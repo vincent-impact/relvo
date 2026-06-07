@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relvo — Planning</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <input type="checkbox" id="nodate-toggle" class="nodate-toggle" hidden>
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="logo-row">
+      <div class="logo">Relvo</div>
+      <input type="checkbox" id="sidebar-toggle" class="sidebar-toggle" hidden>
+      <label for="sidebar-toggle" class="sidebar-collapse-btn" title="Plier/déplier la sidebar">
+        <svg class="when-open" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg class="when-collapsed" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </label>
+    </div>
+
+    <a class="nav-item" href="index.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg></div>
+      <span>Accueil</span>
+    </a>
+    <a class="nav-item" href="feed.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+      <span>Mon fil</span>
+    </a>
+    <a class="nav-item" href="dossiers.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+      <span>Mes dossiers</span>
+    </a>
+    <a class="nav-item" href="parametres.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
+      <span>Paramètres</span>
+    </a>
+
+    <div class="sidebar-footer">
+      <div class="user-avatar">MF</div>
+      <div class="user-info">
+        <div class="user-name">Mamadou Faye</div>
+        <div class="user-role">CEO</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+
+    <!-- TOOLBAR -->
+    <div class="planning-toolbar">
+      <div class="planning-month-nav">
+        <button class="month-nav-btn" title="Mois précédent">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="month-nav-btn" title="Mois suivant">
+          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="planning-month-name">mai 2026</div>
+        <button class="today-btn">Aujourd'hui</button>
+      </div>
+      <div class="planning-toolbar-right">
+        <span>Glisse une tâche pour la replanifier</span>
+      </div>
+    </div>
+
+    <div class="content-area">
+
+      <div class="col-main">
+
+        <!-- CALENDAR MAI 2026 -->
+        <div class="calendar">
+
+          <!-- Header semaine -->
+          <div class="calendar-header">
+            <div class="calendar-header-day">lun.</div>
+            <div class="calendar-header-day">mar.</div>
+            <div class="calendar-header-day">mer.</div>
+            <div class="calendar-header-day">jeu.</div>
+            <div class="calendar-header-day">ven.</div>
+            <div class="calendar-header-day">sam.</div>
+            <div class="calendar-header-day">dim.</div>
+          </div>
+
+          <div class="calendar-body">
+
+            <!-- ══════ SEMAINE 1 (27 avr → 3 mai) — multi : Préparation budget Q2 (jeu 30 → ven 1) ══════ -->
+            <div class="cal-week has-multi">
+              <div class="cal-week-grid">
+
+                <div class="calendar-day is-other-month"><div class="calendar-day-num">27</div></div>
+                <div class="calendar-day is-other-month"><div class="calendar-day-num">28</div></div>
+                <div class="calendar-day is-other-month"><div class="calendar-day-num">29</div></div>
+                <div class="calendar-day is-other-month"><div class="calendar-day-num">30</div></div>
+
+                <div class="calendar-day"><div class="calendar-day-num">1</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Férié — Fête du Travail</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day is-weekend"><div class="calendar-day-num">2</div></div>
+                <div class="calendar-day is-weekend"><div class="calendar-day-num">3</div></div>
+
+              </div>
+              <div class="cal-week-multi">
+                <div class="cal-multi cal-task--general" style="grid-column: 4 / span 2;">
+                  Préparation budget Q2 — clôture
+                </div>
+              </div>
+            </div>
+
+            <!-- ══════ SEMAINE 2 (4 → 10 mai) ══════ -->
+            <div class="cal-week">
+              <div class="cal-week-grid">
+
+                <div class="calendar-day"><div class="calendar-day-num">4</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title"><span class="time">09:30</span>Réunion équipe direction</div>
+                      <div class="cal-task-meta">Salle Atlas</div>
+                    </div>
+                    <div class="cal-task cal-task--rh">
+                      <div class="cal-task-title">Préparer ordre du jour CSE</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Valider budgets shops mai</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">5</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title"><span class="time">10:00</span>Réunion Marie Campos</div>
+                      <div class="cal-task-meta">Comptable · point bilan</div>
+                    </div>
+                    <div class="cal-task cal-task--juridique">
+                      <div class="cal-task-title">Validation devis avocats</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title"><span class="time">14:30</span>Appel banque BPI</div>
+                      <div class="cal-task-meta">Dossier financement</div>
+                    </div>
+                    <div class="cal-task cal-task--rh">
+                      <div class="cal-task-title">Note interne RH</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">6</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--production">
+                      <div class="cal-task-title"><span class="time">09:00</span>Audit qualité Béziers</div>
+                      <div class="cal-task-meta">Shop Béziers centre</div>
+                    </div>
+                    <div class="cal-task cal-task--fournisseurs">
+                      <div class="cal-task-title">Réponse SoGood</div>
+                      <div class="cal-task-meta">SUB-0089 · Karim Benali</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title"><span class="time">16:00</span>Rdv comptable</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">7</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--juridique">
+                      <div class="cal-task-title"><span class="time">11:30</span>Validation devis ClimaPro</div>
+                      <div class="cal-task-meta">SUB-0082 · A. Guérin</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Note charte rédactionnelle</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">8</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Férié — Fête de la Victoire</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day is-weekend"><div class="calendar-day-num">9</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--production">
+                      <div class="cal-task-title"><span class="time">10:00</span>Visite shop Sète</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day is-weekend"><div class="calendar-day-num">10</div></div>
+
+              </div>
+            </div>
+
+            <!-- ══════ SEMAINE 3 (11 → 17 mai) — multi : Vacances M. Campos (lun 11 → mer 13) ══════ -->
+            <div class="cal-week has-multi">
+              <div class="cal-week-grid">
+
+                <div class="calendar-day"><div class="calendar-day-num">11</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--rh">
+                      <div class="cal-task-title">Préparer point recrutement</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Note objectifs trimestre</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">12</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--rh">
+                      <div class="cal-task-title">Préparer plan formation</div>
+                      <div class="cal-task-meta">Équipe nouveau shop</div>
+                    </div>
+                    <div class="cal-task cal-task--fournisseurs">
+                      <div class="cal-task-title">Mise à jour stock fournisseurs</div>
+                    </div>
+                    <div class="cal-task cal-task--fournisseurs">
+                      <div class="cal-task-title"><span class="time">16:00</span>Réponse PackPlus</div>
+                      <div class="cal-task-meta">SUB-0103 · B. Martelli</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">13</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--production">
+                      <div class="cal-task-title">Note ratio production</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Rappeler artisan boulanger</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Valider menu été 2026</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title"><span class="time">15:00</span>Réunion R&D</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">14</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--production">
+                      <div class="cal-task-title"><span class="time">09:00</span>Audit qualité Narbonne</div>
+                      <div class="cal-task-meta">SUB-0117 · FroidExpert</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Valider campagne pub</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Note projet expansion</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title"><span class="time">15:00</span>Rdv CCI Hérault</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Préparer slides COMEX</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day is-today"><div class="calendar-day-num">15</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title"><span class="time">10:00</span>Réunion équipe ops</div>
+                      <div class="cal-task-meta">Direction · Salle Atlas</div>
+                    </div>
+                    <div class="cal-task cal-task--fournisseurs">
+                      <div class="cal-task-title">Confirmer remplacement Karim</div>
+                      <div class="cal-task-meta">SUB-0142 · Urgent</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title"><span class="time">14:00</span>Présentation COMEX</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Valider plan compta Q2</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Finaliser slides Salon</div>
+                    </div>
+                    <div class="cal-task cal-task--rh">
+                      <div class="cal-task-title"><span class="time">16:30</span>Appel Sophie B.</div>
+                      <div class="cal-task-meta">SUB-0148 · Congé mat.</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day is-weekend"><div class="calendar-day-num">16</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--fournisseurs">
+                      <div class="cal-task-title">Relancer PackPlus</div>
+                    </div>
+                    <div class="cal-task cal-task--production">
+                      <div class="cal-task-title"><span class="time">10:00</span>Visite shop Béziers</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day is-weekend"><div class="calendar-day-num">17</div></div>
+
+              </div>
+              <div class="cal-week-multi">
+                <div class="cal-multi cal-task--general" style="grid-column: 1 / span 3;">
+                  ✈ Vacances Marie Campos (comptable)
+                </div>
+              </div>
+            </div>
+
+            <!-- ══════ SEMAINE 4 (18 → 24 mai) — multi : Audit ISO sites (lun 18 → mer 20) ══════ -->
+            <div class="cal-week has-multi">
+              <div class="cal-week-grid">
+
+                <div class="calendar-day"><div class="calendar-day-num">18</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--rh">
+                      <div class="cal-task-title">Préparer réponse Sophie</div>
+                      <div class="cal-task-meta">SUB-0148 · Congé maternité</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title"><span class="time">15:00</span>Réunion DAF</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">19</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Note refonte SI</div>
+                    </div>
+                    <div class="cal-task cal-task--fournisseurs">
+                      <div class="cal-task-title">Validation BL fournisseur</div>
+                    </div>
+                    <div class="cal-task cal-task--rh">
+                      <div class="cal-task-title"><span class="time">11:00</span>Appel cabinet RH</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">20</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title"><span class="time">14:00</span>Réunion directeurs</div>
+                      <div class="cal-task-meta">Mensuelle · Atlas</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Note interne mai</div>
+                    </div>
+                    <div class="cal-task cal-task--juridique">
+                      <div class="cal-task-title">Valider procédure conformité</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">21</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--juridique">
+                      <div class="cal-task-title">Renouveler contrat ClimaPro</div>
+                      <div class="cal-task-meta">SUB-0082 · échéance</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Réponse Le Palais</div>
+                      <div class="cal-task-meta">SUB-0131</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Préparer point compta</div>
+                    </div>
+                    <div class="cal-task cal-task--production">
+                      <div class="cal-task-title"><span class="time">09:00</span>Audit qualité Sète</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">22</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title"><span class="time">12:00</span>Visite Restaurant Le Palais</div>
+                      <div class="cal-task-meta">Béziers centre</div>
+                    </div>
+                    <div class="cal-task cal-task--rh">
+                      <div class="cal-task-title">Plan recrutement été</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Valider campagne réseaux</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title"><span class="time">15:00</span>Réunion projet expansion</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Note brève Salon</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day is-weekend"><div class="calendar-day-num">23</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--production">
+                      <div class="cal-task-title"><span class="time">10:00</span>Visite shop Montpellier</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day is-weekend"><div class="calendar-day-num">24</div></div>
+
+              </div>
+              <div class="cal-week-multi">
+                <div class="cal-multi cal-task--production" style="grid-column: 1 / span 3;">
+                  🛠 Audit ISO 22000 sites Béziers · Narbonne · Sète
+                </div>
+              </div>
+            </div>
+
+            <!-- ══════ SEMAINE 5 (25 → 31 mai) — multi : Salon Food Tech Paris (mar 26 → jeu 28) ══════ -->
+            <div class="cal-week has-multi">
+              <div class="cal-week-grid">
+
+                <div class="calendar-day"><div class="calendar-day-num">25</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Briefing équipe Salon</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Valider stock Salon</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Présentation finale slides</div>
+                    </div>
+                    <div class="cal-task cal-task--production">
+                      <div class="cal-task-title">Vérifier matériel transport</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">26</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Réunion fournisseurs Salon</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Note compte-rendu J1</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">27</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title"><span class="time">11:00</span>Présentation produits</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">28</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title"><span class="time">16:00</span>Bilan Salon</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day"><div class="calendar-day-num">29</div>
+                  <div class="cal-day-tasks">
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title"><span class="time">10:00</span>Debrief Salon — équipe</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title">Note interne post-Salon</div>
+                    </div>
+                    <div class="cal-task cal-task--rh">
+                      <div class="cal-task-title">Tour de table équipes</div>
+                    </div>
+                    <div class="cal-task cal-task--business">
+                      <div class="cal-task-title">Note ratio Q1</div>
+                    </div>
+                    <div class="cal-task cal-task--general">
+                      <div class="cal-task-title"><span class="time">16:00</span>Réunion DAF mensuelle</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="calendar-day is-weekend"><div class="calendar-day-num">30</div></div>
+                <div class="calendar-day is-weekend"><div class="calendar-day-num">31</div></div>
+
+              </div>
+              <div class="cal-week-multi">
+                <div class="cal-multi cal-task--business" style="grid-column: 2 / span 3;">
+                  🎪 Salon Food Tech Paris (Porte de Versailles)
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- LÉGENDE par Dossier -->
+        <div class="calendar-legend">
+          <span class="calendar-legend-item"><span class="calendar-legend-dot calendar-legend-dot--general"></span>Général</span>
+          <span class="calendar-legend-item"><span class="calendar-legend-dot calendar-legend-dot--fournisseurs"></span>Fournisseurs</span>
+          <span class="calendar-legend-item"><span class="calendar-legend-dot calendar-legend-dot--rh"></span>RH</span>
+          <span class="calendar-legend-item"><span class="calendar-legend-dot calendar-legend-dot--juridique"></span>Juridique</span>
+          <span class="calendar-legend-item"><span class="calendar-legend-dot calendar-legend-dot--business"></span>Business</span>
+          <span class="calendar-legend-item"><span class="calendar-legend-dot calendar-legend-dot--production"></span>Production</span>
+          <span class="calendar-legend-item"><span class="calendar-legend-dot calendar-legend-dot--support"></span>Support</span>
+        </div>
+
+      </div>
+
+      <!-- ── COLONNE DROITE — Aucune date ── -->
+      <div class="col-right">
+        <div class="section-header">
+          <div class="section-title">Aucune date <span style="color: var(--text-tertiary); font-weight: 500; text-transform: none; letter-spacing: 0;">(5)</span></div>
+          <label for="nodate-toggle" class="no-date-collapse-btn" title="Plier/déplier la pile">
+            <svg class="when-open" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+            <svg class="when-collapsed" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </label>
+        </div>
+
+        <!-- Vue compacte (visible uniquement quand replié) -->
+        <div class="no-date-collapsed-stack">
+          <div class="no-date-collapsed-count">5</div>
+          <div class="no-date-collapsed-label">Aucune date</div>
+        </div>
+
+        <p class="no-date-hint">
+          Tâches sans deadline. Glisse-les sur une date du calendrier pour les planifier.
+        </p>
+
+        <div class="no-date-section">
+
+          <a href="sujet.html" class="no-date-task">
+            <span class="dot dot--general"></span>
+            <div class="no-date-task-body">
+              <div class="no-date-task-title">Préparer plan stratégique 2026</div>
+              <div class="no-date-task-meta">Général · Moi</div>
+            </div>
+          </a>
+
+          <a href="sujet.html" class="no-date-task">
+            <span class="dot dot--fournisseurs"></span>
+            <div class="no-date-task-body">
+              <div class="no-date-task-title">Mettre à jour note « Particularités fournisseurs »</div>
+              <div class="no-date-task-meta">Fournisseurs · Moi</div>
+            </div>
+          </a>
+
+          <a href="sujet.html" class="no-date-task">
+            <span class="dot dot--rh"></span>
+            <div class="no-date-task-body">
+              <div class="no-date-task-title">Programmer les entretiens annuels</div>
+              <div class="no-date-task-meta">RH · ✦ Relvo</div>
+            </div>
+          </a>
+
+          <a href="sujet.html" class="no-date-task">
+            <span class="dot dot--production"></span>
+            <div class="no-date-task-body">
+              <div class="no-date-task-title">Demander devis nouveau congélateur Narbonne</div>
+              <div class="no-date-task-meta">Production · ✦ Relvo</div>
+            </div>
+          </a>
+
+          <a href="sujet.html" class="no-date-task">
+            <span class="dot dot--juridique"></span>
+            <div class="no-date-task-body">
+              <div class="no-date-task-title">Rédiger procédure validation factures</div>
+              <div class="no-date-task-meta">Juridique · Moi</div>
+            </div>
+          </a>
+
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ═══ DRAWER CHATBOT ═══ -->
+<button id="chat-fab" class="chat-fab" aria-label="Ouvrir l'assistant Relvo">
+  <svg viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><circle cx="9" cy="13" r="1.2" fill="currentColor"/><circle cx="15" cy="13" r="1.2" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="7"/><circle cx="12" cy="3" r="1" fill="currentColor"/><path d="M9 16.5h6"/></svg>
+</button>
+
+<aside id="chat-drawer" class="chat-drawer">
+  <header class="chat-header">
+    <div class="chat-header-left">
+      <span class="chat-brand">Relvo</span>
+      <span class="chat-context-chip">
+        <span class="label-prefix">Contexte :</span>
+        <span class="chat-context-chip-label">Planning · mai 2026</span>
+        <button class="chat-context-clear" title="Discussion générale">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </span>
+    </div>
+    <div class="chat-header-actions">
+      <button class="chat-new-btn">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nouvelle
+      </button>
+      <button class="chat-header-btn" title="Conversations récentes">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </button>
+      <button id="chat-close" class="chat-header-btn" title="Fermer">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="chat-body">
+    <div class="chat-empty">
+      <div class="chat-empty-greeting">Bonjour <strong>Mamadou</strong> 👋</div>
+      <div class="chat-empty-helper">Demande-moi de planifier, replanifier ou réorganiser ton agenda. Je peux aussi détecter les conflits ou les surcharges.</div>
+
+      <div class="chat-suggestions-label">Suggestions sur cette page</div>
+      <div class="chat-suggestions">
+        <div class="chat-suggestion">Replanifie ma semaine en privilégiant les sujets urgents</div>
+        <div class="chat-suggestion">Quelles tâches sont en retard ?</div>
+        <div class="chat-suggestion">Bloque 1 h jeudi pour le projet expansion</div>
+        <div class="chat-suggestion">Ajoute « Audit Sète » jeudi prochain à 9 h</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="chat-footer">
+    <div class="chat-input-row">
+      <textarea class="chat-input" placeholder="Écris à Relvo…" rows="1"></textarea>
+      <button class="chat-send-btn" title="Envoyer">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+    <div class="chat-footer-hint">Relvo peut se tromper. Vérifie les actions importantes.</div>
+  </footer>
+</aside>
+
+<script>
+(function() {
+  const fab = document.getElementById('chat-fab');
+  const drawer = document.getElementById('chat-drawer');
+  const closeBtn = document.getElementById('chat-close');
+  if (fab && drawer) fab.addEventListener('click', () => drawer.classList.add('is-open'));
+  if (closeBtn && drawer) closeBtn.addEventListener('click', () => drawer.classList.remove('is-open'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) drawer.classList.remove('is-open');
+  });
+})();
+</script>
+
+</body>
+</html>

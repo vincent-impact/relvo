@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relvo — Mon fil</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="logo-row">
+      <div class="logo">Relvo</div>
+      <input type="checkbox" id="sidebar-toggle" class="sidebar-toggle" hidden>
+      <label for="sidebar-toggle" class="sidebar-collapse-btn" title="Plier/déplier la sidebar">
+        <svg class="when-open" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg class="when-collapsed" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </label>
+    </div>
+
+    <a class="nav-item" href="index.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg></div>
+      <span>Accueil</span>
+    </a>
+    <a class="nav-item active" href="feed.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+      <span>Mon fil</span>
+    </a>
+    <a class="nav-item" href="dossiers.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+      <span>Mes dossiers</span>
+    </a>
+    <a class="nav-item" href="parametres.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
+      <span>Paramètres</span>
+    </a>
+
+    <div class="sidebar-footer">
+      <div class="user-avatar">MF</div>
+      <div class="user-info">
+        <div class="user-name">Mamadou Faye</div>
+        <div class="user-role">CEO</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+
+    <header class="topbar">
+      <div>
+        <span class="greeting">Mon fil</span>
+        <span class="greeting-date">Sujets ouverts · 24</span>
+      </div>
+      <div class="topbar-actions">
+        <input type="text" class="search-input" placeholder="Rechercher un sujet, un contact, un message…" />
+        <div class="notif-btn">
+          <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+          <div class="notif-dot"></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="content-area">
+
+      <!-- ── COLONNE PRINCIPALE ── -->
+      <div class="col-main">
+
+
+
+        <div class="feed-strip">
+          <div>✦ Aujourd'hui : <strong>587 messages reçus</strong>, j'en ai remonté <strong>9</strong>.</div>
+          <a class="feed-strip-link" href="messages.html">Voir tous les messages bruts →</a>
+        </div>
+
+        <!-- Tabs filtre -->
+        <div class="feed-filter-tabs">
+          <a class="feed-filter-tab active" href="#">Priorité <span class="count">9</span></a>
+          <a class="feed-filter-tab" href="#">Chronologique</a>
+          <a class="feed-filter-tab" href="#">Résolus <span class="count">6</span></a>
+        </div>
+
+        <div class="feed-list">
+
+          <!-- 1 — SUB-0142 — URGENT, à faire -->
+          <a href="sujet.html" class="subject-card-row priority-urgent">
+            <div class="sc-left">
+              <div class="sc-top">
+                <span class="sc-ref">SUB-0142</span>
+                <span class="urgent-flag">Urgent</span>
+                <span class="badge sb-todo">à faire</span>
+                <span class="ai-hint">✦ 2 tâches suggérées</span>
+              </div>
+              <div class="sc-title">Retard livraison sauce blanche — Montpellier</div>
+              <div class="sc-summary">Karim Benali signale un retard et propose un remplacement par la sauce algérienne, même quantité, même prix. Décision attendue avant 14:00.</div>
+              <div class="sc-meta">
+                <span class="folder-tag">Fournisseurs</span>
+                <span class="contact-name"><span class="contact-avatar">KB</span>Karim Benali · SoGood</span>
+                <span class="channel-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email</span>
+                <span class="sc-attachments">
+                  <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                  1
+                </span>
+              </div>
+            </div>
+            <div class="sc-right">
+              <div class="sc-time">
+                <span class="sc-time-label">Dernière activité</span>
+                <span class="sc-time-value">il y a 25 min</span>
+              </div>
+              <div class="task-bar">
+                <div class="task-bar-track"><div class="task-bar-fill" style="width: 33%"></div></div>
+                <span class="task-bar-count"><strong>2</strong> restantes</span>
+              </div>
+            </div>
+            <div class="sc-actions-row">
+              <div class="sc-actions">
+                <button class="sc-action-btn">Répondre</button>
+              </div>
+              <button class="sc-icon-btn is-ignore" title="Ignorer (rétrograder dans le feed)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="sc-icon-btn" title="Marquer comme résolu">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </a>
+
+          <!-- 2 — SUB-0117 — URGENT, en attente -->
+          <a href="sujet.html" class="subject-card-row priority-urgent">
+            <div class="sc-left">
+              <div class="sc-top">
+                <span class="sc-ref">SUB-0117</span>
+                <span class="urgent-flag">Urgent</span>
+                <span class="badge sb-waiting">en attente</span>
+              </div>
+              <div class="sc-title">Remplacement congélateur vitrine — shop Narbonne</div>
+              <div class="sc-summary">Le congélateur vitrine est en panne depuis 3 jours. FroidExpert SA n'a pas de pièces disponibles. Aucune solution alternative trouvée pour le moment.</div>
+              <div class="sc-meta">
+                <span class="folder-tag">Production</span>
+                <span class="contact-name"><span class="contact-avatar">FE</span>FroidExpert SA</span>
+                <span class="channel-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email</span>
+              </div>
+            </div>
+            <div class="sc-right">
+              <div class="sc-time">
+                <span class="sc-time-label">Dernière activité</span>
+                <span class="sc-time-value">il y a 2 j</span>
+              </div>
+              <div style="color: var(--brand-accent); font-size: 12px; font-weight: 500;">En attente depuis 2 j</div>
+            </div>
+            <div class="sc-actions-row">
+              <div class="sc-actions">
+                <button class="sc-action-btn">Relancer FroidExpert</button>
+              </div>
+              <button class="sc-icon-btn is-ignore" title="Ignorer (rétrograder dans le feed)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="sc-icon-btn" title="Marquer comme résolu">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </a>
+
+          <!-- 3 — SUB-0148 — à faire, brouillon prêt -->
+          <a href="sujet.html" class="subject-card-row">
+            <div class="sc-left">
+              <div class="sc-top">
+                <span class="sc-ref">SUB-0148</span>
+                <span class="badge sb-todo">à faire</span>
+                <span class="ai-hint">✦ 3 tâches suggérées</span>
+              </div>
+              <div class="sc-title">Demande de congé maternité — Sophie Blanchard</div>
+              <div class="sc-summary">Sophie informe de sa grossesse et demande les modalités pour son congé maternité prévu début septembre. Brouillon de réponse préparé.</div>
+              <div class="sc-meta">
+                <span class="folder-tag">RH</span>
+                <span class="contact-name"><span class="contact-avatar">SB</span>Sophie Blanchard</span>
+                <span class="channel-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email</span>
+              </div>
+            </div>
+            <div class="sc-right">
+              <div class="sc-time">
+                <span class="sc-time-label">Dernière activité</span>
+                <span class="sc-time-value">hier</span>
+              </div>
+              <div class="task-bar">
+                <div class="task-bar-track"><div class="task-bar-fill" style="width: 0%"></div></div>
+                <span class="task-bar-count"><strong>3</strong> restantes</span>
+              </div>
+            </div>
+            <div class="sc-actions-row">
+              <div class="sc-actions">
+                <button class="sc-action-btn">Voir le brouillon</button>
+                <button class="sc-action-btn is-secondary">Programmer rdv</button>
+              </div>
+              <button class="sc-icon-btn is-ignore" title="Ignorer (rétrograder dans le feed)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="sc-icon-btn" title="Marquer comme résolu">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </a>
+
+          <!-- 4 — SUB-0103 — en attente, pas d'action immédiate -->
+          <a href="sujet.html" class="subject-card-row">
+            <div class="sc-left">
+              <div class="sc-top">
+                <span class="sc-ref">SUB-0103</span>
+                <span class="badge sb-waiting">en attente</span>
+              </div>
+              <div class="sc-title">Commande papier emballage — réapprovisionnement urgent</div>
+              <div class="sc-summary">Réponse envoyée à PackPlus pour confirmer la commande de 500 rouleaux. En attente de la confirmation de livraison et du délai précis.</div>
+              <div class="sc-meta">
+                <span class="folder-tag">Fournisseurs</span>
+                <span class="contact-name"><span class="contact-avatar">PP</span>Bruno Martelli · PackPlus SARL</span>
+                <span class="channel-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email</span>
+              </div>
+            </div>
+            <div class="sc-right">
+              <div class="sc-time">
+                <span class="sc-time-label">Dernière activité</span>
+                <span class="sc-time-value">hier</span>
+              </div>
+              <div class="muted" style="font-size: 12px;">Attente retour fournisseur</div>
+            </div>
+            <div class="sc-actions-row">
+              <div class="sc-actions">
+                <button class="sc-action-btn is-secondary">Relancer</button>
+              </div>
+              <button class="sc-icon-btn is-ignore" title="Ignorer (rétrograder dans le feed)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="sc-icon-btn" title="Marquer comme résolu">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </a>
+
+          <!-- 5 — SUB-0131 — non-lu (cloche + bold + fond gris) -->
+          <a href="sujet.html" class="subject-card-row is-unread">
+            <div class="sc-left">
+              <div class="sc-top">
+                <span class="sc-ref">SUB-0131</span>
+                <span class="unread-bell" title="Nouveau message reçu">
+                  <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                </span>
+                <span class="badge sb-unread">non lu</span>
+                <span class="ai-hint">✦ Résolution suggérée</span>
+              </div>
+              <div class="sc-title">Confirmation virement client — Béziers centre</div>
+              <div class="sc-summary">Le Restaurant Le Palais confirme par WhatsApp que le virement de 3 200 € a bien été effectué. Aucune action supplémentaire nécessaire.</div>
+              <div class="sc-meta">
+                <span class="folder-tag">Business</span>
+                <span class="contact-name"><span class="contact-avatar">RP</span>Restaurant Le Palais</span>
+                <span class="channel-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> WhatsApp</span>
+              </div>
+            </div>
+            <div class="sc-right">
+              <div class="sc-time">
+                <span class="sc-time-label">Dernière activité</span>
+                <span class="sc-time-value">il y a 4 h</span>
+              </div>
+              <div class="muted" style="font-style: italic; font-size: 12px;">À clôturer ?</div>
+            </div>
+            <div class="sc-actions-row">
+              <div class="sc-actions"></div>
+              <button class="sc-icon-btn is-ignore" title="Ignorer (rétrograder dans le feed)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="sc-icon-btn is-relvo" title="✦ Résolution suggérée par Relvo — marquer comme résolu">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </a>
+
+          <!-- 6 — SUB-0082 — à faire (commun) -->
+          <a href="sujet.html" class="subject-card-row">
+            <div class="sc-left">
+              <div class="sc-top">
+                <span class="sc-ref">SUB-0082</span>
+                <span class="badge sb-todo">à faire</span>
+              </div>
+              <div class="sc-title">Contrat maintenance climatisation — renouvellement annuel</div>
+              <div class="sc-summary">ClimaPro Services propose le renouvellement du contrat de maintenance annuel. Une clause de révision tarifaire a été ajoutée. À valider avant le 30 mai.</div>
+              <div class="sc-meta">
+                <span class="folder-tag">Juridique</span>
+                <span class="contact-name"><span class="contact-avatar">CP</span>Antoine Guérin · ClimaPro</span>
+                <span class="channel-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email</span>
+                <span class="sc-attachments">
+                  <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                  2
+                </span>
+              </div>
+            </div>
+            <div class="sc-right">
+              <div class="sc-time">
+                <span class="sc-time-label">Dernière activité</span>
+                <span class="sc-time-value">il y a 3 h</span>
+              </div>
+              <div class="task-bar">
+                <div class="task-bar-track"><div class="task-bar-fill" style="width: 67%"></div></div>
+                <span class="task-bar-count"><strong>1</strong> restante</span>
+              </div>
+            </div>
+            <div class="sc-actions-row">
+              <div class="sc-actions">
+                <button class="sc-action-btn">Valider le contrat</button>
+              </div>
+              <button class="sc-icon-btn is-ignore" title="Ignorer (rétrograder dans le feed)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="sc-icon-btn" title="Marquer comme résolu">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </a>
+
+          <!-- 7 — SUB-0152 — nouveau (is-new : bold + fond gris) -->
+          <a href="sujet.html" class="subject-card-row is-new">
+            <div class="sc-left">
+              <div class="sc-top">
+                <span class="sc-ref">SUB-0152</span>
+                <span class="badge sb-new">nouveau</span>
+              </div>
+              <div class="sc-title">Devis signé reçu — Restaurant La Pergola</div>
+              <div class="sc-summary">Reçu du devis contresigné pour la fourniture de pain de mie sur 12 mois. Pas d'action immédiate suggérée par Relvo. À consulter pour archive.</div>
+              <div class="sc-meta">
+                <span class="folder-tag">Business</span>
+                <span class="contact-name"><span class="contact-avatar">LP</span>Léa Petit · Restaurant La Pergola</span>
+                <span class="channel-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Email</span>
+                <span class="sc-attachments">
+                  <svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+                  1
+                </span>
+              </div>
+            </div>
+            <div class="sc-right">
+              <div class="sc-time">
+                <span class="sc-time-label">Dernière activité</span>
+                <span class="sc-time-value">il y a 2 h</span>
+              </div>
+              <div class="muted" style="font-style: italic; font-size: 12px;">Aucune tâche encore</div>
+            </div>
+            <div class="sc-actions-row">
+              <div class="sc-actions"></div>
+              <button class="sc-icon-btn is-ignore" title="Ignorer (rétrograder dans le feed)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="sc-icon-btn" title="Marquer comme résolu">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </a>
+
+          <!-- 8 — Manageurs régionaux — résumé groupe (titre = groupe, pas Relvo) -->
+          <a href="sujet.html" class="subject-card-row">
+            <div class="sc-left">
+              <div class="sc-top">
+                <span class="sc-ref" style="font-family: var(--font); text-transform: uppercase; font-weight: 600; color: var(--text-secondary);">Groupe WhatsApp</span>
+                <span class="sc-relvo-note">Résumé Relvo</span>
+              </div>
+              <div class="sc-title">Manageurs régionaux — 47 messages échangés ce matin</div>
+              <div class="sc-summary">Sujets : planning d'été, recrutement saisonnier, nouvelle campagne pub. Tu n'es mentionné dans aucun. Aucune décision attendue de ta part.</div>
+              <div class="sc-meta">
+                <span class="folder-tag">Général</span>
+                <span class="contact-name"><span class="contact-avatar">MR</span>5 manageurs (Camille, Julien, Sarah, Pierre, Marc)</span>
+                <span class="channel-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg> WhatsApp</span>
+              </div>
+            </div>
+            <div class="sc-right">
+              <div class="sc-time">
+                <span class="sc-time-label">Dernière activité</span>
+                <span class="sc-time-value">il y a 1 h</span>
+              </div>
+              <div class="muted" style="font-size: 12px;">Lecture rapide possible</div>
+            </div>
+            <div class="sc-actions-row">
+              <div class="sc-actions"></div>
+              <button class="sc-icon-btn is-ignore" title="Ignorer (rétrograder dans le feed)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>
+              <button class="sc-icon-btn" title="Marquer comme vu">
+                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+              </button>
+            </div>
+          </a>
+
+          <!-- 9 — Apprentissage Relvo — encart ambre (Relvo te parle directement) -->
+          <div class="subject-card-row is-learning">
+            <div class="sc-left">
+              <div class="sc-top">
+                <span class="sc-ref" style="font-family: var(--font); text-transform: uppercase; font-weight: 600; color: var(--amber-800);">💡 Apprentissage Relvo</span>
+              </div>
+              <div class="sc-title">Karim répond 3× plus vite par téléphone que par email</div>
+              <div class="sc-summary">Sur les 18 derniers échanges avec Karim, le délai moyen de réponse est de 12 min par WhatsApp/téléphone vs 4 h par email. Veux-tu que je te suggère systématiquement un appel pour les sujets urgents avec lui ?</div>
+              <div class="sc-meta">
+                <span class="folder-tag">Fournisseurs</span>
+                <span class="muted" style="font-size: 11px;">Basé sur 18 échanges récents</span>
+              </div>
+            </div>
+            <div class="sc-right">
+              <div class="sc-time">
+                <span class="sc-time-label">Détecté</span>
+                <span class="sc-time-value">à l'instant</span>
+              </div>
+            </div>
+            <div class="sc-actions-row">
+              <div class="sc-actions">
+                <button class="sc-action-btn">Oui, applique</button>
+                <button class="sc-action-btn is-secondary">Non merci</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ DRAWER CHATBOT ═══ -->
+<button id="chat-fab" class="chat-fab" aria-label="Ouvrir l'assistant Relvo">
+  <svg viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><circle cx="9" cy="13" r="1.2" fill="currentColor"/><circle cx="15" cy="13" r="1.2" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="7"/><circle cx="12" cy="3" r="1" fill="currentColor"/><path d="M9 16.5h6"/></svg>
+</button>
+
+<aside id="chat-drawer" class="chat-drawer">
+  <header class="chat-header">
+    <div class="chat-header-left">
+      <span class="chat-brand">Relvo</span>
+      <span class="chat-context-chip">
+        <span class="label-prefix">Contexte :</span>
+        <span class="chat-context-chip-label">Accueil</span>
+        <button class="chat-context-clear" title="Discussion générale">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </span>
+    </div>
+    <div class="chat-header-actions">
+      <button class="chat-new-btn">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nouvelle
+      </button>
+      <button class="chat-header-btn" title="Conversations récentes">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </button>
+      <button id="chat-close" class="chat-header-btn" title="Fermer">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="chat-body">
+    <div class="chat-empty">
+      <div class="chat-empty-greeting">Bonjour <strong>Mamadou</strong> 👋</div>
+      <div class="chat-empty-helper">Demande-moi n'importe quoi sur tes sujets, ton planning ou tes contacts. Je peux aussi agir directement (créer une tâche, préparer un brouillon, mettre à jour une note…).</div>
+
+      <div class="chat-suggestions-label">Suggestions pour ton brief</div>
+      <div class="chat-suggestions">
+        <div class="chat-suggestion">Liste mes sujets urgents du jour</div>
+        <div class="chat-suggestion">Quels messages dois-je trier ?</div>
+        <div class="chat-suggestion">Résume ma semaine en 3 points</div>
+        <div class="chat-suggestion">Quelles tâches sont en retard ?</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="chat-footer">
+    <div class="chat-input-row">
+      <textarea class="chat-input" placeholder="Écris à Relvo…" rows="1"></textarea>
+      <button class="chat-send-btn" title="Envoyer">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+    <div class="chat-footer-hint">Relvo peut se tromper. Vérifie les actions importantes.</div>
+  </footer>
+</aside>
+
+<script>
+(function() {
+  const fab = document.getElementById('chat-fab');
+  const drawer = document.getElementById('chat-drawer');
+  const closeBtn = document.getElementById('chat-close');
+  if (fab && drawer) fab.addEventListener('click', () => drawer.classList.add('is-open'));
+  if (closeBtn && drawer) closeBtn.addEventListener('click', () => drawer.classList.remove('is-open'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) drawer.classList.remove('is-open');
+  });
+})();
+</script>
+
+</body>
+</html>

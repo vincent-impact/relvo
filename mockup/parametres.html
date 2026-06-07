@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relvo — Paramètres</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="logo-row">
+      <div class="logo">Relvo</div>
+      <input type="checkbox" id="sidebar-toggle" class="sidebar-toggle" hidden>
+      <label for="sidebar-toggle" class="sidebar-collapse-btn" title="Plier/déplier la sidebar">
+        <svg class="when-open" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg class="when-collapsed" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </label>
+    </div>
+
+    <a class="nav-item" href="index.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg></div>
+      <span>Accueil</span>
+    </a>
+    <a class="nav-item" href="feed.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+      <span>Mon fil</span>
+    </a>
+    <a class="nav-item" href="dossiers.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+      <span>Mes dossiers</span>
+    </a>
+    <a class="nav-item active" href="parametres.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
+      <span>Paramètres</span>
+    </a>
+
+    <div class="sidebar-footer">
+      <div class="user-avatar">MF</div>
+      <div class="user-info">
+        <div class="user-name">Mamadou Faye</div>
+        <div class="user-role">CEO</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN — scroll global pour la page Paramètres ═══ -->
+  <div class="main" style="overflow-y: auto;">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="page-header-top">
+        <div>
+          <div class="page-title">Paramètres</div>
+          <div class="page-subtitle">Compte, channels connectés, notifications</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LAYOUT 2 COLS — sub-nav sticky + contenu -->
+    <div class="settings-layout">
+
+      <!-- Sub-nav latérale -->
+      <aside class="settings-nav">
+        <a href="#compte" class="settings-nav-item active">Compte</a>
+        <a href="#channels" class="settings-nav-item">Channels</a>
+        <a href="#notifications" class="settings-nav-item">Notifications</a>
+      </aside>
+
+      <!-- Contenu -->
+      <div class="settings-content">
+
+        <!-- ════ COMPTE ════ -->
+        <section id="compte" class="settings-section">
+          <h2 class="settings-section-title">Compte</h2>
+          <p class="settings-section-desc">Tes informations personnelles. Ce qui apparaît dans les messages que tu envoies et dans le journal d'activité.</p>
+
+          <div class="avatar-uploader">
+            <div class="avatar avatar-color-2">MF</div>
+            <div>
+              <button class="btn-outline">Changer la photo</button>
+              <div class="form-help" style="margin-top: 6px;">PNG ou JPG, 200×200 px minimum.</div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="form-label">Prénom</div>
+            </div>
+            <input type="text" class="form-input" value="Mamadou">
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="form-label">Nom</div>
+            </div>
+            <input type="text" class="form-input" value="Faye">
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="form-label">Email de connexion</div>
+              <div class="form-help">Sert uniquement à te connecter. Ne reçoit pas les messages.</div>
+            </div>
+            <input type="email" class="form-input" value="mamadou.faye@tastycrousty.fr">
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="form-label">Fonction</div>
+            </div>
+            <input type="text" class="form-input" value="CEO">
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="form-label">Rôle dans Relvo</div>
+              <div class="form-help">Détermine ce que tu peux faire dans la plateforme. Modifiable uniquement par un admin.</div>
+            </div>
+            <select class="form-select" disabled>
+              <option selected>Admin</option>
+              <option>CEO</option>
+              <option>Manager</option>
+              <option>Operator</option>
+              <option>Viewer</option>
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div>
+              <div class="form-label">Sécurité</div>
+              <div class="form-help">Mot de passe et authentification à deux facteurs.</div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; align-items: flex-start;">
+              <button class="btn-outline">Changer le mot de passe</button>
+              <button class="btn-outline">Activer la 2FA</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════ CHANNELS ════ -->
+        <section id="channels" class="settings-section">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 4px;">
+            <h2 class="settings-section-title">Channels</h2>
+            <button class="btn-primary">
+              <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Connecter un channel
+            </button>
+          </div>
+          <p class="settings-section-desc">
+            Les <strong>channels</strong> sont les boîtes mail et numéros WhatsApp que Relvo surveille pour traiter les messages entrants. Chaque channel peut être associé à un ou plusieurs Dossiers, ce qui aide Relvo à proposer le bon classement.
+          </p>
+
+          <!-- Channel 1 — Email principal CEO -->
+          <div class="channel-card">
+            <div class="channel-icon-lg channel-icon-email">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div class="channel-body">
+              <div class="channel-name">Boîte principale CEO</div>
+              <div class="channel-identifier">mamadou.faye@tastycrousty.fr</div>
+              <div class="channel-meta">
+                <span class="channel-status channel-status-connected">Connecté</span>
+                <span class="text-xs muted">Google Workspace · sync il y a 2 min</span>
+                <span class="folder-tag">Tous Dossiers</span>
+              </div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn-ghost">Modifier</button>
+              <button class="btn-ghost">Déconnecter</button>
+            </div>
+          </div>
+
+          <!-- Channel 2 — Email RH -->
+          <div class="channel-card">
+            <div class="channel-icon-lg channel-icon-email">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div class="channel-body">
+              <div class="channel-name">Boîte RH</div>
+              <div class="channel-identifier">rh@tastycrousty.fr</div>
+              <div class="channel-meta">
+                <span class="channel-status channel-status-connected">Connecté</span>
+                <span class="text-xs muted">Google Workspace · sync il y a 4 min</span>
+                <span class="folder-tag">RH</span>
+              </div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn-ghost">Modifier</button>
+              <button class="btn-ghost">Déconnecter</button>
+            </div>
+          </div>
+
+          <!-- Channel 3 — Email Fournisseurs -->
+          <div class="channel-card">
+            <div class="channel-icon-lg channel-icon-email">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div class="channel-body">
+              <div class="channel-name">Boîte Fournisseurs</div>
+              <div class="channel-identifier">fournisseurs@tastycrousty.fr</div>
+              <div class="channel-meta">
+                <span class="channel-status channel-status-connected">Connecté</span>
+                <span class="text-xs muted">Google Workspace · sync il y a 1 min</span>
+                <span class="folder-tag">Fournisseurs</span>
+                <span class="folder-tag">Production</span>
+              </div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn-ghost">Modifier</button>
+              <button class="btn-ghost">Déconnecter</button>
+            </div>
+          </div>
+
+          <!-- Channel 4 — Email Juridique -->
+          <div class="channel-card">
+            <div class="channel-icon-lg channel-icon-email">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div class="channel-body">
+              <div class="channel-name">Boîte Juridique</div>
+              <div class="channel-identifier">juridique@tastycrousty.fr</div>
+              <div class="channel-meta">
+                <span class="channel-status channel-status-connected">Connecté</span>
+                <span class="text-xs muted">Google Workspace · sync il y a 12 min</span>
+                <span class="folder-tag">Juridique</span>
+              </div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn-ghost">Modifier</button>
+              <button class="btn-ghost">Déconnecter</button>
+            </div>
+          </div>
+
+          <!-- Channel 5 — Email Support -->
+          <div class="channel-card">
+            <div class="channel-icon-lg channel-icon-email">
+              <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div class="channel-body">
+              <div class="channel-name">Boîte Support</div>
+              <div class="channel-identifier">support@tastycrousty.fr</div>
+              <div class="channel-meta">
+                <span class="channel-status channel-status-connected">Connecté</span>
+                <span class="text-xs muted">Google Workspace · sync il y a 3 min</span>
+                <span class="folder-tag">Support</span>
+              </div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn-ghost">Modifier</button>
+              <button class="btn-ghost">Déconnecter</button>
+            </div>
+          </div>
+
+          <!-- Channel 6 — WhatsApp CEO -->
+          <div class="channel-card">
+            <div class="channel-icon-lg channel-icon-whatsapp">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </div>
+            <div class="channel-body">
+              <div class="channel-name">WhatsApp CEO</div>
+              <div class="channel-identifier">+33 6 12 34 56 78</div>
+              <div class="channel-meta">
+                <span class="channel-status channel-status-connected">Connecté</span>
+                <span class="text-xs muted">Twilio Business API · sync il y a 1 min</span>
+                <span class="folder-tag">Tous Dossiers</span>
+              </div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn-ghost">Modifier</button>
+              <button class="btn-ghost">Déconnecter</button>
+            </div>
+          </div>
+
+          <!-- Channel 7 — WhatsApp Fournisseurs -->
+          <div class="channel-card">
+            <div class="channel-icon-lg channel-icon-whatsapp">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </div>
+            <div class="channel-body">
+              <div class="channel-name">WhatsApp Fournisseurs</div>
+              <div class="channel-identifier">+33 7 89 12 34 56</div>
+              <div class="channel-meta">
+                <span class="channel-status channel-status-connected">Connecté</span>
+                <span class="text-xs muted">Twilio Business API · sync il y a 6 min</span>
+                <span class="folder-tag">Fournisseurs</span>
+              </div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn-ghost">Modifier</button>
+              <button class="btn-ghost">Déconnecter</button>
+            </div>
+          </div>
+
+          <!-- Channel 8 — WhatsApp Business — en erreur (illustration) -->
+          <div class="channel-card">
+            <div class="channel-icon-lg channel-icon-whatsapp">
+              <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+            </div>
+            <div class="channel-body">
+              <div class="channel-name">WhatsApp Business</div>
+              <div class="channel-identifier">+33 6 99 88 77 66</div>
+              <div class="channel-meta">
+                <span class="channel-status channel-status-error">Erreur d'authentification</span>
+                <span class="text-xs muted">Twilio Business API · échec il y a 2 h</span>
+                <span class="folder-tag">Business</span>
+              </div>
+            </div>
+            <div class="channel-actions">
+              <button class="btn-outline" style="color: var(--brand-accent); border-color: var(--red-200);">Reconnecter</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ════ NOTIFICATIONS ════ -->
+        <section id="notifications" class="settings-section">
+          <h2 class="settings-section-title">Notifications</h2>
+          <p class="settings-section-desc">Choisis ce qui mérite de t'interrompre. Tout reste accessible dans le journal de bord de chaque sujet, indépendamment de ces réglages.</p>
+
+          <div style="margin-top: 8px;">
+            <h3 style="font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">Ce qui me notifie</h3>
+
+            <div class="toggle-row">
+              <div class="toggle-row-info">
+                <div class="toggle-row-label">Nouveau sujet urgent</div>
+                <div class="toggle-row-help">Un sujet est ouvert avec le drapeau <strong>urgent</strong>.</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-row-info">
+                <div class="toggle-row-label">Réponse d'un contact en attente</div>
+                <div class="toggle-row-help">Un sujet en <strong>en attente</strong> reçoit un nouveau message.</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-row-info">
+                <div class="toggle-row-label">Sujet sans avancée depuis +3 jours</div>
+                <div class="toggle-row-help">Un sujet ouvert n'a eu aucune activité depuis 3 jours.</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-row-info">
+                <div class="toggle-row-label">Brouillon préparé par Relvo</div>
+                <div class="toggle-row-help">Relvo a préparé une réponse, prête à être validée.</div>
+              </div>
+              <label class="toggle"><input type="checkbox"><span class="toggle-slider"></span></label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-row-info">
+                <div class="toggle-row-label">Message « Sans sujet » accumulé</div>
+                <div class="toggle-row-help">Plus de 5 messages en attente de tri humain.</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-row-info">
+                <div class="toggle-row-label">Channel en erreur</div>
+                <div class="toggle-row-help">Une boîte mail ou un WhatsApp ne sync plus.</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+
+          <div style="margin-top: 32px;">
+            <h3 style="font-size: 13px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px;">Comment me notifier</h3>
+
+            <div class="toggle-row">
+              <div class="toggle-row-info">
+                <div class="toggle-row-label">Notifications dans l'application</div>
+                <div class="toggle-row-help">Cloche dans la barre du haut.</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-row-info">
+                <div class="toggle-row-label">Email récapitulatif</div>
+                <div class="toggle-row-help">Envoyé chaque matin à 8 h sur ton email de connexion.</div>
+              </div>
+              <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+            </div>
+
+            <div class="toggle-row">
+              <div class="toggle-row-info">
+                <div class="toggle-row-label">Notifications push (mobile)</div>
+                <div class="toggle-row-help">Nécessite l'application mobile Relvo. <span class="muted">Bientôt disponible.</span></div>
+              </div>
+              <label class="toggle"><input type="checkbox" disabled><span class="toggle-slider"></span></label>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ═══ DRAWER CHATBOT ═══ -->
+<button id="chat-fab" class="chat-fab" aria-label="Ouvrir l'assistant Relvo">
+  <svg viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><circle cx="9" cy="13" r="1.2" fill="currentColor"/><circle cx="15" cy="13" r="1.2" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="7"/><circle cx="12" cy="3" r="1" fill="currentColor"/><path d="M9 16.5h6"/></svg>
+</button>
+
+<aside id="chat-drawer" class="chat-drawer">
+  <header class="chat-header">
+    <div class="chat-header-left">
+      <span class="chat-brand">Relvo</span>
+      <span class="chat-context-chip">
+        <span class="label-prefix">Contexte :</span>
+        <span class="chat-context-chip-label">Paramètres</span>
+        <button class="chat-context-clear" title="Discussion générale">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </span>
+    </div>
+    <div class="chat-header-actions">
+      <button class="chat-new-btn">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nouvelle
+      </button>
+      <button class="chat-header-btn" title="Conversations récentes">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </button>
+      <button id="chat-close" class="chat-header-btn" title="Fermer">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="chat-body">
+    <div class="chat-empty">
+      <div class="chat-empty-greeting">Bonjour <strong>Mamadou</strong> 👋</div>
+      <div class="chat-empty-helper">Demande-moi de connecter un channel, ajuster une notification, ou diagnostiquer une erreur de sync.</div>
+
+      <div class="chat-suggestions-label">Suggestions sur cette page</div>
+      <div class="chat-suggestions">
+        <div class="chat-suggestion">Connecte une nouvelle boîte mail</div>
+        <div class="chat-suggestion">Affiche mes channels en erreur</div>
+        <div class="chat-suggestion">Désactive le résumé email quotidien</div>
+        <div class="chat-suggestion">Active les notifications push (mobile)</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="chat-footer">
+    <div class="chat-input-row">
+      <textarea class="chat-input" placeholder="Écris à Relvo…" rows="1"></textarea>
+      <button class="chat-send-btn" title="Envoyer">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+    <div class="chat-footer-hint">Relvo peut se tromper. Vérifie les actions importantes.</div>
+  </footer>
+</aside>
+
+<script>
+(function() {
+  const fab = document.getElementById('chat-fab');
+  const drawer = document.getElementById('chat-drawer');
+  const closeBtn = document.getElementById('chat-close');
+  if (fab && drawer) fab.addEventListener('click', () => drawer.classList.add('is-open'));
+  if (closeBtn && drawer) closeBtn.addEventListener('click', () => drawer.classList.remove('is-open'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) drawer.classList.remove('is-open');
+  });
+})();
+</script>
+
+</body>
+</html>

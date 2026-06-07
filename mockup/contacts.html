@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relvo — Contacts</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══ SIDEBAR ═══ -->
+  <aside class="sidebar">
+    <div class="logo-row">
+      <div class="logo">Relvo</div>
+      <input type="checkbox" id="sidebar-toggle" class="sidebar-toggle" hidden>
+      <label for="sidebar-toggle" class="sidebar-collapse-btn" title="Plier/déplier la sidebar">
+        <svg class="when-open" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        <svg class="when-collapsed" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      </label>
+    </div>
+
+    <a class="nav-item" href="index.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5"/><path d="M5 9.5V20a1 1 0 001 1h4v-6h4v6h4a1 1 0 001-1V9.5"/></svg></div>
+      <span>Accueil</span>
+    </a>
+    <a class="nav-item" href="feed.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
+      <span>Mon fil</span>
+    </a>
+    <a class="nav-item" href="dossiers.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+      <span>Mes dossiers</span>
+    </a>
+    <a class="nav-item" href="parametres.html">
+      <div class="nav-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></div>
+      <span>Paramètres</span>
+    </a>
+
+    <div class="sidebar-footer">
+      <div class="user-avatar">MF</div>
+      <div class="user-info">
+        <div class="user-name">Mamadou Faye</div>
+        <div class="user-role">CEO</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div class="page-header-top">
+        <div>
+          <div class="page-title">Contacts</div>
+          <div class="page-subtitle">12 contacts · <strong style="color: var(--amber-700, var(--amber-800));">4 à compléter</strong></div>
+        </div>
+        <button class="btn-primary">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Nouveau contact
+        </button>
+      </div>
+    </div>
+
+    <!-- STATUS TABS -->
+    <div class="status-tabs">
+      <a class="status-tab active" href="#">Tous <span class="tab-count">12</span></a>
+      <a class="status-tab" href="#">À compléter <span class="tab-count">4</span></a>
+      <a class="status-tab" href="#">Complets <span class="tab-count">8</span></a>
+    </div>
+
+    <!-- FILTERS BAR -->
+    <div class="filters-bar">
+      <input type="text" class="filter-search" placeholder="Rechercher un contact, une entreprise…" />
+      <select class="filter-select">
+        <option>Tous les Dossiers</option>
+        <option>Général</option>
+        <option>Fournisseurs</option>
+        <option>RH</option>
+        <option>Juridique</option>
+        <option>Business</option>
+        <option>Support</option>
+        <option>Production</option>
+      </select>
+      <select class="filter-select">
+        <option>Tous les canaux</option>
+        <option>Email</option>
+        <option>WhatsApp</option>
+      </select>
+      <button class="sort-btn">
+        <svg viewBox="0 0 24 24"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="8" y2="18"/></svg>
+        Dernière activité
+      </button>
+      <span class="results-count">12 résultats</span>
+    </div>
+
+    <!-- TABLE DES CONTACTS -->
+    <div class="subject-list-area">
+      <div class="table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Contact</th>
+              <th>Entreprise</th>
+              <th>Dossier</th>
+              <th>Canaux</th>
+              <th style="text-align: center;">Sujets actifs</th>
+              <th>Statut</th>
+              <th>Dernière activité</th>
+            </tr>
+          </thead>
+          <tbody>
+
+            <!-- Karim Benali — complete -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-1">KB</div>
+                  <div>
+                    <div class="cell-primary">Karim Benali</div>
+                    <div class="cell-muted">karim.benali@sogood.fr</div>
+                  </div>
+                </div>
+              </td>
+              <td>SoGood Distribution</td>
+              <td><span class="folder-tag">Fournisseurs</span></td>
+              <td>
+                <div class="row-tight">
+                  <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                  <span class="channel-icon" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
+                </div>
+              </td>
+              <td style="text-align: center;"><strong>1</strong></td>
+              <td><span class="status-pill status-pill-complete">Complet</span></td>
+              <td class="cell-muted">il y a 25 min</td>
+            </tr>
+
+            <!-- Sophie Blanchard — complete -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-2">SB</div>
+                  <div>
+                    <div class="cell-primary">Sophie Blanchard</div>
+                    <div class="cell-muted">sophie.blanchard@tastycrousty.fr</div>
+                  </div>
+                </div>
+              </td>
+              <td>Tasty Crousty</td>
+              <td><span class="folder-tag">RH</span></td>
+              <td>
+                <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              </td>
+              <td style="text-align: center;"><strong>1</strong></td>
+              <td><span class="status-pill status-pill-complete">Complet</span></td>
+              <td class="cell-muted">il y a 1 h</td>
+            </tr>
+
+            <!-- Antoine Guérin — auto (à compléter) -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-3">AG</div>
+                  <div>
+                    <div class="cell-primary">Antoine Guérin</div>
+                    <div class="cell-muted">a.guerin@climapro.fr</div>
+                  </div>
+                </div>
+              </td>
+              <td>ClimaPro Services</td>
+              <td><span class="folder-tag">Juridique</span></td>
+              <td>
+                <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              </td>
+              <td style="text-align: center;"><strong>1</strong></td>
+              <td><span class="status-pill status-pill-auto">À compléter</span></td>
+              <td class="cell-muted">il y a 3 h</td>
+            </tr>
+
+            <!-- Léa Petit — auto -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-4">LP</div>
+                  <div>
+                    <div class="cell-primary">Léa Petit</div>
+                    <div class="cell-muted">l.petit@restaurant-pergola.fr</div>
+                  </div>
+                </div>
+              </td>
+              <td>Restaurant La Pergola</td>
+              <td><span class="folder-tag">Business</span></td>
+              <td>
+                <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              </td>
+              <td style="text-align: center;"><strong>1</strong></td>
+              <td><span class="status-pill status-pill-auto">À compléter</span></td>
+              <td class="cell-muted">il y a 2 h</td>
+            </tr>
+
+            <!-- Restaurant Le Palais — complete (entreprise sans personne nommée mais validée) -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-5">RP</div>
+                  <div>
+                    <div class="cell-primary">Restaurant Le Palais</div>
+                    <div class="cell-muted">contact@lepalais-beziers.fr</div>
+                  </div>
+                </div>
+              </td>
+              <td>Restaurant Le Palais</td>
+              <td><span class="folder-tag">Business</span></td>
+              <td>
+                <div class="row-tight">
+                  <span class="channel-icon" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
+                  <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                </div>
+              </td>
+              <td style="text-align: center;"><strong>1</strong></td>
+              <td><span class="status-pill status-pill-complete">Complet</span></td>
+              <td class="cell-muted">il y a 4 h</td>
+            </tr>
+
+            <!-- Bruno Martelli — auto -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-6">BM</div>
+                  <div>
+                    <div class="cell-primary">Bruno Martelli</div>
+                    <div class="cell-muted">b.martelli@packplus.com</div>
+                  </div>
+                </div>
+              </td>
+              <td>PackPlus SARL</td>
+              <td><span class="folder-tag">Fournisseurs</span></td>
+              <td>
+                <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              </td>
+              <td style="text-align: center;"><strong>2</strong></td>
+              <td><span class="status-pill status-pill-auto">À compléter</span></td>
+              <td class="cell-muted">hier</td>
+            </tr>
+
+            <!-- Marie Campos — complete -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-7" style="background: var(--teal-50); color: var(--teal-800);">MC</div>
+                  <div>
+                    <div class="cell-primary">Marie Campos</div>
+                    <div class="cell-muted">marie.campos@cabinet-mc.fr</div>
+                  </div>
+                </div>
+              </td>
+              <td>Cabinet Campos</td>
+              <td><span class="folder-tag">Business</span></td>
+              <td>
+                <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              </td>
+              <td style="text-align: center;"><strong>0</strong></td>
+              <td><span class="status-pill status-pill-complete">Complet</span></td>
+              <td class="cell-muted">lundi</td>
+            </tr>
+
+            <!-- FroidExpert SA — auto -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-8">FE</div>
+                  <div>
+                    <div class="cell-primary">FroidExpert SA</div>
+                    <div class="cell-muted">contact@froidexpert.fr</div>
+                  </div>
+                </div>
+              </td>
+              <td>FroidExpert SA</td>
+              <td><span class="folder-tag">Production</span></td>
+              <td>
+                <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              </td>
+              <td style="text-align: center;"><strong>1</strong></td>
+              <td><span class="status-pill status-pill-auto">À compléter</span></td>
+              <td class="cell-muted">il y a 2 j</td>
+            </tr>
+
+            <!-- Pierre Lemoine — complete (CEO interne, contact ressources humaines) -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-2">PL</div>
+                  <div>
+                    <div class="cell-primary">Pierre Lemoine</div>
+                    <div class="cell-muted">p.lemoine@tastycrousty.fr</div>
+                  </div>
+                </div>
+              </td>
+              <td>Tasty Crousty</td>
+              <td><span class="folder-tag">RH</span></td>
+              <td>
+                <div class="row-tight">
+                  <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                  <span class="channel-icon" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
+                </div>
+              </td>
+              <td style="text-align: center;"><strong>0</strong></td>
+              <td><span class="status-pill status-pill-complete">Complet</span></td>
+              <td class="cell-muted">3 avril</td>
+            </tr>
+
+            <!-- Yasmine Ouali — complete (avocat habituel) -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-3">YO</div>
+                  <div>
+                    <div class="cell-primary">Yasmine Ouali</div>
+                    <div class="cell-muted">y.ouali@cabinet-ouali.com</div>
+                  </div>
+                </div>
+              </td>
+              <td>Cabinet Ouali Avocats</td>
+              <td><span class="folder-tag">Juridique</span></td>
+              <td>
+                <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              </td>
+              <td style="text-align: center;"><strong>0</strong></td>
+              <td><span class="status-pill status-pill-complete">Complet</span></td>
+              <td class="cell-muted">28 mars</td>
+            </tr>
+
+            <!-- Étienne Rocher — complete -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-1">ER</div>
+                  <div>
+                    <div class="cell-primary">Étienne Rocher</div>
+                    <div class="cell-muted">e.rocher@semoulerie-mediterranee.fr</div>
+                  </div>
+                </div>
+              </td>
+              <td>Semoulerie Méditerranée</td>
+              <td><span class="folder-tag">Fournisseurs</span></td>
+              <td>
+                <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+              </td>
+              <td style="text-align: center;"><strong>0</strong></td>
+              <td><span class="status-pill status-pill-complete">Complet</span></td>
+              <td class="cell-muted">15 avril</td>
+            </tr>
+
+            <!-- Manager Shop Béziers — complete -->
+            <tr onclick="window.location.href='contact.html'">
+              <td>
+                <div class="cell-with-avatar">
+                  <div class="avatar avatar-md avatar-color-6">NK</div>
+                  <div>
+                    <div class="cell-primary">Nadia Kerbouche</div>
+                    <div class="cell-muted">nadia.kerbouche@tastycrousty.fr</div>
+                  </div>
+                </div>
+              </td>
+              <td>Tasty Crousty — shop Béziers</td>
+              <td><span class="folder-tag">Production</span></td>
+              <td>
+                <div class="row-tight">
+                  <span class="channel-icon" title="Email"><svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+                  <span class="channel-icon" title="WhatsApp"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg></span>
+                </div>
+              </td>
+              <td style="text-align: center;"><strong>0</strong></td>
+              <td><span class="status-pill status-pill-complete">Complet</span></td>
+              <td class="cell-muted">12 avril</td>
+            </tr>
+
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ═══ DRAWER CHATBOT ═══ -->
+<button id="chat-fab" class="chat-fab" aria-label="Ouvrir l'assistant Relvo">
+  <svg viewBox="0 0 24 24"><rect x="4" y="7" width="16" height="13" rx="2"/><circle cx="9" cy="13" r="1.2" fill="currentColor"/><circle cx="15" cy="13" r="1.2" fill="currentColor"/><line x1="12" y1="3" x2="12" y2="7"/><circle cx="12" cy="3" r="1" fill="currentColor"/><path d="M9 16.5h6"/></svg>
+</button>
+
+<aside id="chat-drawer" class="chat-drawer">
+  <header class="chat-header">
+    <div class="chat-header-left">
+      <span class="chat-brand">Relvo</span>
+      <span class="chat-context-chip">
+        <span class="label-prefix">Contexte :</span>
+        <span class="chat-context-chip-label">Contacts</span>
+        <button class="chat-context-clear" title="Discussion générale">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </span>
+    </div>
+    <div class="chat-header-actions">
+      <button class="chat-new-btn">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nouvelle
+      </button>
+      <button class="chat-header-btn" title="Conversations récentes">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </button>
+      <button id="chat-close" class="chat-header-btn" title="Fermer">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="chat-body">
+    <div class="chat-empty">
+      <div class="chat-empty-greeting">Bonjour <strong>Mamadou</strong> 👋</div>
+      <div class="chat-empty-helper">Demande-moi de retrouver, créer ou compléter un contact. Je peux aussi te dire qui mérite un suivi.</div>
+
+      <div class="chat-suggestions-label">Suggestions sur cette page</div>
+      <div class="chat-suggestions">
+        <div class="chat-suggestion">Liste les contacts à compléter (statut auto)</div>
+        <div class="chat-suggestion">Crée un contact pour Marie Campos (comptable)</div>
+        <div class="chat-suggestion">Qui sont mes contacts du Dossier Fournisseurs ?</div>
+        <div class="chat-suggestion">Combien de sujets avec PackPlus cette année ?</div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="chat-footer">
+    <div class="chat-input-row">
+      <textarea class="chat-input" placeholder="Écris à Relvo…" rows="1"></textarea>
+      <button class="chat-send-btn" title="Envoyer">
+        <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+    <div class="chat-footer-hint">Relvo peut se tromper. Vérifie les actions importantes.</div>
+  </footer>
+</aside>
+
+<script>
+(function() {
+  const fab = document.getElementById('chat-fab');
+  const drawer = document.getElementById('chat-drawer');
+  const closeBtn = document.getElementById('chat-close');
+  if (fab && drawer) fab.addEventListener('click', () => drawer.classList.add('is-open'));
+  if (closeBtn && drawer) closeBtn.addEventListener('click', () => drawer.classList.remove('is-open'));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) drawer.classList.remove('is-open');
+  });
+})();
+</script>
+
+</body>
+</html>
