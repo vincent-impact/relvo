@@ -1,0 +1,25 @@
+{
+  "name": "relvo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Assistant IA de pilotage des sollicitations professionnelles",
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=9"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter web dev",
+    "dev:worker": "pnpm --filter worker dev",
+    "build": "pnpm -r --if-present build",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "db:generate": "pnpm --filter @relvo/db generate",
+    "db:migrate": "pnpm --filter @relvo/db migrate",
+    "db:status": "pnpm --filter @relvo/db status",
+    "db:reset": "pnpm --filter @relvo/db migrate:reset",
+    "db:studio": "pnpm --filter @relvo/db studio",
+    "db:start": "docker compose up -d",
+    "db:stop": "docker compose down"
+  }
+}

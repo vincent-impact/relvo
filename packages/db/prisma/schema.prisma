@@ -1,0 +1,530 @@
+// Schéma Prisma partagé web ↔ worker.
+// Source de vérité fonctionnelle : docs/conception/02-modele-donnees.md
+//
+// Conventions :
+//  - Champs en camelCase côté client TS, colonnes/tables en snake_case (@map / @@map).
+//  - Tout attribut Actor porte le suffixe *Actor (sourceActor, createdByActor…),
+//    fidèle à la convention `_actor` du modèle.
+//  - account_id partout : clé tenant, filtre systématique (invariant produit n°1).
+//  - Subject.contactIds est un tableau scalaire (UUID[]), PAS une relation
+//    (invariant n°13 : sujets multi-contacts sans table de liaison).
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────
+
+/// Acteur partagé : qui porte la donnée. UI : Moi / Relvo / Externe.
+enum Actor {
+  user
+  ai
+  contact
+  system
+}
+
+enum AccountRole {
+  admin
+  ceo
+  manager
+  operator
+  viewer
+}
+
+enum ContactStatus {
+  auto
+  complete
+}
+
+enum ChannelType {
+  email
+  whatsapp
+}
+
+enum ChannelConfigStatus {
+  pending
+  connected
+  error
+  disabled
+}
+
+/// Les 6 statuts d'un Subject (UI fidèle, un badge par valeur).
+enum SubjectStatus {
+  new
+  to_do
+  waiting
+  unread
+  resolved
+  archived
+}
+
+/// 4 niveaux côté modèle ; l'UI ne projette qu'un drapeau urgent (= critical).
+enum Priority {
+  low
+  medium
+  high
+  critical
+}
+
+enum MessageDirection {
+  incoming
+  outgoing
+}
+
+enum MessageStatus {
+  received
+  linked
+  sent
+  failed
+  ignored
+}
+
+/// Renseigné uniquement quand subjectId = null (message « Sans sujet »).
+enum TriageHint {
+  too_short
+  ambiguous
+  prospection
+  unknown_sender
+  informative_only
+  other
+}
+
+/// Nature d'une tâche — non affichée par défaut, usage technique (automatisation/stats).
+enum TaskKind {
+  decision
+  reply
+  check
+  call
+  inform
+  follow_up
+  other
+}
+
+enum TaskStatus {
+  open
+  done
+  deleted
+}
+
+enum CompletionMode {
+  manual
+  message_match
+  action_match
+}
+
+enum ActionType {
+  send_message
+  other
+}
+
+enum ActionStatus {
+  open
+  in_progress
+  done
+  cancelled
+  failed
+}
+
+enum EventEntityType {
+  subject
+  message
+  task
+  action
+  attachment
+  system
+}
+
+enum KnowledgeKind {
+  file
+  note
+}
+
+// ─────────────────────────────────────────────────────────────
+// 1. Account — tenant racine
+// ─────────────────────────────────────────────────────────────
+
+model Account {
+  id           String      @id @default(uuid()) @db.Uuid
+  email        String      @unique
+  passwordHash String      @map("password_hash")
+  firstName    String      @map("first_name")
+  lastName     String      @map("last_name")
+  role         AccountRole @default(ceo)
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  folders            Folder[]
+  contacts           Contact[]
+  channels           Channel[]
+  channelConfigs     ChannelConfig[]
+  subjects           Subject[]
+  messages           Message[]
+  attachments        Attachment[]
+  tasks              Task[]
+  actions            Action[]
+  eventLogs          EventLog[]
+  knowledgeDocuments KnowledgeDocument[]
+
+  @@map("accounts")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 2. Folder — conteneur métier (Sujets + Connaissances)
+// ─────────────────────────────────────────────────────────────
+
+model Folder {
+  id          String   @id @default(uuid()) @db.Uuid
+  accountId   String   @map("account_id") @db.Uuid
+  name        String
+  slug        String
+  description String?
+  isDefault   Boolean  @default(false) @map("is_default")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  account            Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  subjects           Subject[]
+  knowledgeDocuments KnowledgeDocument[]
+  defaultForContacts Contact[]           @relation("ContactDefaultFolder")
+
+  @@unique([accountId, slug])
+  @@index([accountId])
+  @@map("folders")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 3. Contact — personne extérieure (tous canaux confondus)
+// ─────────────────────────────────────────────────────────────
+
+model Contact {
+  id              String        @id @default(uuid()) @db.Uuid
+  accountId       String        @map("account_id") @db.Uuid
+  name            String
+  email           String?
+  phone           String?
+  company         String?
+  jobTitle        String?       @map("job_title")
+  defaultFolderId String?       @map("default_folder_id") @db.Uuid
+  status          ContactStatus @default(auto)
+  sourceActor     Actor         @map("source_actor")
+  notes           String?       @db.Text
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  account          Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  defaultFolder    Folder?    @relation("ContactDefaultFolder", fields: [defaultFolderId], references: [id], onDelete: SetNull)
+  sentMessages     Message[]  @relation("MessageSenderContact")
+  receivedMessages Message[]  @relation("MessageRecipientContact")
+  eventLogs        EventLog[]
+
+  @@index([accountId])
+  @@index([accountId, status])
+  @@map("contacts")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4. Channel — point d'entrée côté utilisateur (boîte mail, n° WhatsApp)
+// ─────────────────────────────────────────────────────────────
+
+model Channel {
+  id         String      @id @default(uuid()) @db.Uuid
+  accountId  String      @map("account_id") @db.Uuid
+  name       String
+  type       ChannelType
+  identifier String
+  folderIds  String[]    @map("folder_ids") @db.Uuid
+  isActive   Boolean     @default(true) @map("is_active")
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  account  Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  config   ChannelConfig?
+  subjects Subject[]
+  messages Message[]
+
+  @@index([accountId])
+  @@map("channels")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5. ChannelConfig — configuration technique (1-1 avec Channel)
+// ─────────────────────────────────────────────────────────────
+
+model ChannelConfig {
+  id             String              @id @default(uuid()) @db.Uuid
+  accountId      String              @map("account_id") @db.Uuid
+  channelId      String              @unique @map("channel_id") @db.Uuid
+  provider       String
+  connectionData Json?               @map("connection_data")
+  status         ChannelConfigStatus @default(pending)
+  lastSyncAt     DateTime?           @map("last_sync_at")
+  createdAt      DateTime            @default(now()) @map("created_at")
+  updatedAt      DateTime            @updatedAt @map("updated_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@map("channel_configs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 6. Subject — entité centrale du produit
+// ─────────────────────────────────────────────────────────────
+
+model Subject {
+  id                    String        @id @default(uuid()) @db.Uuid
+  accountId             String        @map("account_id") @db.Uuid
+  reference             String
+  title                 String
+  summary               String?       @db.Text
+  folderId              String?       @map("folder_id") @db.Uuid
+  contactIds            String[]      @default([]) @map("contact_ids") @db.Uuid
+  status                SubjectStatus @default(new)
+  priority              Priority      @default(medium)
+  sourceChannelId       String?       @map("source_channel_id") @db.Uuid
+  openedAt              DateTime      @default(now()) @map("opened_at")
+  resolvedAt            DateTime?     @map("resolved_at")
+  lastActivityAt        DateTime?     @map("last_activity_at")
+  lastOpenedAt          DateTime?     @map("last_opened_at")
+  resolutionSuggestedAt DateTime?     @map("resolution_suggested_at")
+  createdByActor        Actor         @map("created_by_actor")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+
+  account       Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  folder        Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  sourceChannel Channel?     @relation(fields: [sourceChannelId], references: [id], onDelete: SetNull)
+  messages      Message[]
+  attachments   Attachment[]
+  tasks         Task[]
+  actions       Action[]
+  eventLogs     EventLog[]
+
+  @@unique([accountId, reference])
+  @@index([accountId])
+  @@index([accountId, status])
+  @@index([accountId, priority])
+  @@index([accountId, folderId])
+  @@map("subjects")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 7. Message — événement brut reçu/envoyé
+// ─────────────────────────────────────────────────────────────
+
+model Message {
+  id                 String           @id @default(uuid()) @db.Uuid
+  accountId          String           @map("account_id") @db.Uuid
+  subjectId          String?          @map("subject_id") @db.Uuid
+  channelId          String           @map("channel_id") @db.Uuid
+  senderContactId    String?          @map("sender_contact_id") @db.Uuid
+  senderRaw          String?          @map("sender_raw")
+  recipientContactId String?          @map("recipient_contact_id") @db.Uuid
+  direction          MessageDirection
+  externalId         String?          @map("external_id")
+  externalThreadId   String?          @map("external_thread_id")
+  subjectLine        String?          @map("subject_line")
+  content            String?          @db.Text
+  receivedAt         DateTime?        @map("received_at")
+  sentAt             DateTime?        @map("sent_at")
+  status             MessageStatus    @default(received)
+  triageHint         TriageHint?      @map("triage_hint")
+  createdAt          DateTime         @default(now()) @map("created_at")
+  updatedAt          DateTime         @updatedAt @map("updated_at")
+
+  account         Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  subject         Subject?     @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  channel         Channel      @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  senderContact   Contact?     @relation("MessageSenderContact", fields: [senderContactId], references: [id], onDelete: SetNull)
+  recipientContact Contact?    @relation("MessageRecipientContact", fields: [recipientContactId], references: [id], onDelete: SetNull)
+  attachments     Attachment[]
+  tasks           Task[]
+  actions         Action[]
+  eventLogs       EventLog[]
+
+  @@index([accountId])
+  @@index([accountId, subjectId])
+  @@index([accountId, externalId])
+  @@index([accountId, externalThreadId])
+  @@map("messages")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 8. Attachment — pièce jointe liée à un message
+// ─────────────────────────────────────────────────────────────
+
+model Attachment {
+  id          String    @id @default(uuid()) @db.Uuid
+  accountId   String    @map("account_id") @db.Uuid
+  messageId   String    @map("message_id") @db.Uuid
+  subjectId   String?   @map("subject_id") @db.Uuid
+  name        String
+  mimeType    String?   @map("mime_type")
+  fileUrl     String    @map("file_url")
+  fileSize    Int?      @map("file_size")
+  aiLabel     String?   @map("ai_label")
+  aiSummary   String?   @map("ai_summary") @db.Text
+  aiAnalysis  String?   @map("ai_analysis") @db.Text
+  aiLabelAt   DateTime? @map("ai_label_at")
+  aiSummaryAt DateTime? @map("ai_summary_at")
+  aiAnalysisAt DateTime? @map("ai_analysis_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  account Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  message Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@index([accountId])
+  @@index([accountId, subjectId])
+  @@index([messageId])
+  @@map("attachments")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 9. Task — unité de travail DU sujet (pas de l'utilisateur)
+// ─────────────────────────────────────────────────────────────
+
+model Task {
+  id               String         @id @default(uuid()) @db.Uuid
+  accountId        String         @map("account_id") @db.Uuid
+  subjectId        String         @map("subject_id") @db.Uuid
+  messageId        String?        @map("message_id") @db.Uuid
+  title            String
+  description      String?        @db.Text
+  sourceActor      Actor          @map("source_actor")
+  kind             TaskKind       @default(other)
+  status           TaskStatus     @default(open)
+  completionMode   CompletionMode @default(manual) @map("completion_mode")
+  startDate        DateTime?      @map("start_date") @db.Date
+  startTime        DateTime?      @map("start_time") @db.Time(6)
+  endDate          DateTime?      @map("end_date") @db.Date
+  endTime          DateTime?      @map("end_time") @db.Time(6)
+  completedAt      DateTime?      @map("completed_at")
+  completedByActor Actor?         @map("completed_by_actor")
+  metadata         Json?
+  createdAt        DateTime       @default(now()) @map("created_at")
+  updatedAt        DateTime       @updatedAt @map("updated_at")
+
+  account Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  message Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  actions Action[]
+  eventLogs EventLog[]
+
+  @@index([accountId])
+  @@index([accountId, subjectId])
+  @@index([accountId, status])
+  @@index([accountId, startDate])
+  @@map("tasks")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 10. Action — exécution concrète (ex : envoyer un message)
+// ─────────────────────────────────────────────────────────────
+
+model Action {
+  id              String       @id @default(uuid()) @db.Uuid
+  accountId       String       @map("account_id") @db.Uuid
+  subjectId       String       @map("subject_id") @db.Uuid
+  taskId          String?      @map("task_id") @db.Uuid
+  messageId       String?      @map("message_id") @db.Uuid
+  type            ActionType
+  title           String
+  payload         Json?
+  status          ActionStatus @default(open)
+  executedByActor Actor?       @map("executed_by_actor")
+  executedAt      DateTime?    @map("executed_at")
+  metadata        Json?
+  createdAt       DateTime     @default(now()) @map("created_at")
+  updatedAt       DateTime     @updatedAt @map("updated_at")
+
+  account Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  task    Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  message Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  eventLogs EventLog[]
+
+  @@index([accountId])
+  @@index([accountId, subjectId])
+  @@index([accountId, status])
+  @@map("actions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 11. EventLog — journal de bord
+// ─────────────────────────────────────────────────────────────
+
+model EventLog {
+  id          String          @id @default(uuid()) @db.Uuid
+  accountId   String          @map("account_id") @db.Uuid
+  subjectId   String?         @map("subject_id") @db.Uuid
+  messageId   String?         @map("message_id") @db.Uuid
+  taskId      String?         @map("task_id") @db.Uuid
+  actionId    String?         @map("action_id") @db.Uuid
+  entityType  EventEntityType @map("entity_type")
+  entityId    String?         @map("entity_id") @db.Uuid
+  eventType   String          @map("event_type")
+  title       String
+  description String?         @db.Text
+  actor       Actor
+  contactId   String?         @map("contact_id") @db.Uuid
+  metadata    Json?
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  account Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  message Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  task    Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  action  Action?  @relation(fields: [actionId], references: [id], onDelete: SetNull)
+  contact Contact? @relation(fields: [contactId], references: [id], onDelete: SetNull)
+
+  @@index([accountId])
+  @@index([accountId, subjectId])
+  @@index([accountId, createdAt])
+  @@map("event_logs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 12. KnowledgeDocument — base de connaissances (file | note)
+// ─────────────────────────────────────────────────────────────
+
+model KnowledgeDocument {
+  id              String        @id @default(uuid()) @db.Uuid
+  accountId       String        @map("account_id") @db.Uuid
+  folderId        String        @map("folder_id") @db.Uuid
+  kind            KnowledgeKind
+  name            String
+  description     String?       @db.Text
+  // kind = file
+  mimeType        String?       @map("mime_type")
+  fileUrl         String?       @map("file_url")
+  fileSize        Int?          @map("file_size")
+  anthropicFileId String?       @map("anthropic_file_id")
+  aiLabel         String?       @map("ai_label")
+  aiSummary       String?       @map("ai_summary") @db.Text
+  // kind = note
+  content         String?       @db.Text
+  // traçabilité
+  createdByActor  Actor         @map("created_by_actor")
+  updatedByActor  Actor?        @map("updated_by_actor")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  folder  Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([accountId, folderId])
+  @@map("knowledge_documents")
+}

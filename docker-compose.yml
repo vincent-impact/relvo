@@ -1,0 +1,23 @@
+# Postgres local pour le dev (backlog M1.2).
+# En prod, DATABASE_URL pointe vers Neon — ce conteneur n'est utilisé qu'en local.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: relvo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: relvo
+      POSTGRES_PASSWORD: relvo
+      POSTGRES_DB: relvo
+    ports:
+      - "5432:5432"
+    volumes:
+      - relvo-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U relvo -d relvo"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  relvo-pgdata:

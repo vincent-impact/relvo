@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+dist/
+build/
+out/
+*.tsbuildinfo
+
+# Prisma
+packages/db/src/generated/
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Worker (Baileys auth state)
+apps/worker/.wa-auth/
+apps/worker/auth_info_baileys/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Vercel
+.vercel/
+
+# Test / coverage
+coverage/
+playwright-report/
+test-results/

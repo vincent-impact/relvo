@@ -138,7 +138,14 @@ Sidebar = **4 entrées** (Accueil, Mon fil, Mes dossiers, Paramètres). Le **dra
 ## Conventions
 
 - **TypeScript partout.** Les enums (`Actor`, `Status`, `Priority`, `Kind`, `TriageHint`) découlent du schéma Prisma (`packages/db`).
-- **Tailwind + Shadcn.** Réutiliser/étendre les composants shadcn plutôt que réécrire des primitives. Conserver la palette navy (#0A1128) / blue (#2B6FE0) / red (#E63150) + neutres.
+- **Tailwind + Shadcn.** Conserver la palette navy (#0A1128) / blue (#2B6FE0) / red (#E63150) + neutres (thème dans `apps/web/src/app/globals.css`).
+- **🔒 Réflexe shadcn obligatoire — ne jamais créer un composant UI sans vérifier shadcn d'abord.** Dès qu'un composant graphique doit être envisagé (bouton, dialog, table, calendrier, sélecteur de date, sheet/drawer, toast, form, etc.), la première action est **toujours** d'interroger le **MCP shadcn** (`.mcp.json` à la racine) pour voir s'il existe déjà dans le registre. Workflow impératif, dans cet ordre :
+  1. **Chercher** dans le registre shadcn via le MCP (search + view de la démo/du code).
+  2. **Trouvé** → l'installer (`pnpm --filter web exec shadcn add <composant>`) et l'adapter au thème Relvo. Ne pas le réécrire à la main.
+  3. **Partiellement couvert** → **composer** à partir des primitives shadcn existantes (`Button`, `Dialog`, `Popover`…) plutôt que repartir de zéro.
+  4. **Absent du registre** (dernier recours seulement) → créer un composant sur mesure, mais en réutilisant les tokens du thème et les conventions shadcn (`cn()`, variants `cva`, structure de `src/components/ui`).
+
+  Créer une primitive from scratch alors qu'un équivalent shadcn existe est considéré comme une **erreur de process**, pas un choix esthétique.
 - Server Components par défaut ; `"use client"` ciblé (drawer chat, drag-and-drop, formulaires interactifs).
 - Données métier dynamiques (sujets, messages, tâches) → tool calls / DB. Connaissances statiques → prompt caching.
 - Page active dans la nav = classe `.active` (ou équivalent state) sur l'entrée correspondante.
