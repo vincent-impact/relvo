@@ -1,9 +1,36 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "./generated/prisma/client.js";
+import { PrismaClient } from "./generated/prisma/client";
 
 // Ré-export de tout le client généré : PrismaClient, types de modèles et enums
 // (Actor, SubjectStatus, Priority, TaskKind, TriageHint, …).
-export * from "./generated/prisma/client.js";
+// NB : imports SANS extension — le générateur prisma-client émet des specifiers
+// extensionless ; ajouter `.js` casse la résolution de Turbopack au build
+// (next build), qui ne mappe pas `.js` → `.ts` comme le fait tsc.
+export * from "./generated/prisma/client";
+
+// Ré-export explicite des enums comme **valeurs** runtime (défensif : garantit
+// `VerificationTokenType.x`, `AccountRole.ceo`, etc. côté apps/web même si la
+// propagation des valeurs via `export *` chaîné variait selon le bundler).
+export {
+  Actor,
+  AccountRole,
+  ContactStatus,
+  ChannelType,
+  ChannelConfigStatus,
+  SubjectStatus,
+  Priority,
+  MessageDirection,
+  MessageStatus,
+  TriageHint,
+  TaskKind,
+  TaskStatus,
+  CompletionMode,
+  ActionType,
+  ActionStatus,
+  EventEntityType,
+  KnowledgeKind,
+  VerificationTokenType,
+} from "./generated/prisma/enums";
 
 /**
  * Singleton du client Prisma.
@@ -41,9 +68,9 @@ if (process.env.NODE_ENV !== "production") {
 export {
   SubjectStatus as Status,
   TaskKind as Kind,
-} from "./generated/prisma/client.js";
+} from "./generated/prisma/client";
 
 export type {
   SubjectStatus as StatusType,
   TaskKind as KindType,
-} from "./generated/prisma/client.js";
+} from "./generated/prisma/client";

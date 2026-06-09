@@ -1,48 +1,41 @@
-import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { logoutAction } from "@/server/actions/auth";
+import { requireAccount } from "@/server/auth-context";
 
-const stack = [
-  { label: "Next.js 16", detail: "App Router · React 19" },
-  { label: "Prisma 7", detail: "PostgreSQL · 12 entités" },
-  { label: "Tailwind v4", detail: "Shadcn UI" },
-  { label: "Worker", detail: "Baileys · BullMQ (M6)" },
-];
+// Accueil provisoire (M2) : prouve l'authentification + l'isolation tenant.
+// La vraie page Accueil (brief matinal) sera construite en M9.
+export default async function HomePage() {
+  const account = await requireAccount();
 
-export default function Home() {
   return (
-    <main className="flex min-h-full flex-1 items-center justify-center bg-background px-6 py-16">
-      <div className="w-full max-w-xl">
-        <span className="inline-flex items-center rounded-full bg-brand/10 px-3 py-1 text-xs font-medium text-brand">
-          Socle technique
-        </span>
-
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-foreground">
-          Relvo
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center gap-6 px-6 py-16">
+      <div className="space-y-1">
+        <p className="text-sm text-muted-foreground">Bienvenue</p>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          {account.firstName} {account.lastName}
         </h1>
-        <p className="mt-2 text-base text-muted-foreground">
-          Assistant IA de pilotage des sollicitations professionnelles. Le socle
-          du monorepo est en place — place aux modules M2+ (auth, modèle,
-          écrans).
-        </p>
+        <p className="text-sm text-muted-foreground">{account.email}</p>
+        {!account.emailVerified && (
+          <p className="mt-2 inline-block rounded-md bg-amber-500/10 px-2 py-1 text-xs text-amber-700 dark:text-amber-400">
+            Email non vérifié — pensez à confirmer votre adresse.
+          </p>
+        )}
+      </div>
 
-        <dl className="mt-8 grid grid-cols-2 gap-3">
-          {stack.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-lg border border-border bg-card p-4"
-            >
-              <dt className="text-sm font-medium text-card-foreground">
-                {item.label}
-              </dt>
-              <dd className="mt-0.5 text-xs text-muted-foreground">
-                {item.detail}
-              </dd>
-            </div>
-          ))}
-        </dl>
-
-        <div className="mt-8">
-          <Button>Commencer</Button>
-        </div>
+      <div className="flex items-center gap-3">
+        <Link
+          href="/parametres"
+          className={cn(buttonVariants({ variant: "outline" }))}
+        >
+          Paramètres
+        </Link>
+        <form action={logoutAction}>
+          <Button type="submit" variant="ghost">
+            Se déconnecter
+          </Button>
+        </form>
       </div>
     </main>
   );

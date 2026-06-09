@@ -11,8 +11,8 @@
 | Module | État | Note |
 |---|---|---|
 | **M1** — Fondations techniques | 🟡 **clos (fonctionnellement atteint)** | Socle + déploiement web (Vercel) + base prod (Neon) faits. M1.5 / M1.7 / worker (M1.8) / M1.9 reportés au moment Railway+Baileys (M6). Détail inline en §4. |
-| **M2** — Auth & multi-tenant | ⬜ **prochaine étape** | — |
-| M3 → M14 | ⬜ à faire | — |
+| **M2** — Auth & multi-tenant | ✅ **fait** | Auth.js v5 (Credentials + Google OAuth, sessions JWT), `proxy.ts` (Next 16), helper tenant + client Prisma tenant-aware (`$extends`), signup public, vérif email + reset via Resend, onglet Profil. Détail inline en §4. |
+| M3 → M14 | ⬜ à faire | **M3 = prochaine étape** |
 
 ---
 
@@ -100,15 +100,17 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 **Dépendances** : M1.
 
-- **M2.1** — Auth.js avec provider Credentials (email/password + bcrypt)
-- **M2.2** — Auth.js avec provider Google OAuth
-- **M2.3** — Sessions Auth.js (cookie/JWT) + middleware Next de protection des routes authentifiées
-- **M2.4** — Helper serveur d'accès au compte courant : injection de `account_id` dans les Server Actions et Route Handlers
-- **M2.5** — Pages Login / Signup / Forgot password / Reset password (Shadcn forms)
-- **M2.6** — Action de signup : création de l'`Account` + auto-création du Folder « Général » + EventLog
-- **M2.7** — Email transactionnel de vérification de compte via Resend (template minimal)
-- **M2.8** — Couche d'accès données tenant-aware : tout accès Prisma applique automatiquement le filtre `account_id`
-- **M2.9** — Page Paramètres → onglet Profil (modification nom, email, mot de passe)
+- **M2.1** ✅ — Auth.js avec provider Credentials (email/password + bcrypt, 12 tours)
+- **M2.2** ✅ — Auth.js avec provider Google OAuth _(branché conditionnellement si `AUTH_GOOGLE_ID/SECRET` présents ; find-or-create du compte par email dans le callback `signIn`)_
+- **M2.3** ✅ — Sessions Auth.js **JWT** (pas de table Session) + **`proxy.ts`** _(Next 16 a renommé `middleware.ts`)_ de protection des routes. Config split edge-safe (`auth.config.ts`) / Node (`auth.ts`)
+- **M2.4** ✅ — Helpers serveur `getCurrentAccount` / `requireAccount` / `requireAccountId` (`src/server/auth-context.ts`) — `account_id` toujours dérivé de la session
+- **M2.5** ✅ — Pages FR `/connexion`, `/inscription`, `/mot-de-passe-oublie`, `/reinitialiser-mot-de-passe`, `/verifier-email` (Server Actions + `useActionState`, primitives shadcn ; le composant RHF `form` n'existe pas dans le registre base-ui)
+- **M2.6** ✅ — `createAccount()` réutilisable : `Account` + Folder « Général » (`is_default`) + EventLog `account_created`, en transaction
+- **M2.7** ✅ — Emails de vérification **et** de reset via Resend (`src/lib/email.ts`) ; sans `RESEND_API_KEY`, le lien est logué (dev). Jetons en table `verification_tokens`
+- **M2.8** ✅ — Client Prisma tenant-aware via `$extends` (`src/lib/tenant-db.ts`, `getTenantDb()`) : injection auto de `account_id` sur where/data. _Caveat documenté : update/delete par clé unique non scopés — passer par updateMany/deleteMany_
+- **M2.9** ✅ — Page `/parametres` → onglet Profil (nom/email + mot de passe ; gère le cas Google-only sans mot de passe). Onglets Canaux/Contacts en placeholder (M5/M9)
+
+> **Changements de schéma (migration `auth_multi_tenant`)** : `Account.passwordHash` → nullable (comptes Google-only) ; ajout `emailVerified`, `image`, `googleId` ; nouveau modèle `VerificationToken` + enum `VerificationTokenType`.
 
 ---
 

@@ -72,8 +72,10 @@ Au premier démarrage du worker, un **QR code** s'affiche dans le terminal : sca
 | Variable | Description |
 |---|---|
 | `DATABASE_URL` | Chaîne de connexion PostgreSQL (Neon ou locale) |
-| `AUTH_SECRET` | Secret Auth.js (`openssl rand -base64 32`) |
-| `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | OAuth Google (Auth.js) |
+| `AUTH_SECRET` | Secret Auth.js (`openssl rand -base64 33`) — obligatoire |
+| `AUTH_URL` | URL de base de l'app (liens des e-mails) — ex. `http://localhost:3000` |
+| `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | OAuth Google (Auth.js) — optionnel ; sans ces clés, login e-mail seul |
+| `EMAIL_FROM` | Expéditeur des e-mails Resend (ex. `Relvo <onboarding@resend.dev>`) |
 | `AI_GATEWAY_API_KEY` | Clé Vercel AI Gateway (routage des modèles Claude) |
 | `ANTHROPIC_API_KEY` | Pour la Files API d'Anthropic (PDFs des Connaissances) |
 | `BLOB_READ_WRITE_TOKEN` | Vercel Blob (stockage fichiers) |

@@ -146,20 +146,33 @@ enum KnowledgeKind {
   note
 }
 
+/// Nature d'un jeton à usage unique envoyé par email (vérification ou reset password).
+enum VerificationTokenType {
+  email_verification
+  password_reset
+}
+
 // ─────────────────────────────────────────────────────────────
 // 1. Account — tenant racine
 // ─────────────────────────────────────────────────────────────
 
 model Account {
-  id           String      @id @default(uuid()) @db.Uuid
-  email        String      @unique
-  passwordHash String      @map("password_hash")
-  firstName    String      @map("first_name")
-  lastName     String      @map("last_name")
-  role         AccountRole @default(ceo)
-  isActive     Boolean     @default(true) @map("is_active")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
+  id            String      @id @default(uuid()) @db.Uuid
+  email         String      @unique
+  // Nullable : un compte créé via Google OAuth n'a pas de mot de passe local.
+  passwordHash  String?     @map("password_hash")
+  firstName     String      @map("first_name")
+  lastName      String      @map("last_name")
+  role          AccountRole @default(ceo)
+  isActive      Boolean     @default(true) @map("is_active")
+  // Vérification email (convention Auth.js : null = non vérifié, sinon date de vérif).
+  emailVerified DateTime?   @map("email_verified")
+  // Avatar (renseigné via Google OAuth principalement).
+  image         String?
+  // Identifiant Google (sub) — lie un compte à son identité OAuth Google.
+  googleId      String?     @unique @map("google_id")
+  createdAt     DateTime    @default(now()) @map("created_at")
+  updatedAt     DateTime    @updatedAt @map("updated_at")
 
   folders            Folder[]
   contacts           Contact[]
@@ -527,4 +540,24 @@ model KnowledgeDocument {
   @@index([accountId])
   @@index([accountId, folderId])
   @@map("knowledge_documents")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 13. VerificationToken — jeton à usage unique (vérif email / reset password)
+// ─────────────────────────────────────────────────────────────
+//
+// Volontairement détaché d'Account (pas de FK) : `identifier` porte l'email
+// cible. Un compte peut donc recevoir un jeton avant même d'être pleinement
+// configuré, et le jeton survit indépendamment du cycle de vie du compte.
+
+model VerificationToken {
+  id         String                @id @default(uuid()) @db.Uuid
+  identifier String // email cible
+  token      String                @unique
+  type       VerificationTokenType
+  expires    DateTime
+  createdAt  DateTime              @default(now()) @map("created_at")
+
+  @@index([identifier])
+  @@map("verification_tokens")
 }
