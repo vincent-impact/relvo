@@ -4,6 +4,18 @@
 
 ---
 
+## État d'avancement
+
+> Suivi haut niveau. Légende : ✅ fait · 🟡 partiel · ⏸️ reporté · ⬜ à faire. Dernière mise à jour : 2026-06-09.
+
+| Module | État | Note |
+|---|---|---|
+| **M1** — Fondations techniques | 🟡 **clos (fonctionnellement atteint)** | Socle + déploiement web (Vercel) + base prod (Neon) faits. M1.5 / M1.7 / worker (M1.8) / M1.9 reportés au moment Railway+Baileys (M6). Détail inline en §4. |
+| **M2** — Auth & multi-tenant | ⬜ **prochaine étape** | — |
+| M3 → M14 | ⬜ à faire | — |
+
+---
+
 ## 1. Résumé du projet
 
 **Relvo** est un assistant IA de pilotage des sollicitations professionnelles. Il transforme le flux désordonné de messages reçus par un dirigeant (emails, WhatsApp) en **sujets métier structurés**, avec tâches, journal de bord et aide à la décision.
@@ -70,15 +82,15 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 **Dépendances** : aucune (point de départ).
 
-- **M1.1** — Setup monorepo **pnpm workspaces** (`apps/web`, `apps/worker`, `packages/db`) + Turbo optionnel
-- **M1.2** — `packages/db` : Prisma + PostgreSQL local via Docker Compose + enums partagés (`Actor`, `Status`, `Priority`, `Kind`, `TriageHint`)
-- **M1.3** — Scaffold `apps/web` : Next.js App Router + Tailwind + Shadcn CLI init + application du thème navy/blue/red défini dans la maquette
-- **M1.4** — Scaffold `apps/worker` : squelette Node + endpoint healthcheck (runtime Baileys ajouté en M6)
-- **M1.5** — Logger structuré pino + Sentry (web + worker)
-- **M1.6** — Configuration ESLint, Prettier, Husky (pre-commit hooks)
-- **M1.7** — Pipeline CI GitHub Actions (lint + typecheck + tests sur PR)
-- **M1.8** — Déploiement Vercel (`apps/web`, Root Directory) + Railway/Render (`apps/worker`), documentation des variables d'environnement
-- **M1.9** — Healthcheck (route `apps/web` + endpoint `apps/worker`) + UI debug côté front
+- **M1.1** ✅ — Setup monorepo **pnpm workspaces** (`apps/web`, `apps/worker`, `packages/db`) + Turbo optionnel
+- **M1.2** ✅ — `packages/db` : Prisma + PostgreSQL local via Docker Compose + enums partagés (`Actor`, `Status`, `Priority`, `Kind`, `TriageHint`) _(NB : Prisma **7** — driver adapter + `prisma.config.ts` ; schéma complet des 12 entités + migration `init` appliquée)_
+- **M1.3** ✅ — Scaffold `apps/web` : Next.js App Router + Tailwind + Shadcn CLI init + application du thème navy/blue/red défini dans la maquette
+- **M1.4** ✅ — Scaffold `apps/worker` : squelette Node + endpoint healthcheck (runtime Baileys ajouté en M6)
+- **M1.5** ⏸️ _(reporté → M6)_ — Logger structuré pino + Sentry (web + worker)
+- **M1.6** ✅ — Configuration ESLint, Prettier, Husky (pre-commit hooks) _(Prettier + plugin Tailwind + Husky + lint-staged faits ; ESLint = web seulement, à étendre worker/db avec M1.7)_
+- **M1.7** ⏸️ _(reporté → M6)_ — Pipeline CI GitHub Actions (lint + typecheck + tests sur PR)
+- **M1.8** 🟡 — Déploiement Vercel (`apps/web`, Root Directory) ✅ **fait** + base Neon prod + migrations au build (`vercel-build`) ; Railway/Render (`apps/worker`) ⏸️ **reporté → M6**
+- **M1.9** ⏸️ _(reporté → M6)_ — Healthcheck (route `apps/web` + endpoint `apps/worker` ✅) + UI debug côté front
 
 ---
 
