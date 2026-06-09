@@ -20,6 +20,18 @@
     "db:reset": "pnpm --filter @relvo/db migrate:reset",
     "db:studio": "pnpm --filter @relvo/db studio",
     "db:start": "docker compose up -d",
-    "db:stop": "docker compose down"
+    "db:stop": "docker compose down",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "prepare": "husky"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs,json,css}": "prettier --write"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.7",
+    "prettier": "^3.8.3",
+    "prettier-plugin-tailwindcss": "^0.8.0"
   }
 }

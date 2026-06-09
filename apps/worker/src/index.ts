@@ -10,7 +10,10 @@ const PORT = Number(process.env.PORT ?? 8081);
 const startedAt = new Date().toISOString();
 
 const server = createServer((req, res) => {
-  if (req.method === "GET" && (req.url === "/health" || req.url === "/healthz")) {
+  if (
+    req.method === "GET" &&
+    (req.url === "/health" || req.url === "/healthz")
+  ) {
     res.writeHead(200, { "content-type": "application/json" });
     res.end(
       JSON.stringify({

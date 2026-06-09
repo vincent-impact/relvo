@@ -1,0 +1,19 @@
+# Dépendances & artefacts
+node_modules
+.next
+dist
+build
+out
+*.tsbuildinfo
+
+# Client Prisma généré
+**/src/generated
+
+# Lockfile & assets
+pnpm-lock.yaml
+public
+
+# Contenu à ne pas reformater
+docs
+mockup
+*.md
