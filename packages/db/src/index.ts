@@ -74,3 +74,9 @@ export type {
   SubjectStatus as StatusType,
   TaskKind as KindType,
 } from "./generated/prisma/client";
+
+// ─────────────────────────────────────────────────────────────
+// Client tenant-aware + couche domaine (M3) — partagés web ↔ worker.
+// ─────────────────────────────────────────────────────────────
+export { tenantDb, type TenantDb, type Tx } from "./tenant";
+export * from "./domain";

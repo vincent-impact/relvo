@@ -6,13 +6,14 @@
 
 ## État d'avancement
 
-> Suivi haut niveau. Légende : ✅ fait · 🟡 partiel · ⏸️ reporté · ⬜ à faire. Dernière mise à jour : 2026-06-09.
+> Suivi haut niveau. Légende : ✅ fait · 🟡 partiel · ⏸️ reporté · ⬜ à faire. Dernière mise à jour : 2026-06-10.
 
 | Module | État | Note |
 |---|---|---|
 | **M1** — Fondations techniques | 🟡 **clos (fonctionnellement atteint)** | Socle + déploiement web (Vercel) + base prod (Neon) faits. M1.5 / M1.7 / worker (M1.8) / M1.9 reportés au moment Railway+Baileys (M6). Détail inline en §4. |
 | **M2** — Auth & multi-tenant | ✅ **fait** | Auth.js v5 (Credentials + Google OAuth, sessions JWT), `proxy.ts` (Next 16), helper tenant + client Prisma tenant-aware (`$extends`), signup public, vérif email + reset via Resend, onglet Profil. Détail inline en §4. |
-| M3 → M14 | ⬜ à faire | **M3 = prochaine étape** |
+| **M3** — Modèle de données & accès CRUD | ✅ **fait** | Couche domaine partagée `packages/db/src/domain/` (tenant-aware, fonctions pures réutilisables par le worker M7), conventions (Zod, DomainError, pagination curseur, `logEvent`), 8 domaines CRUD + agrégations (KPIs/feed/sans-sujet), Server Actions web (wrappers `ActionResult`), seeds Tasty Crousty, 7 tests d'invariants vitest (base `relvo_test`). Détail inline en §4. |
+| M4 → M14 | ⬜ à faire | **M9 (pages front) = prochaine étape** — reproduire la maquette en React/Next, cliquable, branchée sur les données du seed Tasty Crousty (jalon démo intermédiaire, cf. §5). M4 ensuite. |
 
 ---
 
@@ -120,20 +121,20 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 **Dépendances** : M2 (tous les accès sont tenant-aware).
 
-- **M3.1** — Schéma Prisma de toutes les entités (`packages/db`) : Account, Folder, Contact, Channel, ChannelConfig, Subject, Message, Attachment, Task, Action, EventLog, KnowledgeDocument
-- **M3.2** — Migrations initiales + seeds de dev (jeu Tasty Crousty cohérent avec les maquettes)
-- **M3.3** — Convention d'accès données : Server Actions + Route Handlers, validation Zod, pagination cursor, structure d'erreurs standardisée
-- **M3.4** — Domaine **Folders** : CRUD + invariant Folder « Général » (suppression interdite, pas de Subject possible)
-- **M3.5** — Domaine **Contacts** : CRUD + statuts `auto` / `complete` + filtre « À compléter »
-- **M3.6** — Domaine **Channels** : CRUD + ChannelConfig (paramètres techniques de connexion, status)
-- **M3.7** — Domaine **Subjects** : CRUD + transitions de statut (`new` → `to_do` → `waiting` → `unread` → `resolved` → `archived`) + champs `last_*_at`
-- **M3.8** — Domaine **Messages** : CRUD + détachement / réaffectation / ignore (cas M, N, O)
-- **M3.9** — Domaine **Tasks** : CRUD + complétion + `completion_mode` (manual, message_match, action_match)
-- **M3.10** — Domaine **Attachments** : CRUD + métadonnées IA (`ai_label`, `ai_summary`, `ai_analysis`)
-- **M3.11** — Domaine **Actions** : CRUD + brouillons send_message (payload jsonb)
-- **M3.12** — Domaine **EventLog** : insertion systématique via Prisma Client extension (chaque mutation génère un EventLog)
-- **M3.13** — Requêtes d'agrégation : KPIs (sujets ouverts, messages à trier, tâches du jour, % d'aide Relvo), feed prioritaire (`priority IN (critical, high)`), liste « Sans sujet »
-- **M3.14** — Tests unitaires sur les invariants critiques : isolation tenant, Folder Général ne reçoit pas de Subject, Contact non créé sans Subject
+- **M3.1** ✅ — Schéma Prisma des 12 entités _(déjà posé en M1/M2 ; vérifié, `prisma generate` propre — aucune nouvelle migration nécessaire)_
+- **M3.2** ✅ — Seeds de dev `prisma/seed.ts` (jeu Tasty Crousty cohérent maquettes : 6 dossiers, 6 contacts, 3 canaux, 6 sujets SUB-xxxx, 8 messages dont 2 « Sans sujet », tâches datées, brouillon, notes, EventLog). Idempotent (reset par email). S'appuie sur la couche domaine via le client tenant
+- **M3.3** ✅ — Conventions d'accès (`packages/db/src/domain/`) : validation **Zod** co-localisée par domaine, `DomainError` (code + httpStatus), `ActionResult<T>` + `tryAction`, **pagination curseur** (`cursorArgs`/`toPage`), `ensureAffected` (mutation par id tenant-safe via updateMany). _Route Handlers : convention posée (mapping `httpStatus`), endpoints ajoutés au besoin (M5/M10)_
+- **M3.4** ✅ — Domaine **Folders** : CRUD + invariant Folder « Général » (suppression interdite, jamais de Subject)
+- **M3.5** ✅ — Domaine **Contacts** : CRUD + transition `auto` → `complete` (`completeContact`) + filtre `listContacts({ status })`
+- **M3.6** ✅ — Domaine **Channels** : CRUD + ChannelConfig (upsert 1-1, `connection_data` jsonb, status, `last_sync_at`)
+- **M3.7** ✅ — Domaine **Subjects** : CRUD + transitions de statut **validées** (map `TRANSITIONS`) + `updateSubjectPriority`/`ignoreSubject` (dépriorisation d'un cran) + `openSubject` (acquittement implicite) + `suggestResolution` + référence auto `SUB-NNNNN`. Invariant folder Général respecté
+- **M3.8** ✅ — Domaine **Messages** : CRUD + `assignMessageToSubject` (cas M), `ignoreMessage` (cas N), `reassignMessage`/`detachMessage` (cas O), `triage_hint` réservé aux messages sans sujet
+- **M3.9** ✅ — Domaine **Tasks** : CRUD + `completeTask` + `completion_mode` + 4 champs date (règle start=deadline) + soft delete
+- **M3.10** ✅ — Domaine **Attachments** : CRUD + setters IA idempotents (`ai_label`/`ai_summary`/`ai_analysis` avec flag de cache horodaté)
+- **M3.11** ✅ — Domaine **Actions** : CRUD + `createDraftReply` (brouillon send_message, payload jsonb) + `markActionDone` + `cancelAction`
+- **M3.12** ✅ — **EventLog** via helper explicite `logEvent(...)` appelé dans la transaction de chaque mutation (`event_type`/`actor`/titre sémantiques) — choix retenu vs extension générique pour un journal lisible
+- **M3.13** ✅ — Requêtes d'agrégation (`queries.ts`) : `getKpis` (sujets ouverts, messages à trier, tâches du jour, % d'aide Relvo), `getPriorityFeed` (`priority IN (critical, high)`), `listOrphanMessages` (« Sans sujet »)
+- **M3.14** ✅ — Tests vitest d'invariants (base dédiée `relvo_test`, migrate auto) : isolation tenant (lecture + mutation), Folder Général sans Subject + non supprimable, transitions de statut, `triage_hint`. _« Contact non créé sans Subject » garanti par l'absence de chemin auto en M3 (respecté par le pipeline M7)_
 
 ---
 
