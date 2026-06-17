@@ -340,62 +340,60 @@ En V1 le mécanisme est activé techniquement (l'API d'Anthropic supporte les ci
 1. **Depuis la fiche d'un Dossier** — bouton « + Ajouter un fichier » / « + Créer une note », ou glisser-déposer un PDF directement dans la fiche.
 2. **Depuis le chatbot (drawer)** — l'utilisateur peut demander à Relvo de créer une note avec un contenu dicté (`create_knowledge_note` côté tools, cf. `04-ia.md §11.6`).
 
-## 13. Relvo s'exprime de deux manières : un brief sur l'Accueil, une conversation dans le drawer
+## 13. Relvo est central : la conversation est le lieu par défaut (mobile-first)
 
-Pour des utilisateurs non rompus aux SaaS bureautiques, l'omniprésence de Relvo doit se traduire par deux modes d'interaction distincts et complémentaires :
+> **Réécriture — virage produit du 2026-06-16.** La version antérieure de ce principe décrivait une app **desktop-first** où Relvo vivait dans un **drawer latéral secondaire** (~40 % de largeur, bouton flottant) posé par-dessus des écrans de consultation, avec une navigation par **sidebar 4 entrées**. Ce modèle est **abandonné**. Deux constats l'ont fait tomber : (1) le profil cible (dirigeants food/bâtiment) vit sur **téléphone** et ne connaît pas les codes des SaaS bureautiques — une sidebar de bureau leur est étrangère ; (2) ces mêmes utilisateurs sont **à l'aise avec ChatGPT/Claude** — leur mental model natif est la **conversation**. On inverse donc la hiérarchie : **Relvo (la conversation) devient la surface par défaut**, et les écrans structurés deviennent ce que l'agent *fait apparaître* ou ce vers quoi on *navigue*. Conséquences techniques (drawer → surface plein écran, sidebar → barre d'onglets, responsive mobile-first) détaillées dans `../spec/ux-mobile-first.md`.
 
-### Mode brief — l'Accueil (orientation matinale)
+### Posture : mobile-first, agent au centre
 
-L'**Accueil** n'est pas une boîte de dialogue, ni un workspace. C'est **un guide de 30 secondes** que Relvo prépare pour son utilisateur — l'équivalent d'un brief du matin qui répond à la question « qu'est-ce qui m'attend dans ma journée et les 2-3 jours à venir ? ». On y trouve :
+Deux invariants gouvernent désormais toute l'UI :
 
-- Un **bandeau KPIs** (Sujets ouverts, Messages à trier, Tâches du jour, % d'aide Relvo)
-- Le **calendrier de la semaine** en pleine largeur (widget compact, lien « Vue mois complète → » vers `planning.html`)
-- Les **3 sujets prioritaires** présentés en 3 colonnes côte à côte — un aperçu, pas un workspace. Lien « Voir tous les sujets → » vers `feed.html` pour le traitement
-- (Optionnel) Une intro courte signée Relvo (« Bonjour Mamadou, voici ton brief : 3 sujets urgents, 1 message à trier »)
+1. **Mobile-first.** Chaque écran est conçu d'abord pour un **téléphone tenu à une main** : colonne unique, cibles tactiles, navigation au pouce. Le desktop est un **enrichissement progressif** (la colonne unique s'élargit, des panneaux latéraux optionnels apparaissent) — jamais le point de départ.
+2. **L'agent est central.** « L'UI sert à accéder à l'info, **Relvo sert à agir** » : la conversation n'est plus un add-on, c'est **le lieu par défaut**. L'utilisateur ouvre l'app et il est, de fait, déjà en train de parler à Relvo.
 
-L'entrée « Accueil » dans la navigation porte une icône **maison** classique. C'est la page d'atterrissage par défaut à la connexion.
+### Le modèle hybride : un Accueil qui est à la fois brief et conversation
 
-L'Accueil n'a pas de champ de saisie chat ni d'actions de traitement (✕/✓ absent des cartes). Pour dialoguer, l'utilisateur ouvre le drawer. Pour traiter ses sujets, il bascule sur Mon fil.
+L'**Accueil** fusionne deux rôles autrefois séparés (le *brief* matinal et la *conversation*). C'est la page d'atterrissage à la connexion, et elle contient :
 
-### Mode workspace — Mon fil (traitement)
+- En haut, le **brief** que Relvo prépare — un guide de 30 secondes qui répond à « qu'est-ce qui m'attend ? ». Rendu sous forme de **cartes** empilées en colonne unique : un **bandeau KPIs** (Sujets ouverts, Messages à trier, Tâches du jour, % d'aide Relvo), un **aperçu d'agenda** (les tâches des prochains jours, lien vers Planning), et les **2-3 sujets prioritaires** (`SubjectCard`, lien « Voir tout » vers Mon fil).
+- En bas, **fixé au-dessus de la barre d'onglets, un composer chat persistant** (« Demander à Relvo… »). On lit le brief **et** on parle à Relvo **au même endroit**, sans changer d'écran. Taper dans le composer déploie la conversation plein écran.
 
-**Mon fil** (`feed.html`) est l'espace de travail dédié au traitement des sujets. C'est ici que l'utilisateur passe l'essentiel de son temps de session — l'équivalent d'une boîte de réception email, mais structurée par sujets plutôt que par messages.
+Le brief n'est donc plus une page muette : c'est **le premier tour de parole de Relvo**, et l'utilisateur peut enchaîner par une question ou une demande d'action immédiatement.
 
-On y trouve :
+### La conversation : surface plein écran, accessible partout
 
-- Le **feed plein écran** : toutes les cartes-sujets enrichies (référence SUB-XXXX, drapeau urgent, badge statut, badge `✦ N tâches suggérées`, titre, résumé, méta complet, indicateur d'attachements, dernière activité, barre de progression des tâches)
-- Les **filtres** Priorité (défaut, `priority IN (critical, high)`) / Chronologique (du plus récent au plus ancien) / Résolus
-- Le **bandeau Relvo** « ✦ Aujourd'hui : N messages reçus, j'en ai remonté X » + lien « Voir tous les messages bruts → » vers `messages.html`
-- Sur chaque carte : les **boutons d'action contextuels violets** (suggérés par Relvo) et la **paire ✕/✓ systématique** (Ignorer + Marquer résolu)
-- Le **drawer chatbot** accessible via le bouton flottant 🤖
+Quand l'utilisateur engage le dialogue, la conversation occupe **tout l'écran** (sur mobile) — plus un drawer 40 %. C'est là qu'il **dialogue**, **demande des actions**, **creuse** un sujet. Toutes les opérations action-capable y passent.
 
-L'icône de Mon fil est une **enveloppe** — métaphore email assumée (cf. la posture « Relvo donne un objet à WhatsApp » : un sujet = un objet d'email auto-extrait).
+La conversation est **accessible depuis n'importe quelle vue** : chaque écran porte une entrée persistante vers Relvo (composer en pied de page ou action d'en-tête), qui transmet le **contexte de la page courante**. Plus de bouton flottant 🤖 : sur mobile il masque le contenu et entre en conflit avec les gestes système ; l'accès à Relvo est intégré à la structure de chaque page, pas posé par-dessus.
 
-**Pourquoi séparer Accueil et Mon fil** : ce sont deux modes mentaux distincts. Tenter de les mélanger sur une même page revient à demander à l'utilisateur d'alterner orientation et traitement à chaque visite — et le calendrier semaine, qui mérite la pleine largeur sur l'Accueil, écrase le feed s'il vit au-dessus. La séparation respecte aussi le rituel matinal observé chez les clients food/bâtiment : « calendrier d'abord, sujets ensuite ».
+### Generative UI : Relvo rend les mêmes composants que l'UI
 
-### Mode conversation — le drawer
+Puisque l'agent est central, ses réponses ne sont pas que du texte : Relvo **rend les composants structurés du produit directement dans le fil** — `SubjectCard`, `TaskCard`, mini-calendrier, badge de statut. Demander « montre-moi mes sujets urgents » fait apparaître de vraies cartes cliquables, pas une liste à puces. C'est le « bloc visuel » de l'action-capable (cf. plus bas) élevé au rang de **langage de rendu principal**. Les mêmes composants servent dans les vues plein écran et dans la conversation — une seule bibliothèque, deux surfaces.
 
-Le **drawer** est la surface conversationnelle, accessible depuis **toutes les pages** (Accueil compris) via un bouton flottant 🤖 en bas-droite. Il s'ouvre latéralement (~40 % de la largeur) par-dessus la page courante.
+### Les vues structurées : des destinations en colonne unique
 
-C'est là que l'utilisateur **dialogue** avec Relvo, **demande des actions**, **creuse** un sujet ou un détail. C'est aussi par là que passent toutes les opérations action-capable.
+Les écrans de consultation/traitement (**Mon fil**, **Sujet**, **Dossiers**, **Planning**, **Messages**, **Contacts**) existent toujours — pour la lecture profonde et le travail soutenu — mais deviennent des **destinations**, atteintes via une carte du chat ou via la **navigation par onglets**. Tous sont repensés **mobile-first**, en colonne unique (fini les split-views 2 colonnes, tables 7 colonnes et panneaux droits 340px fixes).
 
-### Caractéristiques structurantes du drawer
+- **Mon fil** reste l'espace de **traitement** : feed de cartes-sujets enrichies, filtres (Priorité par défaut / Chronologique / Résolus), paire ✕/✓ systématique sur chaque carte. C'est l'« inbox structurée par sujets ».
+- La **navigation** se fait par une **barre d'onglets basse** (≤ 4 cibles), pas une sidebar. L'Accueil (brief+chat) en est l'onglet par défaut.
 
-- **Page-aware** — le drawer sait toujours sur quelle page l'utilisateur se trouve (URL transmise + données contextuelles pertinentes). Un chip explicite en haut du drawer (« Contexte : SUB-0142 — Sauce blanche ») permet de basculer en discussion générale d'un clic sur ×.
+### Caractéristiques structurantes de la conversation
+
+- **Page-aware** — Relvo sait toujours d'où on lui parle (URL + données contextuelles). Un **chip de contexte** (« Contexte : SUB-0142 — Sauce blanche ») permet de basculer en discussion générale d'un clic sur ×.
 - **Sessions implicites** — à l'ouverture, nouvelle conversation par défaut, ou reprise de la conversation en cours si la dernière activité date de moins de 5 minutes. Bouton « + Nouvelle conversation » toujours accessible.
 - **Éphémère** — les conversations sont stockées **côté client dans IndexedDB**, pas sur le serveur. Aucune entité `ChatConversation` côté base de données en V1. Ce qui persiste, ce sont les actions effectuées et leurs résultats (`Task`, `Action`, `EventLog`…), pas le dialogue qui les a déclenchées.
 - **Action-capable day-one** — tout ce que l'utilisateur peut faire dans l'UI, il peut le demander au chat : créer une tâche, modifier un sujet, préparer un brouillon, éditer une note de Connaissances, consulter ses KPIs, retrouver un message. L'architecture est symétrique — chaque clic UI a un tool API correspondant qui appelle la même fonction métier. Détail technique dans `04-ia.md §11`.
 
 ### Boundaries de l'action-capable en V1
 
-Toutes les actions de Relvo sont **visibles** dans le fil du drawer sous forme de blocs structurés (« ✦ J'ai créé la tâche *Appeler le shop de Montpellier* dans SUB-0142 ») et **annulables** d'un clic dans une fenêtre de quelques minutes après leur exécution.
+Toutes les actions de Relvo sont **visibles** dans le fil sous forme de blocs structurés (« ✦ J'ai créé la tâche *Appeler le shop de Montpellier* dans SUB-0142 ») et **annulables** d'un clic dans une fenêtre de quelques minutes après leur exécution.
 
 Le brouillon de message ne s'envoie **jamais** automatiquement — il atterrit dans le composer du Sujet pour validation utilisateur, conformément au principe « Relvo n'envoie jamais de message automatiquement » (cf. `04-ia.md §7.4`).
 
 La traçabilité des actions chat-driven est assurée via `EventLog` : la métadonnée `metadata.source = "chat"` permet de distinguer une tâche créée depuis le chat d'une tâche créée par suggestion automatique ou clic UI.
 
-### Pourquoi cette dualité
+### Pourquoi ce modèle
 
-Le brief sur l'Accueil sert l'**immédiateté** — l'utilisateur ouvre l'app, il voit l'essentiel sans poser de question. Le drawer sert l'**approfondissement** et l'**action** — l'utilisateur creuse, demande, fait faire. Les deux sont accessibles partout dans l'app (l'Accueil par la nav, le drawer par le bouton flottant), et ils se complètent sans se concurrencer.
+Le brief sert l'**immédiateté** — l'utilisateur ouvre l'app, il voit l'essentiel sans poser de question. La conversation, désormais à portée immédiate dans le même écran, sert l'**approfondissement** et l'**action**. En les réunissant sur l'Accueil plutôt qu'en les séparant derrière un bouton flottant, on supprime la friction « où est le chat ? » et on rend tangible la promesse « Relvo sert à agir ».
 
-Cette dualité tient compte du profil utilisateur cible (food, bâtiment — peu rompu aux outils SaaS, mais habitué à dialoguer avec ChatGPT/Claude). Ne pas avoir à apprendre comment parler à Relvo : la page d'accueil le présente, le bouton flottant le rend toujours accessible.
+Ce modèle épouse le profil cible (food, bâtiment — peu rompu aux SaaS, mais habitué à dialoguer avec ChatGPT/Claude) : pas d'apprentissage d'une navigation bureautique, pas de question sur *comment parler à Relvo* — l'app **est** une conversation, augmentée de vues structurées quand on veut creuser.

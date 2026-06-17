@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Relvo — Mon fil (mobile)</title>
+<link rel="stylesheet" href="css/app.css?v=5" />
+</head>
+<body>
+<div class="device">
+
+  <div class="statusbar"><span>9:41</span><span class="dots">●●● ◗ 🔋</span></div>
+
+  <header class="appbar">
+    <div class="titles">
+      <div class="hello">Mon fil</div>
+      <div class="sub">6 sujets ouverts</div>
+    </div>
+    <button class="icon-btn" aria-label="Recherche">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3-3"/></svg>
+    </button>
+  </header>
+
+  <main class="scroll">
+    <div class="scroll-pad">
+
+      <div class="segmented" style="margin-bottom:12px">
+        <button class="active">Priorité</button>
+        <button>Ouverts</button>
+        <button>Terminés</button>
+      </div>
+
+      <div class="relvo-banner">
+        <span class="spark">✦</span>
+        <p>Aujourd'hui : 9 messages reçus, j'en ai remonté 2 en sujets.</p>
+        <a href="messages.html">Messages →</a>
+      </div>
+
+      <div style="height:12px"></div>
+
+      <!-- ============ PRIORITÉ (critical + high → 2 boutons) ============ -->
+      <div class="feed-list active" id="prio">
+
+        <!-- critical → ⚑ Urgent -->
+        <article class="subject-card">
+          <span class="msg-count corner">2</span>
+          <div class="sc-top">
+            <span class="sc-ref">SUB-0142</span>
+            <span class="urgent" title="Urgent"><svg width="15" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 2a1 1 0 0 1 1 1v18a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1z"/><path d="M7 3.5h11.5a1 1 0 0 1 .8 1.6L17 8l2.3 2.9a1 1 0 0 1-.8 1.6H7z"/></svg></span>
+            <span class="badge to_do"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> À faire</span>
+          </div>
+          <div class="sc-title"><a href="sujet.html">Remplacement sauce blanche</a></div>
+          <div class="sc-summary">Karim (SoGood) propose une sauce de substitution. Réponse préparée par Relvo.</div>
+          <div class="sc-meta">
+            <span class="m">👤 Karim Benali</span><span class="m">📎 1</span><span class="m">⏱ 35 min</span>
+            <span class="badge suggest">✦ 2 suggérées</span>
+          </div>
+          <div class="sc-progress"><i style="width:25%"></i></div>
+          <div class="sc-actions">            <a class="btn relvo grow" href="conversation.html">Répondre avec Relvo</a>          </div>
+        </article>
+
+        <!-- high → 2 boutons, pas de drapeau urgent -->
+        <article class="subject-card">
+          <div class="sc-top">
+            <span class="sc-ref">SUB-0117</span>
+            <span class="badge waiting"><svg width="12" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M6 2c0 4.5 3 6 6 8 3-2 6-3.5 6-8M6 22c0-4.5 3-6 6-8 3 2 6 3.5 6 8"/></svg> En attente</span>
+          </div>
+          <div class="sc-title"><a href="sujet.html">Congélateur HS — Narbonne</a></div>
+          <div class="sc-summary">Intervention FroidExpert planifiée mercredi 14:30. En attente de confirmation.</div>
+          <div class="sc-meta"><span class="m">👤 FroidExpert SA</span><span class="m">⏱ 2 h</span></div>
+          <div class="sc-progress"><i style="width:66%"></i></div>
+        </article>
+
+        <article class="subject-card">
+          <span class="msg-count corner">1</span>
+          <div class="sc-top">
+            <span class="sc-ref">SUB-0148</span>
+            <span class="badge new">Nouveau</span>
+          </div>
+          <div class="sc-title"><a href="sujet.html">Congé maternité — Sophie</a></div>
+          <div class="sc-summary">Sophie Blanchard informe de son départ. À préparer : réponse RH + planning de remplacement.</div>
+          <div class="sc-meta"><span class="m">👤 Sophie Blanchard</span><span class="m">⏱ 3 h</span><span class="badge suggest">✦ 1 suggérée</span></div>
+          <div class="sc-progress"><i style="width:0%"></i></div>
+        </article>
+
+      </div>
+
+      <!-- ============ OUVERTS (tous, chronologique) ============ -->
+      <div class="feed-list" id="ouv">
+
+        <!-- critical → 2 boutons -->
+        <article class="subject-card">
+          <span class="msg-count corner">2</span>
+          <div class="sc-top"><span class="sc-ref">SUB-0142</span><span class="urgent" title="Urgent"><svg width="15" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 2a1 1 0 0 1 1 1v18a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1z"/><path d="M7 3.5h11.5a1 1 0 0 1 .8 1.6L17 8l2.3 2.9a1 1 0 0 1-.8 1.6H7z"/></svg></span><span class="badge to_do"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> À faire</span></div>
+          <div class="sc-title"><a href="sujet.html">Remplacement sauce blanche</a></div>
+          <div class="sc-meta"><span class="m">👤 Karim Benali</span><span class="m">⏱ 35 min</span></div>
+        </article>
+
+        <!-- high → 2 boutons -->
+        <article class="subject-card">
+          <span class="msg-count corner">1</span>
+          <div class="sc-top"><span class="sc-ref">SUB-0148</span><span class="badge new">Nouveau</span></div>
+          <div class="sc-title"><a href="sujet.html">Congé maternité — Sophie</a></div>
+          <div class="sc-meta"><span class="m">👤 Sophie Blanchard</span><span class="m">⏱ 3 h</span></div>
+        </article>
+
+        <!-- low → 1 bouton -->
+        <article class="subject-card is-low">
+          <span class="msg-count corner">1</span>
+          <div class="sc-top"><span class="sc-ref">SUB-0131</span></div>
+          <div class="sc-title"><a href="sujet.html">Virement client — Le Palais</a></div>
+          <div class="sc-meta"><span class="m">👤 Restaurant Le Palais</span><span class="m">⏱ hier</span></div>
+        </article>
+
+        <article class="subject-card is-low">
+          <div class="sc-top"><span class="sc-ref">SUB-0103</span><span class="badge waiting"><svg width="12" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M6 2c0 4.5 3 6 6 8 3-2 6-3.5 6-8M6 22c0-4.5 3-6 6-8 3 2 6 3.5 6 8"/></svg> En attente</span></div>
+          <div class="sc-title"><a href="sujet.html">Papier emballage — réassort</a></div>
+          <div class="sc-meta"><span class="m">👤 PackPlus SARL</span><span class="m">⏱ hier</span></div>
+        </article>
+
+        <article class="subject-card is-low">
+          <div class="sc-top"><span class="sc-ref">SUB-0082</span><span class="badge to_do"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> À faire</span></div>
+          <div class="sc-title"><a href="sujet.html">Contrat climatisation</a></div>
+          <div class="sc-meta"><span class="m">👤 ClimaPro Services</span><span class="m">⏱ il y a 3 j</span></div>
+        </article>
+
+      </div>
+
+      <!-- ============ TERMINÉS ============ -->
+      <div class="feed-list" id="term">
+
+        <article class="subject-card is-done">
+          <div class="sc-top"><span class="sc-ref">SUB-0140</span><span class="badge resolved">Terminé</span></div>
+          <div class="sc-title"><a href="sujet.html">Commande surgelés — validée</a></div>
+          <div class="sc-meta"><span class="m">👤 SoGood Distribution</span><span class="m">✓ terminé hier</span></div>
+        </article>
+
+        <article class="subject-card is-done">
+          <div class="sc-top"><span class="sc-ref">SUB-0136</span><span class="badge resolved">Terminé</span></div>
+          <div class="sc-title"><a href="sujet.html">Réponse à un avis Google</a></div>
+          <div class="sc-meta"><span class="m">👤 Restaurant Le Palais</span><span class="m">✓ terminé il y a 2 j</span></div>
+        </article>
+
+        <article class="subject-card is-done">
+          <div class="sc-top"><span class="sc-ref">SUB-0129</span><span class="badge resolved">Terminé</span></div>
+          <div class="sc-title"><a href="sujet.html">Facture EDF — réglée</a></div>
+          <div class="sc-meta"><span class="m">👤 Marie Campos</span><span class="m">✓ terminé il y a 5 j</span></div>
+        </article>
+
+      </div>
+
+    </div>
+  </main>
+
+  <div class="relvo-bar">
+    <a class="spark" href="conversations.html" aria-label="Mes conversations">✦</a>
+    <a class="field" href="conversation.html">Demander à Relvo…</a>
+    <button class="cam" aria-label="Prendre une photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.2"/></svg>
+    </button>
+    <button class="mic" aria-label="Dicter — maintenir pour parler">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+    </button>
+  </div>
+
+  <nav class="tabbar">
+    <a href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      Accueil
+    </a>
+    <a href="fil.html" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      Mon fil
+    </a>
+    <a href="dossiers.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.142 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.142 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+      Mémoire
+    </a>
+    <a href="parametres.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19.7l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15M21 12a1.6 1.6 0 0 0-1.1-1.5"/></svg>
+      Réglages
+    </a>
+  </nav>
+
+</div>
+
+<script>
+  // Switch des onglets Priorité / Ouverts / Terminés
+  const segBtns=[...document.querySelectorAll('.segmented button')];
+  const lists=['prio','ouv','term'].map(id=>document.getElementById(id));
+  segBtns.forEach((b,i)=>b.addEventListener('click',()=>{
+    segBtns.forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    lists.forEach((l,j)=>l.classList.toggle('active', j===i));
+  }));
+  // Swipe gestuel (tactile + souris) : → Terminer (vert) · ← Ignorer (rouge)
+  // Les cartes `is-low` ne peuvent pas être ignorées → swipe droite uniquement.
+  const CHECK='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  const EYE='<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10c3.5 4.5 16.5 4.5 20 0"/><path d="M5 13l-1.2 2"/><path d="M9 14.3l-.6 2.1"/><path d="M12 14.6v2.2"/><path d="M15 14.3l.6 2.1"/><path d="M19 13l1.2 2"/></svg>';
+  document.querySelectorAll('.feed-list .subject-card:not(.is-done)').forEach(card=>{
+    const low=card.classList.contains('is-low');
+    const row=document.createElement('div'); row.className='swipe-row';
+    card.parentNode.insertBefore(row,card); row.appendChild(card);
+    row.insertAdjacentHTML('afterbegin',
+      '<div class="swipe-actions left">'+CHECK+'<span class="cap">Terminer</span></div>'+
+      (low ? '' : '<div class="swipe-actions right">'+EYE+'<span class="cap">Ignorer</span></div>'));
+    let sx=0,sy=0,dx=0,active=false,decided=false,horiz=false,moved=false;
+    card.addEventListener('pointerdown',e=>{sx=e.clientX;sy=e.clientY;dx=0;active=true;decided=false;horiz=false;moved=false;card.style.transition='none';});
+    card.addEventListener('pointermove',e=>{
+      if(!active)return;
+      const mx=e.clientX-sx,my=e.clientY-sy;
+      if(!decided&&(Math.abs(mx)>8||Math.abs(my)>8)){decided=true;horiz=Math.abs(mx)>Math.abs(my);}
+      if(decided&&horiz){e.preventDefault(); moved=true; dx=mx; if(low&&dx<0)dx=0; card.style.transform='translateX('+dx+'px)';}
+    });
+    const finish=()=>{
+      if(!active)return; active=false; card.style.transition='transform .2s ease';
+      if(horiz&&dx>80){card.style.transform='translateX(110%)';setTimeout(()=>row.remove(),200);}          // Terminer
+      else if(!low&&horiz&&dx<-80){card.style.transform='translateX(-110%)';setTimeout(()=>row.remove(),200);} // Ignorer
+      else{card.style.transform='translateX(0)';}
+    };
+    card.addEventListener('pointerup',finish);
+    card.addEventListener('pointercancel',finish);
+    // Clic sur toute la carte → ouvre le sujet (sauf lien/bouton interne, ou juste après un swipe)
+    card.addEventListener('click',e=>{
+      if(e.target.closest('a,button')) return;
+      if(moved){moved=false;return;}
+      window.location.href='sujet.html';
+    });
+  });
+
+  // Cartes terminées (non swipables) : clic → ouvre le sujet
+  document.querySelectorAll('.feed-list .subject-card.is-done').forEach(card=>{
+    card.addEventListener('click',e=>{ if(!e.target.closest('a,button')) window.location.href='sujet.html'; });
+  });
+</script>
+</body>
+</html>

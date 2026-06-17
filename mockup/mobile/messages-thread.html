@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Relvo — Conversation contact (mobile)</title>
+<link rel="stylesheet" href="css/app.css?v=5" />
+</head>
+<body>
+<div class="device">
+
+  <div class="statusbar"><span>9:41</span><span class="dots">●●● ◗ 🔋</span></div>
+
+  <header class="appbar">
+    <a class="back" href="messages.html" aria-label="Retour">‹</a>
+    <div class="titles">
+      <div class="hello" style="font-size:16px">Karim Benali</div>
+      <div class="sub">SoGood Distribution</div>
+    </div>
+  </header>
+
+  <main class="scroll" style="background:var(--bg-secondary)">
+    <div class="chat">
+
+      <div style="text-align:center;font-size:11.5px;color:var(--text-tertiary);margin:6px 0">Lundi 9 juin</div>
+
+      <div class="msg" style="align-self:flex-start;width:100%">
+        <div class="bubble" style="background:var(--bg-primary);border:1px solid var(--border-light);color:var(--text-primary);border-radius:4px 16px 16px 16px;box-shadow:var(--shadow-card)">
+          Bonjour, petit souci côté entrepôt : rupture sur la sauce blanche jusqu'à la fin de semaine. Je vous tiens au courant.
+        </div>
+        <div class="chan" style="margin-top:4px">Email · SUB-0142</div>
+      </div>
+
+      <div class="msg user">
+        <div class="bubble">Merci de prévenir. Quelle alternative possible en attendant ?</div>
+      </div>
+
+      <div class="msg" style="align-self:flex-start;width:100%">
+        <div class="bubble" style="background:var(--bg-primary);border:1px solid var(--border-light);color:var(--text-primary);border-radius:4px 16px 16px 16px;box-shadow:var(--shadow-card)">
+          Je peux vous proposer notre sauce blanche premium au même tarif pour cette commande, le temps du réapprovisionnement. Ça vous convient ?
+        </div>
+        <div class="chan" style="margin-top:4px">WhatsApp · SUB-0142</div>
+      </div>
+
+      <div style="text-align:center;font-size:11.5px;color:var(--text-tertiary);margin:6px 0">Aujourd'hui</div>
+
+      <div class="msg user">
+        <div class="bubble">C'est parfait pour la substitution. Vous pouvez livrer demain matin ?</div>
+      </div>
+
+      <div class="msg" style="align-self:flex-start;width:100%">
+        <div class="bubble" style="background:var(--bg-primary);border:1px solid var(--border-light);color:var(--text-primary);border-radius:4px 16px 16px 16px;box-shadow:var(--shadow-card)">
+          Parfait, je lance la livraison demain.
+        </div>
+        <div class="chan" style="margin-top:4px">WhatsApp · SUB-0142</div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="reply-bar">
+    <div class="reply-row">
+      <span class="chan-pill">WhatsApp ▾</span>
+      <textarea placeholder="Votre message…"></textarea>
+      <span class="send"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span>
+    </div>
+  </div>
+
+  <nav class="tabbar">
+    <a href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      Accueil
+    </a>
+    <a href="fil.html" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      Mon fil
+    </a>
+    <a href="dossiers.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.142 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.142 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+      Mémoire
+    </a>
+    <a href="parametres.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19.7l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15M21 12a1.6 1.6 0 0 0-1.1-1.5"/></svg>
+      Réglages
+    </a>
+  </nav>
+
+</div>
+
+<script>const ta=document.querySelector('.reply-row textarea');if(ta){const g=()=>{ta.style.height='auto';ta.style.height=Math.min(ta.scrollHeight,120)+'px';};ta.addEventListener('input',g);g();}</script>
+</body>
+</html>

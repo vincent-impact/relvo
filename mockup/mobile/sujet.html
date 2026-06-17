@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Relvo — Sujet (mobile)</title>
+<link rel="stylesheet" href="css/app.css?v=5" />
+</head>
+<body>
+<div class="device">
+
+  <div class="statusbar"><span>9:41</span><span class="dots">●●● ◗ 🔋</span></div>
+
+  <!-- Header : titre métier + contact + Relvo -->
+  <header class="appbar">
+    <a class="back" href="fil.html" aria-label="Retour">‹</a>
+    <div class="avatar-h">KB</div>
+    <div class="titles">
+      <div class="hello" style="font-size:16px">Remplacement sauce blanche</div>
+      <div class="sub">Karim Benali · SoGood Distribution</div>
+    </div>
+    <a class="icon-btn relvo-btn" href="conversation-thread.html" aria-label="Demander à Relvo">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z"/></svg>
+    </a>
+  </header>
+
+  <main class="scroll">
+    <div class="scroll-pad">
+
+      <!-- Sous-header : index (badge technique) + badges d'état -->
+      <div class="status-strip">
+        <span class="badge" style="background:var(--bg-tertiary);color:var(--text-secondary)">SUB-0142</span>
+        <span class="urgent" title="Urgent"><svg width="15" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 2a1 1 0 0 1 1 1v18a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1z"/><path d="M7 3.5h11.5a1 1 0 0 1 .8 1.6L17 8l2.3 2.9a1 1 0 0 1-.8 1.6H7z"/></svg></span>
+        <span class="badge to_do"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> À faire</span>
+        <span class="badge" style="background:var(--blue-50);color:var(--blue-800)">📦 Fournisseurs</span>
+      </div>
+
+      <!-- Résumé Relvo (clampé) -->
+      <div class="relvo-summary" id="summary">
+        <div class="rs-head"><span>✦</span> Résumé de Relvo</div>
+        <p class="rs-text clamp">Karim Benali (SoGood Distribution) signale une rupture de sauce blanche (réf. SB-200) jusqu'à fin de mois et propose une référence de substitution (SB-210), même recette et conditionnement. Une réponse est préparée ; 2 tâches identifiées.</p>
+        <a class="rs-more" id="rsMore">Voir plus</a>
+      </div>
+
+      <!-- Onglets ancrés -->
+      <div class="tabs">
+        <div class="segmented">
+          <button class="active">Messages</button>
+          <button>Tâches</button>
+          <button>Journal</button>
+          <button>Pièces jointes</button>
+        </div>
+      </div>
+
+      <!-- Pane Messages (+ composer en flux, uniquement ici) -->
+      <div class="tabpane active">
+        <div class="chat" style="padding:0;gap:12px">
+          <div class="msg relvo" style="align-self:flex-start">
+            <div class="who"><span class="actor-pill ext"><span class="av">E</span> Karim Benali</span> <span class="chan">WhatsApp</span></div>
+            <div class="bubble">Bonjour, on est en rupture de sauce blanche réf. SB-200 jusqu'à fin du mois. Je peux vous proposer la réf. SB-210, même recette, conditionnement identique. Ça vous va ?</div>
+          </div>
+          <div class="msg user">
+            <div class="bubble">Merci Karim, je regarde ça et je reviens vers vous rapidement.</div>
+          </div>
+          <div class="msg relvo" style="align-self:flex-start">
+            <div class="who"><span class="actor-pill ext"><span class="av">E</span> Karim Benali</span> <span class="chan">WhatsApp</span></div>
+            <div class="bubble">Parfait. Je vous joins le bon de livraison prévisionnel pour validation.</div>
+            <a class="msg-att" href="#">
+              <span class="ma-ic">📄</span>
+              <span><span class="ma-name">bon-livraison.pdf</span><span class="ma-label">Bon de livraison</span></span>
+            </a>
+          </div>
+        </div>
+
+        <div class="msg-composer" id="composer">
+          <button class="draft-pill" id="draftPill">
+            <span>✦</span> Brouillon de Relvo prêt — appuyez pour l'insérer
+            <span class="pill-x">✕</span>
+          </button>
+          <div class="reply-row">
+            <textarea id="reply" rows="1" placeholder="Répondre à Karim…"></textarea>
+            <button class="att-btn" aria-label="Joindre un fichier">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.4 11.05-8.49 8.49a5 5 0 0 1-7.07-7.07l8.49-8.49a3.5 3.5 0 0 1 4.95 4.95l-8.49 8.49a2 2 0 0 1-2.83-2.83l7.78-7.78"/></svg>
+            </button>
+            <button class="mic-sm" aria-label="Dicter">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+            </button>
+            <span class="send" aria-label="Envoyer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pane Tâches -->
+      <div class="tabpane">
+        <div class="task-card">
+          <div class="task-check"></div>
+          <div class="tk-body">
+            <div class="tk-title">Confirmer ou refuser la sauce de substitution</div>
+            <div class="tk-meta">
+              <span class="actor-pill relvo"><span class="av">R</span> Relvo</span>
+              <span>📅 aujourd'hui</span>
+            </div>
+          </div>
+        </div>
+        <div class="task-card done">
+          <div class="task-check done">✓</div>
+          <div class="tk-body">
+            <div class="tk-title">Demander le bon de livraison</div>
+            <div class="tk-meta">
+              <span class="actor-pill me"><span class="av">M</span> Moi</span>
+            </div>
+          </div>
+        </div>
+        <button class="add-task">+ Ajouter une tâche</button>
+      </div>
+
+      <!-- Pane Journal -->
+      <div class="tabpane">
+        <div class="log-item">
+          <span class="lg-dot relvo"></span><span class="lg-line"></span>
+          <div class="lg-body"><div class="lg-text">Relvo a créé le sujet</div><div class="lg-time">il y a 35 min</div></div>
+        </div>
+        <div class="log-item">
+          <span class="lg-dot me"></span><span class="lg-line"></span>
+          <div class="lg-body"><div class="lg-text">Tâche cochée : bon de livraison</div><div class="lg-time">il y a 10 min</div></div>
+        </div>
+        <div class="log-item">
+          <span class="lg-dot ext"></span><span class="lg-line"></span>
+          <div class="lg-body"><div class="lg-text">Message reçu de Karim Benali</div><div class="lg-time">il y a 40 min</div></div>
+        </div>
+      </div>
+
+      <!-- Pane Pièces jointes -->
+      <div class="tabpane">
+        <div class="att-row">
+          <div class="kd-ic">📄</div>
+          <div class="kd-body"><div class="kd-name">bon-livraison.pdf</div><div class="kd-meta">PDF · reçu de Karim · il y a 30 min</div></div>
+          <span class="badge" style="background:var(--amber-50);color:var(--amber-800)">Bon de livraison</span>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Actions sujet (urgent → 2 boutons) : Ignorer gauche · Terminer droite. Barre FIXE au-dessus de la tabbar. -->
+  <div class="sujet-actions">
+    <button class="btn danger" style="flex:1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10c3.5 4.5 16.5 4.5 20 0"/><path d="M5 13l-1.2 2"/><path d="M9 14.3l-.6 2.1"/><path d="M12 14.6v2.2"/><path d="M15 14.3l.6 2.1"/><path d="M19 13l1.2 2"/></svg>
+      Ignorer
+    </button>
+    <button class="btn success" style="flex:1">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      Terminer
+    </button>
+  </div>
+
+  <nav class="tabbar">
+    <a href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      Accueil
+    </a>
+    <a href="fil.html" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      Mon fil
+    </a>
+    <a href="dossiers.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.142 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.142 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+      Mémoire
+    </a>
+    <a href="parametres.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19.7l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15M21 12a1.6 1.6 0 0 0-1.1-1.5"/></svg>
+      Réglages
+    </a>
+  </nav>
+
+</div>
+
+<script>
+  // Onglets
+  document.querySelectorAll('.segmented button').forEach((b,i,arr)=>{
+    b.addEventListener('click',()=>{
+      arr.forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.tabpane').forEach((p,j)=>p.classList.toggle('active', j===i));
+    });
+  });
+  // Résumé : voir plus
+  document.getElementById('rsMore').addEventListener('click',()=>document.getElementById('summary').classList.add('open'));
+  // Composer : auto-grow + masque micro / montre envoi dès qu'on écrit
+  const ta=document.getElementById('reply'), comp=document.getElementById('composer');
+  const sync=()=>{
+    comp.classList.toggle('typing', ta.value.trim().length>0);
+    ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,120)+'px';
+  };
+  ta.addEventListener('input',sync);
+  // Pastille brouillon → insère le texte dans le champ
+  const DRAFT="Bonjour Karim, merci pour votre retour. La sauce de substitution nous convient, vous pouvez lancer la livraison. Bien à vous.";
+  const pill=document.getElementById('draftPill');
+  pill.addEventListener('click',e=>{
+    if(e.target.classList.contains('pill-x')){pill.classList.add('hidden');return;}
+    ta.value=DRAFT; pill.classList.add('hidden'); sync(); ta.focus();
+  });
+</script>
+</body>
+</html>

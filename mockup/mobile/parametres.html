@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Relvo — Paramètres (mobile)</title>
+<link rel="stylesheet" href="css/app.css?v=5" />
+</head>
+<body>
+<div class="device">
+
+  <div class="statusbar"><span>9:41</span><span class="dots">●●● ◗ 🔋</span></div>
+
+  <header class="appbar">
+    <div class="titles">
+      <div class="hello">Paramètres</div>
+      <div class="sub">Compte · Canaux · Contacts</div>
+    </div>
+  </header>
+
+  <main class="scroll">
+    <div class="scroll-pad">
+
+      <div class="segmented">
+        <button class="active">Profil</button>
+        <button>Canaux</button>
+        <button>Contacts</button>
+      </div>
+
+      <div class="tabpane active">
+        <div class="form-card">
+          <div class="form-row">
+            <label>Nom</label>
+            <input value="Vincent">
+          </div>
+          <div class="form-row">
+            <label>Email</label>
+            <input value="vincent@vccimpact.fr">
+          </div>
+          <div class="form-row">
+            <label>Entreprise</label>
+            <input value="Tasty Crousty">
+          </div>
+          <div class="form-row">
+            <label>Mot de passe</label>
+            <input type="password" value="········">
+          </div>
+        </div>
+
+        <div class="form-card">
+          <div class="form-row toggle-row">
+            <div class="tl">Notifications push<small>Sujets urgents et nouveaux messages</small></div>
+            <div class="toggle on"><i></i></div>
+          </div>
+          <div class="form-row toggle-row">
+            <div class="tl">Lecture vocale des réponses<small>Relvo lit ses réponses à voix haute</small></div>
+            <div class="toggle"><i></i></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabpane">
+        <div class="page-intro">Connecte tes canaux pour que Relvo reçoive tes messages.</div>
+        <div class="form-card">
+          <div class="channel-card">
+            <div class="ch-ic wa">💬</div>
+            <div class="ch-body"><div class="ch-name">WhatsApp</div><div class="ch-meta">+33 6 12 34 56 78</div></div>
+            <span class="dot-status">Connecté</span>
+          </div>
+          <div class="channel-card">
+            <div class="ch-ic mail">✉️</div>
+            <div class="ch-body"><div class="ch-name">Email</div><div class="ch-meta">tasty-crousty-a1b2@inbound.relvo.io</div></div>
+            <span class="dot-status">Connecté</span>
+          </div>
+          <button class="btn ghost" style="width:100%;margin-top:10px">+ Ajouter un canal</button>
+        </div>
+      </div>
+
+      <div class="tabpane">
+        <div class="page-intro">2 contacts à compléter.</div>
+        <a class="btn ghost" style="width:100%" href="contacts.html">Ouvrir l'annuaire des contacts →</a>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="relvo-bar">
+    <a class="spark" href="conversations.html" aria-label="Mes conversations">✦</a>
+    <a class="field" href="conversation.html">Demander à Relvo…</a>
+    <button class="cam" aria-label="Prendre une photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.2"/></svg>
+    </button>
+    <button class="mic" aria-label="Dicter — maintenir pour parler">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+    </button>
+  </div>
+
+  <nav class="tabbar">
+    <a href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      Accueil
+    </a>
+    <a href="fil.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      Mon fil
+    </a>
+    <a href="dossiers.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.142 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.142 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+      Mémoire
+    </a>
+    <a href="parametres.html" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19.7l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15M21 12a1.6 1.6 0 0 0-1.1-1.5"/></svg>
+      Réglages
+    </a>
+  </nav>
+
+</div>
+
+<script>
+  document.querySelectorAll('.segmented button').forEach((b,i,arr)=>{
+    b.addEventListener('click',()=>{
+      arr.forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');
+      document.querySelectorAll('.tabpane').forEach((p,j)=>p.classList.toggle('active', j===i));
+    });
+  });
+</script>
+</body>
+</html>

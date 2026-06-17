@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Relvo — Nouvelle conversation (mobile)</title>
+<link rel="stylesheet" href="css/app.css?v=5" />
+</head>
+<body>
+<div class="device">
+
+  <div class="statusbar"><span>9:41</span><span class="dots">●●● ◗ 🔋</span></div>
+
+  <!-- header conversation -->
+  <header class="appbar">
+    <a class="back" href="index.html" aria-label="Retour">‹</a>
+    <div class="titles">
+      <div class="hello" style="font-size:16px;display:flex;align-items:center;gap:6px"><span style="color:var(--relvo)">✦</span> Relvo</div>
+      <div class="sub">Nouvelle conversation</div>
+    </div>
+    <a class="icon-btn" href="conversations.html" aria-label="Mes conversations">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    </a>
+  </header>
+
+  <!-- empty state : pas de chip (discussion générale depuis l'Accueil) -->
+  <main class="scroll" style="background:var(--bg-secondary)">
+    <div class="chat-empty">
+      <div class="hi">
+        <div class="orb">✦</div>
+        <h3>Comment puis-je t'aider ?</h3>
+        <p>Pose ta question ou demande-moi une action.</p>
+      </div>
+      <div class="prompt-list">
+        <a class="prompt" href="conversation-thread.html">Qu'est-ce qui est urgent aujourd'hui ?</a>
+        <a class="prompt" href="conversation-thread.html">Prépare une réponse à Karim sur la sauce blanche</a>
+        <a class="prompt" href="conversation-thread.html">Quelles sont mes tâches cette semaine ?</a>
+        <a class="prompt" href="conversation-thread.html">Résume-moi le sujet du congélateur de Narbonne</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- indice vocal -->
+  <div class="composer-hint">🎙 <b>Maintiens le micro</b> pour parler, ou écris ci-dessous</div>
+  <!-- composer : 1 ligne au repos, grandit à la frappe -->
+  <div class="relvo-bar">
+    <textarea class="field" rows="1" placeholder="Écrire à Relvo…"></textarea>
+    <button class="cam" aria-label="Prendre une photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.2"/></svg>
+    </button>
+    <button class="mic" aria-label="Dicter — maintenir pour parler">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+    </button>
+    <span class="send" aria-label="Envoyer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+    </span>
+  </div>
+
+</div>
+
+<script>
+  // Composer : auto-grow + bascule des icônes (📷/🎙 ↔ ➤) selon la présence de texte
+  const bar = document.querySelector('.relvo-bar');
+  const ta = bar.querySelector('textarea.field');
+  const hint = document.querySelector('.composer-hint');
+  function sync() {
+    const typing = ta.value.trim().length > 0;
+    bar.classList.toggle('typing', typing);
+    if (hint) hint.style.display = typing ? 'none' : '';
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  }
+  ta.addEventListener('input', sync);
+  sync();
+</script>
+</body>
+</html>

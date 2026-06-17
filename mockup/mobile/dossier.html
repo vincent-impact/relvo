@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Relvo — Dossier Fournisseurs (mobile)</title>
+<link rel="stylesheet" href="css/app.css?v=5" />
+</head>
+<body>
+<div class="device">
+
+  <div class="statusbar"><span>9:41</span><span class="dots">●●● ◗ 🔋</span></div>
+
+  <header class="appbar">
+    <a class="back" href="dossiers.html">‹</a>
+    <div class="titles">
+      <div class="hello" style="font-size:17px">Fournisseurs</div>
+      <div class="sub">Un domaine de la mémoire de Relvo</div>
+    </div>
+    <button class="cta">Modifier</button>
+  </header>
+
+  <main class="scroll">
+    <div class="scroll-pad">
+
+      <!-- Carte mémoire : voix de Relvo (stats retirées → portées par les onglets) -->
+      <div class="mem-card">
+        <div class="mc-head"><span>✦</span> Ce que je sais sur ce domaine</div>
+        <p>Je connais vos conditions tarifaires SoGood et PackPlus, 3 contrats fournisseurs en cours et l'historique de 14 sujets. Demandez-moi, je m'appuie dessus.</p>
+      </div>
+
+      <!-- Onglets ancrés : Instructions / Fichiers / Sujets -->
+      <div class="tabs">
+        <div class="segmented" id="dtabs">
+          <button class="active">Instructions <span class="count">6</span></button>
+          <button>Documents <span class="count">38</span></button>
+          <button>Sujets <span class="count">14</span></button>
+        </div>
+      </div>
+
+      <!-- ===== Pane INSTRUCTIONS ===== -->
+      <div class="tabpane active">
+        <div class="page-intro">Consignes que Relvo applique pour ce domaine.</div>
+        <div class="add-row" style="margin-bottom:12px"><button class="btn ghost grow" style="flex:1">+ Instruction</button></div>
+        <div class="list">
+          <a class="kdoc-row" href="#">
+            <div class="kd-ic">📝</div>
+            <div class="kd-body"><div class="kd-name">Particularités fournisseurs</div><div class="kd-meta">modifiée hier</div></div>
+            <span class="kd-read">✦ appliquée</span>
+          </a>
+          <a class="kdoc-row" href="#">
+            <div class="kd-ic">📝</div>
+            <div class="kd-body"><div class="kd-name">Conditions de paiement</div><div class="kd-meta">5 juin</div></div>
+            <span class="kd-read">✦ appliquée</span>
+          </a>
+          <a class="kdoc-row" href="#">
+            <div class="kd-ic">📝</div>
+            <div class="kd-body"><div class="kd-name">Ton de réponse fournisseurs</div><div class="kd-meta">1er juin</div></div>
+            <span class="kd-read">✦ appliquée</span>
+          </a>
+          <a class="kdoc-row reserve" href="#" style="display:none">
+            <div class="kd-ic">📝</div>
+            <div class="kd-body"><div class="kd-name">Délais de livraison habituels</div><div class="kd-meta">29 mai</div></div>
+            <span class="kd-read">✦ appliquée</span>
+          </a>
+          <a class="kdoc-row reserve" href="#" style="display:none">
+            <div class="kd-ic">📝</div>
+            <div class="kd-body"><div class="kd-name">Contacts privilégiés par fournisseur</div><div class="kd-meta">22 mai</div></div>
+            <span class="kd-read">✦ appliquée</span>
+          </a>
+          <a class="kdoc-row reserve" href="#" style="display:none">
+            <div class="kd-ic">📝</div>
+            <div class="kd-body"><div class="kd-name">Litiges récurrents à surveiller</div><div class="kd-meta">15 mai</div></div>
+            <span class="kd-read">✦ appliquée</span>
+          </a>
+        </div>
+        <div class="scroll-hint"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg> Faites défiler pour charger plus</div>
+      </div>
+
+      <!-- ===== Pane FICHIERS ===== -->
+      <div class="tabpane">
+        <div class="page-intro">Documents que Relvo lit pour ce domaine.</div>
+        <div class="dropzone" style="margin-bottom:12px">Glissez un PDF ici ou <b>parcourez</b></div>
+        <div class="list">
+          <a class="kdoc-row" href="#">
+            <div class="kd-ic">📄</div>
+            <div class="kd-body"><div class="kd-name">tarifs-PackPlus-juin.pdf</div><div class="kd-meta">PDF · il y a 5 min</div></div>
+            <span class="kd-read">✦ lu</span>
+          </a>
+          <a class="kdoc-row" href="#">
+            <div class="kd-ic">📄</div>
+            <div class="kd-body"><div class="kd-name">contrat-SoGood-2026.pdf</div><div class="kd-meta">PDF · 12 juin</div></div>
+            <span class="kd-read">✦ lu</span>
+          </a>
+          <a class="kdoc-row" href="#">
+            <div class="kd-ic">📄</div>
+            <div class="kd-body"><div class="kd-name">tarifs-fournisseurs-2026.pdf</div><div class="kd-meta">PDF · 8 juin</div></div>
+            <span class="kd-read">✦ lu</span>
+          </a>
+          <a class="kdoc-row" href="#">
+            <div class="kd-ic">📄</div>
+            <div class="kd-body"><div class="kd-name">bon-livraison-0142.pdf</div><div class="kd-meta">PDF · reçu de Karim · 6 juin</div></div>
+            <span class="kd-read ignored">ignoré</span>
+          </a>
+          <a class="kdoc-row" href="#">
+            <div class="kd-ic">📄</div>
+            <div class="kd-body"><div class="kd-name">catalogue-SoGood-surgelés.pdf</div><div class="kd-meta">PDF · 2 juin</div></div>
+            <span class="kd-read">✦ lu</span>
+          </a>
+          <a class="kdoc-row reserve" href="#" style="display:none">
+            <div class="kd-ic">📄</div>
+            <div class="kd-body"><div class="kd-name">facture-PackPlus-mai.pdf</div><div class="kd-meta">PDF · 28 mai</div></div>
+            <span class="kd-read">✦ lu</span>
+          </a>
+          <a class="kdoc-row reserve" href="#" style="display:none">
+            <div class="kd-ic">📄</div>
+            <div class="kd-body"><div class="kd-name">CGV-SoGood.pdf</div><div class="kd-meta">PDF · 24 mai</div></div>
+            <span class="kd-read">✦ lu</span>
+          </a>
+          <a class="kdoc-row reserve" href="#" style="display:none">
+            <div class="kd-ic">📄</div>
+            <div class="kd-body"><div class="kd-name">tarifs-PackPlus-mai.pdf</div><div class="kd-meta">PDF · 20 mai</div></div>
+            <span class="kd-read">✦ lu</span>
+          </a>
+          <a class="kdoc-row reserve" href="#" style="display:none">
+            <div class="kd-ic">📄</div>
+            <div class="kd-body"><div class="kd-name">bon-commande-0118.pdf</div><div class="kd-meta">PDF · 14 mai</div></div>
+            <span class="kd-read">✦ lu</span>
+          </a>
+        </div>
+        <div class="scroll-hint"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg> Faites défiler pour charger plus</div>
+      </div>
+
+      <!-- ===== Pane SUJETS ===== -->
+      <div class="tabpane">
+        <div class="page-intro">Les sujets rattachés à ce domaine.</div>
+        <div class="list">
+          <a class="row-card" href="sujet.html">
+            <div class="kd-ic">✉️</div>
+            <div class="kd-body"><div class="kd-name">Remplacement sauce blanche</div><div class="kd-meta">SUB-0142 · Karim Benali · 35 min</div></div>
+            <span class="urgent" title="Urgent"><svg width="15" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 2a1 1 0 0 1 1 1v18a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1z"/><path d="M7 3.5h11.5a1 1 0 0 1 .8 1.6L17 8l2.3 2.9a1 1 0 0 1-.8 1.6H7z"/></svg></span>
+          </a>
+          <a class="row-card" href="sujet.html">
+            <div class="kd-ic">✉️</div>
+            <div class="kd-body"><div class="kd-name">Papier emballage — réassort</div><div class="kd-meta">SUB-0103 · PackPlus SARL · hier</div></div>
+            <span class="badge waiting"><svg width="12" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12M6 22h12M6 2c0 4.5 3 6 6 8 3-2 6-3.5 6-8M6 22c0-4.5 3-6 6-8 3 2 6 3.5 6 8"/></svg> En attente</span>
+          </a>
+          <a class="row-card" href="sujet.html">
+            <div class="kd-ic">✉️</div>
+            <div class="kd-body"><div class="kd-name">Commande surgelés — validée</div><div class="kd-meta">SUB-0140 · SoGood · terminé hier</div></div>
+            <span class="badge resolved">Terminé</span>
+          </a>
+          <a class="row-card reserve" href="sujet.html" style="display:none">
+            <div class="kd-ic">✉️</div>
+            <div class="kd-body"><div class="kd-name">Litige facture PackPlus</div><div class="kd-meta">SUB-0122 · PackPlus · terminé 4 j</div></div>
+            <span class="badge resolved">Terminé</span>
+          </a>
+          <a class="row-card reserve" href="sujet.html" style="display:none">
+            <div class="kd-ic">✉️</div>
+            <div class="kd-body"><div class="kd-name">Référencement sauce SB-210</div><div class="kd-meta">SUB-0118 · SoGood · terminé 6 j</div></div>
+            <span class="badge resolved">Terminé</span>
+          </a>
+          <a class="row-card reserve" href="sujet.html" style="display:none">
+            <div class="kd-ic">✉️</div>
+            <div class="kd-body"><div class="kd-name">Nouveau catalogue surgelés</div><div class="kd-meta">SUB-0151 · SoGood · 2 j</div></div>
+            <span class="badge resolved">Terminé</span>
+          </a>
+        </div>
+        <div class="scroll-hint"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg> Faites défiler pour charger plus</div>
+      </div>
+
+    </div>
+  </main>
+
+  <div class="relvo-bar">
+    <a class="spark" href="conversations.html" aria-label="Mes conversations">✦</a>
+    <a class="field" href="conversation.html">Demander à Relvo…</a>
+    <button class="cam" aria-label="Prendre une photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.2"/></svg>
+    </button>
+    <button class="mic" aria-label="Dicter — maintenir pour parler">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+    </button>
+  </div>
+
+  <nav class="tabbar">
+    <a href="index.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+      Accueil
+    </a>
+    <a href="fil.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      Mon fil
+    </a>
+    <a href="dossiers.html" class="active">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.142 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.142 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/></svg>
+      Mémoire
+    </a>
+    <a href="parametres.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1A1.6 1.6 0 0 0 6.6 19.7l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15M21 12a1.6 1.6 0 0 0-1.1-1.5"/></svg>
+      Réglages
+    </a>
+  </nav>
+
+</div>
+
+<script>
+  // Onglets Instructions / Fichiers / Sujets
+  const tb=[...document.querySelectorAll('#dtabs button')];
+  const panes=[...document.querySelectorAll('.tabpane')];
+  tb.forEach((b,i)=>b.addEventListener('click',()=>{
+    tb.forEach(x=>x.classList.remove('active')); b.classList.add('active');
+    panes.forEach((p,j)=>p.classList.toggle('active', j===i));
+  }));
+
+  // Scroll infini : défiler vers le bas révèle un lot de réserve dans l'onglet actif
+  const scroll=document.querySelector('.scroll');
+  function revealMore(){
+    const pane=document.querySelector('.tabpane.active');
+    const hint=pane && pane.querySelector('.scroll-hint');
+    if(!hint || hint.dataset.done) return;
+    const hidden=[...pane.querySelectorAll('.reserve')].filter(r=>getComputedStyle(r).display==='none');
+    // Réserve épuisée : on garde l'indice visible (un vrai domaine a toujours plus à charger)
+    if(hidden.length===0) return;
+    hidden.slice(0,3).forEach(r=>r.style.display='');
+  }
+  scroll.addEventListener('scroll',()=>{
+    if(scroll.scrollTop+scroll.clientHeight >= scroll.scrollHeight-60) revealMore();
+  });
+</script>
+</body>
+</html>

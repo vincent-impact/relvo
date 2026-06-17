@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Relvo — Conversation (mobile)</title>
+<link rel="stylesheet" href="css/app.css?v=5" />
+</head>
+<body>
+<div class="device">
+
+  <div class="statusbar"><span>9:41</span><span class="dots">●●● ◗ 🔋</span></div>
+
+  <!-- header conversation -->
+  <header class="appbar">
+    <a class="back" href="conversations.html" aria-label="Retour">‹</a>
+    <div class="titles">
+      <div class="hello" style="font-size:16px;display:flex;align-items:center;gap:6px"><span style="color:var(--relvo)">✦</span> Relvo</div>
+      <div class="sub">Réponse à Karim — sauce blanche</div>
+    </div>
+    <button class="icon-btn" aria-label="Lecture à voix haute" style="color:var(--relvo);background:var(--relvo-bg)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 6a9 9 0 0 1 0 12"/></svg>
+    </button>
+    <button class="icon-btn" aria-label="Nouvelle conversation">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+  </header>
+
+  <!-- chip de contexte page-aware -->
+  <div class="ctx-chip">
+    Contexte :
+    <span class="label">✉ SUB-0142 — Sauce blanche</span>
+    <button class="x" aria-label="Discussion générale">✕</button>
+  </div>
+
+  <!-- fil -->
+  <main class="scroll" style="background:var(--bg-secondary)">
+    <div class="chat">
+
+      <div class="msg user">
+        <div class="bubble">Où en est le sujet de la sauce blanche avec Karim ?</div>
+      </div>
+
+      <div class="msg relvo">
+        <div class="who"><span>✦</span> Relvo</div>
+        <div class="bubble">
+          Karim Benali (SoGood) propose une sauce de substitution suite à la rupture. Le sujet est <strong>à faire</strong> — j'ai préparé un brouillon de réponse et 2 tâches. Voici le sujet :
+        </div>
+        <!-- Generative UI : vraie SubjectCard rendue dans le fil -->
+        <article class="subject-card">
+          <div class="sc-top">
+            <span class="sc-ref">SUB-0142</span>
+            <span class="urgent" title="Urgent"><svg width="15" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M5 2a1 1 0 0 1 1 1v18a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1z"/><path d="M7 3.5h11.5a1 1 0 0 1 .8 1.6L17 8l2.3 2.9a1 1 0 0 1-.8 1.6H7z"/></svg></span>
+            <span class="badge to_do"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> À faire</span>
+          </div>
+          <div class="sc-title">Remplacement sauce blanche</div>
+          <div class="sc-meta">
+            <span class="m">👤 Karim Benali</span>
+            <span class="attach-chip">📎 bon-livraison.pdf</span>
+          </div>
+          <div class="sc-actions">
+            <a class="btn ghost grow" href="#">Ouvrir le sujet →</a>
+          </div>
+        </article>
+      </div>
+
+      <div class="msg user">
+        <div class="bubble">Crée une tâche pour appeler le shop de Montpellier demain matin.</div>
+      </div>
+
+      <div class="msg relvo">
+        <div class="who"><span>✦</span> Relvo</div>
+        <div class="bubble">C'est fait. Tu pourras la retrouver dans le sujet, ou l'annuler ici.</div>
+        <!-- bloc d'action annulable -->
+        <div class="action-block">
+          <div class="ab-head"><span class="spark">✦</span> Tâche créée dans SUB-0142</div>
+          <div class="ab-body">« Appeler le shop de Montpellier » · demain 09:00 · <span class="actor-pill relvo"><span class="av">R</span> Relvo</span></div>
+          <div class="ab-actions">
+            <a class="btn ghost" href="#">Voir</a>
+            <button class="btn danger">Annuler</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="msg relvo">
+        <div class="who"><span>✦</span> Relvo</div>
+        <div class="bubble">J'ai aussi préparé un brouillon de réponse à Karim. Je le dépose dans le composer du sujet ?</div>
+        <div class="quick-replies">
+          <button class="chip">Voir le brouillon</button>
+          <button class="chip subtle">Modifier</button>
+          <button class="chip subtle">Plus tard</button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- composer : 1 ligne au repos, grandit à la frappe -->
+  <div class="relvo-bar">
+    <textarea class="field" rows="1" placeholder="Écrire à Relvo…"></textarea>
+    <button class="cam" aria-label="Prendre une photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 8a2 2 0 0 1 2-2h2l1.5-2h7L17 6h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><circle cx="12" cy="13" r="3.2"/></svg>
+    </button>
+    <button class="mic" aria-label="Dicter — maintenir pour parler">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3"/></svg>
+    </button>
+    <span class="send" aria-label="Envoyer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+    </span>
+  </div>
+
+</div>
+
+<script>
+  // Composer : auto-grow + bascule des icônes (📷/🎙 ↔ ➤) selon la présence de texte
+  const bar = document.querySelector('.relvo-bar');
+  const ta = bar.querySelector('textarea.field');
+  function sync() {
+    bar.classList.toggle('typing', ta.value.trim().length > 0);
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 120) + 'px';
+  }
+  ta.addEventListener('input', sync);
+  sync();
+</script>
+</body>
+</html>
