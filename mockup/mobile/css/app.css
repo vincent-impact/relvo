@@ -94,6 +94,7 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 .pwa-banner button { color: #fff; font-weight: 700; }
 .pwa-banner button.go { background: var(--brand); padding: 6px 13px; border-radius: 9px; }
 .pwa-banner button.x { opacity: .7; font-size: 15px; }
+.pwa-banner .pwa-ic { width: 16px; height: 16px; vertical-align: -3px; display: inline-block; }
 
 /* ---------- Header ---------- */
 .appbar {
