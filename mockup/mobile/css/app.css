@@ -74,11 +74,16 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .statusbar .dots { letter-spacing: 1px; }
 
-/* PWA installée (standalone) : la vraie status bar de l'OS prend le relais
-   → on masque notre fausse barre et on réserve la zone du notch. */
+/* PWA installée (standalone) : les zones haut/bas sont les safe-areas iOS
+   (encoche/status bar + barre d'accueil), réservées dans TOUTE app native.
+   On ne les supprime pas (impossible) — on les fait fondre en blanc et on
+   étend le header derrière la status bar pour un rendu natif. */
 @media (display-mode: standalone) {
-  .statusbar { display: none; }
-  .device { padding-top: env(safe-area-inset-top); }
+  html, body { background: var(--bg-primary); }   /* zones safe-area en blanc, plus de gris */
+  .statusbar { display: none; }                    /* la vraie barre OS prend le relais */
+  .device { height: 100dvh; min-height: 100dvh; max-height: none; }  /* remplit, jamais bridé */
+  .appbar { padding-top: calc(env(safe-area-inset-top) + 10px); }    /* header blanc derrière l'encoche */
+  /* .tabbar a déjà padding-bottom: env(safe-area-inset-bottom) pour la barre d'accueil */
 }
 
 /* Bandeau d'aide / invite à l'installation (mobile only, géré par pwa.js) */
