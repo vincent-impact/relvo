@@ -298,7 +298,9 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
   display: flex; align-items: stretch;
   background: var(--bg-primary);
   border-top: 1px solid var(--border);
-  padding-bottom: env(safe-area-inset-bottom);
+  /* On descend le menu près du bord (façon Tinder) : on ne réserve qu'un
+     dégagement minimal au-dessus du home indicator, pas toute la safe-area. */
+  padding-bottom: max(env(safe-area-inset-bottom) - 22px, 6px);
 }
 .tabbar a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 8px 0 9px; color: var(--text-tertiary); font-size: 11px; font-weight: 600; }
 .tabbar a svg { width: 23px; height: 23px; }
