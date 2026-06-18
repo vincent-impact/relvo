@@ -74,6 +74,27 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 }
 .statusbar .dots { letter-spacing: 1px; }
 
+/* PWA installée (standalone) : la vraie status bar de l'OS prend le relais
+   → on masque notre fausse barre et on réserve la zone du notch. */
+@media (display-mode: standalone) {
+  .statusbar { display: none; }
+  .device { padding-top: env(safe-area-inset-top); }
+}
+
+/* Bandeau d'aide / invite à l'installation (mobile only, géré par pwa.js) */
+.pwa-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(env(safe-area-inset-top) + 9px) 14px 9px;
+  background: #0A1128; color: #fff; font-size: 13px; line-height: 1.3;
+  box-shadow: 0 2px 10px rgba(0,0,0,.3);
+}
+.pwa-banner span { flex: 1; }
+.pwa-banner b { font-weight: 700; }
+.pwa-banner button { color: #fff; font-weight: 700; }
+.pwa-banner button.go { background: var(--brand); padding: 6px 13px; border-radius: 9px; }
+.pwa-banner button.x { opacity: .7; font-size: 15px; }
+
 /* ---------- Header ---------- */
 .appbar {
   flex: 0 0 auto;
