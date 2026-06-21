@@ -12,21 +12,19 @@ import { nextSubjectReference } from "./reference";
 // validées + dépriorisation (« Ignorer ») + acquittement implicite. Invariant :
 // folder_id ne pointe jamais le Folder « Général » (documentaire transversal).
 
-// Transitions de statut autorisées (cf. 03-cas-usage cas A→L). Le passage vers
-// le même statut est un no-op toléré. `archived` est quasi-terminal (réouverture
-// possible vers `to_do` uniquement).
+// Cycle de vie à 4 valeurs (cf. invariant produit n°7) : new → acknowledged →
+// resolved → archived. `acknowledged` est l'état actif invisible (acquittement).
+// Le passage vers le même statut est un no-op toléré. `archived` est système et
+// quasi-terminal (réouverture possible vers `acknowledged` uniquement).
 const TRANSITIONS: Record<SubjectStatus, SubjectStatus[]> = {
-  new: ["to_do", "waiting", "unread", "resolved", "archived"],
-  to_do: ["new", "waiting", "unread", "resolved", "archived"],
-  waiting: ["to_do", "unread", "resolved", "archived"],
-  unread: ["to_do", "waiting", "resolved", "archived"],
-  resolved: ["to_do", "unread", "archived"],
-  archived: ["to_do"],
+  new: ["acknowledged", "resolved", "archived"],
+  acknowledged: ["new", "resolved", "archived"],
+  resolved: ["acknowledged", "archived"],
+  archived: ["acknowledged"],
 };
 
 const PRIORITY_LADDER: Priority[] = [
   Priority.low,
-  Priority.medium,
   Priority.high,
   Priority.critical,
 ];
@@ -42,6 +40,7 @@ export const createSubjectSchema = z.object({
   contactIds: z.array(z.uuid()).optional().default([]),
   status: z.enum(SubjectStatus).optional(),
   priority: z.enum(Priority).optional(),
+  waitingForReply: z.boolean().optional().default(false),
   sourceChannelId: z.uuid().optional().nullable(),
   createdByActor: actorEnum.default(Actor.user),
 });
@@ -114,6 +113,7 @@ export async function createSubject(db: TenantDb, input: CreateSubjectInput) {
         contactIds: data.contactIds,
         ...(data.status ? { status: data.status } : {}),
         ...(data.priority ? { priority: data.priority } : {}),
+        waitingForReply: data.waitingForReply,
         sourceChannelId: data.sourceChannelId ?? null,
         createdByActor: data.createdByActor,
         openedAt: now,
@@ -278,7 +278,7 @@ export async function updateSubjectPriority(
 
 /**
  * Action « Ignorer » du feed (cas feed prioritaire) : rétrograde la priorité
- * d'un cran (critical→high→medium→low). Sans effet si déjà `low`.
+ * d'un cran (critical→high→low). Sans effet si déjà `low`.
  */
 export async function ignoreSubject(db: TenantDb, id: string) {
   const current = assertFound(
@@ -294,12 +294,25 @@ export async function ignoreSubject(db: TenantDb, id: string) {
   });
 }
 
-/** Acquittement implicite : ouvrir la fiche d'un sujet (cf. invariant n°10). */
+/**
+ * Acquittement implicite : ouvrir la fiche d'un sujet (cf. invariant n°10).
+ * Met à jour `lastOpenedAt` et, si le sujet était `new`, le fait passer à
+ * `acknowledged` (état actif invisible) — ce qui retire le badge « Nouveau ».
+ */
 export async function openSubject(db: TenantDb, id: string) {
   return db.$transaction(async (tx) => {
+    const current = assertFound(
+      await tx.subject.findFirst({ where: { id } }),
+      "Sujet",
+    );
     const { count } = await tx.subject.updateMany({
       where: { id },
-      data: { lastOpenedAt: new Date() },
+      data: {
+        lastOpenedAt: new Date(),
+        ...(current.status === SubjectStatus.new
+          ? { status: SubjectStatus.acknowledged }
+          : {}),
+      },
     });
     ensureAffected(count, "Sujet");
     const subject = assertFound(

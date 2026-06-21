@@ -60,7 +60,7 @@ describe("Isolation tenant", () => {
     const subject = await createSubject(a.db, { title: "Sujet de A" });
 
     await expect(
-      updateSubjectStatus(b.db, subject.id, SubjectStatus.to_do),
+      updateSubjectStatus(b.db, subject.id, SubjectStatus.acknowledged),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
     // L'état chez A est inchangé.
     expect((await getSubject(a.db, subject.id)).status).toBe(SubjectStatus.new);
@@ -95,15 +95,15 @@ describe("Transitions de statut", () => {
     ).rejects.toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
   });
 
-  it("autorise une transition valide (new → to_do)", async () => {
+  it("autorise une transition valide (new → acknowledged)", async () => {
     const a = await makeAccount("f@test.fr");
     const subject = await createSubject(a.db, { title: "Sujet neuf" });
     const updated = await updateSubjectStatus(
       a.db,
       subject.id,
-      SubjectStatus.to_do,
+      SubjectStatus.acknowledged,
     );
-    expect(updated.status).toBe(SubjectStatus.to_do);
+    expect(updated.status).toBe(SubjectStatus.acknowledged);
   });
 });
 

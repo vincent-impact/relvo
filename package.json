@@ -17,6 +17,8 @@
     "db:generate": "pnpm --filter @relvo/db generate",
     "db:migrate": "pnpm --filter @relvo/db migrate",
     "db:status": "pnpm --filter @relvo/db status",
+    "db:seed": "pnpm --filter @relvo/db seed",
+    "db:seed:ensure": "pnpm --filter @relvo/db seed:ensure",
     "db:reset": "pnpm --filter @relvo/db migrate:reset",
     "db:studio": "pnpm --filter @relvo/db studio",
     "db:start": "docker compose up -d",

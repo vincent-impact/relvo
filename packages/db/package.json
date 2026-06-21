@@ -21,6 +21,7 @@
     "studio": "prisma studio",
     "format": "prisma format",
     "seed": "tsx prisma/seed.ts",
+    "seed:ensure": "tsx prisma/seed-if-missing.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"

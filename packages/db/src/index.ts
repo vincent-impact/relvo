@@ -19,6 +19,7 @@ export {
   ChannelConfigStatus,
   SubjectStatus,
   Priority,
+  AbsorptionStatus,
   MessageDirection,
   MessageStatus,
   TriageHint,
@@ -80,3 +81,14 @@ export type {
 // ─────────────────────────────────────────────────────────────
 export { tenantDb, type TenantDb, type Tx } from "./tenant";
 export * from "./domain";
+
+// ─────────────────────────────────────────────────────────────
+// Seed du compte démo (source unique) — CLI `pnpm db:seed` + Server Action de
+// reset. Placé en dernier : prisma/tenant/domain sont déjà définis ci-dessus.
+// ─────────────────────────────────────────────────────────────
+export {
+  seedDemoAccount,
+  seedDemoIfMissing,
+  DEMO_EMAIL,
+  DEMO_ACCOUNT_ID,
+} from "./seed-demo";

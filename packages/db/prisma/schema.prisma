@@ -55,22 +55,31 @@ enum ChannelConfigStatus {
   disabled
 }
 
-/// Les 6 statuts d'un Subject (UI fidèle, un badge par valeur).
+/// Cycle de vie d'un Subject — exclusif et séquentiel (4 valeurs).
+/// `new` (Nouveau) → `acknowledged` (Lu, état actif INVISIBLE : pas de badge)
+/// → `resolved` (Terminé) → `archived` (système, auto après inactivité).
+/// Les ex-statuts to_do/waiting/unread sont devenus des marqueurs cumulables
+/// (À faire dérivé des tâches, waitingForReply, pastille non-lus) — pas des statuts.
 enum SubjectStatus {
   new
-  to_do
-  waiting
-  unread
+  acknowledged
   resolved
   archived
 }
 
-/// 4 niveaux côté modèle ; l'UI ne projette qu'un drapeau urgent (= critical).
+/// 3 niveaux ; l'UI ne projette qu'un drapeau urgent (= critical).
+/// Feed prioritaire = critical + high. La rareté est le signal (`medium` retiré).
 enum Priority {
   low
-  medium
   high
   critical
+}
+
+/// État d'absorption d'un KnowledgeDocument `kind=file` : Relvo l'a lu (✦ injecté
+/// dans les prompts) ou l'a écarté du retrieval.
+enum AbsorptionStatus {
+  read
+  ignored
 }
 
 enum MessageDirection {
@@ -303,7 +312,10 @@ model Subject {
   folderId              String?       @map("folder_id") @db.Uuid
   contactIds            String[]      @default([]) @map("contact_ids") @db.Uuid
   status                SubjectStatus @default(new)
-  priority              Priority      @default(medium)
+  priority              Priority      @default(low)
+  // Marqueur « En attente » (cumulable, distinct du statut) — posé par Relvo
+  // quand un sujet attend une réponse externe. Cf. invariant produit n°7.
+  waitingForReply       Boolean       @default(false) @map("waiting_for_reply")
   sourceChannelId       String?       @map("source_channel_id") @db.Uuid
   openedAt              DateTime      @default(now()) @map("opened_at")
   resolvedAt            DateTime?     @map("resolved_at")
@@ -524,6 +536,8 @@ model KnowledgeDocument {
   fileUrl         String?       @map("file_url")
   fileSize        Int?          @map("file_size")
   anthropicFileId String?       @map("anthropic_file_id")
+  // État d'absorption (kind=file) : Relvo a lu (✦) ou écarté le document.
+  absorptionStatus AbsorptionStatus @default(read) @map("absorption_status")
   aiLabel         String?       @map("ai_label")
   aiSummary       String?       @map("ai_summary") @db.Text
   // kind = note
