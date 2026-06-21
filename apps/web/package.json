@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "pnpm --filter @relvo/db migrate:deploy && next build",
+    "vercel-build": "pnpm --filter @relvo/db migrate:deploy && pnpm --filter @relvo/db seed:ensure && next build",
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit"

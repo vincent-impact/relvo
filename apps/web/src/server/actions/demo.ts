@@ -1,0 +1,25 @@
+"use server";
+
+import { DEMO_EMAIL, seedDemoAccount } from "@relvo/db";
+import { revalidatePath } from "next/cache";
+import { requireAccount } from "@/server/auth-context";
+
+// Reset du compte de démonstration (même effet que `pnpm db:seed`) — pour les
+// béta-testeurs qui veulent repartir de données neuves. Réservé au compte démo :
+// le seed ne touche QUE ce compte (par id/email), et on refuse l'appel pour tout
+// autre compte par sécurité.
+
+export async function resetDemoAction(): Promise<
+  { ok: true } | { ok: false; message: string }
+> {
+  const account = await requireAccount();
+  if (account.email !== DEMO_EMAIL) {
+    return {
+      ok: false,
+      message: "Réinitialisation réservée au compte de démonstration.",
+    };
+  }
+  await seedDemoAccount();
+  revalidatePath("/", "layout"); // rafraîchit toutes les vues sur données neuves
+  return { ok: true };
+}
