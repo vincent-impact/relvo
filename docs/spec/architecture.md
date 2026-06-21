@@ -55,7 +55,7 @@ Le traitement (compréhension, classement, rattachement Subject/Contact, génér
 
 | Domaine | Choix |
 |---|---|
-| App / Front | **Next.js** App Router (fullstack), React Server Components par défaut, `"use client"` ciblé |
+| App / Front | **Next.js** App Router (fullstack), **mobile-first**, React Server Components par défaut, `"use client"` ciblé ; livré en **PWA installable** (manifest + service worker, `display: standalone`) — cf. ci-dessous |
 | UI | **Shadcn UI** + **Tailwind**, thème navy (#0A1128) / blue (#2B6FE0) / red (#E63150) issu de la maquette |
 | API | **Route Handlers** (`/api/*`) + **Server Actions** |
 | Base de données | **PostgreSQL** (Neon, via le Marketplace Vercel) + **Prisma** |
@@ -71,6 +71,16 @@ Le traitement (compréhension, classement, rattachement Subject/Contact, génér
 | Temps réel | **Polling 30 s** en V1 (WebSocket = V2) |
 | Observabilité | **Sentry** (web + worker), **Vercel Analytics**, logs Railway, dashboard coûts via AI Gateway |
 | Hébergement | `apps/web` → **Vercel** (Root Directory = `apps/web`) · `apps/worker` → **Railway/Render** |
+
+### Cible mobile : PWA en V1, Expo en réserve (décision 2026-06-18)
+
+Le produit vise une **application mobile** (utilisateurs food/bâtiment qui vivent sur smartphone, toujours sur WhatsApp). Décision : **PWA** en V1, pas de natif.
+
+- **Pourquoi PWA** : « mobile-first » est une affaire d'UI/CSS, pas de framework. Une PWA **installée** (`display: standalone`) tourne plein écran, sans chrome de navigateur — rendu quasi-natif (safe-areas gérées via `env(safe-area-inset-*)`, barres edge-to-edge, `backdrop-filter` disponible). **Zéro réécriture** : tout le Next.js (SSR, Server Actions, Route Handlers) est réutilisé ; distribution par **simple lien** (WhatsApp).
+- **Seule vraie faiblesse** : la **friction d'installation iOS** (pas d'invite automatique — geste manuel *Partager → « Sur l'écran d'accueil »* ; sur Chrome iOS, via *« Plus »*). Atténuée par un guide d'installation et l'accompagnement des premiers utilisateurs.
+- **Issue de secours V2 — Expo / Capacitor** : si la présence **stores**, un **push iOS infaillible** ou la friction d'install deviennent bloquants, on emballe le frontend dans une coque native. Le **backend ne bouge pas** (worker, auth, DB, chatbot restent serveur) — c'est purement une question de coque frontend. Capacitor réutilise le code web ; Expo/React Native impliquerait une 2ᵉ codebase UI.
+
+La maquette mobile-first de référence vit dans `mockup/mobile/` (PWA installable déjà câblée : `manifest.webmanifest`, `sw.js`, `pwa.js`).
 
 ## 5. Choix techniques arbitrés
 

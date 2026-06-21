@@ -163,80 +163,29 @@ Trace ce qui s'est passé.
 
 ## 9. Cycle de vie d'un sujet
 
-### 1. `new`
+Un Sujet est **un fil de conversation entre deux ou plusieurs personnes autour d'un objet précis**. Son état se lit sur **deux axes distincts** qu'il ne faut surtout pas mélanger — c'est la correction d'un modèle antérieur qui les confondait (un sujet pouvait être à la fois `to_do` *et* `unread`, ce qui ne tient pas).
 
-Le sujet est fraîchement créé.
+### Axe 1 — Le cycle de vie (`status`) : 4 états exclusifs qui s'enchaînent
 
-- L'utilisateur crée lui-même un nouveau sujet.
-- L'IA reçoit un nouveau message, crée un sujet, mais n'identifie aucune tâche à faire. Le sujet reste en `new` en attente que l'utilisateur le consulte.
+- **`new` — Nouveau** : sujet fraîchement créé (par l'IA à la réception d'un message compris, ou par l'utilisateur), **jamais ouvert**. Seul état actif à porter un badge visible. *Si l'IA ne comprend pas un message, elle ne crée pas de sujet : il reste « Sans sujet » dans Messages.*
+- **`acknowledged` — Lu** : l'utilisateur a ouvert la fiche au moins une fois. C'est l'**état actif par défaut, et il est invisible** (aucun badge) : un marqueur porté par ~90 % des sujets n'informe pas. On lit « actif » par l'**absence** de badge de statut.
+- **`resolved` — Terminé** : l'utilisateur a clos le sujet via l'action **« Terminer »**.
+- **`archived` — Archivé** : état **système**, posé automatiquement après une inactivité prolongée d'un sujet terminé. Conservé pour l'historique, hors du flux actif. **Pas de bouton « Archiver »** côté utilisateur.
 
-Note : si l'IA ne parvient pas à comprendre un message (sens ambigu, contact inconnu, contexte insuffisant), elle ne crée pas de sujet. Le message reste "Sans sujet" dans la page Messages, en attente d'une intervention humaine.
+Enchaînement : `new →(ouverture)→ acknowledged →(« Terminer »)→ resolved →(inactivité, système)→ archived`. Un sujet `resolved` qui reçoit un nouveau message **redevient `acknowledged`** (il avait déjà été lu) et ré-affiche ses marqueurs.
 
-### 2. `to_do`
+### Axe 2 — Les marqueurs d'état : cumulables, indépendants du statut
 
-Le sujet est compris, et il existe des choses à faire.
+Ce que l'ancien modèle appelait `to_do`, `waiting`, `unread` n'étaient pas des étapes de vie mais des **états instantanés** qui peuvent coexister. Ils deviennent des **marqueurs**, plusieurs à la fois sur une même carte :
 
-C'est le statut central du produit.
+- **Urgent** — drapeau rouge, levé uniquement si `priority = critical` (la rareté est le signal).
+- **À faire** — il reste au moins une tâche ouverte (dérivé des `Task`).
+- **En attente** — on attend un retour d'un tiers ; flag `waiting_for_reply` posé par Relvo.
+- **Non-lus** — pastille compteur (façon WhatsApp) des messages pas encore lus.
 
-Le sujet passe en `to_do` lorsque :
+Exemple qui prouve la séparation : un sujet **Lu** (statut) peut afficher en même temps 🔴 Urgent + « À faire » + une pastille « 2 » — impossible à représenter dans l'ancien enum exclusif.
 
-- l'IA ou l'utilisateur a identifié une ou plusieurs tâches
-- le dossier est actionnable
-- il reste du travail à réaliser
-
-Exemples :
-
-- confirmer ou non un remplacement produit
-- répondre à un fournisseur
-- préparer une réponse officielle à une demande RH
-
-Le sujet reste en `to_do` tant qu'il reste des tâches utiles à mener et qu'on n'est pas dans une logique d'attente dominante.
-
-### 3. `waiting`
-
-Le sujet est en attente d'un retour externe ou interne important.
-
-Ce statut s'applique quand :
-
-- une réponse a été envoyée
-- une demande a été formulée
-- l'avancement dépend désormais d'un tiers
-
-Exemple : on a répondu au fournisseur, et on attend sa confirmation.
-
-Même s'il reste encore quelques tâches secondaires ouvertes, le sujet peut passer en `waiting` si l'état dominant est l'attente.
-
-### 4. `unread`
-
-Le sujet en état `waiting` reçoit un nouveau message qui n'implique aucune nouvelle action (ce sont souvent des messages de validation ou de confirmation). Pour inciter l'utilisateur à fermer le sujet manuellement, on place le sujet en `unread` si aucune nouvelle action n'est suggérée.
-
-### 5. `resolved`
-
-Le sujet est traité.
-
-Cela signifie que :
-
-- la situation a été gérée
-- les principales tâches ont été faites
-- il n'y a plus de travail significatif à mener
-- le dossier est stabilisé
-
-### 6. `archived`
-
-Le sujet est clos et rangé.
-
-C'est le statut final d'un sujet déjà résolu, que l'on conserve pour l'historique mais qui ne fait plus partie du flux actif.
-
-### Lecture simple du cycle de vie
-
-- **new** → un nouveau sujet naît
-- **to_do** → il y a des tâches à faire
-- **waiting** → on attend un retour (qu'il s'agisse d'une réponse, d'une livraison, d'une décision tierce…)
-- **unread** → un message est arrivé, pas d'action requise
-- **resolved** → c'est traité
-- **archived** → c'est rangé
-
-> **Note historique**. Un statut `blocked` figurait dans une version antérieure du modèle pour signaler les sujets « impossibles à avancer ». Il a été retiré : il n'incite pas à l'action, et tous les cas d'usage qu'il couvrait (pas de pièces, pas de réponse, pas de solution) se réduisent en réalité à une attente externe — donc à `waiting`. Cf. CLAUDE.md §7.
+> **Note historique**. Les statuts `blocked` (« impossible à avancer »), puis `to_do` / `waiting` / `unread`, ont été retirés du cycle de vie : le premier se réduisait à une attente externe, les autres sont en réalité des marqueurs cumulables, pas des étapes exclusives. Cf. CLAUDE.md §7.
 
 Et en amont du cycle : un message que Relvo n'a pas su traiter reste **"Sans sujet"** dans la page Messages, en attente de tri par l'utilisateur. Un indice de tri (`triage_hint` — cf. `04-ia.md §1.1bis`) explique pourquoi : trop court, intention floue, prospection, expéditeur inconnu, sans action, autre.
 
@@ -303,6 +252,8 @@ Relvo ne lit pas que les messages entrants. Il s'appuie aussi sur une **base de 
 
 Côté UI, cette base de connaissances **n'a pas sa propre page**. Elle vit à l'intérieur des **Dossiers** (entité technique `Folder`, cf. `02-modele-donnees.md §2`), aux côtés des Sujets du même périmètre. Un Dossier (Fournisseurs, RH, Juridique…) contient ainsi à la fois les affaires en cours et la connaissance qui sert à les traiter.
 
+**Nommage UI — « Mémoire » (icône cerveau).** L'entrée de navigation ne s'appelle plus « Mes dossiers » mais **« Mémoire »** : « Dossiers » évoque la bureautique Microsoft/Google, alors que « Mémoire » dit *agent*. L'utilisateur comprend qu'il **enrichit la mémoire de son assistant** — comme si Relvo absorbait la connaissance. Chaque Dossier est présenté comme **« un domaine de la mémoire de Relvo »**, structuré en **3 onglets** : **Instructions** (les notes — consignes que Relvo applique), **Documents** (les fichiers — PDF/images que Relvo lit), **Sujets** (l'historique d'activité). La page reste courte quel que soit le volume : on **interroge** la mémoire via le composer Relvo plutôt que de scroller une liste infinie (scroll infini pour parcourir).
+
 ### Pourquoi un Dossier unifié
 
 Le mental modèle est celui d'un **classeur physique** : tu ouvres ton dossier « Fournisseurs », tu y trouves les affaires en cours (ces Sujets ouverts avec Karim, avec PackPlus…) et les documents de référence (le contrat-type, la procédure de validation des devis, ta note sur les marottes de chacun). C'est l'unité de classement métier la plus intuitive pour des utilisateurs non rompus aux SaaS — un Dossier, c'est concret.
@@ -319,8 +270,8 @@ Côté UI, sa fiche affiche un en-tête explicite (« Connaissances transversale
 
 Les `KnowledgeDocument` se déclinent en deux formes complémentaires, identifiées par le champ `kind` :
 
-- **Fichiers (`kind = file`)** — PDFs, images, documents uploadés. Sources de référence figées : organigrammes, factures-types, devis-types, contrats fournisseurs, charte tarifaire. **Non modifiables** dans l'application (suppression seule). En V1, l'utilisateur peut **glisser-déposer** un PDF directement dans la fiche d'un Dossier pour l'ajouter.
-- **Notes (`kind = note`)** — texte Markdown rédigé directement dans l'app. **Mémoire vivante** que l'utilisateur écrit et fait évoluer dans le temps : règles internes, ton de réponse, liste des magasins, particularités d'un fournisseur, lessons learned. Exactement le pattern d'un fichier `.md` qu'on ajoute à Claude Code pour enrichir le contexte.
+- **Documents (`kind = file`)** — PDFs, images, documents uploadés (libellé UI : **« Documents »**). Sources de référence figées : organigrammes, factures-types, devis-types, contrats fournisseurs, charte tarifaire. **Non modifiables** dans l'application (suppression seule). En V1, l'utilisateur peut **glisser-déposer** un PDF directement dans la fiche d'un Dossier. Relvo décide de chaque fichier s'il l'**absorbe** (badge « ✦ lu ») ou l'**écarte** (« ignoré » — un transactionnel sans valeur de référence).
+- **Instructions (`kind = note`)** — texte Markdown rédigé directement dans l'app (libellé UI : **« Instructions »** — on n'écrit pas un mémo, on *instruit son agent*). **Mémoire vivante** que l'utilisateur écrit et fait évoluer dans le temps : règles internes, ton de réponse, liste des magasins, particularités d'un fournisseur, lessons learned. Exactement le pattern d'un fichier `.md` qu'on ajoute à Claude Code pour enrichir le contexte.
 
 La distinction des deux formes est importante : les fichiers sont des **références** auxquelles on se fie, les notes sont une **mémoire** qu'on façonne. La sensation de contrôle vient des notes — elles donnent à l'utilisateur la maîtrise de ce que Relvo « sait ».
 
@@ -372,7 +323,7 @@ Puisque l'agent est central, ses réponses ne sont pas que du texte : Relvo **re
 
 ### Les vues structurées : des destinations en colonne unique
 
-Les écrans de consultation/traitement (**Mon fil**, **Sujet**, **Dossiers**, **Planning**, **Messages**, **Contacts**) existent toujours — pour la lecture profonde et le travail soutenu — mais deviennent des **destinations**, atteintes via une carte du chat ou via la **navigation par onglets**. Tous sont repensés **mobile-first**, en colonne unique (fini les split-views 2 colonnes, tables 7 colonnes et panneaux droits 340px fixes).
+Les écrans de consultation/traitement (**Mon fil**, **Sujet**, **Mémoire**, **Planning**, **Messages**, **Contacts**) existent toujours — pour la lecture profonde et le travail soutenu — mais deviennent des **destinations**, atteintes via une carte du chat ou via la **navigation par onglets**. Tous sont repensés **mobile-first**, en colonne unique (fini les split-views 2 colonnes, tables 7 colonnes et panneaux droits 340px fixes).
 
 - **Mon fil** reste l'espace de **traitement** : feed de cartes-sujets enrichies, filtres (Priorité par défaut / Chronologique / Résolus), paire ✕/✓ systématique sur chaque carte. C'est l'« inbox structurée par sujets ».
 - La **navigation** se fait par une **barre d'onglets basse** (≤ 4 cibles), pas une sidebar. L'Accueil (brief+chat) en est l'onglet par défaut.

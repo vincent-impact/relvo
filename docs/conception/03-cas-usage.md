@@ -14,7 +14,7 @@ Lorsqu'un message est reçu, le système suit cette logique :
      - déterminer s'il appartient à un sujet existant ou s'il faut en créer un nouveau
 5. si un sujet est identifié ou créé : générer éventuellement des tâches
 6. produire les événements de journal (`EventLog`)
-7. mettre à jour le statut du sujet
+7. mettre à jour le **statut** (cycle de vie) et/ou les **marqueurs** du sujet (cf. `02-modele-donnees.md §6` — les deux axes ne se confondent pas)
 
 **Règle fondamentale** : l'IA ne crée un sujet que si elle a suffisamment compris la situation. En cas de doute, elle ne force pas la création — le message reste "Sans sujet" et c'est l'utilisateur qui tranchera.
 
@@ -39,8 +39,8 @@ Un fournisseur inconnu envoie un email pour signaler un retard de livraison. Le 
 
 ### Résultat possible
 
-- **Cas A1** — Compris, sans tâche identifiable : `Subject.status = new`
-- **Cas A2** — Compris, avec tâches : `Subject.status = to_do`
+- **Cas A1** — Compris, sans tâche identifiable : `Subject.status = new`, aucun marqueur.
+- **Cas A2** — Compris, avec tâches : `Subject.status = new` **+ marqueur « À faire »** (≥ 1 tâche ouverte). Les tâches ne changent pas le statut — « À faire » est un marqueur dérivé.
 
 ## Cas B — Message compris d'un contact connu, sans sujet ouvert pertinent
 
@@ -60,8 +60,8 @@ Un fournisseur connu écrit sur un nouveau problème, distinct de ses échanges 
 
 ### Résultat possible
 
-- `new` (compris sans tâche)
-- `to_do` (compris avec tâches)
+- `new`, sans marqueur (compris sans tâche)
+- `new` **+ marqueur « À faire »** (compris avec tâches)
 
 ## Cas C — Message compris d'un contact connu, rattaché à un sujet existant
 
@@ -88,9 +88,11 @@ Le fournisseur répond dans une conversation déjà engagée sur un sujet ouvert
 
 ### Résultat possible
 
-- **Cas C1** — Le message ouvre de nouvelles tâches : `Subject.status = to_do`
-- **Cas C2** — Le message apporte une réponse attendue : le sujet peut rester `waiting`, repasser en `to_do`, ou passer en `unread` / `resolved` selon le contenu
-- **Cas C3** — Le message est purement informatif, sans action requise : `Subject.status = unread`
+Le `status` (cycle de vie) d'un sujet déjà ouvert reste **`acknowledged`** ; c'est l'affaire des **marqueurs** :
+
+- **Cas C1** — Le message ouvre de nouvelles tâches : marqueur **« À faire »** activé + **pastille de non-lus**. Statut inchangé.
+- **Cas C2** — Le message apporte la réponse attendue : Relvo **lève `waiting_for_reply`** (le badge « En attente » disparaît) + pastille de non-lus ; le sujet peut devenir candidat à « Terminer » (résolution suggérée).
+- **Cas C3** — Le message est purement informatif, sans action requise : **pastille de non-lus** uniquement, aucun changement de statut ni de tâche.
 
 ## Cas D — Message que l'IA ne parvient pas à traiter
 
@@ -145,8 +147,7 @@ Le message informe simplement d'un état, sans demander d'action.
 ### Résultat
 
 - si c'est un nouveau sujet : `Subject.status = new`
-- si c'est un sujet existant en `waiting` : `Subject.status = unread` (nouveau message reçu, pas d'action requise — incite l'utilisateur à consulter et potentiellement résoudre)
-- si c'est un sujet existant dans un autre état : le statut reste inchangé
+- si c'est un sujet existant : le **statut reste inchangé** (`acknowledged`) ; le nouveau message allume la **pastille de non-lus**, et s'il répond à une attente, Relvo lève `waiting_for_reply`
 
 ### Règle
 
@@ -171,11 +172,11 @@ Le fournisseur dit :
 6. tenter d'extraire une date pour chaque tâche (`start_date`, et le cas échéant `start_time`, `end_date`, `end_time` — cf. `04-ia.md §2.5`). Si rien n'est extractible, les champs date restent null.
 7. préparer éventuellement un brouillon de réponse dans le composer
 8. produire les `EventLog`
-9. mettre le sujet en `to_do`
+9. les tâches créées allument le marqueur **« À faire »** (le statut ne change pas)
 
 ### Résultat
 
-- `Subject.status = to_do`
+- `Subject.status` inchangé (`new` si le sujet vient d'être créé) **+ marqueur « À faire »**
 
 ### Point important
 
@@ -231,7 +232,7 @@ L'utilisateur envoie un message, qu'il ait utilisé le brouillon IA ou non.
 - `Task` éventuellement marquée `done`
 - mise à jour possible du statut du sujet
 
-## Cas I — Passage du sujet en `waiting`
+## Cas I — Pose du marqueur « En attente » (`waiting_for_reply`)
 
 ### Exemple
 
@@ -241,17 +242,17 @@ Une réponse a été envoyée au fournisseur, et on attend son retour.
 
 1. un `Message` sortant a été envoyé
 2. la `Task` de réponse est cochée
-3. le système constate que l'état dominant du sujet est désormais l'attente (plus de tâches critiques ouvertes, l'avancement dépend d'un tiers)
-4. le sujet passe en `waiting`
+3. Relvo constate que l'état dominant du sujet est désormais l'attente (plus de tâche critique ouverte, l'avancement dépend d'un tiers)
+4. Relvo pose **`waiting_for_reply = true`** → badge **« En attente »**
 5. produire les `EventLog`
 
 ### Résultat
 
-- `Subject.status = waiting`
+- `Subject.waiting_for_reply = true` (marqueur), `status` **inchangé** (`acknowledged`)
 
 ### Remarque
 
-Même s'il reste quelques tâches secondaires ouvertes, le sujet peut passer en `waiting` si le point dominant est l'attente d'un retour externe.
+« En attente » est un **marqueur**, pas un statut : il peut coexister avec « À faire » s'il reste des tâches secondaires ouvertes. Relvo lève le flag dès qu'un message entrant arrive (cf. Cas J).
 
 ## Cas J — Retour d'un tiers sur un sujet en attente
 
@@ -261,14 +262,14 @@ Le fournisseur répond à la suite d'une demande.
 
 ### Traitement
 
-1. créer le `Message`
-2. rattacher au `Subject` existant (en `waiting`)
-3. relire la situation globale avec le nouveau message
+1. créer le `Message` (allume la **pastille de non-lus**)
+2. rattacher au `Subject` existant (marqueur « En attente » actif)
+3. Relvo **lève `waiting_for_reply`** (un retour est arrivé) et relit la situation globale
 4. selon le contenu :
-   - créer de nouvelles `Task` → `to_do`
-   - constater que le sujet est réglé → `resolved`
-   - constater que le message est informatif sans action requise → `unread`
-   - constater que la situation reste en attente d'une réponse externe → garder `waiting`
+   - de nouvelles `Task` → marqueur **« À faire »**
+   - sujet réglé → Relvo **suggère « Terminer »** (`resolution_suggested_at`) ; la clôture reste humaine
+   - message informatif sans action → **pastille de non-lus** seule
+   - toujours en attente d'un autre tiers → Relvo repose **`waiting_for_reply = true`**
 5. produire les `EventLog`
 
 ## Cas K — Résolution du sujet
@@ -285,28 +286,28 @@ Le sujet peut être considéré comme résolu si :
 ### Traitement
 
 1. constater que le travail utile est terminé
-2. marquer le sujet comme `resolved` (manuellement par l'utilisateur, ou suggéré par l'IA)
+2. l'utilisateur déclenche l'action **« Terminer »** (bouton sur la fiche, ou swipe droite sur la carte) → `status = resolved`. L'IA peut l'avoir **suggérée** mais ne l'applique jamais elle-même.
 3. produire un `EventLog`
 
 ### Résultat
 
-- `Subject.status = resolved`
+- `Subject.status = resolved` (libellé UI : **« Terminé »**)
 
 ### Remarque
 
 L'IA peut suggérer la résolution (visible comme "Résolution suggérée" dans l'interface) mais ne peut pas résoudre un sujet d'elle-même. C'est toujours l'utilisateur qui confirme.
 
-## Cas L — Archivage du sujet
+## Cas L — Archivage du sujet (système)
 
 ### Traitement
 
-1. un sujet déjà résolu est retiré du flux actif
-2. il passe en `archived`
-3. un `EventLog` est produit
+1. un sujet déjà **terminé** (`resolved`) reste sans activité pendant une durée prolongée
+2. le **système** le passe en `archived` automatiquement (il n'y a **pas de bouton « Archiver »** côté utilisateur)
+3. un `EventLog` est produit (`actor = system`)
 
 ### Résultat
 
-- `Subject.status = archived`
+- `Subject.status = archived` (masqué du flux actif, conservé pour l'historique)
 
 ## Cas M — Tri d'un message "Sans sujet" par l'utilisateur
 

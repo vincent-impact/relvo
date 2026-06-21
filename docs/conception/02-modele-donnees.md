@@ -95,7 +95,15 @@ Le Folder est aussi associé aux contacts (via `default_folder_id`) pour facilit
 
 ### Nommage UI
 
-Côté interface utilisateur, le libellé général est **« Mes dossiers »** (entrée de sidebar) ; chaque Folder est appelé **« Dossier »** (singulier) dans les fiches détail. Le terme « Folder » n'est utilisé que dans le modèle de données et la documentation technique. Justification du « Mes » : il signale à l'utilisateur que ces espaces sont à lui (qu'il les crée et les organise), même si Relvo y range automatiquement les sujets et y entretient sa mémoire documentaire — cf. `01-principes.md §12`.
+Côté interface, l'entrée de navigation s'appelle **« Mémoire »** (icône **cerveau**) — et non plus « Mes dossiers ». Justification : « Dossiers » évoque la bureautique (Microsoft/Google) ; **« Mémoire » dit *agent*** — l'utilisateur comprend qu'il y stocke des documents et des instructions pour **enrichir la mémoire de son assistant**, comme si Relvo absorbait la connaissance. Chaque Folder est présenté comme **« un domaine de la mémoire de Relvo »**. Le terme « Folder » n'est utilisé que dans le modèle et la doc technique.
+
+**Page d'un domaine — 3 onglets** (la page reste courte quel que soit le volume : on interroge la mémoire via le composer Relvo, on ne scrolle pas une liste infinie ; scroll infini pour parcourir) :
+
+- **Instructions** — les `KnowledgeDocument` de `kind = note` (consignes que Relvo *applique*). « Instructions » remplace « Note » côté UI : on n'écrit pas un mémo, on **instruit son agent**.
+- **Documents** — les `KnowledgeDocument` de `kind = file` (PDF/images que Relvo *lit*). « Documents » remplace « Fichiers ».
+- **Sujets** — les `Subject` rattachés à ce domaine (historique d'activité, en second rang : le trésor du domaine, c'est la connaissance).
+
+Une carte « mémoire » en tête (à la voix de Relvo : *« Ce que je sais sur ce domaine »*) matérialise le cadrage. L'ajout se fait en tête de liste (zone de dépôt pour les Documents, bouton « + Instruction »). Cf. `01-principes.md §12`.
 
 ## 3. Contact
 
@@ -207,8 +215,9 @@ Entité centrale du produit.
 - `summary: text nullable`
 - `folder_id: UUID nullable` — null si Relvo n'a pas su classer (le Sujet apparaît avec un badge « sans dossier » dans Mon fil et invite l'utilisateur à le ranger) ; jamais égal à l'ID du Folder Général (cf. §2 — invariant documentaire)
 - `contact_ids: UUID[] default []`
-- `status: enum(new, to_do, waiting, unread, resolved, archived)`
-- `priority: enum(low, medium, high, critical)`
+- `status: enum(new, acknowledged, resolved, archived)` — **cycle de vie** exclusif et séquentiel (cf. Mapping UI)
+- `priority: enum(low, high, critical)`
+- `waiting_for_reply: boolean default false` — marqueur **« En attente »** posé par Relvo (cf. Mapping UI)
 - `source_channel_id: UUID nullable`
 - `opened_at: datetime`
 - `resolved_at: datetime nullable`
@@ -236,7 +245,7 @@ Un sujet rassemble :
 
 Si l'IA ne comprend pas un message (sens ambigu, contact inconnu, contexte insuffisant), elle ne crée pas de sujet. Le message reste "Sans sujet" (`subject_id = null` sur le Message) en attente d'une intervention humaine dans la page Messages.
 
-Un sujet n'est créé que si l'IA a suffisamment compris la situation pour l'identifier. Il démarre alors en `new` (pas de tâche identifiée) ou directement en `to_do` (tâches identifiées).
+Un sujet n'est créé que si l'IA a suffisamment compris la situation pour l'identifier. Il démarre alors en `new` (statut « Nouveau » — jamais ouvert). Les tâches éventuellement identifiées **ne changent pas le statut** : elles allument le marqueur dérivé **« À faire »** (cf. Mapping UI). C'est l'ouverture de la fiche par l'utilisateur qui fait passer le sujet de `new` à `acknowledged`.
 
 Un sujet peut impliquer un ou plusieurs contacts. Le tableau `contact_ids` porte cette relation directement, sans table de liaison.
 
@@ -246,24 +255,42 @@ Un sujet peut impliquer un ou plusieurs contacts. Le tableau `contact_ids` porte
 
 ### Mapping UI
 
-L'interface V1 applique **deux logiques opposées** selon la dimension :
+Un Sujet est, par nature, **un fil de conversation entre deux ou plusieurs personnes autour d'un objet précis**. Son affichage repose sur **deux axes orthogonaux** qu'il ne faut pas confondre — c'est la correction majeure du modèle de statut (l'ancien enum à 6 valeurs mélangeait les deux et se contredisait : un sujet pouvait être à la fois `to_do` *et* `unread`).
 
-- **Statut UI — fidélité aux 6 valeurs**. Un badge coloré dédié pour chacune des 6 valeurs (`nouveau` violet, `à faire` bleu, `en attente` gris, `non lu` vert, `résolu` teal, `archivé` neutre). Justification : par défaut quasi tous les sujets visibles sont « ouverts », un badge binaire Ouvert/Fermé n'apporterait rien — c'est la nuance entre `to_do`, `waiting`, `unread` qui aide à trier rapidement. Note : les sujets dans les états `new` et `unread` adoptent en plus un visuel **bold + fond gris** (pattern aligné sur les conversations non lues), et les `unread` portent une **cloche notification** matérialisant « il y a un événement à voir ». Le statut `blocked` du modèle initial a été retiré (cf. CLAUDE.md §7).
+**Axe 1 — Cycle de vie (`status`, exclusif, séquentiel).** Quatre valeurs qui s'enchaînent, jamais cumulables :
 
-- **Priorité UI — binaire urgent / commun**. Un seul **drapeau « urgent »** (rouge) levé uniquement quand `priority = critical` côté modèle. Les niveaux `high`, `medium`, `low` ne sont **pas exposés** à l'utilisateur — ils restent un signal interne pour Relvo. Marque-page latéral 4 px rouge sur les cartes urgentes uniquement. Justification inverse de celle des statuts : la **rareté** du drapeau est son signal. Si l'urgence est partout, elle devient du bruit visuel et perd son poids ; si elle reste l'exception (typiquement 1-2 sujets sur 24 ouverts), elle attire immédiatement l'œil quand elle apparaît.
+| `status` | Libellé UI | Visible ? |
+|---|---|---|
+| `new` | **Nouveau** | oui (badge bleu) — sujet créé par Relvo, jamais ouvert |
+| `acknowledged` | *(Lu)* | **non** — état actif par défaut, aucun badge |
+| `resolved` | **Terminé** | oui (onglet Terminés + coche) |
+| `archived` | *(Archivé)* | **non** — état **système** (auto après inactivité prolongée), masqué |
 
-Le modèle conserve les 4 valeurs de `priority` (Relvo en a besoin pour calibrer ses suggestions et déclencher les notifications), mais l'UI n'en projette que la binaire.
+Transitions : `new →(ouverture de la fiche)→ acknowledged →(action « Terminer »)→ resolved →(inactivité, système)→ archived`. Un swipe « Terminer » depuis `new` est possible. **Réouverture** : un message entrant sur un sujet `resolved` le ramène à `acknowledged` (il avait déjà été lu) et fait réapparaître ses marqueurs (pastille non-lus, éventuel drapeau si Relvo le re-priorise). Le principe directeur : **« Lu » est invisible** — un badge porté par 90 % des sujets actifs n'informe pas ; on lit le statut par soustraction (absence de badge = sujet actif).
+
+**Axe 2 — Marqueurs d'état (cumulables, dérivés ou flags).** Orthogonaux au cycle de vie, plusieurs peuvent coexister sur une même carte :
+
+| Marqueur | Source | Rendu |
+|---|---|---|
+| **Urgent** | `priority = critical` | drapeau 🔴 (icône seule, pas de texte) |
+| **À faire** | dérivé : ≥ 1 `Task` non terminée | badge ambre + icône tâche |
+| **En attente** | `waiting_for_reply = true`, **posé par Relvo** | badge gris + icône sablier |
+| **Non-lus** | compteur de messages non lus | pastille bleue ronde façon WhatsApp, en coin de carte |
+
+`to_do`, `waiting` et `unread` ne sont **plus des statuts stockés** — ils deviennent ces marqueurs (dérivé pour À faire, flag Relvo pour En attente, compteur pour les non-lus). Budget visuel mobile : plafond ~3 marqueurs par carte, ordre `[🔴] [pastille] · titre · [À faire] [En attente]`.
+
+**Priorité UI — un seul drapeau (rareté = signal).** Le modèle conserve `priority` à **3 valeurs** (`critical`, `high`, `low` — `medium` retiré). Mais un **seul drapeau « Urgent » rouge** est exposé, levé **uniquement** quand `priority = critical`. `high` et `low` n'ont aucun drapeau : `high` reste un signal interne (il fait entrer le sujet dans le feed prioritaire sans crier visuellement). Justification : si l'urgence est partout, elle devient du bruit ; rare (1-2 sujets sur 24 ouverts), elle attire l'œil.
 
 ### Feed prioritaire et action « Ignorer »
 
-Le **feed prioritaire** affiché sur l'Accueil sélectionne les sujets tels que `priority IN (critical, high)` — c'est-à-dire les sujets que Relvo juge dignes d'attention immédiate, sans nécessairement être marqués urgent (rare). Les sujets `medium` et `low` n'apparaissent jamais dans le feed prioritaire ; ils ne sont accessibles que via la vue chronologique (« par ordre du jour »).
+Le **feed prioritaire** (onglet « Priorité » de Mon fil, et widget de l'Accueil) sélectionne les sujets tels que `priority IN (critical, high)` — ceux que Relvo juge dignes d'attention immédiate. Les sujets `low` n'y apparaissent jamais ; ils vivent dans l'onglet « Ouverts ».
 
-Toute carte du feed expose deux icônes systématiques à droite des éventuels boutons d'action contextuels (voir CLAUDE.md §31) :
+Deux actions structurent le tri, exposées **en gestes de swipe** sur mobile (et en boutons sur la fiche / les cartes urgentes) :
 
-- **✕ Ignorer** (à gauche, hover rouge) — rétrograde la priorité d'un cran : `critical → high → medium → low`. Le sujet sort du feed prioritaire dès qu'il atteint `medium`, mais reste visible dans l'ordre chronologique. Aucune perte d'information : c'est une **dépriorisation**, pas une suppression.
-- **✓ Marquer comme résolu** (à droite, hover vert) — passe le statut à `resolved`. Variante violette `is-relvo` quand `resolution_suggested_at > last_opened_at`, pour signaler que Relvo lui-même propose la clôture.
+- **Ignorer** (swipe gauche, rouge, icône œil fermé) — passe la priorité directement à **`low`** (depuis `critical` ou `high`). Le drapeau tombe, le sujet quitte le feed prioritaire et bascule dans « Ouverts ». Aucune perte d'information : c'est une **dépriorisation**, pas une suppression. Le sujet pourra **redevenir prioritaire** si un nouveau message arrive et que Relvo le re-priorise. Disponible uniquement sur `critical` et `high` (un sujet `low` n'a rien à rétrograder → swipe gauche désactivé). Event log : `EventLog.event_type = priority_changed`, `metadata.source = "ignore"`, `metadata.to = "low"`.
+- **Terminer** (swipe droite, vert, icône coche) — passe le `status` à `resolved`. Disponible sur tous les sujets. C'est l'action de clôture ; **« Terminer » remplace « Résoudre »** (vocabulaire trop éloigné des utilisateurs food/bâtiment), libellé de l'état résolu = **« Terminé »**.
 
-Symétrie : le bouton ✕ est toujours présent (n'apparaît pas seulement sur les sujets en passe d'être terminés). L'utilisateur peut donc **toujours** rétrograder un sujet d'un clic, sans avoir à ouvrir sa fiche. Côté event log : `EventLog.kind = priority_changed` avec `metadata.delta = -1` et `metadata.source = "feed_ignore"`.
+**Pas de bouton « Archiver »** côté utilisateur : `archived` est un état **système** (auto après inactivité prolongée d'un sujet `resolved`). Les trois manières historiques de sortir un sujet du flux (ignorer / résoudre / archiver) sont ramenées à deux gestes clairs : **Ignorer** (déprioriser) et **Terminer** (clore).
 
 ### Distinction `last_activity_at` / `last_opened_at`
 
@@ -274,7 +301,7 @@ Ces deux timestamps portent des informations différentes et ne doivent pas êtr
 
 ### `resolution_suggested_at`
 
-Renseigné par l'IA quand elle estime que le sujet est candidat à la résolution (cf. doc 04-ia §5.5). Si `resolution_suggested_at > last_opened_at`, l'interface affiche le badge **"Résolution suggérée"** dans les listes. Une fois le sujet ouvert, le badge disparaît des listes mais la suggestion reste visible dans la fiche jusqu'à ce que l'utilisateur résolve, archive ou que l'IA la révoque suite à une nouvelle activité.
+Renseigné par l'IA quand elle estime que le sujet est candidat à la résolution (cf. doc 04-ia §5.5). Si `resolution_suggested_at > last_opened_at`, l'interface affiche le badge **"Résolution suggérée"** dans les listes. Une fois le sujet ouvert, le badge disparaît des listes mais la suggestion reste visible dans la fiche jusqu'à ce que l'utilisateur **termine** le sujet ou que l'IA la révoque suite à une nouvelle activité.
 
 ### Cycle de vie des suggestions IA — vue modèle
 
@@ -547,7 +574,7 @@ Document de référence chargé par l'utilisateur pour enrichir le contexte de R
 - `id: UUID`
 - `account_id: UUID`
 - `folder_id: UUID` — le Folder dans lequel vit ce document (toujours renseigné — un doc vit toujours dans un Folder, à défaut dans le Folder « Général » auto-créé)
-- `kind: enum(file, note)` — nature du document
+- `kind: enum(file, note)` — nature du document. **Libellés UI** : `note` → **« Instructions »**, `file` → **« Documents »** (cf. §2 — Nommage UI)
 - `name: string` — titre éditorial pour une note, nom de fichier pour un file
 - `description: text nullable` — courte description saisie par l'utilisateur (optionnelle)
 
@@ -559,6 +586,7 @@ Document de référence chargé par l'utilisateur pour enrichir le contexte de R
 - `anthropic_file_id: string nullable` — identifiant retourné par la Files API d'Anthropic, utilisé pour référencer le fichier dans les prompts sans le re-uploader
 - `ai_label: string nullable` — étiquette automatique (organigramme, facture, devis, contrat-type, procédure, autre) générée à la réception (Haiku)
 - `ai_summary: text nullable` — résumé court généré au premier accès (Sonnet), mis en cache
+- `absorption_status: enum(read, ignored) default read` — état d'absorption dans la mémoire de Relvo. `read` : le document est intégré au contexte (badge UI **« ✦ lu »**). `ignored` : Relvo l'écarte des connaissances de référence (typiquement un transactionnel — bon de livraison, accusé) et **ne l'injecte pas** dans les prompts (badge UI **« ignoré »**). Décidé par Relvo, modifiable par l'utilisateur.
 
 **Champs spécifiques `kind = note`** (note Markdown rédigée par l'utilisateur — modifiable, mémoire vivante) :
 
@@ -606,7 +634,7 @@ Le scope `subject` n'existe pas en V1 — un document spécifique à un sujet po
 - Travail **sur un sujet** (création de tâche, brouillon, statut) → documents du `folder_id` du Sujet + documents du Folder « Général » (`is_default = true`)
 - Travail **transversal** (chatbot, brief de l'Accueil) → documents du Folder « Général » uniquement, plus ce qui colle si Relvo identifie un Folder à partir du contexte ou de la question
 
-Les documents sont assemblés dans le system prompt et mis en **prompt cache** (cf. `04-ia.md §10` pour la stratégie complète).
+Dans tous les cas, seuls les documents `absorption_status = read` sont injectés — les `ignored` sont exclus du retrieval. Les documents retenus sont assemblés dans le system prompt et mis en **prompt cache** (cf. `04-ia.md §10` pour la stratégie complète).
 
 ### Citations
 

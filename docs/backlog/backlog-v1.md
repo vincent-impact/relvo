@@ -15,6 +15,13 @@
 | **M3** — Modèle de données & accès CRUD | ✅ **fait** | Couche domaine partagée `packages/db/src/domain/` (tenant-aware, fonctions pures réutilisables par le worker M7), conventions (Zod, DomainError, pagination curseur, `logEvent`), 8 domaines CRUD + agrégations (KPIs/feed/sans-sujet), Server Actions web (wrappers `ActionResult`), seeds Tasty Crousty, 7 tests d'invariants vitest (base `relvo_test`). Détail inline en §4. |
 | M4 → M14 | ⬜ à faire | **M9 (pages front) = prochaine étape** — reproduire la maquette en React/Next, cliquable, branchée sur les données du seed Tasty Crousty (jalon démo intermédiaire, cf. §5). M4 ensuite. |
 
+> **⚠️ Migration de schéma requise avant/avec M9** — refonte UX mobile-first (2026-06-18). Le modèle de conception a évolué ([`02-modele-donnees.md`](../conception/02-modele-donnees.md)) ; à répercuter dans `packages/db/prisma/schema.prisma` :
+> - `Status` : `enum(new, to_do, waiting, unread, resolved, archived)` → **`enum(new, acknowledged, resolved, archived)`** (cycle de vie exclusif ; `to_do`/`waiting`/`unread` deviennent des marqueurs, pas des statuts).
+> - `Priority` : `enum(low, medium, high, critical)` → **`enum(low, high, critical)`** (`medium` retiré).
+> - `Subject` : + **`waiting_for_reply Boolean @default(false)`** (marqueur « En attente » posé par Relvo).
+> - `KnowledgeDocument` : + **`absorption_status enum(read, ignored) @default(read)`** (Relvo absorbe ✦ ou écarte un `file`).
+> - Renommages **UI seulement** (aucune migration) : nav **« Mémoire »** (ex-Dossiers, icône cerveau), onglets **« Instructions »** (`kind=note`) / **« Documents »** (`kind=file`), action **« Terminer »** (ex-Résoudre). Cible mobile = **PWA** (cf. [`architecture.md §4`](../spec/architecture.md)).
+
 ---
 
 ## 1. Résumé du projet

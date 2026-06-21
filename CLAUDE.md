@@ -81,16 +81,16 @@ Routes francophones, alignées sur la nav V1.
 
 | Route | Écran | Nav |
 |---|---|---|
-| `/` | Accueil (🏠) — brief matinal : KPIs + calendrier semaine + 3 sujets prioritaires | Sidebar |
-| `/fil` | Mon fil (✉️) — workspace de traitement : feed + filtres + actions | Sidebar |
-| `/dossiers` · `/dossiers/[id]` | Dossiers (liste + fiche : sujets + connaissances) | Sidebar |
-| `/parametres` | Paramètres (compte, canaux, contacts) | Sidebar |
+| `/` | Accueil (🏠) — brief : KPIs « Vue du jour » + agenda semaine + 2-3 sujets prioritaires | Onglet |
+| `/fil` | Mon fil (✉️) — traitement : feed + onglets Priorité/Ouverts/Terminés + swipe | Onglet |
+| `/dossiers` · `/dossiers/[id]` | **Mémoire** (🧠) — liste des domaines + fiche : onglets Instructions/Documents/Sujets | Onglet |
+| `/parametres` | Paramètres (compte, canaux, contacts) | Onglet |
 | `/sujets/[id]` | Détail d'un sujet | Fiche détail |
 | `/planning` | Calendrier vue mois | Hors-nav (lien depuis le widget semaine de l'Accueil) |
 | `/messages` | Messages bruts par contact (filtres non-lus / sans sujet) | Hors-nav (lien depuis le feed-strip de Mon fil) |
 | `/contacts` · `/contacts/[id]` | Annuaire + fiche contact | Hors-nav (recherche topbar, clic sur un nom) |
 
-Sidebar = **4 entrées** (Accueil, Mon fil, Mes dossiers, Paramètres). Le **drawer chatbot 🤖** est un bouton flottant présent sur **toutes les pages**, rendu dans `app/layout.tsx`. Icône **maison** pour l'Accueil ; le **robot** est réservé au drawer (rôles visuels distincts).
+**Navigation = barre d'onglets en bas** (mobile-first), **4 entrées** : Accueil 🏠, Mon fil ✉️, **Mémoire 🧠**, Paramètres. La conversation Relvo est une **surface plein écran** (plus un drawer latéral), atteinte via le **composer Relvo persistant** présent sur toutes les pages. Le virage mobile-first et la PWA sont détaillés dans `docs/spec/ux-mobile-first.md` ; cf. `01-principes.md §13`.
 
 ## Invariants produit à respecter
 
@@ -105,8 +105,8 @@ Sidebar = **4 entrées** (Accueil, Mon fil, Mes dossiers, Paramètres). Le **dra
 4. Le **Subject** est l'entité centrale, pas le message. Chaîne : Message → Task → Action → LogEvent.
 5. Pas de statut `to_qualify` : un message incompris ne crée ni sujet ni contact → reste « Sans sujet » avec un `triage_hint`.
 6. Une **tâche** est rattachée au sujet, pas à un utilisateur (affectation = V2). Source visible via actor-pill (`✦ Relvo` / `Moi`).
-7. **Statuts UI fidèles au modèle** (6 valeurs : `new`, `to_do`, `waiting`, `unread`, `resolved`, `archived`), un badge coloré par valeur. Pas de simplification binaire.
-8. **Priorité UI binaire** : un seul drapeau **urgent** (rouge) levé uniquement si `priority = critical`. La **rareté est le signal** (1-2 sujets sur 24). Feed Accueil = `priority IN (critical, high)`. Paire ✕/✓ systématique sur chaque carte (✕ rétrograde la priorité, ✓ résout).
+7. **Statut = cycle de vie à 4 valeurs** (`new`, `acknowledged`, `resolved`, `archived`), exclusif et séquentiel. Seuls **Nouveau** et **Terminé** sont visibles ; `acknowledged` (« Lu ») est l'état actif **invisible** (pas de badge), `archived` est **système** (auto après inactivité). Les états instantanés cumulables sont des **marqueurs** distincts du statut — Urgent (drapeau), À faire (dérivé des tâches ouvertes), En attente (`waiting_for_reply` posé par Relvo), pastille de messages non-lus. Les ex-statuts `to_do`/`waiting`/`unread` sont supprimés (devenus marqueurs).
+8. **Priorité à 3 valeurs** (`critical`, `high`, `low` — `medium` retiré) ; un seul **drapeau urgent** (rouge) levé uniquement si `priority = critical`. La **rareté est le signal** (1-2 sujets sur 24). Feed prioritaire = `priority IN (critical, high)`. Deux actions, en **swipe** sur mobile : **Ignorer** (swipe gauche, rouge — force `priority = low`, dispo sur critical/high) et **Terminer** (swipe droite, vert — `status = resolved`). « **Terminer** » remplace « Résoudre » ; **pas de bouton « Archiver »** (état système).
 9. **Brouillon Relvo dans le composer** (jamais affiché comme un message du fil). Actions « Régénérer » / « Effacer ».
 10. **Acquittement implicite** des suggestions : ouvrir un sujet vaut acquittement (logique sur `last_opened_at`). Pas de bouton « valider ».
 11. **Conversations par contact**, pas par canal (email + WhatsApp d'un même contact = une seule conversation).
@@ -118,19 +118,19 @@ Sidebar = **4 entrées** (Accueil, Mon fil, Mes dossiers, Paramètres). Le **dra
 15. Deux surfaces calendaires : **semaine** (widget Accueil) + **mois** (`/planning`). Code couleur par Dossier. Drag-and-drop.
 
 **Dossiers & connaissances**
-16. `Folder` (modèle) = « Dossier » (UI). Regroupe Sujets (`Subject.folder_id`) **et** Connaissances (`KnowledgeDocument.folder_id`).
+16. `Folder` (modèle) = **« Mémoire »** (nav, icône cerveau) ; chaque Folder = **« un domaine de la mémoire de Relvo »**, fiche en **3 onglets : Instructions / Documents / Sujets**. Regroupe Sujets (`Subject.folder_id`) **et** Connaissances (`KnowledgeDocument.folder_id`).
 17. Folder « **Général** » auto-créé (`is_default`), documentaire transversal, jamais de sujets.
-18. `KnowledgeDocument` : `kind = file` (PDF/image, non modifiable) ou `kind = note` (Markdown éditable). Pas de page « Connaissances » séparée.
-19. Ajout de fichier = drag-and-drop d'un PDF dans la fiche Dossier (Files API Anthropic via `anthropic_file_id`).
-20. V1 : seul l'utilisateur édite les notes ; Relvo les consulte sans les modifier.
+18. `KnowledgeDocument` : `kind = file` (UI **« Documents »**, PDF/image non modifiable) ou `kind = note` (UI **« Instructions »**, Markdown éditable). Un `file` porte un état d'absorption `read` (✦ lu, injecté dans les prompts) / `ignored` (écarté du retrieval), décidé par Relvo. Pas de page « Connaissances » séparée.
+19. Ajout de document = drag-and-drop d'un PDF dans l'onglet Documents (Files API Anthropic via `anthropic_file_id`).
+20. V1 : seul l'utilisateur édite les Instructions ; Relvo les consulte sans les modifier.
 
 **Chatbot Relvo**
-21. Deux modes : **Accueil** = brief structuré (pas un chat) ; **conversation** = drawer accessible partout.
-22. Drawer ~40 % de largeur, bouton flottant 🤖 sur toutes les pages. Pas de page dédiée.
+21. Deux modes : **Accueil** = brief structuré (pas un chat) ; **conversation** = surface **plein écran** accessible partout.
+22. **Conversation plein écran** (mobile-first), ouverte depuis le **composer Relvo persistant** (✦ = historique des conversations, champ = nouvelle conversation, 📷 photo, 🎙 vocal) présent sur toutes les pages. Plus de drawer latéral 40 %.
 23. Conversations chat **éphémères en IndexedDB** (aucune entité serveur en V1). Ce qui persiste = actions + résultats.
 24. Sessions implicites (seuil 5 min). Bouton « + Nouvelle conversation ». Liste des N dernières.
 25. **Action-capable day-one** : chaque opération UI a un tool API correspondant (même fonction métier). Actions rendues en blocs visuels annulables. Le brouillon atterrit dans le composer, jamais envoyé directement.
-26. **Page-aware** : URL + contexte transmis à chaque tour. Chip de contexte en haut du drawer.
+26. **Page-aware** : URL + contexte transmis à chaque tour. Chip de contexte en haut de la conversation.
 27. Stack chatbot : AI SDK + AI Gateway, tool calls natifs (pas de MCP en V1), prompt caching, Files API, citations.
 28. **Empty state** : 3-4 prompts d'exemple contextuels à la page, en gris italique (pas de fausses bulles).
 29. **Pas de RAG vectorielle** : long context + prompt caching pour les Connaissances, tool calls pour les données dynamiques.
