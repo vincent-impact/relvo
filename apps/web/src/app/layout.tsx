@@ -34,6 +34,10 @@ export const metadata: Metadata = {
     title: "Relvo",
     statusBarStyle: "default",
   },
+  // Meta standard (Android/Chrome) — Next n'émet que la variante apple via
+  // appleWebApp ; on ajoute l'équivalent générique pour coller à la maquette et
+  // éviter l'avertissement de dépréciation de Chrome.
+  other: { "mobile-web-app-capable": "yes" },
   icons: {
     icon: "/relvo-icon-192.png",
     apple: "/apple-touch-icon.png",
