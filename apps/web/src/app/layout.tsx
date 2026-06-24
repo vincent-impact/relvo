@@ -32,7 +32,11 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     title: "Relvo",
-    statusBarStyle: "default",
+    // black-translucent : la webview occupe TOUT l'écran (sous la status bar),
+    // le hero violet remonte derrière l'heure (env(safe-area-inset-top) devient
+    // non-nul → RelvoHeader se cale dessous). Un bandeau violet fixe (MobileFrame)
+    // garde l'heure lisible au scroll.
+    statusBarStyle: "black-translucent",
   },
   // Meta standard (Android/Chrome) — Next n'émet que la variante apple via
   // appleWebApp ; on ajoute l'équivalent générique pour coller à la maquette et
@@ -64,6 +68,15 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        {/* Bandeau violet fixe derrière la status bar (standalone iOS, statut
+            black-translucent) : garde l'heure/batterie lisibles partout, y
+            compris quand du contenu blanc scrolle dessous. Hauteur =
+            safe-area-inset-top → 0 hors standalone (invisible en navigateur). */}
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-relvo"
+          style={{ height: "env(safe-area-inset-top)" }}
+        />
         <Providers>
           <NavVisibilityProvider>{children}</NavVisibilityProvider>
         </Providers>
