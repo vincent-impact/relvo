@@ -24,10 +24,13 @@ const THRESHOLD = 80;
 export function SwipeableSubject({
   subjectId,
   canIgnore,
+  rounded = true,
   children,
 }: {
   subjectId: string;
   canIgnore: boolean;
+  /** false : ligne pleine largeur (SubjectRow) sans coins arrondis. */
+  rounded?: boolean;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -136,7 +139,7 @@ export function SwipeableSubject({
         leaving ? "max-h-0 opacity-0" : "max-h-[600px]",
       )}
     >
-      <div className="relative overflow-hidden rounded-xl">
+      <div className={cn("relative overflow-hidden", rounded && "rounded-xl")}>
         {/* Fond Terminer (vert) : révélé en glissant à droite, libellé à gauche. */}
         <div
           className={cn(
@@ -171,7 +174,7 @@ export function SwipeableSubject({
           onPointerUp={onPointerEnd}
           onPointerCancel={onPointerEnd}
           onClick={onClick}
-          className="relative cursor-pointer touch-pan-y bg-white"
+          className="relative flow-root cursor-pointer touch-pan-y bg-white"
         >
           {children}
         </div>

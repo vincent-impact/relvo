@@ -2,15 +2,15 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Camera, History, Mic, Send } from "lucide-react";
+import { Mic, Paperclip, Send, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
-import { AppBar } from "@/components/layout/app-bar";
 import { MobileFrame } from "@/components/layout/mobile-frame";
-import { cn } from "@/lib/utils";
+import { RelvoHeader } from "@/components/layout/relvo-header";
 
-// Coquille de conversation plein écran (M9 / ux-mobile-first §5). Navigable mais
-// SANS IA : le streaming, les tools et le stockage IndexedDB arrivent en M10.
-// Empty-state (orb + prompts cliquables qui pré-remplissent) + composer.
+// Coquille de conversation plein écran (M9 / ux-mobile-first §5), Direction B :
+// hero violet (logo = historique) + empty-state (orb + prompts cliquables qui
+// pré-remplissent) + composer violet « Liquid Glass ». SANS IA : le streaming,
+// les tools et le stockage IndexedDB arrivent en M10.
 
 export function ConversationShell({
   backHref,
@@ -43,27 +43,14 @@ export function ConversationShell({
 
   return (
     <MobileFrame>
-      <AppBar
+      <RelvoHeader
         back={backHref}
-        title={
-          <span className="flex items-center gap-1.5 text-[16px]">
-            <span className="text-relvo">✦</span> Relvo
-          </span>
-        }
+        title="Relvo"
         subtitle="Nouvelle conversation"
-        action={
-          <Link
-            href="/conversations"
-            aria-label="Mes conversations"
-            className="grid size-[38px] flex-none place-items-center rounded-full bg-(--surface) text-(--text-secondary)"
-          >
-            <History className="size-[19px]" strokeWidth={2} />
-          </Link>
-        }
       />
 
       {contextLabel ? (
-        <div className="flex items-center gap-2 border-b border-(--border-light) bg-(--surface) px-4 py-2 text-[12.5px] text-(--text-secondary)">
+        <div className="flex flex-none items-center gap-2 border-b border-(--border-light) px-4 py-2 text-[12.5px] text-(--text-secondary)">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-(--border) bg-white px-2.5 py-1 font-semibold text-(--text-primary)">
             Contexte : {contextLabel}
           </span>
@@ -72,19 +59,21 @@ export function ConversationShell({
             aria-label="Discussion générale"
             className="ml-auto grid size-6 place-items-center rounded-full bg-(--surface-2) text-(--text-tertiary)"
           >
-            ✕
+            <X className="size-3.5" strokeWidth={2.4} />
           </Link>
         </div>
       ) : null}
 
-      <main className="min-h-0 flex-1 overflow-y-auto bg-(--surface) px-[18px] py-6">
+      <main className="min-h-0 flex-1 overflow-y-auto bg-white px-[18px] py-7">
         <div className="mb-5 flex flex-col items-center gap-2.5 text-center">
-          <div className="grid size-[52px] place-items-center rounded-full bg-relvo text-2xl text-white">
-            ✦
+          <div className="grid size-[52px] place-items-center rounded-full bg-relvo text-white shadow-(--shadow-relvo)">
+            <Sparkles className="size-6" fill="currentColor" strokeWidth={0} />
           </div>
-          <h3 className="text-[17px] font-bold">Comment puis-je t'aider ?</h3>
+          <h3 className="font-heading text-[19px] font-extrabold tracking-[-0.3px]">
+            Comment puis-je vous aider ?
+          </h3>
           <p className="text-[13.5px] text-(--text-secondary)">
-            Pose ta question ou demande-moi une action.
+            Posez votre question ou demandez-moi une action.
           </p>
         </div>
         <div className="flex flex-col gap-2.5">
@@ -93,7 +82,7 @@ export function ConversationShell({
               key={p}
               type="button"
               onClick={() => fill(p)}
-              className="rounded-lg border border-dashed border-(--border) px-3 py-2.5 text-left text-sm text-(--text-tertiary) italic"
+              className="rounded-xl border border-dashed border-(--border) px-3.5 py-3 text-left text-[13.5px] text-(--text-tertiary) italic"
             >
               {p}
             </button>
@@ -101,57 +90,59 @@ export function ConversationShell({
         </div>
       </main>
 
-      <div className="flex-none px-3 pt-1.5 text-center text-[11.5px] text-(--text-tertiary)">
-        🎙 <b className="font-semibold text-relvo">Maintiens le micro</b> pour
-        parler, ou écris ci-dessous
-      </div>
       <div
-        className="flex flex-none items-end gap-2.5 border-t border-(--hairline) bg-white px-3 py-2.5"
-        style={{ boxShadow: "var(--shadow-up)" }}
+        className="relative flex flex-none items-center gap-2.5 px-3.5 pt-[11px]"
+        style={{
+          paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
+          background:
+            "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
+          backdropFilter: "blur(28px) saturate(170%)",
+          WebkitBackdropFilter: "blur(28px) saturate(170%)",
+          boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.34)",
+        }}
       >
-        <textarea
-          ref={ref}
-          rows={1}
-          value={value}
-          onChange={(e) => {
-            setValue(e.target.value);
-            autoGrow();
+        <div
+          className="flex min-w-0 flex-1 items-center gap-[7px] rounded-[22px] py-[5px] pr-2 pl-[13px]"
+          style={{
+            background: "rgb(255 255 255 / 0.06)",
+            border: "1px solid rgb(255 255 255 / 0.28)",
+            boxShadow:
+              "inset 0 1px 0 rgb(255 255 255 / 0.3), inset 0 -1px 0 rgb(0 0 0 / 0.04)",
           }}
-          placeholder="Écrire à Relvo…"
-          className="max-h-[120px] min-h-[40px] flex-1 resize-none rounded-[20px] border border-(--border) bg-(--surface) px-3.5 py-2.5 text-sm leading-snug outline-none"
-        />
-        <button
-          type="button"
-          aria-label="Prendre une photo"
-          className={cn(
-            "grid size-[38px] flex-none place-items-center rounded-full border border-(--border) bg-(--surface) text-(--text-secondary)",
-            typing && "hidden",
-          )}
         >
-          <Camera className="size-[18px]" strokeWidth={2} />
-        </button>
+          <button
+            type="button"
+            aria-label="Joindre un fichier"
+            className="grid flex-none place-items-center text-white/85"
+          >
+            <Paperclip className="size-[21px]" strokeWidth={2} />
+          </button>
+          <textarea
+            ref={ref}
+            rows={1}
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              autoGrow();
+            }}
+            placeholder="Écrire à Relvo…"
+            className="max-h-[120px] min-h-[24px] flex-1 resize-none border-none bg-transparent py-1.5 text-[14.5px] leading-snug text-white outline-none placeholder:text-white/70"
+          />
+        </div>
         <button
           type="button"
-          aria-label="Dicter"
-          className={cn(
-            "grid size-[42px] flex-none place-items-center rounded-full bg-relvo text-white shadow-[0_2px_8px_rgba(107,91,214,0.35)]",
-            typing && "hidden",
-          )}
-        >
-          <Mic className="size-5" strokeWidth={2} />
-        </button>
-        <button
-          type="button"
-          aria-label="Envoyer"
+          aria-label={typing ? "Envoyer" : "Dicter"}
           onClick={() =>
-            toast.info("La conversation avec Relvo arrive en M10.")
+            typing && toast.info("La conversation avec Relvo arrive en M10.")
           }
-          className={cn(
-            "grid size-[38px] flex-none place-items-center rounded-full bg-brand text-white",
-            !typing && "hidden",
-          )}
+          className="grid size-[45px] flex-none place-items-center rounded-full bg-white text-relvo active:scale-95"
+          style={{ boxShadow: "0 5px 16px rgb(0 0 0 / 0.22)" }}
         >
-          <Send className="size-[18px]" strokeWidth={2} />
+          {typing ? (
+            <Send className="size-[19px]" strokeWidth={2} />
+          ) : (
+            <Mic className="size-5" strokeWidth={2} />
+          )}
         </button>
       </div>
     </MobileFrame>

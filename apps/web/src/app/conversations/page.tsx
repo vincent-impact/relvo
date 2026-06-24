@@ -1,51 +1,46 @@
 import Link from "next/link";
-import { ChevronLeft, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { MobileFrame } from "@/components/layout/mobile-frame";
+import { RelvoHeader } from "@/components/layout/relvo-header";
 import { requireAccount } from "@/server/auth-context";
 
-// Historique des conversations (coquille M9). Les conversations sont éphémères
-// en IndexedDB côté client (M10) : en V1 on n'affiche que l'entrée « nouvelle
-// conversation » et un empty-state honnête.
+// Historique des conversations (coquille M9, Direction B). Les conversations
+// sont éphémères en IndexedDB côté client (M10) : en V1 on n'affiche que l'entrée
+// « Nouvelle conversation » mise en avant et un empty-state honnête.
 
 export default async function ConversationsPage() {
   await requireAccount();
 
   return (
     <MobileFrame>
-      <header className="flex flex-none items-center gap-2.5 border-b border-(--border-light) bg-white px-4 py-2.5">
-        <Link
-          href="/"
-          aria-label="Retour"
-          className="-ml-1 grid size-8 flex-none place-items-center text-(--text-secondary)"
-        >
-          <ChevronLeft className="size-6" />
-        </Link>
-        <div className="text-[18px] font-bold tracking-[-0.2px]">
-          Mes conversations
+      <main className="min-h-0 flex-1 overflow-y-auto bg-white">
+        <RelvoHeader back="/" title="Mes conversations" />
+
+        <div className="px-4 pt-5">
+          <Link
+            href="/conversation"
+            className="flex items-center gap-3 rounded-2xl border border-(--purple-100) bg-relvo-bg px-3.5 py-3.5"
+          >
+            <span className="grid size-9 flex-none place-items-center rounded-full bg-relvo text-white">
+              <Plus className="size-[18px]" strokeWidth={2.5} />
+            </span>
+            <span>
+              <span className="block text-[14.5px] font-bold text-brand-dark">
+                Nouvelle conversation
+              </span>
+              <span className="block text-[12px] text-relvo">
+                Demander à Relvo…
+              </span>
+            </span>
+          </Link>
+
+          <div className="mt-7 mb-2 px-1 text-[12px] font-bold tracking-[0.5px] text-(--text-tertiary) uppercase">
+            Récentes
+          </div>
+          <p className="px-1 text-[13.5px] text-(--text-tertiary)">
+            Vos conversations récentes apparaîtront ici.
+          </p>
         </div>
-      </header>
-
-      <main className="min-h-0 flex-1 overflow-y-auto bg-(--surface) px-4 py-4">
-        <Link
-          href="/conversation"
-          className="flex items-center gap-2.5 rounded-xl border border-(--purple-100) bg-relvo-bg px-3.5 py-3"
-        >
-          <span className="grid size-8 flex-none place-items-center rounded-full bg-relvo text-lg text-white">
-            <Plus className="size-4" strokeWidth={2.5} />
-          </span>
-          <span>
-            <span className="block text-[14.5px] font-bold text-brand-dark">
-              Nouvelle conversation
-            </span>
-            <span className="block text-[12px] text-relvo">
-              Demander à Relvo…
-            </span>
-          </span>
-        </Link>
-
-        <p className="mt-8 text-center text-[13.5px] text-(--text-tertiary)">
-          Tes conversations récentes apparaîtront ici.
-        </p>
       </main>
     </MobileFrame>
   );

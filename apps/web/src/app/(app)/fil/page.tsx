@@ -1,73 +1,63 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Inbox, Plus, Search } from "lucide-react";
 import {
   type EnrichedSubject,
+  countOrphanMessages,
   enrichSubjects,
-  getPriorityFeed,
+  getOpenFeed,
 } from "@relvo/db";
-import { AppBar, PageBody } from "@/components/layout/app-bar";
 import { FeedTabs } from "@/components/feed/feed-tabs";
+import { IgnoredSubject } from "@/components/feed/ignored-subject";
 import { SwipeableSubject } from "@/components/feed/swipeable-subject";
-import {
-  SubjectCard,
-  toSubjectCardData,
-} from "@/components/shared/subject-card";
+import { RelvoHeader } from "@/components/layout/relvo-header";
+import { Screen } from "@/components/layout/screen";
+import { SubjectRow, toSubjectRowData } from "@/components/shared/subject-row";
 import { getTenantDb } from "@/server/auth-context";
 
-// Mon fil (M9.4) — traitement des sujets. Feed colonne unique + filtres
-// (Priorité / Ouverts / Terminés) + bandeau Relvo + paire ✕/✓ sur chaque carte.
+// Mon fil (M9.4, Direction B) — traitement des sujets. Hero violet + champ de
+// recherche, SegTabs chevauchant. 3 onglets, paniers de STATUT : Ouverts (urgents
+// en tête, swipe ← Ignorer · → Terminer), Terminés, Ignorés (récupérables).
 
-const CLOSED = ["resolved", "archived"] as const;
+const CLOSED = ["resolved", "archived", "ignored"] as const;
 
 function FeedList({
   items,
-  options,
+  variant,
 }: {
   items: EnrichedSubject[];
-  options: {
-    tone?: "default" | "low" | "done";
-    summary?: boolean;
-    actions?: boolean;
-  };
+  variant: "swipe" | "done" | "ignored";
 }) {
   if (items.length === 0) {
     return (
-      <p className="rounded-xl border border-(--border-light) bg-white p-6 text-center text-[13.5px] text-(--text-tertiary)">
+      <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
         Rien ici pour le moment.
       </p>
     );
   }
   return (
-    <div className="space-y-2.5">
+    <div className="pt-1">
       {items.map((e) => {
-        const card = toSubjectCardData(e);
-        const tone =
-          options.tone ?? (card.priority === "low" ? "low" : "default");
-        // Cartes traitables (Priorité/Ouverts) = swipe ; Terminés = lien simple.
-        if (options.actions) {
+        const row = toSubjectRowData(e);
+        if (variant === "swipe") {
           return (
             <SwipeableSubject
-              key={card.id}
-              subjectId={card.id}
-              canIgnore={card.priority !== "low"}
+              key={row.id}
+              subjectId={row.id}
+              canIgnore
+              rounded={false}
             >
-              <SubjectCard
-                data={card}
-                tone={tone}
-                showSummary={options.summary ?? false}
-                linkable={false}
-              />
+              <SubjectRow data={row} linkable={false} />
             </SwipeableSubject>
           );
         }
-        return (
-          <SubjectCard
-            key={card.id}
-            data={card}
-            tone={tone}
-            showSummary={options.summary ?? false}
-          />
-        );
+        if (variant === "ignored") {
+          return (
+            <IgnoredSubject key={row.id} subjectId={row.id}>
+              <SubjectRow data={row} tone="done" />
+            </IgnoredSubject>
+          );
+        }
+        return <SubjectRow key={row.id} data={row} tone="done" />;
       })}
     </div>
   );
@@ -76,76 +66,95 @@ function FeedList({
 export default async function FilPage() {
   const db = await getTenantDb();
 
-  const [priorityPage, openSubjects, resolvedSubjects, openCount] =
+  const [openFeed, resolvedSubjects, ignoredSubjects, openCount, orphanCount] =
     await Promise.all([
-      getPriorityFeed(db, { limit: 20 }),
-      db.subject.findMany({
-        where: { status: { notIn: [...CLOSED] } },
-        orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
-        take: 40,
-      }),
+      getOpenFeed(db, { limit: 40 }),
       db.subject.findMany({
         where: { status: "resolved" },
         orderBy: [{ resolvedAt: "desc" }],
         take: 40,
       }),
+      db.subject.findMany({
+        where: { status: "ignored" },
+        orderBy: [{ lastActivityAt: "desc" }],
+        take: 40,
+      }),
       db.subject.count({ where: { status: { notIn: [...CLOSED] } } }),
+      countOrphanMessages(db),
     ]);
 
-  const [prio, ouverts, termines] = await Promise.all([
-    enrichSubjects(db, priorityPage.items),
-    enrichSubjects(db, openSubjects),
+  const [ouverts, termines, ignores] = await Promise.all([
+    enrichSubjects(db, openFeed.items),
     enrichSubjects(db, resolvedSubjects),
+    enrichSubjects(db, ignoredSubjects),
   ]);
 
   return (
-    <>
-      <AppBar
+    <Screen>
+      <RelvoHeader
         title="Mon fil"
         subtitle={`${openCount} sujet${openCount > 1 ? "s" : ""} ouvert${openCount > 1 ? "s" : ""}`}
+        className="pb-[38px]"
         action={
-          <button
-            type="button"
-            aria-label="Recherche"
-            className="grid size-[38px] flex-none place-items-center rounded-full bg-(--surface) text-(--text-secondary)"
-          >
-            <Search className="size-[19px]" strokeWidth={2} />
-          </button>
-        }
-      />
-      <PageBody className="space-y-3">
-        <div className="flex items-center gap-2.5 rounded-xl border border-(--purple-100) bg-relvo-bg px-3 py-2.5">
-          <span className="text-[15px] text-relvo">✦</span>
-          <p className="flex-1 text-[13px] text-brand-dark">
-            Aujourd'hui : {prio.length} sujet{prio.length > 1 ? "s" : ""}{" "}
-            prioritaire{prio.length > 1 ? "s" : ""} à traiter.
-          </p>
           <Link
-            href="/messages"
-            className="text-[12.5px] font-bold whitespace-nowrap text-relvo"
+            href="/sujets/nouveau"
+            aria-label="Nouveau sujet"
+            className="grid size-[42px] flex-none place-items-center rounded-full text-white active:scale-95"
+            style={{
+              background: "rgb(255 255 255 / 0.15)",
+              boxShadow: "inset 0 0 0 1px rgb(255 255 255 / 0.3)",
+            }}
           >
-            Messages →
+            <Plus className="size-[22px]" strokeWidth={2.2} />
           </Link>
-        </div>
-
-        <FeedTabs
-          options={[
-            { value: "prio", label: "Priorité" },
-            { value: "ouverts", label: "Ouverts" },
-            { value: "termines", label: "Terminés" },
-          ]}
-          panes={{
-            prio: (
-              <FeedList
-                items={prio}
-                options={{ summary: true, actions: true }}
-              />
-            ),
-            ouverts: <FeedList items={ouverts} options={{ actions: true }} />,
-            termines: <FeedList items={termines} options={{ tone: "done" }} />,
+        }
+      >
+        <Link
+          href="/recherche"
+          className="mx-[22px] mt-4 flex items-center gap-2.5 rounded-full px-[15px] py-2.5 text-[15px] text-white/85"
+          style={{
+            background: "rgb(255 255 255 / 0.16)",
+            border: "1px solid rgb(255 255 255 / 0.24)",
+            boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.16)",
           }}
-        />
-      </PageBody>
-    </>
+        >
+          <Search className="size-[18px]" strokeWidth={2} />
+          Rechercher un sujet, un contact…
+        </Link>
+      </RelvoHeader>
+
+      <FeedTabs
+        options={[
+          { value: "ouverts", label: "Ouverts", count: ouverts.length },
+          { value: "termines", label: "Terminés", count: termines.length },
+          { value: "ignores", label: "Ignorés", count: ignores.length },
+        ]}
+        note={
+          orphanCount > 0 ? (
+            <Link
+              href="/messages"
+              className="mx-4 mt-4 mb-1 flex items-center gap-3 rounded-2xl border border-(--purple-100) bg-relvo-bg px-3.5 py-3 active:opacity-90"
+            >
+              <span className="grid size-9 flex-none place-items-center rounded-xl bg-relvo text-white">
+                <Inbox className="size-[18px]" strokeWidth={2} />
+              </span>
+              <p className="flex-1 text-[13.5px] leading-[1.4] text-[#3a3550]">
+                <b className="font-bold">{orphanCount}</b> message
+                {orphanCount > 1 ? "s" : ""} reçu{orphanCount > 1 ? "s" : ""}{" "}
+                sans intérêt.
+              </p>
+              <span className="text-[12.5px] font-bold whitespace-nowrap text-relvo">
+                Voir →
+              </span>
+            </Link>
+          ) : null
+        }
+        panes={{
+          ouverts: <FeedList items={ouverts} variant="swipe" />,
+          termines: <FeedList items={termines} variant="done" />,
+          ignores: <FeedList items={ignores} variant="ignored" />,
+        }}
+      />
+    </Screen>
   );
 }

@@ -11,6 +11,7 @@ import {
   openSubject,
   resolveSubject,
   suggestResolution,
+  unignoreSubject,
   updateSubject,
   updateSubjectPriority,
   updateSubjectStatus,
@@ -68,6 +69,12 @@ export async function ignoreSubjectAction(id: string) {
 
 export async function resolveSubjectAction(id: string) {
   const result = await domainAction((db) => resolveSubject(db, id));
+  if (result.ok) revalidateSubjects();
+  return result;
+}
+
+export async function unignoreSubjectAction(id: string) {
+  const result = await domainAction((db) => unignoreSubject(db, id));
   if (result.ok) revalidateSubjects();
   return result;
 }
