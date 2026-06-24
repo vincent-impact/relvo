@@ -32,6 +32,7 @@ import {
   createMessage,
   createSubject,
   createTask,
+  ignoreSubject,
   completeTask,
   setAiLabel,
   suggestResolution,
@@ -125,7 +126,7 @@ export async function seedDemoAccount() {
     identifier: "support@tastycrousty.fr",
     folderIds: [fournisseurs.id, production.id],
   });
-  await createChannel(db, {
+  const waCeo = await createChannel(db, {
     name: "WhatsApp CEO",
     type: ChannelType.whatsapp,
     identifier: "+33600000000",
@@ -189,7 +190,7 @@ export async function seedDemoAccount() {
     folderId: fournisseurs.id,
     contactIds: [karim.id],
     status: SubjectStatus.acknowledged,
-    priority: Priority.critical,
+    priority: Priority.urgent,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
   });
@@ -258,7 +259,7 @@ export async function seedDemoAccount() {
     folderId: rh.id,
     contactIds: [sophie.id],
     status: SubjectStatus.new,
-    priority: Priority.high,
+    priority: Priority.normal,
     sourceChannelId: emailRh.id,
     createdByActor: Actor.ai,
   });
@@ -290,7 +291,7 @@ export async function seedDemoAccount() {
     folderId: juridique.id,
     contactIds: [climapro.id],
     status: SubjectStatus.acknowledged,
-    priority: Priority.low,
+    priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
   });
@@ -322,7 +323,7 @@ export async function seedDemoAccount() {
     folderId: business.id,
     contactIds: [palais.id],
     status: SubjectStatus.acknowledged,
-    priority: Priority.low,
+    priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
   });
@@ -347,7 +348,7 @@ export async function seedDemoAccount() {
     folderId: fournisseurs.id,
     contactIds: [packplus.id],
     status: SubjectStatus.acknowledged,
-    priority: Priority.low,
+    priority: Priority.normal,
     waitingForReply: true,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -388,7 +389,7 @@ export async function seedDemoAccount() {
     folderId: production.id,
     contactIds: [froidexpert.id],
     status: SubjectStatus.acknowledged,
-    priority: Priority.high,
+    priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
   });
@@ -412,6 +413,31 @@ export async function seedDemoAccount() {
     startTime: slot117.time,
     endTime: slot117End.time,
   });
+
+  // SUB-0156 — Groupe WhatsApp bavard que l'utilisateur a IGNORÉ. Relvo l'avait
+  // ouvert, mais l'utilisateur estime que ça ne le concerne pas → statut ignored
+  // (écarté des ouverts, hors mémoire, purgeable, récupérable dans l'onglet Ignorés).
+  const sub156 = await createSubject(db, {
+    reference: "SUB-0156",
+    title: "Groupe « Commerçants quartier Gambetta »",
+    summary:
+      "Fil de discussion du groupe WhatsApp des commerçants du quartier — animations, voirie, tour de rôle des poubelles. Volume élevé, peu prioritaire.",
+    folderId: undefined,
+    contactIds: [],
+    status: SubjectStatus.acknowledged,
+    priority: Priority.normal,
+    sourceChannelId: waCeo.id,
+    createdByActor: Actor.ai,
+  });
+  await createMessage(db, {
+    channelId: waCeo.id,
+    direction: "incoming",
+    subjectId: sub156.id,
+    senderRaw: "Groupe Commerçants Gambetta",
+    content:
+      "Rappel : la réunion de quartier est décalée à jeudi 18h. Pensez à sortir les poubelles ce soir 🗑️",
+  });
+  await ignoreSubject(db, sub156.id);
 
   // 7. Messages « Sans sujet » (expéditeurs inconnus / ambigus).
   await createMessage(db, {
@@ -491,6 +517,35 @@ export async function seedDemoAccount() {
   await createAction(db, {
     subjectId: sub82.id,
     title: "Relire les clauses du contrat",
+  });
+
+  // Domaine des messages : à la réception, Relvo classe un message dans un
+  // domaine ; ce domaine donne ensuite le sien au sujet. Pour la démo, on aligne
+  // le domaine de chaque message classé sur celui de son sujet.
+  const classified = await db.message.findMany({
+    where: { subjectId: { not: null } },
+    select: { id: true, subject: { select: { folderId: true } } },
+  });
+  for (const m of classified) {
+    if (m.subject?.folderId) {
+      await db.message.updateMany({
+        where: { id: m.id },
+        data: { folderId: m.subject.folderId },
+      });
+    }
+  }
+
+  // Lecture des messages : on simule que l'utilisateur a déjà ouvert les sujets
+  // « actifs » (non `new`) → leurs messages incoming sont LUS. Les messages des
+  // sujets `new` et les orphelins restent NON-LUS (bold + pastille) pour montrer
+  // la distinction lu/non-lu et alimenter les badges de la page Messages.
+  await db.message.updateMany({
+    where: {
+      direction: "incoming",
+      readAt: null,
+      subject: { is: { status: { not: SubjectStatus.new } } },
+    },
+    data: { readAt: new Date() },
   });
 
   const counts = {

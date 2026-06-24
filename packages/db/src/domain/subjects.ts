@@ -12,22 +12,135 @@ import { nextSubjectReference } from "./reference";
 // validées + dépriorisation (« Ignorer ») + acquittement implicite. Invariant :
 // folder_id ne pointe jamais le Folder « Général » (documentaire transversal).
 
-// Cycle de vie à 4 valeurs (cf. invariant produit n°7) : new → acknowledged →
-// resolved → archived. `acknowledged` est l'état actif invisible (acquittement).
-// Le passage vers le même statut est un no-op toléré. `archived` est système et
-// quasi-terminal (réouverture possible vers `acknowledged` uniquement).
+// Cycle de vie (cf. invariant produit n°7) : new → acknowledged → resolved →
+// archived, + `ignored` (disposition « écarté »). `acknowledged` est l'état actif
+// invisible (acquittement). Le passage vers le même statut est un no-op toléré.
+// `archived` est système et quasi-terminal. `ignored` : sujet écarté des ouverts,
+// hors mémoire, purgeable — récupérable vers `acknowledged` (« désignorer »).
 const TRANSITIONS: Record<SubjectStatus, SubjectStatus[]> = {
-  new: ["acknowledged", "resolved", "archived"],
-  acknowledged: ["new", "resolved", "archived"],
-  resolved: ["acknowledged", "archived"],
+  new: ["acknowledged", "resolved", "archived", "ignored"],
+  acknowledged: ["new", "resolved", "archived", "ignored"],
+  resolved: ["acknowledged", "archived", "ignored"],
   archived: ["acknowledged"],
+  ignored: ["acknowledged"],
 };
 
-const PRIORITY_LADDER: Priority[] = [
-  Priority.low,
-  Priority.high,
-  Priority.critical,
-];
+// Libellés FR pour le journal de bord (fidèles à l'UI) — un événement doit dire
+// CE QUI a changé et de quelle valeur vers quelle valeur, jamais un « modifié »
+// opaque. Le domaine ne dépend pas de l'UI : ces maps y sont donc dupliquées.
+const STATUS_LABELS: Record<SubjectStatus, string> = {
+  new: "Nouveau",
+  acknowledged: "En cours",
+  resolved: "Terminé",
+  archived: "Archivé",
+  ignored: "Ignoré",
+};
+
+const PRIORITY_LABELS: Record<Priority, string> = {
+  urgent: "Urgent",
+  normal: "Normal",
+};
+
+/** Nom lisible d'un dossier (ou « Aucun ») pour les libellés de journal. */
+async function folderLabel(tx: Tx, folderId: string | null): Promise<string> {
+  if (!folderId) return "Aucun";
+  const folder = await tx.folder.findFirst({
+    where: { id: folderId },
+    select: { name: true },
+  });
+  return folder?.name ?? "Aucun";
+}
+
+type SubjectChange = {
+  title: string;
+  description?: string | null;
+  metadata?: Record<string, unknown>;
+};
+
+/**
+ * Décrit, champ par champ, ce qui a changé entre l'état courant d'un sujet et
+ * l'input d'`updateSubject` — pour produire des entrées de journal explicites
+ * (« Dossier modifié : Business → Fournisseurs »). Retourne [] si rien ne bouge.
+ */
+async function describeSubjectChanges(
+  tx: Tx,
+  current: {
+    title: string;
+    summary: string | null;
+    folderId: string | null;
+    contactIds: string[];
+  },
+  data: UpdateSubjectInput,
+): Promise<SubjectChange[]> {
+  const changes: SubjectChange[] = [];
+
+  if (data.title !== undefined && data.title !== current.title) {
+    changes.push({
+      title: `Nom modifié : « ${current.title} » → « ${data.title} »`,
+      metadata: { field: "title", from: current.title, to: data.title },
+    });
+  }
+
+  if (
+    data.folderId !== undefined &&
+    (data.folderId ?? null) !== (current.folderId ?? null)
+  ) {
+    const from = await folderLabel(tx, current.folderId);
+    const to = await folderLabel(tx, data.folderId ?? null);
+    changes.push({
+      title: `Dossier modifié : ${from} → ${to}`,
+      metadata: {
+        field: "folder",
+        from: current.folderId,
+        to: data.folderId ?? null,
+      },
+    });
+  }
+
+  if (
+    data.summary !== undefined &&
+    (data.summary ?? null) !== (current.summary ?? null)
+  ) {
+    changes.push({
+      title: current.summary ? "Résumé modifié" : "Résumé ajouté",
+      description: data.summary ?? null,
+      metadata: { field: "summary" },
+    });
+  }
+
+  if (data.contactIds !== undefined) {
+    const added = data.contactIds.filter(
+      (x) => !current.contactIds.includes(x),
+    );
+    const removed = current.contactIds.filter(
+      (x) => !data.contactIds!.includes(x),
+    );
+    if (added.length || removed.length) {
+      const rows = await tx.contact.findMany({
+        where: { id: { in: [...added, ...removed] } },
+        select: { id: true, name: true },
+      });
+      const nameOf = (id: string) =>
+        rows.find((r) => r.id === id)?.name ?? "Contact inconnu";
+      if (added.length) {
+        const names = added.map(nameOf).join(", ");
+        changes.push({
+          title: `Destinataire${added.length > 1 ? "s" : ""} ajouté${added.length > 1 ? "s" : ""} : ${names}`,
+          metadata: { field: "contacts", added },
+        });
+      }
+      if (removed.length) {
+        const names = removed.map(nameOf).join(", ");
+        changes.push({
+          title: `Destinataire${removed.length > 1 ? "s" : ""} retiré${removed.length > 1 ? "s" : ""} : ${names}`,
+          metadata: { field: "contacts", removed },
+        });
+      }
+    }
+  }
+
+  return changes;
+}
 
 const actorEnum = z.enum(Actor);
 
@@ -141,6 +254,15 @@ export async function updateSubject(
   const data = updateSubjectSchema.parse(input);
   return db.$transaction(async (tx) => {
     if (data.folderId) await assertFolderAssignable(tx as Tx, data.folderId);
+    const current = assertFound(
+      await tx.subject.findFirst({ where: { id } }),
+      "Sujet",
+    );
+
+    // On calcule les changements AVANT d'écraser les valeurs, pour pouvoir
+    // journaliser chaque champ avec son ancienne et sa nouvelle valeur.
+    const changes = await describeSubjectChanges(tx as Tx, current, data);
+
     const { count } = await tx.subject.updateMany({
       where: { id },
       data: {
@@ -158,14 +280,21 @@ export async function updateSubject(
       await tx.subject.findFirst({ where: { id } }),
       "Sujet",
     );
-    await logEvent(tx as Tx, {
-      entityType: "subject",
-      entityId: subject.id,
-      subjectId: subject.id,
-      eventType: EVENT_TYPES.subjectUpdated,
-      title: `Sujet ${subject.reference} modifié`,
-      actor: "user",
-    });
+
+    // Un événement explicite par champ modifié. Aucun changement réel → aucun
+    // log (on ne pollue pas le journal avec un « modifié » vide).
+    for (const change of changes) {
+      await logEvent(tx as Tx, {
+        entityType: "subject",
+        entityId: subject.id,
+        subjectId: subject.id,
+        eventType: EVENT_TYPES.subjectUpdated,
+        title: change.title,
+        description: change.description ?? null,
+        actor: "user",
+        metadata: change.metadata,
+      });
+    }
     return subject;
   });
 }
@@ -218,7 +347,7 @@ export async function updateSubjectStatus(
       entityId: subject.id,
       subjectId: subject.id,
       eventType,
-      title: `Sujet ${subject.reference} : ${current.status} → ${status}`,
+      title: `État : ${STATUS_LABELS[current.status]} → ${STATUS_LABELS[status]}`,
       actor,
       metadata: { from: current.status, to: status },
     });
@@ -254,6 +383,7 @@ export async function updateSubjectPriority(
       await tx.subject.findFirst({ where: { id } }),
       "Sujet",
     );
+    if (current.priority === priority) return current; // no-op : pas de log
     const { count } = await tx.subject.updateMany({
       where: { id },
       data: { priority, lastActivityAt: new Date() },
@@ -268,7 +398,7 @@ export async function updateSubjectPriority(
       entityId: subject.id,
       subjectId: subject.id,
       eventType: EVENT_TYPES.subjectPriorityChanged,
-      title: `Sujet ${subject.reference} : priorité ${current.priority} → ${priority}`,
+      title: `Priorité : ${PRIORITY_LABELS[current.priority]} → ${PRIORITY_LABELS[priority]}`,
       actor,
       metadata: { from: current.priority, to: priority, ...meta },
     });
@@ -277,21 +407,44 @@ export async function updateSubjectPriority(
 }
 
 /**
- * Action « Ignorer » du feed (cas feed prioritaire) : rétrograde la priorité
- * d'un cran (critical→high→low). Sans effet si déjà `low`.
+ * Action « Ignorer » : écarte le sujet en posant le statut `ignored`. Décisif et
+ * DURABLE — contrairement à une simple dépriorisation, le sujet quitte les
+ * ouverts, n'alimente plus la mémoire et devient purgeable. L'« ignorance » est
+ * collante : un nouveau message rattaché ne doit pas la lever (cf. pipeline
+ * worker). Récupérable via `unignoreSubject` (onglet Ignorés).
  */
-export async function ignoreSubject(db: TenantDb, id: string) {
-  const current = assertFound(
-    await db.subject.findFirst({ where: { id } }),
-    "Sujet",
-  );
-  const idx = PRIORITY_LADDER.indexOf(current.priority);
-  if (idx <= 0) return current; // déjà low : rien à dégrader
-  const next = PRIORITY_LADDER[idx - 1]!;
-  return updateSubjectPriority(db, id, next, Actor.user, {
-    delta: -1,
-    source: "feed_ignore",
+export function ignoreSubject(
+  db: TenantDb,
+  id: string,
+  actor: Actor = Actor.user,
+) {
+  return updateSubjectStatus(db, id, SubjectStatus.ignored, actor);
+}
+
+/** « Désignorer » : remet un sujet ignoré dans le fil (→ acknowledged). */
+export function unignoreSubject(
+  db: TenantDb,
+  id: string,
+  actor: Actor = Actor.user,
+) {
+  return updateSubjectStatus(db, id, SubjectStatus.acknowledged, actor);
+}
+
+/**
+ * Purge des sujets ignorés inactifs depuis `olderThanDays` (15 j par défaut) —
+ * comme les messages sans sujet. Sur INACTIVITÉ (lastActivityAt), pas en absolu :
+ * un fil bavard ignoré ne doit pas être purgé puis recréé. Destiné à un job
+ * planifié (worker/cron) ; NON branché automatiquement en V1.
+ */
+export async function purgeIgnoredSubjects(
+  db: TenantDb,
+  olderThanDays = 15,
+): Promise<{ deleted: number }> {
+  const cutoff = new Date(Date.now() - olderThanDays * 86_400_000);
+  const { count } = await db.subject.deleteMany({
+    where: { status: SubjectStatus.ignored, lastActivityAt: { lt: cutoff } },
   });
+  return { deleted: count };
 }
 
 /**
@@ -319,6 +472,13 @@ export async function openSubject(db: TenantDb, id: string) {
       await tx.subject.findFirst({ where: { id } }),
       "Sujet",
     );
+    // Lecture des messages : ouvrir le sujet vaut lecture de ses messages reçus
+    // encore non-lus (seul moyen d'« interagir » avec un message). Les orphelins
+    // n'ont pas de sujet → restent non-lus jusqu'au tri.
+    await tx.message.updateMany({
+      where: { subjectId: id, direction: "incoming", readAt: null },
+      data: { readAt: new Date() },
+    });
     await logEvent(tx as Tx, {
       entityType: "subject",
       entityId: subject.id,

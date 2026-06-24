@@ -220,22 +220,28 @@ export async function completeTask(
   });
 }
 
-/** Suppression douce d'une tâche (status = deleted). */
+/**
+ * Suppression DÉFINITIVE d'une tâche (vrai DELETE en base, pas de soft-delete).
+ * Les FK `EventLog.taskId` et `Action.taskId` sont en `onDelete: SetNull` : la
+ * ligne disparaît sans casser les journaux/actions existants. On consigne d'abord
+ * l'évènement de suppression dans le journal du sujet (sans `taskId`, puisque la
+ * tâche n'existe plus après le DELETE), pour garder une trace lisible.
+ */
 export async function deleteTask(db: TenantDb, id: string) {
   return db.$transaction(async (tx) => {
-    const { count } = await tx.task.updateMany({
-      where: { id },
-      data: { status: TaskStatus.deleted },
-    });
-    ensureAffected(count, "Tâche");
     const task = assertFound(
       await tx.task.findFirst({ where: { id } }),
       "Tâche",
     );
+    const { count } = await tx.task.deleteMany({ where: { id } });
+    ensureAffected(count, "Tâche");
+    await tx.subject.updateMany({
+      where: { id: task.subjectId },
+      data: { lastActivityAt: new Date() },
+    });
     await logEvent(tx as Tx, {
       entityType: "task",
       entityId: task.id,
-      taskId: task.id,
       subjectId: task.subjectId,
       eventType: EVENT_TYPES.taskDeleted,
       title: `Tâche supprimée : ${task.title}`,

@@ -65,14 +65,15 @@ enum SubjectStatus {
   acknowledged
   resolved
   archived
+  ignored
 }
 
-/// 3 niveaux ; l'UI ne projette qu'un drapeau urgent (= critical).
-/// Feed prioritaire = critical + high. La rareté est le signal (`medium` retiré).
+/// 2 niveaux d'urgence : `normal` (par défaut) et `urgent` (drapeau rouge rare).
+/// La rareté est le signal. La disposition « ignoré » est un STATUT, pas une
+/// priorité (cf. SubjectStatus.ignored), distincte de l'axe d'urgence.
 enum Priority {
-  low
-  high
-  critical
+  normal
+  urgent
 }
 
 /// État d'absorption d'un KnowledgeDocument `kind=file` : Relvo l'a lu (✦ injecté
@@ -215,6 +216,7 @@ model Folder {
 
   account            Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
   subjects           Subject[]
+  messages           Message[]
   knowledgeDocuments KnowledgeDocument[]
   defaultForContacts Contact[]           @relation("ContactDefaultFolder")
 
@@ -312,7 +314,7 @@ model Subject {
   folderId              String?       @map("folder_id") @db.Uuid
   contactIds            String[]      @default([]) @map("contact_ids") @db.Uuid
   status                SubjectStatus @default(new)
-  priority              Priority      @default(low)
+  priority              Priority      @default(normal)
   // Marqueur « En attente » (cumulable, distinct du statut) — posé par Relvo
   // quand un sujet attend une réponse externe. Cf. invariant produit n°7.
   waitingForReply       Boolean       @default(false) @map("waiting_for_reply")
@@ -351,6 +353,9 @@ model Message {
   id                 String           @id @default(uuid()) @db.Uuid
   accountId          String           @map("account_id") @db.Uuid
   subjectId          String?          @map("subject_id") @db.Uuid
+  // Domaine assigné au message à la réception (classification Relvo). Donne
+  // ensuite son domaine au sujet créé à partir du message. Null = non classé.
+  folderId           String?          @map("folder_id") @db.Uuid
   channelId          String           @map("channel_id") @db.Uuid
   senderContactId    String?          @map("sender_contact_id") @db.Uuid
   senderRaw          String?          @map("sender_raw")
@@ -362,6 +367,10 @@ model Message {
   content            String?          @db.Text
   receivedAt         DateTime?        @map("received_at")
   sentAt             DateTime?        @map("sent_at")
+  // Lecture d'un message (incoming) : posé quand on OUVRE le sujet auquel il est
+  // rattaché. Null = non-lu. Les orphelins (sans sujet) restent non-lus jusqu'au
+  // tri (création d'un sujet). Sert la pile d'événements de la page Messages.
+  readAt             DateTime?        @map("read_at")
   status             MessageStatus    @default(received)
   triageHint         TriageHint?      @map("triage_hint")
   createdAt          DateTime         @default(now()) @map("created_at")
@@ -369,6 +378,7 @@ model Message {
 
   account         Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
   subject         Subject?     @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  folder          Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
   channel         Channel      @relation(fields: [channelId], references: [id], onDelete: Restrict)
   senderContact   Contact?     @relation("MessageSenderContact", fields: [senderContactId], references: [id], onDelete: SetNull)
   recipientContact Contact?    @relation("MessageRecipientContact", fields: [recipientContactId], references: [id], onDelete: SetNull)

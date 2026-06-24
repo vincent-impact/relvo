@@ -10,11 +10,16 @@ import { Actor, SubjectStatus } from "../generated/prisma/enums";
 import type { TenantDb } from "../tenant";
 import { cursorArgs, paginationSchema, toPage } from "./pagination";
 
-// Requêtes d'agrégation (M3.13). Lectures seules : KPIs de l'Accueil, feed
-// prioritaire, liste « Sans sujet ». Toutes scopées par le client tenant.
+// Requêtes d'agrégation (M3.13). Lectures seules : KPIs de l'Accueil, fil des
+// ouverts, liste « Sans sujet ». Toutes scopées par le client tenant.
 
-const CLOSED_STATUSES = [SubjectStatus.resolved, SubjectStatus.archived];
-const FEED_PRIORITIES = [Priority.critical, Priority.high];
+// « Hors fil principal » : terminé, archivé (système) ET ignoré (écarté). Un
+// sujet ignoré quitte les ouverts et n'alimente plus la mémoire (invariant n°7bis).
+const CLOSED_STATUSES = [
+  SubjectStatus.resolved,
+  SubjectStatus.archived,
+  SubjectStatus.ignored,
+];
 
 function dayBounds(now: Date): { start: Date; next: Date } {
   const start = new Date(
@@ -70,7 +75,7 @@ export async function getKpis(
   ] = await Promise.all([
     db.subject.count({
       where: {
-        priority: Priority.critical,
+        priority: Priority.urgent,
         status: { notIn: CLOSED_STATUSES },
       },
     }),
@@ -148,10 +153,11 @@ export async function getUpcomingTasks(
 }
 
 /**
- * Feed prioritaire de l'Accueil : sujets `priority IN (critical, high)` non
- * clos, triés par priorité puis dernière activité. Paginé par curseur.
+ * Fil des OUVERTS : tous les sujets non clos (new/acknowledged), **urgents en
+ * tête** (priority desc) puis dernière activité. Sert l'onglet « Ouverts » du fil
+ * et le brief Accueil (limit court → les plus prioritaires). Paginé par curseur.
  */
-export async function getPriorityFeed(
+export async function getOpenFeed(
   db: TenantDb,
   opts: { cursor?: string; limit?: number } = {},
 ) {
@@ -159,10 +165,7 @@ export async function getPriorityFeed(
   const { _limit, ...args } = cursorArgs(opts);
   const rows = await db.subject.findMany({
     ...args,
-    where: {
-      priority: { in: FEED_PRIORITIES },
-      status: { notIn: CLOSED_STATUSES },
-    },
+    where: { status: { notIn: CLOSED_STATUSES } },
     orderBy: [{ priority: "desc" }, { lastActivityAt: "desc" }],
   });
   return toPage(rows, limit);
@@ -186,6 +189,10 @@ export type EnrichedSubject = {
   attachmentCount: number;
   /** Avancement 0..1 (tâches faites / total non supprimées), ou null si aucune. */
   progress: number | null;
+  /** Slug du dossier de rattachement (rail coloré / icône de domaine), ou null. */
+  folderSlug: string | null;
+  /** Nom du dossier de rattachement, ou null. */
+  folderName: string | null;
 };
 
 export async function enrichSubjects(
@@ -195,8 +202,13 @@ export async function enrichSubjects(
   if (subjects.length === 0) return [];
   const ids = subjects.map((s) => s.id);
   const contactIds = [...new Set(subjects.flatMap((s) => s.contactIds))];
+  const folderIds = [
+    ...new Set(
+      subjects.map((s) => s.folderId).filter((id): id is string => !!id),
+    ),
+  ];
 
-  const [contacts, tasks, openActions, attachments, incoming] =
+  const [contacts, folders, tasks, openActions, attachments, incoming] =
     await Promise.all([
       contactIds.length
         ? db.contact.findMany({
@@ -204,6 +216,12 @@ export async function enrichSubjects(
             select: { id: true, name: true },
           })
         : Promise.resolve([] as { id: string; name: string }[]),
+      folderIds.length
+        ? db.folder.findMany({
+            where: { id: { in: folderIds } },
+            select: { id: true, name: true, slug: true },
+          })
+        : Promise.resolve([] as { id: string; name: string; slug: string }[]),
       db.task.findMany({
         where: { subjectId: { in: ids }, status: { not: TaskStatus.deleted } },
         select: { subjectId: true, status: true, sourceActor: true },
@@ -223,8 +241,10 @@ export async function enrichSubjects(
     ]);
 
   const nameById = new Map(contacts.map((c) => [c.id, c.name]));
+  const folderById = new Map(folders.map((f) => [f.id, f]));
 
   return subjects.map((subject) => {
+    const folder = subject.folderId ? folderById.get(subject.folderId) : null;
     const subTasks = tasks.filter((t) => t.subjectId === subject.id);
     const openTasks = subTasks.filter((t) => t.status === TaskStatus.open);
     const aiOpenTasks = openTasks.filter((t) => t.sourceActor === Actor.ai);
@@ -250,6 +270,8 @@ export async function enrichSubjects(
         .length,
       progress:
         subTasks.length === 0 ? null : doneTasks.length / subTasks.length,
+      folderSlug: folder?.slug ?? null,
+      folderName: folder?.name ?? null,
     };
   });
 }
