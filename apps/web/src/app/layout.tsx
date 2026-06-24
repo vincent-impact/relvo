@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import { NavVisibilityProvider } from "@/components/layout/nav-visibility";
 import { Providers } from "@/components/providers";
@@ -25,6 +25,28 @@ const bricolage = Bricolage_Grotesque({
 export const metadata: Metadata = {
   title: "Relvo",
   description: "Assistant IA de pilotage des sollicitations professionnelles.",
+  applicationName: "Relvo",
+  manifest: "/manifest.webmanifest",
+  // iOS : déclenche le mode standalone (plein écran) une fois ajouté à l'écran
+  // d'accueil DEPUIS SAFARI. Émet <meta name="apple-mobile-web-app-capable">.
+  appleWebApp: {
+    capable: true,
+    title: "Relvo",
+    statusBarStyle: "default",
+  },
+  icons: {
+    icon: "/relvo-icon-192.png",
+    apple: "/apple-touch-icon.png",
+  },
+};
+
+// themeColor + viewport-fit=cover : couleur de la barre de statut alignée sur le
+// hero violet, et activation des env(safe-area-inset-*) déjà utilisés par Screen.
+export const viewport: Viewport = {
+  themeColor: "#6b5bd6",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
