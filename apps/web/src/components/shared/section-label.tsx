@@ -1,31 +1,34 @@
 import Link from "next/link";
 
-// En-tête de section du brief / des listes (cf. .section-label du mockup) :
-// titre en petites capitales + lien d'action optionnel à droite.
+// En-tête de section (Direction B, cf. .sect) : pastille de couleur + titre fort
+// + lien d'action optionnel (« Tout voir »). Gère sa propre gouttière horizontale.
 
 export function SectionLabel({
   title,
   href,
-  linkLabel,
-  count,
+  linkLabel = "Tout voir",
+  dotColor = "var(--brand)",
 }: {
   title: string;
   href?: string;
   linkLabel?: string;
-  count?: number;
+  /** Couleur de la pastille (domaine / signal). */
+  dotColor?: string;
 }) {
   return (
-    <div className="mt-[18px] mb-2 flex items-center justify-between px-0.5 first:mt-1">
-      <h2 className="text-[13px] font-bold tracking-[0.5px] text-(--text-tertiary) uppercase">
+    <div className="flex items-center justify-between px-[22px] pt-6 pb-2">
+      <span className="flex items-center gap-2 text-[16.5px] font-extrabold tracking-[-0.3px] whitespace-nowrap">
+        <span
+          className="size-[7px] flex-none rounded-full"
+          style={{ background: dotColor }}
+        />
         {title}
-        {typeof count === "number" ? (
-          <span className="ml-1 font-semibold text-(--text-tertiary)">
-            {count}
-          </span>
-        ) : null}
-      </h2>
-      {href && linkLabel ? (
-        <Link href={href} className="text-[13px] font-semibold text-brand">
+      </span>
+      {href ? (
+        <Link
+          href={href}
+          className="text-[13.5px] font-bold whitespace-nowrap text-brand"
+        >
           {linkLabel}
         </Link>
       ) : null}

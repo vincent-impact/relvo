@@ -1,6 +1,5 @@
-import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
+import { AppDock } from "@/components/layout/app-dock";
 import { MobileFrame } from "@/components/layout/mobile-frame";
-import { RelvoComposer } from "@/components/layout/relvo-composer";
 import { requireAccount } from "@/server/auth-context";
 
 // Chrome mobile-first commun aux vues structurées (cf. ux-mobile-first §2/§3).
@@ -19,11 +18,12 @@ export default async function AppLayout({
   // Garde-fou tenant (le proxy redirige déjà les anonymes, ceinture + bretelles).
   await requireAccount();
 
+  // Une seule zone de scroll (le <Screen> de chaque page) + dock ancré qui la
+  // chevauche. Le hero violet de la page scrolle sous la tab bar givrée.
   return (
     <MobileFrame>
-      <div className="flex min-h-0 flex-1 flex-col">{children}</div>
-      <RelvoComposer />
-      <BottomTabBar />
+      {children}
+      <AppDock />
     </MobileFrame>
   );
 }

@@ -14,7 +14,7 @@ export function MobileFrame({
   return (
     <div
       className={cn(
-        "mx-auto flex h-dvh w-full max-w-120 flex-col overflow-hidden bg-white sm:border-x sm:border-(--hairline)",
+        "relative mx-auto flex h-dvh w-full max-w-120 flex-col overflow-hidden bg-white sm:border-x sm:border-(--hairline)",
         className,
       )}
     >

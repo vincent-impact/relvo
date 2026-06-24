@@ -9,7 +9,9 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
+  /* Direction B : titres en Bricolage Grotesque, chiffres/refs en Geist Mono */
+  --font-heading: var(--font-display), var(--font-geist-sans);
+  --font-numeric: var(--font-geist-mono);
   /* Couleurs de marque Relvo (cf. mockup/css/styles.css) */
   --color-brand: var(--brand);
   --color-brand-dark: var(--brand-dark);
@@ -101,6 +103,32 @@
   --bar-h: 56px;
   --shadow-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 1px 3px rgb(16 24 40 / 0.06);
   --shadow-up: 0 -2px 12px rgb(16 24 40 / 0.06);
+  --shadow-menu: 0 10px 28px rgb(16 24 40 / 0.18);
+  --shadow-relvo: 0 2px 8px rgb(107 91 214 / 0.35);
+  --shadow-dock: 0 -12px 30px rgb(24 20 48 / 0.12);
+  --shadow-metrics: 0 10px 30px rgb(28 22 60 / 0.13);
+
+  /* Surfaces « Liquid Glass » (Direction B) : tab bar givrée + composer violet.
+     Opacités relevées vs le mockup : par-dessus le fond blanc de l'app, le seul
+     backdrop-filter laissait le dock quasi invisible — on garde le flou (frost)
+     mais on densifie pour une tab bar nettement blanche et un composer violet. */
+  --glass-tab: rgb(255 255 255 / 0.4);
+  --glass-relvo-1: rgb(123 107 230 / 0.95);
+  --glass-relvo-2: rgb(101 85 210 / 0.97);
+  --glass-human-1: rgb(53 123 232 / 0.95);
+  --glass-human-2: rgb(33 99 205 / 0.97);
+  --glass-stroke: rgb(255 255 255 / 0.55);
+  --on-violet: rgb(255 255 255 / 0.74);
+  --blur-glass: 26px;
+  --sat-glass: 190%;
+  --hero-round: 34px;
+
+  /* Couleurs de dossier (« mémoire de Relvo » — rails colorés par domaine) */
+  --folder-suppliers: var(--blue-600);
+  --folder-hr: var(--purple-600);
+  --folder-legal: var(--amber-800);
+  --folder-ops: var(--green-600);
+  --folder-clients: var(--brand-accent);
 
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

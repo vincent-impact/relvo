@@ -48,19 +48,25 @@ export function BottomTabBar() {
   const pathname = usePathname();
   const hidden = useNavHidden();
 
-  // Collapse animé (grille 1fr↔0fr) : le menu se replie vers le bas au scroll
-  // descendant et libère l'espace, réapparaît au scroll montant.
+  // Collapse animé (grille 1fr↔0fr) : la tab bar se replie vers le bas au scroll
+  // descendant et libère l'espace, réapparaît au scroll montant. Verre givré
+  // « Liquid Glass » : translucide blanc, laisse voir le contenu défiler dessous.
   return (
     <div
       className={cn(
-        "grid flex-none transition-[grid-template-rows] duration-300 ease-out",
-        hidden ? "grid-rows-[0fr]" : "grid-rows-[1fr]",
+        "grid flex-none transition-[grid-template-rows,opacity] duration-300 ease-out",
+        hidden ? "grid-rows-[0fr] opacity-0" : "grid-rows-[1fr] opacity-100",
       )}
     >
       <nav
-        className="flex items-stretch overflow-hidden border-t border-(--hairline) bg-white"
+        className="flex items-stretch overflow-hidden"
         style={{
-          paddingBottom: "max(env(safe-area-inset-bottom) - 22px, 6px)",
+          background: "var(--glass-tab)",
+          backdropFilter: "blur(var(--blur-glass)) saturate(var(--sat-glass))",
+          WebkitBackdropFilter:
+            "blur(var(--blur-glass)) saturate(var(--sat-glass))",
+          borderTop: "1px solid var(--glass-stroke)",
+          boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.75)",
         }}
       >
         {TABS.map((tab) => {
@@ -73,10 +79,10 @@ export function BottomTabBar() {
               aria-current={active ? "page" : undefined}
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-[3px] pt-2 pb-[9px] text-[11px] font-semibold",
-                active ? "text-brand" : "text-(--text-tertiary)",
+                active ? "text-relvo" : "text-[#b3b1ab]",
               )}
             >
-              <Icon className="size-[23px]" strokeWidth={2} />
+              <Icon className="size-6" strokeWidth={2} />
               {tab.label}
             </Link>
           );

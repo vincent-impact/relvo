@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Camera, Mic } from "lucide-react";
+import { Mic } from "lucide-react";
+import { RelvoLogoButton } from "@/components/layout/relvo-logo-button";
 
-// Composer Relvo persistant (cf. ux-mobile-first §6.0). Présent sur toutes les
-// vues structurées, ancré au-dessus de la barre d'onglets.
+// Composer Relvo persistant (cf. ux-mobile-first §6.0) — barre violette « Liquid
+// Glass » qui ferme le bas de chaque écran à onglets (cadre violet-haut /
+// violet-bas de la Direction B). Ancré sous la tab bar givrée, dans le dock.
 //  - ✦ = accès à l'historique des conversations (/conversations)
 //  - champ = ouvre une nouvelle conversation plein écran avec le contexte de page
-//  - 📷 / 🎙 = entrées photo / vocal (coquille en V1, branchées en M10)
+//  - 🎙 = entrée vocale (voice-first ; coquille en V1, branchée en M10)
 // Aucun appel IA en M9 : c'est la coquille navigable validée avec l'utilisateur.
 
 export function RelvoComposer() {
@@ -17,36 +19,38 @@ export function RelvoComposer() {
 
   return (
     <div
-      className="flex flex-none items-center gap-2.5 border-t border-(--hairline) bg-white px-3 py-2.5"
-      style={{ boxShadow: "var(--shadow-up)" }}
+      className="relative flex items-center gap-2.5 px-3.5 pt-2.5"
+      style={{
+        paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
+        background:
+          "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
+        backdropFilter: "blur(28px) saturate(170%)",
+        WebkitBackdropFilter: "blur(28px) saturate(170%)",
+        boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.34)",
+      }}
     >
-      <Link
-        href="/conversations"
-        aria-label="Mes conversations"
-        className="grid size-[38px] flex-none place-items-center rounded-full bg-relvo text-[17px] text-white active:scale-95"
-      >
-        ✦
-      </Link>
+      <RelvoLogoButton size={42} />
       <Link
         href={href}
-        className="flex flex-1 items-center rounded-full border border-(--hairline) bg-(--surface) px-3.5 py-2.5 text-sm text-(--text-tertiary)"
+        className="flex flex-1 items-center rounded-full px-[17px] py-3 text-[15px]"
+        style={{
+          background: "rgb(255 255 255 / 0.06)",
+          border: "1px solid rgb(255 255 255 / 0.28)",
+          color: "rgb(255 255 255 / 0.9)",
+          boxShadow:
+            "inset 0 1px 0 rgb(255 255 255 / 0.3), inset 0 -1px 0 rgb(0 0 0 / 0.04)",
+        }}
       >
         Demander à Relvo…
       </Link>
-      <button
-        type="button"
-        aria-label="Prendre une photo"
-        className="grid size-[38px] flex-none place-items-center rounded-full border border-(--hairline) bg-(--surface) text-(--text-secondary)"
-      >
-        <Camera className="size-[18px]" strokeWidth={2} />
-      </button>
-      <button
-        type="button"
-        aria-label="Dicter"
-        className="grid size-[42px] flex-none place-items-center rounded-full bg-relvo text-white shadow-[0_2px_8px_rgba(107,91,214,0.35)] active:scale-95"
+      <Link
+        href={href}
+        aria-label="Dicter à Relvo"
+        className="grid size-[45px] flex-none place-items-center rounded-full bg-white text-relvo active:scale-95"
+        style={{ boxShadow: "0 5px 16px rgb(0 0 0 / 0.22)" }}
       >
         <Mic className="size-5" strokeWidth={2} />
-      </button>
+      </Link>
     </div>
   );
 }
