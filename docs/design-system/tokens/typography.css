@@ -1,0 +1,44 @@
+/* ============================================================
+   Relvo — Typography scale
+   Mobile-first sizes taken directly from the reference mockup.
+   Big titles, few elements per screen, high signal/noise.
+   ============================================================ */
+:root {
+  /* ---- Families (semantic) ---- */
+  --font-heading: var(--font-display);
+  --font-body:    var(--font-sans);
+  --font-numeric: var(--font-mono);
+
+  /* ---- Weights ---- */
+  --fw-regular:  400;  /* @kind font */
+  --fw-medium:   500;  /* @kind font */
+  --fw-semibold: 600;  /* @kind font */
+  --fw-bold:     700;  /* @kind font */
+  --fw-black:    800;  /* @kind font */
+
+  /* ---- Type scale (px — mobile) ---- */
+  --text-kpi:        30px;  /* KpiTile number — tracking -1.2px            */
+  --text-display:    24px;  /* hero / orb greeting headline                */
+  --text-subject:    19px;  /* fiche Sujet title (sh-title)                */
+  --text-title:      18px;  /* app bar « Bonjour … », screen titles        */
+  --text-card-title: 15.5px;/* SubjectCard / folder title                  */
+  --text-body-lg:    14.5px;/* message bubbles                             */
+  --text-body:       14px;  /* default body, inputs                        */
+  --text-body-sm:    13.5px;/* card summary, secondary copy                */
+  --text-meta:       12.5px;/* sub-labels, timestamps                      */
+  --text-caption:    12px;  /* meta rows                                   */
+  --text-micro:      11.5px;/* badge text, refs, pill labels               */
+  --text-label:      13px;  /* SECTION LABEL (uppercase)                   */
+
+  /* ---- Line heights ---- */
+  --leading-tight: 1.15;   /* big titles / KPI                            */
+  --leading-snug:  1.3;    /* card titles                                 */
+  --leading-body:  1.45;   /* paragraphs                                  */
+
+  /* ---- Letter spacing ---- */
+  --tracking-kpi:     -1.2px;
+  --tracking-title:   -0.3px;
+  --tracking-tight:   -0.2px;
+  --tracking-label:    0.5px;  /* uppercase section labels                */
+  --tracking-ref:      0.3px;  /* SUB-0142 references                     */
+}

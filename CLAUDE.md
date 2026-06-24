@@ -82,7 +82,7 @@ Routes francophones, alignées sur la nav V1.
 | Route | Écran | Nav |
 |---|---|---|
 | `/` | Accueil (🏠) — brief : KPIs « Vue du jour » + agenda semaine + 2-3 sujets prioritaires | Onglet |
-| `/fil` | Mon fil (✉️) — traitement : feed + onglets Priorité/Ouverts/Terminés + swipe | Onglet |
+| `/fil` | Mon fil (✉️) — traitement : 3 onglets-statut Ouverts (urgents en tête, swipe ← Ignorer · → Terminer) / Terminés / Ignorés (récupérables) | Onglet |
 | `/dossiers` · `/dossiers/[id]` | **Mémoire** (🧠) — liste des domaines + fiche : onglets Instructions/Documents/Sujets | Onglet |
 | `/parametres` | Paramètres (compte, canaux, contacts) | Onglet |
 | `/sujets/[id]` | Détail d'un sujet | Fiche détail |
@@ -105,8 +105,8 @@ Routes francophones, alignées sur la nav V1.
 4. Le **Subject** est l'entité centrale, pas le message. Chaîne : Message → Task → Action → LogEvent.
 5. Pas de statut `to_qualify` : un message incompris ne crée ni sujet ni contact → reste « Sans sujet » avec un `triage_hint`.
 6. Une **tâche** est rattachée au sujet, pas à un utilisateur (affectation = V2). Source visible via actor-pill (`✦ Relvo` / `Moi`).
-7. **Statut = cycle de vie à 4 valeurs** (`new`, `acknowledged`, `resolved`, `archived`), exclusif et séquentiel. Seuls **Nouveau** et **Terminé** sont visibles ; `acknowledged` (« Lu ») est l'état actif **invisible** (pas de badge), `archived` est **système** (auto après inactivité). Les états instantanés cumulables sont des **marqueurs** distincts du statut — Urgent (drapeau), À faire (dérivé des tâches ouvertes), En attente (`waiting_for_reply` posé par Relvo), pastille de messages non-lus. Les ex-statuts `to_do`/`waiting`/`unread` sont supprimés (devenus marqueurs).
-8. **Priorité à 3 valeurs** (`critical`, `high`, `low` — `medium` retiré) ; un seul **drapeau urgent** (rouge) levé uniquement si `priority = critical`. La **rareté est le signal** (1-2 sujets sur 24). Feed prioritaire = `priority IN (critical, high)`. Deux actions, en **swipe** sur mobile : **Ignorer** (swipe gauche, rouge — force `priority = low`, dispo sur critical/high) et **Terminer** (swipe droite, vert — `status = resolved`). « **Terminer** » remplace « Résoudre » ; **pas de bouton « Archiver »** (état système).
+7. **Statut = cycle de vie à 5 valeurs** (`new`, `acknowledged`, `resolved`, `archived`, `ignored`), exclusif. Seuls **Nouveau** et **Terminé** sont visibles ; `acknowledged` (« Lu ») est l'état actif **invisible**, `archived` est **système** (auto après inactivité), **`ignored`** = sujet **écarté** (hors des ouverts, **hors mémoire de Relvo**, purgeable après 15 j d'inactivité, récupérable via l'onglet Ignorés). L'« ignorance » est **collante** : un nouveau message ne ressort jamais un sujet ignoré (sinon frustration « groupe WhatsApp bavard »). Les états cumulables sont des **marqueurs** distincts — Urgent (drapeau), À faire (dérivé tâches ouvertes), En attente (`waiting_for_reply`), pastille de non-lus. Ex-statuts `to_do`/`waiting`/`unread` supprimés.
+8. **Priorité (urgence) à 2 valeurs** (`urgent`, `normal`) ; **drapeau urgent** (rouge) si `priority = urgent`. La **rareté est le signal** (1-2 sujets sur 24). « Ignoré » n'est **pas** une priorité mais un **statut** (cf. n°7). Deux actions en **swipe** : **Ignorer** (swipe gauche, rouge — `status = ignored`) et **Terminer** (swipe droite, vert — `status = resolved`). « **Terminer** » remplace « Résoudre » ; **pas de bouton « Archiver »** (état système). `getOpenFeed` = tous les ouverts, **urgents en tête**.
 9. **Brouillon Relvo dans le composer** (jamais affiché comme un message du fil). Actions « Régénérer » / « Effacer ».
 10. **Acquittement implicite** des suggestions : ouvrir un sujet vaut acquittement (logique sur `last_opened_at`). Pas de bouton « valider ».
 11. **Conversations par contact**, pas par canal (email + WhatsApp d'un même contact = une seule conversation).

@@ -1,0 +1,27 @@
+import React from "react";
+
+// JournalTimeline — a Subject's activity log as a connected timeline (Direction B).
+// Dots are actor-coloured: Moi blue, Relvo violet, Externe amber.
+// items: [{ actor: "me"|"relvo"|"ext", text, time }]  (text may be a node)
+
+const DOT = { me: "var(--brand)", relvo: "var(--relvo)", ext: "var(--amber-600)" };
+
+export function JournalTimeline({ items = [], style }) {
+  return (
+    <div style={{ padding: "8px 20px 4px", fontFamily: "var(--font-body)", ...style }}>
+      {items.map((it, i) => {
+        const last = i === items.length - 1;
+        return (
+          <div key={i} style={{ display: "flex", gap: 13, paddingBottom: 17, position: "relative" }}>
+            <span style={{ width: 11, height: 11, borderRadius: "50%", marginTop: 3, flex: "0 0 11px", border: "2px solid #fff", position: "relative", zIndex: 1, background: DOT[it.actor] || DOT.relvo }} />
+            {!last ? <span style={{ position: "absolute", left: 5, top: 13, bottom: -4, width: 2, background: "#ece9e3" }} /> : null}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13.5, color: "#3a3833", lineHeight: 1.4 }}>{it.text}</div>
+              {it.time ? <div style={{ fontSize: 11.5, color: "#a8a69d", marginTop: 3 }}>{it.time}</div> : null}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}

@@ -1,0 +1,54 @@
+/* ============================================================
+   Relvo — Spacing, radii, elevation & motion
+   ============================================================ */
+:root {
+  /* ---- Spacing scale (mobile rhythm) ---- */
+  --space-1:  2px;
+  --space-2:  4px;
+  --space-3:  6px;
+  --space-4:  8px;
+  --space-5:  10px;
+  --space-6:  12px;
+  --space-7:  14px;   /* default screen gutter (scroll-pad)  */
+  --space-8:  16px;   /* app bar / composer horizontal pad   */
+  --space-10: 20px;
+  --space-12: 24px;
+
+  --gutter:   16px;   /* horizontal page gutter              */
+
+  /* ---- Radii ---- */
+  --radius-sm:   6px;   /* task checkbox, small chips         */
+  --radius:      10px;  /* buttons, inputs, badges' host      */
+  --radius-md:   11px;  /* icon tiles                         */
+  --radius-lg:   14px;  /* cards (Subject, KPI, Folder)       */
+  --radius-xl:   16px;  /* message bubbles                    */
+  --radius-pill: 999px; /* pills, segmented, avatars          */
+
+  /* ---- Elevation ---- */
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 1px 3px rgb(16 24 40 / 0.06);
+  --shadow-up:   0 -2px 12px rgb(16 24 40 / 0.06);   /* fixed bottom bars */
+  --shadow-menu: 0 10px 28px rgb(16 24 40 / 0.18);   /* dropdown / kebab  */
+  --shadow-relvo: 0 2px 8px rgb(107 91 214 / 0.35);  /* violet glow (mic) */
+  --shadow-dock: 0 -12px 30px rgb(24 20 48 / 0.12);  /* lift under the glass dock (Direction B) */
+  --shadow-metrics: 0 10px 30px rgb(28 22 60 / 0.13);/* « carte à cheval » sur le header (Direction B) */
+
+  /* ---- Liquid Glass (Direction B) ---- */
+  --blur-glass:   26px;   /* backdrop-filter blur for tab bar / composer */
+  --sat-glass:    190%;   /* backdrop saturate */
+  --hero-round:   34px;   /* rayon du bas de la zone agent violette */
+
+  /* ---- Chrome heights (mobile) ---- */
+  --tab-h: 58px;       /* bottom tab bar       */
+  --bar-h: 56px;       /* persistent composer  */
+  --device-w: 402px;   /* mobile frame width    */
+
+  /* ---- Hit target ---- */
+  --tap-min: 44px;
+
+  /* ---- Motion ---- */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);   /* @kind other */
+  --ease-out:      cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */
+  --dur-fast:   120ms;   /* @kind other */
+  --dur-base:   200ms;   /* @kind other */
+  --dur-slow:   320ms;   /* @kind other */
+}

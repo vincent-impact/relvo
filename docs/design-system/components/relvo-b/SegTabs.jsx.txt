@@ -1,0 +1,73 @@
+import React from "react";
+
+// SegTabs — segmented control (Direction B). Used overlapping the violet header
+// (Mon fil filters, Sujet tabs, Réglages tabs). Each tab may carry a small round
+// count badge. Controlled via `value` + `onChange`.
+//   tabs: [{ key, label, count? }]
+
+export function SegTabs({ tabs = [], value, onChange, overlap = false, style }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 5,
+        background: "#fff",
+        borderRadius: "var(--radius-pill)",
+        padding: 5,
+        boxShadow: "0 8px 24px rgb(28 22 60 / 0.14)",
+        ...(overlap ? { position: "relative", zIndex: 3, margin: "-25px 16px 0" } : null),
+        fontFamily: "var(--font-body)",
+        ...style,
+      }}
+    >
+      {tabs.map((t) => {
+        const on = t.key === value;
+        return (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => onChange && onChange(t.key)}
+            style={{
+              flex: 1,
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+              whiteSpace: "nowrap",
+              fontFamily: "inherit",
+              fontSize: 13,
+              fontWeight: 700,
+              padding: "9px 8px",
+              borderRadius: "var(--radius-pill)",
+              background: on ? "var(--relvo)" : "transparent",
+              color: on ? "#fff" : "#8a8980",
+            }}
+          >
+            {t.label}
+            {typeof t.count === "number" ? (
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  minWidth: 18,
+                  height: 18,
+                  padding: "0 5px",
+                  borderRadius: "var(--radius-pill)",
+                  fontSize: 10.5,
+                  fontWeight: 800,
+                  background: on ? "rgba(255,255,255,.28)" : "#eceae6",
+                  color: on ? "#fff" : "#8a8980",
+                }}
+              >
+                {t.count}
+              </span>
+            ) : null}
+          </button>
+        );
+      })}
+    </div>
+  );
+}

@@ -1,0 +1,32 @@
+import React from "react";
+
+// TaskRow — checkable task (Direction B). Source pill (✦ Relvo / Moi), optional
+// due date. Controlled via `done` + `onToggle`.
+
+function ActorPill({ source }) {
+  const relvo = source === "relvo";
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, fontWeight: 650, padding: "2px 8px", borderRadius: "var(--radius-pill)", background: relvo ? "var(--relvo-bg)" : "var(--blue-50)", color: relvo ? "var(--relvo)" : "var(--blue-800)" }}>
+      <span style={{ width: 14, height: 14, borderRadius: "50%", display: "grid", placeItems: "center", fontSize: 8, fontWeight: 800, color: "#fff", background: relvo ? "var(--relvo)" : "var(--brand)" }}>{relvo ? "R" : "M"}</span>
+      {relvo ? "Relvo" : "Moi"}
+    </span>
+  );
+}
+
+export function TaskRow({ title, done = false, source = "me", due, onToggle, style }) {
+  return (
+    <div style={{ display: "flex", gap: 12, alignItems: "flex-start", padding: "13px 18px", margin: "0 14px", borderBottom: "1px solid #f1efeb", fontFamily: "var(--font-body)", ...style }}>
+      <button type="button" onClick={onToggle} aria-pressed={done}
+        style={{ width: 22, height: 22, flex: "0 0 22px", marginTop: 1, borderRadius: "var(--radius-sm)", border: `2px solid ${done ? "var(--green-600)" : "var(--border)"}`, background: done ? "var(--green-600)" : "transparent", color: done ? "#fff" : "transparent", display: "grid", placeItems: "center", cursor: "pointer" }}>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
+      </button>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 14.5, fontWeight: 600, color: done ? "#a8a69d" : "#1c1a22", textDecoration: done ? "line-through" : "none" }}>{title}</div>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6, flexWrap: "wrap" }}>
+          <ActorPill source={source} />
+          {due ? <span style={{ fontSize: 11.5, color: "#a8a69d" }}>{due}</span> : null}
+        </div>
+      </div>
+    </div>
+  );
+}

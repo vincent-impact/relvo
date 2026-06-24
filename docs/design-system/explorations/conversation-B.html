@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Relvo — Conversation (B)</title>
+<link rel="stylesheet" href="../styles.css" />
+<link rel="stylesheet" href="relvo-b.css" />
+<style>
+  .daysep { text-align: center; font-size: 11.5px; color: #a8a69d; font-weight: 600; margin: 4px 0 2px; }
+  .inline-act { display: inline-flex; align-items: center; gap: 6px; margin-top: 9px; font-size: 12.5px; font-weight: 700;
+                color: var(--relvo); background: var(--relvo-bg); border: 1px solid var(--purple-100); padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+  .suggest { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; margin-top: 4px; }
+  .schip { font-size: 13px; font-weight: 600; color: #3a3550; background: #fff; border: 1px solid #e6e3de;
+           padding: 10px 14px; border-radius: 999px; cursor: pointer; box-shadow: 0 1px 2px rgba(20,24,40,.04); }
+  .schip .sp { color: var(--relvo); margin-right: 6px; }
+  img.av { object-fit: cover; }
+</style>
+</head>
+<body>
+  <div class="phone"><div class="screen">
+
+    <!-- HERO compact -->
+    <div class="hero" style="padding-bottom:14px">
+      <div class="sb on-violet"><span>9:41</span><span class="ico">
+        <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="4" width="3" height="8" rx="1"/><rect x="10" y="1.5" width="3" height="10.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" opacity=".4"/></svg>
+        <svg width="22" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="19" height="10" rx="2.6"/><rect x="2.6" y="2.6" width="13" height="6.8" rx="1.4" fill="currentColor" stroke="none"/><rect x="21" y="4" width="2" height="4" rx="1" fill="currentColor" stroke="none"/></svg>
+      </span></div>
+      <div class="appbar">
+        <span class="back"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></span>
+        <div class="ttl"><h1>Relvo</h1><div class="sub">Votre assistant — toujours là</div></div>
+        <button class="relvo-btn" aria-label="Mes conversations Relvo"><img src="../assets/relvo-icon-256.png" alt="Relvo" /></button>
+      </div>
+    </div>
+
+    <div class="scroll" id="scroll" style="background:var(--bg-secondary);padding-bottom:110px">
+      <div class="chat">
+        <div class="daysep">Aujourd'hui</div>
+
+        <div class="msg out"><div class="bub">Où en est le remplacement de la sauce blanche ?</div></div>
+
+        <div class="msg in relvo">
+          <div class="hd"><img class="av" src="../assets/relvo-icon-256.png" alt="" /><span class="nm">Relvo</span><span class="ch">à l'instant</span></div>
+          <div class="bub">Karim (SoGood) propose une substitution équivalente. J'ai préparé une réponse et 2 tâches sur le sujet <b>SUB-0142</b>. J'attends votre validation pour répondre.
+            <div><span class="inline-act">Ouvrir le sujet
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span></div>
+          </div>
+        </div>
+
+        <div class="msg out"><div class="bub">Parfait, envoie la réponse.</div></div>
+
+        <div class="msg in relvo">
+          <div class="hd"><img class="av" src="../assets/relvo-icon-256.png" alt="" /><span class="nm">Relvo</span><span class="ch">à l'instant</span></div>
+          <div class="bub">C'est envoyé ✦. Je vous préviens dès que Karim confirme la fiche allergènes. Souhaitez-vous que je planifie une relance&nbsp;?</div>
+        </div>
+
+        <div class="suggest">
+          <span class="schip"><span class="sp">✦</span>Oui, relancer dans 2 jours</span>
+          <span class="schip"><span class="sp">✦</span>Voir mes autres sujets urgents</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DOCK : composer violet principal -->
+    <div class="dock">
+      <div class="composer">
+        <div class="ib spark"><svg width="19" height="19" viewBox="0 0 24 24" fill="#fff"><path d="M11.1 3.2 12.5 8l4.8 1.4c.6.2.6 1 0 1.2L12.5 12l-1.4 4.8c-.2.6-1 .6-1.2 0L8.5 12l-4.8-1.4c-.6-.2-.6-1 0-1.2L8.5 8 9.9 3.2c.2-.6 1-.6 1.2 0Z"/></svg></div>
+        <div class="field">Demander à Relvo…</div>
+        <div class="ib mic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--relvo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+        <div class="home-ind"></div>
+      </div>
+    </div>
+  </div></div>
+</body>
+</html>

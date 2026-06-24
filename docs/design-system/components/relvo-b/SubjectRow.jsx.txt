@@ -1,0 +1,85 @@
+import React from "react";
+
+// SubjectRow — a Subject rendered as a LINE (Direction B), not a floating card.
+// Domain colour rail + tinted icon, reference, optional urgent flag, title,
+// summary, marker tags, and a blue unread pip top-right. The `urgent` variant
+// washes the whole row red (rare = signal).
+
+const TONES = {
+  amber: { background: "var(--amber-50)", color: "var(--amber-800)" },
+  relvo: { background: "var(--relvo-bg)", color: "var(--relvo)" },
+  blue: { background: "var(--brand)", color: "#fff" },
+  red: { background: "var(--red-600)", color: "#fff" },
+  green: { background: "var(--green-50)", color: "var(--green-600)" },
+  grey: { background: "#f0eeea", color: "#86857d" },
+};
+
+function Tag({ tone = "grey", children }) {
+  return (
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10.5, fontWeight: 700, padding: "3px 9px", borderRadius: "var(--radius-pill)", whiteSpace: "nowrap", ...TONES[tone] }}>
+      {children}
+    </span>
+  );
+}
+
+export function SubjectRow({
+  reference,
+  title,
+  summary,
+  icon,
+  railColor = "var(--blue-600)",
+  iconBg,
+  urgent = false,
+  done = false,
+  tags = [],
+  unread = 0,
+  onClick,
+  style,
+}) {
+  return (
+    <article
+      onClick={onClick}
+      style={{
+        position: "relative",
+        display: "flex",
+        gap: 13,
+        padding: 14,
+        margin: urgent ? "0 12px" : "0 14px",
+        borderBottom: urgent ? "none" : "1px solid #f1efeb",
+        borderRadius: urgent ? 16 : 0,
+        background: urgent ? "#fdf1f1" : "transparent",
+        opacity: done ? 0.62 : 1,
+        cursor: onClick ? "pointer" : "default",
+        fontFamily: "var(--font-body)",
+        ...style,
+      }}
+    >
+      {unread > 0 ? (
+        <span style={{ position: "absolute", top: 13, right: 15, minWidth: 20, height: 20, padding: "0 6px", borderRadius: "var(--radius-pill)", background: "var(--brand)", color: "#fff", fontSize: 11, fontWeight: 700, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{unread}</span>
+      ) : null}
+
+      {!urgent && railColor ? <span style={{ width: 4, borderRadius: "var(--radius-pill)", flex: "0 0 4px", alignSelf: "stretch", background: railColor }} /> : null}
+
+      {icon ? <span style={{ width: 40, height: 40, borderRadius: 12, display: "grid", placeItems: "center", flex: "0 0 40px", color: "#fff", alignSelf: "flex-start", background: iconBg || railColor }}>{icon}</span> : null}
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {reference ? <span style={{ fontFamily: "var(--font-numeric)", fontSize: 10.5, fontWeight: 600, letterSpacing: ".3px", color: "#b3b1ab" }}>{reference}</span> : null}
+          {urgent ? (
+            <Tag tone="red">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M5 2a1 1 0 0 1 1 1v18a1 1 0 1 1-2 0V3a1 1 0 0 1 1-1z" /><path d="M7 3.5h11.5a1 1 0 0 1 .8 1.6L17 8l2.3 2.9a1 1 0 0 1-.8 1.6H7z" /></svg>
+              Urgent
+            </Tag>
+          ) : null}
+        </div>
+        <div style={{ fontSize: 15.5, fontWeight: 700, letterSpacing: "-.2px", margin: "4px 0 0", textDecoration: done ? "line-through" : "none" }}>{title}</div>
+        {summary ? <div style={{ fontSize: 12.5, color: "#86857d", marginTop: 4, lineHeight: 1.4 }}>{summary}</div> : null}
+        {tags.length ? (
+          <div style={{ display: "flex", gap: 7, alignItems: "center", marginTop: 9, flexWrap: "wrap" }}>
+            {tags.map((t, i) => <Tag key={i} tone={t.tone}>{t.label}</Tag>)}
+          </div>
+        ) : null}
+      </div>
+    </article>
+  );
+}

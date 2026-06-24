@@ -1,0 +1,63 @@
+import React from "react";
+
+// MetricsCard — the « carte à cheval » dashboard strip (Direction B). One white
+// surface that overlaps the violet header bottom; cells divided by hairlines.
+// Colour is reserved for signal: tone "urgent" → red, "relvo" → violet. A cell
+// of type "gauge" renders a circular saturation ring (green→amber→red).
+
+function gaugeColor(p) {
+  if (p >= 80) return "var(--red-600)";
+  if (p >= 50) return "#e8902b";
+  return "var(--green-600)";
+}
+
+function Cell({ m }) {
+  if (m.type === "gauge") {
+    const p = Math.max(0, Math.min(100, m.percent || 0));
+    return (
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 7, padding: "0 4px" }}>
+        <div style={{ position: "relative", width: 42, height: 42, display: "grid", placeItems: "center" }}>
+          <svg width="42" height="42" viewBox="0 0 36 36">
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke="#efedea" strokeWidth="3.6" />
+            <circle cx="18" cy="18" r="15.9" fill="none" stroke={gaugeColor(p)} strokeWidth="3.6" strokeLinecap="round" pathLength="100" strokeDasharray={`${p} 100`} transform="rotate(-90 18 18)" />
+          </svg>
+          <span style={{ position: "absolute", fontFamily: "var(--font-numeric)", fontSize: 10.5, fontWeight: 700, color: "#1c1a22" }}>{p}%</span>
+        </div>
+        <div style={{ fontSize: 10.5, color: "#9a988f", fontWeight: 600, textAlign: "center", lineHeight: 1.2 }}>{m.label}</div>
+      </div>
+    );
+  }
+  const color = m.tone === "urgent" ? "var(--red-600)" : m.tone === "relvo" ? "var(--relvo)" : "#1c1a22";
+  return (
+    <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 7, padding: "0 4px" }}>
+      <span style={{ fontFamily: "var(--font-numeric)", fontSize: 22, fontWeight: 700, letterSpacing: "-1px", lineHeight: 1, color, height: 42, display: "flex", alignItems: "center" }}>{m.value}</span>
+      <div style={{ fontSize: 10.5, color: "#9a988f", fontWeight: 600, textAlign: "center", lineHeight: 1.2 }}>{m.label}</div>
+    </div>
+  );
+}
+
+export function MetricsCard({ metrics = [], overlap = true, style }) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        zIndex: 3,
+        margin: overlap ? "-30px 16px 0" : "0 16px",
+        background: "#fff",
+        borderRadius: 22,
+        boxShadow: "var(--shadow-metrics)",
+        display: "flex",
+        padding: "14px 4px",
+        fontFamily: "var(--font-body)",
+        ...style,
+      }}
+    >
+      {metrics.map((m, i) => (
+        <React.Fragment key={i}>
+          {i > 0 ? <span style={{ width: 1, alignSelf: "stretch", margin: "6px 0", background: "#f1efeb" }} /> : null}
+          <Cell m={m} />
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}

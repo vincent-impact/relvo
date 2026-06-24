@@ -1,0 +1,23 @@
+/* ============================================================
+   Relvo — Fonts
+   Typography was UNDEFINED in the product (system font in the mockup,
+   Geist in the Next app). Proposed pairing (Google Fonts), chosen for a
+   calm / premium / human / serious register on a mobile, one-handed app:
+
+     • Display & headings → Bricolage Grotesque  (warm contemporary grotesque,
+       confident at large sizes — for « gros titres »)
+     • UI & body         → Geist                 (the app's real font; clean,
+       neutral, highly legible in bright light)
+     • Numerals & refs   → Geist Mono             (tabular KPI figures, SUB-0142)
+
+   Loaded from the Google Fonts CDN so consumers need only link styles.css.
+   To self-host, download the families and replace this @import with local
+   @font-face rules.
+   ============================================================ */
+@import url("https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Geist:wght@400..700&family=Geist+Mono:wght@400..600&display=swap");
+
+:root {
+  --font-display: "Bricolage Grotesque", "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-sans:    "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono:    "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}

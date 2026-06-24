@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Relvo — Mémoire (B)</title>
+<link rel="stylesheet" href="../styles.css" />
+<link rel="stylesheet" href="relvo-b.css" />
+<style>
+  .stats { position: relative; z-index: 3; margin: -30px 16px 0; background: #fff; border-radius: 22px;
+           box-shadow: 0 10px 30px rgba(28,22,60,.13); display: flex; padding: 14px 4px; }
+  .stat3 { flex: 1; position: relative; display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 0 4px; }
+  .stat3 + .stat3::before { content: ""; position: absolute; left: 0; top: 12%; bottom: 12%; width: 1px; background: #f1efeb; }
+  .stat3 .n { font-family: var(--font-numeric); font-size: 21px; font-weight: 700; letter-spacing: -1px; color: #1c1a22; height: 42px; display: flex; align-items: center; }
+  .stat3 .l { font-size: 10px; color: #9a988f; font-weight: 600; text-align: center; line-height: 1.2; }
+  /* jauge saturation : vert (0-50) → ambre (50-80) → rouge (80-100) */
+  .gaugewrap { position: relative; width: 42px; height: 42px; display: grid; place-items: center; }
+  .gaugewrap .pct { position: absolute; font-family: var(--font-numeric); font-size: 10.5px; font-weight: 700; color: #1c1a22; }
+  .frow { display: flex; align-items: center; gap: 13px; padding: 14px 18px; margin: 0 14px; border-bottom: 1px solid #f1efeb; cursor: pointer; }
+  .frow .fic { width: 42px; height: 42px; border-radius: 13px; display: grid; place-items: center; flex: 0 0 42px; color: #fff; }
+  .frow .fb { flex: 1; min-width: 0; }
+  .frow .fn { font-size: 15.5px; font-weight: 700; letter-spacing: -.2px; }
+  .frow .fs { font-size: 12.5px; color: #86857d; margin-top: 2px; }
+  .frow .chev { color: #cfcdc7; flex: 0 0 auto; }
+</style>
+</head>
+<body>
+  <div class="phone"><div class="screen">
+    <div class="scroll" id="scroll" style="padding-bottom:178px">
+
+      <div class="hero round" style="padding-bottom:42px">
+        <div class="sb on-violet"><span>9:41</span><span class="ico">
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="4" width="3" height="8" rx="1"/><rect x="10" y="1.5" width="3" height="10.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1" opacity=".4"/></svg>
+          <svg width="22" height="12" viewBox="0 0 24 12" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="1" width="19" height="10" rx="2.6"/><rect x="2.6" y="2.6" width="13" height="6.8" rx="1.4" fill="currentColor" stroke="none"/><rect x="21" y="4" width="2" height="4" rx="1" fill="currentColor" stroke="none"/></svg>
+        </span></div>
+        <div class="pad">
+          <div class="top" style="justify-content:space-between">
+            <div><h1 class="big">Mémoire</h1><div class="date">Ce que Relvo sait de votre activité</div></div>
+            <button class="relvo-btn" aria-label="Mes conversations Relvo"><img src="../assets/relvo-icon-256.png" alt="Relvo" /></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- stats à cheval — 4 KPI sur une ligne -->
+      <div class="stats">
+        <div class="stat3"><div class="n">18</div><div class="l">Sujets suivis</div></div>
+        <div class="stat3"><div class="n">7</div><div class="l">Instructions</div></div>
+        <div class="stat3"><div class="n">29</div><div class="l">Documents</div></div>
+        <div class="stat3">
+          <div class="gaugewrap">
+            <svg width="42" height="42" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#efedea" stroke-width="3.6"/>
+              <circle cx="18" cy="18" r="15.9" fill="none" stroke="#e8902b" stroke-width="3.6" stroke-linecap="round" pathLength="100" stroke-dasharray="64 100" transform="rotate(-90 18 18)"/>
+            </svg>
+            <span class="pct">64%</span>
+          </div>
+          <div class="l">Saturation</div>
+        </div>
+      </div>
+
+      <div class="agent-note">
+        <span class="sp"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M11.1 3.2 12.5 8l4.8 1.4c.6.2.6 1 0 1.2L12.5 12l-1.4 4.8c-.2.6-1 .6-1.2 0L8.5 12l-4.8-1.4c-.6-.2-.6-1 0-1.2L8.5 8 9.9 3.2c.2-.6 1-.6 1.2 0Z"/></svg></span>
+        <p>C'est ici que vous enrichissez la mémoire de Relvo et affinez son comportement.</p>
+      </div>
+
+      <div class="sect"><span class="h"><span class="ph" style="background:var(--brand)"></span>Dossiers</span><span class="a">Tout voir</span></div>
+
+      <div class="frow">
+        <div class="fic" style="background:var(--blue-600)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5M12 22V12"/></svg></div>
+        <div class="fb"><div class="fn">Fournisseurs</div><div class="fs">8 sujets · 12 documents</div></div>
+        <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span>
+      </div>
+      <div class="frow">
+        <div class="fic" style="background:var(--purple-600)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M16 19v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 19v-2a4 4 0 0 0-3-3.9"/></svg></div>
+        <div class="fb"><div class="fn">Ressources humaines</div><div class="fs">3 sujets · 5 documents</div></div>
+        <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span>
+      </div>
+      <div class="frow">
+        <div class="fic" style="background:var(--amber-600)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg></div>
+        <div class="fb"><div class="fn">Juridique</div><div class="fs">2 sujets · 9 documents</div></div>
+        <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span>
+      </div>
+      <div class="frow">
+        <div class="fic" style="background:var(--brand-accent)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0"/></svg></div>
+        <div class="fb"><div class="fn">Clients</div><div class="fs">5 sujets · 3 documents</div></div>
+        <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span>
+      </div>
+      <div class="frow">
+        <div class="fic" style="background:var(--green-600)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C8 6 6 9 6 13a6 6 0 0 0 12 0c0-2.5-1-4.5-3-6.5.4 2.2-1 3.5-2 3.5 0-2.2-.5-4.5-1-8Z"/></svg></div>
+        <div class="fb"><div class="fn">Production</div><div class="fs">4 sujets · 2 documents</div></div>
+        <span class="chev"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span>
+      </div>
+
+    </div>
+
+    <div class="dock" id="dock">
+      <div class="tabs">
+        <button><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>Accueil</button>
+        <button><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>Mon fil</button>
+        <button class="on"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.99.1A4 4 0 0 0 3.5 11a4 4 0 0 0 .5 6.6A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.99.1A4 4 0 0 1 20.5 11a4 4 0 0 1-.5 6.6A4 4 0 1 1 12 18Z"/></svg>Mémoire</button>
+        <button><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.2A1.6 1.6 0 0 0 6.6 19.7l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3 15"/></svg>Réglages</button>
+      </div>
+      <div class="composer">
+        <div class="ib spark"><svg width="19" height="19" viewBox="0 0 24 24" fill="#fff"><path d="M11.1 3.2 12.5 8l4.8 1.4c.6.2.6 1 0 1.2L12.5 12l-1.4 4.8c-.2.6-1 .6-1.2 0L8.5 12l-4.8-1.4c-.6-.2-.6-1 0-1.2L8.5 8 9.9 3.2c.2-.6 1-.6 1.2 0Z"/></svg></div>
+        <div class="field">Demander à Relvo…</div>
+        <div class="ib mic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--relvo)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+        <div class="home-ind"></div>
+      </div>
+    </div>
+  </div></div>
+
+  <script>
+    (function () {
+      var scroll = document.getElementById('scroll'), dock = document.getElementById('dock'), last = 0;
+      scroll.addEventListener('scroll', function () {
+        var y = scroll.scrollTop;
+        if (y > last && y > 50) dock.classList.add('tabs-off');
+        else if (y < last) dock.classList.remove('tabs-off');
+        last = y;
+      }, { passive: true });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+/* ============================================================
+   Relvo — Color tokens
+   Brand palette and semantic scales locked by the product brief
+   (Moi=bleu · Relvo=violet · Externe=ambre · urgent=rouge · terminé=vert).
+   Values lifted verbatim from apps/web/src/app/globals.css + mockup/mobile/css/app.css.
+   ============================================================ */
+:root {
+  /* ---- Brand ---- */
+  --brand:        #2b6fe0;   /* bleu — accent primaire, liens, acteur « Moi »  */
+  --brand-dark:   #0a1128;   /* navy — texte fort, fonds profonds, sidebar     */
+  --brand-accent: #e63150;   /* rouge vif — actions destructrices, swipe ignorer */
+
+  /* ---- Relvo (la voix de l'agent — couleur signature ✦) ---- */
+  --relvo:    #6b5bd6;       /* violet — tout ce qui émane de l'IA             */
+  --relvo-bg: #f1effc;       /* violet pâle — fonds de blocs Relvo             */
+
+  /* ---- Échelles sémantiques (badges, états, marqueurs) ---- */
+  /* blue = Moi / info */
+  --blue-50:  #e6f1fb;
+  --blue-100: #b5d4f4;
+  --blue-600: #185fa5;
+  --blue-800: #0c447c;
+  /* purple = Relvo */
+  --purple-50:  #eeedfe;
+  --purple-100: #cecbf6;
+  --purple-600: #534ab7;
+  --purple-800: #3c3489;
+  /* amber = Externe / attention douce */
+  --amber-50:  #faeeda;
+  --amber-100: #fac775;
+  --amber-600: #854f0b;
+  --amber-800: #633806;
+  /* red = urgent / danger */
+  --red-50:  #fcebeb;
+  --red-200: #f09595;
+  --red-600: #a32d2d;
+  --red-800: #791f1f;
+  /* green = terminé / succès */
+  --green-50:  #e7f4ec;
+  --green-600: #1f7a45;
+  --green-800: #155c33;
+
+  /* ---- Neutres (légèrement chauds — chaleur « food/humain ») ---- */
+  --bg-primary:   #ffffff;   /* surface de carte, app bar, composer */
+  --bg-secondary: #f7f7f5;   /* fond de zone scroll                 */
+  --bg-tertiary:  #eeecea;   /* puces, segmented, fills discrets     */
+  --border:       #e4e2de;   /* hairline standard                    */
+  --border-light: #eeecea;   /* hairline plus douce (séparateurs)    */
+
+  --text-primary:   #1a1a1a;
+  --text-secondary: #6b6b6b;
+  --text-tertiary:  #9a9a9a;
+
+  /* ---- Aliases sémantiques (couche d'intention) ---- */
+  --surface:        var(--bg-primary);
+  --surface-2:      var(--bg-secondary);
+  --surface-sunken: var(--bg-tertiary);
+  --hairline:       var(--border);
+
+  /* ---- Surfaces Liquid Glass (Direction B) ---- */
+  --glass-tab:      rgb(255 255 255 / 0.5);   /* tab bar givrée (verre blanc) */
+  --glass-relvo-1:  rgb(123 107 230 / 0.82);  /* composer verre violet — haut */
+  --glass-relvo-2:  rgb(101 85 210 / 0.86);   /* composer verre violet — bas  */
+  --glass-stroke:   rgb(255 255 255 / 0.55);  /* liseré spéculaire sur l'arête */
+  --on-violet:      rgb(255 255 255 / 0.74);  /* texte secondaire sur la zone agent */
+
+  --text-on-brand:  #ffffff;
+  --text-on-dark:   #ffffff;
+  --link:           var(--brand);
+
+  /* Rôles d'acteur (triptyque) */
+  --actor-me:    var(--brand);
+  --actor-relvo: var(--relvo);
+  --actor-ext:   var(--amber-600);
+
+  /* États */
+  --danger:  var(--brand-accent);
+  --success: var(--green-600);
+  --warning: var(--amber-600);
+
+  /* Couleurs de dossier (« mémoire de Relvo » — tâches colorées par dossier) */
+  --folder-suppliers: var(--blue-600);   /* Fournisseurs */
+  --folder-hr:        var(--purple-600);  /* RH           */
+  --folder-legal:     var(--amber-800);   /* Juridique    */
+  --folder-ops:       var(--green-600);   /* Production   */
+  --folder-clients:   var(--brand-accent);/* Clients      */
+}
