@@ -1,12 +1,17 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { FeedTabs } from "@/components/feed/feed-tabs";
+import { RowsSkeleton } from "@/components/shared/screen-skeletons";
 import { getTenantDb } from "@/server/auth-context";
 
 // Contacts (M9.10, Direction B) — annuaire en lignes + filtre « À compléter »
 // (contacts créés par Relvo, status=auto). Un contact n'existe qu'à la création
 // d'un sujet (invariant n°12). Le tap ouvre la fiche /contacts/[id].
+//
+// PERF (M9.19, point 2) : le hero (avec le compteur, requête count légère)
+// s'affiche instantanément ; l'annuaire stream dans un <Suspense>.
 
 function initials(name: string): string {
   return name
@@ -54,7 +59,7 @@ function ContactRow({
   );
 }
 
-export default async function ContactsPage() {
+async function ContactsList() {
   const db = await getTenantDb();
   const contacts = await db.contact.findMany({
     orderBy: { name: "asc" },
@@ -69,44 +74,54 @@ export default async function ContactsPage() {
   const toComplete = contacts.filter((c) => c.status === "auto");
 
   return (
+    <FeedTabs
+      options={[
+        { value: "tous", label: "Tous", count: contacts.length },
+        { value: "complete", label: "À compléter", count: toComplete.length },
+      ]}
+      panes={{
+        tous: (
+          <div className="pt-1">
+            {contacts.length === 0 ? (
+              <p className="px-[22px] py-8 text-center text-[13.5px] text-(--text-tertiary)">
+                Aucun contact.
+              </p>
+            ) : (
+              contacts.map((c) => <ContactRow key={c.id} contact={c} />)
+            )}
+          </div>
+        ),
+        complete: (
+          <div className="pt-1">
+            {toComplete.length === 0 ? (
+              <p className="px-[22px] py-8 text-center text-[13.5px] text-(--text-tertiary)">
+                Tous vos contacts sont complets. ✦
+              </p>
+            ) : (
+              toComplete.map((c) => <ContactRow key={c.id} contact={c} />)
+            )}
+          </div>
+        ),
+      }}
+    />
+  );
+}
+
+export default async function ContactsPage() {
+  const db = await getTenantDb();
+  const total = await db.contact.count();
+
+  return (
     <Screen>
       <RelvoHeader
         back="/"
         title="Contacts"
-        subtitle={`${contacts.length} contact${contacts.length > 1 ? "s" : ""}`}
+        subtitle={`${total} contact${total > 1 ? "s" : ""}`}
         className="pb-9"
       />
-
-      <FeedTabs
-        options={[
-          { value: "tous", label: "Tous", count: contacts.length },
-          { value: "complete", label: "À compléter", count: toComplete.length },
-        ]}
-        panes={{
-          tous: (
-            <div className="pt-1">
-              {contacts.length === 0 ? (
-                <p className="px-[22px] py-8 text-center text-[13.5px] text-(--text-tertiary)">
-                  Aucun contact.
-                </p>
-              ) : (
-                contacts.map((c) => <ContactRow key={c.id} contact={c} />)
-              )}
-            </div>
-          ),
-          complete: (
-            <div className="pt-1">
-              {toComplete.length === 0 ? (
-                <p className="px-[22px] py-8 text-center text-[13.5px] text-(--text-tertiary)">
-                  Tous vos contacts sont complets. ✦
-                </p>
-              ) : (
-                toComplete.map((c) => <ContactRow key={c.id} contact={c} />)
-              )}
-            </div>
-          ),
-        }}
-      />
+      <Suspense fallback={<RowsSkeleton count={6} />}>
+        <ContactsList />
+      </Suspense>
     </Screen>
   );
 }

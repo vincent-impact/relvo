@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { Inbox, Plus, Search } from "lucide-react";
 import {
@@ -11,12 +12,17 @@ import { IgnoredSubject } from "@/components/feed/ignored-subject";
 import { SwipeableSubject } from "@/components/feed/swipeable-subject";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
+import { RowsSkeleton } from "@/components/shared/screen-skeletons";
 import { SubjectRow, toSubjectRowData } from "@/components/shared/subject-row";
 import { getTenantDb } from "@/server/auth-context";
 
 // Mon fil (M9.4, Direction B) — traitement des sujets. Hero violet + champ de
 // recherche, SegTabs chevauchant. 3 onglets, paniers de STATUT : Ouverts (urgents
 // en tête, swipe ← Ignorer · → Terminer), Terminés, Ignorés (récupérables).
+//
+// PERF (M9.19, point 2) : le hero (compteur d'ouverts, requête count légère) +
+// le champ de recherche s'affichent instantanément ; les 3 onglets streament
+// dans un <Suspense>.
 
 const CLOSED = ["resolved", "archived", "ignored"] as const;
 
@@ -63,10 +69,10 @@ function FeedList({
   );
 }
 
-export default async function FilPage() {
+async function FilFeed() {
   const db = await getTenantDb();
 
-  const [openFeed, resolvedSubjects, ignoredSubjects, openCount, orphanCount] =
+  const [openFeed, resolvedSubjects, ignoredSubjects, orphanCount] =
     await Promise.all([
       getOpenFeed(db, { limit: 40 }),
       db.subject.findMany({
@@ -79,7 +85,6 @@ export default async function FilPage() {
         orderBy: [{ lastActivityAt: "desc" }],
         take: 40,
       }),
-      db.subject.count({ where: { status: { notIn: [...CLOSED] } } }),
       countOrphanMessages(db),
     ]);
 
@@ -96,6 +101,48 @@ export default async function FilPage() {
   const ouverts = enriched.slice(0, openLen);
   const termines = enriched.slice(openLen, openLen + resolvedLen);
   const ignores = enriched.slice(openLen + resolvedLen);
+
+  return (
+    <FeedTabs
+      options={[
+        { value: "ouverts", label: "Ouverts", count: ouverts.length },
+        { value: "termines", label: "Terminés", count: termines.length },
+        { value: "ignores", label: "Ignorés", count: ignores.length },
+      ]}
+      note={
+        orphanCount > 0 ? (
+          <Link
+            href="/messages"
+            className="mx-4 mt-4 mb-1 flex items-center gap-3 rounded-2xl border border-(--purple-100) bg-relvo-bg px-3.5 py-3 active:opacity-90"
+          >
+            <span className="grid size-9 flex-none place-items-center rounded-xl bg-relvo text-white">
+              <Inbox className="size-[18px]" strokeWidth={2} />
+            </span>
+            <p className="flex-1 text-[13.5px] leading-[1.4] text-[#3a3550]">
+              <b className="font-bold">{orphanCount}</b> message
+              {orphanCount > 1 ? "s" : ""} reçu{orphanCount > 1 ? "s" : ""} sans
+              intérêt.
+            </p>
+            <span className="text-[12.5px] font-bold whitespace-nowrap text-relvo">
+              Voir →
+            </span>
+          </Link>
+        ) : null
+      }
+      panes={{
+        ouverts: <FeedList items={ouverts} variant="swipe" />,
+        termines: <FeedList items={termines} variant="done" />,
+        ignores: <FeedList items={ignores} variant="ignored" />,
+      }}
+    />
+  );
+}
+
+export default async function FilPage() {
+  const db = await getTenantDb();
+  const openCount = await db.subject.count({
+    where: { status: { notIn: [...CLOSED] } },
+  });
 
   return (
     <Screen>
@@ -131,38 +178,9 @@ export default async function FilPage() {
         </Link>
       </RelvoHeader>
 
-      <FeedTabs
-        options={[
-          { value: "ouverts", label: "Ouverts", count: ouverts.length },
-          { value: "termines", label: "Terminés", count: termines.length },
-          { value: "ignores", label: "Ignorés", count: ignores.length },
-        ]}
-        note={
-          orphanCount > 0 ? (
-            <Link
-              href="/messages"
-              className="mx-4 mt-4 mb-1 flex items-center gap-3 rounded-2xl border border-(--purple-100) bg-relvo-bg px-3.5 py-3 active:opacity-90"
-            >
-              <span className="grid size-9 flex-none place-items-center rounded-xl bg-relvo text-white">
-                <Inbox className="size-[18px]" strokeWidth={2} />
-              </span>
-              <p className="flex-1 text-[13.5px] leading-[1.4] text-[#3a3550]">
-                <b className="font-bold">{orphanCount}</b> message
-                {orphanCount > 1 ? "s" : ""} reçu{orphanCount > 1 ? "s" : ""}{" "}
-                sans intérêt.
-              </p>
-              <span className="text-[12.5px] font-bold whitespace-nowrap text-relvo">
-                Voir →
-              </span>
-            </Link>
-          ) : null
-        }
-        panes={{
-          ouverts: <FeedList items={ouverts} variant="swipe" />,
-          termines: <FeedList items={termines} variant="done" />,
-          ignores: <FeedList items={ignores} variant="ignored" />,
-        }}
-      />
+      <Suspense fallback={<RowsSkeleton count={5} />}>
+        <FilFeed />
+      </Suspense>
     </Screen>
   );
 }

@@ -1,8 +1,13 @@
+import { Suspense } from "react";
 import { Sparkles } from "lucide-react";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { FolderRow } from "@/components/shared/folder-row";
 import { MetricsCard, type Metric } from "@/components/shared/metrics-card";
+import {
+  MetricsCardSkeleton,
+  RowsSkeleton,
+} from "@/components/shared/screen-skeletons";
 import { SectionLabel } from "@/components/shared/section-label";
 import { getTenantDb } from "@/server/auth-context";
 
@@ -10,8 +15,11 @@ import { getTenantDb } from "@/server/auth-context";
 // violet + carte stats à cheval (Sujets suivis / Instructions / Documents /
 // Saturation en jauge) + note d'agent + dossiers en lignes (compteurs par
 // domaine). Chaque dossier = un domaine de la mémoire (icône cerveau dans la nav).
+//
+// PERF (M9.19, point 2) : le hero s'affiche instantanément ; stats + dossiers
+// streament dans une frontière <Suspense>.
 
-export default async function DossiersPage() {
+async function DossiersBody() {
   const db = await getTenantDb();
 
   const [folders, subjectsTotal, subjGroups, docGroups] = await Promise.all([
@@ -69,13 +77,7 @@ export default async function DossiersPage() {
   }
 
   return (
-    <Screen>
-      <RelvoHeader
-        title="Mémoire"
-        subtitle="Ce que Relvo sait de votre activité"
-        className="pb-[42px]"
-      />
-
+    <>
       <MetricsCard metrics={metrics} />
 
       <div className="mx-4 mt-4 flex items-center gap-2.5 rounded-2xl border border-(--purple-100) bg-relvo-bg px-3.5 py-3">
@@ -102,6 +104,28 @@ export default async function DossiersPage() {
           />
         ))}
       </div>
+    </>
+  );
+}
+
+export default function DossiersPage() {
+  return (
+    <Screen>
+      <RelvoHeader
+        title="Mémoire"
+        subtitle="Ce que Relvo sait de votre activité"
+        className="pb-[42px]"
+      />
+      <Suspense
+        fallback={
+          <>
+            <MetricsCardSkeleton />
+            <RowsSkeleton count={5} className="pt-8" />
+          </>
+        }
+      >
+        <DossiersBody />
+      </Suspense>
     </Screen>
   );
 }

@@ -1,8 +1,10 @@
+import { Suspense } from "react";
 import { Clock } from "lucide-react";
 import { countOrphanMessages, listMessageEvents } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { MessageStack } from "@/components/messages/message-stack";
+import { RowsSkeleton } from "@/components/shared/screen-skeletons";
 import { MESSAGES_PAGE_SIZE, toMessageRowData } from "@/lib/message-row";
 import { getTenantDb } from "@/server/auth-context";
 
@@ -11,16 +13,25 @@ import { getTenantDb } from "@/server/auth-context";
 // surface d'interaction, invariant n°4). Cette pile se vide au tri ; un orphelin
 // non rattaché est conservé 15 jours puis retiré automatiquement. Action de tri
 // principale : « Créer un sujet » depuis un message.
+//
+// PERF (M9.19, point 2) : le hero (compteur) + la note s'affichent
+// instantanément ; la pile stream dans un <Suspense>.
+
+async function OrphanStack() {
+  const db = await getTenantDb();
+  const orphanPage = await listMessageEvents(db, {
+    filter: "orphan",
+    limit: MESSAGES_PAGE_SIZE,
+  });
+  const items = orphanPage.items.map(toMessageRowData);
+  return (
+    <MessageStack initialItems={items} initialCursor={orphanPage.nextCursor} />
+  );
+}
 
 export default async function MessagesPage() {
   const db = await getTenantDb();
-
-  const [orphanPage, orphanTotal] = await Promise.all([
-    listMessageEvents(db, { filter: "orphan", limit: MESSAGES_PAGE_SIZE }),
-    countOrphanMessages(db),
-  ]);
-
-  const items = orphanPage.items.map(toMessageRowData);
+  const orphanTotal = await countOrphanMessages(db);
 
   return (
     <Screen>
@@ -47,10 +58,9 @@ export default async function MessagesPage() {
         </p>
       </div>
 
-      <MessageStack
-        initialItems={items}
-        initialCursor={orphanPage.nextCursor}
-      />
+      <Suspense fallback={<RowsSkeleton count={5} />}>
+        <OrphanStack />
+      </Suspense>
     </Screen>
   );
 }

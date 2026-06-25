@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { RelvoHeader } from "@/components/layout/relvo-header";
@@ -13,6 +14,10 @@ import { getTenantDb } from "@/server/auth-context";
 // Planning (M9.8 + M9.17, Direction B) — vue mois pleine largeur, tâches datées
 // colorées par Dossier, navigation mois précédent / aujourd'hui / suivant, et
 // drag-and-drop des tâches d'un jour à l'autre (dnd-kit, dans PlanningMonth).
+//
+// PERF (M9.19, point 2) : le hero (mois) + la barre de navigation (calculs purs)
+// s'affichent instantanément ; la grille (tâches en base) stream dans un
+// <Suspense>.
 
 const MONTHS = [
   "Janvier",
@@ -33,23 +38,14 @@ function ymKey(y: number, m0: number) {
   return `${y}-${String(m0 + 1).padStart(2, "0")}`;
 }
 
-export default async function PlanningPage({
-  searchParams,
+async function PlanningGrid({
+  year,
+  month0,
 }: {
-  searchParams: Promise<{ m?: string }>;
+  year: number;
+  month0: number;
 }) {
-  const { m } = await searchParams;
   const now = new Date();
-
-  // Mois affiché (UTC, cohérent avec le seed). Défaut : mois courant.
-  let year = now.getUTCFullYear();
-  let month0 = now.getUTCMonth();
-  if (m && /^\d{4}-\d{2}$/.test(m)) {
-    const [yy, mm] = m.split("-").map(Number);
-    year = yy;
-    month0 = mm - 1;
-  }
-
   const monthStart = new Date(Date.UTC(year, month0, 1));
   const monthEnd = new Date(Date.UTC(year, month0 + 1, 1));
   // Grille alignée lundi (6 semaines = 42 cellules).
@@ -96,6 +92,41 @@ export default async function PlanningPage({
     };
   });
 
+  return (
+    <>
+      <PlanningMonth cells={cells} tasks={planningTasks} />
+      <p className="px-5 pt-3 text-[12px] text-(--text-tertiary)">
+        Glissez une tâche d’un jour à l’autre pour la replanifier.
+      </p>
+    </>
+  );
+}
+
+function GridSkeleton() {
+  return (
+    <div className="px-4 pt-4">
+      <div className="h-[320px] animate-pulse rounded-2xl bg-white" />
+    </div>
+  );
+}
+
+export default async function PlanningPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ m?: string }>;
+}) {
+  const { m } = await searchParams;
+  const now = new Date();
+
+  // Mois affiché (UTC, cohérent avec le seed). Défaut : mois courant.
+  let year = now.getUTCFullYear();
+  let month0 = now.getUTCMonth();
+  if (m && /^\d{4}-\d{2}$/.test(m)) {
+    const [yy, mm] = m.split("-").map(Number);
+    year = yy;
+    month0 = mm - 1;
+  }
+
   const prevYear = month0 - 1 < 0 ? year - 1 : year;
   const nextYear = month0 + 1 > 11 ? year + 1 : year;
 
@@ -131,11 +162,9 @@ export default async function PlanningPage({
         </Link>
       </div>
 
-      <PlanningMonth cells={cells} tasks={planningTasks} />
-
-      <p className="px-5 pt-3 text-[12px] text-(--text-tertiary)">
-        Glissez une tâche d’un jour à l’autre pour la replanifier.
-      </p>
+      <Suspense key={`${year}-${month0}`} fallback={<GridSkeleton />}>
+        <PlanningGrid year={year} month0={month0} />
+      </Suspense>
     </Screen>
   );
 }
