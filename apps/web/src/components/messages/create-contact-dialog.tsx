@@ -94,7 +94,7 @@ export function CreateContactDialog({
         <DialogHeader>
           <DialogTitle>Nouveau contact</DialogTitle>
           <DialogDescription>
-            Cet expéditeur n'est pas encore enregistré.
+            Cet expéditeur n’est pas encore enregistré.
           </DialogDescription>
         </DialogHeader>
 

@@ -121,7 +121,7 @@ export function AddTask({ subjectId }: { subjectId: string }) {
           active={isToday}
           onClick={() => setDate(isToday ? null : isoDay(0))}
         >
-          Aujourd'hui
+          Aujourd’hui
         </DateChip>
         <DateChip
           active={isTomorrow}

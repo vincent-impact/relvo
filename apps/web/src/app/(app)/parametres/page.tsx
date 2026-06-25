@@ -161,7 +161,7 @@ export default async function ParametresPage() {
                 Ajouter un canal
               </button>
               <p className="mt-3 px-1 text-[12px] text-(--text-tertiary)">
-                La connexion d'un nouveau canal (WhatsApp, Email) arrive avec
+                La connexion d’un nouveau canal (WhatsApp, Email) arrive avec
                 les modules canaux (M5/M6).
               </p>
             </div>

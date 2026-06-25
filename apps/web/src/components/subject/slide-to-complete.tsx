@@ -22,11 +22,15 @@ export function SlideToComplete({ subjectId }: { subjectId: string }) {
   const [pending, startTransition] = useTransition();
   const [x, setX] = useState(0);
   const [done, setDone] = useState(false);
+  // `dragging` pilote le rendu (coupe la transition CSS pendant le geste) ; le
+  // ref garde l'état impératif lu dans les handlers (offset + garde active).
+  const [dragging, setDragging] = useState(false);
   const drag = useRef({ active: false, offset: 0 });
 
   function onDown(e: React.PointerEvent) {
     if (done || pending) return;
     drag.current = { active: true, offset: e.clientX - x };
+    setDragging(true);
     e.currentTarget.setPointerCapture?.(e.pointerId);
   }
 
@@ -39,6 +43,7 @@ export function SlideToComplete({ subjectId }: { subjectId: string }) {
   function onUp() {
     if (!drag.current.active) return;
     drag.current.active = false;
+    setDragging(false);
     if (x >= MAX * 0.85) {
       setX(MAX);
       setDone(true);
@@ -75,9 +80,7 @@ export function SlideToComplete({ subjectId }: { subjectId: string }) {
         style={{
           width: x + THUMB + PAD * 2,
           opacity: done ? 1 : 0.3 + pct * 0.7,
-          transition: drag.current.active
-            ? "none"
-            : "width .2s ease, opacity .2s ease",
+          transition: dragging ? "none" : "width .2s ease, opacity .2s ease",
         }}
       />
       {/* libellé, s'efface quand on glisse */}
@@ -98,7 +101,7 @@ export function SlideToComplete({ subjectId }: { subjectId: string }) {
         className="absolute top-1/2 grid size-[30px] touch-none place-items-center rounded-full bg-white text-(--green-600)"
         style={{
           transform: `translate(${x + PAD}px, -50%)`,
-          transition: drag.current.active ? "none" : "transform .2s ease",
+          transition: dragging ? "none" : "transform .2s ease",
           boxShadow: "0 2px 6px rgb(0 0 0 / 0.2)",
         }}
       >

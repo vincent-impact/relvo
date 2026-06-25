@@ -120,7 +120,7 @@ export default async function PlanningPage({
           href="/planning"
           className="rounded-full bg-relvo-bg px-3.5 py-1.5 text-[13px] font-bold text-relvo"
         >
-          Aujourd'hui
+          Aujourd’hui
         </Link>
         <Link
           href={`/planning?m=${ymKey(nextYear, (month0 + 1) % 12)}`}
@@ -134,7 +134,7 @@ export default async function PlanningPage({
       <PlanningMonth cells={cells} tasks={planningTasks} />
 
       <p className="px-5 pt-3 text-[12px] text-(--text-tertiary)">
-        Glissez une tâche d'un jour à l'autre pour la replanifier.
+        Glissez une tâche d’un jour à l’autre pour la replanifier.
       </p>
     </Screen>
   );

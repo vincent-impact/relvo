@@ -49,11 +49,11 @@ function briefSlides(
           {kpis.urgentSubjects > 1 ? "s" : ""}
         </b>{" "}
         et {kpis.tasksToday} tâche{kpis.tasksToday > 1 ? "s" : ""} pour
-        aujourd'hui.
+        aujourd’hui.
         {suggestions > 0 ? (
           <>
             {" "}
-            J'ai préparé{" "}
+            J’ai préparé{" "}
             <span className="font-bold text-white">
               {suggestions} suggestion{suggestions > 1 ? "s" : ""}
             </span>
@@ -72,7 +72,7 @@ function briefSlides(
       body: (
         <>
           <span className="font-bold text-white">{waiting.subject.title}</span>{" "}
-          — j'attends une réponse externe avant de poursuivre.
+          — j’attends une réponse externe avant de poursuivre.
         </>
       ),
     });

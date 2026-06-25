@@ -9,7 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { folderVisual } from "@/lib/folders";
-import { cn } from "@/lib/utils";
 
 // Sélecteur de sujet (Direction B) — rattacher un message « Sans sujet » à un
 // sujet EXISTANT (Relvo s'est trompé / a oublié). Champ de recherche (les clients

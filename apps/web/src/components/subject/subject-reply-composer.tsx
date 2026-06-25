@@ -52,7 +52,7 @@ export function SubjectReplyComposer({
         >
           <span>✦</span>
           <span className="flex-1">
-            Suggestion de Relvo — appuyez pour l'insérer
+            Suggestion de Relvo — appuyez pour l’insérer
           </span>
           <span
             role="button"

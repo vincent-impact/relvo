@@ -203,7 +203,7 @@ export function SubjectDetailForm({
       </div>
 
       <div>
-        <FieldLabel>Niveau d'urgence</FieldLabel>
+        <FieldLabel>Niveau d’urgence</FieldLabel>
         <PillSelect
           options={PRIORITIES}
           value={form.priority}

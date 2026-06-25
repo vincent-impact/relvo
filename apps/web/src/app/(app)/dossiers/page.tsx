@@ -85,7 +85,7 @@ export default async function DossiersPage() {
           strokeWidth={0}
         />
         <p className="flex-1 text-[13.5px] leading-[1.4] text-[#3a3550]">
-          C'est ici que vous enrichissez la mémoire de Relvo et affinez son
+          C’est ici que vous enrichissez la mémoire de Relvo et affinez son
           comportement.
         </p>
       </div>
