@@ -257,6 +257,27 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 ---
 
+### M9 — Finalisation (plan de clôture, établi le 2026-06-25)
+
+> ⚠️ **Les descriptions M9.1–M9.17 ci-dessus reflètent le plan d'origine** (desktop, sidebar, statut 6 valeurs, paire ✕/✓, Messages = conversations par contact). **Le réalisé a divergé** suite au virage mobile-first « Direction B » (18→25 juin) : statut **5 valeurs** dont `ignored`, priorité **2 valeurs** (`normal`/`urgent`), swipe Ignorer/Terminer, dock 4 onglets + composer Relvo persistant, Messages = **pile d'orphelins**, PWA installable. Les items ci-dessous closent M9 **sur la base du réalisé**, à reprendre dans une nouvelle fenêtre de contexte.
+
+- **M9.18 — Réalignement docs ⇄ code (point 0) [PRIORITAIRE]** — vérifier et aligner conception/spec avec le code après les sessions du 18→25 juin. Dérives connues :
+  - `conception/02-modele-donnees.md` : **`Message.read_at`** (lu/non-lu) et **`Message.folder_id`** (message classé dans un **domaine à la réception** → c'est lui qui donne ensuite son domaine au sujet) — ABSENTS, à documenter. Vérifier **Priorité = 2 valeurs** (`normal`/`urgent`). Task : suppression = **hard delete** désormais (l'enum `TaskStatus.deleted` subsiste mais n'est plus posé par `deleteTask`). Confirmer **SubjectStatus 5 valeurs** (`new`/`acknowledged`/`resolved`/`archived`/`ignored`).
+  - `conception/01-principes.md` : ignorance **« collante »** (un nouveau message ne ressort jamais un sujet `ignored`) + priorité 2 valeurs + virage mobile-first / PWA (§13).
+  - `conception/03-cas-usage.md` : cas **messages orphelins** (pile « sans intérêt », rétention 15 j, créer un sujet / **rattacher à un sujet existant** / créer un contact depuis l'expéditeur) ; cas **ignorer / remettre** un sujet.
+  - `conception/04-ia.md` : l'IA respecte l'ignorance collante ; classifie un message en domaine à la réception ; les sujets `ignored` sont **hors mémoire**.
+  - `spec/architecture.md` : enums Status(5)/Priority(2) ; routes `/messages`, `/messages/[id]`, `/sujets/[id]?tab=` ; **PWA** (manifest standalone + meta apple — cf. `apps/web/src/app/manifest.ts`, `layout.tsx`, bandeau status-bar).
+  - `spec/ux-mobile-first.md` : agenda à **jours cliquables** ; **tâches datables** (date = deadline `start_*`) + date à la création (chips) ; install PWA iOS (Safari **ou** Chrome → Partager → Sur l'écran d'accueil ; standalone piloté par `apple-mobile-web-app-capable`).
+  - **Le backlog lui-même** : corriger/✅ M9.2 (`StatusBadge` 6→5 valeurs + 2 priorités), M9.4 (filtres Priorité/Chrono/Résolus + ✕/✓ → 3 onglets Ouverts/Terminés/Ignorés + swipe), M9.9 (Messages = conversations → pile d'orphelins + page `/messages/[id]`), M9.14 (Ignorer = rétrograde la priorité → pose `status=ignored`, collant).
+- **M9.19 — Réactivité / cache du chargement (point 1)** — le chargement est trop lent, même en démo. `loading.tsx` sur **toutes** les surfaces (manquent au moins `/sujets/[id]`, `/sujets/nouveau`, et les pages hors-`(app)`) ; mise en cache / revalidation (`revalidate`, `unstable_cache`, cache de données tenant) sur les écrans peu volatils ; pooling de connexions Neon ; réduire les requêtes séquentielles. But : navigation quasi-instantanée.
+- **M9.20 — Page Mémoire + sous-pages : D.A. + UX (point 2)** — repasser `/dossiers` et `/dossiers/[id]` (fiche 3 onglets Instructions / Documents / Sujets) à la Direction B et aux patterns UX du projet.
+- **M9.21 — Page Réglages + sous-pages : D.A. + UX (point 3)** — repasser `/parametres` (Profil / Canaux / Contacts) à la D.A. + UX.
+- **M9.22 — Page Contacts + sous-pages : D.A. + UX + accès (point 4)** — repasser `/contacts` et `/contacts/[id]` à la D.A. + UX **et concevoir un point d'accès utilisateur** (page hors-nav : via recherche topbar ? clic sur un nom ? entrée depuis Réglages ?).
+- **M9.23 — Page Connexion (login) : D.A. + UX (point 5)** — repasser `/connexion` (+ pages auth associées) à la D.A. + UX. ⚠️ tenir compte du statut PWA `black-translucent` (le bandeau violet global gère la status bar ; prévoir `env(safe-area-inset-top)` si contenu en tête).
+- **M9.24 — Jeu de données de démo plus conséquent & crédible (point 6)** — étoffer `packages/db/src/seed-demo.ts` : davantage de sujets / contacts / messages / **tâches datées** réalistes (univers Tasty Crousty), répartis sur plusieurs domaines, statuts et dates, pour une démo convaincante (agenda peuplé, fil avec urgents / terminés / ignorés, messages orphelins…).
+
+---
+
 ### M10 — Drawer chatbot
 
 **Objectif** : implémenter la surface d'action principale du produit — un chatbot drawer page-aware, action-capable, accessible partout, avec une palette de tools symétrique à l'UI.
