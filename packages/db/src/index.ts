@@ -47,7 +47,18 @@ const createPrismaClient = () => {
       "DATABASE_URL est absente : impossible d'initialiser le client Prisma.",
     );
   }
-  const adapter = new PrismaPg({ connectionString });
+  // Pool tuné pour le serverless (Vercel ↔ Neon). En prod, DATABASE_URL doit
+  // pointer sur l'endpoint **poolé** de Neon (`-pooler` dans l'hôte) : PgBouncer
+  // côté Neon mutualise les connexions sur les nombreuses instances de fonction.
+  //   - max bas : chaque instance n'ouvre que quelques connexions (Neon plafonne).
+  //   - idleTimeout : referme vite les connexions oisives (cold start fréquent).
+  //   - connectionTimeout : échoue rapidement si Neon met à se réveiller.
+  const adapter = new PrismaPg({
+    connectionString,
+    max: 5,
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 10_000,
+  });
   return new PrismaClient({ adapter });
 };
 

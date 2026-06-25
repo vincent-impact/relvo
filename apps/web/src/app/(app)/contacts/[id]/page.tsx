@@ -26,17 +26,20 @@ export default async function ContactPage({
   const { id } = await params;
   const db = await getTenantDb();
 
-  const contact = await db.contact.findFirst({ where: { id } });
+  // Les messages se filtrent sur l'id de la route (pas sur l'objet contact) →
+  // les deux requêtes partent en parallèle ; on vérifie l'existence ensuite.
+  const [contact, messages] = await Promise.all([
+    db.contact.findFirst({ where: { id } }),
+    db.message.findMany({
+      where: {
+        OR: [{ senderContactId: id }, { recipientContactId: id }],
+      },
+      orderBy: { createdAt: "asc" },
+      take: 60,
+      include: { channel: { select: { type: true } } },
+    }),
+  ]);
   if (!contact) notFound();
-
-  const messages = await db.message.findMany({
-    where: {
-      OR: [{ senderContactId: id }, { recipientContactId: id }],
-    },
-    orderBy: { createdAt: "asc" },
-    take: 60,
-    include: { channel: { select: { type: true } } },
-  });
 
   const bubbles: MessageBubbleData[] = messages.map((m) => ({
     id: m.id,

@@ -83,11 +83,19 @@ export default async function FilPage() {
       countOrphanMessages(db),
     ]);
 
-  const [ouverts, termines, ignores] = await Promise.all([
-    enrichSubjects(db, openFeed.items),
-    enrichSubjects(db, resolvedSubjects),
-    enrichSubjects(db, ignoredSubjects),
+  // Un seul enrichSubjects pour les 3 onglets : 6 requêtes batchées au lieu de
+  // 18 (3 × 6) → moins de contention sur le pool Neon. On redécoupe par longueur
+  // (enrichSubjects préserve l'ordre d'entrée).
+  const enriched = await enrichSubjects(db, [
+    ...openFeed.items,
+    ...resolvedSubjects,
+    ...ignoredSubjects,
   ]);
+  const openLen = openFeed.items.length;
+  const resolvedLen = resolvedSubjects.length;
+  const ouverts = enriched.slice(0, openLen);
+  const termines = enriched.slice(openLen, openLen + resolvedLen);
+  const ignores = enriched.slice(openLen + resolvedLen);
 
   return (
     <Screen>

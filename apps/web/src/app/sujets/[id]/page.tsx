@@ -124,12 +124,10 @@ export default async function SujetPage({
   const { id } = await params;
   const { tab } = await searchParams;
   const db = await getTenantDb();
-  const detail = await getSubjectDetail(db, id);
-  if (!detail) notFound();
-
-  const { subject, contacts, messages, tasks, events, attachments, draft } =
-    detail;
-  const [folders, allContacts] = await Promise.all([
+  // folders + allContacts ne dépendent pas du sujet → on les charge dans la même
+  // vague que getSubjectDetail (une seule attente DB au lieu de deux successives).
+  const [detail, folders, allContacts] = await Promise.all([
+    getSubjectDetail(db, id),
     db.folder.findMany({
       orderBy: [{ isDefault: "desc" }, { name: "asc" }],
       select: { id: true, name: true, slug: true },
@@ -139,6 +137,10 @@ export default async function SujetPage({
       select: { id: true, name: true, company: true },
     }),
   ]);
+  if (!detail) notFound();
+
+  const { subject, contacts, messages, tasks, events, attachments, draft } =
+    detail;
 
   const mainContact = contacts[0];
   const openTaskCount = tasks.filter((t) => t.status === "open").length;
