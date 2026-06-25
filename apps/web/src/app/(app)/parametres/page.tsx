@@ -23,6 +23,12 @@ import { getTenantDb, requireAccount } from "@/server/auth-context";
 
 export const metadata: Metadata = { title: "Paramètres — Relvo" };
 
+// Le reset du compte démo (Server Action invoquée depuis cette page) recrée
+// beaucoup d'objets (29 sujets + 115 tâches + journaux) → on relève le plafond
+// de durée de la fonction serverless pour éviter un timeout (clampé au max du
+// plan Vercel). Fluid Compute autorise des durées longues.
+export const maxDuration = 300;
+
 const CHANNEL_STATUS: Record<string, { label: string; cls: string }> = {
   connected: { label: "Connecté", cls: "bg-(--green-50) text-(--green-600)" },
   pending: { label: "En attente", cls: "bg-(--amber-50) text-(--amber-800)" },
