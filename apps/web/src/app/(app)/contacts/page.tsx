@@ -4,7 +4,8 @@ import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { FeedTabs } from "@/components/feed/feed-tabs";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
-import { getTenantDb } from "@/server/auth-context";
+import { cachedContactCount, cachedContacts } from "@/server/cached";
+import { requireAccountId } from "@/server/auth-context";
 
 // Contacts (M9.10, Direction B) — annuaire en lignes + filtre « À compléter »
 // (contacts créés par Relvo, status=auto). Un contact n'existe qu'à la création
@@ -59,18 +60,8 @@ function ContactRow({
   );
 }
 
-async function ContactsList() {
-  const db = await getTenantDb();
-  const contacts = await db.contact.findMany({
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      company: true,
-      jobTitle: true,
-      status: true,
-    },
-  });
+async function ContactsList({ accountId }: { accountId: string }) {
+  const contacts = await cachedContacts(accountId);
   const toComplete = contacts.filter((c) => c.status === "auto");
 
   return (
@@ -108,8 +99,8 @@ async function ContactsList() {
 }
 
 export default async function ContactsPage() {
-  const db = await getTenantDb();
-  const total = await db.contact.count();
+  const accountId = await requireAccountId();
+  const total = await cachedContactCount(accountId);
 
   return (
     <Screen>
@@ -120,7 +111,7 @@ export default async function ContactsPage() {
         className="pb-9"
       />
       <Suspense fallback={<RowsSkeleton count={6} />}>
-        <ContactsList />
+        <ContactsList accountId={accountId} />
       </Suspense>
     </Screen>
   );

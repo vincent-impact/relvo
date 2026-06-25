@@ -11,6 +11,7 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { revalidateTenantData } from "@/server/cached";
 
 // Server Actions pour l'entité Action (M3.11) — brouillons send_message et
 // exécution. Nommé entity-actions pour ne pas masquer le dossier actions/.
@@ -19,6 +20,7 @@ function revalidateSubjects() {
   revalidatePath("/");
   revalidatePath("/fil");
   revalidatePath("/sujets/[id]", "page"); // brouillons/actions dans la fiche
+  revalidateTenantData();
 }
 
 export async function createActionAction(input: CreateActionInput) {

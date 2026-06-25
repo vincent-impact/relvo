@@ -17,6 +17,7 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { revalidateTenantData } from "@/server/cached";
 import {
   MESSAGES_PAGE_SIZE,
   type MessageRowData,
@@ -31,6 +32,7 @@ function revalidateMessages() {
   revalidatePath("/messages");
   revalidatePath("/fil");
   revalidatePath("/sujets/[id]", "page"); // message rattaché → onglet Messages
+  revalidateTenantData();
 }
 
 export async function createMessageAction(input: CreateMessageInput) {
@@ -70,7 +72,10 @@ export async function loadMessageEventsAction(
  */
 export async function markMessageReadAction(id: string) {
   const result = await domainAction((db) => markMessageRead(db, id));
-  if (result.ok) revalidatePath("/messages");
+  if (result.ok) {
+    revalidatePath("/messages");
+    revalidateTenantData(); // l'état lu modifie unreadCount dans le fil
+  }
   return result;
 }
 

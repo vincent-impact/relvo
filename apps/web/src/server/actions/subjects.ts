@@ -18,6 +18,7 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { revalidateTenantData } from "@/server/cached";
 
 // Server Actions Subjects (M3.7) — fines enveloppes « use server » de la couche
 // domaine. Elles injectent le client tenant et renvoient un ActionResult.
@@ -32,6 +33,7 @@ function revalidateSubjects() {
   revalidatePath("/sujets/[id]", "page");
   revalidatePath("/dossiers/[id]", "page");
   revalidatePath("/recherche");
+  revalidateTenantData();
 }
 
 export async function createSubjectAction(input: CreateSubjectInput) {

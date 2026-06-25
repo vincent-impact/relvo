@@ -1,36 +1,31 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Inbox, Plus, Search } from "lucide-react";
-import {
-  type EnrichedSubject,
-  countOrphanMessages,
-  enrichSubjects,
-  getOpenFeed,
-} from "@relvo/db";
 import { FeedTabs } from "@/components/feed/feed-tabs";
 import { IgnoredSubject } from "@/components/feed/ignored-subject";
 import { SwipeableSubject } from "@/components/feed/swipeable-subject";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
-import { SubjectRow, toSubjectRowData } from "@/components/shared/subject-row";
-import { getTenantDb } from "@/server/auth-context";
+import {
+  SubjectRow,
+  type SubjectRowData,
+} from "@/components/shared/subject-row";
+import { cachedFilFeed, cachedOpenCount } from "@/server/cached";
+import { requireAccountId } from "@/server/auth-context";
 
 // Mon fil (M9.4, Direction B) — traitement des sujets. Hero violet + champ de
 // recherche, SegTabs chevauchant. 3 onglets, paniers de STATUT : Ouverts (urgents
 // en tête, swipe ← Ignorer · → Terminer), Terminés, Ignorés (récupérables).
 //
-// PERF (M9.19, point 2) : le hero (compteur d'ouverts, requête count légère) +
-// le champ de recherche s'affichent instantanément ; les 3 onglets streament
-// dans un <Suspense>.
-
-const CLOSED = ["resolved", "archived", "ignored"] as const;
+// PERF (M9.19) : hero instantané + 3 paniers streamés (<Suspense>), servis depuis
+// le cache serveur (cf. @/server/cached) en SubjectRowData[] plats.
 
 function FeedList({
   items,
   variant,
 }: {
-  items: EnrichedSubject[];
+  items: SubjectRowData[];
   variant: "swipe" | "done" | "ignored";
 }) {
   if (items.length === 0) {
@@ -42,8 +37,7 @@ function FeedList({
   }
   return (
     <div className="pt-1">
-      {items.map((e) => {
-        const row = toSubjectRowData(e);
+      {items.map((row) => {
         if (variant === "swipe") {
           return (
             <SwipeableSubject
@@ -69,38 +63,9 @@ function FeedList({
   );
 }
 
-async function FilFeed() {
-  const db = await getTenantDb();
-
-  const [openFeed, resolvedSubjects, ignoredSubjects, orphanCount] =
-    await Promise.all([
-      getOpenFeed(db, { limit: 40 }),
-      db.subject.findMany({
-        where: { status: "resolved" },
-        orderBy: [{ resolvedAt: "desc" }],
-        take: 40,
-      }),
-      db.subject.findMany({
-        where: { status: "ignored" },
-        orderBy: [{ lastActivityAt: "desc" }],
-        take: 40,
-      }),
-      countOrphanMessages(db),
-    ]);
-
-  // Un seul enrichSubjects pour les 3 onglets : 6 requêtes batchées au lieu de
-  // 18 (3 × 6) → moins de contention sur le pool Neon. On redécoupe par longueur
-  // (enrichSubjects préserve l'ordre d'entrée).
-  const enriched = await enrichSubjects(db, [
-    ...openFeed.items,
-    ...resolvedSubjects,
-    ...ignoredSubjects,
-  ]);
-  const openLen = openFeed.items.length;
-  const resolvedLen = resolvedSubjects.length;
-  const ouverts = enriched.slice(0, openLen);
-  const termines = enriched.slice(openLen, openLen + resolvedLen);
-  const ignores = enriched.slice(openLen + resolvedLen);
+async function FilFeed({ accountId }: { accountId: string }) {
+  const { ouverts, termines, ignores, orphanCount } =
+    await cachedFilFeed(accountId);
 
   return (
     <FeedTabs
@@ -139,10 +104,8 @@ async function FilFeed() {
 }
 
 export default async function FilPage() {
-  const db = await getTenantDb();
-  const openCount = await db.subject.count({
-    where: { status: { notIn: [...CLOSED] } },
-  });
+  const accountId = await requireAccountId();
+  const openCount = await cachedOpenCount(accountId);
 
   return (
     <Screen>
@@ -179,7 +142,7 @@ export default async function FilPage() {
       </RelvoHeader>
 
       <Suspense fallback={<RowsSkeleton count={5} />}>
-        <FilFeed />
+        <FilFeed accountId={accountId} />
       </Suspense>
     </Screen>
   );

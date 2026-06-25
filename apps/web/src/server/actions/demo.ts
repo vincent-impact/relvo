@@ -3,6 +3,7 @@
 import { DEMO_EMAIL, seedDemoAccount } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { requireAccount } from "@/server/auth-context";
+import { revalidateTenantData } from "@/server/cached";
 
 // Reset du compte de démonstration (même effet que `pnpm db:seed`) — pour les
 // béta-testeurs qui veulent repartir de données neuves. Réservé au compte démo :
@@ -21,5 +22,6 @@ export async function resetDemoAction(): Promise<
   }
   await seedDemoAccount();
   revalidatePath("/", "layout"); // rafraîchit toutes les vues sur données neuves
+  revalidateTenantData(); // purge le cache de données (reseed complet)
   return { ok: true };
 }

@@ -9,12 +9,14 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { revalidateTenantData } from "@/server/cached";
 
 // Server Actions Folders (M3.4).
 
 function revalidateFolders() {
   revalidatePath("/dossiers");
   revalidatePath("/dossiers/[id]", "page");
+  revalidateTenantData();
 }
 
 export async function createFolderAction(input: CreateFolderInput) {

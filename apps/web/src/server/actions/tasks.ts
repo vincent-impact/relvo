@@ -10,6 +10,7 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { revalidateTenantData } from "@/server/cached";
 
 // Server Actions Tasks (M3.9).
 
@@ -18,6 +19,7 @@ function revalidateTasks() {
   revalidatePath("/fil");
   revalidatePath("/planning");
   revalidatePath("/sujets/[id]", "page"); // onglet Tâches de la fiche Sujet
+  revalidateTenantData();
 }
 
 export async function createTaskAction(input: CreateTaskInput) {

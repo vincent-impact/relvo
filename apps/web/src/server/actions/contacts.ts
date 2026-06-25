@@ -10,12 +10,14 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { revalidateTenantData } from "@/server/cached";
 
 // Server Actions Contacts (M3.5).
 
 function revalidateContacts() {
   revalidatePath("/contacts");
   revalidatePath("/contacts/[id]", "page");
+  revalidateTenantData();
 }
 
 export async function createContactAction(input: CreateContactInput) {

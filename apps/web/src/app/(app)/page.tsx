@@ -1,15 +1,6 @@
-import { Suspense, cache } from "react";
-import {
-  type EnrichedSubject,
-  enrichSubjects,
-  getKpis,
-  getOpenFeed,
-} from "@relvo/db";
-import {
-  AgendaWeek,
-  type AgendaEvent,
-  type AgendaWeekDay,
-} from "@/components/home/agenda-week";
+import { Suspense } from "react";
+import type { Kpis } from "@relvo/db";
+import { AgendaWeek, type AgendaWeekDay } from "@/components/home/agenda-week";
 import {
   BriefCarousel,
   type BriefSlide,
@@ -17,35 +8,27 @@ import {
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { MetricsCard, type Metric } from "@/components/shared/metrics-card";
+import { MetricsCardSkeleton } from "@/components/shared/screen-skeletons";
 import { SectionLabel } from "@/components/shared/section-label";
-import { SubjectRow, toSubjectRowData } from "@/components/shared/subject-row";
-import { folderColor, formatDayLabel, formatTime } from "@/lib/display";
-import { getTenantDb, requireAccount } from "@/server/auth-context";
+import {
+  SubjectRow,
+  type SubjectRowData,
+} from "@/components/shared/subject-row";
+import { formatDayLabel } from "@/lib/display";
+import {
+  cachedAgendaEvents,
+  cachedKpis,
+  cachedPriorityRows,
+} from "@/server/cached";
+import { requireAccount } from "@/server/auth-context";
 
 // Accueil (M9.3, Direction B) — brief du jour : hero violet « Bonjour … » +
 // brief carousel + carte métriques à cheval + sujets prioritaires (lignes) +
 // agenda semaine. Orientation, pas traitement (pas de ✕/✓ ici).
 //
-// PERF (M9.19, point 2) : le shell (« Bonjour », date, labels de section)
-// s'affiche INSTANTANÉMENT ; chaque zone de données stream ensuite dans sa
-// propre frontière <Suspense>. Les fetchers partagés (KPIs, sujets prioritaires)
-// sont mémoïsés par requête via cache() — appelés depuis deux frontières sans
-// dédoubler les requêtes DB.
-
-// ── Fetchers mémoïsés (partagés entre frontières Suspense) ──────────────────
-
-const fetchKpis = cache(async () => {
-  const db = await getTenantDb();
-  return getKpis(db);
-});
-
-const fetchPriority = cache(async (): Promise<EnrichedSubject[]> => {
-  const db = await getTenantDb();
-  const page = await getOpenFeed(db, { limit: 3 });
-  return enrichSubjects(db, page.items);
-});
-
-// ── Helpers ─────────────────────────────────────────────────────────────────
+// PERF (M9.19) : shell instantané + zones streamées (<Suspense>, point 2), et
+// données servies depuis le cache serveur (point 3, cf. @/server/cached) — KPIs,
+// sujets prioritaires et agenda en formes plates (SubjectRowData / nombres).
 
 function sameUTCDay(a: Date, b: Date) {
   return (
@@ -55,12 +38,9 @@ function sameUTCDay(a: Date, b: Date) {
   );
 }
 
-function briefSlides(
-  kpis: Awaited<ReturnType<typeof getKpis>>,
-  enriched: EnrichedSubject[],
-): BriefSlide[] {
+function briefSlides(kpis: Kpis, rows: SubjectRowData[]): BriefSlide[] {
   const slides: BriefSlide[] = [];
-  const suggestions = enriched.reduce((n, e) => n + e.suggestionCount, 0);
+  const suggestions = rows.reduce((n, r) => n + r.suggestionCount, 0);
   slides.push({
     icon: "spark",
     label: "Votre brief du jour",
@@ -86,15 +66,15 @@ function briefSlides(
     ),
   });
 
-  const waiting = enriched.find((e) => e.subject.waitingForReply);
+  const waiting = rows.find((r) => r.waitingForReply);
   if (waiting) {
     slides.push({
       icon: "watch",
       label: "À surveiller",
       body: (
         <>
-          <span className="font-bold text-white">{waiting.subject.title}</span>{" "}
-          — j’attends une réponse externe avant de poursuivre.
+          <span className="font-bold text-white">{waiting.title}</span> —
+          j’attends une réponse externe avant de poursuivre.
         </>
       ),
     });
@@ -113,15 +93,18 @@ function briefSlides(
   return slides;
 }
 
-// ── Zones de données streamées ───────────────────────────────────────────────
+// ── Zones de données streamées (servies depuis le cache serveur) ─────────────
 
-async function HeroBrief() {
-  const [kpis, enriched] = await Promise.all([fetchKpis(), fetchPriority()]);
-  return <BriefCarousel slides={briefSlides(kpis, enriched)} />;
+async function HeroBrief({ accountId }: { accountId: string }) {
+  const [kpis, rows] = await Promise.all([
+    cachedKpis(accountId),
+    cachedPriorityRows(accountId),
+  ]);
+  return <BriefCarousel slides={briefSlides(kpis, rows)} />;
 }
 
-async function HomeMetrics() {
-  const kpis = await fetchKpis();
+async function HomeMetrics({ accountId }: { accountId: string }) {
+  const kpis = await cachedKpis(accountId);
   const metrics: Metric[] = [
     {
       value: kpis.urgentSubjects,
@@ -135,9 +118,8 @@ async function HomeMetrics() {
   return <MetricsCard metrics={metrics} />;
 }
 
-async function HomeSubjects() {
-  const enriched = await fetchPriority();
-  const rows = enriched.map(toSubjectRowData);
+async function HomeSubjects({ accountId }: { accountId: string }) {
+  const rows = await cachedPriorityRows(accountId);
   if (rows.length === 0) {
     return (
       <p className="mx-4 rounded-2xl bg-white p-4 text-center text-[13.5px] text-(--text-tertiary)">
@@ -154,8 +136,7 @@ async function HomeSubjects() {
   );
 }
 
-async function HomeAgenda() {
-  const db = await getTenantDb();
+async function HomeAgenda({ accountId }: { accountId: string }) {
   const now = new Date();
   // Semaine en cours (lundi → dimanche, UTC pour rester cohérent avec le seed).
   const monday = new Date(
@@ -168,43 +149,11 @@ async function HomeAgenda() {
   const weekEnd = new Date(monday);
   weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
 
-  const weekTasks = await db.task.findMany({
-    where: {
-      status: { not: "deleted" },
-      startDate: { gte: monday, lt: weekEnd },
-    },
-    orderBy: [{ startDate: "asc" }, { startTime: "asc" }],
-    select: {
-      id: true,
-      title: true,
-      startDate: true,
-      startTime: true,
-      subject: {
-        select: {
-          id: true,
-          reference: true,
-          folder: { select: { id: true, name: true, slug: true } },
-        },
-      },
-    },
-  });
-
-  // Évènements regroupés par jour (clé = date ISO YYYY-MM-DD).
-  const eventsByDay: Record<string, AgendaEvent[]> = {};
-  for (const t of weekTasks) {
-    if (!t.startDate) continue;
-    const dayKey = t.startDate.toISOString().slice(0, 10);
-    (eventsByDay[dayKey] ??= []).push({
-      id: t.id,
-      time: formatTime(t.startTime),
-      color: folderColor(t.subject?.folder?.slug),
-      title: t.title,
-      sublabel: t.subject
-        ? `${t.subject.reference}${t.subject.folder ? ` · ${t.subject.folder.name}` : ""}`
-        : null,
-      href: t.subject ? `/sujets/${t.subject.id}?tab=taches` : "/planning",
-    });
-  }
+  const eventsByDay = await cachedAgendaEvents(
+    accountId,
+    monday.toISOString(),
+    weekEnd.toISOString(),
+  );
 
   const todayKey = now.toISOString().slice(0, 10);
   const weekDays: AgendaWeekDay[] = Array.from({ length: 7 }, (_, i) => {
@@ -252,27 +201,6 @@ function BriefSkeleton() {
   );
 }
 
-function MetricsSkeleton() {
-  return (
-    <div
-      className="relative z-[3] mx-4 -mt-[30px] flex rounded-[22px] bg-white px-1 py-3.5"
-      style={{ boxShadow: "var(--shadow-metrics)" }}
-    >
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="contents">
-          {i > 0 ? (
-            <span className="my-1.5 w-px self-stretch bg-[#f1efeb]" />
-          ) : null}
-          <div className="flex flex-1 flex-col items-center gap-[7px] px-1">
-            <div className="h-[46px] w-10 animate-pulse rounded-lg bg-(--surface)" />
-            <div className="h-3 w-12 rounded bg-(--surface)" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function SubjectsSkeleton() {
   return (
     <div className="space-y-2 px-4 pt-1">
@@ -280,7 +208,7 @@ function SubjectsSkeleton() {
         <div
           key={i}
           className="h-[76px] animate-pulse rounded-2xl bg-white"
-          style={{ boxShadow: "var(--shadow-metrics)" }}
+          style={{ boxShadow: "var(--shadow-card)" }}
         />
       ))}
     </div>
@@ -300,6 +228,7 @@ function AgendaSkeleton() {
 export default async function AccueilPage() {
   // Seul await du shell : le compte (session, mis en cache) pour le « Bonjour ».
   const account = await requireAccount();
+  const accountId = account.id;
 
   const todayLong = new Date().toLocaleDateString("fr-FR", {
     weekday: "long",
@@ -316,17 +245,17 @@ export default async function AccueilPage() {
         className="pb-[46px]"
       >
         <Suspense fallback={<BriefSkeleton />}>
-          <HeroBrief />
+          <HeroBrief accountId={accountId} />
         </Suspense>
       </RelvoHeader>
 
-      <Suspense fallback={<MetricsSkeleton />}>
-        <HomeMetrics />
+      <Suspense fallback={<MetricsCardSkeleton />}>
+        <HomeMetrics accountId={accountId} />
       </Suspense>
 
       <SectionLabel title="Sujets prioritaires" href="/fil" />
       <Suspense fallback={<SubjectsSkeleton />}>
-        <HomeSubjects />
+        <HomeSubjects accountId={accountId} />
       </Suspense>
 
       <SectionLabel
@@ -336,7 +265,7 @@ export default async function AccueilPage() {
         dotColor="var(--amber-600)"
       />
       <Suspense fallback={<AgendaSkeleton />}>
-        <HomeAgenda />
+        <HomeAgenda accountId={accountId} />
       </Suspense>
     </Screen>
   );
