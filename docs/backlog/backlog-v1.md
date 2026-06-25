@@ -53,9 +53,9 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 - Triptyque d'acteurs avec badges UI Moi / Relvo / Externe
 - Ingestion email (Postmark Inbound) et WhatsApp (Baileys)
 - Pipeline IA d'arrivée : compréhension, classement, rattachement, création de Subject + Contact, génération de tâches et brouillon, extraction de date
-- 4 pages de nav : Accueil (brief), Mon fil (workspace), Mes dossiers, Paramètres
-- 3 pages hors-nav : Planning (vue mois), Messages (conversations par contact), Contacts
-- Drawer chatbot action-capable accessible partout, avec ~22 tools symétriques à l'UI
+- 4 onglets de nav (barre basse) : Accueil (brief), Mon fil (workspace), **Mémoire** (Dossiers), **Réglages**
+- Pages hors-nav : Planning (vue mois), **Messages (pile d'orphelins « Sans sujet »)**, Contacts (+ fiche), Recherche, fiche Sujet, page Message `/messages/[id]`
+- **Conversation Relvo plein écran**, action-capable, accessible partout via le **composer persistant** (plus de drawer latéral), avec ~22 tools symétriques à l'UI
 - Calendrier semaine sur l'Accueil + vue mois sur Planning, avec drag-and-drop
 - Connaissances : PDFs uploadés (Files API Anthropic) + notes Markdown, organisés par Folder
 - Pièces jointes IA **niveau 1** uniquement (étiquetage Haiku automatique) ; niveaux 2-3 reportés V2
@@ -238,19 +238,19 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 **Dépendances** : M2 (auth), M3 (accès CRUD).
 
 - **M9.1** — Layout global : sidebar 4 entrées (Accueil, Mon fil, Mes dossiers, Paramètres) + topbar (recherche, profil) + bouton flottant chatbot + slot drawer
-- **M9.2** — Composants partagés Shadcn : `SubjectCard`, `TaskCard`, `MessageBubble`, `ActorPill` (M/R/E), `StatusBadge` (6 valeurs), `UrgentFlag`, `RelvoSuggestionBadge`
+- **M9.2** ✅ — Composants partagés (Direction B) : `SubjectRow`, `MessageBubble`, `ActorPill` (M/R/E), badges de statut (**5 valeurs**) + drapeau urgent (`priority=urgent`), `SegTabs`, `MetricsCard`, `ConfirmDialog`, `SwipeToRemove`… _(plus de `StatusBadge` 6 valeurs ni `SubjectCard`/`TaskCard` desktop)_
 - **M9.3** — Page **Accueil** : bandeau KPIs (sujets ouverts, messages à trier, tâches du jour, % d'aide Relvo) + widget calendrier semaine pleine largeur + 3 cartes sujets prioritaires en 3 colonnes
-- **M9.4** — Page **Mon fil** : feed plein écran avec cartes enrichies + filtres (Priorité par défaut / Chronologique / Résolus) + bandeau Relvo violet + paire ✕/✓ systématique sur chaque carte
+- **M9.4** ✅ — Page **Mon fil** : feed plein écran, **3 onglets de statut** (Ouverts urgents en tête / Terminés / Ignorés) + hero violet + **swipe** ← Ignorer (`ignored`) · → Terminer (`resolved`) ; onglet Ignorés avec « Remettre dans le fil » _(plus de filtres Priorité/Chrono/Résolus ni de paire ✕/✓)_
 - **M9.5** — Page **Sujet** : header (référence + statut + drapeau urgent) + résumé Relvo + onglets (Messages / Tâches / Journal / Pièces jointes) + composer multi-canal avec brouillon IA identifié « Suggestion de Relvo — modifiez librement avant d'envoyer »
 - **M9.6** — Page **Mes dossiers** : grille des Folders avec compteurs (sujets, fichiers, notes)
 - **M9.7** — Page **Dossier** : sections Sujets + Fichiers (upload drag-and-drop) + Notes (éditeur Markdown). Fiche du Folder Général masque la section Sujets.
 - **M9.8** — Page **Planning** (hors-nav) : grille vue mois + barres pour tâches multi-jours + navigation mois précédent/suivant/aujourd'hui
-- **M9.9** — Page **Messages** (hors-nav) : conversations par contact, tous canaux confondus + filtres « non lus » et « sans sujet » (URL filtrable `?filter=orphan`) + indicateur de canal sur chaque message
+- **M9.9** ✅ — Page **Messages** (hors-nav) : **pile d'orphelins** (« Sans sujet ») — PAS des conversations par contact ; lu/non-lu, rétention 15 j, actions créer un sujet / rattacher à un sujet existant / créer un contact / retirer (swipe) + **page de détail `/messages/[id]`**
 - **M9.10** — Page **Contacts** (hors-nav) : liste + filtre « À compléter »
 - **M9.11** — Page **Contact** : fiche + édition (passage `auto` → `complete`)
 - **M9.12** — Page **Paramètres** : 3 onglets (Profil / Canaux / Contacts)
 - **M9.13** — Recherche globale topbar (sujets + contacts + messages)
-- **M9.14** — Bouton ✕ Ignorer (rétrograde la priorité d'un cran selon `../conception/02-modele-donnees.md §Feed prioritaire`)
+- **M9.14** ✅ — Action **Ignorer** (swipe gauche) → pose `status = ignored` (sujet écarté, hors mémoire, **collant**, récupérable) — **plus une rétrogradation de priorité**
 - **M9.15** — Bouton ✓ Marquer comme résolu, avec variante violette quand `resolution_suggested_at > last_opened_at`
 - **M9.16** — Acquittement implicite : ouverture d'un sujet met à jour `last_opened_at`, ce qui fait disparaître les badges « ✦ à examiner » des listes
 - **M9.17** — Drag-and-drop des tâches (dnd-kit) sur le widget calendrier semaine et la vue mois Planning

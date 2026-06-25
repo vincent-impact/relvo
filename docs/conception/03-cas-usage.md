@@ -6,15 +6,16 @@ Lorsqu'un message est reçu, le système suit cette logique :
 
 1. identifier le canal source (`Channel`)
 2. enregistrer le `Message` avec les informations brutes de l'expéditeur (`sender_raw`)
-3. chercher un `Contact` existant correspondant à l'expéditeur (par email ou téléphone)
-4. tenter de comprendre le message :
+3. **classer le message dans un domaine (`Folder`) dès la réception** — ce domaine donnera ensuite son domaine au sujet créé ou rattaché (`Message.folder_id` → `Subject.folder_id`)
+4. chercher un `Contact` existant correspondant à l'expéditeur (par email ou téléphone)
+5. tenter de comprendre le message :
    - **s'il est incompréhensible** : le message reste "Sans sujet" (`subject_id = null`), sans contact créé, en attente de tri humain
    - **s'il est compréhensible** :
      - si aucun contact n'existe → créer un `Contact` en statut `auto` avec les informations disponibles
      - déterminer s'il appartient à un sujet existant ou s'il faut en créer un nouveau
-5. si un sujet est identifié ou créé : générer éventuellement des tâches
-6. produire les événements de journal (`EventLog`)
-7. mettre à jour le **statut** (cycle de vie) et/ou les **marqueurs** du sujet (cf. `02-modele-donnees.md §6` — les deux axes ne se confondent pas)
+6. si un sujet est identifié ou créé : générer éventuellement des tâches
+7. produire les événements de journal (`EventLog`)
+8. mettre à jour le **statut** (cycle de vie) et/ou les **marqueurs** du sujet (cf. `02-modele-donnees.md §6` — les deux axes ne se confondent pas)
 
 **Règle fondamentale** : l'IA ne crée un sujet que si elle a suffisamment compris la situation. En cas de doute, elle ne force pas la création — le message reste "Sans sujet" et c'est l'utilisateur qui tranchera.
 
@@ -309,31 +310,47 @@ L'IA peut suggérer la résolution (visible comme "Résolution suggérée" dans 
 
 - `Subject.status = archived` (masqué du flux actif, conservé pour l'historique)
 
+## La page Messages — une pile d'événements, pas une boîte mail
+
+> Préambule aux cas M, N, O. Relvo **n'est pas un gestionnaire de conversations** : la seule surface d'interaction reste le **Sujet** (invariant n°4). La page `/messages` n'affiche donc **que les messages « Sans sujet »** (orphelins, `subject_id = null`) — une **pile d'événements reçus à trier**, jamais une timeline d'échanges. Les messages déjà classés vivent dans le fil de leur sujet, pas ici.
+
+Caractéristiques de la pile :
+
+- **uniquement les orphelins entrants** ; les messages envoyés et les ignorés en sont exclus
+- **rétention 15 jours** : un message jamais rattaché à un sujet est purgé automatiquement au-delà (Relvo n'archive pas la boîte de réception)
+- l'aspect **lu / non-lu** est conservé pour le tri (non-lu = mis en avant ; lu = grisé) ; « lire » un orphelin = déplier son détail, faute de sujet à ouvrir
+- **page de détail dédiée par message** : `/messages/[id]`, utile pour lire un e-mail long tronqué dans le fil du sujet
+- actions de tri disponibles depuis le détail : **créer un sujet**, **rattacher à un sujet existant**, **créer un contact** depuis l'expéditeur ; **retirer** le message (swipe gauche dans la pile)
+
 ## Cas M — Tri d'un message "Sans sujet" par l'utilisateur
 
 ### Contexte
 
-L'utilisateur consulte le dashboard ou la page Messages et voit des messages "Sans sujet" en attente de tri.
+L'utilisateur consulte la page Messages (pile des orphelins) et ouvre un message pour le trier (`/messages/[id]`).
 
-### Traitement — Affectation à un sujet
+### Traitement — Création d'un sujet depuis le message
 
-1. l'utilisateur clique sur le badge "Sans sujet" du message
-2. un popover s'ouvre avec les options d'affectation
-3. **si aucun contact n'existe pour cet expéditeur** : le système propose de créer un contact
-   - les champs sont préremplis avec les informations disponibles (`sender_raw`, nom extrait si possible)
-   - l'utilisateur peut compléter (nom, entreprise, Dossier par défaut)
-   - le contact est créé en statut `complete` (car vérifié par l'utilisateur) avec `source_actor = user`
-4. **si un contact existe déjà** : le message lui est directement associé
-5. l'utilisateur choisit un sujet existant ou en crée un nouveau
-6. le `Message` est mis à jour : `subject_id` et `sender_contact_id` renseignés
-7. produire les `EventLog` (contact créé si applicable, message rattaché)
+1. l'utilisateur ouvre le message et choisit **« Créer un sujet »** (action de tri principale)
+2. **si aucun contact n'existe pour cet expéditeur** : le contact est matérialisé depuis l'expéditeur brut (`sender_raw`), avec `source_actor = user` (invariant n°12 : un contact naît à la création d'un sujet)
+3. **si un contact existe déjà** : il est repris tel quel
+4. un nouveau `Subject` est créé ; il hérite du **domaine du message** (`Message.folder_id` → `Subject.folder_id`, sauf override)
+5. le `Message` est rattaché au sujet : `subject_id` et `sender_contact_id` renseignés, `status = linked`, `triage_hint` effacé
+6. produire les `EventLog` (contact créé si applicable, sujet créé, message rattaché)
+
+### Traitement — Rattachement à un sujet existant
+
+Variante quand le message relève d'un sujet déjà ouvert (typiquement quand Relvo s'est trompé en le laissant orphelin) :
+
+1. l'utilisateur choisit **« Rattacher à un sujet existant »** et sélectionne le sujet
+2. le `Message` est mis à jour : `subject_id` renseigné, `status = linked`, `triage_hint` effacé
+3. produire un `EventLog` (message rattaché)
 
 ### Résultat
 
-- le message disparaît de la liste "Sans sujet"
-- le sujet est enrichi du nouveau message
+- le message disparaît de la pile "Sans sujet"
+- le sujet (créé ou existant) est enrichi du nouveau message
 
-## Cas N — Message "Sans sujet" ignoré par l'utilisateur
+## Cas N — Message "Sans sujet" retiré par l'utilisateur
 
 ### Contexte
 
@@ -341,9 +358,9 @@ L'utilisateur identifie un message comme non pertinent (spam, prospection, messa
 
 ### Traitement
 
-1. l'utilisateur choisit d'ignorer le message
+1. l'utilisateur **retire** le message — geste **swipe gauche** sur la ligne dans la pile
 2. le `Message` est mis à jour : `status = ignored`
-3. le message disparaît de la liste "Sans sujet"
+3. le message disparaît de la pile "Sans sujet"
 4. aucun sujet n'est créé
 5. produire un `EventLog` (message ignoré, actor: user)
 
@@ -356,22 +373,20 @@ L'utilisateur identifie un message comme non pertinent (spam, prospection, messa
 
 ### Contexte
 
-L'utilisateur constate qu'un message a été rattaché au mauvais sujet par l'IA.
+L'utilisateur constate qu'un message a été rattaché au mauvais sujet par l'IA. Le message classé vit dans le fil de son sujet ; on ouvre son détail (`/messages/[id]`, atteint depuis la bulle du fil) pour le réaffecter.
 
 ### Traitement
 
-1. l'utilisateur clique sur le badge du sujet affiché sous le message
-2. le même popover que le Cas M s'ouvre, avec le sujet actuel présélectionné
-3. l'utilisateur peut :
-   - réaffecter le message à un autre sujet existant
-   - créer un nouveau sujet
-   - détacher le message (retour à "Sans sujet")
-4. le `Message` est mis à jour : `subject_id` modifié
-5. produire les `EventLog` (message réaffecté, actor: user)
+1. depuis le détail du message, l'utilisateur choisit de le réaffecter
+2. il peut :
+   - **réaffecter** le message à un autre sujet existant (`status = linked`, `triage_hint` effacé)
+   - **détacher** le message (retour à "Sans sujet" : `subject_id = null`, il repart dans la pile)
+3. le `Message` est mis à jour : `subject_id` modifié (ou remis à `null`)
+4. produire les `EventLog` (message réaffecté ou détaché, actor: user)
 
 ### Résultat
 
-- le message apparaît dans le nouveau sujet
+- le message apparaît dans le nouveau sujet, ou retourne dans la pile "Sans sujet" s'il a été détaché
 - le journal de bord trace le changement
 
 ## Cas P — Complétion d'une fiche contact
@@ -396,3 +411,39 @@ L'IA a créé un contact "Karim Benali" à partir d'une signature email, mais il
 - `Contact.status = complete`
 - le contact disparaît du filtre "À compléter"
 - le `default_folder_id` sera utilisé pour faciliter le classement des prochains messages de ce contact
+
+## Cas Q — Sujet écarté par l'utilisateur (« Ignorer »)
+
+### Contexte
+
+Dans le fil, l'utilisateur juge qu'un sujet ne le concerne pas (groupe WhatsApp bavard, échange sans suite, fausse alerte). Il l'**écarte** plutôt que de le terminer.
+
+### Traitement
+
+1. l'utilisateur déclenche l'action **« Ignorer »** — geste **swipe gauche** (rouge) sur la carte du fil, **symétrique** de « Terminer » (swipe droite, vert — cf. Cas K)
+2. le `Subject` passe en **`status = ignored`** (statut, pas priorité) : il quitte les ouverts, **n'alimente plus la mémoire de Relvo** et devient **purgeable après 15 jours d'inactivité**
+3. produire un `EventLog` (état : … → Ignoré, actor: user)
+
+### Résultat
+
+- `Subject.status = ignored` — le sujet sort du fil des ouverts et bascule dans l'onglet **« Ignorés »**
+
+### Règle — l'ignorance est collante
+
+Un nouveau message rattaché à un sujet ignoré **ne le ressort jamais** du fil (sinon frustration « groupe WhatsApp bavard », cf. invariant n°7). Seul un geste explicite de l'utilisateur le remet en jeu (Cas R). La purge des ignorés se fait sur **inactivité** (`last_activity_at`), pas en absolu : un fil bavard ignoré ne doit pas être purgé puis recréé.
+
+## Cas R — Sujet ignoré remis dans le fil (« Remettre »)
+
+### Contexte
+
+L'utilisateur retrouve un sujet écarté par erreur dans l'onglet **« Ignorés »** et veut le récupérer.
+
+### Traitement
+
+1. depuis l'onglet « Ignorés », l'utilisateur déclenche **« Remettre dans le fil »** (désignorer)
+2. le `Subject` repasse en **`status = acknowledged`** (état actif invisible) : il réapparaît dans le fil des ouverts et réintègre la mémoire de Relvo
+3. produire un `EventLog` (état : Ignoré → En cours, actor: user)
+
+### Résultat
+
+- `Subject.status = acknowledged` — le sujet quitte l'onglet « Ignorés » et revient parmi les ouverts

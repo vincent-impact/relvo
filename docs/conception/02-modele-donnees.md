@@ -78,10 +78,11 @@ Dans le journal de bord, les actions de l'humain titulaire sont identifiées par
 
 ### Rôle
 
-Un Folder est un **conteneur métier** qui regroupe deux types de contenus :
+Un Folder est un **conteneur métier** qui regroupe :
 
 - les `Subject` (affaires en cours dans ce périmètre)
 - les `KnowledgeDocument` (PDFs et notes Markdown qui enrichissent Relvo pour ce périmètre)
+- les `Message` classés dans ce domaine à la réception (via `Message.folder_id`) — c'est ce domaine qui se propage au Sujet créé depuis le message
 
 C'est aussi l'unité de classification utilisée par Relvo pour déterminer quel contexte de Connaissances charger lorsqu'il traite un Sujet (cf. `04-ia.md §10`).
 
@@ -215,8 +216,8 @@ Entité centrale du produit.
 - `summary: text nullable`
 - `folder_id: UUID nullable` — null si Relvo n'a pas su classer (le Sujet apparaît avec un badge « sans dossier » dans Mon fil et invite l'utilisateur à le ranger) ; jamais égal à l'ID du Folder Général (cf. §2 — invariant documentaire)
 - `contact_ids: UUID[] default []`
-- `status: enum(new, acknowledged, resolved, archived)` — **cycle de vie** exclusif et séquentiel (cf. Mapping UI)
-- `priority: enum(low, high, critical)`
+- `status: enum(new, acknowledged, resolved, archived, ignored)` — **cycle de vie** exclusif (cf. Mapping UI). `ignored` = sujet écarté, hors des ouverts et **hors mémoire de Relvo**
+- `priority: enum(normal, urgent)`
 - `waiting_for_reply: boolean default false` — marqueur **« En attente »** posé par Relvo (cf. Mapping UI)
 - `source_channel_id: UUID nullable`
 - `opened_at: datetime`
@@ -257,7 +258,7 @@ Un sujet peut impliquer un ou plusieurs contacts. Le tableau `contact_ids` porte
 
 Un Sujet est, par nature, **un fil de conversation entre deux ou plusieurs personnes autour d'un objet précis**. Son affichage repose sur **deux axes orthogonaux** qu'il ne faut pas confondre — c'est la correction majeure du modèle de statut (l'ancien enum à 6 valeurs mélangeait les deux et se contredisait : un sujet pouvait être à la fois `to_do` *et* `unread`).
 
-**Axe 1 — Cycle de vie (`status`, exclusif, séquentiel).** Quatre valeurs qui s'enchaînent, jamais cumulables :
+**Axe 1 — Cycle de vie (`status`, exclusif).** Cinq valeurs, jamais cumulables :
 
 | `status` | Libellé UI | Visible ? |
 |---|---|---|
@@ -265,32 +266,33 @@ Un Sujet est, par nature, **un fil de conversation entre deux ou plusieurs perso
 | `acknowledged` | *(Lu)* | **non** — état actif par défaut, aucun badge |
 | `resolved` | **Terminé** | oui (onglet Terminés + coche) |
 | `archived` | *(Archivé)* | **non** — état **système** (auto après inactivité prolongée), masqué |
+| `ignored` | **Ignoré** | oui, mais hors des ouverts (onglet Ignorés, récupérable) — sujet **écarté** |
 
-Transitions : `new →(ouverture de la fiche)→ acknowledged →(action « Terminer »)→ resolved →(inactivité, système)→ archived`. Un swipe « Terminer » depuis `new` est possible. **Réouverture** : un message entrant sur un sujet `resolved` le ramène à `acknowledged` (il avait déjà été lu) et fait réapparaître ses marqueurs (pastille non-lus, éventuel drapeau si Relvo le re-priorise). Le principe directeur : **« Lu » est invisible** — un badge porté par 90 % des sujets actifs n'informe pas ; on lit le statut par soustraction (absence de badge = sujet actif).
+Transitions : `new →(ouverture de la fiche)→ acknowledged →(action « Terminer »)→ resolved →(inactivité, système)→ archived`. Le swipe « Ignorer » pose `ignored` depuis n'importe quel état ouvert ; un swipe « Terminer » depuis `new` est possible. **Réouverture** : un message entrant sur un sujet `resolved` le ramène à `acknowledged` (il avait déjà été lu) et fait réapparaître ses marqueurs (pastille non-lus, éventuel drapeau si Relvo le re-priorise). En revanche **l'ignorance est collante** : un message entrant sur un sujet `ignored` ne le ressort **jamais** des ouverts (sinon frustration « groupe WhatsApp bavard ») — seule une récupération manuelle via l'onglet Ignorés le réactive. Un sujet `ignored` est en outre **hors de la mémoire de Relvo** (exclu du contexte) et **purgeable après 15 j d'inactivité**. Le principe directeur : **« Lu » est invisible** — un badge porté par 90 % des sujets actifs n'informe pas ; on lit le statut par soustraction (absence de badge = sujet actif).
 
 **Axe 2 — Marqueurs d'état (cumulables, dérivés ou flags).** Orthogonaux au cycle de vie, plusieurs peuvent coexister sur une même carte :
 
 | Marqueur | Source | Rendu |
 |---|---|---|
-| **Urgent** | `priority = critical` | drapeau 🔴 (icône seule, pas de texte) |
+| **Urgent** | `priority = urgent` | drapeau 🔴 (icône seule, pas de texte) |
 | **À faire** | dérivé : ≥ 1 `Task` non terminée | badge ambre + icône tâche |
 | **En attente** | `waiting_for_reply = true`, **posé par Relvo** | badge gris + icône sablier |
 | **Non-lus** | compteur de messages non lus | pastille bleue ronde façon WhatsApp, en coin de carte |
 
 `to_do`, `waiting` et `unread` ne sont **plus des statuts stockés** — ils deviennent ces marqueurs (dérivé pour À faire, flag Relvo pour En attente, compteur pour les non-lus). Budget visuel mobile : plafond ~3 marqueurs par carte, ordre `[🔴] [pastille] · titre · [À faire] [En attente]`.
 
-**Priorité UI — un seul drapeau (rareté = signal).** Le modèle conserve `priority` à **3 valeurs** (`critical`, `high`, `low` — `medium` retiré). Mais un **seul drapeau « Urgent » rouge** est exposé, levé **uniquement** quand `priority = critical`. `high` et `low` n'ont aucun drapeau : `high` reste un signal interne (il fait entrer le sujet dans le feed prioritaire sans crier visuellement). Justification : si l'urgence est partout, elle devient du bruit ; rare (1-2 sujets sur 24 ouverts), elle attire l'œil.
+**Priorité UI — un seul drapeau (rareté = signal).** Le modèle porte `priority` à **2 valeurs** : `normal` (par défaut) et `urgent`. Un **seul drapeau « Urgent » rouge** est exposé, levé **uniquement** quand `priority = urgent` ; `normal` n'a aucun drapeau. Justification : si l'urgence est partout, elle devient du bruit ; rare (1-2 sujets sur 24 ouverts), elle attire l'œil.
 
-### Feed prioritaire et action « Ignorer »
+### Feed des ouverts et actions de swipe
 
-Le **feed prioritaire** (onglet « Priorité » de Mon fil, et widget de l'Accueil) sélectionne les sujets tels que `priority IN (critical, high)` — ceux que Relvo juge dignes d'attention immédiate. Les sujets `low` n'y apparaissent jamais ; ils vivent dans l'onglet « Ouverts ».
+L'onglet **« Ouverts »** de Mon fil (et le widget de l'Accueil) liste tous les sujets ouverts (`status IN (new, acknowledged)`), **urgents en tête** (`priority = urgent`). C'est `getOpenFeed`. Pas de feed « Priorité » distinct : la rareté du drapeau urgent suffit à hiérarchiser.
 
 Deux actions structurent le tri, exposées **en gestes de swipe** sur mobile (et en boutons sur la fiche / les cartes urgentes) :
 
-- **Ignorer** (swipe gauche, rouge, icône œil fermé) — passe la priorité directement à **`low`** (depuis `critical` ou `high`). Le drapeau tombe, le sujet quitte le feed prioritaire et bascule dans « Ouverts ». Aucune perte d'information : c'est une **dépriorisation**, pas une suppression. Le sujet pourra **redevenir prioritaire** si un nouveau message arrive et que Relvo le re-priorise. Disponible uniquement sur `critical` et `high` (un sujet `low` n'a rien à rétrograder → swipe gauche désactivé). Event log : `EventLog.event_type = priority_changed`, `metadata.source = "ignore"`, `metadata.to = "low"`.
+- **Ignorer** (swipe gauche, rouge, icône œil fermé) — passe le `status` à **`ignored`**. Le sujet quitte les ouverts, sort de la mémoire de Relvo et bascule dans l'onglet **Ignorés** (récupérable). L'ignorance est **collante** : un nouveau message ne le ressort jamais des ouverts (seule une récupération manuelle le réactive). Purgeable après 15 j d'inactivité. Disponible sur tout sujet ouvert. **Ignorer est un statut, pas une priorité.**
 - **Terminer** (swipe droite, vert, icône coche) — passe le `status` à `resolved`. Disponible sur tous les sujets. C'est l'action de clôture ; **« Terminer » remplace « Résoudre »** (vocabulaire trop éloigné des utilisateurs food/bâtiment), libellé de l'état résolu = **« Terminé »**.
 
-**Pas de bouton « Archiver »** côté utilisateur : `archived` est un état **système** (auto après inactivité prolongée d'un sujet `resolved`). Les trois manières historiques de sortir un sujet du flux (ignorer / résoudre / archiver) sont ramenées à deux gestes clairs : **Ignorer** (déprioriser) et **Terminer** (clore).
+**Pas de bouton « Archiver »** côté utilisateur : `archived` est un état **système** (auto après inactivité prolongée d'un sujet `resolved`). Les manières de sortir un sujet du flux sont ramenées à deux gestes clairs : **Ignorer** (écarter, `status = ignored`) et **Terminer** (clore, `status = resolved`).
 
 ### Distinction `last_activity_at` / `last_opened_at`
 
@@ -330,6 +332,7 @@ Cf. doc 04-ia §8 pour le détail UX et les règles d'invalidation.
 - `id: UUID`
 - `account_id: UUID`
 - `subject_id: UUID nullable`
+- `folder_id: UUID nullable` — **domaine assigné au message à la réception** (classification auto par Relvo). C'est ce domaine qui **donne ensuite son domaine au Sujet** créé depuis le message. Null = non classé.
 - `channel_id: UUID`
 - `sender_contact_id: UUID nullable`
 - `sender_raw: string nullable`
@@ -341,6 +344,7 @@ Cf. doc 04-ia §8 pour le détail UX et les règles d'invalidation.
 - `content: text nullable`
 - `received_at: datetime nullable`
 - `sent_at: datetime nullable`
+- `read_at: datetime nullable` — lu/non-lu d'un message entrant. Marqué lu à l'ouverture du sujet auquel il est rattaché **ou** de la page Messages. Null = non-lu. Sert le tri des orphelins et la pastille de non-lus.
 - `status: enum(received, linked, sent, failed, ignored)`
 - `triage_hint: enum(too_short, ambiguous, prospection, unknown_sender, informative_only, other) nullable`
 - `created_at: datetime`
@@ -350,7 +354,8 @@ Cf. doc 04-ia §8 pour le détail UX et les règles d'invalidation.
 
 - `subject_line` est surtout utile pour l'email.
 - `external_thread_id` aide au rattachement d'un email à un fil existant.
-- `subject_id` reste **nullable** : c'est le mécanisme qui porte les messages "Sans sujet". Un message avec `subject_id = null` est un message que Relvo n'a pas su traiter. Il est visible dans la page Messages et dans le dashboard, en attente d'affectation manuelle par l'utilisateur.
+- `subject_id` reste **nullable** : c'est le mécanisme qui porte les messages "Sans sujet". Un message avec `subject_id = null` est un message que Relvo n'a pas su traiter. Ces orphelins forment une **pile d'événements reçus** (pas une messagerie ni une conversation) dans la page Messages, conservés **15 j** s'ils ne sont associés à aucun sujet (purge ensuite). Actions possibles sur un orphelin : **créer un sujet**, **rattacher à un sujet existant**, ou **créer un contact** depuis l'expéditeur.
+- `folder_id` porte le **domaine** que Relvo assigne au message dès la réception. Lorsqu'un Sujet est ensuite créé à partir du message, il **hérite de ce domaine**. Relation `Folder?` (`onDelete: SetNull`) : le modèle `Folder` porte donc aussi `messages`.
 - Un message avec `status = ignored` est un message que l'utilisateur a volontairement écarté (spam, non pertinent) sans lui affecter de sujet.
 - `sender_contact_id` est **nullable**. Un message peut exister sans contact associé : c'est le cas quand l'expéditeur est inconnu et qu'aucun sujet n'a encore été créé. L'information brute de l'expéditeur (adresse email ou numéro de téléphone) est conservée dans `sender_raw` pour permettre la création ultérieure du contact si l'utilisateur décide de traiter le message.
 - `triage_hint` est renseigné **uniquement** quand `subject_id = null`, c'est-à-dire pour les messages que Relvo n'a pas su rattacher à un sujet. Il porte la raison synthétique de cette décision et aide l'utilisateur à trier rapidement (afficher dans la liste des messages "Sans sujet", choisir d'ignorer ou d'affecter). Il n'est pas affiché pour les messages rattachés à un sujet. Valeurs :
@@ -363,7 +368,7 @@ Cf. doc 04-ia §8 pour le détail UX et les règles d'invalidation.
 
 ### Affichage par conversation
 
-Dans l'interface, les messages sont regroupés par `sender_contact_id` / `recipient_contact_id` pour former des **conversations par contact**, tous canaux confondus. Ce regroupement est un concept d'affichage, pas une entité de données distincte.
+Au sein d'un **sujet**, les messages sont regroupés par `sender_contact_id` / `recipient_contact_id` pour former une **conversation par contact**, tous canaux confondus. Ce regroupement est un concept d'affichage, pas une entité de données distincte. La page **Messages** autonome, en revanche, ne regroupe pas : elle liste les seuls messages **« Sans sujet »** (`subject_id = null`) comme une **pile d'orphelins** (lu/non-lu via `read_at`, rétention 15 j), à rattacher à un sujet.
 
 ## 8. Attachment
 
@@ -414,7 +419,7 @@ Unité de travail **du sujet** (pas de l'utilisateur).
 - `description: text nullable`
 - `source_actor: Actor` — qui a créé / proposé la tâche (`ai` = Relvo, `user` = utilisateur, `system` = workflow auto)
 - `kind: enum(decision, reply, check, call, inform, follow_up, other)`
-- `status: enum(open, done, deleted)`
+- `status: enum(open, done, deleted)` — la valeur `deleted` subsiste dans l'enum mais **n'est plus posée** : la suppression d'une tâche est désormais un **hard delete** (vrai `DELETE` en base via `deleteTask`). Les FK `EventLog.task_id` et `Action.task_id` sont en `onDelete: SetNull`, la ligne disparaît sans casser le journal ni les actions.
 - `completion_mode: enum(manual, message_match, action_match)`
 - `start_date: date nullable` — date à laquelle la tâche doit être effectuée (deadline au jour près)
 - `start_time: time nullable` — heure précise si la deadline est horodatée

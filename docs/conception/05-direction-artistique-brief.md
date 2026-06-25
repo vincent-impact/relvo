@@ -119,17 +119,19 @@ Neutres       blanc #fff · gris #f7f7f5 / #eeecea · texte #1a1a1a / #6b6b6b / 
 
 ### Système d'état des sujets (à rendre visuellement, sans le complexifier)
 
-- **Statut = cycle de vie à 4 valeurs, exclusif** : `new` (Nouveau, seul statut
+- **Statut = cycle de vie à 5 valeurs, exclusif** : `new` (Nouveau, seul statut
   actif avec un badge visible) → `acknowledged` (Lu — **état par défaut INVISIBLE**,
   aucun badge : on lit « actif » par l'absence de badge) → `resolved` (Terminé) →
-  `archived` (système, hors flux). **Seuls « Nouveau » et « Terminé » s'affichent.**
+  `archived` (système, hors flux) + `ignored` (Ignoré — sujet écarté, hors mémoire
+  de Relvo, récupérable). **Seuls « Nouveau » et « Terminé » s'affichent** dans le
+  fil des ouverts ; les ignorés vivent dans leur propre onglet.
 - **Marqueurs = cumulables, indépendants du statut** (plusieurs à la fois sur une
-  carte) : 🚩 **Urgent** (drapeau rouge — *uniquement* si priorité critique ; la
+  carte) : 🚩 **Urgent** (drapeau rouge — *uniquement* si priorité `urgent` ; la
   **rareté est le signal**, 1-2 sujets sur 24), **À faire** (tâches ouvertes),
   **En attente** (on attend un retour d'un tiers), **pastille non-lus** (compteur
   façon WhatsApp).
-- **Priorité à 3 valeurs** : `low` / `high` / `critical`. Un seul drapeau urgent
-  rouge, levé seulement sur `critical`.
+- **Priorité à 2 valeurs** : `normal` / `urgent`. Un seul drapeau urgent
+  rouge, levé seulement sur `urgent`.
 
 → Enjeu DA : **hiérarchiser ces signaux sans saturer la carte**. L'urgent doit
 sauter aux yeux *parce qu'il est rare*. Le reste doit rester discret et lisible.

@@ -12,7 +12,7 @@ Le tout vit dans un **monorepo léger** (pnpm workspaces) :
 |---|---|---|
 | **`apps/web`** | App Next.js fullstack : UI + API (Route Handlers + Server Actions) + auth + chatbot + CRUD | **Vercel** |
 | **`apps/worker`** | Daemon Baileys : connexion WhatsApp permanente + pipeline de traitement asynchrone | **Railway / Render** |
-| **`packages/db`** | Schéma Prisma + client généré + enums partagés (`Actor`, `Status`, `Priority`, `Kind`, `TriageHint`) | — |
+| **`packages/db`** | Schéma Prisma + client généré + enums partagés (`Actor`, `SubjectStatus` — 5 valeurs : `new`, `acknowledged`, `resolved`, `archived`, `ignored` ; `Priority` — 2 valeurs : `normal`, `urgent` ; `TaskKind`, `TriageHint`…) + couche domaine partagée | — |
 
 ## 2. Décision structurante : pas de backend découplé, mais un worker obligatoire
 
@@ -51,6 +51,8 @@ Aucun worker n'est nécessaire pour l'email : tout passe par `apps/web`.
 
 Le traitement (compréhension, classement, rattachement Subject/Contact, génération de tâches + brouillon, extraction de date) s'exécute en **tâche de fond**, déclenché par l'arrivée d'un message quel que soit le canal. Implémenté dans `apps/worker` (file BullMQ ou équivalent) pour ne pas dépendre des limites de durée serverless. Détail fonctionnel : `../conception/04-ia.md` et backlog M7.
 
+Le `Message` porte deux champs liés au tri : `folder_id` (domaine assigné dès la réception par la classification Relvo, relation `Folder` en `onDelete: SetNull` ; donne ensuite son domaine au sujet créé à partir du message) et `read_at` (lu/non-lu — posé à l'ouverture du sujet rattaché ; les orphelins « Sans sujet » restent non-lus jusqu'au tri). `Folder` porte la relation inverse `messages Message[]`.
+
 ## 4. Stack détaillée
 
 | Domaine | Choix |
@@ -59,7 +61,7 @@ Le traitement (compréhension, classement, rattachement Subject/Contact, génér
 | UI | **Shadcn UI** + **Tailwind**, thème navy (#0A1128) / blue (#2B6FE0) / red (#E63150) issu de la maquette |
 | API | **Route Handlers** (`/api/*`) + **Server Actions** |
 | Base de données | **PostgreSQL** (Neon, via le Marketplace Vercel) + **Prisma** |
-| Types partagés | Enums Prisma exposés depuis `packages/db` (pas de package `shared-types` séparé) |
+| Types partagés | Enums Prisma exposés depuis `packages/db` (`SubjectStatus` 5 valeurs, `Priority` 2 valeurs, `Actor`, `TaskStatus`, `TriageHint`…) — pas de package `shared-types` séparé. La logique métier (queries, mutations) vit aussi dans `packages/db/src/domain` |
 | Auth | **Auth.js** in-app (provider Credentials + Google OAuth), sessions cookie/JWT, middleware de protection des routes |
 | IA | **Vercel AI SDK** + **Vercel AI Gateway** ; Claude **Haiku / Sonnet / Opus** selon complexité (Opus rare) ; **Files API** Anthropic pour les PDFs (`anthropic_file_id`) ; **prompt caching** (system prompt + KnowledgeDocuments) ; **citations natives** activées (UI minimale en V1) |
 | Chat local | **IndexedDB** via `dexie` (conversations chatbot éphémères, côté client, pas d'entité serveur) |
@@ -77,10 +79,14 @@ Le traitement (compréhension, classement, rattachement Subject/Contact, génér
 Le produit vise une **application mobile** (utilisateurs food/bâtiment qui vivent sur smartphone, toujours sur WhatsApp). Décision : **PWA** en V1, pas de natif.
 
 - **Pourquoi PWA** : « mobile-first » est une affaire d'UI/CSS, pas de framework. Une PWA **installée** (`display: standalone`) tourne plein écran, sans chrome de navigateur — rendu quasi-natif (safe-areas gérées via `env(safe-area-inset-*)`, barres edge-to-edge, `backdrop-filter` disponible). **Zéro réécriture** : tout le Next.js (SSR, Server Actions, Route Handlers) est réutilisé ; distribution par **simple lien** (WhatsApp).
-- **Seule vraie faiblesse** : la **friction d'installation iOS** (pas d'invite automatique — geste manuel *Partager → « Sur l'écran d'accueil »* ; sur Chrome iOS, via *« Plus »*). Atténuée par un guide d'installation et l'accompagnement des premiers utilisateurs.
+- **Seule vraie faiblesse** : la **friction d'installation iOS** (pas d'invite automatique — geste manuel *Partager → « Sur l'écran d'accueil »*, indifféremment depuis **Safari ou Chrome iOS** puisque le standalone est piloté par la meta tag, pas par le navigateur). Atténuée par un guide d'installation et l'accompagnement des premiers utilisateurs.
 - **Issue de secours V2 — Expo / Capacitor** : si la présence **stores**, un **push iOS infaillible** ou la friction d'install deviennent bloquants, on emballe le frontend dans une coque native. Le **backend ne bouge pas** (worker, auth, DB, chatbot restent serveur) — c'est purement une question de coque frontend. Capacitor réutilise le code web ; Expo/React Native impliquerait une 2ᵉ codebase UI.
 
-La maquette mobile-first de référence vit dans `mockup/mobile/` (PWA installable déjà câblée : `manifest.webmanifest`, `sw.js`, `pwa.js`).
+La maquette mobile-first de référence vit dans `mockup/mobile/`. Dans `apps/web`, l'installabilité PWA est câblée par :
+- `src/app/manifest.ts` → `MetadataRoute.Manifest` servi sur `/manifest.webmanifest` : `display: standalone`, `theme_color: #6b5bd6`, icônes **192** et **512** (exigence d'installabilité Chrome).
+- `src/app/layout.tsx` → métadonnées `appleWebApp.capable` (émet `<meta name="apple-mobile-web-app-capable">`), `statusBarStyle: black-translucent`, `other: { "mobile-web-app-capable": "yes" }`, plus `viewport` (`themeColor`, `viewportFit: cover`) et un bandeau violet fixe derrière la status bar (safe-area-inset-top).
+
+> ⚠️ Sur iOS, le mode standalone est piloté par la **meta tag** `apple-mobile-web-app-capable`, pas par le navigateur : l'installation « Sur l'écran d'accueil » fonctionne donc **depuis Safari comme depuis Chrome iOS** (tous deux WebKit). La seule friction est l'absence d'invite automatique (geste manuel *Partager → « Sur l'écran d'accueil »*).
 
 ## 5. Choix techniques arbitrés
 
@@ -106,10 +112,11 @@ La maquette mobile-first de référence vit dans `mockup/mobile/` (PWA installab
 relvo/
 ├── apps/
 │   ├── web/                    # → Vercel (Root Directory = apps/web)
-│   │   ├── src/app/            # routes App Router + UI
+│   │   ├── src/app/            # routes App Router + UI (voir « Routes & navigation »)
+│   │   │   ├── manifest.ts                # manifest PWA (display: standalone)
 │   │   │   ├── api/chat/                  # AI SDK + Gateway
 │   │   │   └── api/webhooks/postmark/     # email entrant
-│   │   ├── src/components/     # layout/ (Sidebar, ChatDrawer), feed/, ui/ (shadcn)
+│   │   ├── src/components/     # layout/ (tab bar bas, composer Relvo), feed/, ui/ (shadcn)
 │   │   ├── src/lib/            # db (client Prisma), auth, helpers
 │   │   └── src/server/         # Server Actions + logique métier
 │   └── worker/                 # → Railway/Render (always-on)
@@ -122,13 +129,42 @@ relvo/
 └── package.json
 ```
 
-## 7. Déploiement
+## 7. Routes & navigation (App Router)
+
+L'app est **mobile-first**. La navigation est une **barre d'onglets en bas** à **4 entrées**, doublée d'un **composer Relvo persistant** (présent sur toutes les pages) qui ouvre la conversation Relvo. **Plus de sidebar ni de drawer latéral 40 %** : la conversation Relvo est une **surface plein écran**.
+
+**4 onglets de la tab bar :**
+
+| Onglet | Route | Écran |
+|---|---|---|
+| Accueil | `/` | Brief du jour (KPIs + agenda semaine + sujets prioritaires) |
+| Mon fil | `/fil` | Traitement — 3 onglets de statut : Ouverts / Terminés / Ignorés (swipe ← Ignorer · → Terminer) |
+| Mémoire | `/dossiers` | Liste des domaines |
+| Réglages | `/parametres` | Compte, canaux, contacts |
+
+**Routes hors-nav (atteintes par lien/recherche/clic) :**
+
+| Route | Écran |
+|---|---|
+| `/dossiers/[id]` | Fiche domaine (onglets Instructions / Documents / Sujets) |
+| `/sujets/[id]` | Détail d'un sujet — onglet pilotable via `?tab=` |
+| `/sujets/nouveau` | Création d'un sujet |
+| `/messages` | Pile des messages orphelins (« Sans sujet ») |
+| `/messages/[id]` | Détail d'un message |
+| `/planning` | Calendrier vue mois |
+| `/contacts` · `/contacts/[id]` | Annuaire + fiche contact |
+| `/recherche` | Recherche transverse |
+| `/conversation` · `/conversations` | Conversation Relvo plein écran + historique des conversations |
+
+Routes d'auth sous `(auth)/` (`connexion`, `inscription`, `mot-de-passe-oublie`, `reinitialiser-mot-de-passe`, `verifier-email`). Les routes applicatives vivent sous le groupe `(app)/` (layout partagé : tab bar + composer).
+
+## 8. Déploiement
 
 - **`apps/web`** → Vercel. Importer le repo, *Root Directory = `apps/web`*, renseigner les variables d'environnement, `git push` déclenche le déploiement.
 - **`apps/worker`** → Railway/Render. Service pointé sur `apps/worker`, redémarrage automatique, doit rester *always-on*.
 - Les deux pointent vers la **même base PostgreSQL** (Neon).
 - Variables d'environnement : documentées dans le `README.md` à la racine.
 
-## 8. Alternative écartée — backend NestJS découplé
+## 9. Alternative écartée — backend NestJS découplé
 
 Le plan initial prévoyait un monorepo Turborepo avec `apps/api` (NestJS + Prisma), un package `shared-types`, et une auth par JWT signé transmis du front au back. **Écarté** : pour un produit mono-utilisateur sans besoin d'API publique ni de scaling indépendant de la couche métier, le découplage ne fait qu'ajouter un runtime, un déploiement et de la plomberie d'authentification — sans bénéfice. Le seul composant qui justifie réellement un process séparé (le daemon WhatsApp) est isolé dans `apps/worker`, ce qui n'impose pas de découpler le reste de l'API.

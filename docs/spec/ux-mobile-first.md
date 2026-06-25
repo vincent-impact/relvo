@@ -38,8 +38,8 @@ Remplace la sidebar. **4 onglets** (alignés sur la nav V1 et le mapping de rout
 |---|---|---|---|
 | **Accueil** | maison | `/` | Brief + conversation (surface par défaut) |
 | **Mon fil** | enveloppe | `/fil` | Traitement des sujets (inbox structurée) |
-| **Dossiers** | classeur | `/dossiers` | Affaires + Connaissances par Folder |
-| **Paramètres** | roue | `/parametres` | Compte, canaux, contacts |
+| **Mémoire** | cerveau | `/dossiers` | Domaines de mémoire de Relvo (Sujets + Connaissances par Folder) |
+| **Réglages** | roue | `/parametres` | Compte, canaux, contacts |
 
 Les **vues hors-nav** (Planning `/planning`, Messages `/messages`, Contacts `/contacts`, Sujet `/sujets/[id]`, Dossier `/dossiers/[id]`, Contact `/contacts/[id]`) ne sont pas dans la barre : on y arrive par un lien contextuel (carte du chat, widget agenda, feed-strip, clic sur un nom) ou la recherche. Sur ces vues, un **bouton retour** en en-tête ramène à l'onglet d'origine.
 
@@ -57,16 +57,17 @@ En `lg`, la barre d'onglets devient un **rail latéral gauche** (icônes + libel
 ├──────────────────────────────┤
 │ ░ BRIEF (rendu par Relvo) ░   │  ← zone scrollable
 │  • Bandeau KPIs (4, 2×2)      │     - KPIs en grille 2×2 (mobile) → 1×4 (md+)
-│  • Carte « Agenda » (3 jours) │     - aperçu tâches à venir, lien → /planning
+│  • Carte « Agenda » (semaine) │     - jours cliquables, évènements du jour, lien → /planning
 │  • 2-3 SubjectCard prioritaires│    - lien « Voir tout » → /fil
 ├──────────────────────────────┤
 │ 💬 Composer « Demander à Relvo…»│  ← FIXE au-dessus de la barre d'onglets
 ├──────────────────────────────┤
-│ 🏠   ✉   🗂   ⚙              │  ← barre d'onglets
+│ 🏠   ✉   🧠   ⚙              │  ← barre d'onglets (Accueil · Mon fil · Mémoire · Réglages)
 └──────────────────────────────┘
 ```
 
 - Le **brief** est le premier tour de parole de Relvo, rendu en **cartes** (mêmes composants que les vues structurées). Il scrolle ; le composer reste collé en bas.
+- La carte **Agenda (semaine)** présente une bande de 7 jours **cliquables** : sélectionner un jour affiche **ses évènements dessous**. Deux états visuels distincts sur les chips — **aujourd'hui** = pastille violette pleine, **jour sélectionné** = anneau violet (cumulables si c'est le même jour). L'agenda liste **toutes les tâches datées** de la semaine ; un évènement d'agenda = une tâche portant une date (§6.2). Lien « Voir tout » → `/planning`.
 - Le **composer persistant** (« Demander à Relvo… ») est toujours visible sur l'Accueil. **Taper / l'activer déploie la conversation plein écran** (§5). Un empty-state propose 3-4 prompts contextuels en gris italique (pas de fausses bulles).
 - L'Accueil **n'a pas** de paire ✕/✓ sur les cartes (orientation, pas traitement — cf. principe 13). Le traitement se fait dans Mon fil.
 
@@ -103,12 +104,16 @@ Déclenchée depuis le composer de l'Accueil **ou** depuis l'accès Relvo d'une 
 Chaque vue structurée porte une entrée **persistante** vers la conversation, transmettant le **contexte de page** (URL + entité courante) : une barre fine « Demander à Relvo… » ancrée au-dessus de la barre d'onglets (cohérente avec l'Accueil), ou une action d'en-tête sur les sous-pages avec bouton retour. Pas de bouton flottant.
 
 ### 6.1 Mon fil (`/fil`)
-Feed plein écran de **cartes-sujets en colonne unique** (référence, drapeau urgent, badge statut, badge `✦ N suggérées`, titre, résumé, méta, attachements, dernière activité, barre de progression). Filtres (Priorité défaut / Chronologique / Résolus) en **segmented control** horizontal scrollable. **Paire ✕/✓** sur chaque carte, cibles tactiles confortables (envisager swipe en V1.1, boutons explicites en V1). Bandeau Relvo « ✦ Aujourd'hui… » + lien → `/messages`.
+Feed plein écran de **cartes-sujets en colonne unique** (référence, drapeau urgent, badge statut, badge `✦ N suggérées`, titre, résumé, méta, attachements, dernière activité, barre de progression). Trois **onglets de statut** (pas des filtres) en **segmented control** : **Ouverts** (`getOpenFeed`, urgents en tête) · **Terminés** (`resolved`) · **Ignorés** (`ignored`). La priorité a **2 valeurs** (`urgent` / `normal`) ; le **drapeau urgent** (rouge) reste **rare** (1-2 sujets sur 24) — la rareté est le signal.
+
+Le traitement se fait **au swipe**, pas via une paire de boutons : sur l'onglet Ouverts, **swipe gauche = Ignorer** (rouge, `status = ignored`) et **swipe droite = Terminer** (vert, `status = resolved`). L'onglet Ignorés expose un bouton **« Remettre dans le fil »** (restauration vers les Ouverts) — l'ignorance reste collante : aucun nouveau message ne ressort un sujet ignoré. Bandeau Relvo « ✦ Aujourd'hui… » + lien → `/messages`.
 
 ### 6.2 Sujet (`/sujets/[id]`)
-L'ancien layout 2 colonnes (main + panneau droit 340px) **s'empile** : en-tête (référence + statut + drapeau urgent + actions résoudre/archiver) → résumé Relvo → **onglets** (Messages / Tâches / Journal / Pièces jointes) en segmented control → contenu de l'onglet → **composer multi-canal** en bas (brouillon IA identifié « Suggestion de Relvo — modifiez librement avant d'envoyer »). Les « détails » (contact, dossier, canal) passent dans un onglet ou un repli en tête, pas une colonne. En `lg` : retour possible à 2 colonnes.
+L'ancien layout 2 colonnes (main + panneau droit 340px) **s'empile** : en-tête (référence + statut + drapeau urgent + action **Terminer**, pas de bouton « Archiver » — état système) → résumé Relvo → **onglets** (Messages / Tâches / Journal / Pièces jointes) en segmented control → contenu de l'onglet → **composer multi-canal** en bas (brouillon IA identifié « Suggestion de Relvo — modifiez librement avant d'envoyer »). Les « détails » (contact, dossier, canal) passent dans un onglet ou un repli en tête, pas une colonne. En `lg` : retour possible à 2 colonnes.
 
-### 6.3 Dossiers (`/dossiers`) & Dossier (`/dossiers/[id]`)
+**Tâches datables.** Toute tâche peut porter une **date** (deadline = `start_date` / `start_time`, durée = `end_date` / `end_time`). À la création d'une tâche dans l'onglet Tâches, on propose la date via des **chips rapides** — Aujourd'hui / Demain / **📅 Date…** (sélecteur natif) — + une **heure optionnelle** qui n'apparaît qu'une fois une date choisie. La **suppression** d'une tâche se fait au **swipe gauche** (suppression définitive, pas de soft-delete). Toute tâche datée alimente l'agenda de l'Accueil et le Planning (§6.4).
+
+### 6.3 Mémoire (`/dossiers`) & Dossier (`/dossiers/[id]`)
 Liste : **cartes Folder empilées** (1 colonne mobile → grille 2-3 en md/lg) avec compteurs (sujets, fichiers, notes). Fiche Dossier : sections **empilées** Sujets puis Connaissances (Fichiers + Notes), au lieu de 2 colonnes. Upload = zone drag-and-drop **+ bouton explicite** (le drag natif n'existe pas au doigt). Folder « Général » masque la section Sujets.
 
 ### 6.4 Planning (`/planning`)
@@ -129,7 +134,7 @@ Sub-nav latérale sticky → **onglets** en haut (segmented control) ou liste-ac
 
 Les composants de M9.2 sont rendus **à la fois** dans les vues structurées **et** dans la conversation (generative UI). Réflexe shadcn d'abord pour chacun (cf. CLAUDE.md). Liste :
 
-`SubjectCard` · `TaskCard` · `MessageBubble` · `ActorPill` (M/R/E) · `StatusBadge` (6 valeurs) · `UrgentFlag` · `RelvoSuggestionBadge` · `KpiTile` · `ChatComposer` (réutilisé Accueil/conversation/Sujet) · `BottomTabBar` · `SegmentedControl` (filtres/onglets).
+`SubjectCard` · `TaskCard` · `MessageBubble` · `ActorPill` (M/R/E) · `StatusBadge` (statut à 5 valeurs ; seuls Nouveau et Terminé sont visibles) · `UrgentFlag` · `RelvoSuggestionBadge` · `KpiTile` · `ChatComposer` (réutilisé Accueil/conversation/Sujet) · `BottomTabBar` · `SegmentedControl` (onglets de statut/onglets).
 
 Chacun doit être **autonome et responsive** : un `SubjectCard` rendu dans une bulle de chat doit être identique à celui du feed.
 
@@ -147,7 +152,19 @@ Aucun comportement desktop n'est requis pour qu'une vue soit fonctionnelle : c'e
 
 ---
 
-## 9. Alignements de suivi (à traiter après validation de cette spec)
+## 9. PWA & installation
+
+`apps/web` est **installable en PWA**, pour un rendu plein écran indistinguable d'une app native, sans coût de store.
+
+- **Manifest** (`manifest.ts`, servi sur `/manifest.webmanifest`) : `display: "standalone"`, `orientation: "portrait"`, `theme_color: "#6b5bd6"`, icônes 192/512 (exigence d'installabilité Chrome/Android).
+- **Meta tags** (`layout.tsx`) : `apple-mobile-web-app-capable` (via `appleWebApp.capable`) **et** son équivalent générique `mobile-web-app-capable` — les deux présents.
+- **Point clé iOS.** Le mode plein écran (standalone) est accordé par le système (WebKit) **dès que la meta tag est présente** ; l'installation marche donc depuis **Safari OU Chrome** (Partager → [Plus →] Sur l'écran d'accueil), tous deux WebKit sur iOS. Le standalone n'est pas réservé à Safari.
+- **Status bar.** `apple-mobile-web-app-status-bar-style: black-translucent` : la webview occupe **tout** l'écran (sous la status bar). Pour garder l'heure/batterie lisibles, un **bandeau violet fixe** (`bg-relvo`, `z-50`) de hauteur `env(safe-area-inset-top)` remplit la zone derrière la status bar (invisible hors standalone, où l'inset = 0). `viewport-fit: cover` active les `env(safe-area-inset-*)`.
+- **Icône PWA** : fond **blanc opaque** requis — sinon iOS compose l'icône sur du noir au lieu de respecter la transparence.
+
+---
+
+## 10. Alignements de suivi (à traiter après validation de cette spec)
 
 Ce virage rend caduques plusieurs passages encore rédigés « desktop/drawer ». À mettre à jour **après** validation, avant ou pendant M9 :
 
@@ -158,7 +175,7 @@ Ce virage rend caduques plusieurs passages encore rédigés « desktop/drawer »
 
 ---
 
-## 10. Décisions tranchées (2026-06-16)
+## 11. Décisions tranchées (2026-06-16)
 
 - ✅ **Accès Relvo partout** : barre « Demander à Relvo… » **persistante sur toutes les vues** (onglets ET sous-pages), au-dessus de la barre d'onglets. Pas de variante « action d'en-tête seule ». Agent omniprésent assumé, au coût de ~56px verticaux.
 - ✅ **Accueil = onglet par défaut** au lancement.

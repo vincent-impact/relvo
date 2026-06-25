@@ -33,9 +33,11 @@ Le message n'est donc pas l'unité de pilotage, mais l'élément qui **alimente*
 
 ## 3. La conversation regroupe les messages par contact
 
-Les messages ne sont pas présentés individuellement, mais regroupés en **conversations par contact**, quel que soit le canal utilisé (email, WhatsApp, etc.).
+Au sein d'un **sujet**, les messages ne sont pas présentés individuellement, mais regroupés en **conversations par contact**, quel que soit le canal utilisé (email, WhatsApp, etc.).
 
 Un même contact peut écrire par email le lundi et par WhatsApp le mardi : tous ses messages apparaissent dans un seul fil de conversation. Chaque message porte un indicateur de canal pour savoir par où il est passé.
+
+Seuls les messages **« Sans sujet »** font exception : faute de sujet où les regrouper, ils s'affichent comme une **pile d'orphelins** dans la page Messages (présentés individuellement, en attente d'être rattachés — cf. `03-cas-usage.md`).
 
 Au sein d'une conversation, les messages peuvent traverser **plusieurs sujets**. Un échange avec un fournisseur peut passer d'un sujet de commande à un sujet de livraison, entrecoupé de messages informels sans rapport professionnel. Chaque message porte un **badge de rattachement** (le sujet auquel il est lié, ou "Sans sujet"), ce qui permet de naviguer vers le sujet correspondant.
 
@@ -165,20 +167,21 @@ Trace ce qui s'est passé.
 
 Un Sujet est **un fil de conversation entre deux ou plusieurs personnes autour d'un objet précis**. Son état se lit sur **deux axes distincts** qu'il ne faut surtout pas mélanger — c'est la correction d'un modèle antérieur qui les confondait (un sujet pouvait être à la fois `to_do` *et* `unread`, ce qui ne tient pas).
 
-### Axe 1 — Le cycle de vie (`status`) : 4 états exclusifs qui s'enchaînent
+### Axe 1 — Le cycle de vie (`status`) : 5 états exclusifs
 
 - **`new` — Nouveau** : sujet fraîchement créé (par l'IA à la réception d'un message compris, ou par l'utilisateur), **jamais ouvert**. Seul état actif à porter un badge visible. *Si l'IA ne comprend pas un message, elle ne crée pas de sujet : il reste « Sans sujet » dans Messages.*
 - **`acknowledged` — Lu** : l'utilisateur a ouvert la fiche au moins une fois. C'est l'**état actif par défaut, et il est invisible** (aucun badge) : un marqueur porté par ~90 % des sujets n'informe pas. On lit « actif » par l'**absence** de badge de statut.
-- **`resolved` — Terminé** : l'utilisateur a clos le sujet via l'action **« Terminer »**.
+- **`resolved` — Terminé** : l'utilisateur a clos le sujet via l'action **« Terminer »** (swipe droite, vert). Visible dans l'onglet **Terminés** de Mon fil.
 - **`archived` — Archivé** : état **système**, posé automatiquement après une inactivité prolongée d'un sujet terminé. Conservé pour l'historique, hors du flux actif. **Pas de bouton « Archiver »** côté utilisateur.
+- **`ignored` — Ignoré** : sujet **écarté** par l'utilisateur via l'action **« Ignorer »** (swipe gauche, rouge). Il sort des ouverts, **disparaît de la mémoire de Relvo** (l'assistant ne le ressort plus ni ne s'en sert pour contextualiser), reste **purgeable après 15 jours d'inactivité** et **récupérable** via l'onglet **Ignorés** de Mon fil. L'ignorance est **collante** : un nouveau message sur un sujet ignoré ne le fait **jamais** ressortir des ouverts — sinon le « groupe WhatsApp bavard » réinonderait le fil, première source de frustration. Sortir un sujet de l'oubli est une action explicite de l'utilisateur depuis l'onglet Ignorés.
 
-Enchaînement : `new →(ouverture)→ acknowledged →(« Terminer »)→ resolved →(inactivité, système)→ archived`. Un sujet `resolved` qui reçoit un nouveau message **redevient `acknowledged`** (il avait déjà été lu) et ré-affiche ses marqueurs.
+Enchaînement nominal : `new →(ouverture)→ acknowledged →(« Terminer »)→ resolved →(inactivité, système)→ archived`. **« Ignorer »** est une branche transverse : depuis Mon fil, un sujet ouvert bascule en `ignored` et y reste tant que l'utilisateur ne le récupère pas. Un sujet `resolved` qui reçoit un nouveau message **redevient `acknowledged`** (il avait déjà été lu) et ré-affiche ses marqueurs ; un sujet `ignored`, lui, ne bouge pas (ignorance collante).
 
 ### Axe 2 — Les marqueurs d'état : cumulables, indépendants du statut
 
 Ce que l'ancien modèle appelait `to_do`, `waiting`, `unread` n'étaient pas des étapes de vie mais des **états instantanés** qui peuvent coexister. Ils deviennent des **marqueurs**, plusieurs à la fois sur une même carte :
 
-- **Urgent** — drapeau rouge, levé uniquement si `priority = critical` (la rareté est le signal).
+- **Urgent** — drapeau rouge, levé uniquement si `priority = urgent` (la rareté est le signal : 1-2 sujets sur 24).
 - **À faire** — il reste au moins une tâche ouverte (dérivé des `Task`).
 - **En attente** — on attend un retour d'un tiers ; flag `waiting_for_reply` posé par Relvo.
 - **Non-lus** — pastille compteur (façon WhatsApp) des messages pas encore lus.
@@ -325,8 +328,9 @@ Puisque l'agent est central, ses réponses ne sont pas que du texte : Relvo **re
 
 Les écrans de consultation/traitement (**Mon fil**, **Sujet**, **Mémoire**, **Planning**, **Messages**, **Contacts**) existent toujours — pour la lecture profonde et le travail soutenu — mais deviennent des **destinations**, atteintes via une carte du chat ou via la **navigation par onglets**. Tous sont repensés **mobile-first**, en colonne unique (fini les split-views 2 colonnes, tables 7 colonnes et panneaux droits 340px fixes).
 
-- **Mon fil** reste l'espace de **traitement** : feed de cartes-sujets enrichies, filtres (Priorité par défaut / Chronologique / Résolus), paire ✕/✓ systématique sur chaque carte. C'est l'« inbox structurée par sujets ».
-- La **navigation** se fait par une **barre d'onglets basse** (≤ 4 cibles), pas une sidebar. L'Accueil (brief+chat) en est l'onglet par défaut.
+- **Mon fil** reste l'espace de **traitement** : feed de cartes-sujets enrichies, organisé en **3 onglets de statut** — **Ouverts** (urgents en tête), **Terminés**, **Ignorés** (récupérables). Sur chaque carte, deux gestes de **swipe** : **Ignorer** (gauche, rouge → `status = ignored`) et **Terminer** (droite, vert → `status = resolved`). C'est l'« inbox structurée par sujets ».
+- La **navigation** se fait par une **barre d'onglets basse**, pas une sidebar : **4 entrées** — **Accueil** (brief+chat, onglet par défaut), **Mon fil**, **Mémoire 🧠** (les Dossiers, cf. principe 12), **Réglages**. Planning, Messages et Contacts sont **hors-nav**, atteints depuis ces écrans.
+- **Distribution en PWA.** En V1, Relvo est une **application web progressive** (Next.js + manifest `display: standalone`, installable sur l'écran d'accueil du téléphone) — pas une app native de store. C'est ce qui permet de livrer l'expérience mobile-first sans cycle de soumission App Store. Le détail (manifest, safe-areas iOS, installabilité) est dans `../spec/ux-mobile-first.md`.
 
 ### Caractéristiques structurantes de la conversation
 
