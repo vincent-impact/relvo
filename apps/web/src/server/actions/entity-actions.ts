@@ -18,6 +18,7 @@ import { domainAction } from "@/lib/action-result";
 function revalidateSubjects() {
   revalidatePath("/");
   revalidatePath("/fil");
+  revalidatePath("/sujets/[id]", "page"); // brouillons/actions dans la fiche
 }
 
 export async function createActionAction(input: CreateActionInput) {

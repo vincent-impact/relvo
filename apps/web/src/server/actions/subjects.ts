@@ -22,9 +22,16 @@ import { domainAction } from "@/lib/action-result";
 // Server Actions Subjects (M3.7) — fines enveloppes « use server » de la couche
 // domaine. Elles injectent le client tenant et renvoient un ActionResult.
 
+// Un sujet s'affiche sur plusieurs surfaces : Accueil, fil, sa fiche, les listes
+// par dossier, la recherche. On les invalide toutes (le pattern [id] purge toutes
+// les fiches/dossiers, sans connaître l'id concerné) pour rester cohérent dès que
+// le cache client (staleTimes) garde les pages quelques secondes.
 function revalidateSubjects() {
   revalidatePath("/");
   revalidatePath("/fil");
+  revalidatePath("/sujets/[id]", "page");
+  revalidatePath("/dossiers/[id]", "page");
+  revalidatePath("/recherche");
 }
 
 export async function createSubjectAction(input: CreateSubjectInput) {

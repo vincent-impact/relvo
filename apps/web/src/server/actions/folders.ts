@@ -14,6 +14,7 @@ import { domainAction } from "@/lib/action-result";
 
 function revalidateFolders() {
   revalidatePath("/dossiers");
+  revalidatePath("/dossiers/[id]", "page");
 }
 
 export async function createFolderAction(input: CreateFolderInput) {

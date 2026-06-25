@@ -30,6 +30,7 @@ function revalidateMessages() {
   revalidatePath("/");
   revalidatePath("/messages");
   revalidatePath("/fil");
+  revalidatePath("/sujets/[id]", "page"); // message rattaché → onglet Messages
 }
 
 export async function createMessageAction(input: CreateMessageInput) {

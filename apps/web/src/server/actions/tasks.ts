@@ -17,6 +17,7 @@ function revalidateTasks() {
   revalidatePath("/");
   revalidatePath("/fil");
   revalidatePath("/planning");
+  revalidatePath("/sujets/[id]", "page"); // onglet Tâches de la fiche Sujet
 }
 
 export async function createTaskAction(input: CreateTaskInput) {

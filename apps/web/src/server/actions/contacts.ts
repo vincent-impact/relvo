@@ -15,6 +15,7 @@ import { domainAction } from "@/lib/action-result";
 
 function revalidateContacts() {
   revalidatePath("/contacts");
+  revalidatePath("/contacts/[id]", "page");
 }
 
 export async function createContactAction(input: CreateContactInput) {
