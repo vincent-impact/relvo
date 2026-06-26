@@ -16,6 +16,8 @@ export type SubjectRowData = {
   summary?: string | null;
   folderSlug?: string | null;
   urgent: boolean;
+  /** Statut `new` (jamais ouvert) → badge bleu « Nouveau », perdu à l'ouverture. */
+  isNew: boolean;
   openTaskCount: number;
   suggestionCount: number;
   unreadCount: number;
@@ -64,6 +66,7 @@ export function SubjectRow({
 }) {
   const { color, icon: Icon } = folderVisual(data.folderSlug);
   const urgent = data.urgent && tone !== "done";
+  const isNew = data.isNew && tone !== "done";
   const done = tone === "done";
 
   return (
@@ -107,6 +110,11 @@ export function SubjectRow({
               Urgent
             </span>
           ) : null}
+          {isNew ? (
+            <span className="inline-flex items-center rounded-full bg-brand px-[9px] py-[3px] text-[11px] font-bold text-white">
+              Nouveau
+            </span>
+          ) : null}
         </div>
 
         <h3
@@ -145,12 +153,6 @@ export function SubjectRow({
                 En attente
               </Tag>
             ) : null}
-            {data.suggestionCount > 0 ? (
-              <Tag tone="relvo" icon={Sparkles}>
-                {data.suggestionCount} suggérée
-                {data.suggestionCount > 1 ? "s" : ""}
-              </Tag>
-            ) : null}
           </div>
         ) : null}
       </div>
@@ -167,6 +169,7 @@ export function toSubjectRowData(e: EnrichedSubject): SubjectRowData {
     summary: e.subject.summary,
     folderSlug: e.folderSlug,
     urgent: e.subject.priority === "urgent",
+    isNew: e.subject.status === "new",
     openTaskCount: e.openTaskCount,
     suggestionCount: e.suggestionCount,
     unreadCount: e.unreadCount,

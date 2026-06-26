@@ -1414,6 +1414,79 @@ export async function seedDemoAccount() {
       createdByActor: Actor.user,
     } as Prisma.KnowledgeDocumentUncheckedCreateInput,
   });
+
+  // ── Instructions « action » réalistes (consignes que Relvo applique) ─────────
+  const addNote = (
+    folderId: string,
+    name: string,
+    content: string,
+    active = true,
+  ) =>
+    db.knowledgeDocument.create({
+      data: {
+        folderId,
+        kind: "note",
+        name,
+        content,
+        absorptionStatus: active
+          ? AbsorptionStatus.read
+          : AbsorptionStatus.ignored,
+        createdByActor: Actor.user,
+      } as Prisma.KnowledgeDocumentUncheckedCreateInput,
+    });
+
+  await addNote(
+    communication.id,
+    "Demandes de partenariat influenceur",
+    "Quand tu reçois un message de demande de partenariat avec un influenceur, réponds automatiquement en demandant : le numéro de SIRET de son entreprise, ses tarifs, et ses 3 dernières collaborations. Précise ensuite que je reviendrai vers lui d'ici 15 jours maximum.",
+  );
+  await addNote(
+    communication.id,
+    "Sponsorings sportifs",
+    "Décline poliment toute demande de sponsoring sportif au-delà de 500 € tant que je ne l'ai pas validée. En dessous, propose un menu offert pour l'équipe plutôt qu'un cachet.",
+  );
+  await addNote(
+    fournisseurs.id,
+    "Fournisseurs non agréés",
+    "Tu refuses automatiquement toutes les propositions de fournisseurs qui ne sont pas déjà dans mes fournisseurs agréés. Réponse courtoise, sans engagement, et ne crée pas de sujet pour ces démarchages.",
+  );
+  await addNote(
+    fournisseurs.id,
+    "Rupture chez un fournisseur agréé",
+    "Si un fournisseur agréé annonce une rupture, demande-lui systématiquement une référence de remplacement équivalente et le délai de retour à la normale, puis crée une tâche pour que je valide le remplacement.",
+  );
+  await addNote(
+    generalFolder.id,
+    "Briefing du matin",
+    "Dans le briefing du matin, fais-moi un résumé des actions que tu as réalisées automatiquement durant la veille (réponses envoyées, contacts créés, sujets classés).",
+  );
+  await addNote(
+    generalFolder.id,
+    "Factures entrantes",
+    "Quand un message contient une facture, classe-la dans le domaine du fournisseur concerné et signale-moi le montant et la date d'échéance.",
+  );
+  await addNote(
+    rh.id,
+    "Candidatures spontanées",
+    "Pour toute candidature spontanée, réponds que nous conservons le CV et que nous recontacterons sous 30 jours en cas de besoin. Range l'expéditeur comme contact du pôle RH.",
+  );
+  await addNote(
+    juridique.id,
+    "Contrôle d'hygiène annoncé",
+    "Si un contrôle d'hygiène (DDPP) est annoncé, crée une tâche urgente « Préparer le plan de maîtrise sanitaire » et rappelle-moi de sortir les relevés de température des 30 derniers jours.",
+  );
+  await addNote(
+    production.id,
+    "Panne d'équipement froid",
+    "En cas de panne d'un équipement froid (congélateur, chambre froide), réponds au SAV en demandant une intervention sous 24 h et préviens-moi immédiatement.",
+  );
+  await addNote(
+    business.id,
+    "Demandes de devis traiteur",
+    "Pour toute demande de devis traiteur ou événementiel, demande le nombre de couverts, la date, le lieu et le budget avant de me transmettre le dossier.",
+    false, // désactivée — illustre l'interrupteur d'activation
+  );
+
   // Documents (kind=file) avec état d'absorption (✦ lu / écarté).
   await db.knowledgeDocument.create({
     data: {
