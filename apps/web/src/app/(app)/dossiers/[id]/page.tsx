@@ -6,6 +6,7 @@ import { enrichSubjects } from "@relvo/db";
 import { FeedTabs } from "@/components/feed/feed-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
+import { EditDomainButton } from "@/components/dossiers/edit-domain-dialog";
 import { InstructionList } from "@/components/dossiers/instruction-list";
 import { TabsSkeleton } from "@/components/shared/screen-skeletons";
 import { SubjectRow, toSubjectRowData } from "@/components/shared/subject-row";
@@ -150,6 +151,14 @@ export default async function DossierPage({
         title={folder.name}
         subtitle="Un domaine de la mémoire de Relvo"
         className="pb-9"
+        action={
+          <EditDomainButton
+            id={folder.id}
+            name={folder.name}
+            color={folder.color}
+            icon={folder.icon}
+          />
+        }
       />
       <Suspense fallback={<TabsSkeleton />}>
         <DossierTabs folder={folder} />
