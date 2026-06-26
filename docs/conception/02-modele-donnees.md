@@ -61,6 +61,8 @@ Dans le journal de bord, les actions de l'humain titulaire sont identifiées par
 - `name: string`
 - `slug: string`
 - `description: string nullable`
+- `color: string nullable` — clé de palette du **logo** du domaine (cf. UI « Mémoire »), null → repli sur le mapping par slug
+- `icon: string nullable` — clé du jeu d'icônes curé du logo, null → repli par slug
 - `is_default: boolean default false` — vrai pour le Folder « Général » auto-créé à la création du compte
 - `is_active: boolean`
 - `created_at: datetime`
@@ -100,7 +102,7 @@ Côté interface, l'entrée de navigation s'appelle **« Mémoire »** (icône *
 
 **Page d'un domaine — 3 onglets** (la page reste courte quel que soit le volume : on interroge la mémoire via le composer Relvo, on ne scrolle pas une liste infinie ; scroll infini pour parcourir) :
 
-- **Instructions** — les `KnowledgeDocument` de `kind = note` (consignes que Relvo *applique*). « Instructions » remplace « Note » côté UI : on n'écrit pas un mémo, on **instruit son agent**.
+- **Instructions** — les `KnowledgeDocument` de `kind = note` (consignes que Relvo *applique*). « Instructions » remplace « Note » côté UI : on n'écrit pas un mémo, on **instruit son agent**. Carte = titre + aperçu (3 lignes) ; on l'ouvre pour la **lire en entier**, la **modifier** et l'**activer/désactiver**. L'activation réutilise `absorption_status` : `read` = active (injectée dans les prompts), `ignored` = désactivée (écartée du contexte).
 - **Documents** — les `KnowledgeDocument` de `kind = file` (PDF/images que Relvo *lit*). « Documents » remplace « Fichiers ».
 - **Sujets** — les `Subject` rattachés à ce domaine (historique d'activité, en second rang : le trésor du domaine, c'est la connaissance).
 

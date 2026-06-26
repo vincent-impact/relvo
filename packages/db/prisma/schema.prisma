@@ -209,6 +209,10 @@ model Folder {
   name        String
   slug        String
   description String?
+  // Logo du domaine (Mémoire) : clés de palette/jeu d'icônes curés (cf.
+  // apps/web/src/lib/folders.ts). Null → repli sur le mapping par slug.
+  color       String?
+  icon        String?
   isDefault   Boolean  @default(false) @map("is_default")
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")

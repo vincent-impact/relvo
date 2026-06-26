@@ -12,11 +12,16 @@ export const createFolderSchema = z.object({
   name: z.string().trim().min(1, "Nom requis").max(80),
   description: z.string().trim().max(500).optional().nullable(),
   slug: z.string().trim().max(80).optional(),
+  /** Clés de logo (palette / jeu d'icônes curés, cf. web lib/folders.ts). */
+  color: z.string().trim().max(40).optional().nullable(),
+  icon: z.string().trim().max(40).optional().nullable(),
 });
 
 export const updateFolderSchema = z.object({
   name: z.string().trim().min(1).max(80).optional(),
   description: z.string().trim().max(500).optional().nullable(),
+  color: z.string().trim().max(40).optional().nullable(),
+  icon: z.string().trim().max(40).optional().nullable(),
   isActive: z.boolean().optional(),
 });
 
@@ -51,6 +56,8 @@ export async function createFolder(db: TenantDb, input: CreateFolderInput) {
         name: data.name,
         slug,
         description: data.description ?? null,
+        color: data.color ?? null,
+        icon: data.icon ?? null,
         // is_default reste false : le Folder « Général » est créé à l'ouverture
         // du compte (createAccount), jamais via cette fonction.
       } as Prisma.FolderUncheckedCreateInput,
@@ -80,6 +87,8 @@ export async function updateFolder(
         ...(data.description !== undefined
           ? { description: data.description }
           : {}),
+        ...(data.color !== undefined ? { color: data.color } : {}),
+        ...(data.icon !== undefined ? { icon: data.icon } : {}),
         ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
       },
     });

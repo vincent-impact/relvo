@@ -9,15 +9,23 @@ import { cn } from "@/lib/utils";
 export function FolderRow({
   name,
   slug,
+  color: colorKey,
+  icon: iconKey,
   sub,
   href,
 }: {
   name: string;
   slug?: string | null;
+  color?: string | null;
+  icon?: string | null;
   sub?: string | null;
   href: string;
 }) {
-  const { color, icon: Icon } = folderVisual(slug);
+  const { color, icon: Icon } = folderVisual({
+    slug,
+    color: colorKey,
+    icon: iconKey,
+  });
   return (
     <Link
       href={href}

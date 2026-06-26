@@ -1,5 +1,6 @@
 import { Suspense } from "react";
-import { Sparkles } from "lucide-react";
+import Link from "next/link";
+import { Plus, Sparkles } from "lucide-react";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { FolderRow } from "@/components/shared/folder-row";
@@ -40,17 +41,28 @@ async function DossiersBody() {
         </p>
       </div>
 
-      <SectionLabel title="Dossiers" />
+      <SectionLabel title="Domaines" />
       <div className="pt-1">
         {folders.map((f) => (
           <FolderRow
             key={f.id}
             name={f.name}
             slug={f.slug}
+            color={f.color}
+            icon={f.icon}
             sub={f.sub}
             href={`/dossiers/${f.id}`}
           />
         ))}
+        <Link
+          href="/dossiers/nouveau"
+          className="mx-[14px] flex items-center gap-[13px] px-[18px] py-3.5 text-[15px] font-semibold text-relvo active:opacity-80"
+        >
+          <span className="grid size-[42px] flex-none place-items-center rounded-[13px] border border-dashed border-(--purple-100) text-relvo">
+            <Plus className="size-5" strokeWidth={2.2} />
+          </span>
+          Nouveau domaine
+        </Link>
       </div>
     </>
   );

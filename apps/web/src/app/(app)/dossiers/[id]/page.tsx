@@ -6,17 +6,18 @@ import { enrichSubjects } from "@relvo/db";
 import { FeedTabs } from "@/components/feed/feed-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
+import { InstructionList } from "@/components/dossiers/instruction-list";
 import { TabsSkeleton } from "@/components/shared/screen-skeletons";
 import { SubjectRow, toSubjectRowData } from "@/components/shared/subject-row";
 import { type SegTabOption } from "@/components/shared/seg-tabs";
 import { formatRelative } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
-// Fiche Mémoire / dossier (M9.7, Direction B) — un domaine de la mémoire de
-// Relvo, en 3 onglets : Instructions (notes Markdown éditables), Documents
-// (fichiers absorbés ✦ / écartés) et Sujets (lignes). Le dossier « Général »
-// (is_default) masque l'onglet Sujets (documentaire transversal). L'édition de
-// note et l'upload arrivent ensuite (coquilles en M9).
+// Fiche Mémoire / domaine (M9.7 → M9.20, Direction B) — un domaine de la mémoire
+// de Relvo, en 3 onglets : Instructions (consignes éditables, activables),
+// Documents (fichiers absorbés ✦ / écartés) et Sujets (lignes). Le domaine
+// « Général » (is_default) masque l'onglet Sujets. L'upload de document arrive
+// ensuite (coquille en M9).
 //
 // PERF (M9.19, point 2) : le hero (nom du dossier) s'affiche dès que la requête
 // légère du dossier répond ; le contenu des onglets stream dans un <Suspense>.
@@ -55,37 +56,15 @@ async function DossierTabs({ folder }: { folder: Folder }) {
       options={options}
       panes={{
         instructions: (
-          <div className="px-4 pt-4">
-            {notes.length === 0 ? (
-              <p className="py-6 text-center text-[13.5px] text-(--text-tertiary)">
-                Aucune instruction. Ajoutez des consignes que Relvo suivra.
-              </p>
-            ) : (
-              <div className="space-y-2.5">
-                {notes.map((n) => (
-                  <div
-                    key={n.id}
-                    className="rounded-2xl border border-(--border-light) bg-white p-3.5 shadow-(--shadow-card)"
-                  >
-                    <div className="mb-1.5 flex items-center gap-2">
-                      <Sparkles
-                        className="size-3.5 flex-none text-relvo"
-                        fill="currentColor"
-                        strokeWidth={0}
-                      />
-                      <span className="text-[14.5px] font-bold">{n.name}</span>
-                    </div>
-                    {n.content ? (
-                      <p className="line-clamp-4 text-[13.5px] leading-[1.45] text-(--text-secondary)">
-                        {n.content}
-                      </p>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
-            <AddRow label="Ajouter une instruction" />
-          </div>
+          <InstructionList
+            folderId={id}
+            notes={notes.map((n) => ({
+              id: n.id,
+              name: n.name,
+              content: n.content,
+              active: n.absorptionStatus === "read",
+            }))}
+          />
         ),
         documents: (
           <div className="px-4 pt-4">

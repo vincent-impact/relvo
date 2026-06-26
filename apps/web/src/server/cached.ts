@@ -186,6 +186,8 @@ export type CachedFolderRow = {
   id: string;
   name: string;
   slug: string;
+  color: string | null;
+  icon: string | null;
   sub: string;
 };
 
@@ -244,7 +246,14 @@ export const cachedDossiers = unstable_cache(
       const sub = f.isDefault
         ? `Transversal · ${docLabel}`
         : `${subjByFolder.get(f.id) ?? 0} sujet${(subjByFolder.get(f.id) ?? 0) > 1 ? "s" : ""} · ${docLabel}`;
-      return { id: f.id, name: f.name, slug: f.slug, sub };
+      return {
+        id: f.id,
+        name: f.name,
+        slug: f.slug,
+        color: f.color,
+        icon: f.icon,
+        sub,
+      };
     });
 
     return { metrics, folders: folderRows };

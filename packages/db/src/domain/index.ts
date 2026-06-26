@@ -10,6 +10,7 @@ export * from "./events";
 export * from "./reference";
 
 export * from "./folders";
+export * from "./knowledge";
 export * from "./contacts";
 export * from "./channels";
 export * from "./subjects";
