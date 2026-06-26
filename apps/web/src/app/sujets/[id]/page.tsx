@@ -1,5 +1,11 @@
 import { notFound } from "next/navigation";
-import { ChevronDown, FileText, History, Paperclip } from "lucide-react";
+import {
+  ChevronDown,
+  FileText,
+  History,
+  Paperclip,
+  SquareCheck,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Actor } from "@relvo/db";
 import { getSubjectDetail } from "@relvo/db";
@@ -146,7 +152,9 @@ export default async function SujetPage({
   }));
 
   const mainContact = contacts[0];
-  const openTaskCount = tasks.filter((t) => t.status === "open").length;
+  const taskTotal = tasks.length;
+  const taskDone = tasks.filter((t) => t.status === "done").length;
+  const taskPct = taskTotal > 0 ? Math.round((taskDone / taskTotal) * 100) : 0;
   const draftContent =
     draft && typeof draft.payload === "object" && draft.payload
       ? ((draft.payload as { content?: string }).content ?? null)
@@ -206,9 +214,6 @@ export default async function SujetPage({
                 <HeroTag tone="urgent">Urgent</HeroTag>
               ) : null}
               {subject.status === "new" ? <HeroTag>Nouveau</HeroTag> : null}
-              {openTaskCount > 0 ? (
-                <HeroTag>À faire · {openTaskCount}</HeroTag>
-              ) : null}
               {subject.waitingForReply ? <HeroTag>En attente</HeroTag> : null}
               {subject.folder
                 ? (() => {
@@ -226,6 +231,25 @@ export default async function SujetPage({
             </div>
             {subject.summary ? (
               <RelvoSummary text={subject.summary} tone="hero" />
+            ) : null}
+            {/* Progress bar récapitulative de l'avancement des tâches (rappel du
+                fil) — posée sous le résumé Relvo, dans le hero violet. */}
+            {taskTotal > 0 ? (
+              <div className="mt-3.5 flex items-center gap-2.5">
+                <SquareCheck
+                  className="size-[17px] flex-none text-white/85"
+                  strokeWidth={2.2}
+                />
+                <span className="relative block h-1.5 flex-1 overflow-hidden rounded-full bg-white/20">
+                  <span
+                    className="absolute inset-y-0 left-0 rounded-full bg-white transition-[width]"
+                    style={{ width: `${taskPct}%` }}
+                  />
+                </span>
+                <span className="font-numeric text-[12px] font-bold text-white/90 tabular-nums">
+                  {taskDone}/{taskTotal}
+                </span>
+              </div>
             ) : null}
           </div>
         </RelvoHeader>
