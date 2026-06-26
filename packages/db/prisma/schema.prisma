@@ -232,7 +232,8 @@ model Folder {
 model Contact {
   id              String        @id @default(uuid()) @db.Uuid
   accountId       String        @map("account_id") @db.Uuid
-  name            String
+  firstName       String?       @map("first_name")
+  lastName        String        @map("last_name")
   email           String?
   phone           String?
   company         String?

@@ -1,6 +1,39 @@
 // Helpers d'affichage (locale FR) — formatage des dates relatives et code
 // couleur par Dossier. Concerns UI : restent côté web, hors couche domaine.
 
+type NamedContact = { firstName?: string | null; lastName: string };
+
+/** Nom d'affichage d'un contact : « Prénom Nom », ou le seul nom de famille. */
+export function contactFullName(c: NamedContact): string {
+  return c.firstName ? `${c.firstName} ${c.lastName}` : c.lastName;
+}
+
+/** Découpe un nom complet brut en prénom (optionnel) + nom de famille. */
+export function splitContactName(full: string): {
+  firstName: string;
+  lastName: string;
+} {
+  const parts = full.trim().split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return { firstName: "", lastName: full.trim() };
+  return {
+    firstName: parts.slice(0, -1).join(" "),
+    lastName: parts[parts.length - 1] ?? "",
+  };
+}
+
+/** Initiales pour l'avatar : prénom+nom, ou 2 premières lettres du nom. */
+export function contactInitials(c: NamedContact): string {
+  if (c.firstName) {
+    return `${c.firstName[0] ?? ""}${c.lastName[0] ?? ""}`.toUpperCase();
+  }
+  return c.lastName
+    .split(/\s+/)
+    .map((w) => w[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+}
+
 /** « à l'instant », « 35 min », « 2 h », « hier », « il y a 3 j », sinon date. */
 export function formatRelative(date: Date | null | undefined): string | null {
   if (!date) return null;

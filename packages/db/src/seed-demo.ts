@@ -144,7 +144,8 @@ export async function seedDemoAccount() {
   // 5. Contacts.
   // — Fournisseurs —
   const karim = await createContact(db, {
-    name: "Karim Benali",
+    firstName: "Karim",
+    lastName: "Benali",
     email: "karim@sogood-distribution.fr",
     company: "SoGood Distribution",
     jobTitle: "Responsable commercial",
@@ -152,7 +153,7 @@ export async function seedDemoAccount() {
     sourceActor: Actor.user,
   });
   const packplus = await createContact(db, {
-    name: "PackPlus SARL",
+    lastName: "PackPlus SARL",
     email: "ventes@packplus.fr",
     company: "PackPlus SARL",
     defaultFolderId: fournisseurs.id,
@@ -160,7 +161,8 @@ export async function seedDemoAccount() {
     status: ContactStatus.auto,
   });
   const avipro = await createContact(db, {
-    name: "Léa Fontaine",
+    firstName: "Léa",
+    lastName: "Fontaine",
     email: "l.fontaine@avipro.fr",
     company: "Avipro Volailles",
     jobTitle: "Commerciale",
@@ -168,7 +170,8 @@ export async function seedDemoAccount() {
     sourceActor: Actor.user,
   });
   const moulins = await createContact(db, {
-    name: "Hassan Cherif",
+    firstName: "Hassan",
+    lastName: "Cherif",
     email: "h.cherif@grandsmoulins.fr",
     company: "Grands Moulins (riz & céréales)",
     jobTitle: "Chargé de compte",
@@ -176,7 +179,7 @@ export async function seedDemoAccount() {
     sourceActor: Actor.user,
   });
   const boissons = await createContact(db, {
-    name: "France Boissons",
+    lastName: "France Boissons",
     email: "idf@france-boissons.fr",
     company: "France Boissons",
     defaultFolderId: fournisseurs.id,
@@ -185,21 +188,24 @@ export async function seedDemoAccount() {
   });
   // — RH —
   const sophie = await createContact(db, {
-    name: "Sophie Blanchard",
+    firstName: "Sophie",
+    lastName: "Blanchard",
     email: "sophie.blanchard@tastycrousty.fr",
     jobTitle: "Assistante RH",
     defaultFolderId: rh.id,
     sourceActor: Actor.user,
   });
   const yacine = await createContact(db, {
-    name: "Yacine Traoré",
+    firstName: "Yacine",
+    lastName: "Traoré",
     email: "yacine.traore@tastycrousty.fr",
     jobTitle: "Équipier polyvalent",
     defaultFolderId: rh.id,
     sourceActor: Actor.user,
   });
   const aicha = await createContact(db, {
-    name: "Aïcha Ndiaye",
+    firstName: "Aïcha",
+    lastName: "Ndiaye",
     email: "aicha.ndiaye@email.com",
     jobTitle: "Candidate — équipier",
     defaultFolderId: rh.id,
@@ -208,7 +214,7 @@ export async function seedDemoAccount() {
   });
   // — Juridique —
   const climapro = await createContact(db, {
-    name: "ClimaPro Services",
+    lastName: "ClimaPro Services",
     email: "contact@climapro.fr",
     company: "ClimaPro Services",
     defaultFolderId: juridique.id,
@@ -216,7 +222,7 @@ export async function seedDemoAccount() {
     status: ContactStatus.auto,
   });
   const ddpp = await createContact(db, {
-    name: "DDPP 93",
+    lastName: "DDPP 93",
     email: "ddpp@seine-saint-denis.gouv.fr",
     company: "Direction de la protection des populations",
     jobTitle: "Service inspection",
@@ -224,7 +230,8 @@ export async function seedDemoAccount() {
     sourceActor: Actor.user,
   });
   const bailleur = await createContact(db, {
-    name: "Gérard Petit",
+    firstName: "Gérard",
+    lastName: "Petit",
     email: "gerant@sci-lestilleuls.fr",
     company: "SCI Les Tilleuls",
     jobTitle: "Bailleur",
@@ -232,7 +239,8 @@ export async function seedDemoAccount() {
     sourceActor: Actor.user,
   });
   const siege = await createContact(db, {
-    name: "Nadia Sow",
+    firstName: "Nadia",
+    lastName: "Sow",
     email: "n.sow@tastycrousty.fr",
     company: "Tasty Crousty — Siège",
     jobTitle: "Animatrice réseau",
@@ -241,14 +249,14 @@ export async function seedDemoAccount() {
   });
   // — Business —
   const palais = await createContact(db, {
-    name: "Restaurant Le Palais",
+    lastName: "Restaurant Le Palais",
     email: "compta@lepalais.fr",
     company: "Le Palais (traiteur événementiel)",
     defaultFolderId: business.id,
     sourceActor: Actor.user,
   });
   const ubereats = await createContact(db, {
-    name: "Uber Eats France",
+    lastName: "Uber Eats France",
     email: "partners-fr@uber.com",
     company: "Uber Eats",
     jobTitle: "Account Manager",
@@ -258,14 +266,14 @@ export async function seedDemoAccount() {
   });
   // — Production —
   const froidexpert = await createContact(db, {
-    name: "FroidExpert SA",
+    lastName: "FroidExpert SA",
     email: "sav@froidexpert.fr",
     company: "FroidExpert SA",
     defaultFolderId: production.id,
     sourceActor: Actor.user,
   });
   const cuisinepro = await createContact(db, {
-    name: "CuisinePro SAV",
+    lastName: "CuisinePro SAV",
     email: "sav@cuisinepro.fr",
     company: "CuisinePro (friteuses & équipements)",
     defaultFolderId: production.id,
@@ -273,7 +281,8 @@ export async function seedDemoAccount() {
   });
   // — Communication —
   const influenceur = await createContact(db, {
-    name: "Camille Roy (@ParisFoodGuide)",
+    firstName: "Camille",
+    lastName: "Roy",
     email: "camille@parisfoodguide.fr",
     company: "ParisFoodGuide",
     jobTitle: "Créatrice de contenu food",
@@ -282,7 +291,7 @@ export async function seedDemoAccount() {
     status: ContactStatus.auto,
   });
   const club = await createContact(db, {
-    name: "AS Épinay Football",
+    lastName: "AS Épinay Football",
     email: "partenariats@as-epinay.fr",
     company: "AS Épinay Football",
     jobTitle: "Responsable partenariats",

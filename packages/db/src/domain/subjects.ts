@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Prisma } from "../generated/prisma/client";
 import { Actor, Priority, SubjectStatus } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
+import { contactDisplayName } from "./contacts";
 import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { ensureAffected } from "./helpers";
@@ -118,10 +119,12 @@ async function describeSubjectChanges(
     if (added.length || removed.length) {
       const rows = await tx.contact.findMany({
         where: { id: { in: [...added, ...removed] } },
-        select: { id: true, name: true },
+        select: { id: true, firstName: true, lastName: true },
       });
-      const nameOf = (id: string) =>
-        rows.find((r) => r.id === id)?.name ?? "Contact inconnu";
+      const nameOf = (id: string) => {
+        const row = rows.find((r) => r.id === id);
+        return row ? contactDisplayName(row) : "Contact inconnu";
+      };
       if (added.length) {
         const names = added.map(nameOf).join(", ");
         changes.push({

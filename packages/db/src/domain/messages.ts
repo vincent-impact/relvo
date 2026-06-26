@@ -7,7 +7,12 @@ import {
   TriageHint,
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
-import { type CreateContactInput, createContact } from "./contacts";
+import {
+  type CreateContactInput,
+  contactDisplayName,
+  createContact,
+  splitFullName,
+} from "./contacts";
 import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { ensureAffected } from "./helpers";
@@ -157,7 +162,7 @@ export async function createSubjectFromMessage(
   let contactId = message.senderContactId;
   if (!contactId && message.senderRaw) {
     const contact = await createContact(db, {
-      name: message.senderRaw,
+      ...splitFullName(message.senderRaw),
       sourceActor: Actor.user,
     });
     contactId = contact.id;
@@ -385,8 +390,8 @@ export type MessageEventItem = {
 
 /** Relations nécessaires au mapping d'un événement message (canal, expéditeur). */
 const MESSAGE_EVENT_INCLUDE = {
-  senderContact: { select: { id: true, name: true } },
-  recipientContact: { select: { id: true, name: true } },
+  senderContact: { select: { id: true, firstName: true, lastName: true } },
+  recipientContact: { select: { id: true, firstName: true, lastName: true } },
   channel: { select: { type: true, name: true, identifier: true } },
   subject: { select: { id: true, reference: true, title: true } },
   folder: { select: { id: true, name: true, slug: true } },
@@ -405,14 +410,18 @@ function toMessageEventItem(m: MessageEventRow): MessageEventItem {
     channelType: m.channel.type,
     channelName: m.channel.name,
     channelIdentifier: m.channel.identifier,
-    senderName: m.senderContact?.name ?? m.senderRaw ?? "Expéditeur inconnu",
+    senderName: m.senderContact
+      ? contactDisplayName(m.senderContact)
+      : (m.senderRaw ?? "Expéditeur inconnu"),
     senderContactId: m.senderContact?.id ?? null,
     senderRaw: m.senderRaw,
     // Reçu → le destinataire est l'utilisateur (« Moi ») ; envoyé → le contact.
     recipientName:
       m.direction === "incoming"
         ? "Moi"
-        : (m.recipientContact?.name ?? "Destinataire inconnu"),
+        : m.recipientContact
+          ? contactDisplayName(m.recipientContact)
+          : "Destinataire inconnu",
     recipientContactId:
       m.direction === "incoming" ? null : (m.recipientContact?.id ?? null),
     folder: m.folder

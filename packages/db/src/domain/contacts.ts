@@ -13,8 +13,40 @@ import { cursorArgs, paginationSchema, toPage } from "./pagination";
 
 const actorEnum = z.enum(Actor);
 
+/**
+ * Nom d'affichage d'un contact : « Prénom Nom » si un prénom existe, sinon le
+ * seul nom de famille (cas des raisons sociales). Source de vérité = les deux
+ * champs structurés `firstName` / `lastName` (le tri/section de l'annuaire se
+ * fait sur `lastName`).
+ */
+export function contactDisplayName(c: {
+  firstName?: string | null;
+  lastName: string;
+}): string {
+  return c.firstName ? `${c.firstName} ${c.lastName}` : c.lastName;
+}
+
+/**
+ * Découpe un nom complet (ou un expéditeur brut) en prénom + nom de famille :
+ * dernier mot → nom de famille, le reste → prénom. Un seul mot (raison sociale,
+ * adresse e-mail brute…) → prénom nul, le tout dans le nom de famille.
+ */
+export function splitFullName(full: string): {
+  firstName: string | null;
+  lastName: string;
+} {
+  const trimmed = full.trim();
+  const parts = trimmed.split(/\s+/);
+  if (parts.length <= 1) return { firstName: null, lastName: trimmed || full };
+  return {
+    firstName: parts.slice(0, -1).join(" "),
+    lastName: parts[parts.length - 1] ?? trimmed,
+  };
+}
+
 export const createContactSchema = z.object({
-  name: z.string().trim().min(1, "Nom requis").max(120),
+  firstName: z.string().trim().max(80).optional().nullable(),
+  lastName: z.string().trim().min(1, "Nom requis").max(80),
   email: z.email().optional().nullable(),
   phone: z.string().trim().max(40).optional().nullable(),
   company: z.string().trim().max(120).optional().nullable(),
@@ -27,7 +59,8 @@ export const createContactSchema = z.object({
 });
 
 export const updateContactSchema = z.object({
-  name: z.string().trim().min(1).max(120).optional(),
+  firstName: z.string().trim().max(80).optional().nullable(),
+  lastName: z.string().trim().min(1).max(80).optional(),
   email: z.email().optional().nullable(),
   phone: z.string().trim().max(40).optional().nullable(),
   company: z.string().trim().max(120).optional().nullable(),
@@ -69,7 +102,8 @@ export async function createContact(db: TenantDb, input: CreateContactInput) {
   return db.$transaction(async (tx) => {
     const contact = await tx.contact.create({
       data: {
-        name: data.name,
+        firstName: data.firstName ?? null,
+        lastName: data.lastName,
         email: data.email ?? null,
         phone: data.phone ?? null,
         company: data.company ?? null,
@@ -85,7 +119,7 @@ export async function createContact(db: TenantDb, input: CreateContactInput) {
       entityId: contact.id,
       contactId: data.sourceActor === Actor.contact ? contact.id : null,
       eventType: EVENT_TYPES.contactCreated,
-      title: `Contact « ${contact.name} » créé`,
+      title: `Contact « ${contactDisplayName(contact)} » créé`,
       actor: data.sourceActor,
     });
     return contact;
@@ -102,7 +136,8 @@ export async function updateContact(
     const { count } = await tx.contact.updateMany({
       where: { id },
       data: {
-        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.firstName !== undefined ? { firstName: data.firstName } : {}),
+        ...(data.lastName !== undefined ? { lastName: data.lastName } : {}),
         ...(data.email !== undefined ? { email: data.email } : {}),
         ...(data.phone !== undefined ? { phone: data.phone } : {}),
         ...(data.company !== undefined ? { company: data.company } : {}),
@@ -122,7 +157,7 @@ export async function updateContact(
       entityType: "system",
       entityId: contact.id,
       eventType: EVENT_TYPES.contactUpdated,
-      title: `Contact « ${contact.name} » modifié`,
+      title: `Contact « ${contactDisplayName(contact)} » modifié`,
       actor: "user",
     });
     return contact;
@@ -145,7 +180,8 @@ export async function completeContact(
       data: {
         status: ContactStatus.complete,
         sourceActor: Actor.user,
-        ...(data.name !== undefined ? { name: data.name } : {}),
+        ...(data.firstName !== undefined ? { firstName: data.firstName } : {}),
+        ...(data.lastName !== undefined ? { lastName: data.lastName } : {}),
         ...(data.email !== undefined ? { email: data.email } : {}),
         ...(data.phone !== undefined ? { phone: data.phone } : {}),
         ...(data.company !== undefined ? { company: data.company } : {}),
@@ -165,7 +201,7 @@ export async function completeContact(
       entityType: "system",
       entityId: contact.id,
       eventType: EVENT_TYPES.contactCompleted,
-      title: `Fiche contact « ${contact.name} » complétée`,
+      title: `Fiche contact « ${contactDisplayName(contact)} » complétée`,
       actor: "user",
     });
     return contact;

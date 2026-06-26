@@ -256,7 +256,8 @@ export const cachedDossiers = unstable_cache(
 // ── Contacts — déjà plats (select sans Date) ─────────────────────────────────
 export type CachedContact = {
   id: string;
-  name: string;
+  firstName: string | null;
+  lastName: string;
   company: string | null;
   jobTitle: string | null;
   status: string;
@@ -265,10 +266,11 @@ export type CachedContact = {
 export const cachedContacts = unstable_cache(
   (accountId: string): Promise<CachedContact[]> =>
     tenantDb(accountId).contact.findMany({
-      orderBy: { name: "asc" },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       select: {
         id: true,
-        name: true,
+        firstName: true,
+        lastName: true,
         company: true,
         jobTitle: true,
         status: true,

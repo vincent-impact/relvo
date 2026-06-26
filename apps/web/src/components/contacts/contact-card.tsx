@@ -15,7 +15,8 @@ import {
 
 type Contact = {
   id: string;
-  name: string;
+  firstName: string | null;
+  lastName: string;
   company: string | null;
   jobTitle: string | null;
   email: string | null;
@@ -31,7 +32,8 @@ const FIELDS: { key: keyof EditState; label: string; type?: string }[] = [
 ];
 
 type EditState = {
-  name: string;
+  firstName: string;
+  lastName: string;
   company: string;
   jobTitle: string;
   email: string;
@@ -43,7 +45,8 @@ export function ContactCard({ contact }: { contact: Contact }) {
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
   const [form, setForm] = useState<EditState>({
-    name: contact.name,
+    firstName: contact.firstName ?? "",
+    lastName: contact.lastName,
     company: contact.company ?? "",
     jobTitle: contact.jobTitle ?? "",
     email: contact.email ?? "",
@@ -56,8 +59,13 @@ export function ContactCard({ contact }: { contact: Contact }) {
   }
 
   function save() {
+    if (!form.lastName.trim()) {
+      toast.error("Le nom est requis.");
+      return;
+    }
     const input = {
-      name: form.name.trim(),
+      firstName: form.firstName.trim() || null,
+      lastName: form.lastName.trim(),
       company: form.company.trim() || null,
       jobTitle: form.jobTitle.trim() || null,
       email: form.email.trim() || null,
@@ -80,13 +88,22 @@ export function ContactCard({ contact }: { contact: Contact }) {
   if (editing) {
     return (
       <div className="mx-4 mt-4 space-y-3 rounded-2xl border border-(--border-light) bg-white p-4 shadow-(--shadow-card)">
-        <Field label="Nom">
-          <input
-            value={form.name}
-            onChange={(e) => set("name", e.target.value)}
-            className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
-          />
-        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Prénom">
+            <input
+              value={form.firstName}
+              onChange={(e) => set("firstName", e.target.value)}
+              className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
+            />
+          </Field>
+          <Field label="Nom">
+            <input
+              value={form.lastName}
+              onChange={(e) => set("lastName", e.target.value)}
+              className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
+            />
+          </Field>
+        </div>
         {FIELDS.map((f) => (
           <Field key={f.key} label={f.label}>
             <input

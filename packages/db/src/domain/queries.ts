@@ -8,6 +8,7 @@ import {
 } from "../generated/prisma/enums";
 import { Actor, SubjectStatus } from "../generated/prisma/enums";
 import type { TenantDb } from "../tenant";
+import { contactDisplayName } from "./contacts";
 import { cursorArgs, paginationSchema, toPage } from "./pagination";
 
 // Requêtes d'agrégation (M3.13). Lectures seules : KPIs de l'Accueil, fil des
@@ -213,9 +214,11 @@ export async function enrichSubjects(
       contactIds.length
         ? db.contact.findMany({
             where: { id: { in: contactIds } },
-            select: { id: true, name: true },
+            select: { id: true, firstName: true, lastName: true },
           })
-        : Promise.resolve([] as { id: string; name: string }[]),
+        : Promise.resolve(
+            [] as { id: string; firstName: string | null; lastName: string }[],
+          ),
       folderIds.length
         ? db.folder.findMany({
             where: { id: { in: folderIds } },
@@ -240,7 +243,7 @@ export async function enrichSubjects(
       }),
     ]);
 
-  const nameById = new Map(contacts.map((c) => [c.id, c.name]));
+  const nameById = new Map(contacts.map((c) => [c.id, contactDisplayName(c)]));
   const folderById = new Map(folders.map((f) => [f.id, f]));
 
   return subjects.map((subject) => {
@@ -289,22 +292,32 @@ export async function getSubjectDetail(db: TenantDb, id: string) {
   });
   if (!subject) return null;
 
-  const [contacts, messages, tasks, events, attachments, draft] =
+  const [contactsRaw, messagesRaw, tasks, events, attachments, draft] =
     await Promise.all([
       subject.contactIds.length
         ? db.contact.findMany({
             where: { id: { in: subject.contactIds } },
-            select: { id: true, name: true, company: true },
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              company: true,
+            },
           })
         : Promise.resolve(
-            [] as { id: string; name: string; company: string | null }[],
+            [] as {
+              id: string;
+              firstName: string | null;
+              lastName: string;
+              company: string | null;
+            }[],
           ),
       db.message.findMany({
         where: { subjectId: id },
         orderBy: { createdAt: "asc" },
         include: {
           channel: { select: { type: true } },
-          senderContact: { select: { name: true } },
+          senderContact: { select: { firstName: true, lastName: true } },
           attachments: { select: { id: true, name: true, aiLabel: true } },
         },
       }),
@@ -334,6 +347,21 @@ export async function getSubjectDetail(db: TenantDb, id: string) {
         orderBy: { createdAt: "desc" },
       }),
     ]);
+
+  // On recompose un `name` d'affichage (« Prénom Nom ») pour garder l'API stable
+  // côté consommateurs (fiche sujet, bulles de messages) après la séparation
+  // prénom/nom du modèle Contact.
+  const contacts = contactsRaw.map((c) => ({
+    id: c.id,
+    name: contactDisplayName(c),
+    company: c.company,
+  }));
+  const messages = messagesRaw.map((m) => ({
+    ...m,
+    senderContact: m.senderContact
+      ? { name: contactDisplayName(m.senderContact) }
+      : null,
+  }));
 
   return { subject, contacts, messages, tasks, events, attachments, draft };
 }

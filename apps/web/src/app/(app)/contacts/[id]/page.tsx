@@ -7,7 +7,7 @@ import {
   type MessageBubbleData,
 } from "@/components/shared/message-bubble";
 import { SectionLabel } from "@/components/shared/section-label";
-import { formatRelative } from "@/lib/display";
+import { contactFullName, formatRelative } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
 // Fiche Contact (M9.11, Direction B) — coordonnées éditables (auto → complete)
@@ -45,7 +45,7 @@ export default async function ContactPage({
     id: m.id,
     direction: m.direction,
     actor: m.direction === "outgoing" ? "user" : "contact",
-    senderName: m.direction === "outgoing" ? "Moi" : contact.name,
+    senderName: m.direction === "outgoing" ? "Moi" : contactFullName(contact),
     channel: CHANNEL_LABEL[m.channel.type] ?? null,
     time: formatRelative(m.receivedAt ?? m.sentAt ?? m.createdAt),
     content: m.content ?? "",
@@ -55,7 +55,7 @@ export default async function ContactPage({
     <Screen>
       <RelvoHeader
         back="/contacts"
-        title={contact.name}
+        title={contactFullName(contact)}
         subtitle={
           [contact.jobTitle, contact.company].filter(Boolean).join(" · ") ||
           "Contact"

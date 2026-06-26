@@ -12,7 +12,8 @@ import { createContactAction } from "@/server/actions/contacts";
 // on redirige vers la fiche du nouveau contact.
 
 type FormState = {
-  name: string;
+  firstName: string;
+  lastName: string;
   jobTitle: string;
   company: string;
   email: string;
@@ -30,7 +31,8 @@ export function NewContactForm() {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [form, setForm] = useState<FormState>({
-    name: "",
+    firstName: "",
+    lastName: "",
     jobTitle: "",
     company: "",
     email: "",
@@ -42,14 +44,15 @@ export function NewContactForm() {
   }
 
   function save() {
-    const name = form.name.trim();
-    if (!name) {
+    const lastName = form.lastName.trim();
+    if (!lastName) {
       toast.error("Le nom est requis.");
       return;
     }
     startTransition(async () => {
       const res = await createContactAction({
-        name,
+        firstName: form.firstName.trim() || null,
+        lastName,
         jobTitle: form.jobTitle.trim() || null,
         company: form.company.trim() || null,
         email: form.email.trim() || null,
@@ -67,15 +70,25 @@ export function NewContactForm() {
 
   return (
     <div className="mx-4 mt-4 space-y-3 rounded-2xl border border-(--border-light) bg-white p-4 shadow-(--shadow-card)">
-      <Field label="Nom">
-        <input
-          value={form.name}
-          onChange={(e) => set("name", e.target.value)}
-          autoFocus
-          placeholder="Prénom Nom"
-          className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
-        />
-      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Prénom">
+          <input
+            value={form.firstName}
+            onChange={(e) => set("firstName", e.target.value)}
+            autoFocus
+            placeholder="Karim"
+            className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
+          />
+        </Field>
+        <Field label="Nom">
+          <input
+            value={form.lastName}
+            onChange={(e) => set("lastName", e.target.value)}
+            placeholder="Benali"
+            className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
+          />
+        </Field>
+      </div>
       {FIELDS.map((f) => (
         <Field key={f.key} label={f.label}>
           <input

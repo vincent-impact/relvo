@@ -28,7 +28,7 @@ import {
 import { TaskCheckbox } from "@/components/subject/task-checkbox";
 import { cn } from "@/lib/utils";
 import { folderVisual } from "@/lib/folders";
-import { formatRelative, formatTaskDate } from "@/lib/display";
+import { contactFullName, formatRelative, formatTaskDate } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
 // Fiche Sujet (M9.5, Direction B) — hero violet portant le status-strip + le
@@ -133,14 +133,19 @@ export default async function SujetPage({
       select: { id: true, name: true, slug: true },
     }),
     db.contact.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, company: true },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      select: { id: true, firstName: true, lastName: true, company: true },
     }),
   ]);
   if (!detail) notFound();
 
   const { subject, contacts, messages, tasks, events, attachments, draft } =
     detail;
+  const allContactOptions = allContacts.map((c) => ({
+    id: c.id,
+    name: contactFullName(c),
+    company: c.company,
+  }));
 
   const mainContact = contacts[0];
   const openTaskCount = tasks.filter((t) => t.status === "open").length;
@@ -296,7 +301,7 @@ export default async function SujetPage({
                   mode="edit"
                   subjectId={subject.id}
                   folders={folders}
-                  contacts={allContacts}
+                  contacts={allContactOptions}
                   initial={{
                     title: subject.title,
                     status: subject.status,

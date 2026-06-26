@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { splitContactName } from "@/lib/display";
 import { createContactFromMessageSenderAction } from "@/server/actions/messages";
 
 // Création d'un contact à partir de l'expéditeur d'un message inconnu (sender
@@ -57,30 +58,33 @@ export function CreateContactDialog({
   onOpenChange: (open: boolean) => void;
   messageId: string;
   prefill: { name: string; email?: string; phone?: string };
-  onCreated: (contact: { id: string; name: string }) => void;
+  onCreated: (contact: { id: string }) => void;
 }) {
   const [pending, startTransition] = useTransition();
-  const [name, setName] = useState(prefill.name);
+  const initial = splitContactName(prefill.name);
+  const [firstName, setFirstName] = useState(initial.firstName);
+  const [lastName, setLastName] = useState(initial.lastName);
   const [email, setEmail] = useState(prefill.email ?? "");
   const [phone, setPhone] = useState(prefill.phone ?? "");
   const [company, setCompany] = useState("");
 
   function submit() {
-    const trimmed = name.trim();
-    if (!trimmed) {
+    const trimmedLast = lastName.trim();
+    if (!trimmedLast) {
       toast.error("Un nom est requis.");
       return;
     }
     startTransition(async () => {
       const res = await createContactFromMessageSenderAction(messageId, {
-        name: trimmed,
+        firstName: firstName.trim() || null,
+        lastName: trimmedLast,
         email: email.trim() || null,
         phone: phone.trim() || null,
         company: company.trim() || null,
       });
       if (res.ok) {
         toast.success("Contact créé");
-        onCreated({ id: res.data.id, name: res.data.name });
+        onCreated({ id: res.data.id });
         onOpenChange(false);
       } else {
         toast.error(res.message);
@@ -99,12 +103,20 @@ export function CreateContactDialog({
         </DialogHeader>
 
         <div className="space-y-3">
-          <Field
-            label="Nom"
-            value={name}
-            onChange={setName}
-            placeholder="Nom du contact"
-          />
+          <div className="grid grid-cols-2 gap-3">
+            <Field
+              label="Prénom"
+              value={firstName}
+              onChange={setFirstName}
+              placeholder="Karim"
+            />
+            <Field
+              label="Nom"
+              value={lastName}
+              onChange={setLastName}
+              placeholder="Benali"
+            />
+          </div>
           <Field
             label="E-mail"
             type="email"

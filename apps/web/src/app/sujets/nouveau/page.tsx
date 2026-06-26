@@ -1,6 +1,7 @@
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { SubjectDetailForm } from "@/components/subject/subject-detail-form";
+import { contactFullName } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
 // Création manuelle d'un sujet (Direction B) — même set-up que l'onglet « Détail »
@@ -15,10 +16,15 @@ export default async function NouveauSujetPage() {
       select: { id: true, name: true, slug: true },
     }),
     db.contact.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, company: true },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      select: { id: true, firstName: true, lastName: true, company: true },
     }),
   ]);
+  const contactOptions = contacts.map((c) => ({
+    id: c.id,
+    name: contactFullName(c),
+    company: c.company,
+  }));
 
   return (
     <MobileFrame>
@@ -32,7 +38,7 @@ export default async function NouveauSujetPage() {
         <SubjectDetailForm
           mode="create"
           folders={folders}
-          contacts={contacts}
+          contacts={contactOptions}
           initial={{
             title: "",
             status: "new",

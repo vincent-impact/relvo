@@ -23,7 +23,13 @@ async function SearchResults({ query }: { query: string }) {
   // Contacts dont le nom/société matche → on remonte leurs sujets rattachés
   // (Subject.contactIds), pas les contacts eux-mêmes.
   const matchedContacts = await db.contact.findMany({
-    where: { OR: [{ name: contains }, { company: contains }] },
+    where: {
+      OR: [
+        { firstName: contains },
+        { lastName: contains },
+        { company: contains },
+      ],
+    },
     select: { id: true },
   });
   const contactIds = matchedContacts.map((c) => c.id);

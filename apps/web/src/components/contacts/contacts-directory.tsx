@@ -3,18 +3,20 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useContactsSearch } from "@/components/contacts/contacts-search-context";
+import { contactFullName, contactInitials } from "@/lib/display";
 
 export type DirectoryContact = {
   id: string;
-  name: string;
+  firstName: string | null;
+  lastName: string;
   company: string | null;
   jobTitle: string | null;
   status: string;
 };
 
 // Annuaire Contacts (M9.22) — façon répertoire téléphonique : sections par 1ʳᵉ
-// lettre du NOM DE FAMILLE (dernier mot du nom), lettres vides masquées, tri fr
-// insensible aux accents. Filtré en direct par la recherche du hero (contexte).
+// lettre du NOM DE FAMILLE, lettres vides masquées, tri fr insensible aux
+// accents. Filtré en direct par la recherche du hero (contexte partagé).
 
 /** Normalise pour comparaison/tri : sans accents, en capitales. */
 function fold(s: string): string {
@@ -24,25 +26,10 @@ function fold(s: string): string {
     .toUpperCase();
 }
 
-/** Nom de famille = dernier mot du nom (pragmatique V1, modèle à champ unique). */
-function lastNameToken(name: string): string {
-  const parts = name.trim().split(/\s+/);
-  return parts[parts.length - 1] ?? name;
-}
-
 /** Lettre de section : 1ʳᵉ lettre du nom de famille, ou « # » si non alphabétique. */
-function sectionLetter(name: string): string {
-  const c = fold(lastNameToken(name)).charAt(0);
+function sectionLetter(lastName: string): string {
+  const c = fold(lastName).charAt(0);
   return c >= "A" && c <= "Z" ? c : "#";
-}
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
 }
 
 function ContactRow({ contact }: { contact: DirectoryContact }) {
@@ -53,10 +40,12 @@ function ContactRow({ contact }: { contact: DirectoryContact }) {
       className="flex items-center gap-3 border-b border-[#f1efeb] px-[18px] py-3.5 active:bg-(--surface-2)"
     >
       <span className="grid size-[42px] flex-none place-items-center rounded-full bg-(--amber-600) text-[14px] font-extrabold text-white">
-        {initials(contact.name)}
+        {contactInitials(contact)}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[15.5px] font-bold">{contact.name}</div>
+        <div className="text-[15.5px] font-bold">
+          {contactFullName(contact)}
+        </div>
         {sub ? (
           <div className="mt-0.5 truncate text-[13px] text-[#86857d]">
             {sub}
@@ -83,22 +72,21 @@ export function ContactsDirectory({
     const q = fold(query.trim());
     const filtered = q
       ? contacts.filter((c) =>
-          fold(`${c.name} ${c.company ?? ""} ${c.jobTitle ?? ""}`).includes(q),
+          fold(
+            `${c.firstName ?? ""} ${c.lastName} ${c.company ?? ""} ${c.jobTitle ?? ""}`,
+          ).includes(q),
         )
       : contacts;
 
-    const sorted = [...filtered].sort((a, b) => {
-      const la = lastNameToken(a.name);
-      const lb = lastNameToken(b.name);
-      return (
-        fold(la).localeCompare(fold(lb), "fr") ||
-        a.name.localeCompare(b.name, "fr")
-      );
-    });
+    const sorted = [...filtered].sort(
+      (a, b) =>
+        fold(a.lastName).localeCompare(fold(b.lastName), "fr") ||
+        fold(a.firstName ?? "").localeCompare(fold(b.firstName ?? ""), "fr"),
+    );
 
     const groups: { letter: string; items: DirectoryContact[] }[] = [];
     for (const c of sorted) {
-      const letter = sectionLetter(c.name);
+      const letter = sectionLetter(c.lastName);
       const last = groups[groups.length - 1];
       if (last && last.letter === letter) last.items.push(c);
       else groups.push({ letter, items: [c] });

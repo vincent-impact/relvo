@@ -112,12 +112,13 @@ Une carte « mémoire » en tête (à la voix de Relvo : *« Ce que je sais sur 
 
 - `id: UUID`
 - `account_id: UUID`
-- `name: string`
+- `first_name: string nullable` — prénom (nul pour une raison sociale)
+- `last_name: string` — nom de famille (ou raison sociale) ; **clé de tri/section** de l'annuaire
 - `email: string nullable`
 - `phone: string nullable`
 - `company: string nullable`
 - `job_title: string nullable`
-- `default_folder_id: UUID nullable`
+- `default_folder_id: UUID nullable` — **pôle/dossier d'affinité** : oriente la qualification des messages reçus de ce contact (un contact « RH » → ses sujets tombent probablement dans le dossier RH)
 - `status: enum(auto, complete)`
 - `source_actor: Actor` — `ai` si Relvo a auto-créé la fiche, `user` si l'utilisateur l'a créée
 - `notes: text nullable`
