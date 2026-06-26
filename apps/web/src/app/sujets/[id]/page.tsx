@@ -16,7 +16,6 @@ import {
 } from "@/components/shared/recipient-composer";
 import { AcknowledgeOnOpen } from "@/components/subject/acknowledge-on-open";
 import { AddTask } from "@/components/subject/add-task";
-import { SwipeTaskDelete } from "@/components/subject/swipe-task-delete";
 import { RelvoDraftBlock } from "@/components/subject/relvo-draft-block";
 import { RelvoSummary } from "@/components/subject/relvo-summary";
 import { SlideToComplete } from "@/components/subject/slide-to-complete";
@@ -262,11 +261,7 @@ export default async function SujetPage({
                     Aucune tâche.
                   </p>
                 ) : (
-                  tasks.map((t) => (
-                    <SwipeTaskDelete key={t.id} taskId={t.id}>
-                      <TaskItem task={t} />
-                    </SwipeTaskDelete>
-                  ))
+                  tasks.map((t) => <TaskItem key={t.id} task={t} />)
                 )}
                 <AddTask subjectId={subject.id} />
               </div>

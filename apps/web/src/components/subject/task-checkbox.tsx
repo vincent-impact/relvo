@@ -32,6 +32,10 @@ export function TaskCheckbox({
       type="button"
       aria-label="Marquer la tâche comme faite"
       disabled={pending}
+      // Empêche SwipeToRemove (parent) de capturer le pointeur : sans ça, le tap
+      // serait livré au wrapper (setPointerCapture) et ouvrirait la modale au lieu
+      // de cocher. On isole le geste « cocher » de l'ouverture de la modale.
+      onPointerDown={(e) => e.stopPropagation()}
       onClick={() =>
         startTransition(async () => {
           const res = await completeTaskAction(taskId);

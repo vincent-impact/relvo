@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CalendarDays, Clock, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { ActorPill } from "@/components/shared/actor-pill";
+import { SwipeToRemove } from "@/components/shared/swipe-to-remove";
 import { TaskCheckbox } from "@/components/subject/task-checkbox";
 import {
   Dialog,
@@ -21,6 +22,13 @@ import type { Actor } from "@relvo/db";
 // ouvre une modale d'édition (titre + DATE/heure + suppression). Relvo peut se
 // tromper de date, ou l'utilisateur repousser une tâche en retard : l'édition de
 // la date est donc centrale (la date = deadline, alimente l'agenda).
+//
+// La ligne est emballée dans SwipeToRemove (swipe ← = supprimer). On NE PEUT PAS
+// compter sur un onClick sur un <button> interne : SwipeToRemove capture le
+// pointeur (setPointerCapture), donc le click natif est livré au wrapper, jamais
+// au bouton. On passe donc par `onTap` (déclenché si aucun glissé) pour ouvrir la
+// modale — la case à cocher reste un vrai bouton (stopPropagation via son propre
+// handler).
 
 export type EditableTask = {
   id: string;
@@ -83,36 +91,39 @@ export function TaskItem({ task }: { task: EditableTask }) {
 
   return (
     <>
-      <div className="mx-[14px] flex items-start gap-3 border-b border-[#f1efeb] px-[18px] py-[13px]">
-        <TaskCheckbox taskId={task.id} done={done} />
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="min-w-0 flex-1 text-left"
-        >
-          <div
-            className={cn(
-              "text-[14.5px] font-semibold",
-              done && "text-[#a8a69d] line-through",
-            )}
-          >
-            {task.title}
+      <SwipeToRemove
+        label="Supprimer"
+        icon={Trash2}
+        onRemove={remove}
+        onTap={() => setOpen(true)}
+      >
+        <div className="mx-[14px] flex items-start gap-3 border-b border-[#f1efeb] px-[18px] py-[13px]">
+          <TaskCheckbox taskId={task.id} done={done} />
+          <div className="min-w-0 flex-1 text-left">
+            <div
+              className={cn(
+                "text-[14.5px] font-semibold",
+                done && "text-[#a8a69d] line-through",
+              )}
+            >
+              {task.title}
+            </div>
+            <div className="mt-1.5 flex items-center gap-2">
+              <ActorPill actor={task.sourceActor} />
+              {formatTaskDate(task.startDate, task.startTime) ? (
+                <span className="inline-flex items-center gap-1 text-[11.5px] text-[#a8a69d]">
+                  <CalendarDays className="size-3" strokeWidth={2} />
+                  {formatTaskDate(task.startDate, task.startTime)}
+                </span>
+              ) : (
+                <span className="text-[11.5px] text-(--text-tertiary) italic">
+                  Sans date
+                </span>
+              )}
+            </div>
           </div>
-          <div className="mt-1.5 flex items-center gap-2">
-            <ActorPill actor={task.sourceActor} />
-            {formatTaskDate(task.startDate, task.startTime) ? (
-              <span className="inline-flex items-center gap-1 text-[11.5px] text-[#a8a69d]">
-                <CalendarDays className="size-3" strokeWidth={2} />
-                {formatTaskDate(task.startDate, task.startTime)}
-              </span>
-            ) : (
-              <span className="text-[11.5px] text-(--text-tertiary) italic">
-                Sans date
-              </span>
-            )}
-          </div>
-        </button>
-      </div>
+        </div>
+      </SwipeToRemove>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="gap-4 p-5">
