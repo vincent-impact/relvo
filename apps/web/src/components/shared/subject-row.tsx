@@ -1,13 +1,13 @@
 import Link from "next/link";
-import { Flag, Hourglass, Sparkles, SquareCheck } from "lucide-react";
+import { Flag, Hourglass, SquareCheck } from "lucide-react";
 import type { EnrichedSubject } from "@relvo/db";
 import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 
-// SubjectRow — un Sujet rendu comme une LIGNE (Direction B), pas une carte
-// flottante : rail coloré par domaine + icône teintée, référence, drapeau urgent
-// éventuel, titre, résumé, tags marqueurs, pastille bleue de non-lus. La variante
-// urgente lave toute la ligne en rouge (rare = signal).
+// SubjectRow — un Sujet rendu comme une LIGNE de liste façon e-mail (Direction
+// B simplifiée) : icône teintée par domaine, référence + badges (Urgent / Nouveau),
+// titre, résumé, progression des tâches. Pas de rail latéral ni de carte arrondie.
+// Le FOND distingue l'état : rouge pâle = urgent, bleu pâle = non vu (new).
 
 export type SubjectRowData = {
   id: string;
@@ -16,43 +16,16 @@ export type SubjectRowData = {
   summary?: string | null;
   folderSlug?: string | null;
   urgent: boolean;
-  /** Statut `new` (jamais ouvert) → badge bleu « Nouveau », perdu à l'ouverture. */
+  /** Statut `new` (jamais ouvert) → fond bleu + badge « Nouveau ». */
   isNew: boolean;
-  openTaskCount: number;
+  /** Tâches terminées / total → progression (barre x/y). */
+  taskDone: number;
+  taskTotal: number;
+  /** Suggestions Relvo en attente — utilisé par le brief de l'Accueil (pas la card). */
   suggestionCount: number;
   unreadCount: number;
   waitingForReply: boolean;
 };
-
-type TagTone = "amber" | "relvo" | "grey";
-
-const TAG_TONE: Record<TagTone, string> = {
-  amber: "bg-(--amber-50) text-(--amber-800)",
-  relvo: "bg-relvo-bg text-relvo",
-  grey: "bg-[#f0eeea] text-[#86857d]",
-};
-
-function Tag({
-  tone,
-  icon: Icon,
-  children,
-}: {
-  tone: TagTone;
-  icon?: typeof Sparkles;
-  children: React.ReactNode;
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap",
-        TAG_TONE[tone],
-      )}
-    >
-      {Icon ? <Icon className="size-3" strokeWidth={2.2} /> : null}
-      {children}
-    </span>
-  );
-}
 
 export function SubjectRow({
   data,
@@ -68,14 +41,15 @@ export function SubjectRow({
   const urgent = data.urgent && tone !== "done";
   const isNew = data.isNew && tone !== "done";
   const done = tone === "done";
+  const pct =
+    data.taskTotal > 0 ? Math.round((data.taskDone / data.taskTotal) * 100) : 0;
+  const allDone = data.taskTotal > 0 && data.taskDone >= data.taskTotal;
 
   return (
     <article
       className={cn(
-        "relative flex gap-3",
-        urgent
-          ? "mx-3 my-1 rounded-2xl bg-[#fdf1f1] p-3.5"
-          : "mx-3.5 border-b border-[#f1efeb] p-3.5",
+        "relative flex gap-3 border-b border-[#f1efeb] px-4 py-3.5",
+        urgent ? "bg-[#fdf1f1]" : isNew ? "bg-(--blue-50)" : null,
         done && "opacity-60",
       )}
     >
@@ -85,16 +59,9 @@ export function SubjectRow({
         </span>
       ) : null}
 
-      {!urgent ? (
-        <span
-          className="w-1 flex-none self-stretch rounded-full"
-          style={{ background: color }}
-        />
-      ) : null}
-
       <span
         className="grid size-10 flex-none place-items-center self-start rounded-xl text-white"
-        style={{ background: urgent ? "var(--red-600)" : color }}
+        style={{ background: color }}
       >
         <Icon className="size-[19px]" strokeWidth={1.9} />
       </span>
@@ -142,16 +109,32 @@ export function SubjectRow({
         ) : null}
 
         {!done ? (
-          <div className="mt-[9px] flex flex-wrap items-center gap-[7px]">
-            {data.openTaskCount > 0 ? (
-              <Tag tone="amber" icon={SquareCheck}>
-                À faire · {data.openTaskCount}
-              </Tag>
+          <div className="mt-[9px] flex flex-wrap items-center gap-x-3 gap-y-1.5">
+            {data.taskTotal > 0 ? (
+              <div className="inline-flex items-center gap-1.5">
+                <SquareCheck
+                  className={cn(
+                    "size-[15px] flex-none",
+                    allDone ? "text-(--green-600)" : "text-(--text-tertiary)",
+                  )}
+                  strokeWidth={2.2}
+                />
+                <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-[#e7e5e0]">
+                  <span
+                    className="absolute inset-y-0 left-0 rounded-full bg-(--green-600) transition-[width]"
+                    style={{ width: `${pct}%` }}
+                  />
+                </span>
+                <span className="font-numeric text-[11.5px] font-bold text-(--text-secondary)">
+                  {data.taskDone}/{data.taskTotal}
+                </span>
+              </div>
             ) : null}
             {data.waitingForReply ? (
-              <Tag tone="grey" icon={Hourglass}>
+              <span className="inline-flex items-center gap-1 rounded-full bg-[#f0eeea] px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap text-[#86857d]">
+                <Hourglass className="size-3" strokeWidth={2.2} />
                 En attente
-              </Tag>
+              </span>
             ) : null}
           </div>
         ) : null}
@@ -170,7 +153,8 @@ export function toSubjectRowData(e: EnrichedSubject): SubjectRowData {
     folderSlug: e.folderSlug,
     urgent: e.subject.priority === "urgent",
     isNew: e.subject.status === "new",
-    openTaskCount: e.openTaskCount,
+    taskDone: e.taskDone,
+    taskTotal: e.taskTotal,
     suggestionCount: e.suggestionCount,
     unreadCount: e.unreadCount,
     waitingForReply: e.subject.waitingForReply,

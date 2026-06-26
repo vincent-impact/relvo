@@ -175,6 +175,10 @@ export type EnrichedSubject = {
   attachmentCount: number;
   /** Avancement 0..1 (tâches faites / total non supprimées), ou null si aucune. */
   progress: number | null;
+  /** Nombre total de tâches (non supprimées) — dénominateur de la progress bar. */
+  taskTotal: number;
+  /** Tâches terminées — numérateur de la progress bar. */
+  taskDone: number;
   /** Slug du dossier de rattachement (rail coloré / icône de domaine), ou null. */
   folderSlug: string | null;
   /** Nom du dossier de rattachement, ou null. */
@@ -258,6 +262,8 @@ export async function enrichSubjects(
         .length,
       progress:
         subTasks.length === 0 ? null : doneTasks.length / subTasks.length,
+      taskTotal: subTasks.length,
+      taskDone: doneTasks.length,
       folderSlug: folder?.slug ?? null,
       folderName: folder?.name ?? null,
     };

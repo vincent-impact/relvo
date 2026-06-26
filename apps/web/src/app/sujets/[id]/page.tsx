@@ -6,7 +6,6 @@ import { getSubjectDetail } from "@relvo/db";
 import { FeedTabs } from "@/components/feed/feed-tabs";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
-import { ActorPill } from "@/components/shared/actor-pill";
 import {
   MessageBubble,
   type MessageBubbleData,
@@ -25,10 +24,10 @@ import {
   SubjectDangerZone,
   SubjectDetailForm,
 } from "@/components/subject/subject-detail-form";
-import { TaskCheckbox } from "@/components/subject/task-checkbox";
+import { TaskItem } from "@/components/subject/task-item";
 import { cn } from "@/lib/utils";
 import { folderVisual } from "@/lib/folders";
-import { contactFullName, formatRelative, formatTaskDate } from "@/lib/display";
+import { contactFullName, formatRelative } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
 // Fiche Sujet (M9.5, Direction B) — hero violet portant le status-strip + le
@@ -239,8 +238,8 @@ export default async function SujetPage({
               : undefined
           }
           options={[
-            { value: "messages", label: "Messages" },
             { value: "taches", label: "Tâches", count: tasks.length },
+            { value: "messages", label: "Messages" },
             { value: "detail", label: "Détails" },
           ]}
           panes={{
@@ -263,34 +262,11 @@ export default async function SujetPage({
                     Aucune tâche.
                   </p>
                 ) : (
-                  tasks.map((t) => {
-                    const done = t.status === "done";
-                    return (
-                      <SwipeTaskDelete key={t.id} taskId={t.id}>
-                        <div className="mx-[14px] flex items-start gap-3 border-b border-[#f1efeb] px-[18px] py-[13px]">
-                          <TaskCheckbox taskId={t.id} done={done} />
-                          <div className="min-w-0 flex-1">
-                            <div
-                              className={cn(
-                                "text-[14.5px] font-semibold",
-                                done && "text-[#a8a69d] line-through",
-                              )}
-                            >
-                              {t.title}
-                            </div>
-                            <div className="mt-1.5 flex items-center gap-2">
-                              <ActorPill actor={t.sourceActor} />
-                              {formatTaskDate(t.startDate, t.startTime) ? (
-                                <span className="text-[11.5px] text-[#a8a69d]">
-                                  {formatTaskDate(t.startDate, t.startTime)}
-                                </span>
-                              ) : null}
-                            </div>
-                          </div>
-                        </div>
-                      </SwipeTaskDelete>
-                    );
-                  })
+                  tasks.map((t) => (
+                    <SwipeTaskDelete key={t.id} taskId={t.id}>
+                      <TaskItem task={t} />
+                    </SwipeTaskDelete>
+                  ))
                 )}
                 <AddTask subjectId={subject.id} />
               </div>

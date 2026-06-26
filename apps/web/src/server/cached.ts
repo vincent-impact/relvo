@@ -41,8 +41,9 @@ export const TENANT_DATA_TAG = "tenant-data";
 // la FORME de son retour : sinon le Vercel Data Cache continue de servir
 // l'ancienne forme après déploiement (champ manquant → undefined à l'écran).
 // Historique : v2 = Kpis (newSubjects) + Contact (firstName/lastName) + Folder
-// (color/icon) ; v3 = SubjectRowData (isNew). Incrément suivant = "v4".
-const CACHE_V = "v3";
+// (color/icon) ; v3 = SubjectRowData (isNew) ; v4 = SubjectRowData (taskDone/
+// taskTotal, − openTaskCount). Incrément suivant = "v5".
+const CACHE_V = "v4";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
