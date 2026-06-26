@@ -137,7 +137,7 @@ export default async function FilPage() {
           }}
         >
           <Search className="size-[18px]" strokeWidth={2} />
-          Rechercher un sujet, un contact…
+          Rechercher un sujet…
         </Link>
       </RelvoHeader>
 

@@ -110,7 +110,7 @@ Routes francophones, alignées sur la nav V1.
 9. **Brouillon Relvo dans le composer** (jamais affiché comme un message du fil). Actions « Régénérer » / « Effacer ».
 10. **Acquittement implicite** des suggestions : ouvrir un sujet vaut acquittement (logique sur `last_opened_at`). Pas de bouton « valider ».
 11. **Conversations par contact**, pas par canal (email + WhatsApp d'un même contact = une seule conversation).
-12. Un **contact** n'est créé qu'à la création d'un sujet. Expéditeur inconnu = `sender_raw` + avatar `?`.
+12. **Création automatique d'un contact** (pipeline IA) uniquement à la création d'un sujet — l'IA ne crée jamais un contact « dans le vide ». Expéditeur inconnu = `sender_raw` + avatar `?`. **La création manuelle par l'utilisateur reste permise** (bouton + de l'annuaire `/contacts` → `sourceActor: user`, statut `complete` d'emblée).
 13. Sujets **multi-contacts** (`contact_ids: UUID[]`).
 
 **Dates & planning**

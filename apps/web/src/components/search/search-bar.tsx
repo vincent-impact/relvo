@@ -37,7 +37,7 @@ export function SearchBar({ initial = "" }: { initial?: string }) {
         onKeyDown={(e) => {
           if (e.key === "Enter") submit(value);
         }}
-        placeholder="Rechercher un sujet, un contact, un message…"
+        placeholder="Rechercher un sujet…"
         className="min-w-0 flex-1 border-none bg-transparent text-[15px] text-white outline-none placeholder:text-white/70 [&::-webkit-search-cancel-button]:hidden"
       />
       {value ? (
