@@ -37,6 +37,13 @@ import { folderColor, formatTime } from "@/lib/display";
 
 export const TENANT_DATA_TAG = "tenant-data";
 
+// Version des clés de cache. À INCRÉMENTER dès qu'une fonction ci-dessous change
+// la FORME de son retour : sinon le Vercel Data Cache continue de servir
+// l'ancienne forme après déploiement (champ manquant → undefined à l'écran).
+// Bumpé pour : Kpis (newSubjects) + Contact (firstName/lastName) + Folder
+// (color/icon). Incrément suivant = "v3".
+const CACHE_V = "v2";
+
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
 /**
@@ -56,7 +63,7 @@ export function revalidateTenantData() {
 // ── KPIs (Accueil) — uniquement des nombres ──────────────────────────────────
 export const cachedKpis = unstable_cache(
   (accountId: string): Promise<Kpis> => getKpis(tenantDb(accountId)),
-  ["kpis"],
+  ["kpis", CACHE_V],
   CACHE,
 );
 
@@ -68,7 +75,7 @@ export const cachedPriorityRows = unstable_cache(
     const enriched = await enrichSubjects(db, page.items);
     return enriched.map(toSubjectRowData);
   },
-  ["priority-rows"],
+  ["priority-rows", CACHE_V],
   CACHE,
 );
 
@@ -119,7 +126,7 @@ export const cachedAgendaEvents = unstable_cache(
     }
     return eventsByDay;
   },
-  ["agenda-events"],
+  ["agenda-events", CACHE_V],
   CACHE,
 );
 
@@ -129,7 +136,7 @@ export const cachedOpenCount = unstable_cache(
     tenantDb(accountId).subject.count({
       where: { status: { notIn: ["resolved", "archived", "ignored"] } },
     }),
-  ["open-count"],
+  ["open-count", CACHE_V],
   CACHE,
 );
 
@@ -177,7 +184,7 @@ export const cachedFilFeed = unstable_cache(
       orphanCount,
     };
   },
-  ["fil-feed"],
+  ["fil-feed", CACHE_V],
   CACHE,
 );
 
@@ -258,7 +265,7 @@ export const cachedDossiers = unstable_cache(
 
     return { metrics, folders: folderRows };
   },
-  ["dossiers"],
+  ["dossiers", CACHE_V],
   CACHE,
 );
 
@@ -285,12 +292,12 @@ export const cachedContacts = unstable_cache(
         status: true,
       },
     }),
-  ["contacts"],
+  ["contacts", CACHE_V],
   CACHE,
 );
 
 export const cachedContactCount = unstable_cache(
   (accountId: string): Promise<number> => tenantDb(accountId).contact.count(),
-  ["contact-count"],
+  ["contact-count", CACHE_V],
   CACHE,
 );
