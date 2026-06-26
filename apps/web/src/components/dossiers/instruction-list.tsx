@@ -55,12 +55,7 @@ export function InstructionList({
               key={n.id}
               type="button"
               onClick={() => setEditing(n)}
-              className={cn(
-                "block w-full rounded-2xl border bg-white p-3.5 text-left shadow-(--shadow-card) transition active:scale-[0.99]",
-                n.active
-                  ? "border-(--border-light)"
-                  : "border-(--border-light)",
-              )}
+              className="block w-full rounded-2xl border border-(--border-light) bg-white p-3.5 text-left shadow-(--shadow-card) transition active:scale-[0.99]"
             >
               <div className="mb-1.5 flex items-center gap-2">
                 <Sparkles
