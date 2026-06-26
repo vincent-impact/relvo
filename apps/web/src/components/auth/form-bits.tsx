@@ -22,7 +22,12 @@ export function SubmitButton({
       type="submit"
       disabled={pending}
       variant={variant}
-      className={className}
+      className={cn(
+        // Tunnel auth « Direction B » : bouton primaire violet (couleur de
+        // marque), sauf variante explicite (ex. Google → outline).
+        !variant && "bg-relvo text-white hover:bg-relvo/90",
+        className,
+      )}
     >
       {pending && <Loader2Icon className="animate-spin" />}
       {children}

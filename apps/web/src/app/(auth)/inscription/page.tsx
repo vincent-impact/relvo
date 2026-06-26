@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentAccount } from "@/server/auth-context";
+import { AuthCard, AuthLink } from "@/components/auth/auth-card";
 import { GoogleButton } from "@/components/auth/google-button";
 import { SignupForm } from "@/components/auth/signup-form";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Créer un compte — Relvo" };
 
@@ -24,35 +17,26 @@ export default async function InscriptionPage() {
   if (await getCurrentAccount()) redirect("/");
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Créer un compte</CardTitle>
-        <CardDescription>
-          Quelques secondes pour démarrer avec Relvo.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <AuthCard
+      title="Créer un compte"
+      description="Quelques secondes pour démarrer avec Relvo."
+    >
+      <div className="space-y-4">
         {googleEnabled && (
           <>
             <GoogleButton label="S'inscrire avec Google" />
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
+            <div className="flex items-center gap-3 text-[12px] text-(--text-tertiary)">
+              <span className="h-px flex-1 bg-(--border-light)" />
               ou
-              <span className="h-px flex-1 bg-border" />
+              <span className="h-px flex-1 bg-(--border-light)" />
             </div>
           </>
         )}
         <SignupForm />
-        <p className="text-center text-sm text-muted-foreground">
-          Déjà inscrit ?{" "}
-          <Link
-            href="/connexion"
-            className="font-medium text-primary hover:underline"
-          >
-            Se connecter
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+        <AuthLink href="/connexion" prefix="Déjà inscrit ?">
+          Se connecter
+        </AuthLink>
+      </div>
+    </AuthCard>
   );
 }

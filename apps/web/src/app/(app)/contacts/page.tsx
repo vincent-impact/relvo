@@ -105,7 +105,6 @@ export default async function ContactsPage() {
   return (
     <Screen>
       <RelvoHeader
-        back="/"
         title="Contacts"
         subtitle={`${total} contact${total > 1 ? "s" : ""}`}
         className="pb-9"

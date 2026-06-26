@@ -1,14 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { prisma } from "@/lib/db";
 import { consumeVerificationToken } from "@/lib/tokens";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { AuthCard, AuthLink } from "@/components/auth/auth-card";
 import { VerificationTokenType } from "@relvo/db";
 
 export const metadata: Metadata = { title: "Vérification de l'email — Relvo" };
@@ -37,25 +30,15 @@ export default async function VerifierEmailPage({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          {verified ? "Email vérifié" : "Lien invalide ou expiré"}
-        </CardTitle>
-        <CardDescription>
-          {verified
-            ? "Votre adresse email a bien été confirmée."
-            : "Ce lien de vérification est invalide ou a expiré."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Link
-          href="/"
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          Accéder à Relvo
-        </Link>
-      </CardContent>
-    </Card>
+    <AuthCard
+      title={verified ? "Email vérifié" : "Lien invalide ou expiré"}
+      description={
+        verified
+          ? "Votre adresse email a bien été confirmée."
+          : "Ce lien de vérification est invalide ou a expiré."
+      }
+    >
+      <AuthLink href="/">Accéder à Relvo</AuthLink>
+    </AuthCard>
   );
 }

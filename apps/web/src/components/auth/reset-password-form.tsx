@@ -24,7 +24,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
         <FormBanner status={state.status} message={state.message} />
         <Link
           href="/connexion"
-          className="text-sm font-medium text-primary hover:underline"
+          className="text-[13.5px] font-semibold text-relvo hover:underline"
         >
           Aller à la connexion
         </Link>

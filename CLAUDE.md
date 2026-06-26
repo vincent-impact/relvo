@@ -83,14 +83,14 @@ Routes francophones, alignées sur la nav V1.
 |---|---|---|
 | `/` | Accueil (🏠) — brief : KPIs « Vue du jour » + agenda semaine + 2-3 sujets prioritaires | Onglet |
 | `/fil` | Mon fil (✉️) — traitement : 3 onglets-statut Ouverts (urgents en tête, swipe ← Ignorer · → Terminer) / Terminés / Ignorés (récupérables) | Onglet |
+| `/contacts` · `/contacts/[id]` | **Contacts** (👥) — annuaire + fiche contact | Onglet |
 | `/dossiers` · `/dossiers/[id]` | **Mémoire** (🧠) — liste des domaines + fiche : onglets Instructions/Documents/Sujets | Onglet |
-| `/parametres` | Paramètres (compte, canaux, contacts) | Onglet |
+| `/parametres` | Paramètres (compte, canaux) | Onglet |
 | `/sujets/[id]` | Détail d'un sujet | Fiche détail |
 | `/planning` | Calendrier vue mois | Hors-nav (lien depuis le widget semaine de l'Accueil) |
 | `/messages` | Messages bruts par contact (filtres non-lus / sans sujet) | Hors-nav (lien depuis le feed-strip de Mon fil) |
-| `/contacts` · `/contacts/[id]` | Annuaire + fiche contact | Hors-nav (recherche topbar, clic sur un nom) |
 
-**Navigation = barre d'onglets en bas** (mobile-first), **4 entrées** : Accueil 🏠, Mon fil ✉️, **Mémoire 🧠**, Paramètres. La conversation Relvo est une **surface plein écran** (plus un drawer latéral), atteinte via le **composer Relvo persistant** présent sur toutes les pages. Le virage mobile-first et la PWA sont détaillés dans `docs/spec/ux-mobile-first.md` ; cf. `01-principes.md §13`.
+**Navigation = barre d'onglets en bas** (mobile-first), **5 entrées** : Accueil 🏠, Mon fil ✉️, **Contacts 👥**, **Mémoire 🧠**, Paramètres. Contacts est une **destination de premier rang** (3ᵉ onglet, entre Mon fil et Mémoire) — pas un sous-menu de Réglages — en vue de l'usage **Équipe** à venir (gestion collaborative des sujets). Note IA : un contact rattaché à un **pôle/dossier** influencera la qualification des messages reçus (les sujets d'un contact « RH » tomberont probablement dans le dossier RH). La conversation Relvo est une **surface plein écran** (plus un drawer latéral), atteinte via le **composer Relvo persistant** présent sur toutes les pages. Le virage mobile-first et la PWA sont détaillés dans `docs/spec/ux-mobile-first.md` ; cf. `01-principes.md §13`.
 
 ## Invariants produit à respecter
 

@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Brain, Home, Mail, Settings } from "lucide-react";
+import { Brain, Home, Mail, Settings, Users } from "lucide-react";
 import { useNavHidden } from "@/components/layout/nav-visibility";
 import { cn } from "@/lib/utils";
 
 // Barre d'onglets basse (mobile-first). Remplace la sidebar desktop.
-// 4 entrées alignées sur la nav V1 (cf. ux-mobile-first §3 + CLAUDE.md).
+// 5 entrées alignées sur la nav V1 (cf. ux-mobile-first §3 + CLAUDE.md).
+// Contacts est une destination de premier rang (3e onglet) en vue de l'usage
+// Équipe à venir — pas un sous-menu de Réglages (décision 2026-06-26).
 
 type Tab = {
   href: string;
@@ -29,6 +31,12 @@ const TABS: Tab[] = [
     label: "Mon fil",
     icon: Mail,
     match: (p) => p.startsWith("/fil") || p.startsWith("/sujets"),
+  },
+  {
+    href: "/contacts",
+    label: "Contacts",
+    icon: Users,
+    match: (p) => p.startsWith("/contacts"),
   },
   {
     href: "/dossiers",

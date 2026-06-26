@@ -1,16 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentAccount } from "@/server/auth-context";
+import { AuthCard, AuthLink } from "@/components/auth/auth-card";
 import { GoogleButton } from "@/components/auth/google-button";
 import { LoginForm } from "@/components/auth/login-form";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 export const metadata: Metadata = { title: "Connexion — Relvo" };
 
@@ -25,33 +18,23 @@ export default async function ConnexionPage() {
   if (await getCurrentAccount()) redirect("/");
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Connexion</CardTitle>
-        <CardDescription>Accédez à votre espace Relvo.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <AuthCard title="Connexion" description="Accédez à votre espace Relvo.">
+      <div className="space-y-4">
         {googleEnabled && (
           <>
             <GoogleButton label="Continuer avec Google" />
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
+            <div className="flex items-center gap-3 text-[12px] text-(--text-tertiary)">
+              <span className="h-px flex-1 bg-(--border-light)" />
               ou
-              <span className="h-px flex-1 bg-border" />
+              <span className="h-px flex-1 bg-(--border-light)" />
             </div>
           </>
         )}
         <LoginForm />
-        <p className="text-center text-sm text-muted-foreground">
-          Pas encore de compte ?{" "}
-          <Link
-            href="/inscription"
-            className="font-medium text-primary hover:underline"
-          >
-            Créer un compte
-          </Link>
-        </p>
-      </CardContent>
-    </Card>
+        <AuthLink href="/inscription" prefix="Pas encore de compte ?">
+          Créer un compte
+        </AuthLink>
+      </div>
+    </AuthCard>
   );
 }
