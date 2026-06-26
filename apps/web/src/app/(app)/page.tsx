@@ -105,15 +105,18 @@ async function HeroBrief({ accountId }: { accountId: string }) {
 
 async function HomeMetrics({ accountId }: { accountId: string }) {
   const kpis = await cachedKpis(accountId);
+  // Ordre fixé (Urgents, Nouveaux, Ouverts, Tâches) — RDV retiré, l'agenda s'en
+  // charge. « Nouveaux » = statut new (et non créés < 7 j) → décrémente dès
+  // qu'on ouvre un sujet ; « Ouverts » = tous les sujets non clos.
   const metrics: Metric[] = [
     {
       value: kpis.urgentSubjects,
       label: "Urgents",
       ...(kpis.urgentSubjects > 0 ? { tone: "urgent" as const } : {}),
     },
+    { value: kpis.newSubjects, label: "Nouveaux" },
+    { value: kpis.openSubjects, label: "Ouverts" },
     { value: kpis.tasksToday, label: "Tâches" },
-    { value: kpis.appointmentsWeek, label: "RDV" },
-    { value: kpis.newSubjectsWeek, label: "Nouveaux" },
   ];
   return <MetricsCard metrics={metrics} />;
 }

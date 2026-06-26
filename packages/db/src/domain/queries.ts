@@ -34,23 +34,21 @@ function dayBounds(now: Date): { start: Date; next: Date } {
 export type Kpis = {
   /** Sujets critiques non clos (drapeau urgent rare — invariant n°8). */
   urgentSubjects: number;
+  /** Sujets non clos au statut `new` (jamais ouverts) → marqueur « Nouveaux ». */
+  newSubjects: number;
   openSubjects: number;
   /** Tâches ouvertes dont l'échéance est aujourd'hui. */
   tasksToday: number;
   /** Total des tâches ouvertes (contexte sous « Tâches aujourd'hui »). */
   openTasksTotal: number;
-  /** Rendez-vous = tâches ouvertes horodatées (startTime) dans les 7 jours. */
-  appointmentsWeek: number;
-  /** Sujets créés dans les 7 derniers jours. */
-  newSubjectsWeek: number;
   messagesToTriage: number;
   /** % de tâches proposées par Relvo (source_actor=ai), ou null si aucune tâche. */
   relvoAssistRate: number | null;
 };
 
 /**
- * KPIs du bandeau « Vue du jour » de l'Accueil, alignés sur la maquette mobile
- * (Sujets urgents / Tâches aujourd'hui / Rendez-vous / Nouveaux sujets).
+ * KPIs du bandeau « Vue du jour » de l'Accueil (Urgents / Nouveaux / Ouverts /
+ * Tâches aujourd'hui). Les rendez-vous ne sont plus un KPI (l'agenda s'en charge).
  */
 export async function getKpis(
   db: TenantDb,
@@ -58,18 +56,13 @@ export async function getKpis(
 ): Promise<Kpis> {
   const now = opts.now ?? new Date();
   const { start, next } = dayBounds(now);
-  const weekAhead = new Date(start);
-  weekAhead.setUTCDate(weekAhead.getUTCDate() + 7);
-  const weekAgo = new Date(start);
-  weekAgo.setUTCDate(weekAgo.getUTCDate() - 7);
 
   const [
     urgentSubjects,
+    newSubjects,
     openSubjects,
     tasksToday,
     openTasksTotal,
-    appointmentsWeek,
-    newSubjectsWeek,
     messagesToTriage,
     aiTasks,
     totalTasks,
@@ -80,6 +73,7 @@ export async function getKpis(
         status: { notIn: CLOSED_STATUSES },
       },
     }),
+    db.subject.count({ where: { status: SubjectStatus.new } }),
     db.subject.count({ where: { status: { notIn: CLOSED_STATUSES } } }),
     db.task.count({
       where: {
@@ -88,14 +82,6 @@ export async function getKpis(
       },
     }),
     db.task.count({ where: { status: TaskStatus.open } }),
-    db.task.count({
-      where: {
-        status: TaskStatus.open,
-        startTime: { not: null },
-        startDate: { gte: start, lt: weekAhead },
-      },
-    }),
-    db.subject.count({ where: { createdAt: { gte: weekAgo } } }),
     db.message.count({
       where: { subjectId: null, status: { not: MessageStatus.ignored } },
     }),
@@ -107,11 +93,10 @@ export async function getKpis(
 
   return {
     urgentSubjects,
+    newSubjects,
     openSubjects,
     tasksToday,
     openTasksTotal,
-    appointmentsWeek,
-    newSubjectsWeek,
     messagesToTriage,
     relvoAssistRate:
       totalTasks === 0 ? null : Math.round((aiTasks / totalTasks) * 100),

@@ -461,13 +461,12 @@ export async function openSubject(db: TenantDb, id: string) {
       await tx.subject.findFirst({ where: { id } }),
       "Sujet",
     );
+    const statusChanged = current.status === SubjectStatus.new;
     const { count } = await tx.subject.updateMany({
       where: { id },
       data: {
         lastOpenedAt: new Date(),
-        ...(current.status === SubjectStatus.new
-          ? { status: SubjectStatus.acknowledged }
-          : {}),
+        ...(statusChanged ? { status: SubjectStatus.acknowledged } : {}),
       },
     });
     ensureAffected(count, "Sujet");
@@ -478,7 +477,7 @@ export async function openSubject(db: TenantDb, id: string) {
     // Lecture des messages : ouvrir le sujet vaut lecture de ses messages reçus
     // encore non-lus (seul moyen d'« interagir » avec un message). Les orphelins
     // n'ont pas de sujet → restent non-lus jusqu'au tri.
-    await tx.message.updateMany({
+    const { count: messagesRead } = await tx.message.updateMany({
       where: { subjectId: id, direction: "incoming", readAt: null },
       data: { readAt: new Date() },
     });
@@ -490,7 +489,9 @@ export async function openSubject(db: TenantDb, id: string) {
       title: `Sujet ${subject.reference} ouvert`,
       actor: "user",
     });
-    return subject;
+    // Flags d'effet réel → l'appelant ne revalide les caches (KPIs, fil) que si
+    // quelque chose a changé (statut acquitté ou messages passés en lus).
+    return { subject, statusChanged, messagesRead: messagesRead > 0 };
   });
 }
 

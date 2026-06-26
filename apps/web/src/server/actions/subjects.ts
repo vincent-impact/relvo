@@ -89,8 +89,18 @@ export async function unignoreSubjectAction(id: string) {
 }
 
 export async function openSubjectAction(id: string) {
-  // Acquittement implicite : pas de revalidation lourde, juste la mise à jour.
-  return domainAction((db) => openSubject(db, id));
+  // Acquittement implicite. On ne revalide que si l'ouverture a EU un effet
+  // (statut new→acknowledged, ou messages passés en lus) : sinon, ré-ouvrir un
+  // sujet déjà vu garderait inutilement les caches froids. Cela rend les KPIs
+  // de l'Accueil (« Nouveaux », « Ouverts ») et les pastilles du fil cohérents
+  // en temps réel — un sujet ouvert quitte le compteur « Nouveaux ».
+  const result = await domainAction((db) => openSubject(db, id));
+  if (result.ok && (result.data.statusChanged || result.data.messagesRead)) {
+    revalidateTenantData();
+    revalidatePath("/");
+    revalidatePath("/fil");
+  }
+  return result;
 }
 
 export async function suggestResolutionAction(id: string) {
