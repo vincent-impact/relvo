@@ -1,65 +1,59 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock, Plus, X } from "lucide-react";
+import { CalendarDays, Clock, Plus } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { createTaskAction } from "@/server/actions/tasks";
 import { cn } from "@/lib/utils";
 
-// Ajout de tâche en ligne (onglet Tâches de la fiche Sujet, cf. .addtask du DS) :
-// « + Ajouter une tâche » révèle un champ ; Entrée ou « Ajouter » crée la tâche
-// (sourceActor = user) puis rafraîchit. La date (= deadline, startDate/startTime,
-// cf. 02-modele §9) se pose via des chips rapides « Aujourd'hui / Demain / 📅 » +
-// une heure optionnelle. Une tâche datée alimente l'agenda (un évènement = une
-// tâche avec une date). Pattern « + Ajouter… » de la Direction B.
-
-/** Date ISO YYYY-MM-DD à `offset` jours d'aujourd'hui (UTC, cohérent agenda). */
-function isoDay(offset: number): string {
-  const now = new Date();
-  return new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() + offset,
-    ),
-  )
-    .toISOString()
-    .slice(0, 10);
-}
+// Ajout de tâche (onglet Tâches de la fiche Sujet) — « + Ajouter une tâche » ouvre
+// une MODALE identique à l'édition (titre + DATE/heure), pour une UX cohérente
+// d'un bout à l'autre. La date (= deadline, startDate/startTime, cf. 02-modele §9)
+// alimente l'agenda (un évènement = une tâche datée). sourceActor = user.
 
 export function AddTask({ subjectId }: { subjectId: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
-  const [value, setValue] = useState("");
-  const [date, setDate] = useState<string | null>(null); // YYYY-MM-DD ou null
+  const [title, setTitle] = useState("");
+  const [date, setDate] = useState(""); // YYYY-MM-DD ou ""
   const [time, setTime] = useState(""); // HH:MM ou ""
   const [pending, startTransition] = useTransition();
-  const ref = useRef<HTMLInputElement>(null);
-  const dateRef = useRef<HTMLInputElement>(null);
 
-  function reset() {
-    setValue("");
-    setDate(null);
-    setTime("");
-    setOpen(false);
+  function onOpenChange(next: boolean) {
+    setOpen(next);
+    if (!next) {
+      setTitle("");
+      setDate("");
+      setTime("");
+    }
   }
 
   function submit() {
-    const title = value.trim();
-    if (!title) return;
+    const trimmed = title.trim();
+    if (!trimmed) {
+      toast.error("Le titre est requis.");
+      return;
+    }
     const startDate = date ? new Date(`${date}T00:00:00.000Z`) : null;
     const startTime = date && time ? new Date(`${date}T${time}:00.000Z`) : null;
     startTransition(async () => {
       const res = await createTaskAction({
         subjectId,
-        title,
+        title: trimmed,
         sourceActor: "user",
         ...(startDate ? { startDate } : {}),
         ...(startTime ? { startTime } : {}),
       });
       if (res.ok) {
-        reset();
+        toast.success("Tâche ajoutée");
+        onOpenChange(false);
         router.refresh();
       } else {
         toast.error(res.message);
@@ -67,14 +61,11 @@ export function AddTask({ subjectId }: { subjectId: string }) {
     });
   }
 
-  if (!open) {
-    return (
+  return (
+    <>
       <button
         type="button"
-        onClick={() => {
-          setOpen(true);
-          requestAnimationFrame(() => ref.current?.focus());
-        }}
+        onClick={() => setOpen(true)}
         className="mx-[14px] mt-1 flex items-center gap-2.5 px-[18px] py-3.5 text-[14px] font-bold text-relvo"
       >
         <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-bg">
@@ -82,133 +73,79 @@ export function AddTask({ subjectId }: { subjectId: string }) {
         </span>
         Ajouter une tâche
       </button>
-    );
-  }
 
-  const isToday = date === isoDay(0);
-  const isTomorrow = date === isoDay(1);
-  const isCustom = date !== null && !isToday && !isTomorrow;
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="gap-4 p-5">
+          <DialogHeader>
+            <DialogTitle>Nouvelle tâche</DialogTitle>
+          </DialogHeader>
 
-  return (
-    <div className="mx-[14px] px-[18px] pt-2 pb-1">
-      <div className="flex gap-2">
-        <input
-          ref={ref}
-          type="text"
-          value={value}
-          disabled={pending}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submit();
-            if (e.key === "Escape") reset();
-          }}
-          placeholder="Nouvelle tâche…"
-          className="min-w-0 flex-1 rounded-xl border border-(--border) px-3 py-[11px] text-[14px] outline-none focus:border-relvo focus:shadow-[0_0_0_3px_var(--relvo-bg)]"
-        />
-        <button
-          type="button"
-          onClick={submit}
-          disabled={pending}
-          className="flex-none rounded-xl bg-relvo px-4 text-[13px] font-bold text-white disabled:opacity-60"
-        >
-          Ajouter
-        </button>
-      </div>
+          <input
+            value={title}
+            autoFocus
+            onChange={(e) => setTitle(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") submit();
+            }}
+            placeholder="Intitulé de la tâche"
+            className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[15px] font-semibold outline-none focus:border-relvo"
+          />
 
-      {/* Chips de date (deadline). Re-cliquer une chip active la désélectionne. */}
-      <div className="mt-2.5 flex flex-wrap items-center gap-2">
-        <DateChip
-          active={isToday}
-          onClick={() => setDate(isToday ? null : isoDay(0))}
-        >
-          Aujourd’hui
-        </DateChip>
-        <DateChip
-          active={isTomorrow}
-          onClick={() => setDate(isTomorrow ? null : isoDay(1))}
-        >
-          Demain
-        </DateChip>
-        <button
-          type="button"
-          onClick={() => dateRef.current?.showPicker?.()}
-          className={cn(
-            "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[13px] font-semibold transition-colors",
-            isCustom
-              ? "border-relvo bg-relvo text-white"
-              : "border-(--border) bg-white text-(--text-secondary)",
-          )}
-        >
-          <CalendarDays className="size-[15px]" strokeWidth={2} />
-          {isCustom
-            ? new Date(`${date}T00:00:00.000Z`).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "short",
-                timeZone: "UTC",
-              })
-            : "Date…"}
-        </button>
-        {/* Input date natif déclenché par la chip (showPicker), invisible. */}
-        <input
-          ref={dateRef}
-          type="date"
-          value={isCustom ? date : ""}
-          onChange={(e) => setDate(e.target.value || null)}
-          className="sr-only"
-          tabIndex={-1}
-          aria-hidden
-        />
-
-        {date ? (
-          <>
-            <label className="inline-flex items-center gap-1.5 rounded-full border border-(--border) bg-white px-3 py-1.5 text-[13px] font-semibold text-(--text-secondary) focus-within:border-relvo">
-              <Clock className="size-[15px]" strokeWidth={2} />
+          <div className="flex gap-2">
+            <label className="flex flex-1 items-center gap-2 rounded-xl border border-(--border) px-3 py-2.5">
+              <CalendarDays
+                className="size-4 flex-none text-(--text-tertiary)"
+                strokeWidth={2}
+              />
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className="min-w-0 flex-1 bg-transparent text-[14px] outline-none"
+              />
+            </label>
+            <label
+              className={cn(
+                "flex items-center gap-2 rounded-xl border border-(--border) px-3 py-2.5",
+                !date && "opacity-50",
+              )}
+            >
+              <Clock
+                className="size-4 flex-none text-(--text-tertiary)"
+                strokeWidth={2}
+              />
               <input
                 type="time"
                 value={time}
+                disabled={!date}
                 onChange={(e) => setTime(e.target.value)}
-                className="w-[68px] bg-transparent text-[13px] outline-none"
+                className="w-[72px] bg-transparent text-[14px] outline-none"
               />
             </label>
+          </div>
+          {date ? (
             <button
               type="button"
-              aria-label="Retirer la date"
               onClick={() => {
-                setDate(null);
+                setDate("");
                 setTime("");
               }}
-              className="grid size-7 place-items-center rounded-full text-(--text-tertiary) hover:bg-(--surface)"
+              className="-mt-1 self-start text-[12.5px] font-semibold text-(--text-tertiary)"
             >
-              <X className="size-4" strokeWidth={2.2} />
+              Retirer la date
             </button>
-          </>
-        ) : null}
-      </div>
-    </div>
-  );
-}
+          ) : null}
 
-function DateChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3 py-1.5 text-[13px] font-semibold transition-colors",
-        active
-          ? "border-relvo bg-relvo text-white"
-          : "border-(--border) bg-white text-(--text-secondary)",
-      )}
-    >
-      {children}
-    </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={pending}
+            className="rounded-xl bg-relvo py-2.5 text-[14px] font-bold text-white disabled:opacity-60"
+          >
+            Ajouter la tâche
+          </button>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
