@@ -173,23 +173,21 @@ export default async function SujetPage({
     href: `/messages/${m.id}`,
   }));
 
-  const recipients: Recipient[] = [];
-  if (mainContact) {
-    const channel = CHANNEL_LABEL[messages.at(-1)?.channel.type ?? ""] ?? null;
-    recipients.push({
-      key: "contact",
-      name: mainContact.name,
-      kind: "human",
-      initials: initials(mainContact.name),
-      sublabel: [mainContact.company, channel].filter(Boolean).join(" · "),
-    });
-  }
-  recipients.push({
-    key: "relvo",
-    name: "Relvo",
-    kind: "relvo",
-    sublabel: "Votre assistant",
-  });
+  // Destinataires = les contacts du sujet (un sujet peut en porter plusieurs →
+  // le select reste utile). Relvo n'est PLUS un destinataire ici : il s'atteint
+  // via le bouton Relvo du header (décision 2026-06-27). Le canal n'est connu que
+  // pour le dernier interlocuteur — on l'affiche sur le 1er contact.
+  const lastChannel =
+    CHANNEL_LABEL[messages.at(-1)?.channel.type ?? ""] ?? null;
+  const recipients: Recipient[] = contacts.map((c, i) => ({
+    key: `contact-${c.id}`,
+    name: c.name,
+    kind: "human",
+    initials: initials(c.name),
+    sublabel:
+      [c.company, i === 0 ? lastChannel : null].filter(Boolean).join(" · ") ||
+      undefined,
+  }));
 
   return (
     <MobileFrame>
@@ -204,29 +202,40 @@ export default async function SujetPage({
               ? `${subject.reference} · ${[mainContact.name, mainContact.company].filter(Boolean).join(" — ")}`
               : subject.reference
           }
-          className="pb-10"
+          leading={
+            subject.folder
+              ? (() => {
+                  const { color, icon: FolderIcon } = folderVisual(
+                    subject.folder.slug,
+                  );
+                  return (
+                    <span
+                      className="grid size-[38px] flex-none place-items-center rounded-xl text-white"
+                      style={{ background: color }}
+                      aria-label={subject.folder.name}
+                    >
+                      <FolderIcon className="size-[19px]" strokeWidth={1.9} />
+                    </span>
+                  );
+                })()
+              : null
+          }
+          className="pb-6"
         >
           <div className="px-[22px]">
-            <div className="my-3 flex flex-wrap items-center gap-[7px]">
-              {subject.priority === "urgent" ? (
-                <HeroTag tone="urgent">Urgent</HeroTag>
-              ) : null}
-              {subject.status === "new" ? <HeroTag>Nouveau</HeroTag> : null}
-              {subject.waitingForReply ? <HeroTag>En attente</HeroTag> : null}
-              {subject.folder
-                ? (() => {
-                    const { icon: FolderIcon } = folderVisual(
-                      subject.folder.slug,
-                    );
-                    return (
-                      <HeroTag>
-                        <FolderIcon className="size-3" strokeWidth={2.2} />
-                        {subject.folder.name}
-                      </HeroTag>
-                    );
-                  })()
-                : null}
-            </div>
+            {subject.priority === "urgent" ||
+            subject.status === "new" ||
+            subject.waitingForReply ? (
+              <div className="mt-2.5 mb-3 flex flex-wrap items-center gap-[7px]">
+                {subject.priority === "urgent" ? (
+                  <HeroTag tone="urgent">Urgent</HeroTag>
+                ) : null}
+                {subject.status === "new" ? <HeroTag>Nouveau</HeroTag> : null}
+                {subject.waitingForReply ? <HeroTag>En attente</HeroTag> : null}
+              </div>
+            ) : (
+              <div className="h-3" />
+            )}
             {subject.summary ? (
               <RelvoSummary text={subject.summary} tone="hero" />
             ) : null}
@@ -390,10 +399,12 @@ export default async function SujetPage({
         />
       </main>
 
-      <RecipientComposer
-        recipients={recipients}
-        defaultRecipient={mainContact ? "contact" : "relvo"}
-      />
+      {recipients.length > 0 ? (
+        <RecipientComposer
+          recipients={recipients}
+          defaultRecipient={recipients[0]?.key}
+        />
+      ) : null}
     </MobileFrame>
   );
 }
