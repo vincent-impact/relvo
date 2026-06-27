@@ -205,21 +205,21 @@
   * {
     @apply border-border outline-ring/50;
   }
-  html,
-  body {
-    /* Verrouille le document : seul le conteneur scrollable interne (le <main>
-       de chaque écran) défile. Sans ça, en bout de course le rubber-band iOS
-       tirait TOUTE l'app (dock du bas compris) vers le haut.
-       PAS de height:100% ici — en PWA iOS standalone il ne coïncide pas avec le
-       h-dvh du MobileFrame et laisse une bande blanche sous le dock. Le frame
-       (h-dvh) donne déjà la hauteur ; on se contente de bloquer le scroll. */
+  html {
+    @apply font-sans;
     overflow: hidden;
-    overscroll-behavior: none;
   }
   body {
     @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
+    /* Verrou anti rubber-band iOS. Le body est ÉPINGLÉ au viewport (position
+       fixed + inset:0) : seul le <main> interne défile, le document ne peut plus
+       rebondir et entraîner le dock. On épingle plutôt que de poser overflow:
+       hidden sur un body en flux normal — ce dernier rétrécit le cadre en PWA
+       iOS standalone et laisse une bande blanche sous le dock. inset:0 couvre
+       tout l'écran (viewport-fit=cover, safe-areas comprises) → aucune bande. */
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    overscroll-behavior: none;
   }
 }
