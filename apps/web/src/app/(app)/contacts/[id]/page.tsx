@@ -65,7 +65,7 @@ export default async function ContactPage({
 
       <ContactCard contact={contact} />
 
-      <SectionLabel title="Échanges" dotColor="var(--amber-600)" />
+      <SectionLabel title="Échanges" />
       {bubbles.length === 0 ? (
         <p className="px-[22px] py-6 text-center text-[13.5px] text-(--text-tertiary)">
           Aucun échange enregistré.

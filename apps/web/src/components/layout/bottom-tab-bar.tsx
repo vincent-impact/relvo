@@ -62,7 +62,10 @@ export function BottomTabBar() {
     <nav
       className="flex flex-none items-stretch"
       style={{
-        paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
+        // On rogne volontairement la safe-area iOS (~34px) : la reco laissait un
+        // grand vide violet sous les libellés. On garde un minimum pour ne pas
+        // coller au bord / à l'indicateur d'accueil (décision 2026-06-27).
+        paddingBottom: "max(calc(env(safe-area-inset-bottom) - 16px), 6px)",
         background:
           "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
         backdropFilter: "blur(28px) saturate(170%)",

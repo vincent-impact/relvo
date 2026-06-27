@@ -51,11 +51,14 @@ export function RelvoHeader({
       )}
       style={{ paddingTop: "max(env(safe-area-inset-top), 14px)" }}
     >
-      {/* halo lumineux haut-droite */}
+      {/* Halo lumineux côté droit. Volontairement décalé vers le BAS (centre ~y+50
+          plutôt que sous la status bar) : le bord haut du header reste un violet
+          plat identique au themeColor, sans couture visible avec la barre d'état. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-[70px] -right-[50px] size-60 rounded-full"
+        className="pointer-events-none absolute -right-[50px] size-60 rounded-full"
         style={{
+          top: "max(env(safe-area-inset-top), 14px)",
           background:
             "radial-gradient(circle, rgb(255 255 255 / 0.18), transparent 70%)",
         }}

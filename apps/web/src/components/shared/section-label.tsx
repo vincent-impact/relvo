@@ -1,33 +1,28 @@
 import Link from "next/link";
 
-// En-tête de section (Direction B, cf. .sect) : pastille de couleur + titre fort
-// + lien d'action optionnel (« Tout voir »). Gère sa propre gouttière horizontale.
+// En-tête de section (Direction B) : libellé en petites capitales sourdes —
+// volontairement d'un AUTRE registre que les titres de sujet (gras, grande
+// taille), pour ne pas brouiller la hiérarchie. Lien d'action optionnel
+// (« Tout voir »). Gère sa propre gouttière horizontale.
 
 export function SectionLabel({
   title,
   href,
   linkLabel = "Tout voir",
-  dotColor = "var(--brand)",
 }: {
   title: string;
   href?: string;
   linkLabel?: string;
-  /** Couleur de la pastille (domaine / signal). */
-  dotColor?: string;
 }) {
   return (
-    <div className="flex items-center justify-between px-[22px] pt-6 pb-2">
-      <span className="flex items-center gap-2 text-[16.5px] font-extrabold tracking-[-0.3px] whitespace-nowrap">
-        <span
-          className="size-[7px] flex-none rounded-full"
-          style={{ background: dotColor }}
-        />
+    <div className="flex items-end justify-between px-[22px] pt-6 pb-2.5">
+      <span className="text-[12.5px] font-bold tracking-[0.6px] whitespace-nowrap text-(--text-tertiary) uppercase">
         {title}
       </span>
       {href ? (
         <Link
           href={href}
-          className="text-[13.5px] font-bold whitespace-nowrap text-brand"
+          className="text-[13px] font-bold whitespace-nowrap text-brand"
         >
           {linkLabel}
         </Link>

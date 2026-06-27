@@ -80,16 +80,6 @@ function briefSlides(kpis: Kpis, rows: SubjectRowData[]): BriefSlide[] {
     });
   }
 
-  slides.push({
-    icon: "good",
-    label: "Bonne nouvelle",
-    body: (
-      <>
-        <span className="font-bold text-white">{kpis.relvoAssistRate}%</span> de
-        vos sujets gérés avec mon aide cette semaine.
-      </>
-    ),
-  });
   return slides;
 }
 
@@ -265,7 +255,6 @@ export default async function AccueilPage() {
         title="Agenda"
         href="/planning"
         linkLabel="Voir le mois →"
-        dotColor="var(--amber-600)"
       />
       <Suspense fallback={<AgendaSkeleton />}>
         <HomeAgenda accountId={accountId} />
