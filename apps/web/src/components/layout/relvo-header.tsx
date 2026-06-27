@@ -15,7 +15,6 @@ export function RelvoHeader({
   subtitle,
   back,
   action,
-  leading,
   relvo = true,
   rounded = true,
   children,
@@ -27,8 +26,6 @@ export function RelvoHeader({
   back?: string;
   /** Action(s) de page, posée(s) à GAUCHE du bouton Relvo (optionnel). */
   action?: React.ReactNode;
-  /** Élément posé juste AVANT le titre (ex. icône de domaine sur la fiche Sujet). */
-  leading?: React.ReactNode;
   /** Affiche le bouton d'accès à Relvo (défaut true ; false dans la conversation). */
   relvo?: boolean;
   rounded?: boolean;
@@ -74,7 +71,6 @@ export function RelvoHeader({
           >
             <ChevronLeft className="size-5" strokeWidth={2.2} />
           </Link>
-          {leading}
           <div className="min-w-0 flex-1">
             <h1 className="truncate font-heading text-[19px] font-extrabold tracking-[-0.3px]">
               {title}

@@ -5,9 +5,10 @@ import { Check, ChevronUp, Mic, Paperclip, Send, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // RecipientComposer — le composer signature de la Direction B qui lève
-// l'ambiguïté « à qui j'écris ? ». Sélecteur de destinataire (avatar) à gauche ;
-// toute la barre est BLEUE quand on écrit à un humain (Moi), VIOLETTE quand on
-// parle à Relvo. Micro quand vide (voice-first), avion dès qu'on tape. 📎 dans
+// l'ambiguïté « à qui j'écris ? ». Sélecteur de destinataire (avatar) à gauche
+// (un sujet peut porter plusieurs contacts). La barre est VIOLETTE (cohérence
+// avec le chrome de l'app ; Relvo n'est plus un destinataire ici, il vit dans le
+// bouton du header). Micro quand vide (voice-first), avion dès qu'on tape. 📎 dans
 // le champ. Coquille M9 : `onSend` est optionnel (aucun envoi réel sans IA).
 
 export type Recipient = {
@@ -151,9 +152,8 @@ export function RecipientComposer({
         className="relative flex items-center gap-2.5 px-3.5 pt-[11px]"
         style={{
           paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
-          background: human
-            ? "linear-gradient(180deg, var(--glass-human-1), var(--glass-human-2))"
-            : "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
+          background:
+            "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
           backdropFilter: "blur(28px) saturate(170%)",
           WebkitBackdropFilter: "blur(28px) saturate(170%)",
           boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.34)",
@@ -210,10 +210,7 @@ export function RecipientComposer({
           type="button"
           onClick={send}
           aria-label={typing ? "Envoyer" : "Dicter"}
-          className={cn(
-            "grid size-[45px] flex-none place-items-center rounded-full bg-white active:scale-95",
-            human ? "text-brand" : "text-relvo",
-          )}
+          className="grid size-[45px] flex-none place-items-center rounded-full bg-white text-relvo active:scale-95"
           style={{ boxShadow: "0 5px 16px rgb(0 0 0 / 0.22)" }}
         >
           {typing ? (

@@ -30,7 +30,6 @@ import {
 } from "@/components/subject/subject-detail-form";
 import { TaskItem } from "@/components/subject/task-item";
 import { cn } from "@/lib/utils";
-import { folderVisual } from "@/lib/folders";
 import { contactFullName, formatRelative } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
@@ -58,28 +57,6 @@ function initials(name: string): string {
     .slice(0, 2)
     .join("")
     .toUpperCase();
-}
-
-/** Tag translucide blanc posé dans la zone agent violette (status-strip). */
-function HeroTag({
-  children,
-  tone = "glass",
-}: {
-  children: React.ReactNode;
-  tone?: "glass" | "urgent";
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1 rounded-full px-[9px] py-[3px] text-[10.5px] font-bold",
-        tone === "urgent"
-          ? "bg-(--red-600) text-white"
-          : "bg-white/18 text-white",
-      )}
-    >
-      {children}
-    </span>
-  );
 }
 
 /** Section repliable autonome (PJ, Journal) — titre lisible, contenu contenu. */
@@ -202,40 +179,9 @@ export default async function SujetPage({
               ? `${subject.reference} · ${[mainContact.name, mainContact.company].filter(Boolean).join(" — ")}`
               : subject.reference
           }
-          leading={
-            subject.folder
-              ? (() => {
-                  const { color, icon: FolderIcon } = folderVisual(
-                    subject.folder.slug,
-                  );
-                  return (
-                    <span
-                      className="grid size-[38px] flex-none place-items-center rounded-xl text-white"
-                      style={{ background: color }}
-                      aria-label={subject.folder.name}
-                    >
-                      <FolderIcon className="size-[19px]" strokeWidth={1.9} />
-                    </span>
-                  );
-                })()
-              : null
-          }
-          className="pb-6"
+          className="pb-10"
         >
-          <div className="px-[22px]">
-            {subject.priority === "urgent" ||
-            subject.status === "new" ||
-            subject.waitingForReply ? (
-              <div className="mt-2.5 mb-3 flex flex-wrap items-center gap-[7px]">
-                {subject.priority === "urgent" ? (
-                  <HeroTag tone="urgent">Urgent</HeroTag>
-                ) : null}
-                {subject.status === "new" ? <HeroTag>Nouveau</HeroTag> : null}
-                {subject.waitingForReply ? <HeroTag>En attente</HeroTag> : null}
-              </div>
-            ) : (
-              <div className="h-3" />
-            )}
+          <div className="px-[22px] pt-3.5">
             {subject.summary ? (
               <RelvoSummary text={subject.summary} tone="hero" />
             ) : null}

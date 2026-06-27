@@ -29,8 +29,8 @@ export type ContactOption = {
 };
 
 const PRIORITIES: { value: Priority; label: string }[] = [
-  { value: "urgent", label: "Urgent" },
   { value: "normal", label: "Normal" },
+  { value: "urgent", label: "Urgent" },
 ];
 
 const STATUSES: { value: SubjectStatus; label: string }[] = [
