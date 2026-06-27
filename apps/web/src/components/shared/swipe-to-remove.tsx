@@ -8,6 +8,10 @@ import { cn } from "@/lib/utils";
 // un fond rouge ; au-delà du seuil, l'élément se replie et `onRemove` est appelé.
 // Un tap (sans glissé) déclenche `onTap`. Réutilisable hors du feed des sujets.
 // `icon`/`label` personnalisables (ex. corbeille « Supprimer » pour une tâche).
+//
+// SCROLL PRIORITAIRE : `onTap` n'est déclenché que sur un VRAI relâchement
+// (pointerup) sans déplacement. Un défilement vertical (touch-action: pan-y)
+// émet `pointercancel` → on n'ouvre rien, le scroll de la liste l'emporte.
 
 const THRESHOLD = 80;
 
@@ -63,16 +67,16 @@ export function SwipeToRemove({
     if (!s.decided && (Math.abs(mx) > 8 || Math.abs(my) > 8)) {
       s.decided = true;
       s.horiz = Math.abs(mx) > Math.abs(my);
+      s.moved = true; // tout déplacement franc (vertical inclus) invalide le tap
     }
     if (s.decided && s.horiz) {
-      s.moved = true;
       const dx = Math.min(0, mx); // gauche uniquement
       s.dx = dx;
       setX(dx);
     }
   }
 
-  function onPointerEnd() {
+  function finish(cancelled: boolean) {
     const s = g.current;
     if (!s.active) return;
     s.active = false;
@@ -81,7 +85,9 @@ export function SwipeToRemove({
       setLeaving(true);
       onRemove();
     } else {
-      if (!s.moved) onTap?.();
+      // onTap seulement sur un relâchement franc sans déplacement. Un scroll
+      // vertical arrive ici via pointercancel (cancelled=true) → pas de tap.
+      if (!cancelled && !s.moved) onTap?.();
       setX(0, true);
     }
   }
@@ -105,8 +111,8 @@ export function SwipeToRemove({
           ref={cardRef}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
-          onPointerUp={onPointerEnd}
-          onPointerCancel={onPointerEnd}
+          onPointerUp={() => finish(false)}
+          onPointerCancel={() => finish(true)}
           className="relative flow-root touch-pan-y bg-white"
         >
           {children}
