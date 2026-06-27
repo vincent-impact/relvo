@@ -147,17 +147,7 @@ export function FeedFilterBar({
         </DropdownMenuRadioGroup>
       </SelectChip>
 
-      {/* Urgent — toggle (libellé seul, sans icône). */}
-      <ToggleChip active={urgent} color="var(--red-600)" onClick={onUrgent}>
-        Urgent
-      </ToggleChip>
-
-      {/* Nouveau — toggle (libellé seul, sans icône). */}
-      <ToggleChip active={nouveau} color="var(--brand)" onClick={onNouveau}>
-        Nouveau
-      </ToggleChip>
-
-      {/* Domaine — select (Tous + un par domaine présent). */}
+      {/* Domaine — select (Tous + un par domaine présent), 2ᵉ position. */}
       {domains.length > 0 ? (
         <SelectChip
           label={
@@ -188,6 +178,16 @@ export function FeedFilterBar({
           </DropdownMenuRadioGroup>
         </SelectChip>
       ) : null}
+
+      {/* Urgent — toggle (libellé seul, sans icône). */}
+      <ToggleChip active={urgent} color="var(--red-600)" onClick={onUrgent}>
+        Urgent
+      </ToggleChip>
+
+      {/* Nouveau — toggle (libellé seul, sans icône). */}
+      <ToggleChip active={nouveau} color="var(--brand)" onClick={onNouveau}>
+        Nouveau
+      </ToggleChip>
     </div>
   );
 }
