@@ -14,13 +14,14 @@ export function MobileFrame({
   return (
     <div
       className={cn(
-        // h-dvh : couvre tout l'écran, safe-areas comprises (viewport-fit=cover),
-        // donc AUCUNE bande blanche. Le rebond du document est neutralisé en JS
-        // (IosScrollLock), pas en verrouillant le body — ce dernier rétrécit le
-        // cadre en standalone iOS.
-        "relative mx-auto flex h-dvh w-full max-w-120 flex-col overflow-hidden bg-white sm:border-x sm:border-(--hairline)",
+        // Hauteur = --app-height (vraie hauteur du viewport mesurée en JS, cf.
+        // layout.tsx), fallback 100dvh. On N'utilise PAS h-dvh seul : il est
+        // instable en PWA Chrome iOS standalone et laisse une bande blanche sous
+        // le dock. Le rebond du document est neutralisé en JS (IosScrollLock).
+        "relative mx-auto flex w-full max-w-120 flex-col overflow-hidden bg-white sm:border-x sm:border-(--hairline)",
         className,
       )}
+      style={{ height: "var(--app-height, 100dvh)" }}
     >
       {children}
     </div>

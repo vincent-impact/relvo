@@ -69,6 +69,17 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
+        {/* Hauteur réelle du viewport mesurée en JS → --app-height (cf. MobileFrame
+            qui s'en sert au lieu de 100dvh). `100dvh` est instable en PWA Chrome
+            iOS standalone (laisse une bande blanche sous le dock) ; window.inner-
+            Height est fiable en standalone. Script inline = posé AVANT le 1er
+            paint, donc aucun flash. Recalcul à resize / rotation. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){function s(){document.documentElement.style.setProperty('--app-height',window.innerHeight+'px')}s();window.addEventListener('resize',s);window.addEventListener('orientationchange',s)})();",
+          }}
+        />
         {/* Bandeau violet fixe derrière la status bar (standalone iOS, statut
             black-translucent) : garde l'heure/batterie lisibles partout, y
             compris quand du contenu blanc scrolle dessous. Hauteur =
