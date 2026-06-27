@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Flag, Sparkles } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -147,15 +147,13 @@ export function FeedFilterBar({
         </DropdownMenuRadioGroup>
       </SelectChip>
 
-      {/* Urgent — toggle. */}
+      {/* Urgent — toggle (libellé seul, sans icône). */}
       <ToggleChip active={urgent} color="var(--red-600)" onClick={onUrgent}>
-        <Flag className="size-3" fill="currentColor" strokeWidth={0} />
         Urgent
       </ToggleChip>
 
-      {/* Nouveau — toggle. */}
+      {/* Nouveau — toggle (libellé seul, sans icône). */}
       <ToggleChip active={nouveau} color="var(--brand)" onClick={onNouveau}>
-        <Sparkles className="size-3.5" strokeWidth={2.2} />
         Nouveau
       </ToggleChip>
 
