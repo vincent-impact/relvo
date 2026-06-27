@@ -207,19 +207,14 @@
   }
   html {
     @apply font-sans;
-    overflow: hidden;
+    /* overscroll-behavior aide là où iOS l'honore (peu fiable à la racine) ;
+       le vrai verrou anti rubber-band est en JS (cf. IosScrollLock). On ne
+       touche NI à overflow NI à la hauteur du body : en standalone iOS ça
+       rétrécit le cadre et crée une bande blanche sous le dock. */
+    overscroll-behavior: none;
   }
   body {
     @apply bg-background text-foreground;
-    /* Verrou anti rubber-band iOS. Le body est ÉPINGLÉ au viewport (position
-       fixed + inset:0) : seul le <main> interne défile, le document ne peut plus
-       rebondir et entraîner le dock. On épingle plutôt que de poser overflow:
-       hidden sur un body en flux normal — ce dernier rétrécit le cadre en PWA
-       iOS standalone et laisse une bande blanche sous le dock. inset:0 couvre
-       tout l'écran (viewport-fit=cover, safe-areas comprises) → aucune bande. */
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
     overscroll-behavior: none;
   }
 }

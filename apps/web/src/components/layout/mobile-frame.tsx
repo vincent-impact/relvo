@@ -14,11 +14,11 @@ export function MobileFrame({
   return (
     <div
       className={cn(
-        // h-full (et non h-dvh) : le <body> est épinglé en position fixed = plein
-        // écran (cf. globals.css). Le cadre prend 100% de ce body → il coïncide
-        // pile avec le viewport, sans la bande blanche que laissait l'écart entre
-        // dvh (plus court en standalone iOS) et le body plein écran.
-        "relative mx-auto flex h-full w-full max-w-120 flex-col overflow-hidden bg-white sm:border-x sm:border-(--hairline)",
+        // h-dvh : couvre tout l'écran, safe-areas comprises (viewport-fit=cover),
+        // donc AUCUNE bande blanche. Le rebond du document est neutralisé en JS
+        // (IosScrollLock), pas en verrouillant le body — ce dernier rétrécit le
+        // cadre en standalone iOS.
+        "relative mx-auto flex h-dvh w-full max-w-120 flex-col overflow-hidden bg-white sm:border-x sm:border-(--hairline)",
         className,
       )}
     >

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
+import { IosScrollLock } from "@/components/layout/ios-scroll-lock";
 import { NavVisibilityProvider } from "@/components/layout/nav-visibility";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
@@ -77,6 +78,7 @@ export default function RootLayout({
           className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-relvo"
           style={{ height: "env(safe-area-inset-top)" }}
         />
+        <IosScrollLock />
         <Providers>
           <NavVisibilityProvider>{children}</NavVisibilityProvider>
         </Providers>
