@@ -302,3 +302,15 @@ export const cachedContactCount = unstable_cache(
   ["contact-count", CACHE_V],
   CACHE,
 );
+
+// ── Noms de domaines par slug (libellés des chips de filtre Mon fil) ──────────
+export const cachedFolderNames = unstable_cache(
+  async (accountId: string): Promise<Record<string, string>> => {
+    const folders = await tenantDb(accountId).folder.findMany({
+      select: { slug: true, name: true },
+    });
+    return Object.fromEntries(folders.map((f) => [f.slug, f.name]));
+  },
+  ["folder-names", CACHE_V],
+  CACHE,
+);
