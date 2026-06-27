@@ -101,6 +101,8 @@ Déclenchée depuis le composer de l'Accueil **ou** depuis l'accès Relvo d'une 
 
 ### 6.0 Accès à Relvo, partout
 
+> **⚠️ MISE À JOUR 2026-06-27 — l'accès à Relvo passe du bas vers le header.** Le **composer Relvo persistant** du bas (barre « Demander à Relvo… » + ✦ + 🎙) est **abandonné** : il encombrait l'écran pour un usage non systématique, imposait un hidden-menu (auto-masquage au scroll) et créait une confusion avec le composer **destinataire** de la fiche Sujet. Désormais : un **bouton Relvo en haut à droite du header violet** (même forme que l'ancien ✦), présent sur toutes les vues, page-aware (`?from=`), qui ouvre la conversation plein écran (§5). Les boutons de page (ex. « + » Nouveau sujet) se posent **à gauche** de ce bouton. La **barre d'onglets basse devient fixe** (plus d'auto-masquage) et passe sur **fond violet** (comme l'ancien composer). L'historique des conversations est atteint **depuis la conversation** (icône horloge). Les passages ci-dessous et les mockups ASCII de ce document décrivant le composer du bas sont **caducs** sur ce point. ⬇️ texte historique conservé pour mémoire :
+
 Chaque vue structurée porte une entrée **persistante** vers la conversation, transmettant le **contexte de page** (URL + entité courante) : une barre fine « Demander à Relvo… » ancrée au-dessus de la barre d'onglets (cohérente avec l'Accueil), ou une action d'en-tête sur les sous-pages avec bouton retour. Pas de bouton flottant.
 
 ### 6.1 Mon fil (`/fil`)

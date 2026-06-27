@@ -14,7 +14,7 @@ export default async function ConversationsPage() {
   return (
     <MobileFrame>
       <main className="min-h-0 flex-1 overflow-y-auto bg-white">
-        <RelvoHeader back="/" title="Mes conversations" />
+        <RelvoHeader back="/" title="Mes conversations" relvo={false} />
 
         <div className="px-4 pt-5">
           <Link

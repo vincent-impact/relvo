@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { Mic, Paperclip, Send, Sparkles, X } from "lucide-react";
+import { History, Mic, Paperclip, Send, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
@@ -47,6 +47,17 @@ export function ConversationShell({
         back={backHref}
         title="Relvo"
         subtitle="Nouvelle conversation"
+        relvo={false}
+        action={
+          <Link
+            href="/conversations"
+            aria-label="Historique des conversations"
+            className="grid size-[38px] flex-none place-items-center rounded-full active:scale-95"
+            style={{ background: "rgb(255 255 255 / 0.16)" }}
+          >
+            <History className="size-5" strokeWidth={2} />
+          </Link>
+        }
       />
 
       {contextLabel ? (

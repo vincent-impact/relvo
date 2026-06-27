@@ -25,7 +25,7 @@ export function Screen({
     >
       <div
         className={cn(className)}
-        style={{ paddingBottom: "calc(146px + env(safe-area-inset-bottom))" }}
+        style={{ paddingBottom: "calc(72px + env(safe-area-inset-bottom))" }}
       >
         {children}
       </div>

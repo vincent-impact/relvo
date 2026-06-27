@@ -310,7 +310,9 @@ Deux invariants gouvernent désormais toute l'UI :
 L'**Accueil** fusionne deux rôles autrefois séparés (le *brief* matinal et la *conversation*). C'est la page d'atterrissage à la connexion, et elle contient :
 
 - En haut, le **brief** que Relvo prépare — un guide de 30 secondes qui répond à « qu'est-ce qui m'attend ? ». Rendu sous forme de **cartes** empilées en colonne unique : un **bandeau KPIs** (Sujets ouverts, Messages à trier, Tâches du jour, % d'aide Relvo), un **aperçu d'agenda** (les tâches des prochains jours, lien vers Planning), et les **2-3 sujets prioritaires** (`SubjectCard`, lien « Voir tout » vers Mon fil).
-- En bas, **fixé au-dessus de la barre d'onglets, un composer chat persistant** (« Demander à Relvo… »). On lit le brief **et** on parle à Relvo **au même endroit**, sans changer d'écran. Taper dans le composer déploie la conversation plein écran.
+- L'accès à Relvo se fait par un **bouton Relvo en haut à droite du header** (cf. note 2026-06-27 ci-dessous). On lit le brief **et** on ouvre la conversation depuis la même page, sans changer d'écran.
+
+> **⚠️ MISE À JOUR 2026-06-27 — accès Relvo : du bas vers le header.** Le **composer chat persistant** du bas (« Demander à Relvo… ») est **abandonné** (encombrement, hidden-menu d'auto-masquage, confusion avec le composer destinataire d'un Sujet). Désormais l'entrée vers la conversation est un **bouton Relvo en haut à droite du header violet** (même forme que l'ancien ✦), présent sur toutes les vues, page-aware. La **barre d'onglets basse devient fixe, sur fond violet**. Les mentions « composer en pied de page » de ce §13 sont caduques sur ce point.
 
 Le brief n'est donc plus une page muette : c'est **le premier tour de parole de Relvo**, et l'utilisateur peut enchaîner par une question ou une demande d'action immédiatement.
 
@@ -318,7 +320,7 @@ Le brief n'est donc plus une page muette : c'est **le premier tour de parole de 
 
 Quand l'utilisateur engage le dialogue, la conversation occupe **tout l'écran** (sur mobile) — plus un drawer 40 %. C'est là qu'il **dialogue**, **demande des actions**, **creuse** un sujet. Toutes les opérations action-capable y passent.
 
-La conversation est **accessible depuis n'importe quelle vue** : chaque écran porte une entrée persistante vers Relvo (composer en pied de page ou action d'en-tête), qui transmet le **contexte de la page courante**. Plus de bouton flottant 🤖 : sur mobile il masque le contenu et entre en conflit avec les gestes système ; l'accès à Relvo est intégré à la structure de chaque page, pas posé par-dessus.
+La conversation est **accessible depuis n'importe quelle vue** : chaque écran porte une entrée vers Relvo — le **bouton Relvo en haut à droite du header** (cf. note 2026-06-27) — qui transmet le **contexte de la page courante** (`?from=`). Plus de bouton flottant 🤖 ni de composer persistant en pied de page : l'accès à Relvo est intégré au header de chaque page, pas posé par-dessus.
 
 ### Generative UI : Relvo rend les mêmes composants que l'UI
 

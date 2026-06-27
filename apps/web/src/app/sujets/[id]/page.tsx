@@ -24,7 +24,6 @@ import { AcknowledgeOnOpen } from "@/components/subject/acknowledge-on-open";
 import { AddTask } from "@/components/subject/add-task";
 import { RelvoDraftBlock } from "@/components/subject/relvo-draft-block";
 import { RelvoSummary } from "@/components/subject/relvo-summary";
-import { SlideToComplete } from "@/components/subject/slide-to-complete";
 import {
   SubjectDangerZone,
   SubjectDetailForm,
@@ -206,7 +205,6 @@ export default async function SujetPage({
               : subject.reference
           }
           className="pb-10"
-          action={<SlideToComplete subjectId={subject.id} />}
         >
           <div className="px-[22px]">
             <div className="my-3 flex flex-wrap items-center gap-[7px]">

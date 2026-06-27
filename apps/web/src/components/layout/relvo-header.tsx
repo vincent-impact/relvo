@@ -1,20 +1,21 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { RelvoHeaderButton } from "@/components/layout/relvo-header-button";
 import { cn } from "@/lib/utils";
 
 // RelvoHeader — la « zone agent » violette en tête de chaque écran (Direction B).
 // Deux modes : page principale (grand titre) ou écran poussé (flèche retour +
-// titre). Le slot droit `action` sert le CONTEXTE de la page ouverte (ex. sur la
-// fiche Sujet : Ignorer/Terminer). L'accès à l'historique des conversations
-// Relvo vit en bas à gauche du composer, pas ici. `children` loge le brief, la
-// carte métriques, un segmented… Le header SCROLLE avec le contenu ; le dock
-// Liquid Glass du bas, lui, est ancré et chevauche le contenu.
+// titre). À DROITE : le bouton d'accès à Relvo (toujours présent, sauf `relvo=
+// false`), précédé du slot `action` qui sert le CONTEXTE de la page (ex. « + »
+// Nouveau sujet sur Mon fil). `children` loge le brief, la carte métriques, un
+// segmented… Le header SCROLLE avec le contenu.
 
 export function RelvoHeader({
   title,
   subtitle,
   back,
   action,
+  relvo = true,
   rounded = true,
   children,
   className,
@@ -23,14 +24,24 @@ export function RelvoHeader({
   subtitle?: React.ReactNode;
   /** href du bouton retour (mode « écran poussé »). */
   back?: string;
-  /** Action(s) de droite servant le contexte de la page (optionnel). */
+  /** Action(s) de page, posée(s) à GAUCHE du bouton Relvo (optionnel). */
   action?: React.ReactNode;
+  /** Affiche le bouton d'accès à Relvo (défaut true ; false dans la conversation). */
+  relvo?: boolean;
   rounded?: boolean;
   /** Brief, MetricsCard, SegTabs, status-strip… logés dans la zone violette. */
   children?: React.ReactNode;
   className?: string;
 }) {
   const detail = Boolean(back);
+  // Cluster droit : action(s) de page puis bouton Relvo (extrême droite).
+  const right =
+    action || relvo ? (
+      <div className="flex flex-none items-center gap-2">
+        {action}
+        {relvo ? <RelvoHeaderButton /> : null}
+      </div>
+    ) : null;
   return (
     <header
       className={cn(
@@ -70,7 +81,7 @@ export function RelvoHeader({
               </div>
             ) : null}
           </div>
-          {action}
+          {right}
         </div>
       ) : (
         <div className="relative z-[1] flex items-center justify-between gap-3 px-[22px] pt-1">
@@ -84,7 +95,7 @@ export function RelvoHeader({
               </div>
             ) : null}
           </div>
-          {action}
+          {right}
         </div>
       )}
 

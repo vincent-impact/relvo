@@ -2,23 +2,27 @@ import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-// Bouton logo Relvo — accès à l'historique des conversations (/conversations).
-// Look « bouton » : pastille translucide blanche + liseré interne + logo Relvo.
-// Vit DÉSORMAIS en bas à gauche du composer persistant (tout ce qui touche à la
-// conversation Relvo est en bas). Réutilisable sur n'importe quel fond foncé.
+// Bouton logo Relvo — pastille translucide blanche + liseré interne + logo Relvo.
+// Forme « bouton » réutilisable sur n'importe quel fond foncé (header violet,
+// composer de conversation…). `href` paramétrable : c'est l'accès à Relvo, posé
+// désormais en HAUT À DROITE du header (cf. RelvoHeaderButton, page-aware).
 
 export function RelvoLogoButton({
   size = 42,
+  href = "/conversations",
+  label = "Demander à Relvo",
   className,
 }: {
   size?: number;
+  href?: string;
+  label?: string;
   className?: string;
 }) {
   const logo = Math.round(size * 0.79);
   return (
     <Link
-      href="/conversations"
-      aria-label="Mes conversations Relvo"
+      href={href}
+      aria-label={label}
       className={cn(
         "grid flex-none place-items-center rounded-full active:scale-95",
         className,

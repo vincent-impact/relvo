@@ -1,10 +1,9 @@
 import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
-import { RelvoComposer } from "@/components/layout/relvo-composer";
 
-// Dock « Liquid Glass » (Direction B) — ancré au bas du cadre, il CHEVAUCHE le
-// contenu scrollé : tab bar givrée translucide au-dessus du composer violet.
-// Le contenu défile dessous (effet verre). Le padding-bas du <Screen> réserve
-// la hauteur du dock.
+// Dock bas (Direction B) — désormais la SEULE barre d'onglets, violette et fixe,
+// ancrée au bas du cadre. L'ancien composer Relvo persistant a été retiré :
+// l'accès à Relvo vit en haut à droite du header (cf. RelvoHeaderButton). Le
+// padding-bas du <Screen> réserve la hauteur de la barre.
 
 export function AppDock() {
   return (
@@ -13,7 +12,6 @@ export function AppDock() {
       style={{ boxShadow: "var(--shadow-dock)" }}
     >
       <BottomTabBar />
-      <RelvoComposer />
     </div>
   );
 }
