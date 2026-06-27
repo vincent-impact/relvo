@@ -48,36 +48,30 @@ export function SubjectRow({
   return (
     <article
       className={cn(
-        "relative flex border-b border-[#f1efeb] py-3.5 pr-4 pl-[18px]",
+        "relative flex gap-3 border-b border-[#f1efeb] px-4 py-3.5",
         urgent ? "bg-[#fdf1f1]" : isNew ? "bg-(--blue-50)" : null,
         done && "opacity-60",
       )}
     >
-      {/* Rail fin de la couleur du domaine, collé au bord gauche. */}
-      <span
-        aria-hidden
-        className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ background: color }}
-      />
-
       {data.unreadCount > 0 ? (
         <span className="absolute top-3.5 right-4 inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-brand px-1.5 text-[12px] font-bold text-white">
           {data.unreadCount}
         </span>
       ) : null}
 
+      {/* Icône du domaine à gauche (tuile colorée, légèrement réduite). */}
+      <span
+        className="grid size-9 flex-none place-items-center self-start rounded-[11px] text-white"
+        style={{ background: color }}
+        title={data.folderSlug ?? undefined}
+      >
+        <Icon className="size-[17px]" strokeWidth={2} />
+      </span>
+
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="font-numeric text-[11.5px] font-semibold tracking-[0.3px] text-[#b3b1ab]">
             {data.reference}
-          </span>
-          {/* Badge domaine (icône) juste à droite de la référence. */}
-          <span
-            className="grid size-[18px] flex-none place-items-center rounded-md text-white"
-            style={{ background: color }}
-            title={data.folderSlug ?? undefined}
-          >
-            <Icon className="size-3" strokeWidth={2.3} />
           </span>
           {urgent ? (
             <span className="inline-flex items-center gap-1 rounded-full bg-(--red-600) px-[9px] py-[3px] text-[11px] font-bold text-white">
