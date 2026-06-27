@@ -1,12 +1,20 @@
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 // MetricsCard — la « carte à cheval » (Direction B) : une surface blanche qui
 // chevauche le bas du hero violet ; cellules séparées par un filet. La couleur
 // est réservée au signal (tone « urgent » → rouge). Une cellule `gauge` rend un
-// anneau de saturation circulaire (vert → ambre → rouge).
+// anneau de saturation circulaire (vert → ambre → rouge). Une cellule `value`
+// peut porter un `href` → elle devient un lien (ex. KPI Accueil → Mon fil filtré).
 
 export type Metric =
-  | { type?: "value"; value: number | string; label: string; tone?: "urgent" }
+  | {
+      type?: "value";
+      value: number | string;
+      label: string;
+      tone?: "urgent";
+      href?: string;
+    }
   | { type: "gauge"; percent: number; label: string };
 
 function gaugeColor(p: number) {
@@ -57,13 +65,15 @@ function ValueCell({
   value,
   label,
   tone,
+  href,
 }: {
   value: number | string;
   label: string;
   tone?: "urgent";
+  href?: string;
 }) {
-  return (
-    <div className="flex flex-1 flex-col items-center gap-[7px] px-1">
+  const inner = (
+    <>
       <span
         className={cn(
           "flex h-[46px] items-center font-numeric text-[28px] font-bold tracking-[-1px]",
@@ -75,7 +85,15 @@ function ValueCell({
       <div className="text-center text-[12px] leading-[1.2] font-semibold text-[#9a988f]">
         {label}
       </div>
-    </div>
+    </>
+  );
+  const cls = "flex flex-1 flex-col items-center gap-[7px] px-1";
+  return href ? (
+    <Link href={href} className={cn(cls, "rounded-xl active:opacity-60")}>
+      {inner}
+    </Link>
+  ) : (
+    <div className={cls}>{inner}</div>
   );
 }
 
@@ -106,7 +124,12 @@ export function MetricsCard({
           {m.type === "gauge" ? (
             <GaugeCell percent={m.percent} label={m.label} />
           ) : (
-            <ValueCell value={m.value} label={m.label} tone={m.tone} />
+            <ValueCell
+              value={m.value}
+              label={m.label}
+              tone={m.tone}
+              href={m.href}
+            />
           )}
         </div>
       ))}

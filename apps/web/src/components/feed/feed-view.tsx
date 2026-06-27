@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { type Basket, FeedFilterBar } from "@/components/feed/feed-filter-bar";
 import { IgnoredSubject } from "@/components/feed/ignored-subject";
 import { SwipeableSubject } from "@/components/feed/swipeable-subject";
@@ -29,10 +30,19 @@ export function FeedView({
   ignores: SubjectRowData[];
   folderNames: Record<string, string>;
 }) {
-  const [statut, setStatut] = useState<Basket>("ouvert");
-  const [urgent, setUrgent] = useState(false);
-  const [nouveau, setNouveau] = useState(false);
-  const [domain, setDomain] = useState<string | null>(null);
+  // État initial des filtres lu depuis l'URL (KPI de l'Accueil → Mon fil filtré) :
+  // ?urgent=1 · ?nouveau=1 · ?statut=ouvert|termine|ignore|tous · ?domaine=<slug>.
+  const params = useSearchParams();
+  const initialStatut = (() => {
+    const s = params.get("statut");
+    return s === "termine" || s === "ignore" || s === "tous" ? s : "ouvert";
+  })();
+  const [statut, setStatut] = useState<Basket>(initialStatut);
+  const [urgent, setUrgent] = useState(params.get("urgent") === "1");
+  const [nouveau, setNouveau] = useState(params.get("nouveau") === "1");
+  const [domain, setDomain] = useState<string | null>(
+    params.get("domaine") || null,
+  );
 
   // Liste de base selon le statut sélectionné, chaque ligne taguée par panier.
   const base: Tagged[] = useMemo(() => {

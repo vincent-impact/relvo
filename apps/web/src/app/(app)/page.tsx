@@ -98,14 +98,17 @@ async function HomeMetrics({ accountId }: { accountId: string }) {
   // Ordre fixé (Urgents, Nouveaux, Ouverts, Tâches) — RDV retiré, l'agenda s'en
   // charge. « Nouveaux » = statut new (et non créés < 7 j) → décrémente dès
   // qu'on ouvre un sujet ; « Ouverts » = tous les sujets non clos.
+  // Les 3 premiers KPI renvoient vers Mon fil avec le bon filtre pré-activé
+  // (FeedView lit les query params). « Ouverts » = statut Ouvert (défaut du fil).
   const metrics: Metric[] = [
     {
       value: kpis.urgentSubjects,
       label: "Urgents",
+      href: "/fil?urgent=1",
       ...(kpis.urgentSubjects > 0 ? { tone: "urgent" as const } : {}),
     },
-    { value: kpis.newSubjects, label: "Nouveaux" },
-    { value: kpis.openSubjects, label: "Ouverts" },
+    { value: kpis.newSubjects, label: "Nouveaux", href: "/fil?nouveau=1" },
+    { value: kpis.openSubjects, label: "Ouverts", href: "/fil" },
     { value: kpis.tasksToday, label: "Tâches" },
   ];
   return <MetricsCard metrics={metrics} />;
