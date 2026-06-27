@@ -214,7 +214,14 @@
     overscroll-behavior: none;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    /* Fond VIOLET (= couleur du dock), volontairement PAS blanc : chaque écran
+       pose son propre fond par-dessus (MobileFrame = blanc, auth = bg-relvo-bg),
+       donc le body n'est jamais censé être visible… SAUF dans la bande de
+       safe-area que Chrome iOS standalone laisse sous le dock (ni dvh ni
+       window.innerHeight ne couvrent cette zone de façon fiable). En la peignant
+       en violet, cette bande se FOND dans le dock au lieu d'apparaître en blanc. */
+    background-color: var(--relvo);
     overscroll-behavior: none;
   }
 }
