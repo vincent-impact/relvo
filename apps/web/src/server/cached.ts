@@ -42,8 +42,9 @@ export const TENANT_DATA_TAG = "tenant-data";
 // l'ancienne forme après déploiement (champ manquant → undefined à l'écran).
 // Historique : v2 = Kpis (newSubjects) + Contact (firstName/lastName) + Folder
 // (color/icon) ; v3 = SubjectRowData (isNew) ; v4 = SubjectRowData (taskDone/
-// taskTotal, − openTaskCount). Incrément suivant = "v5".
-const CACHE_V = "v4";
+// taskTotal, − openTaskCount) ; v5 = « Nouveau » dérivé de lastOpenedAt (valeur
+// d'isNew/newSubjects recalculée, forme inchangée). Incrément suivant = "v6".
+const CACHE_V = "v5";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
@@ -138,6 +139,14 @@ export const cachedOpenCount = unstable_cache(
       where: { status: { notIn: ["resolved", "archived", "ignored"] } },
     }),
   ["open-count", CACHE_V],
+  CACHE,
+);
+
+// ── Compteur de messages orphelins (callout du hero Mon fil) — un nombre ─────
+export const cachedOrphanCount = unstable_cache(
+  (accountId: string): Promise<number> =>
+    countOrphanMessages(tenantDb(accountId)),
+  ["orphan-count", CACHE_V],
   CACHE,
 );
 

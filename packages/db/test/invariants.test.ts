@@ -62,8 +62,10 @@ describe("Isolation tenant", () => {
     await expect(
       updateSubjectStatus(b.db, subject.id, SubjectStatus.acknowledged),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    // L'état chez A est inchangé.
-    expect((await getSubject(a.db, subject.id)).status).toBe(SubjectStatus.new);
+    // L'état chez A est inchangé (défaut « acknowledged »).
+    expect((await getSubject(a.db, subject.id)).status).toBe(
+      SubjectStatus.acknowledged,
+    );
   });
 });
 
@@ -95,15 +97,15 @@ describe("Transitions de statut", () => {
     ).rejects.toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
   });
 
-  it("autorise une transition valide (new → acknowledged)", async () => {
+  it("autorise une transition valide (acknowledged → resolved)", async () => {
     const a = await makeAccount("f@test.fr");
     const subject = await createSubject(a.db, { title: "Sujet neuf" });
     const updated = await updateSubjectStatus(
       a.db,
       subject.id,
-      SubjectStatus.acknowledged,
+      SubjectStatus.resolved,
     );
-    expect(updated.status).toBe(SubjectStatus.acknowledged);
+    expect(updated.status).toBe(SubjectStatus.resolved);
   });
 });
 

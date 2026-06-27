@@ -13,14 +13,14 @@ import { nextSubjectReference } from "./reference";
 // validées + dépriorisation (« Ignorer ») + acquittement implicite. Invariant :
 // folder_id ne pointe jamais le Folder « Général » (documentaire transversal).
 
-// Cycle de vie (cf. invariant produit n°7) : new → acknowledged → resolved →
-// archived, + `ignored` (disposition « écarté »). `acknowledged` est l'état actif
-// invisible (acquittement). Le passage vers le même statut est un no-op toléré.
+// Cycle de vie (cf. invariant produit n°7) : acknowledged → resolved → archived,
+// + `ignored` (disposition « écarté »). `acknowledged` est l'état actif/ouvert
+// (défaut à la création). Le passage vers le même statut est un no-op toléré.
 // `archived` est système et quasi-terminal. `ignored` : sujet écarté des ouverts,
 // hors mémoire, purgeable — récupérable vers `acknowledged` (« désignorer »).
+// « Nouveau » n'est plus un statut : marqueur dérivé (lastOpenedAt null).
 const TRANSITIONS: Record<SubjectStatus, SubjectStatus[]> = {
-  new: ["acknowledged", "resolved", "archived", "ignored"],
-  acknowledged: ["new", "resolved", "archived", "ignored"],
+  acknowledged: ["resolved", "archived", "ignored"],
   resolved: ["acknowledged", "archived", "ignored"],
   archived: ["acknowledged"],
   ignored: ["acknowledged"],
@@ -30,7 +30,6 @@ const TRANSITIONS: Record<SubjectStatus, SubjectStatus[]> = {
 // CE QUI a changé et de quelle valeur vers quelle valeur, jamais un « modifié »
 // opaque. Le domaine ne dépend pas de l'UI : ces maps y sont donc dupliquées.
 const STATUS_LABELS: Record<SubjectStatus, string> = {
-  new: "Nouveau",
   acknowledged: "En cours",
   resolved: "Terminé",
   archived: "Archivé",
@@ -452,8 +451,9 @@ export async function purgeIgnoredSubjects(
 
 /**
  * Acquittement implicite : ouvrir la fiche d'un sujet (cf. invariant n°10).
- * Met à jour `lastOpenedAt` et, si le sujet était `new`, le fait passer à
- * `acknowledged` (état actif invisible) — ce qui retire le badge « Nouveau ».
+ * Pose `lastOpenedAt` — ce qui RETIRE le marqueur dérivé « Nouveau » (un sujet
+ * jamais ouvert, lastOpenedAt null, est « Nouveau »). Le statut ne change pas :
+ * « Nouveau » n'est plus un statut mais un marqueur dérivé.
  */
 export async function openSubject(db: TenantDb, id: string) {
   return db.$transaction(async (tx) => {
@@ -461,13 +461,11 @@ export async function openSubject(db: TenantDb, id: string) {
       await tx.subject.findFirst({ where: { id } }),
       "Sujet",
     );
-    const statusChanged = current.status === SubjectStatus.new;
+    // « Était nouveau » = jamais ouvert → quitte le marqueur « Nouveau » à présent.
+    const statusChanged = current.lastOpenedAt === null;
     const { count } = await tx.subject.updateMany({
       where: { id },
-      data: {
-        lastOpenedAt: new Date(),
-        ...(statusChanged ? { status: SubjectStatus.acknowledged } : {}),
-      },
+      data: { lastOpenedAt: new Date() },
     });
     ensureAffected(count, "Sujet");
     const subject = assertFound(

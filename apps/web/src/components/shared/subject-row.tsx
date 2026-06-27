@@ -16,7 +16,7 @@ export type SubjectRowData = {
   summary?: string | null;
   folderSlug?: string | null;
   urgent: boolean;
-  /** Statut `new` (jamais ouvert) → fond bleu + badge « Nouveau ». */
+  /** Marqueur DÉRIVÉ « Nouveau » (jamais ouvert) → fond bleu + badge « Nouveau ». */
   isNew: boolean;
   /** Tâches terminées / total → progression (barre x/y). */
   taskDone: number;
@@ -154,7 +154,10 @@ export function toSubjectRowData(e: EnrichedSubject): SubjectRowData {
     summary: e.subject.summary,
     folderSlug: e.folderSlug,
     urgent: e.subject.priority === "urgent",
-    isNew: e.subject.status === "new",
+    // « Nouveau » = sujet ouvert jamais consulté (marqueur dérivé de lastOpenedAt).
+    isNew:
+      e.subject.lastOpenedAt == null &&
+      !["resolved", "archived", "ignored"].includes(e.subject.status),
     taskDone: e.taskDone,
     taskTotal: e.taskTotal,
     suggestionCount: e.suggestionCount,

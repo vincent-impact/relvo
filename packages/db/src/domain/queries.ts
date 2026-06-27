@@ -73,7 +73,10 @@ export async function getKpis(
         status: { notIn: CLOSED_STATUSES },
       },
     }),
-    db.subject.count({ where: { status: SubjectStatus.new } }),
+    db.subject.count({
+      // « Nouveaux » = sujets ouverts jamais consultés (marqueur dérivé).
+      where: { status: { notIn: CLOSED_STATUSES }, lastOpenedAt: null },
+    }),
     db.subject.count({ where: { status: { notIn: CLOSED_STATUSES } } }),
     db.task.count({
       where: {

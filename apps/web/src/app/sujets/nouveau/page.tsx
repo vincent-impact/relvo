@@ -41,7 +41,7 @@ export default async function NouveauSujetPage() {
           contacts={contactOptions}
           initial={{
             title: "",
-            status: "new",
+            status: "acknowledged",
             priority: "normal",
             folderId: null,
             contactIds: [],

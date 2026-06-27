@@ -219,7 +219,7 @@ Entité centrale du produit.
 - `summary: text nullable`
 - `folder_id: UUID nullable` — null si Relvo n'a pas su classer (le Sujet apparaît avec un badge « sans dossier » dans Mon fil et invite l'utilisateur à le ranger) ; jamais égal à l'ID du Folder Général (cf. §2 — invariant documentaire)
 - `contact_ids: UUID[] default []`
-- `status: enum(new, acknowledged, resolved, archived, ignored)` — **cycle de vie** exclusif (cf. Mapping UI). `ignored` = sujet écarté, hors des ouverts et **hors mémoire de Relvo**
+- `status: enum(acknowledged, resolved, archived, ignored)` — **cycle de vie** exclusif (cf. Mapping UI). Valeur par défaut à la création : `acknowledged`. `ignored` = sujet écarté, hors des ouverts et **hors mémoire de Relvo**
 - `priority: enum(normal, urgent)`
 - `waiting_for_reply: boolean default false` — marqueur **« En attente »** posé par Relvo (cf. Mapping UI)
 - `source_channel_id: UUID nullable`
@@ -249,7 +249,7 @@ Un sujet rassemble :
 
 Si l'IA ne comprend pas un message (sens ambigu, contact inconnu, contexte insuffisant), elle ne crée pas de sujet. Le message reste "Sans sujet" (`subject_id = null` sur le Message) en attente d'une intervention humaine dans la page Messages.
 
-Un sujet n'est créé que si l'IA a suffisamment compris la situation pour l'identifier. Il démarre alors en `new` (statut « Nouveau » — jamais ouvert). Les tâches éventuellement identifiées **ne changent pas le statut** : elles allument le marqueur dérivé **« À faire »** (cf. Mapping UI). C'est l'ouverture de la fiche par l'utilisateur qui fait passer le sujet de `new` à `acknowledged`.
+Un sujet n'est créé que si l'IA a suffisamment compris la situation pour l'identifier. Il démarre alors en `acknowledged` (état actif par défaut) avec `last_opened_at = null` — c'est ce champ (et non le statut) qui porte « jamais ouvert » et allume le marqueur dérivé **« Nouveau »**. Les tâches éventuellement identifiées **ne changent pas le statut** : elles allument le marqueur dérivé **« À faire »** (cf. Mapping UI). L'ouverture de la fiche par l'utilisateur **pose `last_opened_at`** (acquittement implicite) et éteint le marqueur « Nouveau » ; le statut, lui, **reste `acknowledged`**.
 
 Un sujet peut impliquer un ou plusieurs contacts. Le tableau `contact_ids` porte cette relation directement, sans table de liaison.
 
@@ -261,34 +261,34 @@ Un sujet peut impliquer un ou plusieurs contacts. Le tableau `contact_ids` porte
 
 Un Sujet est, par nature, **un fil de conversation entre deux ou plusieurs personnes autour d'un objet précis**. Son affichage repose sur **deux axes orthogonaux** qu'il ne faut pas confondre — c'est la correction majeure du modèle de statut (l'ancien enum à 6 valeurs mélangeait les deux et se contredisait : un sujet pouvait être à la fois `to_do` *et* `unread`).
 
-**Axe 1 — Cycle de vie (`status`, exclusif).** Cinq valeurs, jamais cumulables :
+**Axe 1 — Cycle de vie (`status`, exclusif).** Quatre valeurs, jamais cumulables :
 
 | `status` | Libellé UI | Visible ? |
 |---|---|---|
-| `new` | **Nouveau** | oui (badge bleu) — sujet créé par Relvo, jamais ouvert |
-| `acknowledged` | *(Lu)* | **non** — état actif par défaut, aucun badge |
+| `acknowledged` | *(actif)* | **non** — état actif par défaut, aucun badge |
 | `resolved` | **Terminé** | oui (onglet Terminés + coche) |
 | `archived` | *(Archivé)* | **non** — état **système** (auto après inactivité prolongée), masqué |
 | `ignored` | **Ignoré** | oui, mais hors des ouverts (onglet Ignorés, récupérable) — sujet **écarté** |
 
-Transitions : `new →(ouverture de la fiche)→ acknowledged →(action « Terminer »)→ resolved →(inactivité, système)→ archived`. Le swipe « Ignorer » pose `ignored` depuis n'importe quel état ouvert ; un swipe « Terminer » depuis `new` est possible. **Réouverture** : un message entrant sur un sujet `resolved` le ramène à `acknowledged` (il avait déjà été lu) et fait réapparaître ses marqueurs (pastille non-lus, éventuel drapeau si Relvo le re-priorise). En revanche **l'ignorance est collante** : un message entrant sur un sujet `ignored` ne le ressort **jamais** des ouverts (sinon frustration « groupe WhatsApp bavard ») — seule une récupération manuelle via l'onglet Ignorés le réactive. Un sujet `ignored` est en outre **hors de la mémoire de Relvo** (exclu du contexte) et **purgeable après 15 j d'inactivité**. Le principe directeur : **« Lu » est invisible** — un badge porté par 90 % des sujets actifs n'informe pas ; on lit le statut par soustraction (absence de badge = sujet actif).
+Transitions : `acknowledged →(action « Terminer »)→ resolved →(inactivité, système)→ archived`. Le sujet **naît `acknowledged`** ; ouvrir la fiche **ne change pas le statut** (il pose seulement `last_opened_at`, ce qui éteint le marqueur « Nouveau »). Le swipe « Ignorer » pose `ignored` depuis n'importe quel état ouvert. **Réouverture** : un message entrant sur un sujet `resolved` le ramène à `acknowledged` (il avait déjà été lu) et fait réapparaître ses marqueurs (pastille non-lus, éventuel drapeau si Relvo le re-priorise). En revanche **l'ignorance est collante** : un message entrant sur un sujet `ignored` ne le ressort **jamais** des ouverts (sinon frustration « groupe WhatsApp bavard ») — seule une récupération manuelle via l'onglet Ignorés le réactive. Un sujet `ignored` est en outre **hors de la mémoire de Relvo** (exclu du contexte) et **purgeable après 15 j d'inactivité**. Le principe directeur : **l'état actif est invisible** — un badge porté par 90 % des sujets actifs n'informe pas ; on lit le statut par soustraction (absence de badge = sujet actif).
 
 **Axe 2 — Marqueurs d'état (cumulables, dérivés ou flags).** Orthogonaux au cycle de vie, plusieurs peuvent coexister sur une même carte :
 
 | Marqueur | Source | Rendu |
 |---|---|---|
+| **Nouveau** | dérivé : `last_opened_at == null` sur un sujet ouvert | badge bleu — disparaît dès l'ouverture de la fiche (statut inchangé) |
 | **Urgent** | `priority = urgent` | drapeau 🔴 (icône seule, pas de texte) |
 | **À faire** | dérivé : ≥ 1 `Task` non terminée | badge ambre + icône tâche |
 | **En attente** | `waiting_for_reply = true`, **posé par Relvo** | badge gris + icône sablier |
 | **Non-lus** | compteur de messages non lus | pastille bleue ronde façon WhatsApp, en coin de carte |
 
-`to_do`, `waiting` et `unread` ne sont **plus des statuts stockés** — ils deviennent ces marqueurs (dérivé pour À faire, flag Relvo pour En attente, compteur pour les non-lus). Budget visuel mobile : plafond ~3 marqueurs par carte, ordre `[🔴] [pastille] · titre · [À faire] [En attente]`.
+`to_do`, `waiting`, `unread` et **`new`** ne sont **plus des statuts stockés** — ils deviennent ces marqueurs (dérivé `last_opened_at == null` pour Nouveau, dérivé tâches pour À faire, flag Relvo pour En attente, compteur pour les non-lus). Budget visuel mobile : plafond ~3 marqueurs par carte, ordre `[🔴] [pastille] · titre · [À faire] [En attente]`.
 
 **Priorité UI — un seul drapeau (rareté = signal).** Le modèle porte `priority` à **2 valeurs** : `normal` (par défaut) et `urgent`. Un **seul drapeau « Urgent » rouge** est exposé, levé **uniquement** quand `priority = urgent` ; `normal` n'a aucun drapeau. Justification : si l'urgence est partout, elle devient du bruit ; rare (1-2 sujets sur 24 ouverts), elle attire l'œil.
 
 ### Feed des ouverts et actions de swipe
 
-L'onglet **« Ouverts »** de Mon fil (et le widget de l'Accueil) liste tous les sujets ouverts (`status IN (new, acknowledged)`), **urgents en tête** (`priority = urgent`). C'est `getOpenFeed`. Pas de feed « Priorité » distinct : la rareté du drapeau urgent suffit à hiérarchiser.
+L'onglet **« Ouverts »** de Mon fil (et le widget de l'Accueil) liste tous les sujets ouverts (`status NOT IN (resolved, archived, ignored)`, soit tous les `acknowledged`), **urgents en tête** (`priority = urgent`). C'est `getOpenFeed`. Pas de feed « Priorité » distinct : la rareté du drapeau urgent suffit à hiérarchiser.
 
 Deux actions structurent le tri, exposées **en gestes de swipe** sur mobile (et en boutons sur la fiche / les cartes urgentes) :
 

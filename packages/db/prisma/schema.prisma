@@ -56,12 +56,12 @@ enum ChannelConfigStatus {
 }
 
 /// Cycle de vie d'un Subject — exclusif et séquentiel (4 valeurs).
-/// `new` (Nouveau) → `acknowledged` (Lu, état actif INVISIBLE : pas de badge)
-/// → `resolved` (Terminé) → `archived` (système, auto après inactivité).
-/// Les ex-statuts to_do/waiting/unread sont devenus des marqueurs cumulables
-/// (À faire dérivé des tâches, waitingForReply, pastille non-lus) — pas des statuts.
+/// `acknowledged` (état actif/ouvert, défaut) → `resolved` (Terminé) →
+/// `archived` (système, auto après inactivité). `ignored` = écarté.
+/// « Nouveau » N'EST PLUS un statut : c'est un marqueur DÉRIVÉ (lastOpenedAt
+/// null = jamais ouvert), au même titre que « Urgent » (priority) ou « À faire »
+/// (tâches ouvertes). Les ex-statuts to_do/waiting/unread/new sont des marqueurs.
 enum SubjectStatus {
-  new
   acknowledged
   resolved
   archived
@@ -318,7 +318,7 @@ model Subject {
   summary               String?       @db.Text
   folderId              String?       @map("folder_id") @db.Uuid
   contactIds            String[]      @default([]) @map("contact_ids") @db.Uuid
-  status                SubjectStatus @default(new)
+  status                SubjectStatus @default(acknowledged)
   priority              Priority      @default(normal)
   // Marqueur « En attente » (cumulable, distinct du statut) — posé par Relvo
   // quand un sujet attend une réponse externe. Cf. invariant produit n°7.

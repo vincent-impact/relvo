@@ -12,7 +12,7 @@ Le tout vit dans un **monorepo léger** (pnpm workspaces) :
 |---|---|---|
 | **`apps/web`** | App Next.js fullstack : UI + API (Route Handlers + Server Actions) + auth + chatbot + CRUD | **Vercel** |
 | **`apps/worker`** | Daemon Baileys : connexion WhatsApp permanente + pipeline de traitement asynchrone | **Railway / Render** |
-| **`packages/db`** | Schéma Prisma + client généré + enums partagés (`Actor`, `SubjectStatus` — 5 valeurs : `new`, `acknowledged`, `resolved`, `archived`, `ignored` ; `Priority` — 2 valeurs : `normal`, `urgent` ; `TaskKind`, `TriageHint`…) + couche domaine partagée | — |
+| **`packages/db`** | Schéma Prisma + client généré + enums partagés (`Actor`, `SubjectStatus` — 4 valeurs : `acknowledged`, `resolved`, `archived`, `ignored` (défaut `acknowledged` ; « Nouveau » n'est plus un statut mais un marqueur dérivé de `last_opened_at == null`) ; `Priority` — 2 valeurs : `normal`, `urgent` ; `TaskKind`, `TriageHint`…) + couche domaine partagée | — |
 
 ## 2. Décision structurante : pas de backend découplé, mais un worker obligatoire
 
@@ -61,7 +61,7 @@ Le `Message` porte deux champs liés au tri : `folder_id` (domaine assigné dès
 | UI | **Shadcn UI** + **Tailwind**, thème navy (#0A1128) / blue (#2B6FE0) / red (#E63150) issu de la maquette |
 | API | **Route Handlers** (`/api/*`) + **Server Actions** |
 | Base de données | **PostgreSQL** (Neon, via le Marketplace Vercel) + **Prisma** |
-| Types partagés | Enums Prisma exposés depuis `packages/db` (`SubjectStatus` 5 valeurs, `Priority` 2 valeurs, `Actor`, `TaskStatus`, `TriageHint`…) — pas de package `shared-types` séparé. La logique métier (queries, mutations) vit aussi dans `packages/db/src/domain` |
+| Types partagés | Enums Prisma exposés depuis `packages/db` (`SubjectStatus` 4 valeurs, `Priority` 2 valeurs, `Actor`, `TaskStatus`, `TriageHint`…) — pas de package `shared-types` séparé. La logique métier (queries, mutations) vit aussi dans `packages/db/src/domain` |
 | Auth | **Auth.js** in-app (provider Credentials + Google OAuth), sessions cookie/JWT, middleware de protection des routes |
 | IA | **Vercel AI SDK** + **Vercel AI Gateway** ; Claude **Haiku / Sonnet / Opus** selon complexité (Opus rare) ; **Files API** Anthropic pour les PDFs (`anthropic_file_id`) ; **prompt caching** (system prompt + KnowledgeDocuments) ; **citations natives** activées (UI minimale en V1) |
 | Chat local | **IndexedDB** via `dexie` (conversations chatbot éphémères, côté client, pas d'entité serveur) |

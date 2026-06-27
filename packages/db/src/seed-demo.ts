@@ -480,7 +480,7 @@ export async function seedDemoAccount() {
       "Grands Moulins annonce un retard de 2 jours sur la livraison de riz basmati. Risque de tension sur le stock pour le week-end.",
     folderId: fournisseurs.id,
     contactIds: [moulins.id],
-    status: SubjectStatus.new,
+    status: SubjectStatus.acknowledged,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -582,7 +582,7 @@ export async function seedDemoAccount() {
       "Sophie informe de son départ en congé maternité le mois prochain et demande l'organisation de son remplacement.",
     folderId: rh.id,
     contactIds: [sophie.id],
-    status: SubjectStatus.new,
+    status: SubjectStatus.acknowledged,
     priority: Priority.normal,
     sourceChannelId: emailRh.id,
     createdByActor: Actor.ai,
@@ -689,7 +689,7 @@ export async function seedDemoAccount() {
       "Un équipier ancien demande une revalorisation salariale. À cadrer avec la grille du réseau et le budget du restaurant.",
     folderId: rh.id,
     contactIds: [yacine.id],
-    status: SubjectStatus.new,
+    status: SubjectStatus.acknowledged,
     priority: Priority.normal,
     sourceChannelId: wa.id,
     createdByActor: Actor.ai,
@@ -939,7 +939,7 @@ export async function seedDemoAccount() {
       "Recul du midi en semaine constaté par le siège. Lancer une opération (menu étudiant, offre midi) pour relancer le trafic.",
     folderId: business.id,
     contactIds: [siege.id],
-    status: SubjectStatus.new,
+    status: SubjectStatus.acknowledged,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -1114,7 +1114,7 @@ export async function seedDemoAccount() {
       "Un créateur TikTok local souhaite tourner un challenge « le plus gros menu poulet ». Visibilité intéressante mais à cadrer (hygiène, affluence).",
     folderId: communication.id,
     contactIds: [],
-    status: SubjectStatus.new,
+    status: SubjectStatus.acknowledged,
     priority: Priority.normal,
     sourceChannelId: emailCom.id,
     createdByActor: Actor.ai,
@@ -1551,12 +1551,27 @@ export async function seedDemoAccount() {
     data: { status: TaskStatus.done, completedAt: new Date() },
   });
 
-  // ===== 12. État lu/non-lu : les sujets actifs (non `new`) sont déjà ouverts =====
+  // ===== 12. Marqueur « Nouveau » (dérivé de lastOpenedAt) =====
+  // « Nouveau » = sujet jamais ouvert (lastOpenedAt null). On pose donc
+  // lastOpenedAt sur TOUS les sujets SAUF les quelques-uns qu'on veut afficher
+  // « Nouveaux » dans la démo. Puis les messages des sujets « vus » passent en lus
+  // (ouvrir un sujet vaut lecture). Les « Nouveaux » gardent leurs non-lus.
+  const NEW_SUBJECT_REFS = [
+    "SUB-0211",
+    "SUB-0148",
+    "SUB-0226",
+    "SUB-0225",
+    "SUB-0231",
+  ];
+  await db.subject.updateMany({
+    where: { reference: { notIn: NEW_SUBJECT_REFS } },
+    data: { lastOpenedAt: new Date() },
+  });
   await db.message.updateMany({
     where: {
       direction: "incoming",
       readAt: null,
-      subject: { is: { status: { not: SubjectStatus.new } } },
+      subject: { is: { lastOpenedAt: { not: null } } },
     },
     data: { readAt: new Date() },
   });

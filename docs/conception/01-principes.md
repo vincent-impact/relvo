@@ -167,20 +167,20 @@ Trace ce qui s'est passé.
 
 Un Sujet est **un fil de conversation entre deux ou plusieurs personnes autour d'un objet précis**. Son état se lit sur **deux axes distincts** qu'il ne faut surtout pas mélanger — c'est la correction d'un modèle antérieur qui les confondait (un sujet pouvait être à la fois `to_do` *et* `unread`, ce qui ne tient pas).
 
-### Axe 1 — Le cycle de vie (`status`) : 5 états exclusifs
+### Axe 1 — Le cycle de vie (`status`) : 4 états exclusifs
 
-- **`new` — Nouveau** : sujet fraîchement créé (par l'IA à la réception d'un message compris, ou par l'utilisateur), **jamais ouvert**. Seul état actif à porter un badge visible. *Si l'IA ne comprend pas un message, elle ne crée pas de sujet : il reste « Sans sujet » dans Messages.*
-- **`acknowledged` — Lu** : l'utilisateur a ouvert la fiche au moins une fois. C'est l'**état actif par défaut, et il est invisible** (aucun badge) : un marqueur porté par ~90 % des sujets n'informe pas. On lit « actif » par l'**absence** de badge de statut.
+- **`acknowledged` — (actif)** : **état actif par défaut, posé dès la création** d'un sujet (par l'IA à la réception d'un message compris, ou par l'utilisateur). Il est **invisible** (aucun badge) : un marqueur porté par ~90 % des sujets n'informe pas. On lit « actif » par l'**absence** de badge de statut. *Si l'IA ne comprend pas un message, elle ne crée pas de sujet : il reste « Sans sujet » dans Messages.* (La distinction « jamais ouvert » est désormais portée par le **marqueur dérivé « Nouveau »** — cf. Axe 2 — et non plus par un statut.)
 - **`resolved` — Terminé** : l'utilisateur a clos le sujet via l'action **« Terminer »** (swipe droite, vert). Visible dans l'onglet **Terminés** de Mon fil.
 - **`archived` — Archivé** : état **système**, posé automatiquement après une inactivité prolongée d'un sujet terminé. Conservé pour l'historique, hors du flux actif. **Pas de bouton « Archiver »** côté utilisateur.
 - **`ignored` — Ignoré** : sujet **écarté** par l'utilisateur via l'action **« Ignorer »** (swipe gauche, rouge). Il sort des ouverts, **disparaît de la mémoire de Relvo** (l'assistant ne le ressort plus ni ne s'en sert pour contextualiser), reste **purgeable après 15 jours d'inactivité** et **récupérable** via l'onglet **Ignorés** de Mon fil. L'ignorance est **collante** : un nouveau message sur un sujet ignoré ne le fait **jamais** ressortir des ouverts — sinon le « groupe WhatsApp bavard » réinonderait le fil, première source de frustration. Sortir un sujet de l'oubli est une action explicite de l'utilisateur depuis l'onglet Ignorés.
 
-Enchaînement nominal : `new →(ouverture)→ acknowledged →(« Terminer »)→ resolved →(inactivité, système)→ archived`. **« Ignorer »** est une branche transverse : depuis Mon fil, un sujet ouvert bascule en `ignored` et y reste tant que l'utilisateur ne le récupère pas. Un sujet `resolved` qui reçoit un nouveau message **redevient `acknowledged`** (il avait déjà été lu) et ré-affiche ses marqueurs ; un sujet `ignored`, lui, ne bouge pas (ignorance collante).
+Enchaînement nominal : `acknowledged →(« Terminer »)→ resolved →(inactivité, système)→ archived`. Le statut **ne change pas à l'ouverture de la fiche** : un sujet naît `acknowledged` et le reste ; ouvrir la fiche pose seulement `last_opened_at` (acquittement implicite), ce qui éteint le marqueur « Nouveau ». **« Ignorer »** est une branche transverse : depuis Mon fil, un sujet ouvert bascule en `ignored` et y reste tant que l'utilisateur ne le récupère pas. Un sujet `resolved` qui reçoit un nouveau message **redevient `acknowledged`** (il avait déjà été lu) et ré-affiche ses marqueurs ; un sujet `ignored`, lui, ne bouge pas (ignorance collante).
 
 ### Axe 2 — Les marqueurs d'état : cumulables, indépendants du statut
 
 Ce que l'ancien modèle appelait `to_do`, `waiting`, `unread` n'étaient pas des étapes de vie mais des **états instantanés** qui peuvent coexister. Ils deviennent des **marqueurs**, plusieurs à la fois sur une même carte :
 
+- **Nouveau** — sujet **jamais ouvert** (dérivé : `last_opened_at == null` sur un sujet ouvert). Ouvrir la fiche pose `last_opened_at` → le marqueur s'éteint (le statut, lui, reste `acknowledged`).
 - **Urgent** — drapeau rouge, levé uniquement si `priority = urgent` (la rareté est le signal : 1-2 sujets sur 24).
 - **À faire** — il reste au moins une tâche ouverte (dérivé des `Task`).
 - **En attente** — on attend un retour d'un tiers ; flag `waiting_for_reply` posé par Relvo.
@@ -188,7 +188,7 @@ Ce que l'ancien modèle appelait `to_do`, `waiting`, `unread` n'étaient pas des
 
 Exemple qui prouve la séparation : un sujet **Lu** (statut) peut afficher en même temps 🔴 Urgent + « À faire » + une pastille « 2 » — impossible à représenter dans l'ancien enum exclusif.
 
-> **Note historique**. Les statuts `blocked` (« impossible à avancer »), puis `to_do` / `waiting` / `unread`, ont été retirés du cycle de vie : le premier se réduisait à une attente externe, les autres sont en réalité des marqueurs cumulables, pas des étapes exclusives. Cf. CLAUDE.md §7.
+> **Note historique**. Les statuts `blocked` (« impossible à avancer »), puis `to_do` / `waiting` / `unread`, et enfin **`new`** (décision du 2026-06-27), ont été retirés du cycle de vie : le premier se réduisait à une attente externe, les autres sont en réalité des marqueurs cumulables, pas des étapes exclusives. « Nouveau » est désormais un marqueur dérivé (`last_opened_at == null`), au même titre que « Urgent » ou « À faire ». Cf. CLAUDE.md §7.
 
 Et en amont du cycle : un message que Relvo n'a pas su traiter reste **"Sans sujet"** dans la page Messages, en attente de tri par l'utilisateur. Un indice de tri (`triage_hint` — cf. `04-ia.md §1.1bis`) explique pourquoi : trop court, intention floue, prospection, expéditeur inconnu, sans action, autre.
 

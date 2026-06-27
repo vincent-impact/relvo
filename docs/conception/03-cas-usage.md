@@ -40,8 +40,8 @@ Un fournisseur inconnu envoie un email pour signaler un retard de livraison. Le 
 
 ### Résultat possible
 
-- **Cas A1** — Compris, sans tâche identifiable : `Subject.status = new`, aucun marqueur.
-- **Cas A2** — Compris, avec tâches : `Subject.status = new` **+ marqueur « À faire »** (≥ 1 tâche ouverte). Les tâches ne changent pas le statut — « À faire » est un marqueur dérivé.
+- **Cas A1** — Compris, sans tâche identifiable : `Subject.status = acknowledged` (jamais ouvert → marqueur dérivé **« Nouveau »**), aucun autre marqueur.
+- **Cas A2** — Compris, avec tâches : `Subject.status = acknowledged` (marqueur **« Nouveau »**) **+ marqueur « À faire »** (≥ 1 tâche ouverte). Les tâches ne changent pas le statut — « À faire » est un marqueur dérivé.
 
 ## Cas B — Message compris d'un contact connu, sans sujet ouvert pertinent
 
@@ -61,8 +61,8 @@ Un fournisseur connu écrit sur un nouveau problème, distinct de ses échanges 
 
 ### Résultat possible
 
-- `new`, sans marqueur (compris sans tâche)
-- `new` **+ marqueur « À faire »** (compris avec tâches)
+- `acknowledged` (marqueur dérivé **« Nouveau »**), sans autre marqueur (compris sans tâche)
+- `acknowledged` (marqueur **« Nouveau »**) **+ marqueur « À faire »** (compris avec tâches)
 
 ## Cas C — Message compris d'un contact connu, rattaché à un sujet existant
 
@@ -147,7 +147,7 @@ Le message informe simplement d'un état, sans demander d'action.
 
 ### Résultat
 
-- si c'est un nouveau sujet : `Subject.status = new`
+- si c'est un nouveau sujet : `Subject.status = acknowledged` (jamais ouvert → marqueur dérivé **« Nouveau »**)
 - si c'est un sujet existant : le **statut reste inchangé** (`acknowledged`) ; le nouveau message allume la **pastille de non-lus**, et s'il répond à une attente, Relvo lève `waiting_for_reply`
 
 ### Règle
@@ -177,7 +177,7 @@ Le fournisseur dit :
 
 ### Résultat
 
-- `Subject.status` inchangé (`new` si le sujet vient d'être créé) **+ marqueur « À faire »**
+- `Subject.status` inchangé (`acknowledged` ; marqueur **« Nouveau »** si le sujet vient d'être créé) **+ marqueur « À faire »**
 
 ### Point important
 

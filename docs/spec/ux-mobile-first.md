@@ -136,7 +136,7 @@ Sub-nav latérale sticky → **onglets** en haut (segmented control) ou liste-ac
 
 Les composants de M9.2 sont rendus **à la fois** dans les vues structurées **et** dans la conversation (generative UI). Réflexe shadcn d'abord pour chacun (cf. CLAUDE.md). Liste :
 
-`SubjectCard` · `TaskCard` · `MessageBubble` · `ActorPill` (M/R/E) · `StatusBadge` (statut à 5 valeurs ; seuls Nouveau et Terminé sont visibles) · `UrgentFlag` · `RelvoSuggestionBadge` · `KpiTile` · `ChatComposer` (réutilisé Accueil/conversation/Sujet) · `BottomTabBar` · `SegmentedControl` (onglets de statut/onglets).
+`SubjectCard` · `TaskCard` · `MessageBubble` · `ActorPill` (M/R/E) · `StatusBadge` (statut à 4 valeurs ; seul Terminé est un statut visible — « Nouveau » est un marqueur dérivé, cf. `02-modele-donnees.md`) · `UrgentFlag` · `RelvoSuggestionBadge` · `KpiTile` · `ChatComposer` (réutilisé Accueil/conversation/Sujet) · `BottomTabBar` · `SegmentedControl` (onglets de statut/onglets).
 
 Chacun doit être **autonome et responsive** : un `SubjectCard` rendu dans une bulle de chat doit être identique à celui du feed.
 

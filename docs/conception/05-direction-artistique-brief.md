@@ -119,14 +119,17 @@ Neutres       blanc #fff · gris #f7f7f5 / #eeecea · texte #1a1a1a / #6b6b6b / 
 
 ### Système d'état des sujets (à rendre visuellement, sans le complexifier)
 
-- **Statut = cycle de vie à 5 valeurs, exclusif** : `new` (Nouveau, seul statut
-  actif avec un badge visible) → `acknowledged` (Lu — **état par défaut INVISIBLE**,
-  aucun badge : on lit « actif » par l'absence de badge) → `resolved` (Terminé) →
+- **Statut = cycle de vie à 4 valeurs, exclusif** : `acknowledged` (état actif par
+  défaut **INVISIBLE**, posé dès la création, aucun badge : on lit « actif » par
+  l'absence de badge) → `resolved` (Terminé) →
   `archived` (système, hors flux) + `ignored` (Ignoré — sujet écarté, hors mémoire
-  de Relvo, récupérable). **Seuls « Nouveau » et « Terminé » s'affichent** dans le
-  fil des ouverts ; les ignorés vivent dans leur propre onglet.
+  de Relvo, récupérable). **Seul « Terminé » est un statut visible** ; « Nouveau »
+  est désormais un **marqueur dérivé** (voir ci-dessous), pas un statut. Les ignorés
+  vivent dans leur propre onglet.
 - **Marqueurs = cumulables, indépendants du statut** (plusieurs à la fois sur une
-  carte) : 🚩 **Urgent** (drapeau rouge — *uniquement* si priorité `urgent` ; la
+  carte) : 🆕 **Nouveau** (badge bleu — sujet jamais ouvert, `last_opened_at == null` ;
+  disparaît à l'ouverture de la fiche, le statut restant `acknowledged`),
+  🚩 **Urgent** (drapeau rouge — *uniquement* si priorité `urgent` ; la
   **rareté est le signal**, 1-2 sujets sur 24), **À faire** (tâches ouvertes),
   **En attente** (on attend un retour d'un tiers), **pastille non-lus** (compteur
   façon WhatsApp).
@@ -166,7 +169,7 @@ visibles dans la maquette, cf. §8) :
 - **MessageBubble** — bulle de message (entrant/sortant), indicateur de canal
   (email / WhatsApp).
 - **ActorPill** — pastille Moi / Relvo / Externe (le triptyque couleur).
-- **Badges & marqueurs** — StatusBadge (Nouveau/Terminé), drapeau Urgent, « À faire »,
+- **Badges & marqueurs** — StatusBadge (Terminé), badge Nouveau (marqueur dérivé), drapeau Urgent, « À faire »,
   « En attente », badge suggestions, pastille non-lus.
 - **AgendaCard / mini-calendrier** — agenda semaine (Accueil) + vue mois (Planning),
   tâches colorées par dossier.

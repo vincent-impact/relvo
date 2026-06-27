@@ -34,8 +34,7 @@ const PRIORITIES: { value: Priority; label: string }[] = [
 ];
 
 const STATUSES: { value: SubjectStatus; label: string }[] = [
-  { value: "new", label: "Nouveau" },
-  { value: "acknowledged", label: "En cours" },
+  { value: "acknowledged", label: "Ouvert" },
   { value: "resolved", label: "Terminé" },
   { value: "ignored", label: "Ignoré" },
 ];
