@@ -205,23 +205,10 @@
   * {
     @apply border-border outline-ring/50;
   }
+  body {
+    @apply bg-background text-foreground;
+  }
   html {
     @apply font-sans;
-    /* overscroll-behavior aide là où iOS l'honore (peu fiable à la racine) ;
-       le vrai verrou anti rubber-band est en JS (cf. IosScrollLock). On ne
-       touche NI à overflow NI à la hauteur du body : en standalone iOS ça
-       rétrécit le cadre et crée une bande blanche sous le dock. */
-    overscroll-behavior: none;
-  }
-  body {
-    @apply text-foreground;
-    /* Fond VIOLET (= couleur du dock), volontairement PAS blanc : chaque écran
-       pose son propre fond par-dessus (MobileFrame = blanc, auth = bg-relvo-bg),
-       donc le body n'est jamais censé être visible… SAUF dans la bande de
-       safe-area que Chrome iOS standalone laisse sous le dock (ni dvh ni
-       window.innerHeight ne couvrent cette zone de façon fiable). En la peignant
-       en violet, cette bande se FOND dans le dock au lieu d'apparaître en blanc. */
-    background-color: var(--relvo);
-    overscroll-behavior: none;
   }
 }

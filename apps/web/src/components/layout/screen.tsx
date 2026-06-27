@@ -21,7 +21,7 @@ export function Screen({
   return (
     <main
       onScroll={(e) => onScroll(e.currentTarget.scrollTop)}
-      className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white"
+      className="min-h-0 flex-1 overflow-y-auto bg-white"
     >
       <div
         className={cn(className)}
