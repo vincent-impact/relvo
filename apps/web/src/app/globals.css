@@ -205,6 +205,15 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html,
+  body {
+    height: 100%;
+    /* Verrouille le document : seul le conteneur scrollable interne (le <main>
+       de chaque écran) défile. Sans ça, en bout de course le rubber-band iOS
+       tirait TOUTE l'app (dock du bas compris) vers le haut. */
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
   body {
     @apply bg-background text-foreground;
   }

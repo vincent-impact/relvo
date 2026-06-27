@@ -13,7 +13,7 @@ export default async function ConversationsPage() {
 
   return (
     <MobileFrame>
-      <main className="min-h-0 flex-1 overflow-y-auto bg-white">
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white">
         <RelvoHeader back="/" title="Mes conversations" relvo={false} />
 
         <div className="px-4 pt-5">

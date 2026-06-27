@@ -77,7 +77,7 @@ export function PageBody({
   return (
     <main
       onScroll={(e) => onScroll(e.currentTarget.scrollTop)}
-      className="min-h-0 flex-1 overflow-y-auto bg-(--surface)"
+      className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-(--surface)"
     >
       <div className={cn("px-4 pt-3.5 pb-3.5", className)}>{children}</div>
     </main>

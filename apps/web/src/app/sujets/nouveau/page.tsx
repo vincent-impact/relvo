@@ -28,7 +28,7 @@ export default async function NouveauSujetPage() {
 
   return (
     <MobileFrame>
-      <main className="min-h-0 flex-1 overflow-y-auto bg-white">
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white">
         <RelvoHeader
           back="/fil"
           title="Nouveau sujet"

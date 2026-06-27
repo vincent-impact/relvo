@@ -75,7 +75,7 @@ export function ConversationShell({
         </div>
       ) : null}
 
-      <main className="min-h-0 flex-1 overflow-y-auto bg-white px-[18px] py-7">
+      <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-[18px] py-7">
         <div className="mb-5 flex flex-col items-center gap-2.5 text-center">
           <div className="grid size-[52px] place-items-center rounded-full bg-relvo text-white shadow-(--shadow-relvo)">
             <Sparkles className="size-6" fill="currentColor" strokeWidth={0} />
