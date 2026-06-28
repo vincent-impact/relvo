@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { type TaskItemData } from "@/lib/task-item-data";
 import { TaskModal } from "@/components/subject/task-modal";
 import { completeTaskAction, reopenTaskAction } from "@/server/actions/tasks";
+import { folderColor } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
 // TaskItem — présentation UNIQUE d'une tâche, partout. Gauche : CASE À COCHER
@@ -76,10 +77,20 @@ export function TaskItem({
       <div
         onClick={() => setOpen(true)}
         className={cn(
-          "flex cursor-pointer items-start gap-3 border-b border-[#f1efeb] px-4 py-3.5",
+          "relative flex cursor-pointer items-start gap-3 border-b border-[#f1efeb] py-3.5 pr-4 pl-[19px]",
           done ? "bg-[#f5f3ef]" : late && "bg-(--red-50)",
         )}
       >
+        {/* Rail de couleur (gauche) — domaine (Folder) hérité du sujet. */}
+        <span
+          aria-hidden
+          className={cn(
+            "absolute inset-y-0 left-0 w-[3px]",
+            done && "opacity-40",
+          )}
+          style={{ background: folderColor(task.folderSlug) }}
+        />
+
         {/* Case à cocher (gauche) — terminer / remettre à faire. */}
         <button
           type="button"

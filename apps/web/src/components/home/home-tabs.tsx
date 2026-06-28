@@ -29,13 +29,15 @@ export type TaskKpis = {
 export function HomeTabs({
   kpis,
   tasksByDay,
-  anchorMondayKey,
+  rangeStartKey,
+  rangeDays,
   todayKey,
   untriaged,
 }: {
   kpis: TaskKpis;
   tasksByDay: Record<string, TaskItemData[]>;
-  anchorMondayKey: string;
+  rangeStartKey: string;
+  rangeDays: number;
   todayKey: string;
   untriaged: TaskItemData[];
 }) {
@@ -73,7 +75,8 @@ export function HomeTabs({
         <>
           <AgendaWeek
             initialTasksByDay={tasksByDay}
-            anchorMondayKey={anchorMondayKey}
+            rangeStartKey={rangeStartKey}
+            rangeDays={rangeDays}
             todayKey={todayKey}
           />
           <div className="px-5 pt-1 pb-2">

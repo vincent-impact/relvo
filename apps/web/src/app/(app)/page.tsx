@@ -82,26 +82,31 @@ async function HeroBrief({ accountId }: { accountId: string }) {
   return <BriefCarousel slides={briefSlides(kpis, rows)} />;
 }
 
+// Fenêtre du rail (jours), centrée sur aujourd'hui. Bornée : au-delà, on passe
+// par le calendrier mensuel (/planning).
+const RAIL_BACK = 21;
+const RAIL_FWD = 21;
+
 async function HomeTaskTabs({ accountId }: { accountId: string }) {
   const now = new Date();
-  // Semaine en cours (lundi → dimanche, UTC pour rester cohérent avec le seed).
-  const monday = new Date(
+  const todayKey = now.toISOString().slice(0, 10);
+  const rangeStart = new Date(
     Date.UTC(
       now.getUTCFullYear(),
       now.getUTCMonth(),
-      now.getUTCDate() - ((now.getUTCDay() + 6) % 7),
+      now.getUTCDate() - RAIL_BACK,
     ),
   );
-  const weekEnd = new Date(monday);
-  weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
-  const todayKey = now.toISOString().slice(0, 10);
+  const rangeDays = RAIL_BACK + 1 + RAIL_FWD;
+  const rangeEnd = new Date(rangeStart);
+  rangeEnd.setUTCDate(rangeEnd.getUTCDate() + rangeDays);
 
   const [kpis, tasksByDay, feed] = await Promise.all([
     cachedTaskKpis(accountId, todayKey),
     cachedAgendaTasks(
       accountId,
-      monday.toISOString(),
-      weekEnd.toISOString(),
+      rangeStart.toISOString(),
+      rangeEnd.toISOString(),
       todayKey,
     ),
     cachedTaskFeed(accountId, todayKey),
@@ -111,7 +116,8 @@ async function HomeTaskTabs({ accountId }: { accountId: string }) {
     <HomeTabs
       kpis={kpis}
       tasksByDay={tasksByDay}
-      anchorMondayKey={monday.toISOString().slice(0, 10)}
+      rangeStartKey={rangeStart.toISOString().slice(0, 10)}
+      rangeDays={rangeDays}
       todayKey={todayKey}
       untriaged={feed.untriaged}
     />

@@ -20,6 +20,8 @@ export type TaskItemData = {
   /** Contexte « à plat » (hors fiche sujet) : titre du sujet + interlocuteur. */
   subjectTitle?: string | null;
   contactName?: string | null;
+  /** Slug du domaine (Folder) hérité du sujet → rail de couleur. */
+  folderSlug?: string | null;
 };
 
 /** Mappe une tâche enrichie (couche domaine) vers la forme plate de TaskItem. */
@@ -39,5 +41,6 @@ export function toTaskItemData(e: EnrichedTask): TaskItemData {
     subjectId: e.subjectId,
     subjectTitle: e.subjectTitle,
     contactName: e.contactName,
+    folderSlug: e.folderSlug,
   };
 }

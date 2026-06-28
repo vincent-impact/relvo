@@ -1,12 +1,12 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  pointerWithin,
   type DragEndEvent,
   type DragStartEvent,
   useDraggable,
@@ -17,19 +17,18 @@ import {
 import { toast } from "sonner";
 import { TaskItem } from "@/components/subject/task-item";
 import type { TaskItemData } from "@/lib/task-item-data";
-import { loadAgendaWeekAction } from "@/server/actions/agenda";
 import { updateTaskAction } from "@/server/actions/tasks";
 import { cn } from "@/lib/utils";
 
-// Semainier (Accueil, onglet « Agenda ») — bande de 7 jours SLIDABLE (swipe ou
-// chevrons) vers le passé / le futur. Chaque jour porte un badge : ROUGE = nb de
-// tâches en retard (jours passés), BLEU = nb de tâches à faire (jour courant +
-// futurs). Sous la bande, les tâches du jour SÉLECTIONNÉ (mêmes lignes que
-// partout, TaskItem). On peut DÉPLACER une tâche d'un jour à l'autre en la
-// MAINTENANT appuyée un instant (long-press → drag, dnd-kit) puis en la lâchant
-// sur un autre jour de la bande — réécrit la date (updateTask), optimiste.
-// Le drag se fait DANS la semaine visible ; pour replanifier plus loin, on slide
-// d'abord, ou on passe par le mois (/planning).
+// Semainier (Accueil, onglet « Agenda ») — RAIL de jours qui glisse librement de
+// gauche à droite (scroll horizontal natif, sans chevrons), AUJOURD'HUI centré au
+// chargement. Le rail couvre une fenêtre bornée autour d'aujourd'hui ; au-delà,
+// l'utilisateur passe par le calendrier mensuel (/planning). Chaque jour porte un
+// badge (ROUGE = nb en retard pour les jours passés, BLEU = nb à faire pour
+// aujourd'hui/futur) et est une ZONE DE DÉPÔT. Sous le rail, les tâches du jour
+// SÉLECTIONNÉ (mêmes lignes que partout, TaskItem). On DÉPLACE une tâche d'un jour
+// à l'autre par LONG-PRESS → drag (dnd-kit) ; c'est la POSITION DU CURSEUR qui
+// désigne la cellule de dépôt (collision `pointerWithin`).
 
 type WeekData = Record<string, TaskItemData[]>;
 
@@ -51,39 +50,24 @@ type DayDesc = {
   isToday: boolean;
 };
 
-function describeWeek(mondayKey: string, todayKey: string): DayDesc[] {
-  return Array.from({ length: 7 }, (_, i) => {
-    const key = keyPlusDays(mondayKey, i);
-    const date = new Date(`${key}T00:00:00.000Z`);
-    return {
-      key,
-      weekday: date
-        .toLocaleDateString("fr-FR", { weekday: "short", timeZone: "UTC" })
-        .replace(".", ""),
-      day: date.getUTCDate(),
-      longLabel: cap(
-        date.toLocaleDateString("fr-FR", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          timeZone: "UTC",
-        }),
-      ),
-      isToday: key === todayKey,
-    };
-  });
-}
-
-function weekRangeLabel(days: DayDesc[]): string {
-  const first = new Date(`${days[0].key}T00:00:00.000Z`);
-  const last = new Date(`${days[6].key}T00:00:00.000Z`);
-  const dayNum = (d: Date) => d.getUTCDate();
-  const monthShort = (d: Date) =>
-    d.toLocaleDateString("fr-FR", { month: "short", timeZone: "UTC" });
-  const sameMonth = first.getUTCMonth() === last.getUTCMonth();
-  return sameMonth
-    ? `${dayNum(first)}–${dayNum(last)} ${monthShort(last)}`
-    : `${dayNum(first)} ${monthShort(first)} – ${dayNum(last)} ${monthShort(last)}`;
+function describeDay(key: string, todayKey: string): DayDesc {
+  const date = new Date(`${key}T00:00:00.000Z`);
+  return {
+    key,
+    weekday: date
+      .toLocaleDateString("fr-FR", { weekday: "short", timeZone: "UTC" })
+      .replace(".", ""),
+    day: date.getUTCDate(),
+    longLabel: cap(
+      date.toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: "UTC",
+      }),
+    ),
+    isToday: key === todayKey,
+  };
 }
 
 // ── Ligne de tâche déplaçable (long-press) ───────────────────────────────────
@@ -105,55 +89,42 @@ function DayTaskRow({ task }: { task: TaskItemData }) {
 
 export function AgendaWeek({
   initialTasksByDay,
-  anchorMondayKey,
+  rangeStartKey,
+  rangeDays,
   todayKey,
 }: {
   initialTasksByDay: WeekData;
-  anchorMondayKey: string; // lundi (UTC) de la semaine en cours
+  rangeStartKey: string; // 1er jour de la fenêtre (UTC)
+  rangeDays: number; // nb de jours couverts par le rail
   todayKey: string;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
 
-  const [offset, setOffset] = useState(0);
-  const [weeks, setWeeks] = useState<Record<number, WeekData>>({
-    0: initialTasksByDay,
-  });
-  const [loading, setLoading] = useState(false);
-  const [selectedKey, setSelectedKey] = useState(todayKey);
+  const [tasksByDay, setTasksByDay] = useState<WeekData>(initialTasksByDay);
+  const [selected, setSelected] = useState(todayKey);
   const [activeId, setActiveId] = useState<string | null>(null);
 
-  const mondayKey = keyPlusDays(anchorMondayKey, offset * 7);
-  const days = describeWeek(mondayKey, todayKey);
-  const tasksByDay = weeks[offset] ?? {};
+  const days = Array.from({ length: rangeDays }, (_, i) =>
+    describeDay(keyPlusDays(rangeStartKey, i), todayKey),
+  );
+  const selectedDesc =
+    days.find((d) => d.key === selected) ??
+    days.find((d) => d.isToday) ??
+    days[0];
+  const dayTasks = tasksByDay[selectedDesc.key] ?? [];
 
-  // Jour sélectionné effectif : on garde le choix s'il est dans la semaine
-  // affichée, sinon on retombe sur « aujourd'hui » (si visible) ou le 1er jour.
-  const weekKeys = days.map((d) => d.key);
-  const selected = weekKeys.includes(selectedKey)
-    ? selectedKey
-    : weekKeys.includes(todayKey)
-      ? todayKey
-      : weekKeys[0];
-  const selectedDesc = days.find((d) => d.key === selected) ?? days[0];
-  const dayTasks = tasksByDay[selected] ?? [];
-
-  // Navigation de semaine — déclenchée UNIQUEMENT par une action utilisateur
-  // (chevrons / swipe). Charge la semaine cible si elle n'est pas déjà en cache
-  // local (seedée pour offset 0). Pas d'effet → pas de setState synchrone en effet.
-  function goToOffset(next: number) {
-    setOffset(next);
-    if (weeks[next]) return;
-    setLoading(true);
-    const mKey = keyPlusDays(anchorMondayKey, next * 7);
-    loadAgendaWeekAction(
-      `${mKey}T00:00:00.000Z`,
-      `${keyPlusDays(mKey, 7)}T00:00:00.000Z`,
-      todayKey,
-    )
-      .then((data) => setWeeks((w) => ({ ...w, [next]: data })))
-      .finally(() => setLoading(false));
-  }
+  // Centre AUJOURD'HUI dans le rail au montage (effet DOM, pas de setState).
+  const railRef = useRef<HTMLDivElement | null>(null);
+  const todayRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const rail = railRef.current;
+    const cell = todayRef.current;
+    if (rail && cell) {
+      rail.scrollLeft =
+        cell.offsetLeft - rail.clientWidth / 2 + cell.clientWidth / 2;
+    }
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -169,21 +140,22 @@ export function AgendaWeek({
     const id = String(e.active.id);
     setActiveId(null);
     const dropKey = e.over ? String(e.over.id) : null;
-    if (!dropKey || dropKey === selected) return;
+    const fromKey = selectedDesc.key;
+    if (!dropKey || dropKey === fromKey) return;
 
-    const task = (weeks[offset]?.[selected] ?? []).find((t) => t.id === id);
+    const task = (tasksByDay[fromKey] ?? []).find((t) => t.id === id);
     if (!task) return;
 
-    // Déplacement optimiste dans la semaine visible.
-    setWeeks((w) => {
-      const week = { ...(w[offset] ?? {}) };
-      week[selected] = (week[selected] ?? []).filter((t) => t.id !== id);
-      week[dropKey] = [...(week[dropKey] ?? []), task].sort((a, b) =>
+    const move = (map: WeekData, to: string, from: string): WeekData => {
+      const next = { ...map };
+      next[from] = (next[from] ?? []).filter((t) => t.id !== id);
+      next[to] = [...(next[to] ?? []), task].sort((a, b) =>
         (a.startTime ?? "").localeCompare(b.startTime ?? ""),
       );
-      return { ...w, [offset]: week };
-    });
+      return next;
+    };
 
+    setTasksByDay((m) => move(m, dropKey, fromKey)); // optimiste
     startTransition(async () => {
       const res = await updateTaskAction(id, {
         startDate: new Date(`${dropKey}T00:00:00.000Z`),
@@ -193,35 +165,9 @@ export function AgendaWeek({
         router.refresh();
       } else {
         toast.error(res.message);
-        // Rollback.
-        setWeeks((w) => {
-          const week = { ...(w[offset] ?? {}) };
-          week[dropKey] = (week[dropKey] ?? []).filter((t) => t.id !== id);
-          week[selected] = [...(week[selected] ?? []), task].sort((a, b) =>
-            (a.startTime ?? "").localeCompare(b.startTime ?? ""),
-          );
-          return { ...w, [offset]: week };
-        });
+        setTasksByDay((m) => move(m, fromKey, dropKey)); // rollback
       }
     });
-  }
-
-  // ── Swipe horizontal pour changer de semaine ───────────────────────────────
-  const touch = useRef<{ x: number; y: number } | null>(null);
-  function onTouchStart(e: React.TouchEvent) {
-    const t = e.touches[0];
-    touch.current = { x: t.clientX, y: t.clientY };
-  }
-  function onTouchEnd(e: React.TouchEvent) {
-    const start = touch.current;
-    touch.current = null;
-    if (!start || activeId) return; // jamais pendant un drag
-    const t = e.changedTouches[0];
-    const dx = t.clientX - start.x;
-    const dy = t.clientY - start.y;
-    if (Math.abs(dx) > 48 && Math.abs(dx) > Math.abs(dy) * 1.4) {
-      goToOffset(offset + (dx < 0 ? 1 : -1));
-    }
   }
 
   const active =
@@ -230,56 +176,35 @@ export function AgendaWeek({
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={pointerWithin}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
       <div className="pt-1 pb-0.5">
-        {/* Navigation de semaine (chevrons + plage). */}
-        <div className="flex items-center justify-between px-[18px] pt-1">
-          <button
-            type="button"
-            aria-label="Semaine précédente"
-            onClick={() => goToOffset(offset - 1)}
-            className="grid size-8 place-items-center rounded-full text-(--text-secondary) active:bg-(--surface)"
-          >
-            <ChevronLeft className="size-[18px]" strokeWidth={2.2} />
-          </button>
-          <span className="text-[13px] font-bold text-(--text-secondary)">
-            {weekRangeLabel(days)}
-            {offset === 0 ? (
-              <span className="ml-1.5 text-relvo">· cette semaine</span>
-            ) : null}
-          </span>
-          <button
-            type="button"
-            aria-label="Semaine suivante"
-            onClick={() => goToOffset(offset + 1)}
-            className="grid size-8 place-items-center rounded-full text-(--text-secondary) active:bg-(--surface)"
-          >
-            <ChevronRight className="size-[18px]" strokeWidth={2.2} />
-          </button>
-        </div>
-
-        {/* Bande de 7 jours (jours = zones de dépôt). Swipe = change de semaine. */}
+        {/* Rail de jours — glisse librement (scroll horizontal), aujourd'hui
+            centré. Chaque jour = zone de dépôt. */}
         <div
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-          className={cn(
-            "flex gap-[9px] px-[18px] pt-1.5 pb-1.5 transition-opacity",
-            loading && "opacity-50",
-          )}
+          ref={railRef}
+          className="flex [scrollbar-width:none] gap-[9px] overflow-x-auto px-[18px] pt-2 pb-1.5 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
           {days.map((d) => (
             <DayCell
               key={d.key}
               desc={d}
-              isSelected={d.key === selected}
+              isSelected={d.key === selectedDesc.key}
               isPast={d.key < todayKey}
               openCount={
                 (tasksByDay[d.key] ?? []).filter((t) => t.status !== "done")
                   .length
               }
-              onSelect={() => setSelectedKey(d.key)}
+              onSelect={() => setSelected(d.key)}
+              registerRef={
+                d.isToday
+                  ? (n) => {
+                      todayRef.current = n;
+                    }
+                  : undefined
+              }
             />
           ))}
         </div>
@@ -316,24 +241,29 @@ export function AgendaWeek({
   );
 }
 
-// ── Jour de la bande (zone de dépôt + badge) ─────────────────────────────────
+// ── Jour du rail (zone de dépôt + badge) ─────────────────────────────────────
 function DayCell({
   desc,
   isSelected,
   isPast,
   openCount,
   onSelect,
+  registerRef,
 }: {
   desc: DayDesc;
   isSelected: boolean;
   isPast: boolean;
   openCount: number;
   onSelect: () => void;
+  registerRef?: (node: HTMLElement | null) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: desc.key });
   return (
     <button
-      ref={setNodeRef}
+      ref={(node) => {
+        setNodeRef(node);
+        registerRef?.(node);
+      }}
       type="button"
       onClick={onSelect}
       aria-pressed={isSelected}

@@ -48,8 +48,9 @@ export const TENANT_DATA_TAG = "tenant-data";
 // taskTotal, − openTaskCount) ; v5 = « Nouveau » dérivé de lastOpenedAt (valeur
 // d'isNew/newSubjects recalculée, forme inchangée) ; v6 = Kpis (+ ignoredMessages)
 // + KPI tâches + feed tâches + titre de sujet dans l'agenda ; v7 = TaskItemData
-// (+ subjectId) + agenda servi en tâches (cachedAgendaTasks). Suivant = "v8".
-const CACHE_V = "v7";
+// (+ subjectId) + agenda servi en tâches (cachedAgendaTasks) ; v8 = TaskItemData
+// (+ folderSlug, rail de couleur par domaine). Suivant = "v9".
+const CACHE_V = "v8";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
