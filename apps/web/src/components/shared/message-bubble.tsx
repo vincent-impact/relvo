@@ -20,6 +20,10 @@ export type MessageBubbleData = {
   attachment?: { name: string; label?: string | null } | null;
   /** Si fourni, la bulle est cliquable et mène à la page détail du message. */
   href?: string | null;
+  /** Interlocuteur du message (pour filtrer le fil par conversation) : expéditeur
+   *  si entrant, destinataire si sortant. */
+  senderContactId?: string | null;
+  recipientContactId?: string | null;
 };
 
 const AVATAR: Record<Actor, { letter: string; bg: string }> = {

@@ -206,7 +206,7 @@ export function MessageDetailView({
 
         {/* Grille 2 colonnes pour les champs courts */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-          <Meta label="Destinataire">
+          <Meta label="Interlocuteur">
             {data.recipientContactId ? (
               <Link
                 href={`/contacts/${data.recipientContactId}`}

@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Check, ChevronUp, Mic, Paperclip, Send, Sparkles } from "lucide-react";
+import {
+  Check,
+  ChevronUp,
+  Mic,
+  Paperclip,
+  Send,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // RecipientComposer — le composer signature de la Direction B qui lève
@@ -14,7 +22,7 @@ import { cn } from "@/lib/utils";
 export type Recipient = {
   key: string;
   name: string;
-  kind: "human" | "relvo";
+  kind: "human" | "relvo" | "all";
   initials?: string;
   sublabel?: string;
 };
@@ -29,12 +37,12 @@ function Avatar({
   /** true : posé sur une surface claire (menu) → fond violet plein, pas translucide. */
   onLight?: boolean;
 }) {
-  if (r.kind === "relvo") {
+  if (r.kind === "relvo" || r.kind === "all") {
     return (
       <span
         className={cn(
           "grid place-items-center rounded-full",
-          onLight && "bg-relvo",
+          onLight && (r.kind === "all" ? "bg-(--amber-600)" : "bg-relvo"),
         )}
         style={{
           width: size,
@@ -42,11 +50,15 @@ function Avatar({
           background: onLight ? undefined : "rgb(255 255 255 / 0.2)",
         }}
       >
-        <Sparkles
-          className="size-[19px] text-white"
-          fill="currentColor"
-          strokeWidth={0}
-        />
+        {r.kind === "all" ? (
+          <Users className="size-[19px] text-white" strokeWidth={2.2} />
+        ) : (
+          <Sparkles
+            className="size-[19px] text-white"
+            fill="currentColor"
+            strokeWidth={0}
+          />
+        )}
       </span>
     );
   }
@@ -67,6 +79,8 @@ function Avatar({
 export function RecipientComposer({
   recipients = [{ key: "relvo", name: "Relvo", kind: "relvo" }],
   defaultRecipient,
+  value,
+  onRecipientChange,
   placeholder,
   defaultValue = "",
   attach = true,
@@ -74,22 +88,35 @@ export function RecipientComposer({
 }: {
   recipients?: Recipient[];
   defaultRecipient?: string;
+  /** Sélection CONTRÔLÉE (ex. orchestrateur du sujet qui filtre le fil). */
+  value?: string;
+  onRecipientChange?: (key: string) => void;
   placeholder?: string;
   defaultValue?: string;
   attach?: boolean;
   onSend?: (text: string, recipientKey: string) => void;
 }) {
-  const [cur, setCur] = useState(
+  const [internal, setInternal] = useState(
     defaultRecipient || recipients[0]?.key || "relvo",
   );
+  // Contrôlé si `value` fourni, sinon état interne (rétro-compatible).
+  const cur = value ?? internal;
+  const setCur = (key: string) => {
+    if (value === undefined) setInternal(key);
+    onRecipientChange?.(key);
+  };
   const [open, setOpen] = useState(false);
   const [text, setText] = useState(defaultValue);
   const r = recipients.find((x) => x.key === cur) || recipients[0];
-  const human = r.kind === "human";
   const typing = text.trim().length > 0;
   const multi = recipients.length > 1;
   const ph =
-    placeholder || (human ? `Répondre à ${r.name}…` : "Demander à Relvo…");
+    placeholder ||
+    (r.kind === "relvo"
+      ? "Demander à Relvo…"
+      : r.kind === "all"
+        ? "Répondre à tous…"
+        : `Répondre à ${r.name}…`);
 
   const send = () => {
     if (!typing) return;
@@ -162,7 +189,7 @@ export function RecipientComposer({
         <button
           type="button"
           onClick={() => multi && setOpen((o) => !o)}
-          aria-label="Destinataire"
+          aria-label="Interlocuteur"
           className={cn(
             "relative size-11 flex-none",
             multi ? "cursor-pointer" : "cursor-default",

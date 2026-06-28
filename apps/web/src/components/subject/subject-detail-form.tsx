@@ -252,7 +252,7 @@ export function SubjectDetailForm({
       </div>
 
       <div>
-        <FieldLabel>Destinataires</FieldLabel>
+        <FieldLabel>Interlocuteurs</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {selectedContacts.map((c) => (
             <span
