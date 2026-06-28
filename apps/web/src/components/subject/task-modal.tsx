@@ -164,11 +164,11 @@ export function TaskModal({
         />
 
         {/* Sujet rattaché — affiché + (ré)assignable / détachable. */}
-        <div>
+        <div className="min-w-0">
           <div className="mb-1.5 text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
             Sujet
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <button
               type="button"
               onClick={openPicker}
@@ -266,8 +266,8 @@ export function TaskModal({
         </div>
 
         {/* Date + heure. */}
-        <div className="flex gap-2">
-          <label className="flex flex-1 items-center gap-2 rounded-xl border border-(--border) px-3 py-2.5">
+        <div className="flex min-w-0 gap-2">
+          <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-(--border) px-3 py-2.5">
             <CalendarDays
               className="size-4 flex-none text-(--text-tertiary)"
               strokeWidth={2}

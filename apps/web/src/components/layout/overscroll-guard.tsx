@@ -36,17 +36,28 @@ function scrollableAncestor(
 export function OverscrollGuard() {
   useEffect(() => {
     const root = document.documentElement;
+    let startX = 0;
     let startY = 0;
 
     function onTouchStart(e: TouchEvent) {
-      if (e.touches.length === 1) startY = e.touches[0].clientY;
+      if (e.touches.length === 1) {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+      }
     }
 
     function onTouchMove(e: TouchEvent) {
       // Multi-touch (pinch-zoom) : on ne touche à rien.
       if (e.touches.length !== 1) return;
 
+      const dx = e.touches[0].clientX - startX;
       const dy = e.touches[0].clientY - startY;
+
+      // Geste HORIZONTAL-dominant : le rebond qu'on combat est VERTICAL. On laisse
+      // donc passer (sinon, quand la page n'est pas scrollable verticalement, on
+      // tuerait le scroll horizontal du semainier — bug PWA après tap sur un jour).
+      if (Math.abs(dx) > Math.abs(dy)) return;
+
       const scroller = scrollableAncestor(e.target, root);
 
       // Aucun conteneur scrollable sous le doigt → rebond pur du document.

@@ -186,9 +186,12 @@ export function AgendaWeek({
     if (!task) return;
 
     const move = (map: WeekData, to: string, from: string): WeekData => {
+      // « En retard » dépend de la date : déplacer vers le futur/aujourd'hui doit
+      // RETIRER le marqueur (fond rouge), le déplacer vers le passé le rétablir.
+      const moved = { ...task, overdue: to < todayKey };
       const next = { ...map };
       next[from] = (next[from] ?? []).filter((t) => t.id !== id);
-      next[to] = [...(next[to] ?? []), task].sort((a, b) =>
+      next[to] = [...(next[to] ?? []), moved].sort((a, b) =>
         (a.startTime ?? "").localeCompare(b.startTime ?? ""),
       );
       return next;
@@ -232,12 +235,12 @@ export function AgendaWeek({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <div className="pt-2.5 pb-1.5">
+      <div className="pt-0.5 pb-1.5">
         {/* Rail de jours — glisse librement (scroll horizontal), aujourd'hui
             centré. Chaque jour = zone de dépôt. */}
         <div
           ref={railRef}
-          className="flex [scrollbar-width:none] gap-[10px] overflow-x-auto px-[18px] pt-3 pb-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          className="flex [scrollbar-width:none] gap-[10px] overflow-x-auto px-[18px] pt-1.5 pb-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
           {days.map((d) => (
             <DayCell
@@ -330,7 +333,7 @@ function DayCell({
       onClick={onSelect}
       aria-pressed={isSelected}
       className={cn(
-        "relative w-[52px] flex-none rounded-[16px] pt-[11px] pb-2.5 text-center transition-shadow",
+        "relative w-[58px] flex-none rounded-[16px] pt-[13px] pb-3 text-center transition-shadow",
         desc.isToday ? "bg-relvo" : "bg-[#f5f3ef]",
         isSelected && "ring-2 ring-relvo ring-offset-2 ring-offset-white",
         isOver && "ring-2 ring-relvo ring-offset-2 ring-offset-white",
@@ -356,7 +359,7 @@ function DayCell({
       </div>
       <div
         className={cn(
-          "mt-[3px] font-heading text-[21px] font-extrabold",
+          "mt-[3px] font-heading text-[22px] font-extrabold",
           desc.isToday ? "text-white" : "text-[#2a2832]",
         )}
       >

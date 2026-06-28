@@ -26,9 +26,9 @@ function gaugeColor(p: number) {
 function GaugeCell({ percent, label }: { percent: number; label: string }) {
   const p = Math.max(0, Math.min(100, percent));
   return (
-    <div className="flex flex-1 flex-col items-center gap-[7px] px-1">
-      <div className="relative grid size-[42px] place-items-center">
-        <svg width="42" height="42" viewBox="0 0 36 36">
+    <div className="flex flex-1 flex-col items-center gap-[5px] px-1">
+      <div className="relative grid size-[34px] place-items-center">
+        <svg width="34" height="34" viewBox="0 0 36 36">
           <circle
             cx="18"
             cy="18"
@@ -76,7 +76,7 @@ function ValueCell({
     <>
       <span
         className={cn(
-          "flex h-[46px] items-center font-numeric text-[28px] font-bold tracking-[-1px]",
+          "flex h-[38px] items-center font-numeric text-[25px] font-bold tracking-[-1px]",
           tone === "urgent" ? "text-(--red-600)" : "text-[#1c1a22]",
         )}
       >
@@ -87,7 +87,7 @@ function ValueCell({
       </div>
     </>
   );
-  const cls = "flex flex-1 flex-col items-center gap-[7px] px-1";
+  const cls = "flex flex-1 flex-col items-center gap-[5px] px-1";
   return href ? (
     <Link href={href} className={cn(cls, "rounded-xl active:opacity-60")}>
       {inner}
@@ -110,7 +110,7 @@ export function MetricsCard({
   return (
     <div
       className={cn(
-        "relative z-[3] mx-4 flex rounded-[22px] bg-white px-1 py-3.5",
+        "relative z-[3] mx-4 flex rounded-[22px] bg-white px-1 py-2.5",
         overlap && "-mt-[30px]",
         className,
       )}
