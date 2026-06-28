@@ -75,6 +75,16 @@ export function TaskModal({
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<SubjectOption[] | null>(null);
 
+  // « Enregistrer » n'est actif QUE si quelque chose a changé (édition) — incite à
+  // sauvegarder avant de quitter, et évite un écrit inutile. En création, toujours
+  // actif (la validation du titre se fait au clic).
+  const dirty =
+    mode === "create" ||
+    title !== (initial.title ?? "") ||
+    date !== (initial.date ?? "") ||
+    time !== (initial.time ?? "") ||
+    subjectId !== (initial.subjectId ?? null);
+
   // La modale est montée à la demande (parent : `{open && <TaskModal/>}`) → l'état
   // repart toujours de `initial` à l'ouverture, sans effet (création = champs
   // vides ; annuler une édition = valeurs d'origine).
@@ -325,8 +335,8 @@ export function TaskModal({
           <button
             type="button"
             onClick={save}
-            disabled={pending}
-            className="flex-1 rounded-xl bg-relvo py-2.5 text-[14px] font-bold text-white disabled:opacity-60"
+            disabled={pending || !dirty}
+            className="flex-1 rounded-xl bg-relvo py-2.5 text-[14px] font-bold text-white disabled:opacity-50"
           >
             {mode === "create" ? "Créer" : "Enregistrer"}
           </button>

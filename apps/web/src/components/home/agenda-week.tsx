@@ -144,6 +144,17 @@ export function AgendaWeek({
   const [selected, setSelected] = useState(todayKey);
   const [activeId, setActiveId] = useState<string | null>(null);
 
+  // Re-synchronise avec le serveur après un `router.refresh` (ex. l'heure d'une
+  // tâche modifiée via la modale doit apparaître SANS changer de page). Pattern
+  // React « ajuster un state pendant le rendu » (pas d'effet → pas de setState en
+  // effet). La référence de `initialTasksByDay` ne change qu'au refresh serveur,
+  // donc l'état optimiste (drag / coche) n'est pas écrasé entre deux refresh.
+  const [syncedFrom, setSyncedFrom] = useState(initialTasksByDay);
+  if (initialTasksByDay !== syncedFrom) {
+    setSyncedFrom(initialTasksByDay);
+    setTasksByDay(initialTasksByDay);
+  }
+
   const days = Array.from({ length: rangeDays }, (_, i) =>
     describeDay(keyPlusDays(rangeStartKey, i), todayKey),
   );
