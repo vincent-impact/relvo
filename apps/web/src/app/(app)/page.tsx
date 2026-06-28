@@ -1,86 +1,23 @@
 import { Suspense } from "react";
-import type { Kpis } from "@relvo/db";
-import {
-  BriefCarousel,
-  type BriefSlide,
-} from "@/components/home/brief-carousel";
 import { HomeTabs } from "@/components/home/home-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { CreateTaskButton } from "@/components/subject/create-task-button";
 import { Screen } from "@/components/layout/screen";
 import { MetricsCardSkeleton } from "@/components/shared/screen-skeletons";
-import type { SubjectRowData } from "@/components/shared/subject-row";
 import {
   cachedAgendaTasks,
-  cachedKpis,
-  cachedPriorityRows,
   cachedTaskFeed,
   cachedTaskKpis,
 } from "@/server/cached";
 import { requireAccount } from "@/server/auth-context";
 
-// Accueil (Direction B) — « plan d'action » : hero violet « Bonjour … » + brief
-// parlé, puis barre KPI Tâches et 3 onglets (Aujourd'hui / En retard / À faire).
-// La page est dédiée aux TÂCHES (les actions extraites) ; l'état des SUJETS vit
-// sur Mon fil. Chaque ligne porte le titre du sujet en clair.
+// Accueil (Direction B) — « Actions du jour » : hero violet « Bonjour … » puis
+// barre KPI Tâches et 2 onglets (Agenda / À trier). La page est dédiée aux TÂCHES
+// (les actions extraites) ; l'état des SUJETS vit sur Sujets. Chaque ligne porte
+// le titre du sujet en clair.
 //
 // PERF (M9.19) : shell instantané + zones streamées (<Suspense>), données servies
 // depuis le cache serveur (cf. @/server/cached) en formes plates.
-
-function briefSlides(kpis: Kpis, rows: SubjectRowData[]): BriefSlide[] {
-  const slides: BriefSlide[] = [];
-  const suggestions = rows.reduce((n, r) => n + r.suggestionCount, 0);
-  slides.push({
-    icon: "spark",
-    label: "Votre brief du jour",
-    body: (
-      <>
-        <b>
-          {kpis.urgentSubjects} sujet{kpis.urgentSubjects > 1 ? "s" : ""} urgent
-          {kpis.urgentSubjects > 1 ? "s" : ""}
-        </b>{" "}
-        et {kpis.tasksToday} tâche{kpis.tasksToday > 1 ? "s" : ""} pour
-        aujourd’hui.
-        {suggestions > 0 ? (
-          <>
-            {" "}
-            J’ai préparé{" "}
-            <span className="font-bold text-white">
-              {suggestions} suggestion{suggestions > 1 ? "s" : ""}
-            </span>
-            , prêtes à valider.
-          </>
-        ) : null}
-      </>
-    ),
-  });
-
-  const waiting = rows.find((r) => r.waitingForReply);
-  if (waiting) {
-    slides.push({
-      icon: "watch",
-      label: "À surveiller",
-      body: (
-        <>
-          <span className="font-bold text-white">{waiting.title}</span> —
-          j’attends une réponse externe avant de poursuivre.
-        </>
-      ),
-    });
-  }
-
-  return slides;
-}
-
-// ── Zones de données streamées (servies depuis le cache serveur) ─────────────
-
-async function HeroBrief({ accountId }: { accountId: string }) {
-  const [kpis, rows] = await Promise.all([
-    cachedKpis(accountId),
-    cachedPriorityRows(accountId),
-  ]);
-  return <BriefCarousel slides={briefSlides(kpis, rows)} />;
-}
 
 // Fenêtre du rail (jours), centrée sur aujourd'hui. Bornée : au-delà, on passe
 // par le calendrier mensuel (/planning).
@@ -152,37 +89,18 @@ export default async function AccueilPage() {
   const account = await requireAccount();
   const accountId = account.id;
 
-  const todayLong = new Date().toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-  const todayCap = todayLong.charAt(0).toUpperCase() + todayLong.slice(1);
-
   return (
     <Screen>
       <RelvoHeader
         title={`Bonjour ${account.firstName}`}
-        subtitle={todayCap}
+        subtitle="Actions du jour"
         className="pb-[46px]"
         action={<CreateTaskButton />}
-      >
-        <Suspense fallback={<BriefSkeleton />}>
-          <HeroBrief accountId={accountId} />
-        </Suspense>
-      </RelvoHeader>
+      />
 
       <Suspense fallback={<TabsSkeleton />}>
         <HomeTaskTabs accountId={accountId} />
       </Suspense>
     </Screen>
-  );
-}
-
-function BriefSkeleton() {
-  return (
-    <div className="mt-4 px-[22px]">
-      <div className="h-[92px] animate-pulse rounded-[18px] bg-white/12" />
-    </div>
   );
 }

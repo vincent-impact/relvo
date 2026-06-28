@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { TaskItem } from "@/components/subject/task-item";
 import type { TaskItemData } from "@/lib/task-item-data";
 import { updateTaskAction } from "@/server/actions/tasks";
+import { folderColor } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
 // Semainier (Accueil, onglet « Agenda ») — RAIL de jours qui glisse librement de
@@ -71,7 +72,13 @@ function describeDay(key: string, todayKey: string): DayDesc {
 }
 
 // ── Ligne de tâche déplaçable (long-press) ───────────────────────────────────
-function DayTaskRow({ task }: { task: TaskItemData }) {
+function DayTaskRow({
+  task,
+  onStatusChange,
+}: {
+  task: TaskItemData;
+  onStatusChange: (id: string, status: "open" | "done") => void;
+}) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: task.id,
   });
@@ -82,7 +89,7 @@ function DayTaskRow({ task }: { task: TaskItemData }) {
       {...attributes}
       className={cn("touch-pan-y", isDragging && "opacity-30")}
     >
-      <TaskItem task={task} flat meta="time" />
+      <TaskItem task={task} flat meta="time" onStatusChange={onStatusChange} />
     </div>
   );
 }
@@ -170,6 +177,19 @@ export function AgendaWeek({
     });
   }
 
+  // Cocher / décocher une tâche met à jour son statut DANS l'état local du rail
+  // → les badges (nb ouvertes par jour) se recalculent immédiatement, sans
+  // attendre le router.refresh (qui ne réinjecte pas l'état seedé du composant).
+  function setTaskStatus(id: string, status: "open" | "done") {
+    setTasksByDay((m) => {
+      const next: WeekData = {};
+      for (const [k, list] of Object.entries(m)) {
+        next[k] = list.map((t) => (t.id === id ? { ...t, status } : t));
+      }
+      return next;
+    });
+  }
+
   const active =
     activeId != null ? dayTasks.find((t) => t.id === activeId) : null;
 
@@ -180,12 +200,12 @@ export function AgendaWeek({
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
-      <div className="pt-1 pb-0.5">
+      <div className="pt-2.5 pb-1.5">
         {/* Rail de jours — glisse librement (scroll horizontal), aujourd'hui
             centré. Chaque jour = zone de dépôt. */}
         <div
           ref={railRef}
-          className="flex [scrollbar-width:none] gap-[9px] overflow-x-auto px-[18px] pt-2 pb-1.5 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          className="flex [scrollbar-width:none] gap-[10px] overflow-x-auto px-[18px] pt-3 pb-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
         >
           {days.map((d) => (
             <DayCell
@@ -219,21 +239,31 @@ export function AgendaWeek({
               : "Rien de prévu ce jour-là."}
           </p>
         ) : (
-          dayTasks.map((t) => <DayTaskRow key={t.id} task={t} />)
+          dayTasks.map((t) => (
+            <DayTaskRow key={t.id} task={t} onStatusChange={setTaskStatus} />
+          ))
         )}
       </div>
 
+      {/* Miniature de drag — TAILLE FIXE (indépendante du texte) : pastille de
+          couleur du domaine + titre tronqué, heure À DROITE (cohérent avec la
+          liste, sans couleur de domaine). */}
       <DragOverlay>
         {active ? (
-          <div className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 shadow-lg ring-1 ring-(--border)">
+          <div className="flex w-[210px] items-center gap-2 rounded-xl bg-white px-3 py-2.5 shadow-lg ring-1 ring-(--border)">
+            <span
+              aria-hidden
+              className="size-2.5 flex-none rounded-full"
+              style={{ background: folderColor(active.folderSlug) }}
+            />
+            <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-(--text-primary)">
+              {active.title}
+            </span>
             {active.startTime ? (
-              <span className="font-numeric text-[13px] font-bold text-relvo">
+              <span className="flex-none font-numeric text-[13px] font-bold text-(--text-secondary)">
                 {active.startTime}
               </span>
             ) : null}
-            <span className="truncate text-[14px] font-semibold text-(--text-primary)">
-              {active.title}
-            </span>
           </div>
         ) : null}
       </DragOverlay>
@@ -268,7 +298,7 @@ function DayCell({
       onClick={onSelect}
       aria-pressed={isSelected}
       className={cn(
-        "relative w-[50px] flex-none rounded-[15px] pt-[9px] pb-2 text-center transition-shadow",
+        "relative w-[52px] flex-none rounded-[16px] pt-[11px] pb-2.5 text-center transition-shadow",
         desc.isToday ? "bg-relvo" : "bg-[#f5f3ef]",
         isSelected && "ring-2 ring-relvo ring-offset-2 ring-offset-white",
         isOver && "ring-2 ring-relvo ring-offset-2 ring-offset-white",
@@ -294,7 +324,7 @@ function DayCell({
       </div>
       <div
         className={cn(
-          "mt-[3px] font-heading text-[20px] font-extrabold",
+          "mt-[3px] font-heading text-[21px] font-extrabold",
           desc.isToday ? "text-white" : "text-[#2a2832]",
         )}
       >

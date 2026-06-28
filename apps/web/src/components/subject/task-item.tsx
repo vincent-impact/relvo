@@ -35,12 +35,16 @@ export function TaskItem({
   task,
   flat = false,
   meta = "none",
+  onStatusChange,
 }: {
   task: TaskItemData;
   /** true : liste à plat (Accueil) → montre le sujet + l'interlocuteur. */
   flat?: boolean;
   /** Colonne droite heure/date : none | time (heure seule) | date (date+heure). */
   meta?: "none" | "time" | "date";
+  /** Notifie le parent du changement de statut (optimiste) — ex. l'agenda met
+   *  à jour ses badges sans attendre le router.refresh. */
+  onStatusChange?: (id: string, status: "open" | "done") => void;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -50,14 +54,18 @@ export function TaskItem({
   function toggle() {
     const next = !done;
     setDone(next); // optimiste
+    onStatusChange?.(task.id, next ? "done" : "open");
     startTransition(async () => {
       const res = next
         ? await completeTaskAction(task.id)
         : await reopenTaskAction(task.id);
-      if (res.ok) router.refresh();
-      else {
+      if (res.ok) {
+        toast.success(next ? "Tâche terminée" : "Tâche rouverte");
+        router.refresh();
+      } else {
         toast.error(res.message);
         setDone(!next);
+        onStatusChange?.(task.id, next ? "open" : "done");
       }
     });
   }
@@ -77,20 +85,10 @@ export function TaskItem({
       <div
         onClick={() => setOpen(true)}
         className={cn(
-          "relative flex cursor-pointer items-start gap-3 border-b border-[#f1efeb] py-3.5 pr-4 pl-[19px]",
+          "flex cursor-pointer items-start gap-2.5 border-b border-[#f1efeb] px-4 py-3.5",
           done ? "bg-[#f5f3ef]" : late && "bg-(--red-50)",
         )}
       >
-        {/* Rail de couleur (gauche) — domaine (Folder) hérité du sujet. */}
-        <span
-          aria-hidden
-          className={cn(
-            "absolute inset-y-0 left-0 w-[3px]",
-            done && "opacity-40",
-          )}
-          style={{ background: folderColor(task.folderSlug) }}
-        />
-
         {/* Case à cocher (gauche) — terminer / remettre à faire. */}
         <button
           type="button"
@@ -110,6 +108,17 @@ export function TaskItem({
         >
           <Check className="size-3.5" strokeWidth={3} />
         </button>
+
+        {/* Rail de couleur — domaine (Folder) hérité du sujet, entre la case et
+            le texte (visible, contrairement au bord d'écran). */}
+        <span
+          aria-hidden
+          className={cn(
+            "my-0.5 w-[3px] flex-none self-stretch rounded-full",
+            done && "opacity-40",
+          )}
+          style={{ background: folderColor(task.folderSlug) }}
+        />
 
         {/* Centre — titre + sujet/interlocuteur. */}
         <div className="min-w-0 flex-1">
