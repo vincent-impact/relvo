@@ -99,10 +99,14 @@ export default async function SujetPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; from?: string }>;
 }) {
   const { id } = await params;
-  const { tab } = await searchParams;
+  const { tab, from } = await searchParams;
+  // `from` = page d'origine (ex. l'écran Actions via une tâche). Sanitisé pour
+  // rester un chemin interne ; sinon retour par défaut au fil des Sujets.
+  const backHref =
+    from && from.startsWith("/") && !from.startsWith("//") ? from : "/fil";
   const db = await getTenantDb();
   // folders + allContacts ne dépendent pas du sujet → on les charge dans la même
   // vague que getSubjectDetail (une seule attente DB au lieu de deux successives).
@@ -172,7 +176,7 @@ export default async function SujetPage({
 
       <main className="min-h-0 flex-1 overflow-y-auto bg-white">
         <RelvoHeader
-          back="/fil"
+          back={backHref}
           title={subject.title}
           subtitle={
             mainContact
@@ -255,11 +259,20 @@ export default async function SujetPage({
                         sourceActor: t.sourceActor,
                         subjectId: subject.id,
                         subjectTitle: subject.title,
+                        folderSlug:
+                          folders.find((f) => f.id === subject.folderId)
+                            ?.slug ?? null,
                       }}
                     />
                   ))
                 )}
-                <AddTask subjectId={subject.id} subjectTitle={subject.title} />
+                <AddTask
+                  subjectId={subject.id}
+                  subjectTitle={subject.title}
+                  subjectFolderSlug={
+                    folders.find((f) => f.id === subject.folderId)?.slug ?? null
+                  }
+                />
               </div>
             ),
             detail: (

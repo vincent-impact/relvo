@@ -11,9 +11,11 @@ import { TaskModal } from "@/components/subject/task-modal";
 export function AddTask({
   subjectId,
   subjectTitle,
+  subjectFolderSlug,
 }: {
   subjectId: string;
   subjectTitle: string;
+  subjectFolderSlug?: string | null;
 }) {
   const [open, setOpen] = useState(false);
   return (
@@ -34,7 +36,7 @@ export function AddTask({
           open
           onOpenChange={setOpen}
           mode="create"
-          initial={{ subjectId, subjectTitle }}
+          initial={{ subjectId, subjectTitle, subjectFolderSlug }}
         />
       ) : null}
     </>

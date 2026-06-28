@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
 import { type TaskItemData } from "@/lib/task-item-data";
@@ -47,6 +48,7 @@ export function TaskItem({
   onStatusChange?: (id: string, status: "open" | "done") => void;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [pending, startTransition] = useTransition();
   const [open, setOpen] = useState(false);
   const [done, setDone] = useState(task.status === "done");
@@ -70,10 +72,14 @@ export function TaskItem({
     });
   }
 
-  const subjectLine =
-    flat && (task.subjectTitle || task.contactName)
-      ? [task.subjectTitle, task.contactName].filter(Boolean).join(" · ")
-      : "";
+  const showSubjectLine =
+    flat && Boolean(task.subjectTitle || task.contactName);
+  // Le sujet (sous le titre) est CLIQUABLE → fiche du sujet. `from` = page
+  // courante pour que le bouton « Retour » y ramène (ex. l'écran Actions).
+  const subjectHref =
+    task.subjectId && task.subjectTitle
+      ? `/sujets/${task.subjectId}?from=${encodeURIComponent(pathname)}`
+      : null;
 
   const dateLine = meta === "date" ? dateShortLabel(task.startDate) : null;
   const timeLine = meta !== "none" ? (task.startTime ?? null) : null;
@@ -130,9 +136,23 @@ export function TaskItem({
           >
             {task.title}
           </div>
-          {subjectLine ? (
+          {showSubjectLine ? (
             <p className="mt-0.5 truncate text-[13px] text-[#86857d]">
-              {subjectLine}
+              {task.subjectTitle ? (
+                subjectHref ? (
+                  <Link
+                    href={subjectHref}
+                    onClick={(e) => e.stopPropagation()}
+                    className="underline decoration-[#c9c7c0] underline-offset-2 hover:text-relvo hover:decoration-relvo"
+                  >
+                    {task.subjectTitle}
+                  </Link>
+                ) : (
+                  task.subjectTitle
+                )
+              ) : null}
+              {task.subjectTitle && task.contactName ? " · " : ""}
+              {task.contactName}
             </p>
           ) : null}
         </div>
@@ -182,6 +202,7 @@ export function TaskItem({
             time: task.startTime,
             subjectId: task.subjectId,
             subjectTitle: task.subjectTitle,
+            subjectFolderSlug: task.folderSlug,
             sourceActor: task.sourceActor,
           }}
         />

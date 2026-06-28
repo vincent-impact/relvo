@@ -44,14 +44,25 @@ export async function createSubjectAction(input: CreateSubjectInput) {
 
 /** Options légères pour le sélecteur de sujet (modale de tâche) — sujets ouverts. */
 export async function listSubjectOptionsAction() {
-  return domainAction((db) =>
-    db.subject.findMany({
+  return domainAction(async (db) => {
+    const subjects = await db.subject.findMany({
       where: { status: { notIn: ["resolved", "archived", "ignored"] } },
       orderBy: [{ lastActivityAt: "desc" }],
-      select: { id: true, reference: true, title: true },
+      select: {
+        id: true,
+        reference: true,
+        title: true,
+        folder: { select: { slug: true } },
+      },
       take: 100,
-    }),
-  );
+    });
+    return subjects.map((s) => ({
+      id: s.id,
+      reference: s.reference,
+      title: s.title,
+      folderSlug: s.folder?.slug ?? null,
+    }));
+  });
 }
 
 export async function updateSubjectAction(

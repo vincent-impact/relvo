@@ -9,6 +9,7 @@ import {
   pointerWithin,
   type DragEndEvent,
   type DragStartEvent,
+  type Modifier,
   useDraggable,
   useDroppable,
   useSensor,
@@ -42,6 +43,37 @@ function keyPlusDays(key: string, n: number): string {
 function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+function pointerCoords(e: Event): { x: number; y: number } | null {
+  if (typeof TouchEvent !== "undefined" && e instanceof TouchEvent) {
+    const t = e.touches[0] ?? e.changedTouches[0];
+    return t ? { x: t.clientX, y: t.clientY } : null;
+  }
+  if ("clientX" in e) {
+    const m = e as MouseEvent;
+    return { x: m.clientX, y: m.clientY };
+  }
+  return null;
+}
+
+// Centre la MINIATURE de drag sur le curseur (et non sur le coin de la tâche
+// saisie). Tient compte de la taille propre de l'overlay (≠ taille de la ligne).
+const snapCenterToCursor: Modifier = ({
+  activatorEvent,
+  draggingNodeRect,
+  overlayNodeRect,
+  transform,
+}) => {
+  const rect = overlayNodeRect ?? draggingNodeRect;
+  if (!rect || !draggingNodeRect || !activatorEvent) return transform;
+  const c = pointerCoords(activatorEvent);
+  if (!c) return transform;
+  return {
+    ...transform,
+    x: transform.x + c.x - draggingNodeRect.left - rect.width / 2,
+    y: transform.y + c.y - draggingNodeRect.top - rect.height / 2,
+  };
+};
 
 type DayDesc = {
   key: string;
@@ -248,7 +280,7 @@ export function AgendaWeek({
       {/* Miniature de drag — TAILLE FIXE (indépendante du texte) : pastille de
           couleur du domaine + titre tronqué, heure À DROITE (cohérent avec la
           liste, sans couleur de domaine). */}
-      <DragOverlay>
+      <DragOverlay modifiers={[snapCenterToCursor]}>
         {active ? (
           <div className="flex w-[210px] items-center gap-2 rounded-xl bg-white px-3 py-2.5 shadow-lg ring-1 ring-(--border)">
             <span

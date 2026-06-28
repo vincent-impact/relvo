@@ -18,6 +18,7 @@ import {
   deleteTaskAction,
   updateTaskAction,
 } from "@/server/actions/tasks";
+import { folderColor } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
 // Modale d'une tâche — PARTAGÉE entre édition (TaskItem) et création (bouton +
@@ -25,7 +26,12 @@ import { cn } from "@/lib/utils";
 // assignable, ou détaché — une tâche peut ne pas avoir de sujet). Le créateur
 // (Relvo/Moi) est rappelé ici (retiré des lignes pour ne pas les surcharger).
 
-type SubjectOption = { id: string; reference: string; title: string };
+type SubjectOption = {
+  id: string;
+  reference: string;
+  title: string;
+  folderSlug: string | null;
+};
 
 export function TaskModal({
   open,
@@ -44,6 +50,7 @@ export function TaskModal({
     time?: string | null;
     subjectId?: string | null;
     subjectTitle?: string | null;
+    subjectFolderSlug?: string | null;
     sourceActor?: Actor;
   };
 }) {
@@ -58,6 +65,9 @@ export function TaskModal({
   );
   const [subjectTitle, setSubjectTitle] = useState<string | null>(
     initial.subjectTitle ?? null,
+  );
+  const [folderSlug, setFolderSlug] = useState<string | null>(
+    initial.subjectFolderSlug ?? null,
   );
 
   // Sélecteur de sujet (chargé à la 1ʳᵉ ouverture).
@@ -162,11 +172,18 @@ export function TaskModal({
             <button
               type="button"
               onClick={openPicker}
-              className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-(--border) px-3 py-2.5 text-left"
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-(--border) px-3 py-2.5 text-left"
             >
+              {subjectId ? (
+                <span
+                  aria-hidden
+                  className="size-2.5 flex-none rounded-full"
+                  style={{ background: folderColor(folderSlug) }}
+                />
+              ) : null}
               <span
                 className={cn(
-                  "truncate text-[14px]",
+                  "min-w-0 flex-1 truncate text-[14px]",
                   subjectTitle
                     ? "font-semibold"
                     : "text-(--text-tertiary) italic",
@@ -184,6 +201,7 @@ export function TaskModal({
                 onClick={() => {
                   setSubjectId(null);
                   setSubjectTitle(null);
+                  setFolderSlug(null);
                 }}
                 aria-label="Détacher le sujet"
                 className="grid size-[42px] flex-none place-items-center rounded-xl border border-(--border) text-(--text-tertiary)"
@@ -225,10 +243,16 @@ export function TaskModal({
                       onClick={() => {
                         setSubjectId(o.id);
                         setSubjectTitle(o.title);
+                        setFolderSlug(o.folderSlug);
                         setPicking(false);
                       }}
                       className="flex w-full items-center gap-2 border-b border-(--border-light) px-3.5 py-2.5 text-left text-[13.5px] last:border-b-0"
                     >
+                      <span
+                        aria-hidden
+                        className="size-2 flex-none rounded-full"
+                        style={{ background: folderColor(o.folderSlug) }}
+                      />
                       <span className="font-numeric text-[11px] font-semibold text-(--text-tertiary)">
                         {o.reference}
                       </span>
@@ -270,22 +294,24 @@ export function TaskModal({
               value={time}
               disabled={!date}
               onChange={(e) => setTime(e.target.value)}
-              className="w-[72px] bg-transparent text-[14px] outline-none"
+              className="w-[64px] bg-transparent text-[14px] outline-none"
             />
           </label>
+          {/* Retirer la date — croix, comme le détachement du sujet. */}
+          {date ? (
+            <button
+              type="button"
+              onClick={() => {
+                setDate("");
+                setTime("");
+              }}
+              aria-label="Retirer la date"
+              className="grid size-[42px] flex-none place-items-center rounded-xl border border-(--border) text-(--text-tertiary)"
+            >
+              <X className="size-[18px]" strokeWidth={2.2} />
+            </button>
+          ) : null}
         </div>
-        {date ? (
-          <button
-            type="button"
-            onClick={() => {
-              setDate("");
-              setTime("");
-            }}
-            className="-mt-1 self-start text-[12.5px] font-semibold text-(--text-tertiary)"
-          >
-            Retirer la date
-          </button>
-        ) : null}
 
         {/* Créateur (édition seulement) — rappel discret. */}
         {mode === "edit" && initial.sourceActor ? (
