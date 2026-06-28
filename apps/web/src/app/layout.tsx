@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import { NavVisibilityProvider } from "@/components/layout/nav-visibility";
 import { OverscrollGuard } from "@/components/layout/overscroll-guard";
+import { ViewportHeight } from "@/components/layout/viewport-height";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
@@ -55,6 +56,10 @@ export const viewport: Viewport = {
   themeColor: "#6b5bd6",
   width: "device-width",
   initialScale: 1,
+  // Zoom BLOQUÉ : le pinch-zoom et le zoom au focus d'un input changent la taille
+  // du viewport (donc la hauteur du cadre) → source du décalage. On fige l'échelle.
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
 };
 
@@ -78,6 +83,7 @@ export default function RootLayout({
           className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-relvo"
           style={{ height: "env(safe-area-inset-top)" }}
         />
+        <ViewportHeight />
         <OverscrollGuard />
         <Providers>
           <NavVisibilityProvider>{children}</NavVisibilityProvider>
