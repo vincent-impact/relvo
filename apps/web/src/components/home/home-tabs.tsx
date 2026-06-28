@@ -2,21 +2,22 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { AgendaWeek, type AgendaWeekDay } from "@/components/home/agenda-week";
-import { TaskRangeGroups } from "@/components/home/task-range-groups";
+import { AgendaWeek } from "@/components/home/agenda-week";
 import { MetricsCard, type Metric } from "@/components/shared/metrics-card";
 import { SegTabs } from "@/components/shared/seg-tabs";
 import { TaskItem, type TaskItemData } from "@/components/subject/task-item";
 
 // Cœur de l'Accueil (Direction B) — page « plan d'action ». Barre KPI Tâches
-// (RDV / Aujourd'hui / En retard / À trier, non cliquable) puis 3 onglets, qui
-// lisent TOUS les tâches de la même façon (TaskItem) :
-//  - Aujourd'hui : agenda (semaine + tâches du jour) + lien vers le mois ;
-//  - En retard   : tâches échues, GROUPÉES par jour (Hier / 25 juin 2026 / …) ;
-//  - À trier     : tâches sans date, à plat.
+// (RDV / Aujourd'hui / En retard / À trier, non cliquable) puis 2 onglets, qui
+// lisent les tâches de la même façon (TaskItem) :
+//  - Agenda   : semainier SLIDABLE (passé / futur) + tâches du jour sélectionné,
+//               drag&drop d'une tâche d'un jour à l'autre. Les tâches en retard
+//               se retrouvent en slidant vers les jours passés (badges rouges) —
+//               plus d'onglet « En retard » dédié.
+//  - À trier  : tâches sans date, à plat.
 // Chaque ligne porte le TITRE du sujet en clair (impératif produit).
 
-type Tab = "aujourdhui" | "retard" | "afaire";
+type Tab = "aujourdhui" | "afaire";
 
 export type TaskKpis = {
   rdv: number;
@@ -27,17 +28,15 @@ export type TaskKpis = {
 
 export function HomeTabs({
   kpis,
-  weekDays,
   tasksByDay,
+  anchorMondayKey,
   todayKey,
-  overdue,
   untriaged,
 }: {
   kpis: TaskKpis;
-  weekDays: AgendaWeekDay[];
   tasksByDay: Record<string, TaskItemData[]>;
+  anchorMondayKey: string;
   todayKey: string;
-  overdue: TaskItemData[];
   untriaged: TaskItemData[];
 }) {
   const [tab, setTab] = useState<Tab>("aujourdhui");
@@ -62,8 +61,7 @@ export function HomeTabs({
       <div className="px-4 pt-3 pb-4">
         <SegTabs
           options={[
-            { value: "aujourdhui", label: "Aujourd’hui" },
-            { value: "retard", label: "En retard" },
+            { value: "aujourdhui", label: "Agenda" },
             { value: "afaire", label: "À trier" },
           ]}
           value={tab}
@@ -74,9 +72,9 @@ export function HomeTabs({
       {tab === "aujourdhui" ? (
         <>
           <AgendaWeek
-            days={weekDays}
-            tasksByDay={tasksByDay}
-            initialKey={todayKey}
+            initialTasksByDay={tasksByDay}
+            anchorMondayKey={anchorMondayKey}
+            todayKey={todayKey}
           />
           <div className="px-5 pt-1 pb-2">
             <Link
@@ -87,14 +85,6 @@ export function HomeTabs({
             </Link>
           </div>
         </>
-      ) : null}
-
-      {tab === "retard" ? (
-        overdue.length === 0 ? (
-          <Empty>Aucune tâche en retard. ✦</Empty>
-        ) : (
-          <TaskRangeGroups tasks={overdue} todayKey={todayKey} />
-        )
       ) : null}
 
       {tab === "afaire" ? (

@@ -77,7 +77,7 @@ export function TaskItem({
         onClick={() => setOpen(true)}
         className={cn(
           "flex cursor-pointer items-start gap-3 border-b border-[#f1efeb] px-4 py-3.5",
-          done && "bg-[#f5f3ef]",
+          done ? "bg-[#f5f3ef]" : late && "bg-(--red-50)",
         )}
       >
         {/* Case à cocher (gauche) — terminer / remettre à faire. */}

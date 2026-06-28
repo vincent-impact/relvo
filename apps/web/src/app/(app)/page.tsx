@@ -1,6 +1,5 @@
 import { Suspense } from "react";
 import type { Kpis } from "@relvo/db";
-import { type AgendaWeekDay } from "@/components/home/agenda-week";
 import {
   BriefCarousel,
   type BriefSlide,
@@ -11,7 +10,6 @@ import { CreateTaskButton } from "@/components/subject/create-task-button";
 import { Screen } from "@/components/layout/screen";
 import { MetricsCardSkeleton } from "@/components/shared/screen-skeletons";
 import type { SubjectRowData } from "@/components/shared/subject-row";
-import { formatDayLabel } from "@/lib/display";
 import {
   cachedAgendaTasks,
   cachedKpis,
@@ -28,14 +26,6 @@ import { requireAccount } from "@/server/auth-context";
 //
 // PERF (M9.19) : shell instantané + zones streamées (<Suspense>), données servies
 // depuis le cache serveur (cf. @/server/cached) en formes plates.
-
-function sameUTCDay(a: Date, b: Date) {
-  return (
-    a.getUTCFullYear() === b.getUTCFullYear() &&
-    a.getUTCMonth() === b.getUTCMonth() &&
-    a.getUTCDate() === b.getUTCDate()
-  );
-}
 
 function briefSlides(kpis: Kpis, rows: SubjectRowData[]): BriefSlide[] {
   const slides: BriefSlide[] = [];
@@ -117,39 +107,12 @@ async function HomeTaskTabs({ accountId }: { accountId: string }) {
     cachedTaskFeed(accountId, todayKey),
   ]);
 
-  const weekDays: AgendaWeekDay[] = Array.from({ length: 7 }, (_, i) => {
-    const date = new Date(
-      Date.UTC(
-        monday.getUTCFullYear(),
-        monday.getUTCMonth(),
-        monday.getUTCDate() + i,
-      ),
-    );
-    const key = date.toISOString().slice(0, 10);
-    const { weekday, day } = formatDayLabel(date);
-    const long = date.toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      timeZone: "UTC",
-    });
-    return {
-      key,
-      weekday,
-      day,
-      longLabel: long.charAt(0).toUpperCase() + long.slice(1),
-      isToday: sameUTCDay(date, now),
-      hasEvents: (tasksByDay[key]?.length ?? 0) > 0,
-    };
-  });
-
   return (
     <HomeTabs
       kpis={kpis}
-      weekDays={weekDays}
       tasksByDay={tasksByDay}
+      anchorMondayKey={monday.toISOString().slice(0, 10)}
       todayKey={todayKey}
-      overdue={feed.overdue}
       untriaged={feed.untriaged}
     />
   );
