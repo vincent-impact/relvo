@@ -81,16 +81,16 @@ Routes francophones, alignées sur la nav V1.
 
 | Route | Écran | Nav |
 |---|---|---|
-| `/` | Accueil (🏠) — brief : KPIs « Vue du jour » + agenda semaine + 2-3 sujets prioritaires | Onglet |
-| `/fil` | Mon fil (✉️) — traitement : 3 onglets-statut Ouverts (urgents en tête, swipe ← Ignorer · → Terminer) / Terminés / Ignorés (récupérables) | Onglet |
-| `/contacts` · `/contacts/[id]` | **Contacts** (👥) — annuaire + fiche contact | Onglet |
+| `/` | **Actions** (✅) — page des TÂCHES : barre KPI Tâches (RDV · Aujourd'hui · En retard · À trier) + 3 onglets Aujourd'hui (agenda) / En retard / À trier | Onglet |
+| `/fil` | **Sujets** (📥, ex-« Mon fil ») — barre KPI Sujets (Urgents · Nouveaux · Ouverts · Sans sujet↗) + barre de filtres (Statut/Domaine/Urgent/Nouveau) | Onglet |
 | `/dossiers` · `/dossiers/[id]` | **Mémoire** (🧠) — liste des domaines + fiche : onglets Instructions/Documents/Sujets | Onglet |
-| `/parametres` | Paramètres (compte, canaux) | Onglet |
+| `/parametres` | **Réglages** (⚙️) — onglets Profil / Canaux / **Contacts** (annuaire) / Préférences | Onglet |
+| `/contacts` · `/contacts/[id]` | Annuaire + fiche contact | Hors-nav (atteint via l'onglet Contacts des Réglages) |
 | `/sujets/[id]` | Détail d'un sujet | Fiche détail |
 | `/planning` | Calendrier vue mois | Hors-nav (lien depuis le widget semaine de l'Accueil) |
-| `/messages` | Messages bruts par contact (filtres non-lus / sans sujet) | Hors-nav (lien depuis le feed-strip de Mon fil) |
+| `/messages` | Messages bruts par contact (filtres non-lus / sans sujet) | Hors-nav (lien depuis le KPI « Sans sujet » des Sujets) |
 
-**Navigation = barre d'onglets en bas** (mobile-first), **5 entrées** : Accueil 🏠, Mon fil ✉️, **Contacts 👥**, **Mémoire 🧠**, Paramètres. Contacts est une **destination de premier rang** (3ᵉ onglet, entre Mon fil et Mémoire) — pas un sous-menu de Réglages — en vue de l'usage **Équipe** à venir (gestion collaborative des sujets). Note IA : un contact rattaché à un **pôle/dossier** influencera la qualification des messages reçus (les sujets d'un contact « RH » tomberont probablement dans le dossier RH). La conversation Relvo est une **surface plein écran** (plus un drawer latéral), atteinte via un **bouton Relvo en haut à droite du header violet** — présent sur toutes les pages, même forme que l'ancien bouton ✦ du composer (décision 2026-06-27, abandon du composer persistant du bas : trop encombrant, hidden-menu, confusion avec le composer destinataire d'un sujet). Les éventuels boutons de page (ex. « + » Nouveau sujet) se posent **à gauche** du bouton Relvo. La **barre d'onglets basse est fixe, sur fond violet** (comme l'ancien composer). Le virage mobile-first et la PWA sont détaillés dans `docs/spec/ux-mobile-first.md` ; cf. `01-principes.md §13`.
+**Navigation = barre d'onglets en bas** (mobile-first), **4 entrées** : **Actions** ✅, **Sujets** 📥, **Mémoire** 🧠, **Réglages** ⚙️ (décision 2026-06-28). « Accueil » est devenu **Actions** (page des tâches, cf. invariant n°30) et « Mon fil » est devenu **Sujets**. **Contacts a quitté le dock** : c'est désormais un **onglet des Réglages** (entre Canaux et Préférences) — l'usage Équipe à venir le re-promouvra peut-être. Note IA : un contact rattaché à un **pôle/dossier** influencera la qualification des messages reçus (les sujets d'un contact « RH » tomberont probablement dans le dossier RH). La conversation Relvo est une **surface plein écran** (plus un drawer latéral), atteinte via un **bouton Relvo en haut à droite du header violet** — présent sur toutes les pages, même forme que l'ancien bouton ✦ du composer (décision 2026-06-27, abandon du composer persistant du bas : trop encombrant, hidden-menu, confusion avec le composer destinataire d'un sujet). Les éventuels boutons de page (ex. « + » Nouveau sujet) se posent **à gauche** du bouton Relvo. La **barre d'onglets basse est fixe, sur fond violet** (comme l'ancien composer). Le virage mobile-first et la PWA sont détaillés dans `docs/spec/ux-mobile-first.md` ; cf. `01-principes.md §13`.
 
 ## Invariants produit à respecter
 
@@ -134,6 +134,10 @@ Routes francophones, alignées sur la nav V1.
 27. Stack chatbot : AI SDK + AI Gateway, tool calls natifs (pas de MCP en V1), prompt caching, Files API, citations.
 28. **Empty state** : 3-4 prompts d'exemple contextuels à la page, en gris italique (pas de fausses bulles).
 29. **Pas de RAG vectorielle** : long context + prompt caching pour les Connaissances, tool calls pour les données dynamiques.
+
+**Actions & tâches (Accueil)**
+30. **L'Accueil (« Actions ») est la page des TÂCHES**, pas des sujets (décision 2026-06-28). Brief parlé + barre KPI Tâches + 3 onglets : **Aujourd'hui** (agenda), **En retard**, **À trier**. La barre KPI est **contextuelle par page** : KPI Tâches sur Actions, KPI Sujets sur la page Sujets — jamais les deux lentilles sur un écran. **Taxonomie des tâches** dérivée de `start_date`/`start_time` (zéro migration) : **RDV** (date+heure), **tâche datée** (date sans heure), **flottante / à trier** (sans date). Marqueur dérivé **« En retard »** = tâche ouverte à échéance < aujourd'hui (granularité jour ; une flottante n'est jamais en retard).
+31. **Présentation UNIQUE des tâches** (`TaskItem`) partout — liste d'un sujet ET liste à plat : titre, sujet (+ interlocuteur si à plat), **badge créateur** (Relvo/Moi), date. Chaque tâche porte **le titre du sujet en clair** (jamais SUB-XXX seul). **Gestes alignés sur les sujets** : **swipe droite = Terminer**, **swipe gauche = remettre « à faire »** (`reopenTask`) ; **pas de case à cocher**. Tap = modale d'édition (titre/date/suppression). État fait = **barré + fond gris**.
 
 ## Conventions
 
