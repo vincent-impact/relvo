@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
+import { LandscapeGuard } from "@/components/layout/landscape-guard";
 import { NavVisibilityProvider } from "@/components/layout/nav-visibility";
 import { OverscrollGuard } from "@/components/layout/overscroll-guard";
 import { ViewportHeight } from "@/components/layout/viewport-height";
@@ -85,6 +86,7 @@ export default function RootLayout({
         />
         <ViewportHeight />
         <OverscrollGuard />
+        <LandscapeGuard />
         <Providers>
           <NavVisibilityProvider>{children}</NavVisibilityProvider>
         </Providers>
