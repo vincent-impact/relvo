@@ -6,6 +6,7 @@ import {
   completeTask,
   createTask,
   deleteTask,
+  reopenTask,
   updateTask,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
@@ -36,6 +37,12 @@ export async function updateTaskAction(id: string, input: UpdateTaskInput) {
 
 export async function completeTaskAction(id: string) {
   const result = await domainAction((db) => completeTask(db, id));
+  if (result.ok) revalidateTasks();
+  return result;
+}
+
+export async function reopenTaskAction(id: string) {
+  const result = await domainAction((db) => reopenTask(db, id));
   if (result.ok) revalidateTasks();
   return result;
 }

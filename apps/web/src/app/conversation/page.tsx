@@ -47,7 +47,7 @@ export default async function ConversationPage({
       prompts = PROMPTS.subject;
     }
   } else if (from?.startsWith("/fil")) {
-    contextLabel = "Mon fil";
+    contextLabel = "Sujets";
     prompts = PROMPTS.fil;
   }
 

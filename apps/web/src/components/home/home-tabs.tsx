@@ -9,7 +9,7 @@ import {
 } from "@/components/home/agenda-week";
 import { MetricsCard, type Metric } from "@/components/shared/metrics-card";
 import { SegTabs } from "@/components/shared/seg-tabs";
-import { TaskRow, type TaskRowData } from "@/components/shared/task-row";
+import { TaskItem, type TaskItemData } from "@/components/subject/task-item";
 
 // Cœur de l'Accueil (Direction B) — page « plan d'action ». Barre KPI Tâches
 // (RDV / Aujourd'hui / En retard / À trier, non cliquable) puis 3 onglets :
@@ -39,8 +39,8 @@ export function HomeTabs({
   weekDays: AgendaWeekDay[];
   eventsByDay: Record<string, AgendaEvent[]>;
   todayKey: string;
-  overdue: TaskRowData[];
-  untriaged: TaskRowData[];
+  overdue: TaskItemData[];
+  untriaged: TaskItemData[];
 }) {
   const [tab, setTab] = useState<Tab>("aujourdhui");
 
@@ -59,16 +59,14 @@ export function HomeTabs({
     <>
       <MetricsCard metrics={metrics} />
 
-      <div className="px-4 pt-3">
+      {/* Onglets SANS compteurs (les KPI au-dessus jouent ce rôle), + espace
+          sous la barre pour laisser respirer l'interface. */}
+      <div className="px-4 pt-3 pb-4">
         <SegTabs
           options={[
-            {
-              value: "aujourdhui",
-              label: "Aujourd’hui",
-              count: kpis.rdv + kpis.today,
-            },
-            { value: "retard", label: "En retard", count: kpis.overdue },
-            { value: "afaire", label: "À faire", count: kpis.untriaged },
+            { value: "aujourdhui", label: "Aujourd’hui" },
+            { value: "retard", label: "En retard" },
+            { value: "afaire", label: "À trier" },
           ]}
           value={tab}
           onValueChange={(v) => setTab(v as Tab)}
@@ -104,7 +102,7 @@ export function HomeTabs({
   );
 }
 
-function TaskList({ rows, empty }: { rows: TaskRowData[]; empty: string }) {
+function TaskList({ rows, empty }: { rows: TaskItemData[]; empty: string }) {
   if (rows.length === 0) {
     return (
       <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
@@ -113,9 +111,9 @@ function TaskList({ rows, empty }: { rows: TaskRowData[]; empty: string }) {
     );
   }
   return (
-    <div className="pt-1">
+    <div>
       {rows.map((row) => (
-        <TaskRow key={row.id} data={row} />
+        <TaskItem key={row.id} task={row} flat />
       ))}
     </div>
   );

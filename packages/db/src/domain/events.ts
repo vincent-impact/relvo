@@ -48,6 +48,7 @@ export const EVENT_TYPES = {
   taskCreatedByUser: "task_created_by_user",
   taskUpdated: "task_updated",
   taskCompleted: "task_completed",
+  taskReopened: "task_reopened",
   taskDeleted: "task_deleted",
   // Attachments
   attachmentCreated: "attachment_created",

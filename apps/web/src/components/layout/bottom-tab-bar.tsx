@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Brain, Home, Mail, Settings, Users } from "lucide-react";
+import { Brain, Inbox, ListChecks, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Barre d'onglets basse (mobile-first). Remplace la sidebar desktop.
-// 5 entrées alignées sur la nav V1 (cf. ux-mobile-first §3 + CLAUDE.md).
-// Contacts est une destination de premier rang (3e onglet) en vue de l'usage
-// Équipe à venir — pas un sous-menu de Réglages (décision 2026-06-26).
+// 4 entrées : Actions (tâches), Sujets, Mémoire, Réglages. « Accueil » est
+// devenu « Actions » (page des tâches) et « Mon fil » est devenu « Sujets »
+// (décision 2026-06-28). Contacts a quitté le dock → onglet des Réglages.
 //
 // Place FIXE (plus d'auto-masquage au scroll, décision 2026-06-27) sur fond
 // VIOLET, exactement comme l'ancien composer : actif = blanc plein, inactif =
@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 type Tab = {
   href: string;
   label: string;
-  icon: typeof Home;
+  icon: typeof Brain;
   /** Préfixes de routes qui activent cet onglet (sous-pages incluses). */
   match: (path: string) => boolean;
 };
@@ -25,21 +25,15 @@ type Tab = {
 const TABS: Tab[] = [
   {
     href: "/",
-    label: "Accueil",
-    icon: Home,
+    label: "Actions",
+    icon: ListChecks,
     match: (p) => p === "/",
   },
   {
     href: "/fil",
-    label: "Mon fil",
-    icon: Mail,
+    label: "Sujets",
+    icon: Inbox,
     match: (p) => p.startsWith("/fil") || p.startsWith("/sujets"),
-  },
-  {
-    href: "/contacts",
-    label: "Contacts",
-    icon: Users,
-    match: (p) => p.startsWith("/contacts"),
   },
   {
     href: "/dossiers",

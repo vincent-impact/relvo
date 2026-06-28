@@ -238,7 +238,23 @@ export default async function SujetPage({
                     Aucune tâche.
                   </p>
                 ) : (
-                  tasks.map((t) => <TaskItem key={t.id} task={t} />)
+                  tasks.map((t) => (
+                    <TaskItem
+                      key={t.id}
+                      task={{
+                        id: t.id,
+                        title: t.title,
+                        startDate: t.startDate
+                          ? t.startDate.toISOString().slice(0, 10)
+                          : null,
+                        startTime: t.startTime
+                          ? t.startTime.toISOString().slice(11, 16)
+                          : null,
+                        status: t.status,
+                        sourceActor: t.sourceActor,
+                      }}
+                    />
+                  ))
                 )}
                 <AddTask subjectId={subject.id} />
               </div>

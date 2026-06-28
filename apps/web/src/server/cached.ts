@@ -18,7 +18,7 @@ import {
   type SubjectRowData,
   toSubjectRowData,
 } from "@/components/shared/subject-row";
-import { type TaskRowData, toTaskRowData } from "@/components/shared/task-row";
+import { type TaskItemData, toTaskItemData } from "@/lib/task-item-data";
 import { folderColor, formatTime } from "@/lib/display";
 
 // Cache de données serveur (M9.19, point 3) — Vercel Data Cache, durable et
@@ -149,8 +149,8 @@ export const cachedTaskKpis = unstable_cache(
 );
 
 export type CachedTaskFeed = {
-  overdue: TaskRowData[];
-  untriaged: TaskRowData[];
+  overdue: TaskItemData[];
+  untriaged: TaskItemData[];
 };
 
 export const cachedTaskFeed = unstable_cache(
@@ -166,8 +166,8 @@ export const cachedTaskFeed = unstable_cache(
       enrichTasks(db, untriagedTasks, now),
     ]);
     return {
-      overdue: overdue.map(toTaskRowData),
-      untriaged: untriaged.map(toTaskRowData),
+      overdue: overdue.map(toTaskItemData),
+      untriaged: untriaged.map(toTaskItemData),
     };
   },
   ["task-feed", CACHE_V],

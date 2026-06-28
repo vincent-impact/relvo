@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LogOut, MessageCircle, Mail, Plus } from "lucide-react";
 import { DEMO_EMAIL } from "@relvo/db";
+import { ContactsPane } from "@/components/contacts/contacts-pane";
 import { FeedTabs } from "@/components/feed/feed-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
@@ -19,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { logoutAction } from "@/server/actions/auth";
+import { cachedContacts } from "@/server/cached";
 import { getTenantDb, requireAccount } from "@/server/auth-context";
 
 export const metadata: Metadata = { title: "Paramètres — Relvo" };
@@ -49,16 +51,20 @@ const CHANNEL_STATUS: Record<string, { label: string; cls: string }> = {
 async function ParametresTabs() {
   const account = await requireAccount();
   const db = await getTenantDb();
-  const channels = await db.channel.findMany({
-    orderBy: { createdAt: "asc" },
-    include: { config: { select: { status: true } } },
-  });
+  const [channels, contacts] = await Promise.all([
+    db.channel.findMany({
+      orderBy: { createdAt: "asc" },
+      include: { config: { select: { status: true } } },
+    }),
+    cachedContacts(account.id),
+  ]);
 
   return (
     <FeedTabs
       options={[
         { value: "profil", label: "Profil" },
         { value: "canaux", label: "Canaux" },
+        { value: "contacts", label: "Contacts" },
         { value: "preferences", label: "Préférences" },
       ]}
       panes={{
@@ -171,6 +177,7 @@ async function ParametresTabs() {
             </p>
           </div>
         ),
+        contacts: <ContactsPane contacts={contacts} />,
         preferences: (
           <div className="px-4 pt-5">
             <PreferencesToggles />
@@ -186,7 +193,7 @@ export default function ParametresPage() {
     <Screen>
       <RelvoHeader
         title="Réglages"
-        subtitle="Compte, canaux, préférences"
+        subtitle="Compte, canaux, contacts, préférences"
         className="pb-[34px]"
       />
       <Suspense fallback={<TabsSkeleton rows={3} />}>

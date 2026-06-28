@@ -221,6 +221,53 @@ export async function completeTask(
 }
 
 /**
+ * Rouvre une tâche terminée (done → open) — geste « swipe gauche » symétrique de
+ * la complétion. Réinitialise les champs de complétion. Idempotent si déjà open.
+ */
+export async function reopenTask(db: TenantDb, id: string) {
+  return db.$transaction(async (tx) => {
+    const current = assertFound(
+      await tx.task.findFirst({ where: { id } }),
+      "Tâche",
+    );
+    if (current.status === TaskStatus.deleted) {
+      throw new DomainError(
+        "INVALID_STATE",
+        "Une tâche supprimée ne peut pas être rouverte.",
+      );
+    }
+    if (current.status === TaskStatus.open) return current; // no-op idempotent
+    const { count } = await tx.task.updateMany({
+      where: { id },
+      data: {
+        status: TaskStatus.open,
+        completedAt: null,
+        completedByActor: null,
+      },
+    });
+    ensureAffected(count, "Tâche");
+    const task = assertFound(
+      await tx.task.findFirst({ where: { id } }),
+      "Tâche",
+    );
+    await tx.subject.updateMany({
+      where: { id: task.subjectId },
+      data: { lastActivityAt: new Date() },
+    });
+    await logEvent(tx as Tx, {
+      entityType: "task",
+      entityId: task.id,
+      taskId: task.id,
+      subjectId: task.subjectId,
+      eventType: EVENT_TYPES.taskReopened,
+      title: `Tâche rouverte : ${task.title}`,
+      actor: Actor.user,
+    });
+    return task;
+  });
+}
+
+/**
  * Suppression DÉFINITIVE d'une tâche (vrai DELETE en base, pas de soft-delete).
  * Les FK `EventLog.taskId` et `Action.taskId` sont en `onDelete: SetNull` : la
  * ligne disparaît sans casser les journaux/actions existants. On consigne d'abord
