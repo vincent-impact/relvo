@@ -4,8 +4,12 @@ import {
   type Kpis,
   countOrphanMessages,
   enrichSubjects,
+  enrichTasks,
   getKpis,
   getOpenFeed,
+  getOverdueTasks,
+  getTaskKpis,
+  getUntriagedTasks,
   tenantDb,
 } from "@relvo/db";
 import type { AgendaEvent } from "@/components/home/agenda-week";
@@ -14,6 +18,7 @@ import {
   type SubjectRowData,
   toSubjectRowData,
 } from "@/components/shared/subject-row";
+import { type TaskRowData, toTaskRowData } from "@/components/shared/task-row";
 import { folderColor, formatTime } from "@/lib/display";
 
 // Cache de données serveur (M9.19, point 3) — Vercel Data Cache, durable et
@@ -43,8 +48,9 @@ export const TENANT_DATA_TAG = "tenant-data";
 // Historique : v2 = Kpis (newSubjects) + Contact (firstName/lastName) + Folder
 // (color/icon) ; v3 = SubjectRowData (isNew) ; v4 = SubjectRowData (taskDone/
 // taskTotal, − openTaskCount) ; v5 = « Nouveau » dérivé de lastOpenedAt (valeur
-// d'isNew/newSubjects recalculée, forme inchangée). Incrément suivant = "v6".
-const CACHE_V = "v5";
+// d'isNew/newSubjects recalculée, forme inchangée) ; v6 = Kpis (+ ignoredMessages)
+// + KPI tâches + feed tâches + titre de sujet dans l'agenda. Incrément suivant = "v7".
+const CACHE_V = "v6";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
@@ -104,7 +110,7 @@ export const cachedAgendaEvents = unstable_cache(
         subject: {
           select: {
             id: true,
-            reference: true,
+            title: true,
             folder: { select: { id: true, name: true, slug: true } },
           },
         },
@@ -120,15 +126,51 @@ export const cachedAgendaEvents = unstable_cache(
         time: formatTime(t.startTime),
         color: folderColor(t.subject?.folder?.slug),
         title: t.title,
-        sublabel: t.subject
-          ? `${t.subject.reference}${t.subject.folder ? ` · ${t.subject.folder.name}` : ""}`
-          : null,
+        // Impératif produit : le TITRE du sujet en clair (pas SUB-XXX).
+        sublabel: t.subject?.title ?? null,
         href: t.subject ? `/sujets/${t.subject.id}?tab=taches` : "/planning",
       });
     }
     return eventsByDay;
   },
   ["agenda-events", CACHE_V],
+  CACHE,
+);
+
+// ── Tâches (Accueil = plan d'action) ─────────────────────────────────────────
+// `dayISO` (jour UTC) entre dans la clé de cache : « aujourd'hui »/« en retard »
+// changent au passage de minuit, donc le cache doit se renouveler chaque jour.
+
+export const cachedTaskKpis = unstable_cache(
+  (accountId: string, dayISO: string) =>
+    getTaskKpis(tenantDb(accountId), new Date(dayISO)),
+  ["task-kpis", CACHE_V],
+  CACHE,
+);
+
+export type CachedTaskFeed = {
+  overdue: TaskRowData[];
+  untriaged: TaskRowData[];
+};
+
+export const cachedTaskFeed = unstable_cache(
+  async (accountId: string, dayISO: string): Promise<CachedTaskFeed> => {
+    const db = tenantDb(accountId);
+    const now = new Date(dayISO);
+    const [overdueTasks, untriagedTasks] = await Promise.all([
+      getOverdueTasks(db, { now, limit: 50 }),
+      getUntriagedTasks(db, { limit: 50 }),
+    ]);
+    const [overdue, untriaged] = await Promise.all([
+      enrichTasks(db, overdueTasks, now),
+      enrichTasks(db, untriagedTasks, now),
+    ]);
+    return {
+      overdue: overdue.map(toTaskRowData),
+      untriaged: untriaged.map(toTaskRowData),
+    };
+  },
+  ["task-feed", CACHE_V],
   CACHE,
 );
 
@@ -139,14 +181,6 @@ export const cachedOpenCount = unstable_cache(
       where: { status: { notIn: ["resolved", "archived", "ignored"] } },
     }),
   ["open-count", CACHE_V],
-  CACHE,
-);
-
-// ── Compteur de messages orphelins (callout du hero Mon fil) — un nombre ─────
-export const cachedOrphanCount = unstable_cache(
-  (accountId: string): Promise<number> =>
-    countOrphanMessages(tenantDb(accountId)),
-  ["orphan-count", CACHE_V],
   CACHE,
 );
 

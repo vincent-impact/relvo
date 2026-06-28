@@ -1,34 +1,32 @@
 import { Suspense } from "react";
 import type { Kpis } from "@relvo/db";
-import { AgendaWeek, type AgendaWeekDay } from "@/components/home/agenda-week";
+import { type AgendaWeekDay } from "@/components/home/agenda-week";
 import {
   BriefCarousel,
   type BriefSlide,
 } from "@/components/home/brief-carousel";
+import { HomeTabs } from "@/components/home/home-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
-import { MetricsCard, type Metric } from "@/components/shared/metrics-card";
 import { MetricsCardSkeleton } from "@/components/shared/screen-skeletons";
-import { SectionLabel } from "@/components/shared/section-label";
-import {
-  SubjectRow,
-  type SubjectRowData,
-} from "@/components/shared/subject-row";
+import type { SubjectRowData } from "@/components/shared/subject-row";
 import { formatDayLabel } from "@/lib/display";
 import {
   cachedAgendaEvents,
   cachedKpis,
   cachedPriorityRows,
+  cachedTaskFeed,
+  cachedTaskKpis,
 } from "@/server/cached";
 import { requireAccount } from "@/server/auth-context";
 
-// Accueil (M9.3, Direction B) — brief du jour : hero violet « Bonjour … » +
-// brief carousel + carte métriques à cheval + sujets prioritaires (lignes) +
-// agenda semaine. Orientation, pas traitement (pas de ✕/✓ ici).
+// Accueil (Direction B) — « plan d'action » : hero violet « Bonjour … » + brief
+// parlé, puis barre KPI Tâches et 3 onglets (Aujourd'hui / En retard / À faire).
+// La page est dédiée aux TÂCHES (les actions extraites) ; l'état des SUJETS vit
+// sur Mon fil. Chaque ligne porte le titre du sujet en clair.
 //
-// PERF (M9.19) : shell instantané + zones streamées (<Suspense>, point 2), et
-// données servies depuis le cache serveur (point 3, cf. @/server/cached) — KPIs,
-// sujets prioritaires et agenda en formes plates (SubjectRowData / nombres).
+// PERF (M9.19) : shell instantané + zones streamées (<Suspense>), données servies
+// depuis le cache serveur (cf. @/server/cached) en formes plates.
 
 function sameUTCDay(a: Date, b: Date) {
   return (
@@ -93,46 +91,7 @@ async function HeroBrief({ accountId }: { accountId: string }) {
   return <BriefCarousel slides={briefSlides(kpis, rows)} />;
 }
 
-async function HomeMetrics({ accountId }: { accountId: string }) {
-  const kpis = await cachedKpis(accountId);
-  // Ordre fixé (Urgents, Nouveaux, Ouverts, Tâches) — RDV retiré, l'agenda s'en
-  // charge. « Nouveaux » = statut new (et non créés < 7 j) → décrémente dès
-  // qu'on ouvre un sujet ; « Ouverts » = tous les sujets non clos.
-  // Les 3 premiers KPI renvoient vers Mon fil avec le bon filtre pré-activé
-  // (FeedView lit les query params). « Ouverts » = statut Ouvert (défaut du fil).
-  const metrics: Metric[] = [
-    {
-      value: kpis.urgentSubjects,
-      label: "Urgents",
-      href: "/fil?urgent=1",
-      ...(kpis.urgentSubjects > 0 ? { tone: "urgent" as const } : {}),
-    },
-    { value: kpis.newSubjects, label: "Nouveaux", href: "/fil?nouveau=1" },
-    { value: kpis.openSubjects, label: "Ouverts", href: "/fil" },
-    { value: kpis.tasksToday, label: "Tâches" },
-  ];
-  return <MetricsCard metrics={metrics} />;
-}
-
-async function HomeSubjects({ accountId }: { accountId: string }) {
-  const rows = await cachedPriorityRows(accountId);
-  if (rows.length === 0) {
-    return (
-      <p className="mx-4 rounded-2xl bg-white p-4 text-center text-[13.5px] text-(--text-tertiary)">
-        Aucun sujet prioritaire. ✦
-      </p>
-    );
-  }
-  return (
-    <>
-      {rows.map((row) => (
-        <SubjectRow key={row.id} data={row} />
-      ))}
-    </>
-  );
-}
-
-async function HomeAgenda({ accountId }: { accountId: string }) {
+async function HomeTaskTabs({ accountId }: { accountId: string }) {
   const now = new Date();
   // Semaine en cours (lundi → dimanche, UTC pour rester cohérent avec le seed).
   const monday = new Date(
@@ -144,14 +103,14 @@ async function HomeAgenda({ accountId }: { accountId: string }) {
   );
   const weekEnd = new Date(monday);
   weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
-
-  const eventsByDay = await cachedAgendaEvents(
-    accountId,
-    monday.toISOString(),
-    weekEnd.toISOString(),
-  );
-
   const todayKey = now.toISOString().slice(0, 10);
+
+  const [kpis, eventsByDay, feed] = await Promise.all([
+    cachedTaskKpis(accountId, todayKey),
+    cachedAgendaEvents(accountId, monday.toISOString(), weekEnd.toISOString()),
+    cachedTaskFeed(accountId, todayKey),
+  ]);
+
   const weekDays: AgendaWeekDay[] = Array.from({ length: 7 }, (_, i) => {
     const date = new Date(
       Date.UTC(
@@ -179,50 +138,42 @@ async function HomeAgenda({ accountId }: { accountId: string }) {
   });
 
   return (
-    <AgendaWeek
-      days={weekDays}
+    <HomeTabs
+      kpis={kpis}
+      weekDays={weekDays}
       eventsByDay={eventsByDay}
-      initialKey={todayKey}
+      todayKey={todayKey}
+      overdue={feed.overdue}
+      untriaged={feed.untriaged}
     />
   );
 }
 
-// ── Squelettes de chargement (dimensionnés pour éviter le décalage) ──────────
+// ── Squelette de chargement (KPI + onglets) ──────────────────────────────────
 
-function BriefSkeleton() {
+function TabsSkeleton() {
   return (
-    <div className="mt-4 px-[22px]">
-      <div className="h-[92px] animate-pulse rounded-[18px] bg-white/12" />
-    </div>
-  );
-}
-
-function SubjectsSkeleton() {
-  return (
-    <div className="space-y-2 px-4 pt-1">
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="h-[76px] animate-pulse rounded-2xl bg-white"
-          style={{ boxShadow: "var(--shadow-card)" }}
-        />
-      ))}
-    </div>
-  );
-}
-
-function AgendaSkeleton() {
-  return (
-    <div className="px-4 pt-1">
-      <div className="h-[200px] animate-pulse rounded-2xl bg-white" />
-    </div>
+    <>
+      <MetricsCardSkeleton />
+      <div className="px-4 pt-3">
+        <div className="h-[52px] animate-pulse rounded-full bg-white" />
+      </div>
+      <div className="space-y-2 px-4 pt-4">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-[68px] animate-pulse rounded-2xl bg-white"
+            style={{ boxShadow: "var(--shadow-card)" }}
+          />
+        ))}
+      </div>
+    </>
   );
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function AccueilPage() {
-  // Seul await du shell : le compte (session, mis en cache) pour le « Bonjour ».
   const account = await requireAccount();
   const accountId = account.id;
 
@@ -245,23 +196,17 @@ export default async function AccueilPage() {
         </Suspense>
       </RelvoHeader>
 
-      <Suspense fallback={<MetricsCardSkeleton />}>
-        <HomeMetrics accountId={accountId} />
-      </Suspense>
-
-      <SectionLabel title="Sujets prioritaires" href="/fil" />
-      <Suspense fallback={<SubjectsSkeleton />}>
-        <HomeSubjects accountId={accountId} />
-      </Suspense>
-
-      <SectionLabel
-        title="Agenda"
-        href="/planning"
-        linkLabel="Voir le mois →"
-      />
-      <Suspense fallback={<AgendaSkeleton />}>
-        <HomeAgenda accountId={accountId} />
+      <Suspense fallback={<TabsSkeleton />}>
+        <HomeTaskTabs accountId={accountId} />
       </Suspense>
     </Screen>
+  );
+}
+
+function BriefSkeleton() {
+  return (
+    <div className="mt-4 px-[22px]">
+      <div className="h-[92px] animate-pulse rounded-[18px] bg-white/12" />
+    </div>
   );
 }

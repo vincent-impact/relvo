@@ -1576,6 +1576,28 @@ export async function seedDemoAccount() {
     data: { readAt: new Date() },
   });
 
+  // ===== 13. Plan d'action de l'Accueil : tâches « en retard » et « à trier » ====
+  // Créées APRÈS le sweep (§11) pour rester OUVERTES : sinon une tâche datée
+  // passée serait marquée « done ». Alimente les onglets En retard / À faire.
+  // En retard (échéance passée, ouvertes) :
+  await addTasks(sub142.id, [
+    { title: "Relancer Karim sur le délai de la sauce SB-210", off: -2 },
+  ]);
+  await addTasks(sub82.id, [
+    { title: "Renvoyer le bon de commande clim signé", off: -4, hour: 10 },
+  ]);
+  await addTasks(sub214.id, [
+    { title: "Transmettre le plan de maîtrise sanitaire à la DDPP", off: -1 },
+  ]);
+  // À trier (sans date — « Relvo n'a pas su placer » / accusés de réception) :
+  await addTasks(sub103.id, [
+    { title: "Répondre : merci, bien cordialement", actor: Actor.ai },
+  ]);
+  await addTasks(sub219.id, [
+    { title: "Comparer les deux devis boissons reçus", actor: Actor.ai },
+  ]);
+  await addTasks(sub190.id, [{ title: "Classer la facture reçue" }]);
+
   const counts = {
     folders: await db.folder.count(),
     contacts: await db.contact.count(),
