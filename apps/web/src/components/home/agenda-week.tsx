@@ -92,7 +92,7 @@ export function AgendaWeek({
             : "Rien de prévu ce jour-là."}
         </p>
       ) : (
-        tasks.map((t) => <TaskItem key={t.id} task={t} flat />)
+        tasks.map((t) => <TaskItem key={t.id} task={t} flat meta="time" />)
       )}
     </div>
   );

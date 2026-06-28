@@ -241,7 +241,7 @@ export default async function SujetPage({
                   tasks.map((t) => (
                     <TaskItem
                       key={t.id}
-                      showDate
+                      meta="date"
                       task={{
                         id: t.id,
                         title: t.title,
@@ -259,7 +259,7 @@ export default async function SujetPage({
                     />
                   ))
                 )}
-                <AddTask subjectId={subject.id} />
+                <AddTask subjectId={subject.id} subjectTitle={subject.title} />
               </div>
             ),
             detail: (

@@ -1589,6 +1589,13 @@ export async function seedDemoAccount() {
   await addTasks(sub214.id, [
     { title: "Transmettre le plan de maîtrise sanitaire à la DDPP", off: -1 },
   ]);
+  // En retard plus anciens → alimentent les plages « 30 derniers jours » / « + 30 j ».
+  await addTasks(sub205.id, [
+    { title: "Répondre à la hausse de tarif poulet (Avipro)", off: -15 },
+  ]);
+  await addTasks(sub103.id, [
+    { title: "Relancer le devis papier d'emballage", off: -42 },
+  ]);
   // À trier (sans date — « Relvo n'a pas su placer » / accusés de réception) :
   await addTasks(sub103.id, [
     { title: "Répondre : merci, bien cordialement", actor: Actor.ai },

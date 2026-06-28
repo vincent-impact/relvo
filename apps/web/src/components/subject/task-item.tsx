@@ -9,20 +9,21 @@ import { TaskModal } from "@/components/subject/task-modal";
 import { completeTaskAction, reopenTaskAction } from "@/server/actions/tasks";
 import { cn } from "@/lib/utils";
 
-// TaskItem — présentation UNIQUE d'une tâche, partout (liste d'un sujet OU listes
-// de l'Accueil). Contenu épuré : CASE À COCHER (gauche, distingue une tâche d'un
-// sujet) + titre + sujet/interlocuteur (si « à plat ») + heure éventuelle. Le
-// badge créateur a quitté la ligne (on le retrouve dans la modale). Cocher =
-// terminer / décocher = remettre « à faire » (état fait : barré + fond gris).
-// Tap sur la ligne (hors case) = modale d'édition. La date n'apparaît dans la
-// ligne que hors vues groupées par jour (`showDate`, ex. liste d'un sujet).
+// TaskItem — présentation UNIQUE d'une tâche, partout. Gauche : CASE À COCHER
+// (distingue une tâche d'un sujet). Centre : titre + sujet/interlocuteur (si « à
+// plat »). DROITE : colonne ~22 % réservée à l'HEURE (RDV) et, selon le contexte
+// (`meta`), à la DATE — pour repérer un RDV / une échéance en un coup d'œil :
+//   meta="none"  → pas de colonne (ex. « À trier », sans date)
+//   meta="time"  → heure (ou « — »)            (ex. agenda « Aujourd'hui »)
+//   meta="date"  → date + heure                (ex. « En retard », liste d'un sujet)
+// Cocher = terminer / décocher = remettre « à faire » (état fait : barré + gris).
+// Tap sur la ligne = modale d'édition.
 
 export type { TaskItemData };
 
-function dateLabel(startDate: string | null): string | null {
+function dateShortLabel(startDate: string | null): string | null {
   if (!startDate) return null;
   return new Date(`${startDate}T00:00:00.000Z`).toLocaleDateString("fr-FR", {
-    weekday: "short",
     day: "numeric",
     month: "short",
     timeZone: "UTC",
@@ -32,13 +33,13 @@ function dateLabel(startDate: string | null): string | null {
 export function TaskItem({
   task,
   flat = false,
-  showDate = false,
+  meta = "none",
 }: {
   task: TaskItemData;
   /** true : liste à plat (Accueil) → montre le sujet + l'interlocuteur. */
   flat?: boolean;
-  /** true : affiche la date dans la ligne (vues NON groupées par jour). */
-  showDate?: boolean;
+  /** Colonne droite heure/date : none | time (heure seule) | date (date+heure). */
+  meta?: "none" | "time" | "date";
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -65,13 +66,10 @@ export function TaskItem({
       ? [task.subjectTitle, task.contactName].filter(Boolean).join(" · ")
       : "";
 
-  // Méta de planification : heure si RDV ; date si demandée (vue non groupée).
-  const label = dateLabel(task.startDate);
-  const meta = showDate
-    ? label
-      ? `${label}${task.startTime ? ` · ${task.startTime}` : ""}`
-      : null
-    : (task.startTime ?? null);
+  const dateLine = meta === "date" ? dateShortLabel(task.startDate) : null;
+  const timeLine = meta !== "none" ? (task.startTime ?? null) : null;
+  const colEmpty = !dateLine && !timeLine;
+  const late = task.overdue && !done;
 
   return (
     <>
@@ -102,6 +100,7 @@ export function TaskItem({
           <Check className="size-3.5" strokeWidth={3} />
         </button>
 
+        {/* Centre — titre + sujet/interlocuteur. */}
         <div className="min-w-0 flex-1">
           <div
             className={cn(
@@ -116,21 +115,39 @@ export function TaskItem({
               {subjectLine}
             </p>
           ) : null}
-          {meta ? (
-            <div
-              className={cn(
-                "mt-1 text-[11.5px] font-semibold",
-                task.overdue && !done ? "text-(--red-600)" : "text-[#a8a69d]",
-              )}
-            >
-              {meta}
-            </div>
-          ) : showDate ? (
-            <div className="mt-1 text-[11.5px] text-(--text-tertiary) italic">
-              Sans date
-            </div>
-          ) : null}
         </div>
+
+        {/* Droite — colonne heure / date (~22 %). */}
+        {meta !== "none" ? (
+          <div className="flex w-[78px] flex-none flex-col items-end self-center text-right leading-tight">
+            {colEmpty ? (
+              <span className="text-[14px] text-[#cfcdc6]">—</span>
+            ) : (
+              <>
+                {dateLine ? (
+                  <span
+                    className={cn(
+                      "text-[12px] font-semibold",
+                      late ? "text-(--red-600)" : "text-[#86857d]",
+                    )}
+                  >
+                    {dateLine}
+                  </span>
+                ) : null}
+                {timeLine ? (
+                  <span
+                    className={cn(
+                      "font-numeric text-[14px] font-bold",
+                      late ? "text-(--red-600)" : "text-[#2a2832]",
+                    )}
+                  >
+                    {timeLine}
+                  </span>
+                ) : null}
+              </>
+            )}
+          </div>
+        ) : null}
       </div>
 
       {open ? (

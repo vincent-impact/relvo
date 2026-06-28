@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AgendaWeek, type AgendaWeekDay } from "@/components/home/agenda-week";
-import { TaskDayGroups } from "@/components/home/task-day-groups";
+import { TaskRangeGroups } from "@/components/home/task-range-groups";
 import { MetricsCard, type Metric } from "@/components/shared/metrics-card";
 import { SegTabs } from "@/components/shared/seg-tabs";
 import { TaskItem, type TaskItemData } from "@/components/subject/task-item";
@@ -93,7 +93,7 @@ export function HomeTabs({
         overdue.length === 0 ? (
           <Empty>Aucune tâche en retard. ✦</Empty>
         ) : (
-          <TaskDayGroups tasks={overdue} todayKey={todayKey} order="desc" />
+          <TaskRangeGroups tasks={overdue} todayKey={todayKey} />
         )
       ) : null}
 
