@@ -42,6 +42,18 @@ export async function createSubjectAction(input: CreateSubjectInput) {
   return result;
 }
 
+/** Options légères pour le sélecteur de sujet (modale de tâche) — sujets ouverts. */
+export async function listSubjectOptionsAction() {
+  return domainAction((db) =>
+    db.subject.findMany({
+      where: { status: { notIn: ["resolved", "archived", "ignored"] } },
+      orderBy: [{ lastActivityAt: "desc" }],
+      select: { id: true, reference: true, title: true },
+      take: 100,
+    }),
+  );
+}
+
 export async function updateSubjectAction(
   id: string,
   input: UpdateSubjectInput,

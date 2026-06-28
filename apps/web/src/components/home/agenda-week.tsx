@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { TaskItem } from "@/components/subject/task-item";
+import type { TaskItemData } from "@/lib/task-item-data";
 import { cn } from "@/lib/utils";
 
-// Agenda semaine (Accueil, Direction B) — bande horizontale de 7 jours cliquables
-// puis la liste des évènements (= tâches datées) du jour SÉLECTIONNÉ. Deux signaux
-// distincts sur les chips : « aujourd'hui » = pastille violette pleine ; « jour
-// sélectionné » = anneau (ring) violet détaché. Les deux se cumulent sans se
-// confondre. Module distinct des cartes (règle « pas de carte blanche sur gris »).
+// Agenda semaine (Accueil, onglet « Aujourd'hui ») — bande horizontale de 7 jours
+// cliquables, puis les TÂCHES du jour SÉLECTIONNÉ, rendues avec la MÊME ligne que
+// partout (TaskItem). « aujourd'hui » = pastille violette pleine ; « jour
+// sélectionné » = anneau violet. Plus tard, le clic sur un jour du calendrier
+// (mois) affichera ses tâches de la même façon.
 
 export type AgendaWeekDay = {
   key: string; // ISO date YYYY-MM-DD (UTC, cohérent avec le seed)
@@ -19,27 +20,18 @@ export type AgendaWeekDay = {
   hasEvents: boolean;
 };
 
-export type AgendaEvent = {
-  id: string;
-  time: string | null;
-  color: string;
-  title: string;
-  sublabel?: string | null;
-  href: string;
-};
-
 export function AgendaWeek({
   days,
-  eventsByDay,
+  tasksByDay,
   initialKey,
 }: {
   days: AgendaWeekDay[];
-  eventsByDay: Record<string, AgendaEvent[]>;
+  tasksByDay: Record<string, TaskItemData[]>;
   initialKey: string;
 }) {
   const [selectedKey, setSelectedKey] = useState(initialKey);
   const selected = days.find((d) => d.key === selectedKey) ?? days[0];
-  const events = eventsByDay[selectedKey] ?? [];
+  const tasks = tasksByDay[selectedKey] ?? [];
 
   return (
     <div className="pt-1 pb-0.5">
@@ -90,42 +82,18 @@ export function AgendaWeek({
         })}
       </div>
 
-      <div className="px-5 pt-3.5 pb-0.5">
-        <div className="mb-2.5 text-[12.5px] font-bold tracking-[0.3px] text-[#a8a69d] uppercase">
-          {selected.isToday ? "Aujourd'hui" : selected.longLabel}
-        </div>
-        {events.length === 0 ? (
-          <p className="py-2 text-[13.5px] text-(--text-tertiary)">
-            {selected.isToday
-              ? "Rien de prévu aujourd'hui."
-              : "Rien de prévu ce jour-là."}
-          </p>
-        ) : (
-          events.map((e) => (
-            <Link
-              key={e.id}
-              href={e.href}
-              className="flex items-center gap-3 py-[9px]"
-            >
-              <span className="w-[46px] flex-none font-numeric text-[14px] font-semibold text-[#2a2832]">
-                {e.time ?? "—"}
-              </span>
-              <span
-                className="h-[30px] w-[3px] flex-none rounded-full"
-                style={{ background: e.color }}
-              />
-              <span className="min-w-0 flex-1 text-[15px] font-semibold">
-                {e.title}
-                {e.sublabel ? (
-                  <small className="mt-px block text-[12.5px] font-medium text-[#9a988f]">
-                    {e.sublabel}
-                  </small>
-                ) : null}
-              </span>
-            </Link>
-          ))
-        )}
+      <div className="mb-1 px-5 pt-3.5 text-[12.5px] font-bold tracking-[0.3px] text-[#a8a69d] uppercase">
+        {selected.isToday ? "Aujourd'hui" : selected.longLabel}
       </div>
+      {tasks.length === 0 ? (
+        <p className="px-5 py-2 text-[13.5px] text-(--text-tertiary)">
+          {selected.isToday
+            ? "Rien de prévu aujourd'hui."
+            : "Rien de prévu ce jour-là."}
+        </p>
+      ) : (
+        tasks.map((t) => <TaskItem key={t.id} task={t} flat />)
+      )}
     </div>
   );
 }

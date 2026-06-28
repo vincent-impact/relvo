@@ -241,6 +241,7 @@ export default async function SujetPage({
                   tasks.map((t) => (
                     <TaskItem
                       key={t.id}
+                      showDate
                       task={{
                         id: t.id,
                         title: t.title,
@@ -252,6 +253,8 @@ export default async function SujetPage({
                           : null,
                         status: t.status,
                         sourceActor: t.sourceActor,
+                        subjectId: subject.id,
+                        subjectTitle: subject.title,
                       }}
                     />
                   ))

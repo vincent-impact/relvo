@@ -225,7 +225,8 @@ export async function getUntriagedTasks(
  */
 export type EnrichedTask = {
   task: Task;
-  subjectId: string;
+  /** Sujet rattaché, ou null (une tâche peut ne pas avoir de sujet). */
+  subjectId: string | null;
   subjectTitle: string;
   subjectReference: string;
   /** Urgence héritée du sujet (le drapeau vit sur le Subject, pas la Task). */
@@ -244,7 +245,11 @@ export async function enrichTasks(
 ): Promise<EnrichedTask[]> {
   if (tasks.length === 0) return [];
   const { start } = dayBounds(now);
-  const subjectIds = [...new Set(tasks.map((t) => t.subjectId))];
+  const subjectIds = [
+    ...new Set(
+      tasks.map((t) => t.subjectId).filter((id): id is string => id != null),
+    ),
+  ];
   const subjects = await db.subject.findMany({
     where: { id: { in: subjectIds } },
     select: {
@@ -267,7 +272,7 @@ export async function enrichTasks(
   const nameById = new Map(contacts.map((c) => [c.id, contactDisplayName(c)]));
 
   return tasks.map((task) => {
-    const s = subById.get(task.subjectId);
+    const s = task.subjectId ? subById.get(task.subjectId) : undefined;
     const firstContactId = s?.contactIds[0];
     return {
       task,

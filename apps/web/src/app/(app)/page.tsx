@@ -7,12 +7,13 @@ import {
 } from "@/components/home/brief-carousel";
 import { HomeTabs } from "@/components/home/home-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
+import { CreateTaskButton } from "@/components/subject/create-task-button";
 import { Screen } from "@/components/layout/screen";
 import { MetricsCardSkeleton } from "@/components/shared/screen-skeletons";
 import type { SubjectRowData } from "@/components/shared/subject-row";
 import { formatDayLabel } from "@/lib/display";
 import {
-  cachedAgendaEvents,
+  cachedAgendaTasks,
   cachedKpis,
   cachedPriorityRows,
   cachedTaskFeed,
@@ -105,9 +106,14 @@ async function HomeTaskTabs({ accountId }: { accountId: string }) {
   weekEnd.setUTCDate(weekEnd.getUTCDate() + 7);
   const todayKey = now.toISOString().slice(0, 10);
 
-  const [kpis, eventsByDay, feed] = await Promise.all([
+  const [kpis, tasksByDay, feed] = await Promise.all([
     cachedTaskKpis(accountId, todayKey),
-    cachedAgendaEvents(accountId, monday.toISOString(), weekEnd.toISOString()),
+    cachedAgendaTasks(
+      accountId,
+      monday.toISOString(),
+      weekEnd.toISOString(),
+      todayKey,
+    ),
     cachedTaskFeed(accountId, todayKey),
   ]);
 
@@ -133,7 +139,7 @@ async function HomeTaskTabs({ accountId }: { accountId: string }) {
       day,
       longLabel: long.charAt(0).toUpperCase() + long.slice(1),
       isToday: sameUTCDay(date, now),
-      hasEvents: (eventsByDay[key]?.length ?? 0) > 0,
+      hasEvents: (tasksByDay[key]?.length ?? 0) > 0,
     };
   });
 
@@ -141,7 +147,7 @@ async function HomeTaskTabs({ accountId }: { accountId: string }) {
     <HomeTabs
       kpis={kpis}
       weekDays={weekDays}
-      eventsByDay={eventsByDay}
+      tasksByDay={tasksByDay}
       todayKey={todayKey}
       overdue={feed.overdue}
       untriaged={feed.untriaged}
@@ -190,6 +196,7 @@ export default async function AccueilPage() {
         title={`Bonjour ${account.firstName}`}
         subtitle={todayCap}
         className="pb-[46px]"
+        action={<CreateTaskButton />}
       >
         <Suspense fallback={<BriefSkeleton />}>
           <HeroBrief accountId={accountId} />

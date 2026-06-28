@@ -438,7 +438,7 @@ model Attachment {
 model Task {
   id               String         @id @default(uuid()) @db.Uuid
   accountId        String         @map("account_id") @db.Uuid
-  subjectId        String         @map("subject_id") @db.Uuid
+  subjectId        String?        @map("subject_id") @db.Uuid
   messageId        String?        @map("message_id") @db.Uuid
   title            String
   description      String?        @db.Text
@@ -457,7 +457,7 @@ model Task {
   updatedAt        DateTime       @updatedAt @map("updated_at")
 
   account Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   message Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
   actions Action[]
   eventLogs EventLog[]

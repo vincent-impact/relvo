@@ -15,6 +15,8 @@ export type TaskItemData = {
   status: string;
   sourceActor: Actor;
   overdue?: boolean;
+  /** Sujet rattaché (modale : afficher/changer), ou null. */
+  subjectId?: string | null;
   /** Contexte « à plat » (hors fiche sujet) : titre du sujet + interlocuteur. */
   subjectTitle?: string | null;
   contactName?: string | null;
@@ -34,6 +36,7 @@ export function toTaskItemData(e: EnrichedTask): TaskItemData {
     status: e.task.status,
     sourceActor: e.task.sourceActor,
     overdue: e.overdue,
+    subjectId: e.subjectId,
     subjectTitle: e.subjectTitle,
     contactName: e.contactName,
   };

@@ -12,14 +12,12 @@ import {
   getUntriagedTasks,
   tenantDb,
 } from "@relvo/db";
-import type { AgendaEvent } from "@/components/home/agenda-week";
 import type { Metric } from "@/components/shared/metrics-card";
 import {
   type SubjectRowData,
   toSubjectRowData,
 } from "@/components/shared/subject-row";
 import { type TaskItemData, toTaskItemData } from "@/lib/task-item-data";
-import { folderColor, formatTime } from "@/lib/display";
 
 // Cache de données serveur (M9.19, point 3) — Vercel Data Cache, durable et
 // partagé entre invocations/régions. Coupe les requêtes Neon sur les écrans peu
@@ -49,8 +47,9 @@ export const TENANT_DATA_TAG = "tenant-data";
 // (color/icon) ; v3 = SubjectRowData (isNew) ; v4 = SubjectRowData (taskDone/
 // taskTotal, − openTaskCount) ; v5 = « Nouveau » dérivé de lastOpenedAt (valeur
 // d'isNew/newSubjects recalculée, forme inchangée) ; v6 = Kpis (+ ignoredMessages)
-// + KPI tâches + feed tâches + titre de sujet dans l'agenda. Incrément suivant = "v7".
-const CACHE_V = "v6";
+// + KPI tâches + feed tâches + titre de sujet dans l'agenda ; v7 = TaskItemData
+// (+ subjectId) + agenda servi en tâches (cachedAgendaTasks). Suivant = "v8".
+const CACHE_V = "v7";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
@@ -87,14 +86,16 @@ export const cachedPriorityRows = unstable_cache(
   CACHE,
 );
 
-// ── Agenda semaine (Accueil) — évènements par jour, plats ────────────────────
-// weekStartISO/weekEndISO dans la clé (la semaine courante change chaque lundi).
-export const cachedAgendaEvents = unstable_cache(
+// ── Agenda semaine (Accueil) — TÂCHES par jour (TaskItemData plat) ───────────
+// Mêmes lignes que partout (TaskItem). weekStartISO/weekEndISO + dayISO dans la
+// clé (semaine + « aujourd'hui » pour le marqueur en retard).
+export const cachedAgendaTasks = unstable_cache(
   async (
     accountId: string,
     weekStartISO: string,
     weekEndISO: string,
-  ): Promise<Record<string, AgendaEvent[]>> => {
+    dayISO: string,
+  ): Promise<Record<string, TaskItemData[]>> => {
     const db = tenantDb(accountId);
     const tasks = await db.task.findMany({
       where: {
@@ -102,38 +103,17 @@ export const cachedAgendaEvents = unstable_cache(
         startDate: { gte: new Date(weekStartISO), lt: new Date(weekEndISO) },
       },
       orderBy: [{ startDate: "asc" }, { startTime: "asc" }],
-      select: {
-        id: true,
-        title: true,
-        startDate: true,
-        startTime: true,
-        subject: {
-          select: {
-            id: true,
-            title: true,
-            folder: { select: { id: true, name: true, slug: true } },
-          },
-        },
-      },
     });
-
-    const eventsByDay: Record<string, AgendaEvent[]> = {};
-    for (const t of tasks) {
-      if (!t.startDate) continue;
-      const dayKey = t.startDate.toISOString().slice(0, 10);
-      (eventsByDay[dayKey] ??= []).push({
-        id: t.id,
-        time: formatTime(t.startTime),
-        color: folderColor(t.subject?.folder?.slug),
-        title: t.title,
-        // Impératif produit : le TITRE du sujet en clair (pas SUB-XXX).
-        sublabel: t.subject?.title ?? null,
-        href: t.subject ? `/sujets/${t.subject.id}?tab=taches` : "/planning",
-      });
+    const enriched = await enrichTasks(db, tasks, new Date(dayISO));
+    const byDay: Record<string, TaskItemData[]> = {};
+    for (const e of enriched) {
+      if (!e.task.startDate) continue;
+      const dayKey = e.task.startDate.toISOString().slice(0, 10);
+      (byDay[dayKey] ??= []).push(toTaskItemData(e));
     }
-    return eventsByDay;
+    return byDay;
   },
-  ["agenda-events", CACHE_V],
+  ["agenda-tasks", CACHE_V],
   CACHE,
 );
 

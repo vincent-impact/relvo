@@ -1597,6 +1597,11 @@ export async function seedDemoAccount() {
     { title: "Comparer les deux devis boissons reçus", actor: Actor.ai },
   ]);
   await addTasks(sub190.id, [{ title: "Classer la facture reçue" }]);
+  // Une tâche SANS sujet rattaché (créée « à la volée » depuis l'Accueil).
+  await createTask(db, {
+    title: "Rappeler le comptable",
+    sourceActor: Actor.user,
+  });
 
   const counts = {
     folders: await db.folder.count(),

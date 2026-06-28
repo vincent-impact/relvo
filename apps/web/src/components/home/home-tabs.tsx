@@ -2,20 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  AgendaWeek,
-  type AgendaEvent,
-  type AgendaWeekDay,
-} from "@/components/home/agenda-week";
+import { AgendaWeek, type AgendaWeekDay } from "@/components/home/agenda-week";
+import { TaskDayGroups } from "@/components/home/task-day-groups";
 import { MetricsCard, type Metric } from "@/components/shared/metrics-card";
 import { SegTabs } from "@/components/shared/seg-tabs";
 import { TaskItem, type TaskItemData } from "@/components/subject/task-item";
 
 // Cœur de l'Accueil (Direction B) — page « plan d'action ». Barre KPI Tâches
-// (RDV / Aujourd'hui / En retard / À trier, non cliquable) puis 3 onglets :
-//  - Aujourd'hui : la vue agenda (semaine + jour sélectionné), lien vers le mois ;
-//  - En retard   : tâches dont l'échéance est passée (tap → sujet) ;
-//  - À faire     : tâches sans date.
+// (RDV / Aujourd'hui / En retard / À trier, non cliquable) puis 3 onglets, qui
+// lisent TOUS les tâches de la même façon (TaskItem) :
+//  - Aujourd'hui : agenda (semaine + tâches du jour) + lien vers le mois ;
+//  - En retard   : tâches échues, GROUPÉES par jour (Hier / 25 juin 2026 / …) ;
+//  - À trier     : tâches sans date, à plat.
 // Chaque ligne porte le TITRE du sujet en clair (impératif produit).
 
 type Tab = "aujourdhui" | "retard" | "afaire";
@@ -30,14 +28,14 @@ export type TaskKpis = {
 export function HomeTabs({
   kpis,
   weekDays,
-  eventsByDay,
+  tasksByDay,
   todayKey,
   overdue,
   untriaged,
 }: {
   kpis: TaskKpis;
   weekDays: AgendaWeekDay[];
-  eventsByDay: Record<string, AgendaEvent[]>;
+  tasksByDay: Record<string, TaskItemData[]>;
   todayKey: string;
   overdue: TaskItemData[];
   untriaged: TaskItemData[];
@@ -77,7 +75,7 @@ export function HomeTabs({
         <>
           <AgendaWeek
             days={weekDays}
-            eventsByDay={eventsByDay}
+            tasksByDay={tasksByDay}
             initialKey={todayKey}
           />
           <div className="px-5 pt-1 pb-2">
@@ -92,29 +90,32 @@ export function HomeTabs({
       ) : null}
 
       {tab === "retard" ? (
-        <TaskList rows={overdue} empty="Aucune tâche en retard. ✦" />
+        overdue.length === 0 ? (
+          <Empty>Aucune tâche en retard. ✦</Empty>
+        ) : (
+          <TaskDayGroups tasks={overdue} todayKey={todayKey} order="desc" />
+        )
       ) : null}
 
       {tab === "afaire" ? (
-        <TaskList rows={untriaged} empty="Aucune tâche à trier." />
+        untriaged.length === 0 ? (
+          <Empty>Aucune tâche à trier.</Empty>
+        ) : (
+          <div>
+            {untriaged.map((t) => (
+              <TaskItem key={t.id} task={t} flat />
+            ))}
+          </div>
+        )
       ) : null}
     </>
   );
 }
 
-function TaskList({ rows, empty }: { rows: TaskItemData[]; empty: string }) {
-  if (rows.length === 0) {
-    return (
-      <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
-        {empty}
-      </p>
-    );
-  }
+function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <div>
-      {rows.map((row) => (
-        <TaskItem key={row.id} task={row} flat />
-      ))}
-    </div>
+    <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
+      {children}
+    </p>
   );
 }

@@ -27,7 +27,8 @@ const dateFields = {
 
 export const createTaskSchema = z
   .object({
-    subjectId: z.uuid(),
+    // Une tâche peut ne pas avoir de sujet (créée depuis l'Accueil « Actions »).
+    subjectId: z.uuid().optional().nullable(),
     messageId: z.uuid().optional().nullable(),
     title: z.string().trim().min(1, "Titre requis").max(300),
     description: z.string().trim().max(5000).optional().nullable(),
@@ -47,6 +48,8 @@ export const updateTaskSchema = z
     description: z.string().trim().max(5000).optional().nullable(),
     kind: z.enum(TaskKind).optional(),
     completionMode: z.enum(CompletionMode).optional(),
+    // Réassignation : un uuid pour (r)attacher, null pour détacher le sujet.
+    subjectId: z.uuid().optional().nullable(),
     ...dateFields,
   })
   .refine((d) => !(d.endDate && d.startDate === null), {
@@ -86,13 +89,15 @@ export async function getTask(db: TenantDb, id: string) {
 export async function createTask(db: TenantDb, input: CreateTaskInput) {
   const data = createTaskSchema.parse(input);
   return db.$transaction(async (tx) => {
-    assertFound(
-      await tx.subject.findFirst({ where: { id: data.subjectId } }),
-      "Sujet",
-    );
+    if (data.subjectId) {
+      assertFound(
+        await tx.subject.findFirst({ where: { id: data.subjectId } }),
+        "Sujet",
+      );
+    }
     const task = await tx.task.create({
       data: {
-        subjectId: data.subjectId,
+        subjectId: data.subjectId ?? null,
         messageId: data.messageId ?? null,
         title: data.title,
         description: data.description ?? null,
@@ -105,10 +110,12 @@ export async function createTask(db: TenantDb, input: CreateTaskInput) {
         endTime: data.endTime ?? null,
       } as Prisma.TaskUncheckedCreateInput,
     });
-    await tx.subject.updateMany({
-      where: { id: data.subjectId },
-      data: { lastActivityAt: new Date() },
-    });
+    if (data.subjectId) {
+      await tx.subject.updateMany({
+        where: { id: data.subjectId },
+        data: { lastActivityAt: new Date() },
+      });
+    }
     await logEvent(tx as Tx, {
       entityType: "task",
       entityId: task.id,
@@ -132,6 +139,13 @@ export async function updateTask(
 ) {
   const data = updateTaskSchema.parse(input);
   return db.$transaction(async (tx) => {
+    // Réassignation de sujet : valider la cible si on (r)attache.
+    if (data.subjectId) {
+      assertFound(
+        await tx.subject.findFirst({ where: { id: data.subjectId } }),
+        "Sujet",
+      );
+    }
     const { count } = await tx.task.updateMany({
       where: { id },
       data: {
@@ -143,6 +157,7 @@ export async function updateTask(
         ...(data.completionMode !== undefined
           ? { completionMode: data.completionMode }
           : {}),
+        ...(data.subjectId !== undefined ? { subjectId: data.subjectId } : {}),
         ...(data.startDate !== undefined ? { startDate: data.startDate } : {}),
         ...(data.startTime !== undefined ? { startTime: data.startTime } : {}),
         ...(data.endDate !== undefined ? { endDate: data.endDate } : {}),
@@ -203,10 +218,12 @@ export async function completeTask(
       await tx.task.findFirst({ where: { id } }),
       "Tâche",
     );
-    await tx.subject.updateMany({
-      where: { id: task.subjectId },
-      data: { lastActivityAt: new Date() },
-    });
+    if (task.subjectId) {
+      await tx.subject.updateMany({
+        where: { id: task.subjectId },
+        data: { lastActivityAt: new Date() },
+      });
+    }
     await logEvent(tx as Tx, {
       entityType: "task",
       entityId: task.id,
@@ -250,10 +267,12 @@ export async function reopenTask(db: TenantDb, id: string) {
       await tx.task.findFirst({ where: { id } }),
       "Tâche",
     );
-    await tx.subject.updateMany({
-      where: { id: task.subjectId },
-      data: { lastActivityAt: new Date() },
-    });
+    if (task.subjectId) {
+      await tx.subject.updateMany({
+        where: { id: task.subjectId },
+        data: { lastActivityAt: new Date() },
+      });
+    }
     await logEvent(tx as Tx, {
       entityType: "task",
       entityId: task.id,
@@ -282,10 +301,12 @@ export async function deleteTask(db: TenantDb, id: string) {
     );
     const { count } = await tx.task.deleteMany({ where: { id } });
     ensureAffected(count, "Tâche");
-    await tx.subject.updateMany({
-      where: { id: task.subjectId },
-      data: { lastActivityAt: new Date() },
-    });
+    if (task.subjectId) {
+      await tx.subject.updateMany({
+        where: { id: task.subjectId },
+        data: { lastActivityAt: new Date() },
+      });
+    }
     await logEvent(tx as Tx, {
       entityType: "task",
       entityId: task.id,
