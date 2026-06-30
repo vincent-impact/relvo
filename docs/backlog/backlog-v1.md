@@ -6,14 +6,15 @@
 
 ## État d'avancement
 
-> Suivi haut niveau. Légende : ✅ fait · 🟡 partiel · ⏸️ reporté · ⬜ à faire. Dernière mise à jour : 2026-06-10.
+> Suivi haut niveau. Légende : ✅ fait · 🟡 partiel · ⏸️ reporté · ⬜ à faire. Dernière mise à jour : 2026-06-30.
 
 | Module | État | Note |
 |---|---|---|
 | **M1** — Fondations techniques | 🟡 **clos (fonctionnellement atteint)** | Socle + déploiement web (Vercel) + base prod (Neon) faits. M1.5 / M1.7 / worker (M1.8) / M1.9 reportés au moment Railway+Baileys (M6). Détail inline en §4. |
 | **M2** — Auth & multi-tenant | ✅ **fait** | Auth.js v5 (Credentials + Google OAuth, sessions JWT), `proxy.ts` (Next 16), helper tenant + client Prisma tenant-aware (`$extends`), signup public, vérif email + reset via Resend, onglet Profil. Détail inline en §4. |
 | **M3** — Modèle de données & accès CRUD | ✅ **fait** | Couche domaine partagée `packages/db/src/domain/` (tenant-aware, fonctions pures réutilisables par le worker M7), conventions (Zod, DomainError, pagination curseur, `logEvent`), 8 domaines CRUD + agrégations (KPIs/feed/sans-sujet), Server Actions web (wrappers `ActionResult`), seeds Tasty Crousty, 7 tests d'invariants vitest (base `relvo_test`). Détail inline en §4. |
-| M4 → M14 | ⬜ à faire | **M9 (pages front) = prochaine étape** — reproduire la maquette en React/Next, cliquable, branchée sur les données du seed Tasty Crousty (jalon démo intermédiaire, cf. §5). M4 ensuite. |
+| **M9** — Pages applicatives front | ✅ **clos (2026-06-30)** | Les 7 pages reproduites en React/Next (mobile-first « Direction B »), cliquables et branchées sur le seed démo, + PWA installable. Divergences vs plan d'origine assumées (statut 4 valeurs, priorité 2 valeurs, dock 4 onglets, Accueil = page des tâches, Messages = pile d'orphelins). **Démo client validée le 2026-06-29** (retour très positif). Améliorations continues à venir « au fil de l'usage », hors jalon. Détail : §5 + plan de clôture M9.18→M9.24. |
+| M4 → M8, M10 → M14 | ⬜ à faire | **M10 (drawer chatbot) = prochaine étape produit** (surface d'action principale). M4 (stockage), M5 (canaux), M6/M7 (WhatsApp + pipeline IA) restent à planifier. |
 
 > **⚠️ Migration de schéma requise avant/avec M9** — refonte UX mobile-first (2026-06-18). Le modèle de conception a évolué ([`02-modele-donnees.md`](../conception/02-modele-donnees.md)) ; à répercuter dans `packages/db/prisma/schema.prisma` :
 > - `Status` : `enum(new, to_do, waiting, unread, resolved, archived)` → **`enum(acknowledged, resolved, archived, ignored)`** (cycle de vie exclusif ; `to_do`/`waiting`/`unread` **et `new`** deviennent des marqueurs, pas des statuts — `new` retiré le 2026-06-27, « Nouveau » dérivé de `last_opened_at == null`).
@@ -275,6 +276,14 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 - **M9.22 ✅ — Page Contacts + sous-pages : D.A. + UX + accès (point 4)** — `/contacts` et `/contacts/[id]` conformes Direction B. **Point d'accès tranché (2026-06-26) : Contacts = 3ᵉ onglet du dock** (entre Mon fil et Mémoire), destination de premier rang en vue de l'usage **Équipe** — pas un sous-menu de Réglages. Dock 4→**5 entrées** (CLAUDE.md + `bottom-tab-bar.tsx` mis à jour). Note IA : un contact rattaché à un pôle/dossier orientera la qualification des messages reçus (à exploiter au pipeline M7).
 - **M9.23 ✅ — Page Connexion (login) : D.A. + UX (point 5)** — tunnel `(auth)/*` repassé Direction B : hero violet de marque (logo + tagline) + carte blanche « à cheval », bouton primaire violet, liens violets (`AuthCard`/`AuthLink`). Statut PWA `black-translucent` géré (`max(env(safe-area-inset-top), …)` + `env(safe-area-inset-bottom)`).
 - **M9.24 ✅ — Jeu de données de démo plus conséquent & crédible (point 6)** — `packages/db/src/seed-demo.ts` étoffé (univers Mam's Diallo / Tasty Crousty Épinay) : 6 domaines dont Communication, 18 contacts, 29 sujets (statuts variés), 115 tâches datées juin→juillet, messages orphelins, connaissances. Idempotent + reset-able via Réglages.
+
+**Itérations UX post-plan (26→30 juin), incluses dans M9 réalisé :**
+- **Accueil = page des TÂCHES** (« Actions du jour ») : barre KPI Tâches contextuelle, **semainier slidable** (rail de jours, aujourd'hui centré, badges rouges/bleus) avec **drag-and-drop long-press** d'une tâche d'un jour à l'autre (curseur = cible), onglet « À trier » ; KPI Sujets sur la page Sujets. `TaskItem` unifié (case à cocher, rail de couleur domaine, colonne heure). Sujet cliquable depuis une ligne (retour contextuel via `?from=`).
+- **Fiche Sujet — Conversations** : composer limité à l'onglet, **select d'interlocuteur qui switche la conversation** (filtre `sender/recipientContactId`), option **« Tous »** (diffusion) dès > 1 interlocuteur ; « Destinataire » → « Interlocuteur ».
+- **PWA iOS fiabilisée** : hauteur de cadre stable (`--app-height` = max des métriques viewport, dont `screen.height` en portrait) — fin du cadre rétréci / bande blanche au lancement ; **verrou portrait** (voile paysage) ; zoom bloqué ; garde anti-rebond corrigée (ignore l'horizontal).
+- Filtres « Mon fil » à un niveau (chips + select), « Nouveau » devenu marqueur dérivé.
+
+**➡️ M9 CLÔTURÉ le 2026-06-30.** Démo client du 2026-06-29 validée (« très satisfaits »). Reste du travail d'**amélioration continue** de l'UI, mené au fil de l'usage — **hors jalon**, pas bloquant. Prochaine étape produit : **M10 (drawer chatbot)**, la surface d'action principale.
 
 ---
 
