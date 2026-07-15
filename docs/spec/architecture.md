@@ -63,10 +63,10 @@ Le `Message` porte deux champs liés au tri : `folder_id` (domaine assigné dès
 | Base de données | **PostgreSQL** (Neon, via le Marketplace Vercel) + **Prisma** |
 | Types partagés | Enums Prisma exposés depuis `packages/db` (`SubjectStatus` 4 valeurs, `Priority` 2 valeurs, `Actor`, `TaskStatus`, `TriageHint`…) — pas de package `shared-types` séparé. La logique métier (queries, mutations) vit aussi dans `packages/db/src/domain` |
 | Auth | **Auth.js** in-app (provider Credentials + Google OAuth), sessions cookie/JWT, middleware de protection des routes |
-| IA | **Vercel AI SDK** + **Vercel AI Gateway** ; Claude **Haiku / Sonnet / Opus** selon complexité (Opus rare) ; **Files API** Anthropic pour les PDFs (`anthropic_file_id`) ; **prompt caching** (system prompt + KnowledgeDocuments) ; **citations natives** activées (UI minimale en V1) |
+| IA | **Vercel AI SDK** + **Vercel AI Gateway** ; Claude **Haiku / Sonnet / Opus** selon complexité (Opus rare) ; **Files API** Anthropic pour les PDFs (`anthropic_file_id`) — **copie d'inférence en écriture seule, jamais la source de vérité** (cf. §5) ; **prompt caching** (system prompt + KnowledgeDocuments) ; **citations natives** activées (UI minimale en V1) |
 | Chat local | **IndexedDB** via `dexie` (conversations chatbot éphémères, côté client, pas d'entité serveur) |
 | Drag & drop | `dnd-kit` (replanification des tâches sur les calendriers) |
-| Stockage fichiers | **Vercel Blob**, upload via URL pré-signée |
+| Stockage fichiers | **Cloudflare R2** (object storage S3-compatible), upload navigateur via URL pré-signée. **Pas de CDN devant** : les fichiers sont privés et cloisonnés par tenant, un cache edge n'apporte rien à cette échelle et empêcherait les URLs pré-signées (cf. §5) |
 | WhatsApp | **Baileys** dans `apps/worker` (WhatsApp perso du dirigeant, risque de ban assumé et documenté) |
 | Email | **Postmark Inbound** (entrant) + **Resend / Postmark** (sortant) |
 | File asynchrone | **BullMQ** (ou file simple) dans `apps/worker` |
@@ -98,10 +98,11 @@ La maquette mobile-first de référence vit dans `mockup/mobile/`. Dans `apps/we
 | Auth | **Auth.js** in-app | Standard, pas de dépendance payante, pas de JWT inter-services à gérer |
 | Email entrant | **Postmark Inbound** (webhook) | Robuste, async natif, setup rapide vs IMAP polling |
 | WhatsApp | **Baileys** (lib non officielle) | Seule voie viable pour le WhatsApp perso d'un dirigeant ; risque ban assumé |
-| Stockage fichiers | **Vercel Blob** | Intégré à l'hébergement web, upload pré-signé |
+| Stockage fichiers | **Cloudflare R2** (décision 2026-07-15) | **API S3-compatible** : un seul client S3 générique partagé `web` ⇄ `worker` (le worker Railway écrit les médias WhatsApp), outillage connu, sortie vers S3 possible sans réécrire les call sites. **Free tier permanent** (10 Go, 1 M écritures, 10 M lectures/mois) qui couvre toute la bêta, sans imposer un abonnement Vercel Pro. Setup = 1 bucket + 1 token, contre 5 services AWS (S3 + CloudFront + IAM + ACM + Route 53) pour S3, et contre un lock-in propriétaire sans API S3 pour Vercel Blob. Le coût n'a pas départagé : les trois options sont sous 2 $/mois à l'échelle V1 |
 | Base de données | **Neon** (Marketplace Vercel) | Postgres managé, intégration native Vercel, branches de preview |
 | Stripe | **Reporté V1.1** | Bêta privée gratuite |
 | RAG | **Pas de base vectorielle** | Long context + prompt caching suffisent (cf. `../conception/04-ia.md §10`) |
+| Files API ≠ stockage | **Deux copies assumées** : R2 (vérité) + Files API (inférence) | Un fichier uploadé via `POST /v1/files` porte `downloadable: false` **posé par le serveur** ; `GET /v1/files/{id}/content` renvoie **400** dessus (seuls les fichiers *générés* par les skills / le code execution tool sont téléchargeables). La Files API ne peut donc **pas** alimenter l'onglet Documents : c'est un cache d'inférence en écriture seule. Elle reste utile (gratuite, sans expiration, 500 Mo/fichier, 500 Go/organisation) pour éviter de re-uploader le PDF à chaque prompt. À savoir : **hors Zero Data Retention**, et indisponible sur Bedrock/Vertex |
 | MCP | **Pas en V1** | Tool calling natif Anthropic suffit pour un chatbot in-app |
 | Temps réel | **Polling 30 s** | Suffisant en V1, WebSocket en V2 |
 | Conversations chatbot | **IndexedDB éphémère** | Pas d'entité serveur, architecture simplifiée |

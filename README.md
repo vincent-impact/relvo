@@ -12,7 +12,8 @@ Monorepo (pnpm workspaces) avec deux déployables partageant un schéma Prisma :
 |---|---|---|
 | **`apps/web`** | App Next.js fullstack (UI + API + auth + chatbot + CRUD) | Vercel |
 | **`apps/worker`** | Daemon Baileys (connexion WhatsApp permanente) + pipeline IA | Railway / Render |
-| **`packages/db`** | Schéma Prisma + client généré, partagé web ↔ worker | — |
+| **`packages/db`** | Schéma Prisma + client généré + couche domaine, partagés web ↔ worker | — |
+| **`packages/storage`** | Stockage fichiers (Cloudflare R2, API S3), partagé web ↔ worker | — |
 
 **Pourquoi un worker séparé ?** Baileys maintient un WebSocket permanent vers WhatsApp pour recevoir les messages. Les fonctions serverless Vercel sont *request-scoped* et ne peuvent pas héberger un process always-on — d'où un worker sur une plateforme à process longs. L'e-mail, lui, arrive par webhook Postmark (simple Route Handler dans `apps/web`) et ne nécessite aucun worker. Détail : [`docs/spec/architecture.md`](./docs/spec/architecture.md).
 
@@ -22,7 +23,8 @@ relvo/
 │   ├── web/        → Vercel (Root Directory = apps/web)
 │   └── worker/     → Railway/Render
 ├── packages/
-│   └── db/         schéma Prisma partagé
+│   ├── db/         schéma Prisma + domaine, partagés
+│   └── storage/    stockage fichiers R2, partagé
 ├── docs/           conception · spec · backlog
 └── mockup/         maquette HTML figée (référence visuelle)
 ```
@@ -77,8 +79,12 @@ Au premier démarrage du worker, un **QR code** s'affiche dans le terminal : sca
 | `AUTH_GOOGLE_ID` / `AUTH_GOOGLE_SECRET` | OAuth Google (Auth.js) — optionnel ; sans ces clés, login e-mail seul |
 | `EMAIL_FROM` | Expéditeur des e-mails Resend (ex. `Relvo <onboarding@resend.dev>`) |
 | `AI_GATEWAY_API_KEY` | Clé Vercel AI Gateway (routage des modèles Claude) |
-| `ANTHROPIC_API_KEY` | Pour la Files API d'Anthropic (PDFs des Connaissances) |
-| `BLOB_READ_WRITE_TOKEN` | Vercel Blob (stockage fichiers) |
+| `ANTHROPIC_API_KEY` | Files API d'Anthropic (copie d'inférence des PDFs — **pas** le stockage de vérité, cf. `docs/spec/architecture.md §5`) |
+| `R2_ACCOUNT_ID` | Cloudflare R2 — ID de compte (visible dans l'URL du dashboard) |
+| `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | Token de compte R2, permission « Object Read & Write » scopée au bucket |
+| `R2_BUCKET` | Nom du bucket (ex. `relvo-files-prod`) |
+| `R2_JURISDICTION` | `eu` (défaut) — résidence RGPD, **figée à la création du bucket** ; conditionne l'endpoint S3 |
+| `CRON_SECRET` | Secret du cron Vercel qui draine l'outbox de suppression de fichiers (`openssl rand -base64 32`) |
 | `POSTMARK_SERVER_TOKEN` | Envoi e-mail sortant |
 | `POSTMARK_INBOUND_SECRET` | Vérification du webhook e-mail entrant |
 | `RESEND_API_KEY` | E-mails transactionnels (vérification de compte) |
@@ -93,8 +99,18 @@ Au premier démarrage du worker, un **QR code** s'affiche dans le terminal : sca
 | `WORKER_API_SECRET` | Même secret que côté `web` |
 | `PORT` | Port d'écoute de l'endpoint `send` |
 | `WA_AUTH_STATE_PATH` | Chemin de persistance de l'état d'auth Baileys |
+| `R2_*` | Mêmes valeurs que `web` — le worker écrit les médias WhatsApp dans le même bucket (M6.6) |
 
 > Sur Vercel, gérer les variables de `web` via `vercel env` ou le dashboard. Sur Railway/Render, configurer celles du `worker` dans leur interface respective.
+
+### Vérifier le stockage R2
+
+Une fois les variables `R2_*` renseignées, un aller-retour réel contre le bucket (upload pré-signé → lecture → contrôle d'accès → suppression) :
+
+```bash
+cp packages/storage/.env.example packages/storage/.env   # puis renseigner
+pnpm --filter @relvo/storage smoke
+```
 
 ## Déploiement
 
@@ -104,7 +120,7 @@ Au premier démarrage du worker, un **QR code** s'affiche dans le terminal : sca
 
 ## Stack
 
-Next.js (App Router) · TypeScript · Tailwind + Shadcn UI · Prisma + PostgreSQL · Auth.js · Vercel AI SDK + AI Gateway (Claude) · Vercel Blob · Baileys (WhatsApp) · Postmark / Resend (e-mail) · dnd-kit · dexie (IndexedDB).
+Next.js (App Router) · TypeScript · Tailwind + Shadcn UI · Prisma + PostgreSQL · Auth.js · Vercel AI SDK + AI Gateway (Claude) · Cloudflare R2 (stockage fichiers) · Baileys (WhatsApp) · Postmark / Resend (e-mail) · dnd-kit · dexie (IndexedDB).
 
 ## Scripts utiles
 

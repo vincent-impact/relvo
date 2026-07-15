@@ -14,7 +14,7 @@
 | **M2** — Auth & multi-tenant | ✅ **fait** | Auth.js v5 (Credentials + Google OAuth, sessions JWT), `proxy.ts` (Next 16), helper tenant + client Prisma tenant-aware (`$extends`), signup public, vérif email + reset via Resend, onglet Profil. Détail inline en §4. |
 | **M3** — Modèle de données & accès CRUD | ✅ **fait** | Couche domaine partagée `packages/db/src/domain/` (tenant-aware, fonctions pures réutilisables par le worker M7), conventions (Zod, DomainError, pagination curseur, `logEvent`), 8 domaines CRUD + agrégations (KPIs/feed/sans-sujet), Server Actions web (wrappers `ActionResult`), seeds Tasty Crousty, 7 tests d'invariants vitest (base `relvo_test`). Détail inline en §4. |
 | **M9** — Pages applicatives front | ✅ **clos (2026-06-30)** | Les 7 pages reproduites en React/Next (mobile-first « Direction B »), cliquables et branchées sur le seed démo, + PWA installable. Divergences vs plan d'origine assumées (statut 4 valeurs, priorité 2 valeurs, dock 4 onglets, Accueil = page des tâches, Messages = pile d'orphelins). **Démo client validée le 2026-06-29** (retour très positif). Améliorations continues à venir « au fil de l'usage », hors jalon. Détail : §5 + plan de clôture M9.18→M9.24. |
-| M4 → M8, M10 → M14 | ⬜ à faire | **M10 (drawer chatbot) = prochaine étape produit** (surface d'action principale). M4 (stockage), M5 (canaux), M6/M7 (WhatsApp + pipeline IA) restent à planifier. |
+| M4 → M8, M10 → M14 | ⬜ à faire | **M4 (stockage fichiers) = prochaine étape, en cours depuis le 2026-07-15** — fournisseur tranché : **Cloudflare R2**. M4 débloque M11 (upload PDF → Files API), qui débloque M7 **et** M10 : le chatbot ne peut pas passer avant. M5 (email), M6/M7 (WhatsApp + pipeline IA) suivent. |
 
 > **⚠️ Migration de schéma requise avant/avec M9** — refonte UX mobile-first (2026-06-18). Le modèle de conception a évolué ([`02-modele-donnees.md`](../conception/02-modele-donnees.md)) ; à répercuter dans `packages/db/prisma/schema.prisma` :
 > - `Status` : `enum(new, to_do, waiting, unread, resolved, archived)` → **`enum(acknowledged, resolved, archived, ignored)`** (cycle de vie exclusif ; `to_do`/`waiting`/`unread` **et `new`** deviennent des marqueurs, pas des statuts — `new` retiré le 2026-06-27, « Nouveau » dérivé de `last_opened_at == null`).
@@ -150,12 +150,37 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 **Objectif** : gérer le stockage et la diffusion sécurisée des fichiers uploadés (pièces jointes, documents de Connaissances).
 
-**Dépendances** : M2.
+**Dépendances** : M2. **M4 bloque M11** (upload PDF → Files API), qui bloque **M7** et **M10** → M4 passe **avant M10** malgré la mention « M10 = prochaine étape » héritée de la clôture M9.
 
-- **M4.1** — Setup Vercel Blob
-- **M4.2** — Route Handler / Server Action d'upload via URL pré-signée
-- **M4.3** — Download avec contrôle d'accès tenant
-- **M4.4** — Service de validation des uploads (MIME, taille max, vérification basique d'extension)
+> **Fournisseur retenu : Cloudflare R2** (décision 2026-07-15, benchmark vs Vercel Blob / S3+CloudFront / Supabase / UploadThing). Justification complète dans [`../spec/architecture.md §5`](../spec/architecture.md). En bref : API S3-compatible (un client générique partagé web ⇄ worker, outillage connu, sortie possible), free tier permanent couvrant toute la bêta sans imposer Vercel Pro, setup en 1 bucket + 1 token. **Le coût n'a pas départagé** — les trois options sont sous 2 $/mois à l'échelle V1.
+>
+> **Pas de CDN** : les fichiers sont privés et cloisonnés par tenant, consultés par 3-10 utilisateurs. Un cache edge n'apporte rien et, chez R2, les URLs pré-signées ne fonctionnent que sur le domaine S3 API — cache et pré-signature sont **mutuellement exclusifs**. À rouvrir seulement si un usage public de fichiers apparaît.
+
+- **M4.1** — Setup Cloudflare R2 : bucket privé (région EU), token API, `AWS_*`-like env vars sur Vercel **et** Railway
+- **M4.2** — Module `storage` isolant le fournisseur (put / presign-get / delete) — la couche domaine ne connaît que `storage_key`, chaîne opaque ⇒ le choix reste réversible
+- **M4.3** — Upload **navigateur → R2 via URL pré-signée** émise par un Route Handler authentifié (obligatoire : body plafonné à 4,5 Mo sur une Vercel Function, 1 Mo sur une Server Action)
+- **M4.4** — Download avec contrôle d'accès tenant : pathname `accounts/<account_id>/...`, **résolu depuis la DB scopée par `getTenantDb`, jamais depuis un input utilisateur**, auth vérifiée dans le Route Handler (pas en middleware)
+- **M4.5** — Service de validation des uploads (MIME, taille max, vérification basique d'extension)
+- **M4.6** ✅ — Cycle de vie des fichiers : **outbox transactionnel alimenté par trigger PostgreSQL** (décidé le 2026-07-15 après revue des pratiques Rails / Django / WarpStream).
+
+  **Pourquoi pas la suppression synchrone** (première approche, abandonnée) : Django l'a **retirée en 1.3** pour cause de perte de données — *« This opened the door to several data-loss scenarios, including rolled-back transactions and fields on different models referencing the same file »*. Rails l'interdit en transaction : *« Deleting files off the service will initiate an HTTP connection which may be slow or prevented, so you should not use [purge] inside a transaction or in callbacks; use purge_later instead. »* Et elle est **structurellement incapable** de voir les cascades.
+
+  **Pourquoi pas le balayage de réconciliation** : il supprime sur une **différence calculée**. Si la requête listant les `storage_key` renvoie vide (filtre cassé, migration en cours), il conclut que tout est orphelin et vide le bucket. Sans versioning R2 → irrécupérable. L'outbox ne supprime que des clés qu'une vraie suppression a explicitement mises en file.
+
+  **Le mécanisme** :
+  - **Trigger `AFTER DELETE`** sur chaque table porteuse d'un `storage_key` (`attachments`, `knowledge_documents`) → insère la clé dans `pending_file_deletions`, **dans la transaction de suppression**. Garanti par la doc PostgreSQL : *« If a foreign key constraint specifies referential actions […] any triggers that exist on the referencing table will be fired for those changes. »* C'est le **seul** moyen de capter les cascades — Prisma en est aveugle par conception (*« Referential actions are actually defined and executed at the database level, not at the Prisma Client level »*, équipe Prisma).
+  - **Atomicité** : un `ROLLBACK` annule la mise en file (testé). C'est ce qu'un job applicatif type `purge_later` n'obtient pas.
+  - **Drainage hors transaction** (`drainFileDeletions`) via **Vercel Cron** quotidien (`/api/cron/drain-file-deletions`, protégé par `CRON_SECRET` ; le plan Hobby limite à 1 cron/jour). Le report est sans conséquence : **un fichier devient inaccessible dès que sa ligne disparaît**, puisqu'une URL n'est signée qu'à partir d'une clé résolue en base.
+  - **Garde-fou « clé réattribuée »** : avant de supprimer, on vérifie qu'aucune ligne ne référence encore la clé (scénario Django n°2). Sans lui, le reset démo effacerait les fixtures qu'il vient de reposer sur les mêmes clés déterministes.
+  - **Échec du stockage** → l'entrée reste en file avec `attempts`/`last_error`. La fuite est **visible**, pas silencieuse — c'est ce qui rend le balayage non nécessaire.
+  - **Le domaine ne connaît plus le stockage** : `deleteAttachment(db, id)`, `deleteDocument(db, id)`. Rien à se rappeler en écrivant une suppression.
+  - ⚠️ **Seul point de vigilance restant** : toute nouvelle table portant un `storage_key` doit recevoir son trigger. Explicite (une ligne de migration) plutôt que diffus dans le code.
+  - ⚠️ **`TRUNCATE` ne déclenche pas les triggers `ON DELETE`** (doc PostgreSQL). Sans effet ici : le seul `TRUNCATE` du projet est dans les tests, contre une base sans fichiers réels.
+
+  **Fixtures du compte démo** (`packages/db/prisma/fixtures/`, ~4,6 Ko) : de vrais PDF en git, poussés dans R2 à chaque reset sur des **clés déterministes** (`…/seed/<nom>` → un PUT écrase en place). Avant, cliquer un document de la démo renvoyait « introuvable ». Le reset purge le préfixe du compte (uploads des béta-testeurs compris) puis repousse les 4 fixtures.
+
+- **M4.7** ⬜ — **Upload abandonné** : URL émise → fichier poussé → onglet fermé avant l'écriture en base. Aucune ligne, donc aucun trigger, donc aucune entrée de file. **Solution retenue, à câbler : préfixe `pending/` + Object Lifecycle Rule R2 (`Days: 1`)** — R2 sait expirer les objets d'un préfixe tout seul, zéro ligne de code. Nuance : exécution best-effort sous ~24 h (un objet peut survivre ~48 h) ⇒ ramasse-miettes paresseux, pas un TTL. Nécessite le pattern « pending upload » (ligne créée AVANT l'émission de l'URL, confirmée après). Non bloquant : à faire avec M11, qui apporte l'UI d'upload.
+- **M4.8** ⬜ — *(filet de sécurité, à n'ajouter que sur preuve de dérive)* **Balayage de réconciliation**. Le consensus (Rails `unattached` + délai de grâce, WarpStream) est que le chemin nominal et le filet sont des **couches**, pas des alternatives. Reporté car l'outbox rend les fuites visibles (`pending_file_deletions` qui monte). Si un jour nécessaire : **garde-fous obligatoires** — refus si la base renvoie zéro clé, plafond de suppression par passe, délai de grâce 24 h, mode simulation par défaut.
 
 ---
 

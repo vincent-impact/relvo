@@ -385,7 +385,7 @@ Pièce jointe liée à un message.
 - `subject_id: UUID nullable`
 - `name: string`
 - `mime_type: string nullable`
-- `file_url: string`
+- `storage_key: string` — clé de l'objet dans le stockage (R2), **pas une URL** : le bucket est privé et les URLs pré-signées expirent (7 j max). L'URL de lecture est signée à la demande
 - `file_size: integer nullable`
 - `ai_label: string nullable`
 - `ai_summary: text nullable`
@@ -589,9 +589,9 @@ Document de référence chargé par l'utilisateur pour enrichir le contexte de R
 **Champs spécifiques `kind = file`** (PDF, image, document uploadé — non modifiable sauf suppression) :
 
 - `mime_type: string nullable`
-- `file_url: string nullable`
+- `storage_key: string nullable` — clé de l'objet dans le stockage (R2), **pas une URL** — cf. `Attachment.storage_key`
 - `file_size: integer nullable`
-- `anthropic_file_id: string nullable` — identifiant retourné par la Files API d'Anthropic, utilisé pour référencer le fichier dans les prompts sans le re-uploader
+- `anthropic_file_id: string nullable` — identifiant retourné par la Files API d'Anthropic, utilisé pour référencer le fichier dans les prompts sans le re-uploader. **Pointeur vers une copie d'inférence, pas vers la source de vérité** : un fichier uploadé chez Anthropic n'est **jamais téléchargeable** (`downloadable: false`, `GET /content` → 400). L'affichage utilisateur passe donc **toujours** par `storage_key` (R2). Si l'`anthropic_file_id` est perdu, on ré-uploade depuis R2 ; l'inverse est impossible
 - `ai_label: string nullable` — étiquette automatique (organigramme, facture, devis, contrat-type, procédure, autre) générée à la réception (Haiku)
 - `ai_summary: text nullable` — résumé court généré au premier accès (Sonnet), mis en cache
 - `absorption_status: enum(read, ignored) default read` — état d'absorption dans la mémoire de Relvo. `read` : le document est intégré au contexte (badge UI **« ✦ lu »**). `ignored` : Relvo l'écarte des connaissances de référence (typiquement un transactionnel — bon de livraison, accusé) et **ne l'injecte pas** dans les prompts (badge UI **« ignoré »**). Décidé par Relvo, modifiable par l'utilisateur.
@@ -624,7 +624,7 @@ Exemples typiques :
 |---|---|---|
 | Source | Upload PDF, image, doc | Markdown rédigé dans l'app |
 | Modifiable | Non (suppression seule) | Oui (par l'utilisateur en V1) |
-| Stockage | Blob (file_url) + Anthropic Files API | Texte inline (`content`) |
+| Stockage | **R2** (`storage_key`, source de vérité) + Anthropic Files API (`anthropic_file_id`, copie d'inférence en écriture seule) | Texte inline (`content`) |
 | Évolution | Statique | Mémoire vivante |
 | Usage type | Référence visuelle, modèle, contrat | Règles, contexte métier, ton, organisation |
 

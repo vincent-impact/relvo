@@ -55,7 +55,8 @@ relvo/
 │   └── backlog/backlog-v1.md  # roadmap modules M1→M14
 ├── mockup/                    # maquette HTML figée — référence visuelle
 ├── packages/
-│   └── db/prisma/schema.prisma   # schéma partagé web ↔ worker
+│   ├── db/prisma/schema.prisma   # schéma partagé web ↔ worker
+│   └── storage/src/              # stockage fichiers R2 partagé web ↔ worker (M4)
 └── apps/
     ├── web/                   # → Vercel (Root Directory = apps/web)
     │   ├── src/app/           # routes App Router (voir mapping ci-dessous)
@@ -72,7 +73,9 @@ relvo/
 - Avant de créer/modifier un écran, **lire les docs `docs/conception/` concernées** — elles priment sur toute supposition.
 - Pour reproduire fidèlement un écran, s'appuyer sur le HTML/CSS correspondant dans `mockup/`.
 - Le schéma Prisma (`packages/db`) doit rester **cohérent avec `02-modele-donnees.md`**.
-- Toute logique partagée web/worker (types, accès DB) passe par `packages/db` — jamais de duplication.
+- Toute logique partagée web/worker passe par un package : `packages/db` (types, accès DB), `packages/storage` (fichiers R2) — jamais de duplication.
+- **Aucun accès direct au stockage** : tout passe par `@relvo/storage` (`getStorage()`), jamais par un client S3 instancié à la main. C'est ce qui garde le fournisseur remplaçable.
+- **🚫 Ne JAMAIS supprimer un fichier R2 depuis une fonction de suppression.** Le domaine ignore le stockage : un **trigger PostgreSQL** met `storage_key` dans l'outbox `pending_file_deletions` (dans la transaction), un cron draine hors transaction (M4.6). C'est le seul mécanisme qui capte les **cascades**, dont Prisma est aveugle par conception. Supprimer en synchrone rouvrirait les pertes de données qui ont fait retirer ce comportement de Django en 1.3. **Toute nouvelle table portant un `storage_key` doit recevoir son trigger dans la migration.**
 - `docs/` et `mockup/` ne sont buildés par personne (Next ne build que `apps/web/src/app`).
 
 ### Mapping routes ↔ écrans
@@ -121,7 +124,7 @@ Routes francophones, alignées sur la nav V1.
 16. `Folder` (modèle) = **« Mémoire »** (nav, icône cerveau) ; chaque Folder = **« un domaine de la mémoire de Relvo »**, fiche en **3 onglets : Instructions / Documents / Sujets**. Regroupe Sujets (`Subject.folder_id`) **et** Connaissances (`KnowledgeDocument.folder_id`).
 17. Folder « **Général** » auto-créé (`is_default`), documentaire transversal, jamais de sujets.
 18. `KnowledgeDocument` : `kind = file` (UI **« Documents »**, PDF/image non modifiable) ou `kind = note` (UI **« Instructions »**, Markdown éditable). Un `file` porte un état d'absorption `read` (✦ lu, injecté dans les prompts) / `ignored` (écarté du retrieval), décidé par Relvo. Pas de page « Connaissances » séparée.
-19. Ajout de document = drag-and-drop d'un PDF dans l'onglet Documents (Files API Anthropic via `anthropic_file_id`).
+19. Ajout de document = drag-and-drop d'un PDF dans l'onglet Documents. **Deux stockages, jamais un seul** : le fichier vit dans **Cloudflare R2** (`storage_key` — une **clé d'objet, pas une URL** : bucket privé, URLs signées à la demande ; source de vérité et seule voie d'affichage à l'utilisateur) et une copie part vers la **Files API Anthropic** (`anthropic_file_id`) pour l'inférence. La Files API est en **écriture seule** — un fichier uploadé porte `downloadable: false` et n'est jamais relisible. Upload = **navigateur → R2 via URL pré-signée** (une Vercel Function plafonne le body à 4,5 Mo, une Server Action à 1 Mo — le PDF ne transite pas par le code).
 20. V1 : seul l'utilisateur édite les Instructions ; Relvo les consulte sans les modifier.
 
 **Chatbot Relvo**
