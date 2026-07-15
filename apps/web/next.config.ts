@@ -1,6 +1,24 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Le traçage part du dossier du projet Next (`apps/web`) : « any files outside
+  // of that folder will not be included » (doc Next). Or nos fixtures de démo
+  // vivent dans `packages/db/prisma/fixtures/`. On remonte donc à la racine du
+  // monorepo, sinon l'include ci-dessous ne peut pas les atteindre.
+  outputFileTracingRoot: path.join(import.meta.dirname, "../../"),
+
+  // `seedDemoFiles` lit les PDF de démo avec `readFile()` et un chemin construit
+  // à l'exécution depuis `import.meta.url`. Le traceur (@vercel/nft) analyse les
+  // `import`/`require`/`fs` STATIQUEMENT : il ne peut pas voir ce chemin, donc il
+  // n'embarque pas les fichiers. En local ça marche (le monorepo est sur le
+  // disque) ; sur Vercel, `readFile` lève ENOENT et le reset démo renvoie 500.
+  //
+  // Le bouton « Réinitialiser » vit sur /parametres → c'est cette route qui doit
+  // porter les fixtures dans son bundle.
+  outputFileTracingIncludes: {
+    "/parametres": ["../../packages/db/prisma/fixtures/**"],
+  },
   // @relvo/db et @relvo/storage exposent du TypeScript brut : Next doit les
   // transpiler comme du code applicatif.
   transpilePackages: ["@relvo/db", "@relvo/storage"],
