@@ -19,6 +19,11 @@ const TABLES = [
   "folders",
   "accounts",
   "verification_tokens",
+  // Outbox de suppression de fichiers (M4.6) : sans ça, la file d'un test
+  // déborderait sur le suivant.
+  // NB : TRUNCATE ne déclenche PAS les triggers ON DELETE (doc PostgreSQL), donc
+  // vider les tables ci-dessus n'enfile rien — c'est ce qu'on veut ici.
+  "pending_file_deletions",
 ];
 
 beforeEach(async () => {

@@ -16,6 +16,7 @@
  * pièces jointes, connaissances, et des cas « ignoré » / « terminé » / « orphelin ».
  */
 import { Prisma, prisma, tenantDb } from "./index";
+import { seedDemoFiles, seedFileKey } from "./seed-files";
 import {
   AbsorptionStatus,
   Actor,
@@ -75,8 +76,20 @@ export async function seedDemoIfMissing(): Promise<{ created: boolean }> {
   return { created: true };
 }
 
-export async function seedDemoAccount() {
+/**
+ * Stockage à alimenter en fixtures (M4.6). Optionnel : sans lui, le seed pose
+ * des lignes dont les fichiers n'existent pas — les documents de la démo
+ * renverront « introuvable ». Toléré en dev, signalé bruyamment.
+ */
+type SeedStorage = Parameters<typeof seedDemoFiles>[0];
+
+export async function seedDemoAccount(storage?: SeedStorage) {
   // 1. Reset idempotent : supprime le compte démo (cascade sur tout le reste).
+  //
+  // ⚠️ La cascade s'exécute dans PostgreSQL : les clés des `attachments` et
+  // `knowledge_documents` effacés ne passent jamais par le code, leurs objets R2
+  // ne peuvent donc pas être supprimés ici. C'est `seedDemoFiles()` qui purge le
+  // préfixe du compte plus bas — d'où l'ordre : DB d'abord, fichiers ensuite.
   await prisma.account.deleteMany({
     where: { OR: [{ id: DEMO_ACCOUNT_ID }, { email: DEMO_EMAIL }] },
   });
@@ -107,6 +120,12 @@ export async function seedDemoAccount() {
   });
 
   const db = tenantDb(account.id);
+
+  // Clés des fichiers de démo (M4.6). Déterministes : les fixtures de
+  // `prisma/fixtures/` sont poussées sur ces mêmes clés par `seedDemoFiles()`,
+  // donc un reset écrase en place au lieu d'accumuler des copies.
+  const seedKey = (scope: "knowledge" | "attachments", filename: string) =>
+    seedFileKey(account.id, scope, filename);
 
   // 3. Dossiers métier (domaines de la mémoire de Relvo).
   const rh = await createFolder(db, { name: "RH" });
@@ -365,7 +384,7 @@ export async function seedDemoAccount() {
     subjectId: sub142.id,
     name: "bon-livraison-SB210.pdf",
     mimeType: "application/pdf",
-    fileUrl: "https://placeholder.relvo.local/bon-livraison-SB210.pdf",
+    storageKey: seedKey("attachments", "bon-livraison-SB210.pdf"),
     fileSize: 86_000,
   });
   await setAiLabel(db, bl142.id, "Bon de livraison");
@@ -1494,7 +1513,7 @@ export async function seedDemoAccount() {
       kind: "file",
       name: "catalogue-avipro-2026.pdf",
       mimeType: "application/pdf",
-      fileUrl: "https://placeholder.relvo.local/catalogue-avipro-2026.pdf",
+      storageKey: seedKey("knowledge", "catalogue-avipro-2026.pdf"),
       fileSize: 248_000,
       aiLabel: "catalogue",
       absorptionStatus: AbsorptionStatus.read,
@@ -1507,7 +1526,7 @@ export async function seedDemoAccount() {
       kind: "file",
       name: "plan-maitrise-sanitaire.pdf",
       mimeType: "application/pdf",
-      fileUrl: "https://placeholder.relvo.local/plan-maitrise-sanitaire.pdf",
+      storageKey: seedKey("knowledge", "plan-maitrise-sanitaire.pdf"),
       fileSize: 320_000,
       aiLabel: "procédure",
       absorptionStatus: AbsorptionStatus.read,
@@ -1520,7 +1539,7 @@ export async function seedDemoAccount() {
       kind: "file",
       name: "media-kit-parisfoodguide.pdf",
       mimeType: "application/pdf",
-      fileUrl: "https://placeholder.relvo.local/media-kit-parisfoodguide.pdf",
+      storageKey: seedKey("knowledge", "media-kit-parisfoodguide.pdf"),
       fileSize: 540_000,
       aiLabel: "autre",
       absorptionStatus: AbsorptionStatus.ignored,
@@ -1610,6 +1629,19 @@ export async function seedDemoAccount() {
     sourceActor: Actor.user,
   });
 
+  // Fichiers : purge du préfixe du compte (ce que la cascade PostgreSQL a laissé
+  // derrière elle) puis (ré)upload des fixtures sur des clés déterministes.
+  let files: { purged: number; uploaded: number } | null = null;
+  if (storage) {
+    files = await seedDemoFiles(storage, account.id);
+  } else {
+    console.warn(
+      "[seed] Aucun stockage fourni : les documents de la démo pointeront vers " +
+        "des fichiers inexistants (téléchargement → introuvable). " +
+        "Renseignez les variables R2_* pour un jeu de démo complet.",
+    );
+  }
+
   const counts = {
     folders: await db.folder.count(),
     contacts: await db.contact.count(),
@@ -1618,6 +1650,7 @@ export async function seedDemoAccount() {
     messages: await db.message.count(),
     tasks: await db.task.count(),
     eventLogs: await db.eventLog.count(),
+    files,
   };
   return counts;
 }

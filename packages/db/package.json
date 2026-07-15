@@ -33,6 +33,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@relvo/storage": "workspace:*",
     "@types/node": "^22.10.5",
     "@types/pg": "^8.11.10",
     "dotenv": "^16.4.7",

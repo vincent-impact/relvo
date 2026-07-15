@@ -1,0 +1,43 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 759 >>
+stream
+BT /F1 16 Tf 50 750 Td (Plan de Maitrise Sanitaire - Epinay) Tj ET
+BT /F1 11 Tf 50 720 Td (1. Temperatures) Tj ET
+BT /F1 11 Tf 50 702 Td (   Chambre froide positive : 0 a +4 C - releve 2x/jour) Tj ET
+BT /F1 11 Tf 50 684 Td (   Congelateur : -18 C minimum - releve 2x/jour) Tj ET
+BT /F1 11 Tf 50 666 Td (   Huile de friture : 180 C max - controle polarite hebdo) Tj ET
+BT /F1 11 Tf 50 648 Td () Tj ET
+BT /F1 11 Tf 50 630 Td (2. Tracabilite) Tj ET
+BT /F1 11 Tf 50 612 Td (   Conservation des etiquettes 6 mois.) Tj ET
+BT /F1 11 Tf 50 594 Td (   Plat temoin conserve 5 jours a +3 C.) Tj ET
+BT /F1 11 Tf 50 576 Td () Tj ET
+BT /F1 11 Tf 50 558 Td (3. Nettoyage) Tj ET
+BT /F1 11 Tf 50 540 Td (   Plan de nettoyage affiche en cuisine, emarge quotidiennement.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001050 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1120
+%%EOF

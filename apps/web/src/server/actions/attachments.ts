@@ -36,5 +36,7 @@ export async function setAttachmentAnalysisAction(
 }
 
 export async function deleteAttachmentAction(id: string) {
+  // Le fichier R2 part via l'outbox alimentée par trigger (M4.6) — rien à faire
+  // ici, et surtout pas d'appel réseau dans le chemin de la requête.
   return domainAction((db) => deleteAttachment(db, id));
 }

@@ -3,6 +3,8 @@
 // fonction prend un client tenant (`TenantDb`) déjà scellé sur un account_id.
 
 export * from "./errors";
+export * from "./storage-port";
+export * from "./file-deletions";
 export * from "./result";
 export * from "./pagination";
 export * from "./helpers";

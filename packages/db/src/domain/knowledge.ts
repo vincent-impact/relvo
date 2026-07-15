@@ -13,8 +13,11 @@ import { ensureAffected } from "./helpers";
 // Domaine Knowledge — INSTRUCTIONS (kind=note) : consignes Markdown que Relvo
 // consulte. V1 : seul l'utilisateur les édite (invariant n°20). L'état
 // d'absorption sert d'interrupteur d'activation : `read` = active (injectée dans
-// les prompts), `ignored` = désactivée (écartée du contexte). Les documents
-// (kind=file) sont gérés ailleurs (upload Files API, hors V1 ici).
+// les prompts), `ignored` = désactivée (écartée du contexte).
+//
+// DOCUMENTS (kind=file) : l'upload arrive en M11 ; la suppression vit ici. Le
+// fichier dans R2 est effacé par l'outbox alimentée par trigger (M4.6), pas par
+// ce code — cf. `deleteDocument`.
 
 export const createNoteSchema = z.object({
   folderId: z.uuid(),
@@ -123,5 +126,24 @@ export async function deleteNote(db: TenantDb, id: string) {
     where: { id, kind: KnowledgeKind.note },
   });
   ensureAffected(count, "Instruction");
+  return { id };
+}
+
+/**
+ * Supprime un DOCUMENT (kind=file). Le FICHIER est effacé par ailleurs (M4.6) :
+ * un trigger PostgreSQL met sa clé dans l'outbox `pending_file_deletions`, un
+ * worker draine hors transaction.
+ *
+ * Distinct de `deleteNote` uniquement par le `kind` — l'instruction est du texte
+ * inline, le document a un objet, mais ni l'un ni l'autre n'a à s'en occuper.
+ *
+ * NB : `anthropic_file_id` pointe vers la copie d'inférence chez Anthropic. Elle
+ * n'est pas nettoyée ici — ça viendra avec M11, qui l'y aura poussée.
+ */
+export async function deleteDocument(db: TenantDb, id: string) {
+  const { count } = await db.knowledgeDocument.deleteMany({
+    where: { id, kind: KnowledgeKind.file },
+  });
+  ensureAffected(count, "Document");
   return { id };
 }

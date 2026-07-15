@@ -15,7 +15,9 @@ export const createAttachmentSchema = z.object({
   subjectId: z.uuid().optional().nullable(),
   name: z.string().trim().min(1).max(500),
   mimeType: z.string().trim().max(255).optional().nullable(),
-  fileUrl: z.string().trim().min(1).max(2000),
+  // Clé de l'objet dans le stockage (R2), jamais une URL : le bucket est privé,
+  // les URLs pré-signées expirent. Signer à la demande via `@relvo/storage`.
+  storageKey: z.string().trim().min(1).max(1024),
   fileSize: z.number().int().nonnegative().optional().nullable(),
 });
 
@@ -54,7 +56,7 @@ export async function createAttachment(
         subjectId: data.subjectId ?? null,
         name: data.name,
         mimeType: data.mimeType ?? null,
-        fileUrl: data.fileUrl,
+        storageKey: data.storageKey,
         fileSize: data.fileSize ?? null,
       } as Prisma.AttachmentUncheckedCreateInput,
     });
@@ -124,6 +126,15 @@ export async function setAiAnalysis(
   return getAttachment(db, id);
 }
 
+/**
+ * Supprime une pièce jointe. Le FICHIER est effacé par ailleurs (M4.6).
+ *
+ * Rien à faire ici : un trigger PostgreSQL met `storage_key` dans l'outbox
+ * `pending_file_deletions`, dans cette transaction même, et un worker draine
+ * hors transaction. Le domaine n'a donc aucune notion de stockage — c'est ce
+ * qui rend l'oubli impossible, y compris pour les suppressions en CASCADE que
+ * ce code ne voit jamais passer.
+ */
 export async function deleteAttachment(db: TenantDb, id: string) {
   const { count } = await db.attachment.deleteMany({ where: { id } });
   ensureAffected(count, "Pièce jointe");

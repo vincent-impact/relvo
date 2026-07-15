@@ -410,7 +410,9 @@ model Attachment {
   subjectId   String?   @map("subject_id") @db.Uuid
   name        String
   mimeType    String?   @map("mime_type")
-  fileUrl     String    @map("file_url")
+  /// Clé de l'objet dans le stockage (R2), pas une URL : le bucket est privé et
+  /// les URLs pré-signées expirent. Toujours signer via `@relvo/storage`.
+  storageKey  String    @map("storage_key")
   fileSize    Int?      @map("file_size")
   aiLabel     String?   @map("ai_label")
   aiSummary   String?   @map("ai_summary") @db.Text
@@ -548,7 +550,8 @@ model KnowledgeDocument {
   description     String?       @db.Text
   // kind = file
   mimeType        String?       @map("mime_type")
-  fileUrl         String?       @map("file_url")
+  /// Clé de l'objet dans le stockage (R2), pas une URL — cf. Attachment.storageKey.
+  storageKey      String?       @map("storage_key")
   fileSize        Int?          @map("file_size")
   anthropicFileId String?       @map("anthropic_file_id")
   // État d'absorption (kind=file) : Relvo a lu (✦) ou écarté le document.
@@ -589,4 +592,27 @@ model VerificationToken {
 
   @@index([identifier])
   @@map("verification_tokens")
+}
+
+/// Outbox de suppression de fichiers (M4.6).
+///
+/// Alimentée par un TRIGGER PostgreSQL (`enqueue_file_deletion`) posé sur toute
+/// table porteuse d'un `storage_key`. C'est le seul mécanisme capable de voir
+/// passer les suppressions en CASCADE : Prisma en est structurellement aveugle
+/// (les actions référentielles sont exécutées par la base, pas par le client).
+///
+/// La mise en file est atomique avec la suppression ; le worker draine ensuite
+/// hors transaction (jamais d'I/O réseau dans une transaction DB).
+///
+/// ⚠️ Aucune FK vers l'entité d'origine, et c'est voulu : la ligne source
+/// n'existe précisément plus quand on arrive ici.
+model PendingFileDeletion {
+  id         BigInt    @id @default(autoincrement())
+  storageKey String    @map("storage_key")
+  enqueuedAt DateTime  @default(now()) @map("enqueued_at") @db.Timestamptz
+  attempts   Int       @default(0)
+  lastError  String?   @map("last_error") @db.Text
+
+  @@index([enqueuedAt])
+  @@map("pending_file_deletions")
 }
