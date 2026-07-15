@@ -85,15 +85,55 @@ export async function resolveAttachmentFile(
 }
 
 /**
- * URL de lecture temporaire d'un fichier déjà résolu.
+ * Durée de vie d'une URL signée.
  *
- * Courte durée à dessein : l'URL fuite dans l'historique du navigateur et le
- * `Referer`. 5 min suffisent à ouvrir un PDF, pas à le partager.
+ * 5 min, comme le défaut d'ActiveStorage (`service_urls_expire_in`). Courte à
+ * dessein : l'URL fuite dans l'historique et le `Referer`, et la doc Rails est
+ * explicite — « An expired URL simply stops working, but a URL shared before
+ * expiration remains accessible for its full lifetime. » Ce n'est pas un
+ * contrôle d'accès, juste une fenêtre de tir réduite. Le contrôle d'accès, lui,
+ * est fait ci-dessus par `tenantDb`.
  */
-export async function signDownloadUrl(file: ResolvedFile): Promise<string> {
+const SIGNED_URL_TTL_SECONDS = 5 * 60;
+
+/**
+ * `inline` — le fichier s'affiche dans la page (`<img src>`, `<iframe>`).
+ * `attachment` — le navigateur le télécharge sous son vrai nom (la clé étant
+ * aléatoire, sans ça il atterrirait avec un nom d'UUID).
+ */
+export type Disposition = "inline" | "attachment";
+
+/** URL de lecture temporaire d'un fichier déjà résolu. */
+export async function signDownloadUrl(
+  file: ResolvedFile,
+  disposition: Disposition = "attachment",
+): Promise<string> {
   return getStorage().presignDownload({
     key: file.key,
-    expiresInSeconds: 5 * 60,
-    downloadFilename: file.name,
+    expiresInSeconds: SIGNED_URL_TTL_SECONDS,
+    ...(disposition === "attachment" ? { downloadFilename: file.name } : {}),
   });
+}
+
+/**
+ * En-têtes d'une réponse de redirection vers une URL signée.
+ *
+ * `private` + `Vercel-CDN-Cache-Control: no-store` : défense en profondeur. Par
+ * défaut, la clé de cache d'un CDN est méthode + URL — aucun header de requête,
+ * donc une route authentifiée par cookie a la MÊME clé pour tous les
+ * utilisateurs. Vercel ne cache pas les réponses `private`, mais on ne s'en
+ * remet pas au défaut plateforme : lors de l'incident Railway du 2026-03-30, un
+ * cache activé par accident a servi « requests for one user to a different
+ * user » — et seules les apps qui envoyaient `private` explicitement ont été
+ * épargnées.
+ *
+ * `max-age` est plafonné par la durée de l'URL signée : cacher la redirection
+ * plus longtemps que sa cible n'est pas valide (même raisonnement que le
+ * `expires_in ActiveStorage.service_urls_expire_in` du RedirectController).
+ */
+export function signedRedirectHeaders(): Record<string, string> {
+  return {
+    "Cache-Control": `private, max-age=${SIGNED_URL_TTL_SECONDS}`,
+    "Vercel-CDN-Cache-Control": "no-store",
+  };
 }

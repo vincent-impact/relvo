@@ -1,17 +1,34 @@
 import { NextResponse } from "next/server";
-import { resolveKnowledgeFile, signDownloadUrl } from "@/server/storage-access";
+import {
+  resolveKnowledgeFile,
+  signDownloadUrl,
+  signedRedirectHeaders,
+  type Disposition,
+} from "@/server/storage-access";
 
-// Download d'un document de Connaissances (M4.4).
+// Lecture d'un document de Connaissances (M4.4).
 //
-// Le client passe l'ID du DOCUMENT, pas la clé de stockage : celle-ci est
-// résolue depuis la base scopée par tenant (cf. storage-access.ts).
+// L'URL est STABLE et permanente : `/api/documents/<id>/download`. C'est elle
+// que les composants manipulent — dans un `<img src>`, un `<iframe>`, un `<a>`.
+// L'URL signée de 5 min est fabriquée au dernier moment et jamais exposée.
 //
-// On redirige vers une URL pré-signée courte plutôt que de streamer le fichier
-// à travers la Function : le body de réponse est lui aussi plafonné à 4,5 Mo, et
-// faire transiter les octets nous coûterait du Fast Data Transfer pour rien.
+// C'est l'architecture par défaut d'ActiveStorage (URL de contrôleur permanente
+// → 302 vers une URL de service courte), à une différence près : celle de Rails
+// n'est PAS authentifiée (« Anyone who knows the URL can access the file, even
+// if the rest of your application requires authentication »), la nôtre l'est.
+// C'est ce que Rails appelle un « Authenticated Controller », et ce qu'il
+// recommande dès que les fichiers sont sensibles — ce qui est le cas de TOUS les
+// nôtres (factures, contrats, photos de chantier).
+//
+// On REDIRIGE, on ne streame pas : Vercel est explicite — « Vercel Functions […]
+// should be treated like a lightweight API layer, not a media server ». Et le
+// body d'une réponse de Function plafonne à 4,5 Mo.
+//
+// `?inline=1` → affichage dans la page. Défaut → téléchargement sous le vrai nom
+// du fichier (la clé est aléatoire, sinon il atterrirait nommé comme un UUID).
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { id } = await params;
@@ -24,13 +41,19 @@ export async function GET(
     return NextResponse.json({ error: "Document introuvable." }, { status });
   }
 
-  return NextResponse.redirect(await signDownloadUrl(resolved.file), {
-    // 307 : la redirection est valable pour cette requête uniquement. Un 301/302
-    // serait mis en cache par le navigateur et pointerait vers une URL expirée.
-    status: 307,
-    headers: {
-      // L'URL signée ne doit jamais être mémorisée par un cache intermédiaire.
-      "Cache-Control": "private, no-store",
+  const disposition: Disposition = new URL(request.url).searchParams.has(
+    "inline",
+  )
+    ? "inline"
+    : "attachment";
+
+  return NextResponse.redirect(
+    await signDownloadUrl(resolved.file, disposition),
+    {
+      // 307 : la redirection vaut pour cette requête. Un 301/302 serait mémorisé
+      // par le navigateur et pointerait vers une URL signée expirée.
+      status: 307,
+      headers: signedRedirectHeaders(),
     },
-  });
+  );
 }

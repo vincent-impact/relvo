@@ -1,9 +1,30 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // @relvo/db expose du TypeScript brut (src/index.ts + client Prisma généré) :
-  // Next doit le transpiler comme du code applicatif.
-  transpilePackages: ["@relvo/db"],
+  // @relvo/db et @relvo/storage exposent du TypeScript brut : Next doit les
+  // transpiler comme du code applicatif.
+  transpilePackages: ["@relvo/db", "@relvo/storage"],
+
+  images: {
+    // Nos fichiers privés sont servis par /api/{documents,attachments}/[id]/
+    // download, qui REDIRIGE (307) vers une URL R2 signée. L'optimiseur d'images
+    // suit les redirections « without validating remotePatterns again on the
+    // redirect location » (doc next/image) — autrement dit, une origine
+    // autorisée qui redirige fait sauter la frontière de sécurité.
+    //
+    // 1 suffit à notre chaîne (route → R2). Le défaut est 3, ce qui laisserait
+    // une marge inutile si une cible était un jour dérivée d'un input client.
+    // Chez nous elle ne l'est jamais : la clé vient de la base scopée tenant.
+    maximumRedirects: 1,
+
+    // Pas de `remotePatterns` : aucune image distante n'est référencée
+    // directement. ⚠️ Si on en ajoute un jour, ne JAMAIS omettre `search` — la
+    // doc avertit que ça « could allow malicious actors to optimize URLs you did
+    // not intend » (proxy d'optimisation ouvert). Et ne jamais y mettre une URL
+    // pré-signée : la clé de cache Vercel inclut la query string, donc une
+    // signature qui tourne = un MISS et une transformation FACTURÉE à chaque
+    // rendu. C'est précisément pour ça qu'on passe par une URL stable.
+  },
 
   experimental: {
     // Cache client (Router Cache) : durée pendant laquelle un payload de route
