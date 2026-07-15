@@ -6,7 +6,7 @@
 
 ## État d'avancement
 
-> Suivi haut niveau. Légende : ✅ fait · 🟡 partiel · ⏸️ reporté · ⬜ à faire. Dernière mise à jour : 2026-06-30.
+> Suivi haut niveau. Légende : ✅ fait · 🟡 partiel · ⏸️ reporté · ⬜ à faire. Dernière mise à jour : 2026-07-15.
 
 | Module | État | Note |
 |---|---|---|
@@ -14,7 +14,8 @@
 | **M2** — Auth & multi-tenant | ✅ **fait** | Auth.js v5 (Credentials + Google OAuth, sessions JWT), `proxy.ts` (Next 16), helper tenant + client Prisma tenant-aware (`$extends`), signup public, vérif email + reset via Resend, onglet Profil. Détail inline en §4. |
 | **M3** — Modèle de données & accès CRUD | ✅ **fait** | Couche domaine partagée `packages/db/src/domain/` (tenant-aware, fonctions pures réutilisables par le worker M7), conventions (Zod, DomainError, pagination curseur, `logEvent`), 8 domaines CRUD + agrégations (KPIs/feed/sans-sujet), Server Actions web (wrappers `ActionResult`), seeds Tasty Crousty, 7 tests d'invariants vitest (base `relvo_test`). Détail inline en §4. |
 | **M9** — Pages applicatives front | ✅ **clos (2026-06-30)** | Les 7 pages reproduites en React/Next (mobile-first « Direction B »), cliquables et branchées sur le seed démo, + PWA installable. Divergences vs plan d'origine assumées (statut 4 valeurs, priorité 2 valeurs, dock 4 onglets, Accueil = page des tâches, Messages = pile d'orphelins). **Démo client validée le 2026-06-29** (retour très positif). Améliorations continues à venir « au fil de l'usage », hors jalon. Détail : §5 + plan de clôture M9.18→M9.24. |
-| M4 → M8, M10 → M14 | ⬜ à faire | **M4 (stockage fichiers) = prochaine étape, en cours depuis le 2026-07-15** — fournisseur tranché : **Cloudflare R2**. M4 débloque M11 (upload PDF → Files API), qui débloque M7 **et** M10 : le chatbot ne peut pas passer avant. M5 (email), M6/M7 (WhatsApp + pipeline IA) suivent. |
+| **M4** — Stockage fichiers | ✅ **clos (2026-07-15)** | **Cloudflare R2** (bucket juridiction `eu`), package partagé `@relvo/storage`, upload navigateur pré-signé, download authentifié (URL stable → 307 vers URL signée 5 min, `?inline=1`), suppression par **outbox alimentée par trigger PostgreSQL** (seul mécanisme qui capte les cascades — Prisma en est aveugle), fixtures de démo en git. M4.1→M4.6 faits ; **M4.7** (uploads abandonnés → préfixe `pending/` + lifecycle R2) reporté **à M11**, qui apporte l'UI d'upload ; **M4.8** (balayage) reporté sur preuve de dérive. Détail inline en §4. |
+| M5 → M8, M10 → M14 | ⬜ à faire | **M11 (Connaissances) = prochaine étape** : c'est lui qui branche l'UI d'upload sur le socle M4, et il débloque M7 **et** M10. M5 (email), M6/M7 (WhatsApp + pipeline IA) suivent. |
 
 > **⚠️ Migration de schéma requise avant/avec M9** — refonte UX mobile-first (2026-06-18). Le modèle de conception a évolué ([`02-modele-donnees.md`](../conception/02-modele-donnees.md)) ; à répercuter dans `packages/db/prisma/schema.prisma` :
 > - `Status` : `enum(new, to_do, waiting, unread, resolved, archived)` → **`enum(acknowledged, resolved, archived, ignored)`** (cycle de vie exclusif ; `to_do`/`waiting`/`unread` **et `new`** deviennent des marqueurs, pas des statuts — `new` retiré le 2026-06-27, « Nouveau » dérivé de `last_opened_at == null`).
@@ -150,14 +151,18 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 **Objectif** : gérer le stockage et la diffusion sécurisée des fichiers uploadés (pièces jointes, documents de Connaissances).
 
-**Dépendances** : M2. **M4 bloque M11** (upload PDF → Files API), qui bloque **M7** et **M10** → M4 passe **avant M10** malgré la mention « M10 = prochaine étape » héritée de la clôture M9.
+**Dépendances** : M2. **M4 bloque M11** (upload PDF → Files API), qui bloque **M7** et **M10**.
+
+**➡️ M4 CLÔTURÉ le 2026-07-15.** M4.1→M4.6 livrés et vérifiés contre le vrai bucket (aller-retour d'upload, isolation inter-tenants, cascade à 2 niveaux captée par le trigger, drainage réel). **M4.7 et M4.8 restent ouverts mais ne bloquent pas** : le premier attend M11 (il lui faut l'UI d'upload pour avoir un sens), le second est un filet à n'ajouter que sur preuve de dérive.
+
+> **⚠️ Action requise avant la mise en prod de M11** : poser `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_JURISDICTION` et `CRON_SECRET` sur Vercel (et les `R2_*` sur Railway au moment de M6.6). Sans elles : le cron de drainage échoue en 500 chaque nuit, et toute route fichier lèverait — sans impact aujourd'hui puisque aucune UI ne les appelle.
 
 > **Fournisseur retenu : Cloudflare R2** (décision 2026-07-15, benchmark vs Vercel Blob / S3+CloudFront / Supabase / UploadThing). Justification complète dans [`../spec/architecture.md §5`](../spec/architecture.md). En bref : API S3-compatible (un client générique partagé web ⇄ worker, outillage connu, sortie possible), free tier permanent couvrant toute la bêta sans imposer Vercel Pro, setup en 1 bucket + 1 token. **Le coût n'a pas départagé** — les trois options sont sous 2 $/mois à l'échelle V1.
 >
 > **Pas de CDN** : les fichiers sont privés et cloisonnés par tenant, consultés par 3-10 utilisateurs. Un cache edge n'apporte rien et, chez R2, les URLs pré-signées ne fonctionnent que sur le domaine S3 API — cache et pré-signature sont **mutuellement exclusifs**. À rouvrir seulement si un usage public de fichiers apparaît.
 
-- **M4.1** — Setup Cloudflare R2 : bucket privé (région EU), token API, `AWS_*`-like env vars sur Vercel **et** Railway
-- **M4.2** — Module `storage` isolant le fournisseur (put / presign-get / delete) — la couche domaine ne connaît que `storage_key`, chaîne opaque ⇒ le choix reste réversible
+- **M4.1** ✅ — Setup Cloudflare R2 : bucket `relvo-files-prod` en **juridiction `eu`** (résidence RGPD — figée à la création, conditionne l'endpoint `<account>.eu.r2.cloudflarestorage.com`), token de **compte** en « Object Read & Write » scopé au bucket. Un seul environnement (bêta) : le dev local écrit dans le même bucket, isolé par le préfixe `accounts/<id>/`. Vérifié par `pnpm --filter @relvo/storage smoke` (aller-retour réel + contrôle que le bucket n'est pas public)
+- **M4.2** ✅ — Package `@relvo/storage` isolant le fournisseur (presign-put / presign-get / put / delete / head) — la couche domaine ne connaît que `storage_key`, chaîne opaque ⇒ le choix reste réversible
 - **M4.3** ✅ — Upload **navigateur → R2 via URL pré-signée** émise par un Route Handler authentifié (obligatoire : body plafonné à 4,5 Mo sur une Vercel Function, 1 Mo sur une Server Action).
   - ⚠️ **Deux réglages non négociables du SDK AWS**, trouvés à l'audit de conformité du 2026-07-15 et vérifiés contre le vrai bucket :
     - **`signableHeaders: new Set(["content-type"])`** sur `getSignedUrl`. Le presigner met `content-type` dans ses `unsignableHeaders` **par défaut** — sans cette option, un PUT en `text/html` sur une URL signée pour `application/pdf` renvoyait **HTTP 200** et R2 stockait `text/html`. L'allowlist MIME ne contraignait donc **rien**. Corrigé → 403.
@@ -171,7 +176,7 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
   - **`Cache-Control: private` + `Vercel-CDN-Cache-Control: no-store`** sur les redirections. Défense en profondeur : la clé de cache d'un CDN est méthode + URL, sans header de requête ⇒ même clé pour tous les utilisateurs. Incident Railway 2026-03-30 (cache activé par accident, « *requests for one user [served] to a different user* ») : seules les apps envoyant `private` explicitement ont été épargnées.
   - **Pas de bucket public / pas de clivage « avatars publics »** : Relvo n'a **aucun fichier non sensible** (`Contact` n'a pas de photo, `Account.image` est une URL Google OAuth hors R2). Tout ce qui entre dans le bucket est de la donnée métier. Le pattern multi-services de Rails (`public: true`) est documenté mais Rails ne prescrit **nulle part** « avatars publics / documents privés » — c'est une inférence de communauté. Sans objet ici.
   - ⚠️ **Contrainte R2 structurante** : « *Presigned URLs cannot be used with custom domains* » ⇒ URL pré-signée et cache/transformations CDN sont **mutuellement exclusifs**. Si un jour le cache CDN devient nécessaire, il faudra un Worker + binding R2 (l'auth vit dans le Worker), pas une URL signée.
-- **M4.5** — Service de validation des uploads (MIME, taille max, vérification basique d'extension)
+- **M4.5** ✅ — Validation des uploads : **allowlist MIME par scope** (Connaissances ≠ pièces jointes) + plafond de taille (32 Mo / 64 Mo). Pas de vérification d'extension : elle était redondante et ne produisait que des faux positifs — le vrai rempart est la **signature du `content-type`** (M4.3), et aucun MIME dangereux n'est dans l'allowlist. Le nom de fichier n'est pas demandé à l'upload (il ne sert pas à la clé et vit en base)
 - **M4.6** ✅ — Cycle de vie des fichiers : **outbox transactionnel alimenté par trigger PostgreSQL** (décidé le 2026-07-15 après revue des pratiques Rails / Django / WarpStream).
 
   **Pourquoi pas la suppression synchrone** (première approche, abandonnée) : Django l'a **retirée en 1.3** pour cause de perte de données — *« This opened the door to several data-loss scenarios, including rolled-back transactions and fields on different models referencing the same file »*. Rails l'interdit en transaction : *« Deleting files off the service will initiate an HTTP connection which may be slow or prevented, so you should not use [purge] inside a transaction or in callbacks; use purge_later instead. »* Et elle est **structurellement incapable** de voir les cascades.
