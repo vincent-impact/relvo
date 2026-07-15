@@ -2,12 +2,16 @@ import { z } from "zod";
 import type { StorageScope } from "./keys";
 
 // Validation des uploads (M4.5). Appliquée AVANT d'émettre une URL pré-signée :
-// une fois l'URL émise, le navigateur pousse directement dans le bucket sans
-// repasser par nous. C'est donc le seul point de contrôle.
+// après, le navigateur pousse directement dans le bucket sans repasser par nous.
+//
+// Ce qui rend cette allowlist réellement contraignante, c'est que le
+// `contentType` validé ici est ensuite SIGNÉ dans l'URL (cf. `signableHeaders`
+// dans r2.ts). Sans cette signature, le client pourrait déclarer `application/pdf`
+// pour obtenir l'URL puis pousser autre chose — vérifié, R2 acceptait.
 
 /** Types acceptés, par usage. Volontairement restrictif : on élargira au besoin. */
 export const ALLOWED_MIME_TYPES: Record<StorageScope, readonly string[]> = {
-  // Connaissances (invariant n°18) : PDF et images consultables, notes = pas de fichier.
+  // Connaissances (invariant n°18) : PDF et images consultables.
   knowledge: [
     "application/pdf",
     "image/jpeg",
@@ -35,7 +39,7 @@ export const ALLOWED_MIME_TYPES: Record<StorageScope, readonly string[]> = {
     "application/vnd.ms-excel",
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   ],
-} as const;
+};
 
 /**
  * Plafonds de taille, par usage.
@@ -51,57 +55,15 @@ export const MAX_FILE_SIZE_BYTES: Record<StorageScope, number> = {
 };
 
 /**
- * Extensions dont le MIME annoncé par le client ne doit jamais faire foi.
- * On ne se fie pas au `Content-Type` du navigateur — il est déclaratif — donc
- * on croise avec l'extension du nom de fichier.
+ * Le nom de fichier n'est PAS demandé ici : il ne sert pas à construire la clé
+ * (un UUID suffit) et il vit en base, où il alimente le `Content-Disposition`.
+ * Moins d'entrée client = moins à valider.
  */
-const DANGEROUS_EXTENSIONS = [
-  ".exe",
-  ".dll",
-  ".so",
-  ".dylib",
-  ".sh",
-  ".bat",
-  ".cmd",
-  ".com",
-  ".scr",
-  ".msi",
-  ".app",
-  ".jar",
-  ".js",
-  ".mjs",
-  ".php",
-  ".py",
-  ".rb",
-  ".html",
-  ".htm",
-  ".svg", // SVG = vecteur XSS s'il est servi inline
-];
-
 export function buildUploadRequestSchema(scope: StorageScope) {
   const allowed = ALLOWED_MIME_TYPES[scope];
   const maxSize = MAX_FILE_SIZE_BYTES[scope];
 
   return z.object({
-    filename: z
-      .string()
-      .trim()
-      .min(1)
-      .max(255)
-      // Un nom de fichier ne doit jamais pouvoir remonter l'arborescence.
-      .refine((name) => !name.includes("/") && !name.includes("\\"), {
-        message: "Nom de fichier invalide.",
-      })
-      .refine((name) => !name.includes(".."), {
-        message: "Nom de fichier invalide.",
-      })
-      .refine(
-        (name) => {
-          const lower = name.toLowerCase();
-          return !DANGEROUS_EXTENSIONS.some((ext) => lower.endsWith(ext));
-        },
-        { message: "Ce type de fichier n'est pas accepté." },
-      ),
     contentType: z
       .string()
       .trim()

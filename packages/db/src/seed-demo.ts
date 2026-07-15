@@ -1631,7 +1631,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
 
   // Fichiers : purge du préfixe du compte (ce que la cascade PostgreSQL a laissé
   // derrière elle) puis (ré)upload des fixtures sur des clés déterministes.
-  let files: { purged: number; uploaded: number } | null = null;
+  let files: { uploaded: number } | null = null;
   if (storage) {
     files = await seedDemoFiles(storage, account.id);
   } else {

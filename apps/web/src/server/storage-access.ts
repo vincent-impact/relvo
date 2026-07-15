@@ -1,6 +1,6 @@
 import { getCurrentAccountId } from "@/server/auth-context";
 import { tenantDb } from "@/lib/tenant-db";
-import { getStorage, keyBelongsToAccount } from "@relvo/storage";
+import { getStorage } from "@relvo/storage";
 
 // Accès au stockage depuis le web (M4.4).
 //
@@ -42,12 +42,6 @@ export async function resolveKnowledgeFile(
 
   if (!doc?.storageKey) return { ok: false, error: "not_found" };
 
-  // Ceinture et bretelles : `tenantDb` filtre déjà par account_id, mais une clé
-  // hors préfixe du compte signalerait une corruption de données. On refuse.
-  if (!keyBelongsToAccount(doc.storageKey, accountId)) {
-    return { ok: false, error: "not_found" };
-  }
-
   return {
     ok: true,
     file: { key: doc.storageKey, name: doc.name, mimeType: doc.mimeType },
@@ -70,9 +64,6 @@ export async function resolveAttachmentFile(
   });
 
   if (!attachment) return { ok: false, error: "not_found" };
-  if (!keyBelongsToAccount(attachment.storageKey, accountId)) {
-    return { ok: false, error: "not_found" };
-  }
 
   return {
     ok: true,
@@ -85,16 +76,13 @@ export async function resolveAttachmentFile(
 }
 
 /**
- * Durée de vie d'une URL signée.
- *
- * 5 min, comme le défaut d'ActiveStorage (`service_urls_expire_in`). Courte à
- * dessein : l'URL fuite dans l'historique et le `Referer`, et la doc Rails est
- * explicite — « An expired URL simply stops working, but a URL shared before
- * expiration remains accessible for its full lifetime. » Ce n'est pas un
- * contrôle d'accès, juste une fenêtre de tir réduite. Le contrôle d'accès, lui,
- * est fait ci-dessus par `tenantDb`.
+ * Durée du cache de la redirection. Plafonnée par la durée de l'URL signée
+ * (5 min, cf. `DEFAULT_EXPIRY_SECONDS` dans @relvo/storage) : cacher une
+ * redirection plus longtemps que sa cible n'est pas valide — c'est le même
+ * raisonnement que le `expires_in ActiveStorage.service_urls_expire_in` du
+ * RedirectController de Rails.
  */
-const SIGNED_URL_TTL_SECONDS = 5 * 60;
+const REDIRECT_CACHE_SECONDS = 5 * 60;
 
 /**
  * `inline` — le fichier s'affiche dans la page (`<img src>`, `<iframe>`).
@@ -110,7 +98,6 @@ export async function signDownloadUrl(
 ): Promise<string> {
   return getStorage().presignDownload({
     key: file.key,
-    expiresInSeconds: SIGNED_URL_TTL_SECONDS,
     ...(disposition === "attachment" ? { downloadFilename: file.name } : {}),
   });
 }
@@ -127,13 +114,10 @@ export async function signDownloadUrl(
  * user » — et seules les apps qui envoyaient `private` explicitement ont été
  * épargnées.
  *
- * `max-age` est plafonné par la durée de l'URL signée : cacher la redirection
- * plus longtemps que sa cible n'est pas valide (même raisonnement que le
- * `expires_in ActiveStorage.service_urls_expire_in` du RedirectController).
  */
 export function signedRedirectHeaders(): Record<string, string> {
   return {
-    "Cache-Control": `private, max-age=${SIGNED_URL_TTL_SECONDS}`,
+    "Cache-Control": `private, max-age=${REDIRECT_CACHE_SECONDS}`,
     "Vercel-CDN-Cache-Control": "no-store",
   };
 }

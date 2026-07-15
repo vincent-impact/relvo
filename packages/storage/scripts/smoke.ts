@@ -31,7 +31,6 @@ async function main() {
   const key = buildObjectKey({
     accountId: "00000000-0000-0000-0000-000000000000",
     scope: "knowledge",
-    filename: "smoke-test.txt",
   });
   const body = Buffer.from(CONTENT, "utf8");
 

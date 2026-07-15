@@ -14,19 +14,10 @@ import {
 // par nous : une Vercel Function plafonne le body à 4,5 Mo (non configurable) et
 // une Server Action à 1 Mo — un PDF de Connaissances dépasse couramment.
 //
-// C'est donc le SEUL point de contrôle avant écriture dans le bucket : après
-// émission de l'URL, plus rien ne s'interpose. D'où la validation stricte, et
-// le fait que type et poids soient signés dans l'URL (cf. r2.ts) : une URL
-// obtenue pour un PDF de 1 Mo ne peut pas servir à pousser autre chose.
+// C'est donc le SEUL point de contrôle avant écriture dans le bucket. Le type
+// validé ici est signé dans l'URL (cf. r2.ts), ce qui le rend contraignant.
 
 const SCOPES = ["knowledge", "attachments"] as const;
-
-const bodySchema = z.object({
-  scope: z.enum(SCOPES),
-  filename: z.string(),
-  contentType: z.string(),
-  contentLength: z.number(),
-});
 
 export async function POST(request: Request) {
   const accountId = await getCurrentAccountId();
@@ -45,15 +36,14 @@ export async function POST(request: Request) {
     );
   }
 
-  const envelope = bodySchema.safeParse(raw);
-  if (!envelope.success) {
+  // Le scope détermine le schéma : les Connaissances n'acceptent ni vidéo ni
+  // tableur, et les plafonds de taille diffèrent.
+  const scope = z.object({ scope: z.enum(SCOPES) }).safeParse(raw);
+  if (!scope.success) {
     return NextResponse.json({ error: "Requête invalide." }, { status: 400 });
   }
 
-  // Le schéma dépend du scope : les Connaissances n'acceptent ni vidéo ni
-  // tableur, et les plafonds de taille diffèrent.
-  const scope: StorageScope = envelope.data.scope;
-  const parsed = buildUploadRequestSchema(scope).safeParse(envelope.data);
+  const parsed = buildUploadRequestSchema(scope.data.scope).safeParse(raw);
   if (!parsed.success) {
     return NextResponse.json(
       {
@@ -64,12 +54,11 @@ export async function POST(request: Request) {
     );
   }
 
-  // La clé est construite ici, à partir de l'account_id de la SESSION — jamais
-  // d'une valeur envoyée par le client.
+  // La clé est construite à partir de l'account_id de la SESSION — jamais d'une
+  // valeur envoyée par le client.
   const key = buildObjectKey({
     accountId,
-    scope,
-    filename: parsed.data.filename,
+    scope: scope.data.scope satisfies StorageScope,
   });
 
   const upload = await getStorage().presignUpload({

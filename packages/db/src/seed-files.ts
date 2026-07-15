@@ -26,7 +26,6 @@ type FileWriter = {
     body: Uint8Array;
     contentType: string;
   }): Promise<void>;
-  deleteByPrefix(prefix: string): Promise<number>;
 };
 
 /** Fichiers de démo, par nom. La clé est dérivée du nom (cf. `seedFileKey`). */
@@ -50,19 +49,17 @@ export function seedFileKey(
 }
 
 /**
- * Purge les fichiers du compte démo puis y (re)pousse les fixtures.
+ * (Re)pousse les fixtures dans le stockage.
  *
- * La purge par préfixe est indispensable : la cascade `ON DELETE CASCADE` du
- * `deleteMany` sur l'Account s'exécute dans PostgreSQL, le code ne voit jamais
- * passer les clés des lignes effacées. Le préfixe est la seule prise qu'on ait
- * sur les fichiers qu'un béta-testeur aurait uploadés entre deux resets.
+ * Pas de purge : le `deleteMany` sur l'Account déclenche le trigger, qui met
+ * TOUTES les clés du compte (fixtures + uploads du béta-testeur) dans l'outbox.
+ * Le cron les supprimera. Les fixtures, elles, sont reposées sur les mêmes clés
+ * déterministes et seront donc épargnées par le garde-fou `stillReferenced`.
  */
 export async function seedDemoFiles(
   storage: FileWriter,
   accountId: string,
-): Promise<{ purged: number; uploaded: number }> {
-  const purged = await storage.deleteByPrefix(`accounts/${accountId}/`);
-
+): Promise<{ uploaded: number }> {
   for (const fixture of DEMO_FIXTURES) {
     const body = await readFile(join(FIXTURES_DIR, fixture.filename));
     await storage.put({
@@ -72,5 +69,5 @@ export async function seedDemoFiles(
     });
   }
 
-  return { purged, uploaded: DEMO_FIXTURES.length };
+  return { uploaded: DEMO_FIXTURES.length };
 }

@@ -11,12 +11,7 @@
 // jamais relisible. L'affichage utilisateur passe toujours par ici.
 
 export { loadStorageConfig, type StorageConfig } from "./config";
-export {
-  accountPrefix,
-  buildObjectKey,
-  keyBelongsToAccount,
-  type StorageScope,
-} from "./keys";
+export { buildObjectKey, type StorageScope } from "./keys";
 export type {
   ObjectMetadata,
   PresignedUpload,

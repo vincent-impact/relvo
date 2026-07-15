@@ -64,18 +64,6 @@ export interface StorageProvider {
   /** Idempotent : supprimer une clé absente ne lève pas. */
   delete(key: string): Promise<void>;
 
-  /**
-   * Supprime tout un préfixe.
-   *
-   * Sert à purger les fichiers d'un compte (`accounts/<id>/`) quand la cascade
-   * PostgreSQL efface ses lignes sans que le code ne voie passer les clés.
-   * Renvoie le nombre d'objets supprimés.
-   */
-  deleteByPrefix(prefix: string): Promise<number>;
-
-  /** Liste les clés sous un préfixe (pagination gérée en interne). */
-  list(prefix: string): Promise<string[]>;
-
   /** `null` si l'objet n'existe pas. Sert à vérifier qu'un upload a abouti. */
   head(key: string): Promise<ObjectMetadata | null>;
 }

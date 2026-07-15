@@ -1,9 +1,7 @@
 import {
   DeleteObjectCommand,
-  DeleteObjectsCommand,
   HeadObjectCommand,
   GetObjectCommand,
-  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
@@ -25,15 +23,12 @@ import type {
 //     sur un domaine custom. C'est pour ça qu'il n'y a pas de CDN devant : le
 //     cache edge et la pré-signature sont mutuellement exclusifs chez R2.
 
-/** Plafond dur de R2 sur une URL pré-signée. */
-const MAX_EXPIRES_IN_SECONDS = 7 * 24 * 60 * 60;
-
-const DEFAULT_UPLOAD_EXPIRY = 5 * 60;
-const DEFAULT_DOWNLOAD_EXPIRY = 5 * 60;
-
-function clampExpiry(seconds: number): number {
-  return Math.min(Math.max(Math.floor(seconds), 1), MAX_EXPIRES_IN_SECONDS);
-}
+/**
+ * Durée de vie d'une URL signée. 5 min, comme le défaut d'ActiveStorage
+ * (`service_urls_expire_in`) : assez pour ouvrir un fichier, trop court pour
+ * partager. R2 plafonne à 7 jours, on n'en approche pas.
+ */
+const DEFAULT_EXPIRY_SECONDS = 5 * 60;
 
 /** Un nom de fichier ne doit pas pouvoir injecter d'en-tête HTTP. */
 function encodeDownloadFilename(filename: string): string {
@@ -54,47 +49,38 @@ export function createR2Storage(
       accessKeyId: config.accessKeyId,
       secretAccessKey: config.secretAccessKey,
     },
+
+    // ⚠️ OBLIGATOIRE avec R2. Depuis la v3.729, le SDK calcule un checksum par
+    // défaut (`WHEN_SUPPORTED`) et injecte `x-amz-checksum-crc32` dans l'URL
+    // pré-signée. Deux problèmes :
+    //   1. R2 liste `x-amz-checksum-algorithm` comme NON IMPLÉMENTÉ (doc S3 API
+    //      compatibility) ;
+    //   2. à la présignature il n'y a pas encore de corps, donc le SDK signe le
+    //      CRC32 du VIDE (`AAAAAA==`). Si R2 le validait un jour contre le
+    //      fichier réellement envoyé, TOUS les uploads non vides échoueraient.
+    // Vérifié le 2026-07-15 : R2 l'ignore, nos uploads passaient par chance.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
   });
-
-  // Fonction locale plutôt que méthode : `deleteByPrefix` l'appelle, et passer
-  // par `this` casserait dès qu'on déstructure le provider.
-  async function listKeys(prefix: string): Promise<string[]> {
-    const keys: string[] = [];
-    let token: string | undefined;
-
-    // `list` plafonne à 1000 clés par appel : sans la boucle de pagination, on
-    // ne verrait qu'une partie du préfixe — et un purge partiel est pire qu'un
-    // purge absent (il donne l'illusion d'avoir nettoyé).
-    do {
-      const page = await client.send(
-        new ListObjectsV2Command({
-          Bucket: config.bucket,
-          Prefix: prefix,
-          ContinuationToken: token,
-        }),
-      );
-      for (const item of page.Contents ?? []) {
-        if (item.Key) keys.push(item.Key);
-      }
-      token = page.IsTruncated ? page.NextContinuationToken : undefined;
-    } while (token);
-
-    return keys;
-  }
 
   return {
     async presignUpload({
       key,
       contentType,
       contentLength,
-      expiresInSeconds = DEFAULT_UPLOAD_EXPIRY,
+      expiresInSeconds = DEFAULT_EXPIRY_SECONDS,
     }): Promise<PresignedUpload> {
-      const expiresIn = clampExpiry(expiresInSeconds);
+      const expiresIn = expiresInSeconds;
 
-      // `ContentType` et `ContentLength` sont signés : le navigateur ne peut
-      // donc pas uploader un type ou un poids autres que ceux validés côté
-      // serveur. C'est ce qui empêche une URL obtenue pour un PDF de 1 Mo de
-      // servir à pousser un exécutable de 2 Go.
+      // `signableHeaders` est INDISPENSABLE : le presigner AWS met `content-type`
+      // dans ses `unsignableHeaders` par défaut (cf. @aws-sdk/s3-request-presigner,
+      // `unsignableHeaders.add("content-type")`). Sans cette ligne, `ContentType`
+      // n'est PAS signé et le client peut pousser n'importe quel type sur l'URL.
+      //
+      // Vérifié le 2026-07-15 contre le vrai bucket : sans elle, un PUT en
+      // `text/html` sur une URL signée pour `application/pdf` renvoyait 200 et
+      // R2 stockait `text/html`. L'allowlist MIME du Route Handler ne servait
+      // donc à rien — c'est ici qu'elle devient réellement contraignante.
       const url = await getSignedUrl(
         client,
         new PutObjectCommand({
@@ -103,7 +89,7 @@ export function createR2Storage(
           ContentType: contentType,
           ContentLength: contentLength,
         }),
-        { expiresIn },
+        { expiresIn, signableHeaders: new Set(["content-type"]) },
       );
 
       return {
@@ -119,7 +105,7 @@ export function createR2Storage(
 
     async presignDownload({
       key,
-      expiresInSeconds = DEFAULT_DOWNLOAD_EXPIRY,
+      expiresInSeconds = DEFAULT_EXPIRY_SECONDS,
       downloadFilename,
     }): Promise<string> {
       return getSignedUrl(
@@ -134,7 +120,7 @@ export function createR2Storage(
               }
             : {}),
         }),
-        { expiresIn: clampExpiry(expiresInSeconds) },
+        { expiresIn: expiresInSeconds },
       );
     },
 
@@ -155,32 +141,6 @@ export function createR2Storage(
       await client.send(
         new DeleteObjectCommand({ Bucket: config.bucket, Key: key }),
       );
-    },
-
-    list: listKeys,
-
-    async deleteByPrefix(prefix: string): Promise<number> {
-      // Garde-fou : un préfixe vide effacerait le bucket entier. Ça ne devrait
-      // jamais arriver, mais le coût d'un `if` est nul face à celui de l'erreur.
-      if (prefix.trim().length === 0) {
-        throw new Error("deleteByPrefix : préfixe vide refusé.");
-      }
-
-      const keys = await listKeys(prefix);
-      if (keys.length === 0) return 0;
-
-      // DeleteObjects prend 1000 clés par appel.
-      for (let i = 0; i < keys.length; i += 1000) {
-        const batch = keys.slice(i, i + 1000);
-        await client.send(
-          new DeleteObjectsCommand({
-            Bucket: config.bucket,
-            Delete: { Objects: batch.map((Key) => ({ Key })) },
-          }),
-        );
-      }
-
-      return keys.length;
     },
 
     async head(key: string): Promise<ObjectMetadata | null> {
