@@ -294,6 +294,12 @@ model ChannelConfig {
   channelId      String              @unique @map("channel_id") @db.Uuid
   provider       String
   connectionData Json?               @map("connection_data")
+  // Identifiant du compte chez le fournisseur d'intégration (Unipile
+  // `account_id`, ex. `acc_imap_…`). C'est la CLÉ de résolution du tenant dans
+  // le webhook, qui arrive NON authentifié : on ne connaît pas encore
+  // l'accountId, on le retrouve via ce champ (unique global, comme le fait le
+  // cron M4.6 avec un accès Prisma hors tenant).
+  externalAccountId String?          @unique @map("external_account_id")
   status         ChannelConfigStatus @default(pending)
   lastSyncAt     DateTime?           @map("last_sync_at")
   createdAt      DateTime            @default(now()) @map("created_at")
@@ -396,6 +402,12 @@ model Message {
   @@index([accountId, subjectId])
   @@index([accountId, externalId])
   @@index([accountId, externalThreadId])
+  // Idempotence des webhooks : un provider rejoue ses livraisons. Un même
+  // (canal, id externe) ne peut créer qu'un seul Message. NB : Postgres autorise
+  // plusieurs NULL sur une contrainte unique → les messages sans id externe
+  // (créés en interne) ne sont pas contraints. La dédup applicative reste en
+  // ceinture-bretelles côté route webhook (findFirst par externalId).
+  @@unique([channelId, externalId])
   @@map("messages")
 }
 

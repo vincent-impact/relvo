@@ -31,16 +31,15 @@ Lecture obligatoire avant de toucher un écran :
 
 > **Détail complet et raisonné : [`docs/spec/architecture.md`](docs/spec/architecture.md) — source de vérité.** Ce qui suit n'en est qu'un résumé.
 
-Monorepo léger (pnpm workspaces), **deux déployables** partageant un schéma Prisma :
+Monorepo léger (pnpm workspaces), **déployable unique** (`apps/web`) sur un schéma Prisma partagé :
 
-- **`apps/web`** — Next.js App Router **fullstack** → **Vercel**. UI + API (Route Handlers + Server Actions) + auth + chatbot + CRUD.
-- **`apps/worker`** — daemon **Baileys** (WhatsApp) → **Railway/Render**. Process *always-on* tenant le socket WhatsApp 24/7 + pipeline IA asynchrone.
-- **`packages/db`** — schéma **Prisma** + enums partagés (`Actor`, `Status`, `Priority`, `Kind`, `TriageHint`).
+- **`apps/web`** — Next.js App Router **fullstack** → **Vercel**. UI + API (Route Handlers + Server Actions) + auth + chatbot + CRUD + **webhooks d'ingestion Unipile** (email + WhatsApp).
+- **`packages/db`** — schéma **Prisma** + enums partagés (`Actor`, `Status`, `Priority`, `Kind`, `TriageHint`) + couche domaine.
+- **`packages/storage`** — stockage fichiers R2 (upload pré-signé, download authentifié, outbox de suppression).
 
 Points à ne pas oublier :
 - **Pas de backend NestJS séparé.** Route Handlers + Server Actions + Prisma couvrent tout. Le plan initial (Turborepo + NestJS + JWT) est **abandonné** — si une doc le mentionne encore, c'est caduc, se référer à la spec.
-- **Le worker est obligatoire pour WhatsApp** : Baileys exige un WebSocket permanent, impossible en serverless Vercel.
-- **Email** = simple webhook Postmark (Route Handler dans `apps/web`), pas de worker.
+- **🔀 Bascule Unipile (2026-07-16) — plus de worker always-on.** Email **et** WhatsApp passent par l'agrégateur managé **Unipile** (envoi « au nom de » l'utilisateur, hosted auth OAuth/IMAP/QR, webhooks temps réel, UE/SOC2/DPA). Cela **remplace** Postmark **et** le daemon Baileys : WhatsApp devient un webhook serverless comme l'email. Toute mention de `apps/worker`, Baileys, Railway/Render, BullMQ ou Postmark est **caduque**. Le client d'intégration vit dans `apps/web/src/server/unipile/` ; l'ingestion aboutit à un `Message` orphelin (« Sans sujet »), le pipeline IA (M7) fera le Sujet. Le **risque de ban WhatsApp** demeure (connexion non officielle chez Unipile).
 - **Temps réel navigateur** = polling 30 s (V1).
 
 ## Arborescence du repo
@@ -55,25 +54,24 @@ relvo/
 │   └── backlog/backlog-v1.md  # roadmap modules M1→M14
 ├── mockup/                    # maquette HTML figée — référence visuelle
 ├── packages/
-│   ├── db/prisma/schema.prisma   # schéma partagé web ↔ worker
-│   └── storage/src/              # stockage fichiers R2 partagé web ↔ worker (M4)
+│   ├── db/prisma/schema.prisma   # schéma + couche domaine (partagé app ↔ tests)
+│   └── storage/src/              # stockage fichiers R2 (M4)
 └── apps/
-    ├── web/                   # → Vercel (Root Directory = apps/web)
-    │   ├── src/app/           # routes App Router (voir mapping ci-dessous)
-    │   │   ├── api/chat/                  # AI SDK + Gateway
-    │   │   └── api/webhooks/postmark/     # email entrant
-    │   ├── src/components/    # layout/ (Sidebar, ChatDrawer), feed/, ui/ (shadcn)
-    │   ├── src/lib/           # db.ts (client Prisma), auth.ts, helpers
-    │   └── src/server/        # Server Actions + logique métier
-    └── worker/                # → Railway/Render
-        └── src/               # daemon Baileys + file BullMQ + pipeline IA
+    └── web/                   # → Vercel (Root Directory = apps/web) — déployable UNIQUE
+        ├── src/app/           # routes App Router (voir mapping ci-dessous)
+        │   ├── api/chat/                  # AI SDK + Gateway
+        │   └── api/webhooks/unipile/      # email + WhatsApp entrants (Unipile)
+        ├── src/components/    # layout/ (Sidebar, ChatDrawer), feed/, ui/ (shadcn)
+        ├── src/lib/           # db.ts (client Prisma), auth.ts, helpers
+        └── src/server/        # Server Actions + logique métier + unipile/ (client intégration)
 ```
+> `apps/worker` (daemon Baileys) **n'existe plus** : bascule Unipile (webhooks serverless).
 
 **Règles de navigation pour Claude** :
 - Avant de créer/modifier un écran, **lire les docs `docs/conception/` concernées** — elles priment sur toute supposition.
 - Pour reproduire fidèlement un écran, s'appuyer sur le HTML/CSS correspondant dans `mockup/`.
 - Le schéma Prisma (`packages/db`) doit rester **cohérent avec `02-modele-donnees.md`**.
-- Toute logique partagée web/worker passe par un package : `packages/db` (types, accès DB), `packages/storage` (fichiers R2) — jamais de duplication.
+- Toute logique métier réutilisable passe par un package : `packages/db` (types, accès DB, domaine), `packages/storage` (fichiers R2) — jamais de duplication. L'intégration Unipile (email + WhatsApp) vit dans `apps/web/src/server/unipile/` (unique consommateur : l'app).
 - **Aucun accès direct au stockage** : tout passe par `@relvo/storage` (`getStorage()`), jamais par un client S3 instancié à la main. C'est ce qui garde le fournisseur remplaçable — et ce qui évite de recréer un `S3Client` sans les deux réglages R2 obligatoires (`signableHeaders` sur `content-type`, checksums en `WHEN_REQUIRED` : cf. `r2.ts`, sans eux la signature ne contraint pas le type de fichier et le SDK signe le CRC32 du vide).
 - **Afficher un fichier = une URL stable, jamais une URL signée.** `<img src={`/api/attachments/${id}/download?inline=1`} />` — le navigateur suit la redirection 307 vers R2 tout seul. L'URL signée (5 min) est un détail interne, jamais manipulée par un composant. C'est l'architecture par défaut d'ActiveStorage, en version **authentifiée** (le défaut Rails ne l'est pas). Sans `?inline=1` → téléchargement sous le vrai nom du fichier. **Ne jamais mettre une URL pré-signée dans `next/image`** : la clé de cache Vercel inclut la query string ⇒ signature qui tourne = MISS + transformation **facturée** à chaque rendu. **Ne jamais streamer un fichier à travers une Function** (« lightweight API layer, not a media server » — Vercel ; body de réponse plafonné à 4,5 Mo).
 - **Toute route servant de la donnée d'un tenant envoie `Cache-Control: private` + `Vercel-CDN-Cache-Control: no-store`.** La clé de cache d'un CDN est méthode + URL, sans aucun header de requête : une route authentifiée par cookie a donc la **même clé pour tous les utilisateurs**. Ne pas s'en remettre au défaut plateforme — incident Railway du 2026-03-30 : cache activé par accident, « requests for one user [served] to a different user », seules les apps qui envoyaient `private` explicitement ont été épargnées.
@@ -178,17 +176,16 @@ Données fictives mais réalistes, inspirées du cas **Tasty Crousty** (chaîne 
 ```bash
 pnpm install                          # installe le monorepo
 pnpm --filter web dev                 # dev de l'app Next.js
-pnpm --filter worker dev              # dev du daemon WhatsApp
 pnpm --filter db prisma migrate dev   # migrations DB
 pnpm --filter db prisma studio        # explorer la base
+pnpm --filter db test                 # tests d'invariants + domaine (base relvo_test)
 
-# Déploiement : git push → Vercel déploie apps/web automatiquement
-#               apps/worker déployé sur Railway/Render
+# Déploiement : git push → Vercel déploie apps/web (déployable unique)
 ```
 
 ## Scope V1 (rappel)
 
-**Inclus (MUST)** : modèle `Account`/`Actor`, Dossiers (Sujets + Connaissances), modèle de date riche, calendrier semaine + planning mois + drag-and-drop, statuts fidèles + drapeau urgent rare, chatbot drawer action-capable page-aware, WhatsApp (Baileys) **et** email dès V1, citations API (UI minimale), pièces jointes **niveau 1** (étiquetage Haiku).
+**Inclus (MUST)** : modèle `Account`/`Actor`, Dossiers (Sujets + Connaissances), modèle de date riche, calendrier semaine + planning mois + drag-and-drop, statuts fidèles + drapeau urgent rare, chatbot drawer action-capable page-aware, WhatsApp **et** email dès V1 (via **Unipile**), citations API (UI minimale), pièces jointes **niveau 1** (étiquetage Haiku).
 
 **Reporté V2** : page Activité standalone, pièces jointes niveau 2/3, édition de notes par Relvo, chatbot cross-device, UI riche citations, scope `subject` pour KnowledgeDocument, affectation tâche → utilisateur, WebSocket temps réel.
 

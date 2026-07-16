@@ -4,6 +4,7 @@
 
 export * from "./errors";
 export * from "./storage-port";
+export * from "./email-port";
 export * from "./file-deletions";
 export * from "./result";
 export * from "./pagination";

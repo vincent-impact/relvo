@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { LogOut, MessageCircle, Mail, Plus } from "lucide-react";
+import { LogOut, MessageCircle, Mail } from "lucide-react";
 import { DEMO_EMAIL } from "@relvo/db";
+import { ConnectEmailButton } from "@/components/settings/connect-email-button";
 import { ContactsPane } from "@/components/contacts/contacts-pane";
 import { FeedTabs } from "@/components/feed/feed-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
@@ -54,7 +55,7 @@ async function ParametresTabs() {
   const [channels, contacts] = await Promise.all([
     db.channel.findMany({
       orderBy: { createdAt: "asc" },
-      include: { config: { select: { status: true } } },
+      include: { config: { select: { status: true, lastSyncAt: true } } },
     }),
     cachedContacts(account.id),
   ]);
@@ -164,17 +165,7 @@ async function ParametresTabs() {
                 })
               )}
             </div>
-            <button
-              type="button"
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-(--border) py-3.5 text-[13.5px] font-semibold text-(--text-secondary)"
-            >
-              <Plus className="size-4" strokeWidth={2.4} />
-              Ajouter un canal
-            </button>
-            <p className="mt-3 px-1 text-[12px] text-(--text-tertiary)">
-              La connexion d’un nouveau canal (WhatsApp, Email) arrive avec les
-              modules canaux (M5/M6).
-            </p>
+            <ConnectEmailButton />
           </div>
         ),
         contacts: <ContactsPane contacts={contacts} />,

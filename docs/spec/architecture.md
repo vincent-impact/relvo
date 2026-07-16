@@ -4,17 +4,19 @@
 
 ## 1. Vue d'ensemble
 
-Relvo V1 est une application **Next.js fullstack** déployée sur **Vercel**, complétée par un **worker WhatsApp dédié** déployé sur une plateforme à process longs (Railway/Render). Les deux partagent une base **PostgreSQL** via un schéma **Prisma** commun.
+Relvo V1 est une application **Next.js fullstack** déployée sur **Vercel** — **déployable unique** depuis la bascule Unipile (2026-07-16, cf. §2) : email et WhatsApp sont ingérés par webhooks serverless, il n'y a plus de worker always-on. Base **PostgreSQL** via un schéma **Prisma**.
 
 Le tout vit dans un **monorepo léger** (pnpm workspaces) :
 
 | Workspace | Rôle | Hébergement |
 |---|---|---|
-| **`apps/web`** | App Next.js fullstack : UI + API (Route Handlers + Server Actions) + auth + chatbot + CRUD | **Vercel** |
-| **`apps/worker`** | Daemon Baileys : connexion WhatsApp permanente + pipeline de traitement asynchrone | **Railway / Render** |
+| **`apps/web`** | App Next.js fullstack : UI + API (Route Handlers + Server Actions) + auth + chatbot + CRUD + **webhooks d'ingestion Unipile** | **Vercel** |
 | **`packages/db`** | Schéma Prisma + client généré + enums partagés (`Actor`, `SubjectStatus` — 4 valeurs : `acknowledged`, `resolved`, `archived`, `ignored` (défaut `acknowledged` ; « Nouveau » n'est plus un statut mais un marqueur dérivé de `last_opened_at == null`) ; `Priority` — 2 valeurs : `normal`, `urgent` ; `TaskKind`, `TriageHint`…) + couche domaine partagée | — |
+| **`packages/storage`** | Stockage fichiers R2 (upload pré-signé, download authentifié, outbox de suppression) | — |
 
-## 2. Décision structurante : pas de backend découplé, mais un worker obligatoire
+> **~~`apps/worker`~~ (Daemon Baileys) — abandonné** avec la bascule Unipile : le socket WhatsApp permanent vit désormais chez Unipile, WhatsApp devient un webhook serverless comme l'email.
+
+## 2. Décision structurante : pas de backend découplé, et plus de worker (bascule Unipile)
 
 ### Pourquoi Next.js fullstack plutôt qu'un back NestJS séparé
 
@@ -22,34 +24,36 @@ Pour ce produit (**1 compte = 1 humain**, polling 30 s, pas de RAG vectorielle),
 
 > ⚠️ Cette décision **remplace** le plan initial (monorepo Turborepo + NestJS découplé + JWT) qui figurait dans les premières versions des docs. Toute mention de NestJS / `apps/api` / JWT inter-services dans d'anciens documents est **caduque**.
 
-### Pourquoi un worker séparé reste indispensable
+### Pourquoi il n'y a plus de worker always-on (bascule Unipile, 2026-07-16)
 
-**WhatsApp est une priorité V1 au même titre que l'email.** L'ingestion passe par **Baileys** (client WhatsApp Web non officiel), seule voie viable pour le WhatsApp **personnel** d'un dirigeant. Or Baileys maintient un **WebSocket permanent** vers les serveurs WhatsApp pour recevoir les messages, gérer le pairing QR et se reconnecter.
+**Le plan initial** exigeait un process séparé *always-on* (Railway/Render) parce que l'ingestion WhatsApp passait par **Baileys** (client WhatsApp Web non officiel), qui maintient un **WebSocket permanent** — impossible en serverless Vercel (fonctions *request-scoped*, durée bornée).
 
-Une fonction serverless Vercel est **request-scoped** : durée d'exécution bornée, aucune garantie de process *always-on*. Elle **ne peut donc pas** héberger Baileys. Le worker tourne sur une plateforme qui exécute des process Node longue durée (Railway/Render).
+**Décision 2026-07-16 : email ET WhatsApp passent désormais par l'agrégateur managé [Unipile](https://www.unipile.com).** Unipile porte, derrière une API unifiée, la connexion des boîtes (OAuth Gmail/Outlook, IMAP), l'envoi **« au nom de » l'utilisateur** (la réponse part de sa vraie adresse, atterrit dans ses Envoyés) et la réception **par webhooks temps réel**. Il gère aussi WhatsApp (connexion par **QR code**, webhooks). Le socket permanent WhatsApp vit **chez Unipile**, plus chez nous. Conséquences :
 
-À noter : ce n'est **pas** un problème de « temps réel vers le navigateur » (résolu simplement par du polling 30 s, cf. §6), mais bien un besoin de **daemon permanent côté serveur**.
+- **Plus de daemon permanent, plus de `apps/worker`.** Email et WhatsApp deviennent des **webhooks → `apps/web`** (serverless). Un seul déployable (Vercel).
+- **Envoi vraie adresse résolu pour tous les providers** (Gmail/Outlook/IMAP : OVH, Orange, Free…) sans audit Google CASA — car on ne lit **pas** l'historique, seulement le nouveau courrier.
+- **RGPD** : Unipile héberge en **UE**, est **SOC 2** et fournit un **DPA**. C'est un tiers traitant, à contractualiser.
+- **Le risque de ban WhatsApp demeure** (connexion non officielle sous le capot) : Unipile ôte la charge *opérationnelle* (hosting du socket, reconnexion), pas le risque *TOS*. À documenter côté utilisateur (backlog M6).
+
+Pourquoi Unipile plutôt que Nylas (l'autre agrégateur crédible) : Nylas ne fait pas WhatsApp. Unipile **unifie email + WhatsApp** sous un seul contrat → M5 et M6 partagent l'intégration. Coût : 49 €/mois (10 comptes connectés), puis 5 €/compte.
+
+> ⚠️ Toute mention d'un worker Baileys, de Railway/Render, de BullMQ ou de Postmark dans d'anciens documents est **caduque** depuis cette bascule.
 
 ## 3. Flux de données
 
-### Ingestion WhatsApp
+### Ingestion Email & WhatsApp (via Unipile)
 
-1. `apps/worker` tient le socket Baileys 24/7 → reçoit un message entrant.
-2. Le worker écrit le `Message` en base (`packages/db`) et déclenche le **pipeline de traitement IA** (cf. backlog M7).
-3. `apps/web` lit en base ; le navigateur rafraîchit par polling 30 s.
-4. Pour **envoyer** un message WhatsApp, `apps/web` appelle un endpoint `send` exposé par le worker (authentifié par un secret partagé).
+1. L'utilisateur **connecte sa boîte** (ou son WhatsApp) via le **hosted auth** Unipile — un lien généré côté serveur (`POST /api/v1/hosted/accounts/link`), vers lequel on le redirige ; Unipile gère tout le consentement OAuth/IMAP (ou le QR WhatsApp). Un webhook `notify` nous renvoie l'`account_id` Unipile, qu'on relie au `Channel` (`ChannelConfig.external_account_id`).
+2. À chaque nouveau message, Unipile poste un **webhook signé** (header secret `Unipile-Auth`) sur `/api/webhooks/unipile`. Le Route Handler **vérifie le secret**, **résout le tenant** depuis `external_account_id` (accès Prisma hors tenant, même schéma que le cron M4.6), et **normalise en `Message`** de façon **idempotente** (dédup sur `channel_id + external_id`). Le message naît **orphelin** (« Sans sujet ») ; le pipeline IA (M7) le transformera en Sujet.
+3. Les **pièces jointes** sont récupérées via l'API Unipile puis stockées dans **R2** (source de vérité), et un `Attachment` est créé (M5.4). Unipile n'est qu'un transport.
+4. **Envoi sortant** (`POST /api/v1/emails`) : `apps/web` appelle Unipile, qui envoie **depuis la vraie adresse** de l'utilisateur. Aucun endpoint `send` à héberger.
+5. `apps/web` lit en base ; le navigateur rafraîchit par polling 30 s.
 
-### Ingestion Email
-
-1. Postmark **Inbound** envoie un webhook signé.
-2. Un **Route Handler** Next (`/api/webhooks/postmark/inbound`) reçoit, vérifie la signature, normalise en `Message` et déclenche le pipeline.
-3. Envoi sortant via **Resend / Postmark SMTP**.
-
-Aucun worker n'est nécessaire pour l'email : tout passe par `apps/web`.
+> **Anti-loop** : nos envois passent par l'API (pas par un transfert qui reboucle), donc le risque de boucle est marginal. Garde-fous conservés : dédup par `external_id`, on n'ingère jamais un `mail_sent`, on ignore un entrant dont l'expéditeur est une de nos propres adresses connectées.
 
 ### Pipeline de traitement IA
 
-Le traitement (compréhension, classement, rattachement Subject/Contact, génération de tâches + brouillon, extraction de date) s'exécute en **tâche de fond**, déclenché par l'arrivée d'un message quel que soit le canal. Implémenté dans `apps/worker` (file BullMQ ou équivalent) pour ne pas dépendre des limites de durée serverless. Détail fonctionnel : `../conception/04-ia.md` et backlog M7.
+Le traitement (compréhension, classement, rattachement Subject/Contact, génération de tâches + brouillon, extraction de date) s'exécute en **tâche de fond**, déclenché par l'arrivée d'un message quel que soit le canal. Sans worker always-on, il s'appuiera sur une exécution **serverless** (fonction de fond Vercel / **Vercel Queues**, plafond de durée relevé par Fluid Compute). Choix de l'orchestration à arrêter en **M7**. Détail fonctionnel : `../conception/04-ia.md` et backlog M7.
 
 Le `Message` porte deux champs liés au tri : `folder_id` (domaine assigné dès la réception par la classification Relvo, relation `Folder` en `onDelete: SetNull` ; donne ensuite son domaine au sujet créé à partir du message) et `read_at` (lu/non-lu — posé à l'ouverture du sujet rattaché ; les orphelins « Sans sujet » restent non-lus jusqu'au tri). `Folder` porte la relation inverse `messages Message[]`.
 
@@ -67,12 +71,12 @@ Le `Message` porte deux champs liés au tri : `folder_id` (domaine assigné dès
 | Chat local | **IndexedDB** via `dexie` (conversations chatbot éphémères, côté client, pas d'entité serveur) |
 | Drag & drop | `dnd-kit` (replanification des tâches sur les calendriers) |
 | Stockage fichiers | **Cloudflare R2** (object storage S3-compatible), upload navigateur via URL pré-signée. **Pas de CDN devant** : les fichiers sont privés et cloisonnés par tenant, un cache edge n'apporte rien à cette échelle et empêcherait les URLs pré-signées (cf. §5) |
-| WhatsApp | **Baileys** dans `apps/worker` (WhatsApp perso du dirigeant, risque de ban assumé et documenté) |
-| Email | **Postmark Inbound** (entrant) + **Resend / Postmark** (sortant) |
-| File asynchrone | **BullMQ** (ou file simple) dans `apps/worker` |
+| Email + WhatsApp | **Unipile** (agrégateur managé UE/SOC2/DPA) : hosted auth (OAuth Gmail/Outlook, IMAP, QR WhatsApp), webhooks entrants temps réel, envoi « au nom de » l'utilisateur. Remplace Postmark **et** Baileys (bascule 2026-07-16). Le risque de ban WhatsApp reste assumé et documenté |
+| Emails transactionnels | **Resend** (vérification de compte, reset password) — inchangé |
+| Traitement asynchrone | **Serverless** (webhooks Unipile + fonction de fond / **Vercel Queues** pour le pipeline IA M7). Plus de BullMQ ni de daemon |
 | Temps réel | **Polling 30 s** en V1 (WebSocket = V2) |
-| Observabilité | **Sentry** (web + worker), **Vercel Analytics**, logs Railway, dashboard coûts via AI Gateway |
-| Hébergement | `apps/web` → **Vercel** (Root Directory = `apps/web`) · `apps/worker` → **Railway/Render** |
+| Observabilité | **Sentry** (web), **Vercel Analytics**, dashboard coûts via AI Gateway |
+| Hébergement | **`apps/web` → Vercel** (Root Directory = `apps/web`), **déployable unique** — plus de worker Railway/Render |
 
 ### Cible mobile : PWA en V1, Expo en réserve (décision 2026-06-18)
 
@@ -80,7 +84,7 @@ Le produit vise une **application mobile** (utilisateurs food/bâtiment qui vive
 
 - **Pourquoi PWA** : « mobile-first » est une affaire d'UI/CSS, pas de framework. Une PWA **installée** (`display: standalone`) tourne plein écran, sans chrome de navigateur — rendu quasi-natif (safe-areas gérées via `env(safe-area-inset-*)`, barres edge-to-edge, `backdrop-filter` disponible). **Zéro réécriture** : tout le Next.js (SSR, Server Actions, Route Handlers) est réutilisé ; distribution par **simple lien** (WhatsApp).
 - **Seule vraie faiblesse** : la **friction d'installation iOS** (pas d'invite automatique — geste manuel *Partager → « Sur l'écran d'accueil »*, indifféremment depuis **Safari ou Chrome iOS** puisque le standalone est piloté par la meta tag, pas par le navigateur). Atténuée par un guide d'installation et l'accompagnement des premiers utilisateurs.
-- **Issue de secours V2 — Expo / Capacitor** : si la présence **stores**, un **push iOS infaillible** ou la friction d'install deviennent bloquants, on emballe le frontend dans une coque native. Le **backend ne bouge pas** (worker, auth, DB, chatbot restent serveur) — c'est purement une question de coque frontend. Capacitor réutilise le code web ; Expo/React Native impliquerait une 2ᵉ codebase UI.
+- **Issue de secours V2 — Expo / Capacitor** : si la présence **stores**, un **push iOS infaillible** ou la friction d'install deviennent bloquants, on emballe le frontend dans une coque native. Le **backend ne bouge pas** (auth, DB, chatbot, webhooks d'ingestion restent serveur) — c'est purement une question de coque frontend. Capacitor réutilise le code web ; Expo/React Native impliquerait une 2ᵉ codebase UI.
 
 La maquette mobile-first de référence vit dans `mockup/mobile/`. Dans `apps/web`, l'installabilité PWA est câblée par :
 - `src/app/manifest.ts` → `MetadataRoute.Manifest` servi sur `/manifest.webmanifest` : `display: standalone`, `theme_color: #6b5bd6`, icônes **192** et **512** (exigence d'installabilité Chrome).
@@ -93,12 +97,12 @@ La maquette mobile-first de référence vit dans `mockup/mobile/`. Dans `apps/we
 | Sujet | Choix retenu | Justification |
 |---|---|---|
 | Architecture | **Next.js fullstack** (pas de back découplé) | 1 compte = 1 humain, pas de besoin justifiant NestJS + JWT ; réduit à 1 le nombre de runtimes applicatifs |
-| Worker WhatsApp | **Process séparé** sur plateforme always-on | Baileys exige un WebSocket permanent, impossible en serverless Vercel |
-| Monorepo | **pnpm workspaces** (Turbo optionnel) | Justifié par le partage du schéma DB entre `web` et `worker` |
+| Email + WhatsApp | **Unipile** (agrégateur managé), bascule 2026-07-16 | Envoi « au nom de » l'utilisateur exigé + multi-provider (OVH/Orange/Free) + connexion un-clic. Un seul vendor unifie email et WhatsApp → **supprime le worker always-on** (Baileys) et le montage Postmark. UE/SOC2/DPA. Cf. §2 |
+| ~~Worker WhatsApp~~ | **Abandonné** (bascule Unipile) | Le socket WhatsApp permanent vit chez Unipile ; WhatsApp devient un webhook serverless comme l'email |
+| Monorepo | **pnpm workspaces** | Partage de `packages/db` (schéma + domaine) et `packages/storage` entre l'app et les scripts ; conservé même sans worker |
 | Auth | **Auth.js** in-app | Standard, pas de dépendance payante, pas de JWT inter-services à gérer |
-| Email entrant | **Postmark Inbound** (webhook) | Robuste, async natif, setup rapide vs IMAP polling |
-| WhatsApp | **Baileys** (lib non officielle) | Seule voie viable pour le WhatsApp perso d'un dirigeant ; risque ban assumé |
-| Stockage fichiers | **Cloudflare R2** (décision 2026-07-15) | **API S3-compatible** : un seul client S3 générique partagé `web` ⇄ `worker` (le worker Railway écrit les médias WhatsApp), outillage connu, sortie vers S3 possible sans réécrire les call sites. **Free tier permanent** (10 Go, 1 M écritures, 10 M lectures/mois) qui couvre toute la bêta, sans imposer un abonnement Vercel Pro. Setup = 1 bucket + 1 token, contre 5 services AWS (S3 + CloudFront + IAM + ACM + Route 53) pour S3, et contre un lock-in propriétaire sans API S3 pour Vercel Blob. Le coût n'a pas départagé : les trois options sont sous 2 $/mois à l'échelle V1 |
+| Lecture email | **Nouveau courrier seulement** (pas d'historique) | Évite les scopes Gmail « restricted » et l'audit **CASA** ; le webhook `mail_received` suffit à alimenter le pipeline |
+| Stockage fichiers | **Cloudflare R2** (décision 2026-07-15) | **API S3-compatible** : un client S3 générique dans `packages/storage` (les pièces jointes email/WhatsApp récupérées via Unipile y sont poussées), outillage connu, sortie vers S3 possible sans réécrire les call sites. **Free tier permanent** (10 Go, 1 M écritures, 10 M lectures/mois) qui couvre toute la bêta, sans imposer un abonnement Vercel Pro. Setup = 1 bucket + 1 token, contre 5 services AWS (S3 + CloudFront + IAM + ACM + Route 53) pour S3, et contre un lock-in propriétaire sans API S3 pour Vercel Blob. Le coût n'a pas départagé : les trois options sont sous 2 $/mois à l'échelle V1 |
 | Base de données | **Neon** (Marketplace Vercel) | Postgres managé, intégration native Vercel, branches de preview |
 | Stripe | **Reporté V1.1** | Bêta privée gratuite |
 | RAG | **Pas de base vectorielle** | Long context + prompt caching suffisent (cf. `../conception/04-ia.md §10`) |
@@ -112,19 +116,17 @@ La maquette mobile-first de référence vit dans `mockup/mobile/`. Dans `apps/we
 ```
 relvo/
 ├── apps/
-│   ├── web/                    # → Vercel (Root Directory = apps/web)
-│   │   ├── src/app/            # routes App Router + UI (voir « Routes & navigation »)
-│   │   │   ├── manifest.ts                # manifest PWA (display: standalone)
-│   │   │   ├── api/chat/                  # AI SDK + Gateway
-│   │   │   └── api/webhooks/postmark/     # email entrant
-│   │   ├── src/components/     # layout/ (tab bar bas, composer Relvo), feed/, ui/ (shadcn)
-│   │   ├── src/lib/            # db (client Prisma), auth, helpers
-│   │   └── src/server/         # Server Actions + logique métier
-│   └── worker/                 # → Railway/Render (always-on)
-│       └── src/                # daemon Baileys + file BullMQ + pipeline IA
+│   └── web/                    # → Vercel (Root Directory = apps/web) — déployable UNIQUE
+│       ├── src/app/            # routes App Router + UI (voir « Routes & navigation »)
+│       │   ├── manifest.ts                # manifest PWA (display: standalone)
+│       │   ├── api/chat/                  # AI SDK + Gateway
+│       │   └── api/webhooks/unipile/      # email + WhatsApp entrants (Unipile)
+│       ├── src/components/     # layout/ (tab bar bas, composer Relvo), feed/, ui/ (shadcn)
+│       ├── src/lib/            # db (client Prisma), auth, helpers
+│       └── src/server/         # Server Actions + logique métier + unipile/ (client intégration)
 ├── packages/
 │   └── db/
-│       └── prisma/schema.prisma   # schéma + enums partagés web ↔ worker
+│       └── prisma/schema.prisma   # schéma + enums (partagé app ↔ scripts/tests)
 ├── pnpm-workspace.yaml
 ├── turbo.json                  # optionnel (cache de build)
 └── package.json
@@ -161,11 +163,10 @@ Routes d'auth sous `(auth)/` (`connexion`, `inscription`, `mot-de-passe-oublie`,
 
 ## 8. Déploiement
 
-- **`apps/web`** → Vercel. Importer le repo, *Root Directory = `apps/web`*, renseigner les variables d'environnement, `git push` déclenche le déploiement.
-- **`apps/worker`** → Railway/Render. Service pointé sur `apps/worker`, redémarrage automatique, doit rester *always-on*.
-- Les deux pointent vers la **même base PostgreSQL** (Neon).
-- Variables d'environnement : documentées dans le `README.md` à la racine.
+- **`apps/web`** → Vercel (**déployable unique**). Importer le repo, *Root Directory = `apps/web`*, renseigner les variables d'environnement (dont `UNIPILE_*`), `git push` déclenche le déploiement.
+- Base **PostgreSQL** (Neon). Variables d'environnement documentées dans le `README.md` à la racine.
+- **Webhook Unipile** : configurer, côté dashboard Unipile, l'URL `https://<app>/api/webhooks/unipile` avec un header `Unipile-Auth: <UNIPILE_WEBHOOK_SECRET>`.
 
 ## 9. Alternative écartée — backend NestJS découplé
 
-Le plan initial prévoyait un monorepo Turborepo avec `apps/api` (NestJS + Prisma), un package `shared-types`, et une auth par JWT signé transmis du front au back. **Écarté** : pour un produit mono-utilisateur sans besoin d'API publique ni de scaling indépendant de la couche métier, le découplage ne fait qu'ajouter un runtime, un déploiement et de la plomberie d'authentification — sans bénéfice. Le seul composant qui justifie réellement un process séparé (le daemon WhatsApp) est isolé dans `apps/worker`, ce qui n'impose pas de découpler le reste de l'API.
+Le plan initial prévoyait un monorepo Turborepo avec `apps/api` (NestJS + Prisma), un package `shared-types`, et une auth par JWT signé transmis du front au back. **Écarté** : pour un produit mono-utilisateur sans besoin d'API publique ni de scaling indépendant de la couche métier, le découplage ne fait qu'ajouter un runtime, un déploiement et de la plomberie d'authentification — sans bénéfice. Le seul composant qui aurait justifié un process séparé (le daemon WhatsApp Baileys) a lui-même été **supprimé** par la bascule vers Unipile (webhooks serverless, cf. §2) : il ne reste donc **qu'un seul runtime applicatif**.

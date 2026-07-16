@@ -85,23 +85,14 @@ Au premier démarrage du worker, un **QR code** s'affiche dans le terminal : sca
 | `R2_BUCKET` | Nom du bucket (ex. `relvo-files-prod`) |
 | `R2_JURISDICTION` | `eu` (défaut) — résidence RGPD, **figée à la création du bucket** ; conditionne l'endpoint S3 |
 | `CRON_SECRET` | Secret du cron Vercel qui draine l'outbox de suppression de fichiers (`openssl rand -base64 32`) |
-| `POSTMARK_SERVER_TOKEN` | Envoi e-mail sortant |
-| `POSTMARK_INBOUND_SECRET` | Vérification du webhook e-mail entrant |
 | `RESEND_API_KEY` | E-mails transactionnels (vérification de compte) |
-| `WORKER_SEND_URL` | URL de l'endpoint `send` du worker (envoi WhatsApp) |
-| `WORKER_API_SECRET` | Secret partagé pour authentifier les appels web → worker |
+| `UNIPILE_DSN` | DSN régional (UE) de l'instance Unipile — ingestion email + WhatsApp (M5) |
+| `UNIPILE_API_KEY` | Clé d'API Unipile (header `X-API-KEY`) |
+| `UNIPILE_WEBHOOK_SECRET` | Secret du header `Unipile-Auth` vérifié sur `/api/webhooks/unipile` (`openssl rand -base64 32`) |
 
-### `apps/worker/.env`
+> **Bascule Unipile (2026-07-16)** — l'ingestion email **et** WhatsApp passe par l'agrégateur managé **Unipile** (envoi « au nom de » l'utilisateur, webhooks temps réel, UE/SOC2/DPA). Cela **remplace** le montage Postmark (forwarding + SMTP) **et supprime le worker always-on Baileys** : WhatsApp devient piloté par webhooks, donc serverless sur Vercel comme l'email. Il n'y a **plus de `apps/worker`**. Cf. `docs/spec/architecture.md`.
 
-| Variable | Description |
-|---|---|
-| `DATABASE_URL` | Même base que `web` (le worker écrit les messages entrants) |
-| `WORKER_API_SECRET` | Même secret que côté `web` |
-| `PORT` | Port d'écoute de l'endpoint `send` |
-| `WA_AUTH_STATE_PATH` | Chemin de persistance de l'état d'auth Baileys |
-| `R2_*` | Mêmes valeurs que `web` — le worker écrit les médias WhatsApp dans le même bucket (M6.6) |
-
-> Sur Vercel, gérer les variables de `web` via `vercel env` ou le dashboard. Sur Railway/Render, configurer celles du `worker` dans leur interface respective.
+> Sur Vercel, gérer les variables via `vercel env` ou le dashboard.
 
 ### Vérifier le stockage R2
 
@@ -114,13 +105,12 @@ pnpm --filter @relvo/storage smoke
 
 ## Déploiement
 
-- **`apps/web`** → **Vercel**. Importer le repo, définir *Root Directory = `apps/web`*, renseigner les variables d'environnement. `git push` sur la branche de production déclenche le déploiement.
-- **`apps/worker`** → **Railway** (ou Render). Pointer le service sur `apps/worker`, configurer les variables, activer le redémarrage automatique. Le worker doit rester *always-on*.
-- Les deux pointent vers la **même base PostgreSQL**.
+- **`apps/web`** → **Vercel**. Importer le repo, définir *Root Directory = `apps/web`*, renseigner les variables d'environnement. `git push` sur la branche de production déclenche le déploiement. **Un seul déployable** depuis la bascule Unipile — email et WhatsApp sont pilotés par webhooks (serverless), il n'y a plus de worker always-on à héberger.
+- Base : **PostgreSQL** (Neon en prod).
 
 ## Stack
 
-Next.js (App Router) · TypeScript · Tailwind + Shadcn UI · Prisma + PostgreSQL · Auth.js · Vercel AI SDK + AI Gateway (Claude) · Cloudflare R2 (stockage fichiers) · Baileys (WhatsApp) · Postmark / Resend (e-mail) · dnd-kit · dexie (IndexedDB).
+Next.js (App Router) · TypeScript · Tailwind + Shadcn UI · Prisma + PostgreSQL · Auth.js · Vercel AI SDK + AI Gateway (Claude) · Cloudflare R2 (stockage fichiers) · **Unipile** (email + WhatsApp) · Resend (e-mails transactionnels) · dnd-kit · dexie (IndexedDB).
 
 ## Scripts utiles
 

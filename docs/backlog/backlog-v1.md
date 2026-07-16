@@ -10,12 +10,13 @@
 
 | Module | État | Note |
 |---|---|---|
-| **M1** — Fondations techniques | 🟡 **clos (fonctionnellement atteint)** | Socle + déploiement web (Vercel) + base prod (Neon) faits. M1.5 / M1.7 / worker (M1.8) / M1.9 reportés au moment Railway+Baileys (M6). Détail inline en §4. |
+| **M1** — Fondations techniques | 🟡 **clos (fonctionnellement atteint)** | Socle + déploiement web (Vercel) + base prod (Neon) faits. M1.5 / M1.7 / M1.9 reportés. ⚠️ Les items **worker** (scaffold `apps/worker`, Railway/Render, Sentry worker) sont **caducs** depuis la bascule Unipile (M5) : plus de worker à héberger. Détail inline en §4. |
 | **M2** — Auth & multi-tenant | ✅ **fait** | Auth.js v5 (Credentials + Google OAuth, sessions JWT), `proxy.ts` (Next 16), helper tenant + client Prisma tenant-aware (`$extends`), signup public, vérif email + reset via Resend, onglet Profil. Détail inline en §4. |
 | **M3** — Modèle de données & accès CRUD | ✅ **fait** | Couche domaine partagée `packages/db/src/domain/` (tenant-aware, fonctions pures réutilisables par le worker M7), conventions (Zod, DomainError, pagination curseur, `logEvent`), 8 domaines CRUD + agrégations (KPIs/feed/sans-sujet), Server Actions web (wrappers `ActionResult`), seeds Tasty Crousty, 7 tests d'invariants vitest (base `relvo_test`). Détail inline en §4. |
 | **M9** — Pages applicatives front | ✅ **clos (2026-06-30)** | Les 7 pages reproduites en React/Next (mobile-first « Direction B »), cliquables et branchées sur le seed démo, + PWA installable. Divergences vs plan d'origine assumées (statut 4 valeurs, priorité 2 valeurs, dock 4 onglets, Accueil = page des tâches, Messages = pile d'orphelins). **Démo client validée le 2026-06-29** (retour très positif). Améliorations continues à venir « au fil de l'usage », hors jalon. Détail : §5 + plan de clôture M9.18→M9.24. |
 | **M4** — Stockage fichiers | ✅ **clos (2026-07-15)** | **Cloudflare R2** (bucket juridiction `eu`), package partagé `@relvo/storage`, upload navigateur pré-signé, download authentifié (URL stable → 307 vers URL signée 5 min, `?inline=1`), suppression par **outbox alimentée par trigger PostgreSQL** (seul mécanisme qui capte les cascades — Prisma en est aveugle), fixtures de démo en git. M4.1→M4.6 faits ; **M4.7** (uploads abandonnés → préfixe `pending/` + lifecycle R2) reporté **à M11**, qui apporte l'UI d'upload ; **M4.8** (balayage) reporté sur preuve de dérive. Détail inline en §4. |
-| M5 → M8, M10 → M14 | ⬜ à faire | **M11 (Connaissances) = prochaine étape** : c'est lui qui branche l'UI d'upload sur le socle M4, et il débloque M7 **et** M10. M5 (email), M6/M7 (WhatsApp + pipeline IA) suivent. |
+| **M5** — Ingestion email | ✅ **fait (2026-07-16)** | **Bascule Unipile** (agrégateur managé email + WhatsApp) — abandon du forwarding Postmark **et du worker Baileys**. Client Unipile, route webhook idempotente, ingestion → Message orphelin, PJ → R2, envoi « au nom de » l'utilisateur, UI Canaux (hosted auth un-clic). Reste : provisionner l'instance Unipile + env vars. Détail : §M5. |
+| M6 → M8, M10 → M14 | ⬜ à faire | **M6 (WhatsApp) réutilise le client Unipile de M5** (webhooks serverless, plus de worker). **M11 (Connaissances)** branche l'UI d'upload sur le socle M4 et débloque M7 **et** M10. M7 (pipeline IA) transforme les Messages orphelins de M5/M6 en Sujets. |
 
 > **⚠️ Migration de schéma requise avant/avec M9** — refonte UX mobile-first (2026-06-18). Le modèle de conception a évolué ([`02-modele-donnees.md`](../conception/02-modele-donnees.md)) ; à répercuter dans `packages/db/prisma/schema.prisma` :
 > - `Status` : `enum(new, to_do, waiting, unread, resolved, archived)` → **`enum(acknowledged, resolved, archived, ignored)`** (cycle de vie exclusif ; `to_do`/`waiting`/`unread` **et `new`** deviennent des marqueurs, pas des statuts — `new` retiré le 2026-06-27, « Nouveau » dérivé de `last_opened_at == null`).
@@ -53,7 +54,7 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 - Multi-tenant via entité `Account` racine
 - Triptyque d'acteurs avec badges UI Moi / Relvo / Externe
-- Ingestion email (Postmark Inbound) et WhatsApp (Baileys)
+- Ingestion email et WhatsApp via **Unipile** (agrégateur managé, webhooks serverless — plus de worker Baileys ; bascule 2026-07-16)
 - Pipeline IA d'arrivée : compréhension, classement, rattachement, création de Subject + Contact, génération de tâches et brouillon, extraction de date
 - 4 onglets de nav (barre basse) : Accueil (brief), Mon fil (workspace), **Mémoire** (Dossiers), **Réglages**
 - Pages hors-nav : Planning (vue mois), **Messages (pile d'orphelins « Sans sujet »)**, Contacts (+ fiche), Recherche, fiche Sujet, page Message `/messages/[id]`
@@ -95,12 +96,12 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 - **M1.1** ✅ — Setup monorepo **pnpm workspaces** (`apps/web`, `apps/worker`, `packages/db`) + Turbo optionnel
 - **M1.2** ✅ — `packages/db` : Prisma + PostgreSQL local via Docker Compose + enums partagés (`Actor`, `Status`, `Priority`, `Kind`, `TriageHint`) _(NB : Prisma **7** — driver adapter + `prisma.config.ts` ; schéma complet des 12 entités + migration `init` appliquée)_
 - **M1.3** ✅ — Scaffold `apps/web` : Next.js App Router + Tailwind + Shadcn CLI init + application du thème navy/blue/red défini dans la maquette
-- **M1.4** ✅ — Scaffold `apps/worker` : squelette Node + endpoint healthcheck (runtime Baileys ajouté en M6)
-- **M1.5** ⏸️ _(reporté → M6)_ — Logger structuré pino + Sentry (web + worker)
-- **M1.6** ✅ — Configuration ESLint, Prettier, Husky (pre-commit hooks) _(Prettier + plugin Tailwind + Husky + lint-staged faits ; ESLint = web seulement, à étendre worker/db avec M1.7)_
-- **M1.7** ⏸️ _(reporté → M6)_ — Pipeline CI GitHub Actions (lint + typecheck + tests sur PR)
-- **M1.8** 🟡 — Déploiement Vercel (`apps/web`, Root Directory) ✅ **fait** + base Neon prod + migrations au build (`vercel-build`) ; Railway/Render (`apps/worker`) ⏸️ **reporté → M6**
-- **M1.9** ⏸️ _(reporté → M6)_ — Healthcheck (route `apps/web` + endpoint `apps/worker` ✅) + UI debug côté front
+- **M1.4** — ~~Scaffold `apps/worker`~~ **Caduc** (bascule Unipile 2026-07-16 : plus de worker). Le scaffold éventuel est à retirer.
+- **M1.5** ⏸️ _(reporté)_ — Logger structuré pino + Sentry (**web** ; volet worker sans objet)
+- **M1.6** ✅ — Configuration ESLint, Prettier, Husky (pre-commit hooks) _(Prettier + plugin Tailwind + Husky + lint-staged faits ; ESLint = web seulement, à étendre db avec M1.7)_
+- **M1.7** ⏸️ _(reporté)_ — Pipeline CI GitHub Actions (lint + typecheck + tests sur PR)
+- **M1.8** ✅ — Déploiement Vercel (`apps/web`, Root Directory) + base Neon prod + migrations au build (`vercel-build`). ~~Railway/Render (`apps/worker`)~~ **sans objet** (déployable unique depuis la bascule Unipile).
+- **M1.9** ⏸️ _(reporté)_ — Healthcheck (route `apps/web` ✅) + UI debug côté front
 
 ---
 
@@ -155,9 +156,9 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 **➡️ M4 CLÔTURÉ le 2026-07-15.** M4.1→M4.6 livrés et vérifiés contre le vrai bucket (aller-retour d'upload, isolation inter-tenants, cascade à 2 niveaux captée par le trigger, drainage réel). **M4.7, M4.8 et M4.9 restent ouverts mais ne bloquent pas** : M4.7 attend M11 (il lui faut l'UI d'upload pour avoir un sens), M4.8 est un filet à n'ajouter que sur preuve de dérive, et **M4.9 est un risque connu et assumé** (bucket unique dev/prod — reporté explicitement, pas oublié).
 
-> **⚠️ Action requise avant la mise en prod de M11** : poser `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_JURISDICTION` et `CRON_SECRET` sur Vercel (et les `R2_*` sur Railway au moment de M6.6). Sans elles : le cron de drainage échoue en 500 chaque nuit, et toute route fichier lèverait — sans impact aujourd'hui puisque aucune UI ne les appelle.
+> **⚠️ Action requise avant la mise en prod de M11** : poser `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_JURISDICTION` et `CRON_SECRET` sur Vercel. Sans elles : le cron de drainage échoue en 500 chaque nuit, et toute route fichier lèverait — sans impact aujourd'hui puisque aucune UI ne les appelle. _(Les PJ email/WhatsApp récupérées via Unipile s'écrivent aussi dans R2, côté `apps/web` — plus de worker à configurer.)_
 
-> **Fournisseur retenu : Cloudflare R2** (décision 2026-07-15, benchmark vs Vercel Blob / S3+CloudFront / Supabase / UploadThing). Justification complète dans [`../spec/architecture.md §5`](../spec/architecture.md). En bref : API S3-compatible (un client générique partagé web ⇄ worker, outillage connu, sortie possible), free tier permanent couvrant toute la bêta sans imposer Vercel Pro, setup en 1 bucket + 1 token. **Le coût n'a pas départagé** — les trois options sont sous 2 $/mois à l'échelle V1.
+> **Fournisseur retenu : Cloudflare R2** (décision 2026-07-15, benchmark vs Vercel Blob / S3+CloudFront / Supabase / UploadThing). Justification complète dans [`../spec/architecture.md §5`](../spec/architecture.md). En bref : API S3-compatible (un client générique dans `packages/storage`, outillage connu, sortie possible), free tier permanent couvrant toute la bêta sans imposer Vercel Pro, setup en 1 bucket + 1 token. **Le coût n'a pas départagé** — les trois options sont sous 2 $/mois à l'échelle V1.
 >
 > **Pas de CDN** : les fichiers sont privés et cloisonnés par tenant, consultés par 3-10 utilisateurs. Un cache edge n'apporte rien et, chez R2, les URLs pré-signées ne fonctionnent que sur le domaine S3 API — cache et pré-signature sont **mutuellement exclusifs**. À rouvrir seulement si un usage public de fichiers apparaît.
 
@@ -205,47 +206,51 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 ---
 
-### M5 — Ingestion email
+### M5 — Ingestion email (via Unipile)
 
-**Objectif** : recevoir les emails entrants des utilisateurs et envoyer les emails sortants depuis Relvo.
+**Objectif** : recevoir les emails entrants des utilisateurs et envoyer les emails sortants **depuis leur vraie adresse**.
 
 **Dépendances** : M3 (Message, Contact, Channel), M4 (attachments).
 
-- **M5.1** — Configuration Postmark Inbound, adresses dédiées par compte (`{slug}-{hash}@inbound.relvo.io`)
-- **M5.2** — Route Handler Next `/api/webhooks/postmark/inbound` avec vérification de signature et idempotence via `external_id`
-- **M5.3** — Parsing email et normalisation vers l'entité `Message` (subject_line, content text + html, sender_raw, external_thread_id)
-- **M5.4** — Extraction et stockage des pièces jointes (upload Blob + création des `Attachment`)
-- **M5.5** — Anti-loop : détection et blocage des emails sortants Relvo qui reviennent en boucle
-- **M5.6** — Envoi sortant via SMTP Postmark/Resend (template minimal, signature, reply-to vers l'adresse inbound du compte)
-- **M5.7** — UI Paramètres → onglet Canaux → ajout/configuration d'une boîte email (instructions de forwarder Gmail)
-- **M5.8** — Statut de connexion du Channel (`last_sync_at`, gestion des erreurs)
+> **🔀 Bascule technique majeure (2026-07-16).** L'ingestion ne passe **plus** par un forwarding Gmail → Postmark, mais par l'agrégateur managé **[Unipile](https://www.unipile.com)** (email + WhatsApp unifiés). Arbitrages : envoi « au nom de » l'utilisateur **obligatoire** (exclut le Reply-To), lecture = **nouveau courrier seulement** (pas d'historique → pas d'audit Google CASA), agrégateur **retenu** (UE/SOC2/DPA). Conséquence : **le worker always-on Baileys est abandonné** — WhatsApp (M6) passera aussi par Unipile, en webhooks serverless. Cf. `../spec/architecture.md §2`.
+
+- **M5.1** ✅ — Client Unipile (`apps/web/src/server/unipile/`) bâti sur le **SDK officiel `unipile-node-sdk`** (`UnipileClient` : `account.createHostedAuthLink` avec `sync_limit: NO_HISTORY_SYNC` + `providers ["GOOGLE","OUTLOOK","MAIL"]`, `email.send`, `email.getEmailAttachment` → `Blob`, `account.getOne`, `webhook.create`). Config lazy + dégradation propre sans credentials. Résolution du tenant via `ChannelConfig.external_account_id` (colonne unique, migration `20260716120000`).
+- **M5.2** ✅ — Route Handler `/api/webhooks/unipile` : vérif du header secret `Unipile-Auth`, idempotence via `@@unique([channelId, externalId])` + check applicatif, routage `notify` / `mail_received` / `account_status`.
+- **M5.3** ✅ — Mapper pur `mail_received` → `Message` orphelin (`ingestInboundEmail`, domaine) : subject_line, content (texte/dé-balisage HTML), sender_raw, external_thread_id.
+- **M5.4** ✅ — Récupération des PJ via Unipile → **R2** (`getStorage().put`) + création des `Attachment` (garde-fou taille), au premier passage uniquement.
+- **M5.5** ✅ — Anti-loop : nos envois passent par l'API (pas de reboucle) ; garde-fous dédup `external_id` + `mail_sent` ignoré.
+- **M5.6** ✅ — Envoi sortant depuis la vraie adresse (`sendEmailReply` domaine via port injecté `EmailSenderPort` + `sendEmailReplyAction`).
+- **M5.7** ✅ — UI Paramètres → onglet Canaux → « Connecter une boîte email » (hosted auth un-clic, multi-provider Gmail/Outlook/IMAP).
+- **M5.8** ✅ — Statut de connexion du Channel (`external_account_id`, `status`, `last_sync_at`) posé par le webhook `notify` / `account_status`.
+
+> **Reste à faire hors code** (config, pas du dev) : provisionner l'instance Unipile (UE), renseigner `UNIPILE_DSN` / `UNIPILE_API_KEY` / `UNIPILE_WEBHOOK_SECRET`, déclarer le webhook côté dashboard Unipile. Le **pipeline IA** qui transforme l'orphelin en Sujet = **M7** ; l'**étiquetage Haiku** des PJ = **M8**.
 
 ---
 
-### M6 — Ingestion WhatsApp (Baileys)
+### M6 — Ingestion WhatsApp (via Unipile)
 
-**Objectif** : recevoir et envoyer des messages WhatsApp via Baileys, en assumant les contraintes de la lib non-officielle. Toute cette logique vit dans `apps/worker` (process always-on, cf. [`../spec/architecture.md §2`](../spec/architecture.md)).
+**Objectif** : recevoir et envoyer des messages WhatsApp. **Via Unipile**, comme l'email (bascule 2026-07-16) — **plus de worker Baileys** : le socket permanent vit chez Unipile, WhatsApp devient un webhook serverless. M6 **réutilise le client Unipile de M5**.
 
-**Dépendances** : M3 (Message, Contact, Channel), M4 (medias).
+**Dépendances** : M3 (Message, Contact, Channel), M4 (medias), **M5 (client Unipile + route webhook + résolution tenant)**.
 
-- **M6.1** — Runtime Baileys dans `apps/worker` (process séparé always-on, scalable indépendamment du web)
-- **M6.2** — Stockage persistant de la session Baileys (auth state en DB ou volume persistant)
-- **M6.3** — UI Paramètres → onglet Canaux → pairing par QR code
-- **M6.4** — Réception des messages entrants : écriture directe en base (`packages/db`) + déclenchement du pipeline ; endpoint `send` exposé au web pour l'envoi sortant (authentifié par secret partagé)
-- **M6.5** — Envoi sortant via Baileys (appelé par `apps/web`)
-- **M6.6** — Gestion des médias (image, audio, document) → upload Blob + création des `Attachment`
-- **M6.7** — Reconnexion automatique + monitoring de health du worker
-- **M6.8** — Documentation des risques (TOS WhatsApp, possibilité de ban du numéro) pour les utilisateurs
+- **M6.1** — ~~Runtime Baileys~~ **Abandonné.** Réutiliser `apps/web/src/server/unipile/` et la route `/api/webhooks/unipile` (le webhook porte déjà `account_status` + messages).
+- **M6.2** — ~~Session Baileys persistante~~ **Sans objet** (Unipile gère la session côté serveur).
+- **M6.3** — UI Paramètres → onglet Canaux → « Connecter WhatsApp » : hosted auth Unipile en **QR code** (même flux que l'email, `providers: ["WHATSAPP"]`).
+- **M6.4** — Réception des messages/événements WhatsApp entrants : gérer les événements `message_received` d'Unipile dans la route webhook (ingestion idempotente → `Message` orphelin, comme l'email) + déclenchement du pipeline (M7).
+- **M6.5** — Envoi sortant WhatsApp via l'API Unipile (endpoint messaging), appelé par `apps/web`.
+- **M6.6** — Gestion des médias (image, audio, document) → récupération via Unipile → **R2** + création des `Attachment` (réutilise le chemin PJ de M5.4).
+- **M6.7** — Monitoring de santé de la connexion via le webhook `account_status` (statut du Channel, reconnexion pilotée par un lien hosted auth `type: "reconnect"`).
+- **M6.8** — Documentation des risques (TOS WhatsApp, possibilité de ban du numéro) pour les utilisateurs. **Toujours valable** : Unipile ôte la charge opérationnelle, **pas** le risque TOS (connexion non officielle sous le capot).
 
 ---
 
 ### M7 — Pipeline IA d'arrivée
 
-**Objectif** : implémenter le cœur du produit — orchestrer le traitement IA d'un message entrant jusqu'à la création/mise à jour du Subject, des Task, des brouillons, et du journal de bord. Exécuté en tâche de fond dans `apps/worker`, déclenché par l'arrivée d'un message (email ou WhatsApp).
+**Objectif** : implémenter le cœur du produit — orchestrer le traitement IA d'un message entrant jusqu'à la création/mise à jour du Subject, des Task, des brouillons, et du journal de bord. Exécuté en **tâche de fond serverless** (déclenché depuis le webhook Unipile), déclenché par l'arrivée d'un message (email ou WhatsApp). **Plus de worker/BullMQ** (bascule 2026-07-16).
 
 **Dépendances** : M3, M5, M6, M11 (KnowledgeDocuments accessibles).
 
-- **M7.1** — Service `MessageProcessor` orchestrateur, avec file d'attente BullMQ (dans `apps/worker`)
+- **M7.1** — Service `MessageProcessor` orchestrateur, en **exécution de fond serverless** (fonction de fond Vercel / **Vercel Queues** ; plafond de durée relevé par Fluid Compute) — choix de l'orchestration à arrêter ici
 - **M7.2** — Prompt système global Relvo (rôle, ton, règles de non-création, format de sortie)
 - **M7.3** — Construction du contexte par message : Folder match + KnowledgeDocuments du Folder + Folder Général + dernières conversations du contact
 - **M7.4** — Appel Claude Sonnet via AI Gateway : comprendre le message, classer le Folder, rattacher à un Subject existant ou en créer un nouveau, créer un Contact si nécessaire
@@ -410,10 +415,10 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 - **M14.1** — Tests d'intégration sur le `MessageProcessor` (couvrir les cas A à P de `../conception/03-cas-usage.md`)
 - **M14.2** — Tests E2E Playwright sur les 3 flux critiques : login, traiter un sujet, dialoguer dans le drawer
-- **M14.3** — Monitoring : Sentry (web + worker) + Vercel Analytics + logs Railway (worker)
+- **M14.3** — Monitoring : Sentry (web) + Vercel Analytics + suivi de l'état des connexions Unipile (webhook `account_status`)
 - **M14.4** — Sauvegarde DB quotidienne (Neon : backups / point-in-time recovery) + test de restore
 - **M14.5** — Dashboard de coûts Claude (tokens/jour/compte) via AI Gateway
-- **M14.6** — Anti-loop d'ingestion email (header `X-Relvo-Outbound` sur les messages sortants)
+- **M14.6** — Durcissement anti-loop d'ingestion (déjà couvert en M5.5 par la dédup `external_id` + `mail_sent` ignoré ; renforcer si dérive constatée)
 
 ---
 

@@ -13,6 +13,7 @@ import {
   createContact,
   splitFullName,
 } from "./contacts";
+import type { EmailSenderPort } from "./email-port";
 import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { ensureAffected } from "./helpers";
@@ -120,6 +121,145 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
       actor: incoming ? "contact" : "user",
     });
     return message;
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Ingestion entrante (M5.3) — un email reçu via le fournisseur d'intégration
+// (Unipile) devient un Message ORPHELIN (« Sans sujet »). Le pipeline IA qui en
+// fait un Sujet est M7 ; ici on ne fait que persister l'événement brut.
+// ─────────────────────────────────────────────────────────────
+
+export const ingestInboundEmailSchema = z.object({
+  channelId: z.uuid(),
+  // Idempotence : identifiant du message chez le fournisseur (Unipile email_id).
+  externalId: z.string().trim().min(1).max(255),
+  externalThreadId: z.string().trim().max(255).optional().nullable(),
+  senderRaw: z.string().trim().max(320).optional().nullable(),
+  subjectLine: z.string().trim().max(500).optional().nullable(),
+  content: z.string().optional().nullable(),
+  receivedAt: z.date().optional().nullable(),
+});
+
+export type IngestInboundEmailInput = z.infer<typeof ingestInboundEmailSchema>;
+
+/**
+ * Persiste un email entrant en Message orphelin, de façon IDEMPOTENTE : un
+ * webhook rejoué (même `channelId` + `externalId`) ne crée pas de doublon.
+ * Double garde : check applicatif (findFirst) + contrainte unique en base
+ * (`messages_channel_id_external_id_key`) qui gagne en cas de course.
+ */
+export async function ingestInboundEmail(
+  db: TenantDb,
+  input: IngestInboundEmailInput,
+): Promise<{
+  message: Awaited<ReturnType<typeof createMessage>>;
+  created: boolean;
+}> {
+  const data = ingestInboundEmailSchema.parse(input);
+
+  const existing = await db.message.findFirst({
+    where: { channelId: data.channelId, externalId: data.externalId },
+  });
+  if (existing) return { message: existing, created: false };
+
+  try {
+    const message = await createMessage(db, {
+      channelId: data.channelId,
+      direction: MessageDirection.incoming,
+      subjectId: null,
+      senderRaw: data.senderRaw ?? null,
+      externalId: data.externalId,
+      externalThreadId: data.externalThreadId ?? null,
+      subjectLine: data.subjectLine ?? null,
+      content: data.content ?? null,
+      receivedAt: data.receivedAt ?? new Date(),
+    });
+    return { message, created: true };
+  } catch (err) {
+    // Course entre deux livraisons concurrentes : la contrainte unique a rejeté
+    // le second insert. On relit et on renvoie l'existant — pas un doublon.
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      const raced = await db.message.findFirst({
+        where: { channelId: data.channelId, externalId: data.externalId },
+      });
+      if (raced) return { message: raced, created: false };
+    }
+    throw err;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Envoi sortant (M5.6) — répondre DEPUIS la vraie adresse de l'utilisateur via
+// le port d'envoi injecté (Unipile côté web). Le brouillon du composer ne part
+// JAMAIS tout seul : c'est cette fonction, déclenchée par l'utilisateur, qui
+// envoie puis journalise un Message sortant rattaché au sujet.
+// ─────────────────────────────────────────────────────────────
+
+export const sendEmailReplySchema = z.object({
+  subjectId: z.uuid(),
+  channelId: z.uuid(),
+  to: z.object({
+    identifier: z.email(),
+    displayName: z.string().trim().max(200).optional(),
+  }),
+  subject: z.string().trim().min(1).max(500),
+  body: z.string().min(1),
+});
+
+export type SendEmailReplyInput = z.infer<typeof sendEmailReplySchema>;
+
+export async function sendEmailReply(
+  db: TenantDb,
+  sender: EmailSenderPort,
+  input: SendEmailReplyInput,
+) {
+  const data = sendEmailReplySchema.parse(input);
+
+  assertFound(
+    await db.subject.findFirst({ where: { id: data.subjectId } }),
+    "Sujet",
+  );
+  const channel = assertFound(
+    await db.channel.findFirst({
+      where: { id: data.channelId },
+      include: { config: true },
+    }),
+    "Canal",
+  );
+  const externalAccountId = channel.config?.externalAccountId;
+  if (!externalAccountId) {
+    throw new DomainError(
+      "INVALID_STATE",
+      "Ce canal n'est pas connecté : impossible d'envoyer un email.",
+    );
+  }
+
+  const { emailId } = await sender.sendEmail({
+    externalAccountId,
+    to: [{ identifier: data.to.identifier, display_name: data.to.displayName }],
+    subject: data.subject,
+    body: data.body,
+  });
+
+  // Rattache au contact destinataire si son email est connu (best-effort).
+  const recipient = await db.contact.findFirst({
+    where: { email: data.to.identifier },
+    select: { id: true },
+  });
+
+  return createMessage(db, {
+    channelId: data.channelId,
+    direction: MessageDirection.outgoing,
+    subjectId: data.subjectId,
+    recipientContactId: recipient?.id ?? null,
+    externalId: emailId,
+    subjectLine: data.subject,
+    content: data.body,
+    status: MessageStatus.sent,
   });
 }
 
