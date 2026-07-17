@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   MessageDirection,
   MessageStatus,
+  createMessage,
+  createSubject,
   ingestInboundEmail,
+  normalizeSubjectLine,
   prisma,
   tenantDb,
 } from "../src/index";
@@ -92,5 +95,124 @@ describe("ingestInboundEmail (M5)", () => {
 
     expect(second.created).toBe(true);
     expect(await db.message.count()).toBe(2);
+  });
+});
+
+describe("rattachement automatique pré-M7 (interlocuteur + objet)", () => {
+  /** Sème un sujet portant un message du même interlocuteur et du même objet. */
+  async function seedSubjectWith(
+    db: ReturnType<typeof tenantDb>,
+    channelId: string,
+    opts: { title: string; sender: string; subjectLine: string },
+  ) {
+    const subject = await createSubject(db, {
+      title: opts.title,
+      contactIds: [],
+      createdByActor: "user",
+    });
+    await createMessage(db, {
+      channelId,
+      direction: MessageDirection.incoming,
+      subjectId: subject.id,
+      senderRaw: opts.sender,
+      subjectLine: opts.subjectLine,
+      content: "Message initial",
+      status: MessageStatus.linked,
+    });
+    return subject;
+  }
+
+  it("range l'email dans le sujet quand interlocuteur + objet correspondent (préfixe Re: ignoré)", async () => {
+    const { channel, db } = await makeAccountWithChannel("attach@test.fr");
+    const subject = await seedSubjectWith(db, channel.id, {
+      title: "Livraison sauce blanche",
+      sender: "karim@sogood.fr",
+      subjectLine: "Livraison sauce blanche",
+    });
+
+    const { message } = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "reply-attach",
+      senderRaw: "Karim@SoGood.fr", // casse différente : matching insensible
+      subjectLine: "Re: Livraison sauce blanche",
+      content: "Merci, bien reçu.",
+    });
+
+    expect(message.subjectId).toBe(subject.id);
+    expect(message.status).toBe(MessageStatus.linked);
+  });
+
+  it("laisse orphelin si l'objet diffère (même interlocuteur)", async () => {
+    const { channel, db } = await makeAccountWithChannel("obj@test.fr");
+    await seedSubjectWith(db, channel.id, {
+      title: "Livraison sauce blanche",
+      sender: "karim@sogood.fr",
+      subjectLine: "Livraison sauce blanche",
+    });
+
+    const { message } = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "other-object",
+      senderRaw: "karim@sogood.fr",
+      subjectLine: "Nouvelle commande emballages",
+      content: "Autre sujet.",
+    });
+
+    expect(message.subjectId).toBeNull();
+  });
+
+  it("laisse orphelin si l'interlocuteur diffère (même objet)", async () => {
+    const { channel, db } = await makeAccountWithChannel("who@test.fr");
+    await seedSubjectWith(db, channel.id, {
+      title: "Livraison sauce blanche",
+      sender: "karim@sogood.fr",
+      subjectLine: "Livraison sauce blanche",
+    });
+
+    const { message } = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "other-sender",
+      senderRaw: "sophie@autre.fr",
+      subjectLine: "Re: Livraison sauce blanche",
+      content: "Je ne suis pas Karim.",
+    });
+
+    expect(message.subjectId).toBeNull();
+  });
+
+  it("n'exhume pas un sujet ignoré (ignorance collante, invariant n°7)", async () => {
+    const { channel, db } = await makeAccountWithChannel("ignored@test.fr");
+    const subject = await seedSubjectWith(db, channel.id, {
+      title: "Groupe bavard",
+      sender: "spam@groupe.fr",
+      subjectLine: "Groupe bavard",
+    });
+    await db.subject.update({
+      where: { id: subject.id },
+      data: { status: "ignored" },
+    });
+
+    const { message } = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "into-ignored",
+      senderRaw: "spam@groupe.fr",
+      subjectLine: "Re: Groupe bavard",
+      content: "Encore un message.",
+    });
+
+    expect(message.subjectId).toBeNull();
+  });
+});
+
+describe("normalizeSubjectLine", () => {
+  it("retire les préfixes de réponse/transfert, même répétés et multilingues", () => {
+    const base = "livraison sauce blanche";
+    expect(normalizeSubjectLine("Livraison sauce blanche")).toBe(base);
+    expect(normalizeSubjectLine("Re: Livraison sauce blanche")).toBe(base);
+    expect(normalizeSubjectLine("RE: RE: Livraison sauce blanche")).toBe(base);
+    expect(normalizeSubjectLine("Ré : Livraison sauce blanche")).toBe(base);
+    expect(normalizeSubjectLine("Fwd: Livraison sauce blanche")).toBe(base);
+    expect(normalizeSubjectLine("TR: Livraison sauce blanche")).toBe(base);
+    expect(normalizeSubjectLine("Re[2]: Livraison sauce blanche")).toBe(base);
   });
 });

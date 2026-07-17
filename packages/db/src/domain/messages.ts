@@ -4,6 +4,7 @@ import {
   Actor,
   MessageDirection,
   MessageStatus,
+  SubjectStatus,
   TriageHint,
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
@@ -144,10 +145,96 @@ export const ingestInboundEmailSchema = z.object({
 export type IngestInboundEmailInput = z.infer<typeof ingestInboundEmailSchema>;
 
 /**
- * Persiste un email entrant en Message orphelin, de façon IDEMPOTENTE : un
- * webhook rejoué (même `channelId` + `externalId`) ne crée pas de doublon.
- * Double garde : check applicatif (findFirst) + contrainte unique en base
+ * Normalise un objet d'email pour le comparer d'un message à l'autre : retire
+ * les préfixes de réponse/transfert (Re, Ré, Rép, Fwd, Tr, Aw, Answer…, y
+ * compris répétés « Re: Re: »), écrase les espaces, passe en minuscules.
+ */
+export function normalizeSubjectLine(raw: string): string {
+  return raw
+    .replace(
+      /^(\s*(re|ré|rep|rép|répondre|réf|ref|fw|fwd|tr|aw|antw|answer|rv)\s*(\[\d+\])?\s*[:：]\s*)+/i,
+      "",
+    )
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Rattachement métier PRÉ-M7 (règle déterministe, remplaçable plus tard par
+ * l'IA) : un email entrant rejoint un sujet existant si — et seulement si — il
+ * partage le MÊME interlocuteur ET le MÊME objet normalisé qu'un message (ou le
+ * titre) de ce sujet. On exclut les sujets `ignored` (l'ignorance est collante,
+ * invariant n°7) et `archived` (système, inactif). Retourne l'id du sujet, ou
+ * null (→ message orphelin « Sans sujet »).
+ */
+async function findSubjectForInboundEmail(
+  db: TenantDb,
+  input: {
+    senderEmail: string | null;
+    senderContactId: string | null;
+    subjectLine: string | null;
+  },
+): Promise<string | null> {
+  const target = input.subjectLine
+    ? normalizeSubjectLine(input.subjectLine)
+    : "";
+  if (!target || !input.senderEmail) return null;
+
+  // Sujets où cet interlocuteur apparaît déjà : soit via un contact lié
+  // (contactIds / recipientContact), soit via l'expéditeur brut (sender_raw)
+  // quand l'email n'est pas encore un contact enregistré.
+  const orInterlocutor: Prisma.SubjectWhereInput[] = [
+    {
+      messages: {
+        some: { senderRaw: { equals: input.senderEmail, mode: "insensitive" } },
+      },
+    },
+    {
+      messages: {
+        some: {
+          recipientContact: {
+            email: { equals: input.senderEmail, mode: "insensitive" },
+          },
+        },
+      },
+    },
+  ];
+  if (input.senderContactId) {
+    orInterlocutor.push({ contactIds: { has: input.senderContactId } });
+  }
+
+  const candidates = await db.subject.findMany({
+    where: {
+      status: { in: [SubjectStatus.acknowledged, SubjectStatus.resolved] },
+      OR: orInterlocutor,
+    },
+    select: {
+      id: true,
+      title: true,
+      messages: { select: { subjectLine: true } },
+    },
+    orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
+  });
+
+  for (const s of candidates) {
+    const objects = [s.title, ...s.messages.map((m) => m.subjectLine)]
+      .filter((v): v is string => Boolean(v))
+      .map(normalizeSubjectLine);
+    if (objects.includes(target)) return s.id;
+  }
+  return null;
+}
+
+/**
+ * Persiste un email entrant en Message, de façon IDEMPOTENTE : un webhook rejoué
+ * (même `channelId` + `externalId`) ne crée pas de doublon. Double garde : check
+ * applicatif (findFirst) + contrainte unique en base
  * (`messages_channel_id_external_id_key`) qui gagne en cas de course.
+ *
+ * Rattachement automatique (pré-M7) : si l'email partage interlocuteur + objet
+ * avec un sujet existant, il y est rangé (`linked`) plutôt que laissé orphelin.
+ * Sinon il reste « Sans sujet » en attente de tri.
  */
 export async function ingestInboundEmail(
   db: TenantDb,
@@ -163,18 +250,57 @@ export async function ingestInboundEmail(
   });
   if (existing) return { message: existing, created: false };
 
+  // Résout l'interlocuteur : contact déjà connu pour ce sender_raw (email vu
+  // dans un message précédent), à défaut un contact dont l'email correspond.
+  const senderEmail = data.senderRaw?.trim() || null;
+  const senderContactId = senderEmail
+    ? ((
+        await db.message.findFirst({
+          where: {
+            senderRaw: { equals: senderEmail, mode: "insensitive" },
+            senderContactId: { not: null },
+          },
+          select: { senderContactId: true },
+          orderBy: { createdAt: "desc" },
+        })
+      )?.senderContactId ??
+      (
+        await db.contact.findFirst({
+          where: { email: { equals: senderEmail, mode: "insensitive" } },
+          select: { id: true },
+        })
+      )?.id ??
+      null)
+    : null;
+
+  const subjectId = await findSubjectForInboundEmail(db, {
+    senderEmail,
+    senderContactId,
+    subjectLine: data.subjectLine ?? null,
+  });
+
   try {
     const message = await createMessage(db, {
       channelId: data.channelId,
       direction: MessageDirection.incoming,
-      subjectId: null,
+      subjectId,
+      senderContactId,
       senderRaw: data.senderRaw ?? null,
       externalId: data.externalId,
       externalThreadId: data.externalThreadId ?? null,
       subjectLine: data.subjectLine ?? null,
       content: data.content ?? null,
       receivedAt: data.receivedAt ?? new Date(),
+      status: subjectId ? MessageStatus.linked : undefined,
     });
+    // Rangé dans un sujet → on remonte son activité (il refait surface dans le
+    // fil des ouverts). Best-effort, hors transaction du message.
+    if (subjectId) {
+      await db.subject.updateMany({
+        where: { id: subjectId },
+        data: { lastActivityAt: new Date() },
+      });
+    }
     return { message, created: true };
   } catch (err) {
     // Course entre deux livraisons concurrentes : la contrainte unique a rejeté

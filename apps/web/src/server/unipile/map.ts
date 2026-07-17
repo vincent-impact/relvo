@@ -23,17 +23,47 @@ function threadHint(v: unknown): string | null {
   return null;
 }
 
-/** Corps lisible : on privilégie le texte brut, sinon on dé-balise le HTML. */
+/**
+ * Retire le fil cité d'une réponse email (texte brut). Les clients (Gmail,
+ * Outlook…) recopient l'historique sous une ligne d'attribution — « Le … a
+ * écrit : », « On … wrote: », « -----Message d'origine----- » — suivie de lignes
+ * préfixées « > ». On ne veut afficher QUE la nouvelle réponse dans Relvo, donc
+ * on coupe à la première marque de citation. Best-effort, multilingue.
+ */
+function stripQuotedReply(text: string): string {
+  const attribution =
+    /^\s*(le\s.+\sa\s+écrit\s*:|on\s.+\bwrote:\s*$|el\s.+\sescribió:|-{2,}\s*(message d'origine|original message|forwarded message)|_{5,}|de\s*:\s.+\benvoyé\s*:)/i;
+  const kept: string[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    if (attribution.test(line)) break; // début du bloc cité → on coupe
+    if (/^\s*>/.test(line)) break; // lignes citées → on coupe
+    kept.push(line);
+  }
+  return kept
+    .join("\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** Corps lisible : on privilégie le texte brut (nettoyé du fil cité), sinon on
+ *  dé-balise le HTML après avoir retiré les blocs de citation. */
 function plainContent(mail: UnipileMailWebhook): string | null {
-  if (mail.body_plain?.trim()) return mail.body_plain;
+  if (mail.body_plain?.trim()) {
+    return stripQuotedReply(mail.body_plain) || null;
+  }
   if (mail.body?.trim()) {
-    return mail.body
+    const text = mail.body
       .replace(/<style[\s\S]*?<\/style>/gi, " ")
       .replace(/<script[\s\S]*?<\/script>/gi, " ")
+      // Blocs cités Gmail/Outlook retirés AVANT le dé-balisage.
+      .replace(/<blockquote[\s\S]*?<\/blockquote>/gi, " ")
+      .replace(/<div[^>]*gmail_quote[\s\S]*?<\/div>/gi, " ")
       .replace(/<[^>]+>/g, " ")
       .replace(/&nbsp;/gi, " ")
       .replace(/\s+/g, " ")
       .trim();
+    return text || null;
   }
   return null;
 }
