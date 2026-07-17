@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 // ce cache. On ne rafraîchit que si l'onglet est VISIBLE (pas de requêtes en
 // arrière-plan), et aussi au retour d'onglet.
 
-export function PollRefresh({ intervalMs = 20_000 }: { intervalMs?: number }) {
+export function PollRefresh({ intervalMs = 12_000 }: { intervalMs?: number }) {
   const router = useRouter();
   useEffect(() => {
     const refreshIfVisible = () => {
