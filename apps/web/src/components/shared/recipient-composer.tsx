@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Check,
   ChevronUp,
@@ -122,6 +122,16 @@ export function RecipientComposer({
         ? "Répondre à tous…"
         : `Répondre à ${r.name}…`);
 
+  // Textarea auto-croissante : un email fait plusieurs lignes, on agrandit le
+  // champ jusqu'à un plafond (puis scroll interne) plutôt qu'une ligne unique.
+  const taRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = taRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 168)}px`;
+  }, [text]);
+
   const [sending, setSending] = useState(false);
   const send = async () => {
     if (!typing || sending) return;
@@ -191,7 +201,7 @@ export function RecipientComposer({
       ) : null}
 
       <div
-        className="relative flex items-center gap-2.5 px-3.5 pt-[11px]"
+        className="relative flex items-end gap-2.5 px-3.5 pt-[11px]"
         style={{
           paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
           background:
@@ -219,7 +229,7 @@ export function RecipientComposer({
         </button>
 
         <div
-          className="flex min-w-0 flex-1 items-center gap-[7px] rounded-full py-[5px] pr-2 pl-[13px]"
+          className="flex min-w-0 flex-1 items-end gap-[7px] rounded-[22px] py-[5px] pr-2 pl-[13px]"
           style={{
             background: "rgb(255 255 255 / 0.06)",
             border: "1px solid rgb(255 255 255 / 0.28)",
@@ -231,20 +241,25 @@ export function RecipientComposer({
             <button
               type="button"
               aria-label="Joindre un fichier"
-              className="grid flex-none place-items-center text-white/85"
+              className="grid flex-none place-items-center py-1.5 text-white/85"
             >
               <Paperclip className="size-[21px]" strokeWidth={2} />
             </button>
           ) : null}
-          <input
-            type="text"
+          <textarea
+            ref={taRef}
             value={text}
+            rows={1}
             onChange={(e) => setText(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") send();
+              // Email multi-ligne : Entrée = saut de ligne ; ⌘/Ctrl+Entrée = envoi.
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                send();
+              }
             }}
             placeholder={ph}
-            className="min-w-0 flex-1 border-none bg-transparent py-1.5 text-[14.5px] text-white outline-none placeholder:text-white/70"
+            className="max-h-[168px] min-w-0 flex-1 resize-none border-none bg-transparent py-1.5 text-[14.5px] leading-[1.4] text-white outline-none placeholder:text-white/70"
           />
         </div>
 

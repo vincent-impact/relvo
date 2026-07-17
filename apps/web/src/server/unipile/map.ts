@@ -4,6 +4,25 @@ import type { UnipileMailWebhook } from "./types";
 // Mapper PUR : payload webhook Unipile → entrée normalisée du domaine (M5.3).
 // Isolé et sans effet de bord pour être testable sans base ni réseau.
 
+/**
+ * Extrait un signal de fil (`in_reply_to`) robuste. Unipile documente ce champ
+ * comme un id de message parent, mais l'envoie en pratique tantôt en `string`
+ * (premier email), tantôt en **objet** `{ id, ... }` (vraie réponse) — sans
+ * garde-fou, l'objet remontait jusqu'à Zod et faisait crasher l'ingestion en
+ * 500 (le webhook rejouait alors en boucle). On ne garde qu'une string, sinon
+ * `null` : ce n'est qu'un signal faible pour M7, les conversations sont de toute
+ * façon regroupées par contact en V1 (invariant produit n°11).
+ */
+function threadHint(v: unknown): string | null {
+  if (typeof v === "string") return v.trim() || null;
+  if (v && typeof v === "object") {
+    const id =
+      (v as { id?: unknown }).id ?? (v as { message_id?: unknown }).message_id;
+    return typeof id === "string" && id.trim() ? id : null;
+  }
+  return null;
+}
+
 /** Corps lisible : on privilégie le texte brut, sinon on dé-balise le HTML. */
 function plainContent(mail: UnipileMailWebhook): string | null {
   if (mail.body_plain?.trim()) return mail.body_plain;
@@ -37,8 +56,8 @@ export function toInboundEmail(
     // `provider_id` = id provider du message, et `in_reply_to` = message parent).
     // On ne fabrique donc pas de thread id ; les conversations sont de toute
     // façon regroupées par contact en V1 (invariant produit n°11). `in_reply_to`
-    // est conservé comme signal faible pour M7.
-    externalThreadId: mail.in_reply_to ?? null,
+    // est conservé comme signal faible pour M7, coercé en string-ou-null.
+    externalThreadId: threadHint(mail.in_reply_to),
     senderRaw: mail.from_attendee?.identifier ?? null,
     subjectLine: mail.subject ?? null,
     content: plainContent(mail),

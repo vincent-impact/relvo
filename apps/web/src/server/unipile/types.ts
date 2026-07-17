@@ -35,8 +35,9 @@ export type UnipileMailWebhook = {
   email_id: string;
   /** Id provider du message (pas un id de fil). */
   provider_id?: string | null;
-  /** Id du message parent (réponse à) — signal de fil faible pour M7. */
-  in_reply_to?: string | null;
+  /** Id du message parent (réponse à) — signal de fil faible pour M7. Unipile
+   *  l'envoie tantôt en string, tantôt en objet `{ id }` : coercé par `map.ts`. */
+  in_reply_to?: string | Record<string, unknown> | null;
   from_attendee?: UnipileAttendee | null;
   to_attendees?: UnipileAttendee[] | null;
   cc_attendees?: UnipileAttendee[] | null;
