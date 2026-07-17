@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FileText } from "lucide-react";
 import type { Actor } from "@relvo/db";
 import { cn } from "@/lib/utils";
+import { AttachmentViewer } from "@/components/shared/attachment-viewer";
 
 // Bulle de message partagée (fil d'un sujet, fil de conversation par contact),
 // style « Direction B ». Sortant (Moi) = bulle bleue à droite. Entrant = en-tête
@@ -17,7 +18,12 @@ export type MessageBubbleData = {
   /** Horodatage relatif (« 35 min »), affiché après le canal. */
   time?: string | null;
   content: string;
-  attachment?: { id?: string; name: string; label?: string | null } | null;
+  attachment?: {
+    id?: string;
+    name: string;
+    label?: string | null;
+    mimeType?: string | null;
+  } | null;
   /** Si fourni, la bulle est cliquable et mène à la page détail du message. */
   href?: string | null;
   /** Interlocuteur du message (pour filtrer le fil par conversation) : expéditeur
@@ -107,19 +113,20 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
                 </span>
               </>
             );
-            // Cliquable dès qu'on a l'id : ouvre la PJ (URL stable, redirection R2).
+            // Cliquable dès qu'on a l'id : image → lightbox in-app, PDF/autre →
+            // navigateur (cf. AttachmentViewer). URL stable, redirection R2.
             return data.attachment.id ? (
-              <a
-                href={`/api/attachments/${data.attachment.id}/download?inline=1`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <AttachmentViewer
+                id={data.attachment.id}
+                name={data.attachment.name}
+                mimeType={data.attachment.mimeType}
                 className={cn(
                   cardClass,
-                  "transition-colors hover:bg-(--surface-2)",
+                  "cursor-pointer text-left transition-colors hover:bg-(--surface-2)",
                 )}
               >
                 {inner}
-              </a>
+              </AttachmentViewer>
             ) : (
               <span className={cardClass}>{inner}</span>
             );

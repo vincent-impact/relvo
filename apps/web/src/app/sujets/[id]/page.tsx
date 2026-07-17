@@ -15,6 +15,7 @@ import { type MessageBubbleData } from "@/components/shared/message-bubble";
 import { type Recipient } from "@/components/shared/recipient-composer";
 import { AcknowledgeOnOpen } from "@/components/subject/acknowledge-on-open";
 import { PollRefresh } from "@/components/shared/poll-refresh";
+import { AttachmentViewer } from "@/components/shared/attachment-viewer";
 import { AddTask } from "@/components/subject/add-task";
 import { RelvoDraftBlock } from "@/components/subject/relvo-draft-block";
 import { RelvoSummary } from "@/components/subject/relvo-summary";
@@ -148,6 +149,7 @@ export default async function SujetPage({
           id: m.attachments[0].id,
           name: m.attachments[0].name,
           label: m.attachments[0].aiLabel,
+          mimeType: m.attachments[0].mimeType,
         }
       : null,
     href: `/messages/${m.id}`,
@@ -335,12 +337,12 @@ export default async function SujetPage({
               ) : (
                 <div className="space-y-2 pb-1">
                   {attachments.map((a) => (
-                    <a
+                    <AttachmentViewer
                       key={a.id}
-                      href={`/api/attachments/${a.id}/download?inline=1`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-3 rounded-xl border border-[#ececea] bg-white px-3 py-2.5 shadow-(--shadow-card) transition-colors hover:bg-(--surface-2)"
+                      id={a.id}
+                      name={a.name}
+                      mimeType={a.mimeType}
+                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#ececea] bg-white px-3 py-2.5 text-left shadow-(--shadow-card) transition-colors hover:bg-(--surface-2)"
                     >
                       <span className="grid size-[34px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
                         <FileText className="size-[18px]" strokeWidth={2} />
@@ -358,7 +360,7 @@ export default async function SujetPage({
                           {a.aiLabel}
                         </span>
                       ) : null}
-                    </a>
+                    </AttachmentViewer>
                   ))}
                 </div>
               )}

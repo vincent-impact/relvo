@@ -441,7 +441,9 @@ export async function getSubjectDetail(db: TenantDb, id: string) {
         include: {
           channel: { select: { type: true } },
           senderContact: { select: { firstName: true, lastName: true } },
-          attachments: { select: { id: true, name: true, aiLabel: true } },
+          attachments: {
+            select: { id: true, name: true, aiLabel: true, mimeType: true },
+          },
         },
       }),
       db.task.findMany({
