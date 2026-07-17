@@ -122,6 +122,29 @@ export async function createEmailHostedAuthLink(input: {
 }
 
 /**
+ * Convertit notre corps TEXTE (saisi au composer, avec de vrais `\n`, espaces et
+ * tabulations) en HTML qui préserve la mise en forme. Le champ `body` d'Unipile
+ * est interprété comme du HTML (le webhook entrant sépare d'ailleurs `body` HTML
+ * de `body_plain` texte) : envoyer du texte brut y écrase les retours à la ligne
+ * → l'email arrive « aplati ». On échappe le HTML puis on rétablit sauts de
+ * ligne (`<br>`), tabulations et indentations (`&nbsp;`).
+ */
+function textToHtmlBody(text: string): string {
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  const inner = escaped
+    .replace(/\r\n?/g, "\n")
+    .replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;")
+    // Les espaces consécutifs sont fusionnés par le rendu HTML → on les fige.
+    .replace(/ {2,}/g, (run) => "&nbsp;".repeat(run.length))
+    .replace(/\n/g, "<br>");
+  // `white-space:pre-wrap` en ceinture-bretelles pour les clients tolérants.
+  return `<div style="white-space:pre-wrap">${inner}</div>`;
+}
+
+/**
  * Envoie un email DEPUIS la vraie adresse de l'utilisateur (M5.6). Le compte est
  * désigné par son `account_id` Unipile (stocké dans ChannelConfig).
  * Retourne le `tracking_id` Unipile (référence externe du message envoyé).
@@ -143,7 +166,7 @@ export async function sendEmail(input: {
     account_id: input.accountId,
     to: input.to,
     subject: input.subject,
-    body: input.body,
+    body: textToHtmlBody(input.body),
   });
   return { emailId: res.tracking_id ?? null };
 }
