@@ -14,6 +14,7 @@ import { RelvoHeader } from "@/components/layout/relvo-header";
 import { type MessageBubbleData } from "@/components/shared/message-bubble";
 import { type Recipient } from "@/components/shared/recipient-composer";
 import { AcknowledgeOnOpen } from "@/components/subject/acknowledge-on-open";
+import { PollRefresh } from "@/components/shared/poll-refresh";
 import { AddTask } from "@/components/subject/add-task";
 import { RelvoDraftBlock } from "@/components/subject/relvo-draft-block";
 import { RelvoSummary } from "@/components/subject/relvo-summary";
@@ -143,7 +144,11 @@ export default async function SujetPage({
     time: formatRelative(m.receivedAt ?? m.sentAt ?? m.createdAt),
     content: m.content ?? "",
     attachment: m.attachments[0]
-      ? { name: m.attachments[0].name, label: m.attachments[0].aiLabel }
+      ? {
+          id: m.attachments[0].id,
+          name: m.attachments[0].name,
+          label: m.attachments[0].aiLabel,
+        }
       : null,
     href: `/messages/${m.id}`,
     // Interlocuteur du message → filtrage du fil par conversation.
@@ -205,6 +210,7 @@ export default async function SujetPage({
   return (
     <MobileFrame>
       <AcknowledgeOnOpen subjectId={subject.id} />
+      <PollRefresh />
 
       <SubjectBody
         defaultTab={
@@ -329,9 +335,12 @@ export default async function SujetPage({
               ) : (
                 <div className="space-y-2 pb-1">
                   {attachments.map((a) => (
-                    <div
+                    <a
                       key={a.id}
-                      className="flex items-center gap-3 rounded-xl border border-[#ececea] bg-white px-3 py-2.5 shadow-(--shadow-card)"
+                      href={`/api/attachments/${a.id}/download?inline=1`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 rounded-xl border border-[#ececea] bg-white px-3 py-2.5 shadow-(--shadow-card) transition-colors hover:bg-(--surface-2)"
                     >
                       <span className="grid size-[34px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
                         <FileText className="size-[18px]" strokeWidth={2} />
@@ -349,7 +358,7 @@ export default async function SujetPage({
                           {a.aiLabel}
                         </span>
                       ) : null}
-                    </div>
+                    </a>
                   ))}
                 </div>
               )}

@@ -17,7 +17,7 @@ export type MessageBubbleData = {
   /** Horodatage relatif (« 35 min »), affiché après le canal. */
   time?: string | null;
   content: string;
-  attachment?: { name: string; label?: string | null } | null;
+  attachment?: { id?: string; name: string; label?: string | null } | null;
   /** Si fourni, la bulle est cliquable et mène à la page détail du message. */
   href?: string | null;
   /** Interlocuteur du message (pour filtrer le fil par conversation) : expéditeur
@@ -86,23 +86,45 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
         );
       })()}
 
-      {data.attachment ? (
-        <span className="mt-[7px] inline-flex items-center gap-2.5 rounded-xl border border-[#ececea] bg-white px-[11px] py-2 shadow-(--shadow-card)">
-          <span className="grid size-[30px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
-            <FileText className="size-4" strokeWidth={2} />
-          </span>
-          <span className="min-w-0">
-            <span className="block text-[13px] font-semibold">
-              {data.attachment.name}
-            </span>
-            {data.attachment.label ? (
-              <span className="mt-0.5 inline-block rounded-full bg-(--amber-50) px-[7px] py-px text-[11px] text-(--amber-800)">
-                {data.attachment.label}
-              </span>
-            ) : null}
-          </span>
-        </span>
-      ) : null}
+      {data.attachment
+        ? (() => {
+            const cardClass =
+              "mt-[7px] inline-flex items-center gap-2.5 rounded-xl border border-[#ececea] bg-white px-[11px] py-2 shadow-(--shadow-card)";
+            const inner = (
+              <>
+                <span className="grid size-[30px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
+                  <FileText className="size-4" strokeWidth={2} />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-semibold">
+                    {data.attachment.name}
+                  </span>
+                  {data.attachment.label ? (
+                    <span className="mt-0.5 inline-block rounded-full bg-(--amber-50) px-[7px] py-px text-[11px] text-(--amber-800)">
+                      {data.attachment.label}
+                    </span>
+                  ) : null}
+                </span>
+              </>
+            );
+            // Cliquable dès qu'on a l'id : ouvre la PJ (URL stable, redirection R2).
+            return data.attachment.id ? (
+              <a
+                href={`/api/attachments/${data.attachment.id}/download?inline=1`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  cardClass,
+                  "transition-colors hover:bg-(--surface-2)",
+                )}
+              >
+                {inner}
+              </a>
+            ) : (
+              <span className={cardClass}>{inner}</span>
+            );
+          })()
+        : null}
     </div>
   );
 }

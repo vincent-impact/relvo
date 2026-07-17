@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PollRefresh } from "@/components/shared/poll-refresh";
 import Link from "next/link";
 import { Plus, Search } from "lucide-react";
 import { FeedView } from "@/components/feed/feed-view";
@@ -59,6 +60,7 @@ export default async function FilPage() {
 
   return (
     <Screen>
+      <PollRefresh />
       <RelvoHeader
         title="Sujets"
         className="pb-[46px]"

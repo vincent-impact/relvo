@@ -511,6 +511,11 @@ export async function assignMessageToSubject(
       data: { subjectId, status: MessageStatus.linked, triageHint: null },
     });
     ensureAffected(count, "Message");
+    // Les PJ du message suivent son sujet (box « Pièces jointes » de la fiche).
+    await tx.attachment.updateMany({
+      where: { messageId: id },
+      data: { subjectId },
+    });
     await logEvent(tx as Tx, {
       entityType: "message",
       entityId: id,
@@ -566,6 +571,10 @@ export async function reassignMessage(
       data: { subjectId, status: MessageStatus.linked, triageHint: null },
     });
     ensureAffected(count, "Message");
+    await tx.attachment.updateMany({
+      where: { messageId: id },
+      data: { subjectId },
+    });
     await logEvent(tx as Tx, {
       entityType: "message",
       entityId: id,
@@ -590,6 +599,10 @@ export async function detachMessage(db: TenantDb, id: string) {
       data: { subjectId: null, status: MessageStatus.received },
     });
     ensureAffected(count, "Message");
+    await tx.attachment.updateMany({
+      where: { messageId: id },
+      data: { subjectId: null },
+    });
     await logEvent(tx as Tx, {
       entityType: "message",
       entityId: id,

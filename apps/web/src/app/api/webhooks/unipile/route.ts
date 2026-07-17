@@ -192,6 +192,10 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
         });
         await createAttachment(db, {
           messageId: message.id,
+          // Si le message a été rattaché à un sujet (règle interlocuteur+objet),
+          // la PJ hérite du subjectId → elle apparaît dans la box « Pièces
+          // jointes » de la fiche (qui liste par subjectId).
+          subjectId: message.subjectId,
           name: att.name ?? "piece-jointe",
           mimeType: mime,
           storageKey: key,

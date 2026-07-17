@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { PollRefresh } from "@/components/shared/poll-refresh";
 import { Clock } from "lucide-react";
 import { countOrphanMessages, listMessageEvents } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
@@ -35,6 +36,7 @@ export default async function MessagesPage() {
 
   return (
     <Screen>
+      <PollRefresh />
       <RelvoHeader
         back="/fil"
         title="Messages sans sujet"
