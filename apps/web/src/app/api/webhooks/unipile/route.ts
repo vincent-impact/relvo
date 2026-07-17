@@ -7,6 +7,7 @@ import {
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { tenantDb } from "@/lib/tenant-db";
+import { expireTenantData } from "@/server/cached";
 import { createAttachment } from "@relvo/db";
 import { toInboundEmail } from "@/server/unipile/map";
 import {
@@ -208,6 +209,11 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
       }
     }
   }
+
+  // Nouveau message → purge le Data Cache du tenant, sinon les KPI/fil (servis
+  // depuis `unstable_cache`) resteraient périmés jusqu'au revalidate 120 s et le
+  // polling client (router.refresh) relirait le cache sans rien voir.
+  if (created) expireTenantData();
 
   return ok({ ok: true, messageId: message.id, created, attachments: stored });
 }

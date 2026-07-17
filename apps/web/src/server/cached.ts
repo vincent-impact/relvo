@@ -1,5 +1,5 @@
 import "server-only";
-import { unstable_cache, updateTag } from "next/cache";
+import { revalidateTag, unstable_cache, updateTag } from "next/cache";
 import {
   type Kpis,
   countOrphanMessages,
@@ -66,6 +66,21 @@ const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
  */
 export function revalidateTenantData() {
   updateTag(TENANT_DATA_TAG);
+}
+
+/**
+ * Invalide le même cache mais depuis un contexte HORS Server Action — le webhook
+ * d'ingestion (email/WhatsApp) ou un cron. C'est le maillon qui manquait : un
+ * message arrivé par webhook écrit en base mais NE passait par aucune Server
+ * Action, donc le Data Cache restait servi jusqu'au `revalidate` (120 s) — et
+ * `router.refresh()` (polling) relisait ce cache sans rien voir de neuf. On
+ * purge donc le tag ici pour que la prochaine lecture (poll/navigation)
+ * recalcule. `updateTag` étant réservé aux Server Actions, on utilise
+ * `revalidateTag` en on-demand (2ᵉ argument requis en Next 16 ; le mono-argument
+ * est déprécié).
+ */
+export function expireTenantData() {
+  revalidateTag(TENANT_DATA_TAG, "max");
 }
 
 // ── KPIs (Accueil) — uniquement des nombres ──────────────────────────────────
