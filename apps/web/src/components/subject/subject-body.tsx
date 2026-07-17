@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 import {
   MessageBubble,
@@ -10,6 +12,7 @@ import {
   RecipientComposer,
   type Recipient,
 } from "@/components/shared/recipient-composer";
+import { sendEmailReplyAction } from "@/server/actions/email";
 
 // Orchestrateur de la fiche Sujet (corps interactif) — possède l'ONGLET ACTIF et
 // l'INTERLOCUTEUR sélectionné, partagés entre le fil (zone scrollable) et le
@@ -32,6 +35,9 @@ export function SubjectBody({
   detailPane,
   interlocuteurs,
   defaultInterlocuteurKey,
+  subjectId,
+  subjectTitle,
+  emailReplyTargets,
 }: {
   header: React.ReactNode;
   defaultTab?: Tab;
@@ -44,12 +50,49 @@ export function SubjectBody({
   interlocuteurs: Recipient[];
   /** Dernier interlocuteur actif (sélection par défaut), ou null. */
   defaultInterlocuteurKey: string | null;
+  subjectId: string;
+  subjectTitle: string;
+  /** Par interlocuteur joignable par email : son adresse + le canal à utiliser. */
+  emailReplyTargets: Record<string, { channelId: string; email: string }>;
 }) {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
   const multi = interlocuteurs.length > 1;
   const [selected, setSelected] = useState<string>(
     defaultInterlocuteurKey ?? interlocuteurs[0]?.key ?? "all",
   );
+
+  // Envoi réel d'une réponse email (M5.6). Retourne `false` pour que le composer
+  // NE vide PAS le champ si l'envoi n'a pas eu lieu (texte préservé).
+  async function handleSend(text: string, recipientKey: string) {
+    if (recipientKey === "all") {
+      toast.info("La diffusion à tous les interlocuteurs arrive après la V1.");
+      return false;
+    }
+    const target = emailReplyTargets[recipientKey];
+    if (!target) {
+      toast.error(
+        "Réponse email indisponible pour cet interlocuteur (pas d'email connu, ou canal WhatsApp).",
+      );
+      return false;
+    }
+    const name = interlocuteurs.find((r) => r.key === recipientKey)?.name;
+    const res = await sendEmailReplyAction({
+      subjectId,
+      channelId: target.channelId,
+      to: { identifier: target.email, displayName: name },
+      recipientContactId: recipientKey,
+      subject: `Re: ${subjectTitle}`,
+      body: text,
+    });
+    if (!res.ok) {
+      toast.error(res.message);
+      return false;
+    }
+    toast.success("Email envoyé");
+    router.refresh();
+    return true;
+  }
 
   const options: SegTabOption[] = [
     { value: "taches", label: "Tâches", count: tasksCount },
@@ -108,6 +151,7 @@ export function SubjectBody({
           recipients={composerRecipients}
           value={selected}
           onRecipientChange={setSelected}
+          onSend={handleSend}
         />
       ) : null}
     </>

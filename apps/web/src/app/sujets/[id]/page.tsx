@@ -179,6 +179,29 @@ export default async function SujetPage({
     interlocuteurs[0]?.key ??
     null;
 
+  // Cibles de réponse EMAIL par interlocuteur : dernier message ENTRANT reçu
+  // par email de ce contact → son adresse (senderRaw) + le canal email à
+  // réutiliser pour répondre. Un interlocuteur sans entrée ici n'est pas
+  // joignable par email (sujet créé à la main, ou canal WhatsApp = M6) → le
+  // composer le signalera au lieu d'envoyer.
+  const emailReplyTargets: Record<
+    string,
+    { channelId: string; email: string }
+  > = {};
+  for (const m of messages) {
+    if (
+      m.direction === "incoming" &&
+      m.channel.type === "email" &&
+      m.senderContactId &&
+      m.senderRaw
+    ) {
+      emailReplyTargets[m.senderContactId] = {
+        channelId: m.channelId,
+        email: m.senderRaw,
+      };
+    }
+  }
+
   return (
     <MobileFrame>
       <AcknowledgeOnOpen subjectId={subject.id} />
@@ -196,6 +219,9 @@ export default async function SujetPage({
         draft={draftContent ? <RelvoDraftBlock text={draftContent} /> : null}
         interlocuteurs={interlocuteurs}
         defaultInterlocuteurKey={defaultInterlocuteurKey}
+        subjectId={subject.id}
+        subjectTitle={subject.title}
+        emailReplyTargets={emailReplyTargets}
         header={
           <RelvoHeader
             back={backHref}

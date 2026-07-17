@@ -206,6 +206,10 @@ export const sendEmailReplySchema = z.object({
     identifier: z.email(),
     displayName: z.string().trim().max(200).optional(),
   }),
+  // Interlocuteur destinataire. Fourni explicitement par l'appelant (le contact
+  // sélectionné dans le composer) : sans lui, le message sortant ne serait
+  // rattaché à personne et disparaîtrait du fil filtré par interlocuteur.
+  recipientContactId: z.uuid().optional().nullable(),
   subject: z.string().trim().min(1).max(500),
   body: z.string().min(1),
 });
@@ -245,17 +249,23 @@ export async function sendEmailReply(
     body: data.body,
   });
 
-  // Rattache au contact destinataire si son email est connu (best-effort).
-  const recipient = await db.contact.findFirst({
-    where: { email: data.to.identifier },
-    select: { id: true },
-  });
+  // Destinataire : celui passé par l'appelant (interlocuteur sélectionné) ;
+  // à défaut, on retombe sur une recherche par email (best-effort).
+  const recipientContactId =
+    data.recipientContactId ??
+    (
+      await db.contact.findFirst({
+        where: { email: data.to.identifier },
+        select: { id: true },
+      })
+    )?.id ??
+    null;
 
   return createMessage(db, {
     channelId: data.channelId,
     direction: MessageDirection.outgoing,
     subjectId: data.subjectId,
-    recipientContactId: recipient?.id ?? null,
+    recipientContactId,
     externalId: emailId,
     subjectLine: data.subject,
     content: data.body,

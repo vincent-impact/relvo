@@ -94,7 +94,11 @@ export function RecipientComposer({
   placeholder?: string;
   defaultValue?: string;
   attach?: boolean;
-  onSend?: (text: string, recipientKey: string) => void;
+  /** Retourner `false` (ou une promesse de `false`) préserve le texte saisi. */
+  onSend?: (
+    text: string,
+    recipientKey: string,
+  ) => void | boolean | Promise<void | boolean>;
 }) {
   const [internal, setInternal] = useState(
     defaultRecipient || recipients[0]?.key || "relvo",
@@ -118,10 +122,21 @@ export function RecipientComposer({
         ? "Répondre à tous…"
         : `Répondre à ${r.name}…`);
 
-  const send = () => {
-    if (!typing) return;
-    onSend?.(text, cur);
-    setText("");
+  const [sending, setSending] = useState(false);
+  const send = async () => {
+    if (!typing || sending) return;
+    if (!onSend) {
+      setText("");
+      return;
+    }
+    setSending(true);
+    try {
+      const result = await onSend(text, cur);
+      // On ne vide le champ que si l'envoi n'a pas explicitement échoué.
+      if (result !== false) setText("");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -236,8 +251,9 @@ export function RecipientComposer({
         <button
           type="button"
           onClick={send}
+          disabled={sending}
           aria-label={typing ? "Envoyer" : "Dicter"}
-          className="grid size-[45px] flex-none place-items-center rounded-full bg-white text-relvo active:scale-95"
+          className="grid size-[45px] flex-none place-items-center rounded-full bg-white text-relvo active:scale-95 disabled:opacity-70"
           style={{ boxShadow: "0 5px 16px rgb(0 0 0 / 0.22)" }}
         >
           {typing ? (

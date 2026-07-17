@@ -14,8 +14,17 @@ import { domainAction } from "@/lib/action-result";
 import {
   appBaseUrl,
   createEmailHostedAuthLink,
+  type MailProvider,
   unipileEmailSender,
 } from "@/server/unipile";
+
+// Libellé de canal par provider (le vrai nom sera remplacé par l'adresse réelle
+// une fois la connexion finalisée par le webhook `notify`).
+const PROVIDER_LABEL: Record<MailProvider, string> = {
+  GOOGLE: "Gmail",
+  OUTLOOK: "Outlook",
+  MAIL: "Boîte email (IMAP)",
+};
 
 // Server Actions M5 — connexion d'une boîte email (hosted auth Unipile) et envoi
 // sortant depuis la vraie adresse de l'utilisateur.
@@ -26,12 +35,12 @@ import {
  * redirige vers l'URL renvoyée ; le webhook `notify` finalisera la connexion
  * (externalAccountId + statut connected + adresse réelle).
  */
-export async function connectEmailChannelAction(): Promise<
-  ActionResult<{ url: string }>
-> {
+export async function connectEmailChannelAction(
+  provider?: MailProvider,
+): Promise<ActionResult<{ url: string }>> {
   const created = await domainAction(async (db) => {
     const channel = await createChannel(db, {
-      name: "Boîte email",
+      name: provider ? PROVIDER_LABEL[provider] : "Boîte email",
       type: "email",
       identifier: "En attente de connexion…",
     });
@@ -53,6 +62,7 @@ export async function connectEmailChannelAction(): Promise<
     notifyUrl,
     successRedirectUrl: `${base}/parametres?tab=canaux&connected=1`,
     failureRedirectUrl: `${base}/parametres?tab=canaux&error=1`,
+    provider,
   });
   if (!url) {
     return err(

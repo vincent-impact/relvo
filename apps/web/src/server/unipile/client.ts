@@ -67,12 +67,18 @@ export function appBaseUrl(): string {
  *
  * Retourne `null` si Unipile n'est pas configuré (dev).
  */
+/** Fournisseurs mail proposés par Unipile (`MAIL` = IMAP/SMTP générique). */
+export type MailProvider = "GOOGLE" | "OUTLOOK" | "MAIL";
+
 export async function createEmailHostedAuthLink(input: {
   channelId: string;
   notifyUrl: string;
   successRedirectUrl: string;
   failureRedirectUrl: string;
   expiresInMinutes?: number;
+  /** Provider unique choisi côté app → saute l'écran de sélection Unipile.
+   *  Omis → on propose les trois (Gmail/Outlook/IMAP). */
+  provider?: MailProvider;
 }): Promise<string | null> {
   const ctx = getClient();
   if (!ctx) {
@@ -88,8 +94,11 @@ export async function createEmailHostedAuthLink(input: {
   const hostedAuthInput = {
     type: "create",
     // Fournisseurs mail : Gmail/Outlook en OAuth un-clic, `MAIL` = IMAP/SMTP
-    // générique pour le reste (OVH, Orange, Free…).
-    providers: ["GOOGLE", "OUTLOOK", "MAIL"],
+    // générique pour le reste (OVH, Orange, Free…). Si l'app a déjà fait choisir
+    // le type, on ne propose que celui-là → Unipile saute son écran de sélection.
+    providers: input.provider
+      ? [input.provider]
+      : ["GOOGLE", "OUTLOOK", "MAIL"],
     api_url: ctx.dsn,
     expiresOn,
     name: input.channelId,

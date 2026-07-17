@@ -58,6 +58,28 @@ async function main() {
     return;
   }
 
+  if (cmd === "create-status") {
+    if (!arg) {
+      console.error("Usage: create-status <PUBLIC_BASE_URL>");
+      process.exit(1);
+    }
+    if (!UNIPILE_WEBHOOK_SECRET) {
+      console.error("✗ UNIPILE_WEBHOOK_SECRET absent.");
+      process.exit(1);
+    }
+    const requestUrl = `${arg.replace(/\/+$/, "")}/api/webhooks/unipile`;
+    const res = await client.webhook.create({
+      source: "account_status",
+      request_url: requestUrl,
+      format: "json",
+      headers: [{ key: "Unipile-Auth", value: UNIPILE_WEBHOOK_SECRET }],
+      name: "relvo-account-status",
+    });
+    console.log("✓ Webhook account_status créé →", requestUrl);
+    console.log(JSON.stringify(res, null, 2));
+    return;
+  }
+
   if (cmd === "delete") {
     if (!arg) {
       console.error("Usage: delete <webhook_id>");
@@ -68,7 +90,9 @@ async function main() {
     return;
   }
 
-  console.error("Commandes : list | create <url> | delete <id>");
+  console.error(
+    "Commandes : list | create <url> | create-status <url> | delete <id>",
+  );
   process.exit(1);
 }
 

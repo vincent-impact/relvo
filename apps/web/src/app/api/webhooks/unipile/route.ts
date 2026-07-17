@@ -132,9 +132,15 @@ async function handleAccountStatus(evt: UnipileAccountStatusWebhook) {
   });
   if (!config) return ok({ ok: true, ignored: "unknown_account" });
 
-  const raw = (evt.status ?? "").toUpperCase();
+  // Unipile ne type pas fortement ce payload : le libellé d'état peut arriver
+  // sous `status` ou `message` (OK / CREDENTIALS / DISCONNECTED / SYNC_SUCCESS…).
+  const raw = (evt.status ?? evt.message ?? "").toUpperCase();
   const connected =
-    raw === "OK" || raw === "CONNECTED" || raw === "CREATION_SUCCESS";
+    raw === "OK" ||
+    raw === "CONNECTED" ||
+    raw === "CREATION_SUCCESS" ||
+    raw === "SYNC_SUCCESS" ||
+    raw === "RECONNECTED";
   await prisma.channelConfig.updateMany({
     where: { channelId: config.channelId },
     data: {
