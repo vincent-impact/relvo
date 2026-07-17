@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail } from "lucide-react";
+import { Mail, MessageCircle } from "lucide-react";
 import { useState, useTransition } from "react";
 import type { MailProvider } from "@/server/unipile/client";
 import { connectEmailChannelAction } from "@/server/actions/email";
@@ -36,7 +36,7 @@ export function ConnectEmailButton() {
 
   return (
     <div className="mt-3">
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         {CHOICES.map((c) => (
           <button
             key={c.provider}
@@ -49,6 +49,17 @@ export function ConnectEmailButton() {
             {busy === c.provider ? "Ouverture…" : c.label}
           </button>
         ))}
+        {/* WhatsApp : connexion livrée avec M6 → tuile grisée, non cliquable. */}
+        <div
+          aria-disabled
+          className="relative flex cursor-not-allowed flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-(--border) py-4 text-[12.5px] font-semibold text-(--text-tertiary) opacity-70"
+        >
+          <MessageCircle className="size-[18px]" strokeWidth={2} />
+          WhatsApp
+          <span className="absolute top-1.5 right-1.5 rounded-full bg-(--surface-2) px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-(--text-tertiary) uppercase">
+            Bientôt
+          </span>
+        </div>
       </div>
       {error ? (
         <p className="mt-2 px-1 text-[12px] text-(--red-600)">{error}</p>
