@@ -390,7 +390,7 @@ model Message {
   account         Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
   subject         Subject?     @relation(fields: [subjectId], references: [id], onDelete: SetNull)
   folder          Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  channel         Channel      @relation(fields: [channelId], references: [id], onDelete: Restrict)
+  channel         Channel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
   senderContact   Contact?     @relation("MessageSenderContact", fields: [senderContactId], references: [id], onDelete: SetNull)
   recipientContact Contact?    @relation("MessageRecipientContact", fields: [recipientContactId], references: [id], onDelete: SetNull)
   attachments     Attachment[]

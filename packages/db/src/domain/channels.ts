@@ -107,10 +107,33 @@ export async function updateChannel(
   });
 }
 
+/**
+ * Supprime un canal (Réglages → Canaux). HARD-DELETE assumé : les messages reçus
+ * via ce canal — et leurs pièces jointes (→ trigger R2 → cron) — partent en
+ * cascade. Tâches/actions/sujets rattachés survivent (FK en SetNull). Renvoie
+ * l'`externalAccountId` (compte chez le fournisseur d'intégration) pour que
+ * l'appelant puisse aussi supprimer ce compte côté Unipile — le domaine ne
+ * connaît pas le transport.
+ */
 export async function deleteChannel(db: TenantDb, id: string) {
-  const { count } = await db.channel.deleteMany({ where: { id } });
-  ensureAffected(count, "Canal");
-  return { id };
+  const channel = assertFound(
+    await db.channel.findFirst({ where: { id }, include: { config: true } }),
+    "Canal",
+  );
+  const externalAccountId = channel.config?.externalAccountId ?? null;
+  return db.$transaction(async (tx) => {
+    // Journalisé AVANT la suppression (l'event n'a pas de FK vers le canal).
+    await logEvent(tx as Tx, {
+      entityType: "system",
+      entityId: id,
+      eventType: EVENT_TYPES.channelDeleted,
+      title: `Canal « ${channel.name} » supprimé`,
+      actor: "user",
+    });
+    const { count } = await tx.channel.deleteMany({ where: { id } });
+    ensureAffected(count, "Canal");
+    return { id, externalAccountId };
+  });
 }
 
 /**

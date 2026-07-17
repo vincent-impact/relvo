@@ -246,6 +246,26 @@ export async function registerInboundEmailWebhook(input: {
   return (res as { webhook_id?: string }).webhook_id ?? null;
 }
 
+/**
+ * Supprime le compte connecté chez Unipile (quand l'utilisateur supprime le
+ * canal côté Relvo) : stoppe l'ingestion des webhooks et la facturation par
+ * compte. Best-effort : on ne fait pas échouer la suppression du canal Relvo si
+ * l'appel Unipile rate (le canal a déjà disparu de notre base).
+ */
+export async function deleteUnipileAccount(
+  accountId: string,
+): Promise<boolean> {
+  const ctx = getClient();
+  if (!ctx) return false;
+  try {
+    await ctx.client.account.delete(accountId);
+    return true;
+  } catch (err) {
+    console.error("[unipile] suppression du compte échouée", accountId, err);
+    return false;
+  }
+}
+
 /** true si Unipile est configuré — utile à l'UI pour l'état « connectable ». */
 export function isUnipileConfigured(): boolean {
   return loadConfig() != null;

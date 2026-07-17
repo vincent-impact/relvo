@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { LogOut, MessageCircle, Mail } from "lucide-react";
 import { DEMO_EMAIL } from "@relvo/db";
 import { ConnectEmailButton } from "@/components/settings/connect-email-button";
+import { ChannelDeleteButton } from "@/components/settings/channel-delete-button";
 import { ContactsPane } from "@/components/contacts/contacts-pane";
 import { FeedTabs } from "@/components/feed/feed-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
@@ -160,6 +161,10 @@ async function ParametresTabs() {
                       >
                         {st.label}
                       </span>
+                      <ChannelDeleteButton
+                        channelId={ch.id}
+                        channelName={ch.name}
+                      />
                     </div>
                   );
                 })

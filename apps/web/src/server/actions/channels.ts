@@ -11,6 +11,7 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { deleteUnipileAccount } from "@/server/unipile";
 
 // Server Actions Channels (M3.6) — onglet Paramètres → Canaux (M5/M6).
 
@@ -35,7 +36,14 @@ export async function updateChannelAction(
 
 export async function deleteChannelAction(id: string) {
   const result = await domainAction((db) => deleteChannel(db, id));
-  if (result.ok) revalidateChannels();
+  if (result.ok) {
+    // Le canal (et ses messages) ont été supprimés en base ; on déconnecte aussi
+    // le compte chez Unipile s'il y en avait un (best-effort, hors transaction).
+    if (result.data.externalAccountId) {
+      await deleteUnipileAccount(result.data.externalAccountId);
+    }
+    revalidateChannels();
+  }
   return result;
 }
 
