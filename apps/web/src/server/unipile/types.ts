@@ -54,26 +54,38 @@ export type UnipileMailWebhook = {
 };
 
 /**
- * Un interlocuteur de messagerie (WhatsApp) tel que normalisé par Unipile. Le
- * numéro brut vit dans `attendee_provider_id` (ex. `33612345678@s.whatsapp.net`)
- * ou `provider_id` selon la source ; on lit de façon tolérante côté mapper.
+ * Un interlocuteur de messagerie (WhatsApp) tel que normalisé par Unipile.
+ * Formes CONFIRMÉES contre le webhook prod (2026-07-18) : `attendee_name` = nom
+ * de profil (« Leroy Frederique »), `attendee_specifics.phone_number` = numéro
+ * (« +33634087653 »), `attendee_provider_id` = LID opaque (`…@lid`),
+ * `attendee_public_identifier` = numéro@s.whatsapp.net. On privilégie le NUMÉRO
+ * (humain, stable, matchable avec `Contact.phone`) au LID.
  */
 export type UnipileMessagingAttendee = {
   attendee_id?: string | null;
   attendee_name?: string | null;
   attendee_provider_id?: string | null;
+  attendee_public_identifier?: string | null;
+  attendee_specifics?: {
+    provider?: string | null;
+    phone_number?: string | null;
+    lid?: string | null;
+  } | null;
   provider_id?: string | null;
 };
 
-/** Descripteur de média dans un webhook `message_received`. */
+/**
+ * Descripteur de média dans un webhook `message_received`. Forme CONFIRMÉE contre
+ * le webhook prod : `attachment_id` (⚠️ PAS `id` — c'est ce qu'attend
+ * `getMessageAttachment`), `attachment_type` (`img`/`video`/`audio`/`file`…). Pas
+ * de nom ni de MIME dans le webhook → le MIME vient du `content-type` du Blob
+ * récupéré, le nom est dérivé du type.
+ */
 export type UnipileMessagingAttachmentRef = {
-  id: string;
-  type?: string | null;
-  name?: string | null;
-  file_name?: string | null;
-  mime?: string | null;
-  mimetype?: string | null;
-  size?: number | null;
+  attachment_id: string;
+  attachment_type?: string | null;
+  attachment_url?: string | null;
+  attachment_size?: number | null;
 };
 
 /**
@@ -94,10 +106,15 @@ export type UnipileMessagingWebhook = {
   message_id?: string | null;
   /** Corps texte du message. */
   message?: string | null;
-  /** Auteur du message (numéro dans `attendee_provider_id` / `provider_id`). */
+  /** Auteur du message (nom/numéro dans `attendee_*` — cf. type attendee). */
   sender?: UnipileMessagingAttendee | null;
   attendees?: UnipileMessagingAttendee[] | null;
   attachments?: UnipileMessagingAttachmentRef[] | null;
+  /** true = message ENVOYÉ par le compte connecté (nous). Sert l'anti-loop :
+   *  l'écho de nos propres envois porte `is_sender: true` → on l'ignore. */
+  is_sender?: boolean | null;
+  /** true = message reçu dans un GROUPE (chat_id = le groupe). Pour M7. */
+  is_group?: boolean | null;
   /** Type de compte (`WHATSAPP`…). */
   account_type?: string | null;
   /** Horodatage ISO 8601 (ou epoch selon la source). */

@@ -879,6 +879,14 @@ export type MessageEventItem = {
   /** Lu = `readAt` posé (à l'ouverture du sujet). Null pour les orphelins. */
   read: boolean;
   subject: { id: string; reference: string; title: string } | null;
+  /** Pièces jointes du message (photos WhatsApp, PJ email…) — pour l'aperçu du
+   *  détail, y compris quand le message est encore orphelin. */
+  attachments: {
+    id: string;
+    name: string;
+    label: string | null;
+    mimeType: string | null;
+  }[];
 };
 
 /** Relations nécessaires au mapping d'un événement message (canal, expéditeur). */
@@ -888,6 +896,9 @@ const MESSAGE_EVENT_INCLUDE = {
   channel: { select: { type: true, name: true, identifier: true } },
   subject: { select: { id: true, reference: true, title: true } },
   folder: { select: { id: true, name: true, slug: true } },
+  attachments: {
+    select: { id: true, name: true, aiLabel: true, mimeType: true },
+  },
 } as const;
 
 type MessageEventRow = Prisma.MessageGetPayload<{
@@ -929,6 +940,12 @@ function toMessageEventItem(m: MessageEventRow): MessageEventItem {
           title: m.subject.title,
         }
       : null,
+    attachments: m.attachments.map((a) => ({
+      id: a.id,
+      name: a.name,
+      label: a.aiLabel,
+      mimeType: a.mimeType,
+    })),
   };
 }
 

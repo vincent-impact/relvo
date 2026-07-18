@@ -99,13 +99,22 @@ export function toInboundEmail(
   };
 }
 
-/** Numéro/identifiant brut de l'expéditeur WhatsApp, lu de façon tolérante (la
- *  forme du `sender` varie selon la version d'Unipile). */
+/**
+ * Identifiant brut de l'expéditeur WhatsApp. On PRIVILÉGIE le numéro de téléphone
+ * (humain, stable, matchable avec `Contact.phone`) au LID opaque (`…@lid`), qui
+ * n'a de sens pour personne. Ordre : `attendee_specifics.phone_number` →
+ * `attendee_public_identifier` dé-suffixé de `@s.whatsapp.net` → LID en dernier
+ * recours. Formes confirmées contre le webhook prod.
+ */
 function whatsAppSenderRaw(evt: UnipileMessagingWebhook): string | null {
   const s = evt.sender;
   if (!s) return null;
-  const raw = s.attendee_provider_id ?? s.provider_id ?? null;
-  return typeof raw === "string" && raw.trim() ? raw.trim() : null;
+  const phone = s.attendee_specifics?.phone_number?.trim();
+  if (phone) return phone;
+  const publicId = s.attendee_public_identifier?.trim();
+  if (publicId) return publicId.replace(/@s\.whatsapp\.net$/i, "");
+  const lid = (s.attendee_provider_id ?? s.provider_id)?.trim();
+  return lid || null;
 }
 
 /** Coerce l'horodatage Unipile (ISO string ou epoch) en `Date` valide, sinon null. */

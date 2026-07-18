@@ -231,20 +231,31 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
   return ok({ ok: true, messageId: message.id, created, attachments: stored });
 }
 
+// Nom de fichier lisible pour un média WhatsApp (le webhook n'en fournit aucun).
+// Dérivé du `attachment_type` ; l'extension exacte suivra le MIME du Blob.
+function whatsAppMediaName(type: string | null | undefined): string {
+  switch ((type ?? "").toLowerCase()) {
+    case "img":
+    case "image":
+      return "photo";
+    case "video":
+      return "vidéo";
+    case "audio":
+    case "voice":
+      return "message vocal";
+    default:
+      return "piece-jointe";
+  }
+}
+
 async function handleMessageReceived(evt: UnipileMessagingWebhook) {
-  // [unipile-diag] TEMPORAIRE (M6) — capte la VRAIE forme du webhook messaging
-  // pour corriger le label expéditeur (point 3) et les PJ (point 6, `att.id`
-  // undefined → 404). À RETIRER une fois les formes confirmées.
-  console.log(
-    "[unipile-diag] wa message_received",
-    JSON.stringify({
-      keys: Object.keys(evt),
-      sender: evt.sender,
-      attachments: evt.attachments,
-      chat_id: evt.chat_id,
-      account_type: evt.account_type,
-    }),
-  );
+  // Anti-loop : un message ENVOYÉ par le compte connecté (nous, ou l'utilisateur
+  // depuis son propre téléphone) revient en `message_received` avec
+  // `is_sender: true`. Nos envois sont déjà journalisés par sendWhatsAppReply →
+  // on ignore l'écho (plus robuste que l'idempotence seule).
+  if (evt.is_sender) {
+    return ok({ ok: true, ignored: "own_message" });
+  }
 
   // Données minimales requises pour l'ingestion idempotente + le rattachement.
   if (!evt.account_id || !evt.message_id) {
@@ -270,6 +281,8 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   );
 
   // Médias (M6.6) : même chemin que les PJ email — seulement au premier passage.
+  // Le webhook messaging n'expose ni nom ni MIME : l'id de PJ est `attachment_id`
+  // (⚠️ pas `id`), le MIME vient du Blob récupéré, le nom est dérivé du type.
   let stored = 0;
   if (created && evt.attachments?.length) {
     const storage = getStorage();
@@ -277,14 +290,14 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
       try {
         const { bytes, contentType } = await fetchMessageAttachment({
           messageId: evt.message_id,
-          attachmentId: att.id,
+          attachmentId: att.attachment_id,
         });
         if (bytes.byteLength > MAX_FILE_SIZE_BYTES.attachments) continue; // garde-fou taille
         const key = buildObjectKey({
           accountId: config.accountId,
           scope: "attachments",
         });
-        const mime = contentType ?? att.mime ?? att.mimetype ?? null;
+        const mime = contentType ?? null;
         await storage.put({
           key,
           body: bytes,
@@ -293,14 +306,18 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
         await createAttachment(db, {
           messageId: message.id,
           subjectId: message.subjectId,
-          name: att.file_name ?? att.name ?? "piece-jointe",
+          name: whatsAppMediaName(att.attachment_type),
           mimeType: mime,
           storageKey: key,
           fileSize: bytes.byteLength,
         });
         stored += 1;
       } catch (err) {
-        console.error("[unipile] média WhatsApp non stocké", att.id, err);
+        console.error(
+          "[unipile] média WhatsApp non stocké",
+          att.attachment_id,
+          err,
+        );
       }
     }
   }

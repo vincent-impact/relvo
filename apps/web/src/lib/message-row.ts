@@ -26,6 +26,12 @@ export type MessageRowData = {
   time: string;
   read: boolean;
   subject: { id: string; reference: string; title: string } | null;
+  attachments: {
+    id: string;
+    name: string;
+    label: string | null;
+    mimeType: string | null;
+  }[];
 };
 
 export function toMessageRowData(item: MessageEventItem): MessageRowData {
@@ -51,5 +57,6 @@ export function toMessageRowData(item: MessageEventItem): MessageRowData {
     time: formatRelative(item.receivedAt) ?? "",
     read: item.read,
     subject: item.subject,
+    attachments: item.attachments,
   };
 }
