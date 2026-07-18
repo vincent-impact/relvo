@@ -30,6 +30,7 @@ import {
 } from "@/components/messages/subject-picker-dialog";
 import { folderVisual } from "@/lib/folders";
 import type { MessageRowData } from "@/lib/message-row";
+import { initialsFor } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
 // Vue détail d'un message (page /messages/[id]) — texte complet, canal exact +
@@ -44,15 +45,6 @@ const CHANNEL: Record<string, { label: string; icon: typeof Mail }> = {
 };
 
 const TAP = "active:opacity-90";
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 /** Champ labellisé compact (label réduit + valeur), brique de la grille 2 colonnes. */
 function Meta({
@@ -155,7 +147,7 @@ export function MessageDetailView({
   const senderCompact = (
     <>
       <span className="grid size-9 flex-none place-items-center rounded-full bg-(--amber-600) text-[12.5px] font-extrabold text-white">
-        {initials(data.senderName)}
+        {initialsFor(data.senderName) ?? "E"}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[14.5px] font-bold">

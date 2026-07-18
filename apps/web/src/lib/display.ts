@@ -34,6 +34,27 @@ export function contactInitials(c: NamedContact): string {
     .toUpperCase();
 }
 
+/**
+ * Initiales d'un nom pour un avatar (« Leroy Frederique » → « LF »). Renvoie
+ * `null` si la chaîne n'est PAS un vrai nom humain — identifiant brut (email,
+ * numéro de téléphone, LID WhatsApp `…@lid`) — pour laisser l'appelant retomber
+ * sur un badge générique plutôt que d'afficher une initiale absurde (« 1… »).
+ */
+export function initialsFor(name: string | null | undefined): string | null {
+  const clean = name?.trim();
+  if (!clean) return null;
+  // Email, téléphone, ou identifiant technique → pas d'initiales lisibles.
+  if (clean.includes("@") || /^\+?[\d\s().-]+$/.test(clean)) return null;
+  const letters = clean
+    .split(/\s+/)
+    .map((w) => w[0])
+    .filter((c) => /\p{L}/u.test(c ?? ""))
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+  return letters || null;
+}
+
 /** « à l'instant », « 35 min », « 2 h », « hier », « il y a 3 j », sinon date. */
 export function formatRelative(date: Date | null | undefined): string | null {
   if (!date) return null;

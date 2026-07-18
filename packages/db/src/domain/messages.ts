@@ -32,6 +32,7 @@ export const createMessageSchema = z.object({
   subjectId: z.uuid().optional().nullable(),
   senderContactId: z.uuid().optional().nullable(),
   senderRaw: z.string().trim().max(320).optional().nullable(),
+  senderName: z.string().trim().max(200).optional().nullable(),
   recipientContactId: z.uuid().optional().nullable(),
   externalId: z.string().trim().max(255).optional().nullable(),
   externalThreadId: z.string().trim().max(255).optional().nullable(),
@@ -97,6 +98,7 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
         subjectId: data.subjectId ?? null,
         senderContactId: data.senderContactId ?? null,
         senderRaw: data.senderRaw ?? null,
+        senderName: data.senderName ?? null,
         recipientContactId: data.recipientContactId ?? null,
         externalId: data.externalId ?? null,
         externalThreadId: data.externalThreadId ?? null,
@@ -138,6 +140,7 @@ export const ingestInboundEmailSchema = z.object({
   externalId: z.string().trim().min(1).max(255),
   externalThreadId: z.string().trim().max(255).optional().nullable(),
   senderRaw: z.string().trim().max(320).optional().nullable(),
+  senderName: z.string().trim().max(200).optional().nullable(),
   subjectLine: z.string().trim().max(500).optional().nullable(),
   content: z.string().optional().nullable(),
   receivedAt: z.date().optional().nullable(),
@@ -287,6 +290,7 @@ export async function ingestInboundEmail(
       subjectId,
       senderContactId,
       senderRaw: data.senderRaw ?? null,
+      senderName: data.senderName ?? null,
       externalId: data.externalId,
       externalThreadId: data.externalThreadId ?? null,
       subjectLine: data.subjectLine ?? null,
@@ -338,6 +342,8 @@ export const ingestInboundWhatsAppSchema = z.object({
   // Numéro / identifiant WhatsApp brut de l'expéditeur (cf. modèle : « adresse
   // email ou numéro »). Peut être absent pour un événement système.
   senderRaw: z.string().trim().max(320).optional().nullable(),
+  // Nom de profil WhatsApp (« Leroy Frederique ») — label lisible avant contact.
+  senderName: z.string().trim().max(200).optional().nullable(),
   content: z.string().optional().nullable(),
   receivedAt: z.date().optional().nullable(),
 });
@@ -429,6 +435,7 @@ export async function ingestInboundWhatsApp(
       subjectId,
       senderContactId,
       senderRaw: data.senderRaw ?? null,
+      senderName: data.senderName ?? null,
       externalId: data.externalId,
       externalThreadId: data.externalThreadId ?? null,
       // WhatsApp n'a pas d'objet → subjectLine reste null.
@@ -639,10 +646,16 @@ export async function createSubjectFromMessage(
 
   // Contact : on réutilise celui du message, sinon on le matérialise depuis
   // l'expéditeur brut (sender_raw) — un expéditeur inconnu devient un contact.
+  // On PRIVILÉGIE le nom de profil (« Leroy Frederique ») pour le prénom/nom, et
+  // on classe l'identifiant brut en email ou téléphone selon sa forme.
   let contactId = message.senderContactId;
-  if (!contactId && message.senderRaw) {
+  if (!contactId && (message.senderName || message.senderRaw)) {
+    const rawId = message.senderRaw?.trim() || null;
+    const isEmail = rawId?.includes("@") ?? false;
     const contact = await createContact(db, {
-      ...splitFullName(message.senderRaw),
+      ...splitFullName(message.senderName ?? rawId ?? ""),
+      email: isEmail ? rawId : null,
+      phone: rawId && !isEmail ? rawId : null,
       sourceActor: Actor.user,
     });
     contactId = contact.id;
@@ -914,9 +927,11 @@ function toMessageEventItem(m: MessageEventRow): MessageEventItem {
     channelType: m.channel.type,
     channelName: m.channel.name,
     channelIdentifier: m.channel.identifier,
+    // Label prioritaire : contact enregistré > nom de profil du canal (WhatsApp
+    // « Leroy Frederique », display-name email) > identifiant brut (numéro/email).
     senderName: m.senderContact
       ? contactDisplayName(m.senderContact)
-      : (m.senderRaw ?? "Expéditeur inconnu"),
+      : (m.senderName ?? m.senderRaw ?? "Expéditeur inconnu"),
     senderContactId: m.senderContact?.id ?? null,
     senderRaw: m.senderRaw,
     // Reçu → le destinataire est l'utilisateur (« Moi ») ; envoyé → le contact.

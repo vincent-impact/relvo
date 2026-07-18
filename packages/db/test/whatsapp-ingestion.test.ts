@@ -41,7 +41,8 @@ describe("ingestInboundWhatsApp (M6)", () => {
       channelId: channel.id,
       externalId: "unipile-wa-1",
       externalThreadId: "chat-abc",
-      senderRaw: "33612345678@s.whatsapp.net",
+      senderRaw: "+33612345678",
+      senderName: "Leroy Frederique",
       content: "Bonjour, c'est pour la commande.",
     });
 
@@ -51,7 +52,9 @@ describe("ingestInboundWhatsApp (M6)", () => {
     expect(message.status).toBe(MessageStatus.received);
     expect(message.externalId).toBe("unipile-wa-1");
     expect(message.externalThreadId).toBe("chat-abc");
-    expect(message.senderRaw).toBe("33612345678@s.whatsapp.net");
+    expect(message.senderRaw).toBe("+33612345678");
+    // Nom de profil conservé → label lisible avant la création du contact.
+    expect(message.senderName).toBe("Leroy Frederique");
     expect(message.receivedAt).not.toBeNull();
   });
 

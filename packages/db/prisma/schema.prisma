@@ -370,6 +370,10 @@ model Message {
   channelId          String           @map("channel_id") @db.Uuid
   senderContactId    String?          @map("sender_contact_id") @db.Uuid
   senderRaw          String?          @map("sender_raw")
+  // Nom d'affichage de l'expéditeur tel que fourni par le canal à la réception
+  // (nom de profil WhatsApp, display-name email) — quand l'expéditeur n'est pas
+  // encore un Contact. Sert de label lisible avant la création du contact (M7).
+  senderName         String?          @map("sender_name")
   recipientContactId String?          @map("recipient_contact_id") @db.Uuid
   direction          MessageDirection
   externalId         String?          @map("external_id")

@@ -10,6 +10,7 @@ import {
 } from "@/server/actions/messages";
 import { SwipeToRemove } from "@/components/shared/swipe-to-remove";
 import type { MessageRowData } from "@/lib/message-row";
+import { initialsFor } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
 // Pile « Sans sujet » (Direction B) — uniquement les messages que Relvo n'a pas
@@ -20,15 +21,6 @@ const CHANNEL: Record<string, { label: string; icon: typeof Mail }> = {
   email: { label: "Email", icon: Mail },
   whatsapp: { label: "WhatsApp", icon: MessageCircle },
 };
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 function ChannelTag({ type }: { type: string }) {
   const c = CHANNEL[type] ?? { label: "Canal", icon: Mail };
@@ -81,7 +73,7 @@ function MessageRow({
             unread ? "bg-(--amber-600)" : "bg-[#c7c5bd]",
           )}
         >
-          {initials(data.senderName)}
+          {initialsFor(data.senderName) ?? "E"}
         </span>
 
         <div className="min-w-0 flex-1">

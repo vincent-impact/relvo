@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Actor } from "@relvo/db";
 import { cn } from "@/lib/utils";
+import { initialsFor } from "@/lib/display";
 import { AttachmentPreview } from "@/components/shared/attachment-preview";
 
 // Bulle de message partagée (fil d'un sujet, fil de conversation par contact),
@@ -42,6 +43,13 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
   const outgoing = data.direction === "outgoing";
   const relvo = data.actor === "ai" || data.actor === "system";
   const av = AVATAR[data.actor];
+  // Un contact externe montre ses INITIALES (ex. « LF »), cohérent avec le
+  // composer ; la couleur (ambre) porte toujours l'acteur. Moi/Relvo gardent M/R.
+  // Sans nom lisible (numéro/email brut) → on retombe sur « E ».
+  const avatarText =
+    data.actor === "contact"
+      ? (initialsFor(data.senderName) ?? av.letter)
+      : av.letter;
 
   return (
     <div
@@ -55,7 +63,7 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
               av.bg,
             )}
           >
-            {av.letter}
+            {avatarText}
           </span>
           <span className="text-[12.5px] font-bold">
             {data.senderName ?? "Externe"}

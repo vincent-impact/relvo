@@ -92,6 +92,8 @@ export function toInboundEmail(
     // est conservé comme signal faible pour M7, coercé en string-ou-null.
     externalThreadId: threadHint(mail.in_reply_to),
     senderRaw: mail.from_attendee?.identifier ?? null,
+    // Nom d'affichage email (« Karim Benali <karim@…> ») quand le client le donne.
+    senderName: mail.from_attendee?.display_name ?? null,
     subjectLine: mail.subject ?? null,
     content: plainContent(mail),
     receivedAt:
@@ -138,11 +140,14 @@ export function toInboundWhatsApp(
   channelId: string,
 ): IngestInboundWhatsAppInput {
   const content = evt.message?.trim() ? evt.message.trim() : null;
+  const profileName = evt.sender?.attendee_name?.trim() || null;
   return {
     channelId,
     externalId: evt.message_id ?? "",
     externalThreadId: evt.chat_id ?? null,
     senderRaw: whatsAppSenderRaw(evt),
+    // Nom de profil WhatsApp (« Leroy Frederique ») → label lisible avant contact.
+    senderName: profileName,
     content,
     receivedAt: messagingReceivedAt(evt.timestamp),
   };

@@ -26,7 +26,7 @@ import {
 } from "@/components/subject/subject-detail-form";
 import { TaskItem } from "@/components/subject/task-item";
 import { cn } from "@/lib/utils";
-import { contactFullName, formatRelative } from "@/lib/display";
+import { contactFullName, formatRelative, initialsFor } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
 // Fiche Sujet (M9.5, Direction B) — hero violet portant le status-strip + le
@@ -45,15 +45,6 @@ const ACTOR_DOT: Record<Actor, string> = {
   contact: "bg-(--amber-600)",
   system: "bg-(--text-tertiary)",
 };
-
-function initials(name: string): string {
-  return name
-    .split(/\s+/)
-    .map((p) => p[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
-}
 
 /** Section repliable autonome (PJ, Journal) — titre lisible, contenu contenu. */
 function DetailSection({
@@ -140,7 +131,7 @@ export default async function SujetPage({
     id: m.id,
     direction: m.direction,
     actor: m.direction === "outgoing" ? "user" : "contact",
-    senderName: m.senderContact?.name ?? m.senderRaw,
+    senderName: m.senderContact?.name ?? m.senderName ?? m.senderRaw,
     channel: CHANNEL_LABEL[m.channel.type] ?? null,
     time: formatRelative(m.receivedAt ?? m.sentAt ?? m.createdAt),
     content: m.content ?? "",
@@ -175,7 +166,7 @@ export default async function SujetPage({
     key: c.id,
     name: c.name,
     kind: "human",
-    initials: initials(c.name),
+    initials: initialsFor(c.name) ?? undefined,
     sublabel:
       [c.company, c.id === lastActiveContactId ? lastChannel : null]
         .filter(Boolean)

@@ -11,6 +11,7 @@ import {
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { initialsFor } from "@/lib/display";
 
 // RecipientComposer — le composer signature de la Direction B qui lève
 // l'ambiguïté « à qui j'écris ? ». Sélecteur de destinataire (avatar) à gauche
@@ -71,7 +72,7 @@ function Avatar({
         boxShadow: "0 0 0 2px rgb(255 255 255 / 0.35)",
       }}
     >
-      {r.initials || r.name.slice(0, 2).toUpperCase()}
+      {r.initials || initialsFor(r.name) || "?"}
     </span>
   );
 }
