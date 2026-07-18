@@ -54,32 +54,33 @@ export function appBaseUrl(): string {
   );
 }
 
-/**
- * Crée un lien de « hosted auth » email : Unipile héberge tout le flux
- * OAuth/IMAP, on redirige l'utilisateur vers l'URL renvoyée. `name` porte NOTRE
- * identifiant (le channelId pré-créé), qui nous revient dans le webhook
- * `notify_url` pour relier le compte Unipile au bon Channel.
- *
- * `sync_limit.MAILING = "NO_HISTORY_SYNC"` : on ne veut QUE le nouveau courrier
- * (arbitrage produit) — ce qui évite au passage les scopes Gmail « restricted »
- * et l'audit CASA. `providers: "*:MAILING"` propose tous les fournisseurs mail
- * (Gmail/Outlook/IMAP : OVH, Orange, Free…).
- *
- * Retourne `null` si Unipile n'est pas configuré (dev).
- */
 /** Fournisseurs mail proposés par Unipile (`MAIL` = IMAP/SMTP générique). */
 export type MailProvider = "GOOGLE" | "OUTLOOK" | "MAIL";
 
-export async function createEmailHostedAuthLink(input: {
+type HostedAuthCommon = {
   channelId: string;
   notifyUrl: string;
   successRedirectUrl: string;
   failureRedirectUrl: string;
   expiresInMinutes?: number;
-  /** Provider unique choisi côté app → saute l'écran de sélection Unipile.
-   *  Omis → on propose les trois (Gmail/Outlook/IMAP). */
-  provider?: MailProvider;
-}): Promise<string | null> {
+};
+
+/**
+ * Tronc commun des liens de « hosted auth » (email ET WhatsApp) : Unipile
+ * héberge tout le parcours de connexion (OAuth/IMAP pour l'email, QR code pour
+ * WhatsApp) ; on redirige l'utilisateur vers l'URL renvoyée. `name` porte NOTRE
+ * identifiant (le channelId pré-créé), qui nous revient dans le webhook
+ * `notify_url` pour relier le compte Unipile au bon Channel. `extra` porte les
+ * options spécifiques au canal (ex. `sync_limit` pour l'email).
+ *
+ * Retourne `null` si Unipile n'est pas configuré (dev).
+ */
+async function createHostedAuthLink(
+  input: HostedAuthCommon & {
+    providers: string[];
+    extra?: Record<string, unknown>;
+  },
+): Promise<string | null> {
   const ctx = getClient();
   if (!ctx) {
     console.warn(
@@ -93,24 +94,14 @@ export async function createEmailHostedAuthLink(input: {
 
   const hostedAuthInput = {
     type: "create",
-    // Fournisseurs mail : Gmail/Outlook en OAuth un-clic, `MAIL` = IMAP/SMTP
-    // générique pour le reste (OVH, Orange, Free…). Si l'app a déjà fait choisir
-    // le type, on ne propose que celui-là → Unipile saute son écran de sélection.
-    providers: input.provider
-      ? [input.provider]
-      : ["GOOGLE", "OUTLOOK", "MAIL"],
+    providers: input.providers,
     api_url: ctx.dsn,
     expiresOn,
     name: input.channelId,
     notify_url: input.notifyUrl,
     success_redirect_url: input.successRedirectUrl,
     failure_redirect_url: input.failureRedirectUrl,
-    // `sync_limit.MAILING = NO_HISTORY_SYNC` : ne PAS importer l'historique à la
-    // connexion (arbitrage « nouveau courrier seulement »). Le champ existe dans
-    // le schéma wire d'Unipile mais le type TS exporté par le SDK est en retard
-    // dessus — d'où le cast ciblé (le SDK valide en interne contre le schéma
-    // complet, qui l'accepte).
-    sync_limit: { MAILING: "NO_HISTORY_SYNC" },
+    ...(input.extra ?? {}),
   };
   type HostedAuthArg = Parameters<
     typeof ctx.client.account.createHostedAuthLink
@@ -119,6 +110,42 @@ export async function createEmailHostedAuthLink(input: {
     hostedAuthInput as unknown as HostedAuthArg,
   );
   return res.url;
+}
+
+export async function createEmailHostedAuthLink(
+  input: HostedAuthCommon & {
+    /** Provider unique choisi côté app → saute l'écran de sélection Unipile.
+     *  Omis → on propose les trois (Gmail/Outlook/IMAP). */
+    provider?: MailProvider;
+  },
+): Promise<string | null> {
+  return createHostedAuthLink({
+    ...input,
+    // Fournisseurs mail : Gmail/Outlook en OAuth un-clic, `MAIL` = IMAP/SMTP
+    // générique pour le reste (OVH, Orange, Free…). Si l'app a déjà fait choisir
+    // le type, on ne propose que celui-là → Unipile saute son écran de sélection.
+    providers: input.provider
+      ? [input.provider]
+      : ["GOOGLE", "OUTLOOK", "MAIL"],
+    // `sync_limit.MAILING = NO_HISTORY_SYNC` : ne PAS importer l'historique à la
+    // connexion (arbitrage « nouveau courrier seulement »). Le champ existe dans
+    // le schéma wire d'Unipile mais le type TS exporté par le SDK est en retard
+    // dessus — le tronc commun le passe tel quel (le SDK valide en interne contre
+    // le schéma complet, qui l'accepte).
+    extra: { sync_limit: { MAILING: "NO_HISTORY_SYNC" } },
+  });
+}
+
+/**
+ * Lien de « hosted auth » WhatsApp (M6.3) : Unipile héberge l'écran QR code, le
+ * dirigeant scanne avec son téléphone, et `notify_url` nous renvoie l'account_id
+ * — même finalisation que l'email (`handleHostedAuthNotify`). Pas de `sync_limit`
+ * (option mail uniquement).
+ */
+export async function createWhatsAppHostedAuthLink(
+  input: HostedAuthCommon,
+): Promise<string | null> {
+  return createHostedAuthLink({ ...input, providers: ["WHATSAPP"] });
 }
 
 /**
@@ -186,6 +213,52 @@ export async function fetchAttachment(input: {
     throw new Error("[unipile] non configuré — fetchAttachment impossible.");
   const blob = await ctx.client.email.getEmailAttachment({
     email_id: input.emailId,
+    attachment_id: input.attachmentId,
+  });
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  return { bytes, contentType: blob.type || null };
+}
+
+/**
+ * Envoie un message WhatsApp DANS un fil existant (M6.5). Le `chatId` (chat_id
+ * Unipile, stocké dans `Message.externalThreadId`) désigne à la fois le compte et
+ * le destinataire — pas d'`account_id` à passer. Retourne le `message_id` du
+ * message envoyé (référence externe, réutilisée pour l'anti-loop).
+ */
+export async function sendWhatsAppMessage(input: {
+  chatId: string;
+  text: string;
+}): Promise<{ messageId: string | null }> {
+  const ctx = getClient();
+  if (!ctx) {
+    console.warn(
+      `[unipile] non configuré — message WhatsApp non envoyé (chat ${input.chatId}).`,
+    );
+    return { messageId: null };
+  }
+  const res = await ctx.client.messaging.sendMessage({
+    chat_id: input.chatId,
+    text: input.text,
+  });
+  return { messageId: res.message_id ?? null };
+}
+
+/**
+ * Récupère les octets d'un média de message (M6.6) pour le pousser dans R2.
+ * Calque `fetchAttachment` (email) sur le namespace messaging. R2 reste la source
+ * de vérité, Unipile n'est qu'un transport.
+ */
+export async function fetchMessageAttachment(input: {
+  messageId: string;
+  attachmentId: string;
+}): Promise<{ bytes: Uint8Array; contentType: string | null }> {
+  const ctx = getClient();
+  if (!ctx)
+    throw new Error(
+      "[unipile] non configuré — fetchMessageAttachment impossible.",
+    );
+  const blob = await ctx.client.messaging.getMessageAttachment({
+    message_id: input.messageId,
     attachment_id: input.attachmentId,
   });
   const bytes = new Uint8Array(await blob.arrayBuffer());

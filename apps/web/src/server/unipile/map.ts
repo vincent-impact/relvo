@@ -1,5 +1,8 @@
-import type { IngestInboundEmailInput } from "@relvo/db";
-import type { UnipileMailWebhook } from "./types";
+import type {
+  IngestInboundEmailInput,
+  IngestInboundWhatsAppInput,
+} from "@relvo/db";
+import type { UnipileMailWebhook, UnipileMessagingWebhook } from "./types";
 
 // Mapper PUR : payload webhook Unipile → entrée normalisée du domaine (M5.3).
 // Isolé et sans effet de bord pour être testable sans base ni réseau.
@@ -93,5 +96,45 @@ export function toInboundEmail(
     content: plainContent(mail),
     receivedAt:
       receivedAt && !Number.isNaN(receivedAt.getTime()) ? receivedAt : null,
+  };
+}
+
+/** Numéro/identifiant brut de l'expéditeur WhatsApp, lu de façon tolérante (la
+ *  forme du `sender` varie selon la version d'Unipile). */
+function whatsAppSenderRaw(evt: UnipileMessagingWebhook): string | null {
+  const s = evt.sender;
+  if (!s) return null;
+  const raw = s.attendee_provider_id ?? s.provider_id ?? null;
+  return typeof raw === "string" && raw.trim() ? raw.trim() : null;
+}
+
+/** Coerce l'horodatage Unipile (ISO string ou epoch) en `Date` valide, sinon null. */
+function messagingReceivedAt(
+  ts: string | number | null | undefined,
+): Date | null {
+  if (ts == null) return null;
+  const d = new Date(ts);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/**
+ * Convertit un `message_received` (WhatsApp via Unipile) en entrée
+ * `ingestInboundWhatsApp`. `externalThreadId` porte le `chat_id` (fil = clé de
+ * rattachement et de réponse) ; `senderRaw` le numéro brut ; pas de `subjectLine`
+ * (WhatsApp n'a pas d'objet). `channelId` vient de la résolution du tenant, pas
+ * du payload.
+ */
+export function toInboundWhatsApp(
+  evt: UnipileMessagingWebhook,
+  channelId: string,
+): IngestInboundWhatsAppInput {
+  const content = evt.message?.trim() ? evt.message.trim() : null;
+  return {
+    channelId,
+    externalId: evt.message_id ?? "",
+    externalThreadId: evt.chat_id ?? null,
+    senderRaw: whatsAppSenderRaw(evt),
+    content,
+    receivedAt: messagingReceivedAt(evt.timestamp),
   };
 }

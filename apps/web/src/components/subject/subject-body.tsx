@@ -13,6 +13,7 @@ import {
   type Recipient,
 } from "@/components/shared/recipient-composer";
 import { sendEmailReplyAction } from "@/server/actions/email";
+import { sendWhatsAppReplyAction } from "@/server/actions/whatsapp";
 
 // Orchestrateur de la fiche Sujet (corps interactif) — possède l'ONGLET ACTIF et
 // l'INTERLOCUTEUR sélectionné, partagés entre le fil (zone scrollable) et le
@@ -38,6 +39,7 @@ export function SubjectBody({
   subjectId,
   subjectTitle,
   emailReplyTargets,
+  whatsappReplyTargets,
 }: {
   header: React.ReactNode;
   defaultTab?: Tab;
@@ -54,6 +56,8 @@ export function SubjectBody({
   subjectTitle: string;
   /** Par interlocuteur joignable par email : son adresse + le canal à utiliser. */
   emailReplyTargets: Record<string, { channelId: string; email: string }>;
+  /** Par interlocuteur joignable par WhatsApp : le fil (chat_id) + le canal. */
+  whatsappReplyTargets: Record<string, { channelId: string; chatId: string }>;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
@@ -62,36 +66,58 @@ export function SubjectBody({
     defaultInterlocuteurKey ?? interlocuteurs[0]?.key ?? "all",
   );
 
-  // Envoi réel d'une réponse email (M5.6). Retourne `false` pour que le composer
-  // NE vide PAS le champ si l'envoi n'a pas eu lieu (texte préservé).
+  // Envoi réel d'une réponse (M5.6 email / M6.5 WhatsApp), routé selon le canal
+  // par lequel l'interlocuteur est joignable. Retourne `false` pour que le
+  // composer NE vide PAS le champ si l'envoi n'a pas eu lieu (texte préservé).
   async function handleSend(text: string, recipientKey: string) {
     if (recipientKey === "all") {
       toast.info("La diffusion à tous les interlocuteurs arrive après la V1.");
       return false;
     }
-    const target = emailReplyTargets[recipientKey];
-    if (!target) {
-      toast.error(
-        "Réponse email indisponible pour cet interlocuteur (pas d'email connu, ou canal WhatsApp).",
-      );
-      return false;
-    }
     const name = interlocuteurs.find((r) => r.key === recipientKey)?.name;
-    const res = await sendEmailReplyAction({
-      subjectId,
-      channelId: target.channelId,
-      to: { identifier: target.email, displayName: name },
-      recipientContactId: recipientKey,
-      subject: `Re: ${subjectTitle}`,
-      body: text,
-    });
-    if (!res.ok) {
-      toast.error(res.message);
-      return false;
+
+    // Email prioritaire s'il est disponible ; sinon WhatsApp (fil existant).
+    const emailTarget = emailReplyTargets[recipientKey];
+    if (emailTarget) {
+      const res = await sendEmailReplyAction({
+        subjectId,
+        channelId: emailTarget.channelId,
+        to: { identifier: emailTarget.email, displayName: name },
+        recipientContactId: recipientKey,
+        subject: `Re: ${subjectTitle}`,
+        body: text,
+      });
+      if (!res.ok) {
+        toast.error(res.message);
+        return false;
+      }
+      toast.success("Email envoyé");
+      router.refresh();
+      return true;
     }
-    toast.success("Email envoyé");
-    router.refresh();
-    return true;
+
+    const waTarget = whatsappReplyTargets[recipientKey];
+    if (waTarget) {
+      const res = await sendWhatsAppReplyAction({
+        subjectId,
+        channelId: waTarget.channelId,
+        chatId: waTarget.chatId,
+        recipientContactId: recipientKey,
+        body: text,
+      });
+      if (!res.ok) {
+        toast.error(res.message);
+        return false;
+      }
+      toast.success("Message WhatsApp envoyé");
+      router.refresh();
+      return true;
+    }
+
+    toast.error(
+      "Réponse indisponible pour cet interlocuteur (aucun email ni fil WhatsApp connu).",
+    );
+    return false;
   }
 
   const options: SegTabOption[] = [

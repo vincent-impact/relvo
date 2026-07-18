@@ -1,4 +1,4 @@
-import { ingestInboundEmail } from "@relvo/db";
+import { ingestInboundEmail, ingestInboundWhatsApp } from "@relvo/db";
 import {
   buildObjectKey,
   MAX_FILE_SIZE_BYTES,
@@ -9,19 +9,22 @@ import { prisma } from "@/lib/db";
 import { tenantDb } from "@/lib/tenant-db";
 import { expireTenantData } from "@/server/cached";
 import { createAttachment } from "@relvo/db";
-import { toInboundEmail } from "@/server/unipile/map";
+import { toInboundEmail, toInboundWhatsApp } from "@/server/unipile/map";
 import {
   UNIPILE_AUTH_HEADER,
   verifyWebhookAuth,
 } from "@/server/unipile/signature";
 import {
   fetchAttachment,
+  fetchMessageAttachment,
   getAccount,
   type UnipileAccountStatusWebhook,
   type UnipileHostedAuthNotify,
   type UnipileMailWebhook,
+  type UnipileMessagingWebhook,
   isHostedAuthNotify,
   isMailWebhook,
+  isMessagingWebhook,
 } from "@/server/unipile";
 
 // Webhook unique du fournisseur d'intégration Unipile (M5.2/M5.3/M5.4/M5.8).
@@ -81,7 +84,16 @@ export async function POST(request: Request) {
     return ok({ ok: true, ignored: payload.event });
   }
 
-  // 3) Changement d'état d'un compte connecté (déconnexion, reauth requise).
+  // 3) Messagerie (WhatsApp) entrante.
+  if (isMessagingWebhook(payload)) {
+    if (payload.event === "message_received") {
+      return handleMessageReceived(payload);
+    }
+    // `message_read` / `message_reaction` : rien à faire en V1.
+    return ok({ ok: true, ignored: payload.event });
+  }
+
+  // 4) Changement d'état d'un compte connecté (déconnexion, reauth requise).
   if (
     typeof payload === "object" &&
     payload !== null &&
@@ -213,6 +225,71 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
   // Nouveau message → purge le Data Cache du tenant, sinon les KPI/fil (servis
   // depuis `unstable_cache`) resteraient périmés jusqu'au revalidate 120 s et le
   // polling client (router.refresh) relirait le cache sans rien voir.
+  if (created) expireTenantData();
+
+  return ok({ ok: true, messageId: message.id, created, attachments: stored });
+}
+
+async function handleMessageReceived(evt: UnipileMessagingWebhook) {
+  // Données minimales requises pour l'ingestion idempotente + le rattachement.
+  if (!evt.account_id || !evt.message_id) {
+    return ok({ ok: true, ignored: "incomplete_message" });
+  }
+
+  // Résolution du tenant depuis le compte Unipile.
+  const config = await prisma.channelConfig.findUnique({
+    where: { externalAccountId: evt.account_id },
+    select: { accountId: true, channelId: true },
+  });
+  if (!config) return ok({ ok: true, ignored: "unknown_account" });
+
+  const db = tenantDb(config.accountId);
+
+  // Ingestion idempotente → Message orphelin, ou rattaché au fil (chat_id) s'il
+  // existe déjà un sujet ouvert. Anti-loop : nos envois ont déjà posé un Message
+  // sortant avec `externalId = message_id` → l'écho d'un message que NOUS avons
+  // envoyé retombe sur l'idempotence (findFirst → created:false), aucun doublon.
+  const { message, created } = await ingestInboundWhatsApp(
+    db,
+    toInboundWhatsApp(evt, config.channelId),
+  );
+
+  // Médias (M6.6) : même chemin que les PJ email — seulement au premier passage.
+  let stored = 0;
+  if (created && evt.attachments?.length) {
+    const storage = getStorage();
+    for (const att of evt.attachments) {
+      try {
+        const { bytes, contentType } = await fetchMessageAttachment({
+          messageId: evt.message_id,
+          attachmentId: att.id,
+        });
+        if (bytes.byteLength > MAX_FILE_SIZE_BYTES.attachments) continue; // garde-fou taille
+        const key = buildObjectKey({
+          accountId: config.accountId,
+          scope: "attachments",
+        });
+        const mime = contentType ?? att.mime ?? att.mimetype ?? null;
+        await storage.put({
+          key,
+          body: bytes,
+          contentType: mime ?? "application/octet-stream",
+        });
+        await createAttachment(db, {
+          messageId: message.id,
+          subjectId: message.subjectId,
+          name: att.file_name ?? att.name ?? "piece-jointe",
+          mimeType: mime,
+          storageKey: key,
+          fileSize: bytes.byteLength,
+        });
+        stored += 1;
+      } catch (err) {
+        console.error("[unipile] média WhatsApp non stocké", att.id, err);
+      }
+    }
+  }
+
   if (created) expireTenantData();
 
   return ok({ ok: true, messageId: message.id, created, attachments: stored });

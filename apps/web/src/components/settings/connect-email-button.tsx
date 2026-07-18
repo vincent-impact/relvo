@@ -4,10 +4,11 @@ import { Mail, MessageCircle } from "lucide-react";
 import { useState, useTransition } from "react";
 import type { MailProvider } from "@/server/unipile/client";
 import { connectEmailChannelAction } from "@/server/actions/email";
+import { connectWhatsAppChannelAction } from "@/server/actions/whatsapp";
 
-// M5.7 — connexion d'une boîte email via le hosted auth Unipile. On fait choisir
-// le TYPE de boîte ici (Gmail / Outlook / IMAP) et on ne passe qu'un provider à
-// Unipile → son écran de sélection est sauté (parcours plus direct).
+// M5.7 / M6.3 — connexion d'un canal via le hosted auth Unipile. Email : on fait
+// choisir le TYPE de boîte (Gmail / Outlook / IMAP) → un seul provider passé à
+// Unipile, son écran de sélection est sauté. WhatsApp : hosted auth QR code.
 
 const CHOICES: { provider: MailProvider; label: string }[] = [
   { provider: "GOOGLE", label: "Gmail" },
@@ -17,7 +18,7 @@ const CHOICES: { provider: MailProvider; label: string }[] = [
 
 export function ConnectEmailButton() {
   const [pending, startTransition] = useTransition();
-  const [busy, setBusy] = useState<MailProvider | null>(null);
+  const [busy, setBusy] = useState<MailProvider | "WHATSAPP" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   function connect(provider: MailProvider) {
@@ -25,6 +26,20 @@ export function ConnectEmailButton() {
     setBusy(provider);
     startTransition(async () => {
       const result = await connectEmailChannelAction(provider);
+      if (result.ok) {
+        window.location.href = result.data.url;
+        return;
+      }
+      setError(result.message);
+      setBusy(null);
+    });
+  }
+
+  function connectWhatsApp() {
+    setError(null);
+    setBusy("WHATSAPP");
+    startTransition(async () => {
+      const result = await connectWhatsAppChannelAction();
       if (result.ok) {
         window.location.href = result.data.url;
         return;
@@ -49,27 +64,31 @@ export function ConnectEmailButton() {
             {busy === c.provider ? "Ouverture…" : c.label}
           </button>
         ))}
-        {/* WhatsApp : connexion livrée avec M6 → tuile grisée, non cliquable. */}
-        <div
-          aria-disabled
-          className="relative flex cursor-not-allowed flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-(--border) py-4 text-[12.5px] font-semibold text-(--text-tertiary) opacity-70"
+        {/* WhatsApp (M6.3) : hosted auth QR code Unipile. */}
+        <button
+          type="button"
+          onClick={connectWhatsApp}
+          disabled={pending}
+          className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-(--border) py-4 text-[12.5px] font-semibold text-(--text-secondary) disabled:opacity-60"
         >
           <MessageCircle className="size-[18px]" strokeWidth={2} />
-          WhatsApp
-          <span className="absolute top-1.5 right-1.5 rounded-full bg-(--surface-2) px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-(--text-tertiary) uppercase">
-            Bientôt
-          </span>
-        </div>
+          {busy === "WHATSAPP" ? "Ouverture…" : "WhatsApp"}
+        </button>
       </div>
       {error ? (
         <p className="mt-2 px-1 text-[12px] text-(--red-600)">{error}</p>
       ) : (
         <p className="mt-3 px-1 text-[12px] text-(--text-tertiary)">
           Connectez Gmail, Outlook ou toute boîte IMAP (OVH, Orange…). Relvo lit
-          les nouveaux emails et répond depuis votre adresse. WhatsApp arrive
-          avec le module suivant.
+          les nouveaux emails et répond depuis votre adresse. Pour WhatsApp,
+          scannez un QR code depuis l’app WhatsApp de votre téléphone.
         </p>
       )}
+      <p className="mt-2 px-1 text-[11.5px] leading-snug text-(--text-tertiary)">
+        WhatsApp : la connexion passe par une session non officielle. Un usage
+        intensif peut entraîner un blocage du numéro par WhatsApp (rare pour un
+        volume normal, mais à connaître).
+      </p>
     </div>
   );
 }

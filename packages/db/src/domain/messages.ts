@@ -15,6 +15,7 @@ import {
   splitFullName,
 } from "./contacts";
 import type { EmailSenderPort } from "./email-port";
+import type { WhatsAppSenderPort } from "./whatsapp-port";
 import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { ensureAffected } from "./helpers";
@@ -319,6 +320,144 @@ export async function ingestInboundEmail(
 }
 
 // ─────────────────────────────────────────────────────────────
+// Ingestion entrante WhatsApp (M6.4) — un message WhatsApp reçu via Unipile
+// devient un Message ORPHELIN, comme l'email. Différence structurante : WhatsApp
+// n'a PAS de ligne d'objet → le rattachement pré-M7 ne peut pas se faire sur
+// l'objet normalisé (règle email M5.9). On se cale sur le `chat_id` (fil), stocké
+// dans `externalThreadId` : un message rejoint un sujet ouvert qui contient DÉJÀ
+// un message du même fil. Le pipeline IA (M7) fera le vrai regroupement.
+// ─────────────────────────────────────────────────────────────
+
+export const ingestInboundWhatsAppSchema = z.object({
+  channelId: z.uuid(),
+  // Idempotence : identifiant du message chez Unipile (messaging `message_id`).
+  externalId: z.string().trim().min(1).max(255),
+  // Le `chat_id` WhatsApp = le fil de discussion. Sert au rattachement ET à la
+  // réponse (le composer répond dans ce chat). Toujours présent en pratique.
+  externalThreadId: z.string().trim().max(255).optional().nullable(),
+  // Numéro / identifiant WhatsApp brut de l'expéditeur (cf. modèle : « adresse
+  // email ou numéro »). Peut être absent pour un événement système.
+  senderRaw: z.string().trim().max(320).optional().nullable(),
+  content: z.string().optional().nullable(),
+  receivedAt: z.date().optional().nullable(),
+});
+
+export type IngestInboundWhatsAppInput = z.infer<
+  typeof ingestInboundWhatsAppSchema
+>;
+
+/**
+ * Rattachement pré-M7 pour WhatsApp (règle déterministe, remplacée par l'IA en
+ * M7) : un message entrant rejoint un sujet existant si — et seulement si — le
+ * sujet contient DÉJÀ un message du même fil (`chat_id` = `externalThreadId`).
+ * On ne devine JAMAIS un nouveau sujet à partir d'un premier message de chat (il
+ * reste orphelin). On exclut les sujets `ignored` (ignorance collante, invariant
+ * n°7) et `archived` (système). Retourne l'id du sujet, ou null.
+ */
+async function findSubjectByChatThread(
+  db: TenantDb,
+  externalThreadId: string | null,
+): Promise<string | null> {
+  if (!externalThreadId) return null;
+  const linked = await db.message.findFirst({
+    where: {
+      externalThreadId,
+      subjectId: { not: null },
+      subject: {
+        status: { in: [SubjectStatus.acknowledged, SubjectStatus.resolved] },
+      },
+    },
+    select: { subjectId: true },
+    orderBy: { createdAt: "desc" },
+  });
+  return linked?.subjectId ?? null;
+}
+
+/**
+ * Persiste un message WhatsApp entrant en Message, de façon IDEMPOTENTE (même
+ * `channelId` + `externalId` → pas de doublon ; double garde applicative + unique
+ * en base). Rattachement automatique par fil (`chat_id`) si un sujet ouvert le
+ * porte déjà ; sinon orphelin « Sans sujet ». Même contrat de retour que
+ * `ingestInboundEmail`.
+ */
+export async function ingestInboundWhatsApp(
+  db: TenantDb,
+  input: IngestInboundWhatsAppInput,
+): Promise<{
+  message: Awaited<ReturnType<typeof createMessage>>;
+  created: boolean;
+}> {
+  const data = ingestInboundWhatsAppSchema.parse(input);
+
+  const existing = await db.message.findFirst({
+    where: { channelId: data.channelId, externalId: data.externalId },
+  });
+  if (existing) return { message: existing, created: false };
+
+  // Résout l'interlocuteur : contact déjà vu pour ce numéro (senderRaw dans un
+  // message précédent), à défaut un contact dont le téléphone correspond.
+  const senderNumber = data.senderRaw?.trim() || null;
+  const senderContactId = senderNumber
+    ? ((
+        await db.message.findFirst({
+          where: {
+            senderRaw: { equals: senderNumber, mode: "insensitive" },
+            senderContactId: { not: null },
+          },
+          select: { senderContactId: true },
+          orderBy: { createdAt: "desc" },
+        })
+      )?.senderContactId ??
+      (
+        await db.contact.findFirst({
+          where: { phone: { equals: senderNumber, mode: "insensitive" } },
+          select: { id: true },
+        })
+      )?.id ??
+      null)
+    : null;
+
+  const subjectId = await findSubjectByChatThread(
+    db,
+    data.externalThreadId ?? null,
+  );
+
+  try {
+    const message = await createMessage(db, {
+      channelId: data.channelId,
+      direction: MessageDirection.incoming,
+      subjectId,
+      senderContactId,
+      senderRaw: data.senderRaw ?? null,
+      externalId: data.externalId,
+      externalThreadId: data.externalThreadId ?? null,
+      // WhatsApp n'a pas d'objet → subjectLine reste null.
+      content: data.content ?? null,
+      receivedAt: data.receivedAt ?? new Date(),
+      status: subjectId ? MessageStatus.linked : undefined,
+    });
+    if (subjectId) {
+      await db.subject.updateMany({
+        where: { id: subjectId },
+        data: { lastActivityAt: new Date() },
+      });
+    }
+    return { message, created: true };
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      const raced = await db.message.findFirst({
+        where: { channelId: data.channelId, externalId: data.externalId },
+      });
+      if (raced) return { message: raced, created: false };
+    }
+    throw err;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // Envoi sortant (M5.6) — répondre DEPUIS la vraie adresse de l'utilisateur via
 // le port d'envoi injecté (Unipile côté web). Le brouillon du composer ne part
 // JAMAIS tout seul : c'est cette fonction, déclenchée par l'utilisateur, qui
@@ -394,6 +533,71 @@ export async function sendEmailReply(
     recipientContactId,
     externalId: emailId,
     subjectLine: data.subject,
+    content: data.body,
+    status: MessageStatus.sent,
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Envoi sortant WhatsApp (M6.5) — répondre DANS un fil existant. Le `chatId`
+// vient d'un message entrant du même contact (stocké en `externalThreadId`).
+// Comme l'email, le brouillon ne part jamais seul : c'est cette fonction,
+// déclenchée par l'utilisateur, qui envoie puis journalise le Message sortant.
+// ─────────────────────────────────────────────────────────────
+
+export const sendWhatsAppReplySchema = z.object({
+  subjectId: z.uuid(),
+  channelId: z.uuid(),
+  // Fil WhatsApp cible (chat_id Unipile), connu via un message entrant.
+  chatId: z.string().trim().min(1).max(255),
+  // Interlocuteur destinataire (contact sélectionné dans le composer) : sans lui
+  // le message sortant ne serait rattaché à personne et disparaîtrait du fil
+  // filtré par interlocuteur.
+  recipientContactId: z.uuid().optional().nullable(),
+  body: z.string().min(1),
+});
+
+export type SendWhatsAppReplyInput = z.infer<typeof sendWhatsAppReplySchema>;
+
+export async function sendWhatsAppReply(
+  db: TenantDb,
+  sender: WhatsAppSenderPort,
+  input: SendWhatsAppReplyInput,
+) {
+  const data = sendWhatsAppReplySchema.parse(input);
+
+  assertFound(
+    await db.subject.findFirst({ where: { id: data.subjectId } }),
+    "Sujet",
+  );
+  const channel = assertFound(
+    await db.channel.findFirst({
+      where: { id: data.channelId },
+      include: { config: true },
+    }),
+    "Canal",
+  );
+  if (!channel.config?.externalAccountId) {
+    throw new DomainError(
+      "INVALID_STATE",
+      "Ce canal n'est pas connecté : impossible d'envoyer un message.",
+    );
+  }
+
+  const { messageId } = await sender.sendMessage({
+    chatId: data.chatId,
+    text: data.body,
+  });
+
+  return createMessage(db, {
+    channelId: data.channelId,
+    direction: MessageDirection.outgoing,
+    subjectId: data.subjectId,
+    recipientContactId: data.recipientContactId ?? null,
+    externalId: messageId,
+    // On garde le fil pour recoller l'écho entrant (anti-loop) et filtrer la
+    // conversation par interlocuteur.
+    externalThreadId: data.chatId,
     content: data.body,
     status: MessageStatus.sent,
   });

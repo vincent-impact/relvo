@@ -195,17 +195,27 @@ export default async function SujetPage({
     string,
     { channelId: string; email: string }
   > = {};
+  // Cibles de réponse WHATSAPP par interlocuteur : dernier message ENTRANT reçu
+  // par WhatsApp de ce contact → le fil (chat_id = externalThreadId) + le canal à
+  // réutiliser pour répondre. Un interlocuteur sans fil ici n'est pas joignable
+  // par WhatsApp → le composer bascule sur l'email ou le signale.
+  const whatsappReplyTargets: Record<
+    string,
+    { channelId: string; chatId: string }
+  > = {};
   for (const m of messages) {
-    if (
-      m.direction === "incoming" &&
-      m.channel.type === "email" &&
-      m.senderContactId &&
-      m.senderRaw
-    ) {
-      emailReplyTargets[m.senderContactId] = {
-        channelId: m.channelId,
-        email: m.senderRaw,
-      };
+    if (m.direction === "incoming" && m.senderContactId) {
+      if (m.channel.type === "email" && m.senderRaw) {
+        emailReplyTargets[m.senderContactId] = {
+          channelId: m.channelId,
+          email: m.senderRaw,
+        };
+      } else if (m.channel.type === "whatsapp" && m.externalThreadId) {
+        whatsappReplyTargets[m.senderContactId] = {
+          channelId: m.channelId,
+          chatId: m.externalThreadId,
+        };
+      }
     }
   }
 
@@ -230,6 +240,7 @@ export default async function SujetPage({
         subjectId={subject.id}
         subjectTitle={subject.title}
         emailReplyTargets={emailReplyTargets}
+        whatsappReplyTargets={whatsappReplyTargets}
         header={
           <RelvoHeader
             back={backHref}

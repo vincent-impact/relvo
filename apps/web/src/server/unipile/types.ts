@@ -54,6 +54,57 @@ export type UnipileMailWebhook = {
 };
 
 /**
+ * Un interlocuteur de messagerie (WhatsApp) tel que normalisé par Unipile. Le
+ * numéro brut vit dans `attendee_provider_id` (ex. `33612345678@s.whatsapp.net`)
+ * ou `provider_id` selon la source ; on lit de façon tolérante côté mapper.
+ */
+export type UnipileMessagingAttendee = {
+  attendee_id?: string | null;
+  attendee_name?: string | null;
+  attendee_provider_id?: string | null;
+  provider_id?: string | null;
+};
+
+/** Descripteur de média dans un webhook `message_received`. */
+export type UnipileMessagingAttachmentRef = {
+  id: string;
+  type?: string | null;
+  name?: string | null;
+  file_name?: string | null;
+  mime?: string | null;
+  mimetype?: string | null;
+  size?: number | null;
+};
+
+/**
+ * Webhook de messagerie (WhatsApp via Unipile, source `messaging`). `event`
+ * discrimine `message_received` (le seul utile en V1) de `message_read` /
+ * `message_reaction` (ignorés). Champs alignés sur le contrat du SDK
+ * (`WebhookCreateMessagingBodySchema.data.key`) : `message` (texte), `account_id`,
+ * `chat_id`, `message_id`, `sender`, `attendees`, `attachments`, `timestamp`,
+ * `account_type`. Volontairement tolérant (tout optionnel sauf `event`).
+ */
+export type UnipileMessagingWebhook = {
+  event: "message_received" | "message_read" | "message_reaction";
+  account_id?: string | null;
+  /** Fil de discussion — devient `Message.externalThreadId` (clé de rattachement
+   *  ET de réponse). */
+  chat_id?: string | null;
+  /** Id du message chez Unipile — idempotence (`Message.externalId`). */
+  message_id?: string | null;
+  /** Corps texte du message. */
+  message?: string | null;
+  /** Auteur du message (numéro dans `attendee_provider_id` / `provider_id`). */
+  sender?: UnipileMessagingAttendee | null;
+  attendees?: UnipileMessagingAttendee[] | null;
+  attachments?: UnipileMessagingAttachmentRef[] | null;
+  /** Type de compte (`WHATSAPP`…). */
+  account_type?: string | null;
+  /** Horodatage ISO 8601 (ou epoch selon la source). */
+  timestamp?: string | number | null;
+};
+
+/**
  * Notification de fin de hosted auth (posée sur `notify_url`). Relie le compte
  * Unipile fraîchement connecté à notre Channel (via `name` = channelId).
  */
@@ -78,6 +129,7 @@ export type UnipileAccountStatusWebhook = {
 /** Union tolérante de tout payload reçu sur notre endpoint webhook unique. */
 export type UnipileWebhookPayload =
   | UnipileMailWebhook
+  | UnipileMessagingWebhook
   | UnipileHostedAuthNotify
   | UnipileAccountStatusWebhook
   | Record<string, unknown>;
@@ -88,6 +140,17 @@ export function isMailWebhook(p: unknown): p is UnipileMailWebhook {
     p !== null &&
     typeof (p as { event?: unknown }).event === "string" &&
     ["mail_received", "mail_sent", "mail_moved"].includes(
+      (p as { event: string }).event,
+    )
+  );
+}
+
+export function isMessagingWebhook(p: unknown): p is UnipileMessagingWebhook {
+  return (
+    typeof p === "object" &&
+    p !== null &&
+    typeof (p as { event?: unknown }).event === "string" &&
+    ["message_received", "message_read", "message_reaction"].includes(
       (p as { event: string }).event,
     )
   );
