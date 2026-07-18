@@ -115,13 +115,17 @@ export function RecipientComposer({
   const r = recipients.find((x) => x.key === cur) || recipients[0];
   const typing = text.trim().length > 0;
   const multi = recipients.length > 1;
+  // Nom du destinataire tronqué pour tenir le placeholder sur UNE ligne (un email
+  // long débordait sur deux lignes). L'ellipsis de coupe fait office de « … ».
+  const recipientLabel =
+    r.name.length > 16 ? `${r.name.slice(0, 15).trimEnd()}…` : r.name;
   const ph =
     placeholder ||
     (r.kind === "relvo"
       ? "Demander à Relvo…"
       : r.kind === "all"
         ? "Répondre à tous…"
-        : `Répondre à ${r.name}…`);
+        : `Répondre à ${recipientLabel}${recipientLabel.endsWith("…") ? "" : "…"}`);
 
   // Textarea auto-croissante : un email fait plusieurs lignes, on agrandit le
   // champ jusqu'à un plafond (puis scroll interne) plutôt qu'une ligne unique.
@@ -253,9 +257,8 @@ export function RecipientComposer({
             placeholder={ph}
             className="max-h-[168px] min-w-0 flex-1 resize-none border-none bg-transparent py-1.5 text-[14.5px] leading-[1.4] text-white outline-none placeholder:text-white/70"
           />
-          {/* Trombone à DROITE, masqué pendant la frappe : le texte prend toute la
-              largeur au moment où l'on écrit. Réapparaît à vide pour joindre. */}
-          {attach && !typing ? (
+          {/* Trombone à DROITE du champ (toujours visible). */}
+          {attach ? (
             <button
               type="button"
               aria-label="Joindre un fichier"
