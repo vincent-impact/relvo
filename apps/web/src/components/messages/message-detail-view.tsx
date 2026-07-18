@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ChevronRight,
-  FileText,
   Link2,
   Loader2,
   Mail,
@@ -16,7 +15,7 @@ import {
   UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
-import { AttachmentViewer } from "@/components/shared/attachment-viewer";
+import { AttachmentPreview } from "@/components/shared/attachment-preview";
 import {
   assignMessageAction,
   createSubjectFromMessageAction,
@@ -293,31 +292,11 @@ export function MessageDetailView({
       </p>
 
       {/* Pièces jointes (photos WhatsApp, PJ email) — visibles même orphelin.
-          Image → lightbox in-app, PDF/autre → navigateur (cf. AttachmentViewer). */}
+          Image → miniature + lightbox, PDF/autre → carte + navigateur. */}
       {data.attachments.length ? (
         <div className="mt-3.5 flex flex-col gap-2">
           {data.attachments.map((a) => (
-            <AttachmentViewer
-              key={a.id}
-              id={a.id}
-              name={a.name}
-              mimeType={a.mimeType}
-              className="inline-flex items-center gap-2.5 rounded-xl border border-(--border-light) bg-white px-[11px] py-2 text-left shadow-(--shadow-card) transition-colors hover:bg-(--surface-2)"
-            >
-              <span className="grid size-[30px] flex-none place-items-center rounded-lg bg-(--surface-2) text-(--text-tertiary)">
-                <FileText className="size-4" strokeWidth={2} />
-              </span>
-              <span className="min-w-0">
-                <span className="block truncate text-[13px] font-semibold">
-                  {a.name}
-                </span>
-                {a.label ? (
-                  <span className="mt-0.5 inline-block rounded-full bg-(--amber-50) px-[7px] py-px text-[11px] text-(--amber-800)">
-                    {a.label}
-                  </span>
-                ) : null}
-              </span>
-            </AttachmentViewer>
+            <AttachmentPreview key={a.id} attachment={a} />
           ))}
         </div>
       ) : null}

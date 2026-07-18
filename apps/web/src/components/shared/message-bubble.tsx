@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { FileText } from "lucide-react";
 import type { Actor } from "@relvo/db";
 import { cn } from "@/lib/utils";
-import { AttachmentViewer } from "@/components/shared/attachment-viewer";
+import { AttachmentPreview } from "@/components/shared/attachment-preview";
 
 // Bulle de message partagée (fil d'un sujet, fil de conversation par contact),
 // style « Direction B ». Sortant (Moi) = bulle bleue à droite. Entrant = en-tête
@@ -69,69 +68,40 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
         </div>
       ) : null}
 
-      {(() => {
-        const boxClass = cn(
-          // Les e-mails très longs sont tronqués dans le fil (≈12 lignes) pour ne
-          // pas saturer la conversation ; la page détail donne le texte complet.
-          "line-clamp-[12] px-3.5 py-[11px] text-[15px] leading-[1.45] whitespace-pre-wrap",
-          outgoing
-            ? "rounded-[18px_18px_5px_18px] bg-brand text-white"
-            : relvo
-              ? "rounded-[5px_18px_18px_18px] border border-(--purple-100) bg-relvo-bg text-(--text-primary)"
-              : "rounded-[5px_18px_18px_18px] border border-[#ececea] bg-white text-(--text-primary) shadow-(--shadow-card)",
-        );
-        return data.href ? (
-          <Link
-            href={data.href}
-            className={cn(boxClass, "block active:opacity-90")}
-          >
-            {data.content}
-          </Link>
-        ) : (
-          <div className={boxClass}>{data.content}</div>
-        );
-      })()}
-
-      {data.attachment
+      {/* Bulle texte — masquée si le message n'a QUE une pièce jointe (ex. photo
+          WhatsApp sans légende) : pas de bulle vide au-dessus de la miniature. */}
+      {data.content.trim()
         ? (() => {
-            const cardClass =
-              "mt-[7px] inline-flex items-center gap-2.5 rounded-xl border border-[#ececea] bg-white px-[11px] py-2 shadow-(--shadow-card)";
-            const inner = (
-              <>
-                <span className="grid size-[30px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
-                  <FileText className="size-4" strokeWidth={2} />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-[13px] font-semibold">
-                    {data.attachment.name}
-                  </span>
-                  {data.attachment.label ? (
-                    <span className="mt-0.5 inline-block rounded-full bg-(--amber-50) px-[7px] py-px text-[11px] text-(--amber-800)">
-                      {data.attachment.label}
-                    </span>
-                  ) : null}
-                </span>
-              </>
+            const boxClass = cn(
+              // Les e-mails très longs sont tronqués dans le fil (≈12 lignes) pour
+              // ne pas saturer la conversation ; la page détail donne le texte
+              // complet.
+              "line-clamp-[12] px-3.5 py-[11px] text-[15px] leading-[1.45] whitespace-pre-wrap",
+              outgoing
+                ? "rounded-[18px_18px_5px_18px] bg-brand text-white"
+                : relvo
+                  ? "rounded-[5px_18px_18px_18px] border border-(--purple-100) bg-relvo-bg text-(--text-primary)"
+                  : "rounded-[5px_18px_18px_18px] border border-[#ececea] bg-white text-(--text-primary) shadow-(--shadow-card)",
             );
-            // Cliquable dès qu'on a l'id : image → lightbox in-app, PDF/autre →
-            // navigateur (cf. AttachmentViewer). URL stable, redirection R2.
-            return data.attachment.id ? (
-              <AttachmentViewer
-                id={data.attachment.id}
-                name={data.attachment.name}
-                mimeType={data.attachment.mimeType}
-                className={cn(
-                  cardClass,
-                  "cursor-pointer text-left transition-colors hover:bg-(--surface-2)",
-                )}
+            return data.href ? (
+              <Link
+                href={data.href}
+                className={cn(boxClass, "block active:opacity-90")}
               >
-                {inner}
-              </AttachmentViewer>
+                {data.content}
+              </Link>
             ) : (
-              <span className={cardClass}>{inner}</span>
+              <div className={boxClass}>{data.content}</div>
             );
           })()
         : null}
+
+      {data.attachment ? (
+        <AttachmentPreview
+          attachment={data.attachment}
+          className={data.content.trim() ? "mt-[7px]" : undefined}
+        />
+      ) : null}
     </div>
   );
 }
