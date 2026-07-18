@@ -202,7 +202,7 @@ export function RecipientComposer({
       ) : null}
 
       <div
-        className="relative flex items-end gap-2.5 px-3.5 pt-[11px]"
+        className="relative flex items-end gap-2 px-3.5 pt-[11px]"
         style={{
           paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
           background:
@@ -217,11 +217,11 @@ export function RecipientComposer({
           onClick={() => multi && setOpen((o) => !o)}
           aria-label="Interlocuteur"
           className={cn(
-            "relative size-11 flex-none",
+            "relative size-10 flex-none",
             multi ? "cursor-pointer" : "cursor-default",
           )}
         >
-          <Avatar r={r} />
+          <Avatar r={r} size={40} />
           {multi ? (
             <span className="absolute -right-px -bottom-px grid size-[17px] place-items-center rounded-full bg-white shadow-[0_1px_3px_rgb(0_0_0/0.2)]">
               <ChevronUp className="size-2.5 text-[#6b6b6b]" strokeWidth={3} />
@@ -230,7 +230,7 @@ export function RecipientComposer({
         </button>
 
         <div
-          className="flex min-w-0 flex-1 items-end gap-[7px] rounded-[22px] py-[5px] pr-2 pl-[13px]"
+          className="flex min-w-0 flex-1 items-end gap-[7px] rounded-[22px] py-[5px] pr-1.5 pl-[15px]"
           style={{
             background: "rgb(255 255 255 / 0.06)",
             border: "1px solid rgb(255 255 255 / 0.28)",
@@ -238,15 +238,6 @@ export function RecipientComposer({
               "inset 0 1px 0 rgb(255 255 255 / 0.3), inset 0 -1px 0 rgb(0 0 0 / 0.04)",
           }}
         >
-          {attach ? (
-            <button
-              type="button"
-              aria-label="Joindre un fichier"
-              className="grid flex-none place-items-center py-1.5 text-white/85"
-            >
-              <Paperclip className="size-[21px]" strokeWidth={2} />
-            </button>
-          ) : null}
           <textarea
             ref={taRef}
             value={text}
@@ -262,6 +253,17 @@ export function RecipientComposer({
             placeholder={ph}
             className="max-h-[168px] min-w-0 flex-1 resize-none border-none bg-transparent py-1.5 text-[14.5px] leading-[1.4] text-white outline-none placeholder:text-white/70"
           />
+          {/* Trombone à DROITE, masqué pendant la frappe : le texte prend toute la
+              largeur au moment où l'on écrit. Réapparaît à vide pour joindre. */}
+          {attach && !typing ? (
+            <button
+              type="button"
+              aria-label="Joindre un fichier"
+              className="grid flex-none place-items-center py-1.5 text-white/85"
+            >
+              <Paperclip className="size-5" strokeWidth={2} />
+            </button>
+          ) : null}
         </div>
 
         <button
@@ -269,7 +271,7 @@ export function RecipientComposer({
           onClick={send}
           disabled={sending}
           aria-label={typing ? "Envoyer" : "Dicter"}
-          className="grid size-[45px] flex-none place-items-center rounded-full bg-white text-relvo active:scale-95 disabled:opacity-70"
+          className="grid size-[42px] flex-none place-items-center rounded-full bg-white text-relvo active:scale-95 disabled:opacity-70"
           style={{ boxShadow: "0 5px 16px rgb(0 0 0 / 0.22)" }}
         >
           {typing ? (
