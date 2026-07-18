@@ -266,23 +266,30 @@ export async function fetchMessageAttachment(input: {
 }
 
 /**
- * Détails d'un compte connecté — sert à récupérer l'adresse email réelle après
- * la connexion (le webhook `notify` ne porte que l'`account_id`). Best-effort :
- * `null` si non configuré ou introuvable.
+ * Détails d'un compte connecté — sert à récupérer l'identité réelle après la
+ * connexion (le webhook `notify` ne porte que l'`account_id`). `identifier` =
+ * ce qu'on affiche dans l'UI Canaux : l'adresse email (mail) ou le **numéro**
+ * (WhatsApp). Best-effort : `null` si non configuré ou introuvable.
+ *
+ * Formes confirmées contre l'API réelle (leçon M5 « lire le vrai payload ») :
+ *   - mail   : `connection_params.mail.username` / `.imap_user`
+ *   - WhatsApp : `connection_params.im.phone_number` (+ `name` = le numéro)
  */
-export async function getAccount(
-  accountId: string,
-): Promise<{ name: string | null; email: string | null } | null> {
+export async function getAccount(accountId: string): Promise<{
+  name: string | null;
+  email: string | null;
+  identifier: string | null;
+} | null> {
   const ctx = getClient();
   if (!ctx) return null;
   try {
-    // La réponse est une union typée par provider ; l'adresse vit à différents
-    // endroits (`mail.username` pour Google/Outlook OAuth, `mail.imap_user` pour
-    // IMAP). On lit de façon défensive.
+    // La réponse est une union typée par provider ; l'identité vit à différents
+    // endroits selon le canal. On lit de façon défensive.
     const acc = (await ctx.client.account.getOne(accountId)) as unknown as {
       name?: string;
       connection_params?: {
         mail?: { username?: string; imap_user?: string };
+        im?: { phone_number?: string };
       };
     };
     const email =
@@ -290,7 +297,18 @@ export async function getAccount(
       acc.connection_params?.mail?.imap_user ??
       (acc.name?.includes("@") ? acc.name : null) ??
       null;
-    return { name: acc.name ?? null, email };
+    // Numéro WhatsApp (messagerie) — normalisé `+` si Unipile le donne sans.
+    const rawPhone = acc.connection_params?.im?.phone_number ?? null;
+    const phone = rawPhone
+      ? rawPhone.startsWith("+")
+        ? rawPhone
+        : `+${rawPhone}`
+      : null;
+    return {
+      name: acc.name ?? null,
+      email,
+      identifier: email ?? phone ?? acc.name ?? null,
+    };
   } catch {
     return null;
   }

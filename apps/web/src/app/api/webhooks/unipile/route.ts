@@ -125,17 +125,18 @@ async function handleHostedAuthNotify(notify: UnipileHostedAuthNotify) {
     },
   });
 
-  // Récupère l'adresse réelle (le webhook ne la porte pas) pour l'afficher.
+  // Récupère l'identité réelle (le webhook ne la porte pas) pour l'afficher :
+  // adresse email pour une boîte mail, numéro pour WhatsApp.
   const account = await getAccount(notify.account_id);
-  const email = account?.email ?? null;
-  if (email) {
+  const identifier = account?.identifier ?? null;
+  if (identifier) {
     await prisma.channel.updateMany({
       where: { id: channelId },
-      data: { identifier: email, name: email },
+      data: { identifier, name: identifier },
     });
   }
 
-  return ok({ ok: true, channelId, status: "connected", email });
+  return ok({ ok: true, channelId, status: "connected", identifier });
 }
 
 async function handleAccountStatus(evt: UnipileAccountStatusWebhook) {
@@ -231,6 +232,20 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
 }
 
 async function handleMessageReceived(evt: UnipileMessagingWebhook) {
+  // [unipile-diag] TEMPORAIRE (M6) — capte la VRAIE forme du webhook messaging
+  // pour corriger le label expéditeur (point 3) et les PJ (point 6, `att.id`
+  // undefined → 404). À RETIRER une fois les formes confirmées.
+  console.log(
+    "[unipile-diag] wa message_received",
+    JSON.stringify({
+      keys: Object.keys(evt),
+      sender: evt.sender,
+      attachments: evt.attachments,
+      chat_id: evt.chat_id,
+      account_type: evt.account_type,
+    }),
+  );
+
   // Données minimales requises pour l'ingestion idempotente + le rattachement.
   if (!evt.account_id || !evt.message_id) {
     return ok({ ok: true, ignored: "incomplete_message" });
