@@ -1,7 +1,7 @@
-import { ConversationShell } from "@/components/conversation/conversation-shell";
+import { RelvoChatShell } from "@/components/relvo-chat/relvo-chat-shell";
 import { getTenantDb } from "@/server/auth-context";
 
-// Nouvelle conversation plein écran (coquille M9). Page-aware : `from` porte la
+// Échange avec Relvo, plein écran (coquille M9). Page-aware : `from` porte la
 // page d'origine pour le bouton retour, le chip de contexte et les prompts.
 
 const PROMPTS = {
@@ -30,7 +30,7 @@ export default async function ConversationPage({
   searchParams: Promise<{ from?: string }>;
 }) {
   const { from } = await searchParams;
-  const backHref = from && from !== "/conversation" ? from : "/";
+  const backHref = from && from !== "/relvo" ? from : "/";
 
   let contextLabel: string | null = null;
   let prompts = PROMPTS.general;
@@ -52,7 +52,7 @@ export default async function ConversationPage({
   }
 
   return (
-    <ConversationShell
+    <RelvoChatShell
       backHref={backHref}
       contextLabel={contextLabel}
       prompts={prompts}

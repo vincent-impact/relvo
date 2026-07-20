@@ -5,22 +5,22 @@ import { cn } from "@/lib/utils";
 
 // Badges & marqueurs partagés (cf. invariants produit 7/8 + mockup mobile).
 // Deux familles DISTINCTES :
-//  - StatusBadge = le statut (cycle de vie). Seul `resolved` (Terminé) est
-//    visible ; `acknowledged`/`archived`/`ignored` ne rendent rien. « Nouveau »
-//    n'est plus un statut : c'est un marqueur dérivé (cf. SubjectRow).
+//  - StatusBadge = le statut (cycle de vie). Seul `validated` (Validé) est
+//    visible ; `open`/`closed` ne rendent rien. « Nouveau » n'est pas un
+//    statut : c'est un marqueur dérivé (cf. SubjectRow).
 //  - Marqueurs cumulables (Urgent, Nouveau, À faire, En attente, non-lus,
 //    suggestions) = composants indépendants, jamais confondus avec le statut.
 
 const STATUS_LABELS: Partial<
   Record<SubjectStatus, { label: string; className: string }>
 > = {
-  resolved: {
-    label: "Terminé",
+  validated: {
+    label: "Validé",
     className: "bg-(--green-50) text-(--green-600)",
   },
 };
 
-/** Badge de statut (rendu uniquement pour `resolved`). */
+/** Badge de statut (rendu uniquement pour `validated`). */
 export function StatusBadge({ status }: { status: SubjectStatus }) {
   const cfg = STATUS_LABELS[status];
   if (!cfg) return null;

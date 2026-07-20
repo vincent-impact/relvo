@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 
-// Onglets de Mon fil (Ouverts / Terminés / Ignorés). Les trois listes sont
+// Onglets de Mon fil (Ouverts / Validés / Fermés). Les trois listes sont
 // rendues côté serveur et passées en props ; on n'affiche que l'active. La barre
 // SegTabs chevauche le bas du hero violet (variante overlap). La note d'agent
 // éventuelle reste visible au-dessus des panneaux.

@@ -17,31 +17,51 @@ Autrement dit, un sujet représente une **situation métier en cours de traiteme
 
 Cette logique prolonge bien l'intention initiale du projet : transformer un flux désordonné de messages en dossiers clairs et suivis.
 
-## 2. Le message est le point d'entrée du système
+## 2. Le message est le point d'entrée, la conversation son point de chute
 
 Un message entrant ou sortant est souvent l'élément déclencheur.
 
-Quand un message est reçu, l'IA tente de le traiter :
+Quand un message arrive, il est **immédiatement rangé dans une conversation**, par une règle **déterministe** propre à son canal (cf. §3). Ce rangement a lieu **à la réception**, et il ne peut pas échouer : un message a donc toujours une place, dès la première seconde, sans qu'aucune IA n'ait à comprendre quoi que ce soit.
 
-- elle l'enregistre
-- elle tente de le rattacher à un sujet existant ou de créer un nouveau sujet
-- si elle y parvient, elle peut proposer des tâches en fonction du contenu
+> **Il n'y a plus de message « Sans sujet ».** Ce qui peut rester en attente de tri, ce n'est pas un message isolé mais une **conversation orpheline** — une conversation sur laquelle aucun sujet n'est ouvert.
 
-Si l'IA ne parvient pas à comprendre le message (contact inconnu, intention ambiguë, contexte insuffisant), le message reste **"Sans sujet"**. Il est visible dans la page Messages et dans le dashboard, en attente d'une intervention humaine : l'utilisateur peut alors l'affecter à un sujet existant, créer un nouveau sujet à partir de ce message, ou l'ignorer.
+Le message n'est donc ni l'unité de pilotage, ni l'unité de regroupement : il **alimente** une conversation, et c'est depuis une conversation que s'ouvre un sujet.
 
-Le message n'est donc pas l'unité de pilotage, mais l'élément qui **alimente** le sujet.
+> **Note historique.** Le modèle antérieur faisait tenter à l'IA, dès la réception, un rattachement à un sujet ; en cas d'échec (contact inconnu, intention ambiguë), le message restait « Sans sujet » dans une page Messages, avec un indice de tri (`triage_hint`). Ce statut n'a plus d'objet, et la page Messages disparaît au profit de la page **Conversations** (décision du 2026-07-20).
 
-## 3. La conversation regroupe les messages par contact
+## 3. La conversation regroupe les messages selon le discriminant de son canal
 
-Au sein d'un **sujet**, les messages ne sont pas présentés individuellement, mais regroupés en **conversations par contact**, quel que soit le canal utilisé (email, WhatsApp, etc.).
+Une **conversation** est un ensemble de messages réunis par un **discriminant stable, propre au canal**. Elle est calculée à la réception, sans IA, et elle est **durable** : une conversation ne se supprime pas et ne se termine jamais.
 
-Un même contact peut écrire par email le lundi et par WhatsApp le mardi : tous ses messages apparaissent dans un seul fil de conversation. Chaque message porte un indicateur de canal pour savoir par où il est passé.
+| Type | Canal | Discriminant (clé) | Titre |
+|---|---|---|---|
+| **objet** | email | interlocuteur externe + objet normalisé | l'objet de l'email |
+| **groupe** | WhatsApp | identifiant du fil de groupe (`chat_id`) | le nom du groupe |
+| **direct** | WhatsApp | l'interlocuteur | le nom du contact |
 
-Seuls les messages **« Sans sujet »** font exception : faute de sujet où les regrouper, ils s'affichent comme une **pile d'orphelins** dans la page Messages (présentés individuellement, en attente d'être rattachés — cf. `03-cas-usage.md`).
+Nos propres messages **sortants** rejoignent la conversation de leur interlocuteur — et, pour l'email, de leur objet. Une conversation contient donc les deux sens de l'échange.
 
-Au sein d'une conversation, les messages peuvent traverser **plusieurs sujets**. Un échange avec un fournisseur peut passer d'un sujet de commande à un sujet de livraison, entrecoupé de messages informels sans rapport professionnel. Chaque message porte un **badge de rattachement** (le sujet auquel il est lié, ou "Sans sujet"), ce qui permet de naviguer vers le sujet correspondant.
+### Pourquoi le discriminant dépend du canal
 
-Lors de la réponse, le canal est présélectionné sur le **dernier canal utilisé par le contact**, avec la possibilité de le changer via un sélecteur.
+L'email porte nativement une notion de fil : l'**objet**. Deux affaires distinctes menées avec la même personne se séparent d'elles-mêmes. WhatsApp n'a pas d'objet : le seul discriminant disponible est **l'interlocuteur** (ou le groupe). Un fil WhatsApp direct est donc un flux continu où les sujets **s'entrelacent** — c'est précisément le problème que Relvo existe pour résoudre.
+
+De cette asymétrie découle la contrainte la plus structurante du modèle :
+
+> **La granularité sémantique (le sujet) est forcément plus fine que la granularité de transport (la conversation).**
+
+C'est pourquoi le rattachement à un sujet se décide **message par message**, et non conversation par conversation (cf. §9).
+
+### Ce qu'une conversation n'est pas
+
+Elle **n'est jamais découpée par thème**. Découper un fil WhatsApp par sujet supposerait d'**inférer** le sujet — donc de faire intervenir l'IA à la réception. On y perdrait deux choses : le déterminisme (un message n'aurait plus de place garantie) et la stabilité de l'identité (une erreur d'inférence rangerait durablement un message au mauvais endroit, et le corriger reviendrait à déplacer des messages un à un — c'est-à-dire à faire, en plus compliqué, ce que le modèle fait déjà).
+
+La conversation est la couche **transport et identité** ; le sujet est la couche **sémantique**.
+
+### Le statut « ignoré »
+
+Une conversation peut être **ignorée** : Relvo cesse alors d'analyser, de résumer et de trier ses messages. C'est le remède au « groupe WhatsApp bavard ». L'ignorance est **réversible, mais par le seul utilisateur** : c'est à lui de rouvrir la conversation s'il veut que Relvo la traite à nouveau.
+
+> **Note historique.** Le modèle antérieur regroupait les messages **par contact, tous canaux confondus** : un même contact écrivant par email le lundi et par WhatsApp le mardi alimentait un fil unique. Ce regroupement était trop grossier — il ne séparait pas deux affaires distinctes menées avec la même personne. Un contact qui écrit par email puis par WhatsApp génère désormais **deux conversations**. La réunification entre canaux ne disparaît pas : elle **remonte d'un cran**, au niveau du sujet, qui peut agréger plusieurs conversations (décision du 2026-07-20).
 
 ## 4. La tâche est l'unité de travail du sujet
 
@@ -145,11 +165,19 @@ Le journal de bord permet :
 
 L'épine dorsale du projet est la suivante :
 
-> **Message → Task → Action → LogEvent**
+> **Message → Conversation → Subject → Task → Action → LogEvent**
 
 ### Message
 
 Révèle une situation ou un besoin.
+
+### Conversation
+
+Range le message dès sa réception, selon un discriminant déterministe propre au canal. Durable : elle ne se termine pas.
+
+### Subject
+
+Ouvre une **fenêtre de travail temporaire** sur un ou plusieurs fils, et donne un sens métier à un sous-ensemble de messages.
 
 ### Task
 
@@ -163,34 +191,66 @@ Permet d'exécuter concrètement une partie du travail.
 
 Trace ce qui s'est passé.
 
-## 9. Cycle de vie d'un sujet
+> **Note historique.** La chaîne s'écrivait `Message → Task → Action → LogEvent` : le message se rattachait directement au sujet, et le regroupement était refait à chaque création de sujet. L'insertion de **Conversation** (rangement déterministe à la réception) et de **Subject** (fenêtre de travail) rend explicite ce qui se jouait implicitement entre les deux (décision du 2026-07-20).
 
-Un Sujet est **un fil de conversation entre deux ou plusieurs personnes autour d'un objet précis**. Son état se lit sur **deux axes distincts** qu'il ne faut surtout pas mélanger — c'est la correction d'un modèle antérieur qui les confondait (un sujet pouvait être à la fois `to_do` *et* `unread`, ce qui ne tient pas).
+## 9. Cycle de vie d'un sujet — une fenêtre de travail
 
-### Axe 1 — Le cycle de vie (`status`) : 4 états exclusifs
+Un Sujet n'est pas un fil de discussion : c'est une **fenêtre de travail temporaire ouverte sur des conversations**. On l'**ouvre**, on l'utilise, on la **ferme** — comme une fenêtre. La conversation, elle, existe avant, pendant et après.
 
-- **`acknowledged` — (actif)** : **état actif par défaut, posé dès la création** d'un sujet (par l'IA à la réception d'un message compris, ou par l'utilisateur). Il est **invisible** (aucun badge) : un marqueur porté par ~90 % des sujets n'informe pas. On lit « actif » par l'**absence** de badge de statut. *Si l'IA ne comprend pas un message, elle ne crée pas de sujet : il reste « Sans sujet » dans Messages.* (La distinction « jamais ouvert » est désormais portée par le **marqueur dérivé « Nouveau »** — cf. Axe 2 — et non plus par un statut.)
-- **`resolved` — Terminé** : l'utilisateur a clos le sujet via l'action **« Terminer »** (swipe droite, vert). Visible dans l'onglet **Terminés** de Mon fil.
-- **`archived` — Archivé** : état **système**, posé automatiquement après une inactivité prolongée d'un sujet terminé. Conservé pour l'historique, hors du flux actif. **Pas de bouton « Archiver »** côté utilisateur.
-- **`ignored` — Ignoré** : sujet **écarté** par l'utilisateur via l'action **« Ignorer »** (swipe gauche, rouge). Il sort des ouverts, **disparaît de la mémoire de Relvo** (l'assistant ne le ressort plus ni ne s'en sert pour contextualiser), reste **purgeable après 15 jours d'inactivité** et **récupérable** via l'onglet **Ignorés** de Mon fil. L'ignorance est **collante** : un nouveau message sur un sujet ignoré ne le fait **jamais** ressortir des ouverts — sinon le « groupe WhatsApp bavard » réinonderait le fil, première source de frustration. Sortir un sujet de l'oubli est une action explicite de l'utilisateur depuis l'onglet Ignorés.
+Le vocabulaire est délibéré : on ne « crée » ni ne « supprime » un sujet, on l'**ouvre** et on le **ferme**.
 
-Enchaînement nominal : `acknowledged →(« Terminer »)→ resolved →(inactivité, système)→ archived`. Le statut **ne change pas à l'ouverture de la fiche** : un sujet naît `acknowledged` et le reste ; ouvrir la fiche pose seulement `last_opened_at` (acquittement implicite), ce qui éteint le marqueur « Nouveau ». **« Ignorer »** est une branche transverse : depuis Mon fil, un sujet ouvert bascule en `ignored` et y reste tant que l'utilisateur ne le récupère pas. Un sujet `resolved` qui reçoit un nouveau message **redevient `acknowledged`** (il avait déjà été lu) et ré-affiche ses marqueurs ; un sujet `ignored`, lui, ne bouge pas (ignorance collante).
+### Ouvrir un sujet : depuis un message d'ancrage
 
-### Axe 2 — Les marqueurs d'état : cumulables, indépendants du statut
+Un sujet s'ouvre **à partir d'un message précis** d'une conversation — son **message d'ancrage**. Ce message marque le début du sujet : les messages **antérieurs** restent dans la conversation sans lui appartenir.
+
+Tant que le sujet reste ouvert, les **nouveaux messages de la conversation lui sont rattachés automatiquement**. L'ancrage est donc une **règle d'affectation par défaut, pas une définition** : l'appartenance réelle se décide **message par message**, et l'utilisateur — plus tard Relvo — peut détacher ou déplacer un message à la marge. C'est ce qui permet de traiter des sujets **entrelacés** dans un même fil, cas impossible à représenter avec une simple fenêtre temporelle (cf. §3).
+
+Règles associées :
+
+- **Au plus un sujet actif par conversation** — règle métier V1. Sans IA capable de trancher, une conversation n'a qu'une fenêtre ouverte à la fois, ce qui rend la destination d'un nouveau message non ambiguë. **Le modèle, lui, en supporte plusieurs** : la règle pourra être levée sans migration de schéma le jour où l'IA saura séparer les sujets entrelacés.
+- Si le message d'ancrage est **détaché**, l'ancre **glisse** au message suivant du sujet.
+- Rattacher un message **isolé** à un autre sujet **ne déplace pas** la fenêtre active : seule l'ouverture d'un sujet pose une ancre.
+
+> ⚠️ **La « fenêtre active » est un échafaudage du mode manuel, pas une règle métier durable.**
+>
+> Elle n'existe que pour une raison : tant qu'aucune IA ne sait à quel sujet appartient un message, il faut bien une règle mécanique pour que les messages successifs d'une conversation atterrissent au même endroit. Quand le pipeline IA (M7) arrivera, **c'est lui qui décidera**, message par message — et cette règle sera **remplacée**, pas complétée.
+>
+> C'est écrit ici parce que ce genre de règle se fossilise : sans cette note, quelqu'un lira « au plus un sujet actif par conversation » comme une contrainte du domaine et cherchera à la préserver, alors que tout le modèle a été conçu pour qu'elle puisse **disparaître sans migration**. L'appartenance vit sur le message (`subject_id`), jamais sur la conversation — c'est précisément ce qui rend l'échafaudage démontable.
+
+### Un sujet agrège 0, 1 ou n conversations
+
+- **0** — un sujet sans échange, purement personnel : une liste de tâches (« Préparer l'inventaire »).
+- **1** — le cas courant : une fenêtre ouverte sur un fil de groupe ou sur un objet d'email.
+- **n** — le sujet s'étend : parti d'un fil WhatsApp (« Retard livraison sauce blanche »), l'utilisateur écrit **par email** à son fournisseur pour la même affaire. Le sujet porte alors deux conversations, chacune avec **sa propre ancre**.
+
+C'est à ce niveau — et non plus au niveau de la conversation — que se fait la **réunification entre canaux**.
+
+### Les statuts : 3 états exclusifs
+
+- **`ouvert`** — état par défaut, posé à l'ouverture. **Invisible** (aucun badge) : un état porté par la quasi-totalité des sujets n'informe pas. On lit « ouvert » par l'**absence** de badge.
+- **`validé`** — le travail est fait. Clos via **« Valider »** (swipe droite, vert).
+- **`fermé`** — le sujet n'avait pas lieu d'être, ou n'intéresse pas l'utilisateur. Clos via **« Fermer »** (swipe gauche, rouge).
+
+Dans les deux cas terminaux la **fenêtre se fige** : les messages postérieurs à la fermeture n'appartiennent plus à ce sujet, et les conversations qu'il portait **redeviennent orphelines**. Les fenêtres successives sur une même conversation sont donc **séquentielles et sans chevauchement**.
+
+À la fermeture, Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » — c'est le geste qui empêche un fil bavard de reproposer indéfiniment de nouveaux sujets. L'ignorance vit désormais sur la **conversation** (cf. §3), pas sur le sujet : ce n'est pas un sujet qu'on veut faire taire, c'est une **source**.
+
+> **Note historique.** Le cycle comptait 4 états : `acknowledged`, `resolved`, `archived`, `ignored`. **`archived`** (automatique après inactivité) est retiré : il n'exprimait rien qu'une fermeture n'exprime déjà. **`ignored`** est retiré du sujet et **migre sur la conversation**. Le vocabulaire « créer / supprimer / terminer / ignorer » devient « **ouvrir / fermer / valider** » (décision du 2026-07-20).
+
+### Les marqueurs d'état : cumulables, indépendants du statut
 
 Ce que l'ancien modèle appelait `to_do`, `waiting`, `unread` n'étaient pas des étapes de vie mais des **états instantanés** qui peuvent coexister. Ils deviennent des **marqueurs**, plusieurs à la fois sur une même carte :
 
-- **Nouveau** — sujet **jamais ouvert** (dérivé : `last_opened_at == null` sur un sujet ouvert). Ouvrir la fiche pose `last_opened_at` → le marqueur s'éteint (le statut, lui, reste `acknowledged`).
+- **Nouveau** — sujet **jamais ouvert** (dérivé : `last_opened_at == null` sur un sujet ouvert). Ouvrir la fiche pose `last_opened_at` → le marqueur s'éteint (le statut, lui, reste `ouvert`).
 - **Urgent** — drapeau rouge, levé uniquement si `priority = urgent` (la rareté est le signal : 1-2 sujets sur 24).
 - **À faire** — il reste au moins une tâche ouverte (dérivé des `Task`).
 - **En attente** — on attend un retour d'un tiers ; flag `waiting_for_reply` posé par Relvo.
-- **Non-lus** — pastille compteur (façon WhatsApp) des messages pas encore lus.
 
-Exemple qui prouve la séparation : un sujet **Lu** (statut) peut afficher en même temps 🔴 Urgent + « À faire » + une pastille « 2 » — impossible à représenter dans l'ancien enum exclusif.
+Exemple qui prouve la séparation : un sujet **ouvert** (statut) peut afficher en même temps 🔴 Urgent + « À faire » — impossible à représenter dans un enum exclusif.
 
-> **Note historique**. Les statuts `blocked` (« impossible à avancer »), puis `to_do` / `waiting` / `unread`, et enfin **`new`** (décision du 2026-06-27), ont été retirés du cycle de vie : le premier se réduisait à une attente externe, les autres sont en réalité des marqueurs cumulables, pas des étapes exclusives. « Nouveau » est désormais un marqueur dérivé (`last_opened_at == null`), au même titre que « Urgent » ou « À faire ». Cf. CLAUDE.md §7.
+**Le non-lu a quitté le sujet pour la conversation.** La pastille compteur (façon WhatsApp) se lit sur la **conversation**, pas sur le sujet : c'est là que les messages arrivent, et c'est l'ouverture de la **conversation** — non celle du sujet — qui marque un message comme lu. Un sujet peut être ouvert depuis longtemps pendant que sa conversation accumule des non-lus.
 
-Et en amont du cycle : un message que Relvo n'a pas su traiter reste **"Sans sujet"** dans la page Messages, en attente de tri par l'utilisateur. Un indice de tri (`triage_hint` — cf. `04-ia.md §1.1bis`) explique pourquoi : trop court, intention floue, prospection, expéditeur inconnu, sans action, autre.
+> **Note historique**. Les statuts `blocked` (« impossible à avancer »), puis `to_do` / `waiting` / `unread`, et enfin **`new`** (décision du 2026-06-27), ont été retirés du cycle de vie : le premier se réduisait à une attente externe, les autres sont en réalité des marqueurs cumulables, pas des étapes exclusives. « Nouveau » est désormais un marqueur dérivé (`last_opened_at == null`). Le marqueur **Non-lus** a migré du sujet vers la conversation le 2026-07-20. Cf. CLAUDE.md §7.
 
 ## 10. Relvo aide aussi à prendre du recul
 
@@ -330,8 +390,13 @@ Puisque l'agent est central, ses réponses ne sont pas que du texte : Relvo **re
 
 Les écrans de consultation/traitement (**Mon fil**, **Sujet**, **Mémoire**, **Planning**, **Messages**, **Contacts**) existent toujours — pour la lecture profonde et le travail soutenu — mais deviennent des **destinations**, atteintes via une carte du chat ou via la **navigation par onglets**. Tous sont repensés **mobile-first**, en colonne unique (fini les split-views 2 colonnes, tables 7 colonnes et panneaux droits 340px fixes).
 
-- **Mon fil** reste l'espace de **traitement** : feed de cartes-sujets enrichies, organisé en **3 onglets de statut** — **Ouverts** (urgents en tête), **Terminés**, **Ignorés** (récupérables). Sur chaque carte, deux gestes de **swipe** : **Ignorer** (gauche, rouge → `status = ignored`) et **Terminer** (droite, vert → `status = resolved`). C'est l'« inbox structurée par sujets ».
-- La **navigation** se fait par une **barre d'onglets basse**, pas une sidebar : **4 entrées** — **Accueil** (brief+chat, onglet par défaut), **Mon fil**, **Mémoire 🧠** (les Dossiers, cf. principe 12), **Réglages**. Planning, Messages et Contacts sont **hors-nav**, atteints depuis ces écrans.
+- **Sujets** reste l'espace de **traitement** : feed de cartes-sujets enrichies, organisé en **2 onglets de statut** — **Ouverts** (urgents en tête) et **Validés**. Sur chaque carte, deux gestes de **swipe** : **Fermer** (gauche, rouge → `status = fermé`) et **Valider** (droite, vert → `status = validé`). C'est l'« inbox structurée par sujets ».
+- **Conversations** est l'espace de **tri**, et il reste **hors navigation** : on y accède par le **KPI « Sans sujet »** de la page Sujets. Non-lus en tête, swipe gauche = **Ignorer la conversation**. C'est depuis un message d'une conversation qu'on **ouvre un sujet** (cf. principe 9).
+- La **navigation** se fait par une **barre d'onglets basse**, pas une sidebar : **4 entrées** — **Actions** ✅ (les tâches du jour), **Sujets** 📥, **Mémoire 🧠** (cf. principe 12), **Réglages** ⚙️. Planning, Contacts et **Conversations** sont **hors-nav**, atteints depuis ces écrans.
+
+> **⚠️ MISE À JOUR 2026-07-20 — la page Messages devient Conversations.** La pile de messages orphelins **disparaît** au profit de la liste des **conversations**, atteinte par le même point d'entrée qu'avant : le **KPI « Sans sujet »**. Ce KPI ne compte plus des messages mais des **conversations dont le dernier message n'est rattaché à aucun sujet** — c'est-à-dire celles qui **peuvent solliciter l'utilisateur**. L'onglet **Ignorés** de Sujets disparaît (l'ignorance vit désormais sur la conversation, filtrable depuis Conversations). Le dock, lui, **ne change pas**.
+>
+> **Pourquoi Conversations n'est pas un onglet.** Tant que Relvo ne trie pas lui-même, exposer en permanence la liste des fils **réafficherait une boîte de réception** que le dirigeant a déjà dans WhatsApp et Gmail : on lui *ajouterait* du travail au lieu de lui en retirer. En la plaçant derrière le KPI « Sans sujet », on n'expose par défaut que **ce qui n'est pas encore traité**, et la charge mentale reste sur les **sujets**, pas sur les messages. C'est la traduction directe de la posture produit : *l'UI sert à accéder à l'info, Relvo sert à agir*.
 - **Distribution en PWA.** En V1, Relvo est une **application web progressive** (Next.js + manifest `display: standalone`, installable sur l'écran d'accueil du téléphone) — pas une app native de store. C'est ce qui permet de livrer l'expérience mobile-first sans cycle de soumission App Store. Le détail (manifest, safe-areas iOS, installabilité) est dans `../spec/ux-mobile-first.md`.
 
 ### Caractéristiques structurantes de la conversation

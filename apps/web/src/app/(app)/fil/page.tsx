@@ -19,7 +19,7 @@ import { requireAccountId } from "@/server/auth-context";
 // depuis le cache serveur en SubjectRowData[] plats.
 
 async function FilFeed({ accountId }: { accountId: string }) {
-  const [{ ouverts, termines, ignores }, folderNames] = await Promise.all([
+  const [{ ouverts, valides, fermes }, folderNames] = await Promise.all([
     cachedFilFeed(accountId),
     cachedFolderNames(accountId),
   ]);
@@ -27,8 +27,8 @@ async function FilFeed({ accountId }: { accountId: string }) {
   return (
     <FeedView
       ouverts={ouverts}
-      termines={termines}
-      ignores={ignores}
+      valides={valides}
+      fermes={fermes}
       folderNames={folderNames}
     />
   );
@@ -55,7 +55,14 @@ export default async function FilPage() {
     },
     { value: kpis.newSubjects, label: "Nouveaux" },
     { value: kpis.openSubjects, label: "Ouverts" },
-    { value: kpis.messagesToTriage, label: "Sans sujet", href: "/messages" },
+    {
+      value: kpis.unsortedConversations,
+      label: "Sans sujet",
+      // Le KPI compte des CONVERSATIONS (dernier message non couvert par un
+      // sujet) : il mène donc à la surface de tri par conversation, et non plus
+      // à la pile de messages orphelins de `/messages` (transitoire, M6bis).
+      href: "/conversations?filtre=sans-sujet",
+    },
   ];
 
   return (

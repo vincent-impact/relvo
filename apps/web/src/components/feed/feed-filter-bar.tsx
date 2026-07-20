@@ -13,19 +13,19 @@ import { cn } from "@/lib/utils";
 
 // Barre de filtres rapides de Mon fil (Direction B) — UNE seule rangée de chips
 // défilable. Raffine la liste côté client (instantané), 4 dimensions cumulables :
-//  - Statut (select)  : Ouvert / Terminé / Ignoré / Tous  (par défaut Ouvert)
+//  - Statut (select)  : Ouvert / Validé / Fermé / Tous  (par défaut Ouvert)
 //  - Urgent (toggle)  : marqueur d'urgence
 //  - Nouveau (toggle) : marqueur dérivé (jamais ouvert)
 //  - Domaine (select) : Tous les domaines / un domaine précis
 // Les chips « select » ouvrent un menu (DropdownMenu radio). Les chips « toggle »
 // se remplissent à la couleur de leur sens quand actives.
 
-export type Basket = "ouvert" | "termine" | "ignore" | "tous";
+export type Basket = "ouvert" | "valide" | "ferme" | "tous";
 
 const STATUT_OPTIONS: { value: Basket; label: string }[] = [
   { value: "ouvert", label: "Ouvert" },
-  { value: "termine", label: "Terminé" },
-  { value: "ignore", label: "Ignoré" },
+  { value: "valide", label: "Validé" },
+  { value: "ferme", label: "Fermé" },
   { value: "tous", label: "Tous" },
 ];
 

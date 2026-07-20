@@ -8,6 +8,7 @@ import {
   Paperclip,
   Send,
   Sparkles,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -86,6 +87,7 @@ export function RecipientComposer({
   defaultValue = "",
   attach = true,
   onSend,
+  onAddRecipient,
 }: {
   recipients?: Recipient[];
   defaultRecipient?: string;
@@ -100,6 +102,12 @@ export function RecipientComposer({
     text: string,
     recipientKey: string,
   ) => void | boolean | Promise<void | boolean>;
+  /**
+   * Cas S — « écrire à quelqu'un qui n'est pas encore dans le sujet ». Le point
+   * d'entrée vit dans le sélecteur d'interlocuteur, et pas ailleurs : c'est là
+   * que l'utilisateur se pose la question « à qui j'écris ? ».
+   */
+  onAddRecipient?: () => void;
 }) {
   const [internal, setInternal] = useState(
     defaultRecipient || recipients[0]?.key || "relvo",
@@ -115,6 +123,10 @@ export function RecipientComposer({
   const r = recipients.find((x) => x.key === cur) || recipients[0];
   const typing = text.trim().length > 0;
   const multi = recipients.length > 1;
+  // Le menu s'ouvre dès qu'il a quelque chose à offrir — y compris sur un sujet
+  // mono-interlocuteur, où la seule entrée utile est « écrire à quelqu'un
+  // d'autre » (c'est justement ce cas qui fait passer un sujet à 2 conversations).
+  const openable = multi || Boolean(onAddRecipient);
   // Nom du destinataire tronqué pour tenir le placeholder sur UNE ligne (un email
   // long débordait sur deux lignes). L'ellipsis de coupe fait office de « … ».
   const recipientLabel =
@@ -156,7 +168,7 @@ export function RecipientComposer({
 
   return (
     <div className="relative">
-      {open && multi ? (
+      {open && openable ? (
         <>
           <button
             type="button"
@@ -201,6 +213,23 @@ export function RecipientComposer({
                 ) : null}
               </button>
             ))}
+            {onAddRecipient ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  onAddRecipient();
+                }}
+                className="mt-0.5 flex w-full items-center gap-[11px] rounded-xl border-t border-(--border-light) px-2.5 py-[11px] text-left"
+              >
+                <span className="grid size-8 flex-none place-items-center rounded-full bg-(--surface-2) text-relvo">
+                  <UserPlus className="size-4" strokeWidth={2.2} />
+                </span>
+                <span className="text-[14px] font-bold text-relvo">
+                  Écrire à quelqu'un d'autre
+                </span>
+              </button>
+            ) : null}
           </div>
         </>
       ) : null}
@@ -218,15 +247,15 @@ export function RecipientComposer({
       >
         <button
           type="button"
-          onClick={() => multi && setOpen((o) => !o)}
+          onClick={() => openable && setOpen((o) => !o)}
           aria-label="Interlocuteur"
           className={cn(
             "relative size-10 flex-none",
-            multi ? "cursor-pointer" : "cursor-default",
+            openable ? "cursor-pointer" : "cursor-default",
           )}
         >
           <Avatar r={r} size={40} />
-          {multi ? (
+          {openable ? (
             <span className="absolute -right-px -bottom-px grid size-[17px] place-items-center rounded-full bg-white shadow-[0_1px_3px_rgb(0_0_0/0.2)]">
               <ChevronUp className="size-2.5 text-[#6b6b6b]" strokeWidth={3} />
             </span>

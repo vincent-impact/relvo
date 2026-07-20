@@ -206,6 +206,89 @@ Configuration technique du channel.
 
 Cette entité porte les informations techniques de connexion, sans alourdir `Channel`.
 
+## 5bis. Conversation
+
+Couche de **transport et d'identité** : le regroupement déterministe des messages, calculé **à la réception**, sans IA (cf. `01-principes.md §3`). Une conversation est **durable** — elle ne se supprime pas et ne se termine jamais.
+
+### Propriétés
+
+- `id: UUID`
+- `account_id: UUID`
+- `channel_id: UUID` — le canal par lequel la conversation transite
+- `type: enum(objet, groupe, direct)`
+- `key: string` — **clé canonique unique** qui matérialise le discriminant (cf. ci-dessous). Contrainte `unique(account_id, key)`
+- `title: string` — objet de l'email, nom du groupe, ou nom du contact
+- `contact_id: UUID nullable` — l'interlocuteur, quand il est un contact enregistré (types `objet` et `direct` uniquement ; toujours `null` pour un groupe)
+- `interlocutor_raw: string nullable` — email ou numéro brut, tant que l'interlocuteur n'est pas un contact
+- `external_thread_id: string nullable` — `chat_id` WhatsApp ; sert aussi de cible d'envoi
+- `normalized_subject: string nullable` — objet normalisé (type `objet` uniquement)
+- `status: enum(actif, ignoré) default actif`
+- `last_message_at: datetime nullable` — pilote le tri de la liste (plus récent en tête)
+- `created_at: datetime`
+- `updated_at: datetime`
+
+### Les trois types et leurs clés
+
+| Type | Canal | Discriminant | `key` canonique |
+|---|---|---|---|
+| **objet** | email | interlocuteur externe + objet normalisé | `email:<interlocuteur>:<objet_normalisé>` |
+| **groupe** | WhatsApp | fil de groupe | `wa-group:<chat_id>` |
+| **direct** | WhatsApp | interlocuteur | `wa-direct:<numéro>` |
+
+La `key` est calculée à la réception ; on cherche la conversation correspondante, sinon on la crée. C'est **tout** l'algorithme de tri — il est déterministe et ne peut pas échouer.
+
+L'**objet normalisé** réutilise la règle existante (retrait des préfixes `Re:` / `Fwd:` / `Tr:` répétés et multilingues, espaces écrasés, minuscules), afin qu'une réponse rejoigne bien la conversation de départ.
+
+Les messages **sortants** rejoignent la conversation de leur interlocuteur (et de leur objet, pour l'email) : une conversation porte les deux sens de l'échange.
+
+### Statut `ignoré`
+
+`ignoré` signifie : **Relvo cesse d'analyser, de résumer et de trier** les messages de cette conversation. Les messages continuent d'être reçus et stockés — on ne perd rien — mais ils sortent du champ de travail de l'assistant. C'est le remède au « groupe WhatsApp bavard ». Réversible **par le seul utilisateur**.
+
+### Asymétrie email / WhatsApp — conséquence à connaître
+
+Parce que la clé d'une conversation `direct` ne contient **que** l'interlocuteur, il ne peut exister **qu'une seule** conversation directe par contact, pour toujours. Ouvrir « une nouvelle conversation » depuis un sujet (cf. §6) recouvre donc **deux comportements distincts** :
+
+- **email** → une *vraie* nouvelle conversation est créée (nouvel objet = nouvelle clé) ;
+- **WhatsApp direct** → la conversation existante est **rattachée au sujet avec une nouvelle ancre**.
+
+Même bouton côté interface, deux mécaniques sous-jacentes.
+
+### Surface de tri — le KPI « Sans sujet »
+
+Les conversations **ne sont pas un onglet de navigation** : elles vivent derrière le **KPI « Sans sujet »** de la page Sujets. Ce KPI compte les conversations **actives dont le dernier message n'est rattaché à aucun sujet** (`status = actif` ET dernier message avec `subject_id = null`) — autrement dit celles dont l'activité récente **n'est couverte par aucune fenêtre**, et qui peuvent donc solliciter l'utilisateur.
+
+La liste expose **trois filtres** :
+
+| Filtre | Contenu | Usage |
+|---|---|---|
+| **Sans sujet** *(défaut)* | conversations actives dont le dernier message n'a pas de sujet | le tri du jour |
+| **Ignorées** | `status = ignoré` | se dédire, réactiver une source |
+| **Toutes** | tout, y compris les conversations couvertes par un sujet | retrouver un fil, remonter un historique |
+
+Un filtre secondaire permet de restreindre par **canal** (email / WhatsApp).
+
+Ce placement est délibéré : exposer en permanence la liste des fils reviendrait à **réafficher une boîte de réception** que le dirigeant a déjà ailleurs. Par défaut, on ne montre que **ce qui n'est pas traité**.
+
+### Le mot « conversation » est réservé — décision du 2026-07-20
+
+Le mot désignait déjà **trois** choses : la surface chatbot plein écran (`/conversation`), son historique (`/conversations`), et l'onglet « Conversations » de la fiche Sujet. En introduire un quatrième sens aurait produit une ambiguïté quotidienne : « ouvre la conversation avec Karim » et « reprends ma conversation d'hier » n'auraient plus rien eu en commun.
+
+Arbitrage : **le fil avec un interlocuteur externe garde le mot** — c'est celui du dirigeant, et celui de WhatsApp. La surface chatbot devient un **« échange avec Relvo »**, aux routes `/relvo` et `/relvo/historique`. Le chatbot n'était encore que des coquilles (M9) : le renommer coûtait dix minutes, l'inverse aurait coûté un renommage de modèle de données.
+
+| Terme | Ce qu'il désigne | Où |
+|---|---|---|
+| **Conversation** | fil de messages avec un interlocuteur externe | entité `Conversation`, `/conversations` |
+| **Échange** | session de dialogue avec l'assistant | `/relvo`, `/relvo/historique` |
+
+### Remarques
+
+Une conversation **n'est jamais découpée par thème** : cela exigerait d'inférer le sujet, donc de l'IA à la réception, ce qui ruinerait le déterminisme et rendrait son identité instable. La séparation des sujets se joue **au niveau du message** (cf. §7).
+
+Le **non-lu se lit sur la conversation**, pas sur le sujet : c'est là que les messages arrivent, et c'est l'ouverture de la conversation qui pose `read_at` sur les messages.
+
+Une conversation `ignoré` **sort du KPI et du filtre par défaut** : elle n'apparaît plus que via le filtre « Ignorées » ou « Toutes ». Elle continue de recevoir et de stocker ses messages — on ne perd rien.
+
 ## 6. Subject
 
 Entité centrale du produit.
@@ -219,7 +302,8 @@ Entité centrale du produit.
 - `summary: text nullable`
 - `folder_id: UUID nullable` — null si Relvo n'a pas su classer (le Sujet apparaît avec un badge « sans dossier » dans Mon fil et invite l'utilisateur à le ranger) ; jamais égal à l'ID du Folder Général (cf. §2 — invariant documentaire)
 - `contact_ids: UUID[] default []`
-- `status: enum(acknowledged, resolved, archived, ignored)` — **cycle de vie** exclusif (cf. Mapping UI). Valeur par défaut à la création : `acknowledged`. `ignored` = sujet écarté, hors des ouverts et **hors mémoire de Relvo**
+- `status: enum(ouvert, validé, fermé)` — **cycle de vie** exclusif (cf. Mapping UI). Valeur par défaut à l'ouverture : `ouvert`. `validé` = travail fait ; `fermé` = sujet écarté. Il n'y a **plus** de statut `ignored` (migré sur la Conversation) ni `archived` (retiré)
+- `closed_at: datetime nullable` — date de fermeture ou de validation. **Borne haute de la fenêtre** : un message postérieur n'appartient plus au sujet
 - `priority: enum(normal, urgent)`
 - `waiting_for_reply: boolean default false` — marqueur **« En attente »** posé par Relvo (cf. Mapping UI)
 - `source_channel_id: UUID nullable`
@@ -234,22 +318,43 @@ Entité centrale du produit.
 
 ### Rôle
 
-Conteneur métier principal.
+**Fenêtre de travail temporaire** ouverte sur des conversations (cf. `01-principes.md §9`).
 
 Un sujet rassemble :
 
-- les messages
+- les messages (via leur `subject_id` — cf. §7)
 - les pièces jointes
 - les tâches
 - les événements
+
+### Table de liaison `SubjectConversation`
+
+Un sujet agrège **0, 1 ou n conversations**, chacune avec **sa propre ancre** :
+
+- `subject_id: UUID`
+- `conversation_id: UUID`
+- `anchor_message_id: UUID` — le message à partir duquel la fenêtre s'ouvre sur cette conversation
+- `created_at: datetime`
+- contrainte `unique(subject_id, conversation_id)`
+
+Cette table porte la **règle de routage** (« ce sujet est la fenêtre active sur cette conversation », donc les nouveaux messages lui reviennent). Elle ne porte **pas** l'appartenance des messages, qui vit sur `Message.subject_id` (cf. §7). C'est la seule redondance assumée du modèle : deux liens, deux rôles distincts.
+
+**Règle V1 : au plus un sujet `ouvert` par conversation.** Elle rend la destination d'un nouveau message non ambiguë tant qu'aucune IA ne sait séparer des sujets entrelacés. C'est une **règle métier, pas une contrainte de modèle** : la lever ne demandera aucune migration.
 
 ### Remarques
 
 `reference` est un identifiant lisible métier. Exemples : `SUB-00124`, `RH-0042`.
 
-Si l'IA ne comprend pas un message (sens ambigu, contact inconnu, contexte insuffisant), elle ne crée pas de sujet. Le message reste "Sans sujet" (`subject_id = null` sur le Message) en attente d'une intervention humaine dans la page Messages.
+Un sujet est **ouvert depuis un message** d'une conversation (le message d'ancrage), par l'utilisateur — et plus tard par Relvo, via exactement la même mécanique. Les messages **antérieurs** à l'ancre restent dans la conversation sans appartenir au sujet.
 
-Un sujet n'est créé que si l'IA a suffisamment compris la situation pour l'identifier. Il démarre alors en `acknowledged` (état actif par défaut) avec `last_opened_at = null` — c'est ce champ (et non le statut) qui porte « jamais ouvert » et allume le marqueur dérivé **« Nouveau »**. Les tâches éventuellement identifiées **ne changent pas le statut** : elles allument le marqueur dérivé **« À faire »** (cf. Mapping UI). L'ouverture de la fiche par l'utilisateur **pose `last_opened_at`** (acquittement implicite) et éteint le marqueur « Nouveau » ; le statut, lui, **reste `acknowledged`**.
+Deux cas limites de l'ancre :
+
+- si le message d'ancrage est **détaché**, l'ancre **glisse** au message suivant du sujet ;
+- rattacher un message **isolé** à un autre sujet **ne déplace pas** la fenêtre active — seule l'ouverture d'un sujet pose une ancre.
+
+Un sujet démarre en `ouvert` avec `last_opened_at = null` — c'est ce champ (et non le statut) qui porte « jamais ouvert » et allume le marqueur dérivé **« Nouveau »**. Les tâches identifiées **ne changent pas le statut** : elles allument le marqueur dérivé **« À faire »**. L'ouverture de la fiche **pose `last_opened_at`** (acquittement implicite) et éteint « Nouveau » ; le statut **reste `ouvert`**.
+
+À la validation ou à la fermeture, `closed_at` est posé : la fenêtre se **fige**, et les conversations qu'elle portait **redeviennent orphelines** (plus aucun sujet actif ne les couvre). Relvo propose alors « **Souhaitez-vous aussi ignorer la conversation ?** ».
 
 Un sujet peut impliquer un ou plusieurs contacts. Le tableau `contact_ids` porte cette relation directement, sans table de liaison.
 
@@ -259,18 +364,23 @@ Un sujet peut impliquer un ou plusieurs contacts. Le tableau `contact_ids` porte
 
 ### Mapping UI
 
-Un Sujet est, par nature, **un fil de conversation entre deux ou plusieurs personnes autour d'un objet précis**. Son affichage repose sur **deux axes orthogonaux** qu'il ne faut pas confondre — c'est la correction majeure du modèle de statut (l'ancien enum à 6 valeurs mélangeait les deux et se contredisait : un sujet pouvait être à la fois `to_do` *et* `unread`).
+Un Sujet est une **fenêtre de travail temporaire** ouverte sur des conversations. Son affichage repose sur **deux axes orthogonaux** qu'il ne faut pas confondre — c'est la correction majeure du modèle de statut (l'ancien enum à 6 valeurs mélangeait les deux et se contredisait : un sujet pouvait être à la fois `to_do` *et* `unread`).
 
-**Axe 1 — Cycle de vie (`status`, exclusif).** Quatre valeurs, jamais cumulables :
+**Axe 1 — Cycle de vie (`status`, exclusif).** Trois valeurs, jamais cumulables :
 
 | `status` | Libellé UI | Visible ? |
 |---|---|---|
-| `acknowledged` | *(actif)* | **non** — état actif par défaut, aucun badge |
-| `resolved` | **Terminé** | oui (onglet Terminés + coche) |
-| `archived` | *(Archivé)* | **non** — état **système** (auto après inactivité prolongée), masqué |
-| `ignored` | **Ignoré** | oui, mais hors des ouverts (onglet Ignorés, récupérable) — sujet **écarté** |
+| `ouvert` | *(ouvert)* | **non** — état par défaut, aucun badge |
+| `validé` | **Validé** | oui (onglet Validés + coche) |
+| `fermé` | *(fermé)* | **non** — hors du flux, la fenêtre est close |
 
-Transitions : `acknowledged →(action « Terminer »)→ resolved →(inactivité, système)→ archived`. Le sujet **naît `acknowledged`** ; ouvrir la fiche **ne change pas le statut** (il pose seulement `last_opened_at`, ce qui éteint le marqueur « Nouveau »). Le swipe « Ignorer » pose `ignored` depuis n'importe quel état ouvert. **Réouverture** : un message entrant sur un sujet `resolved` le ramène à `acknowledged` (il avait déjà été lu) et fait réapparaître ses marqueurs (pastille non-lus, éventuel drapeau si Relvo le re-priorise). En revanche **l'ignorance est collante** : un message entrant sur un sujet `ignored` ne le ressort **jamais** des ouverts (sinon frustration « groupe WhatsApp bavard ») — seule une récupération manuelle via l'onglet Ignorés le réactive. Un sujet `ignored` est en outre **hors de la mémoire de Relvo** (exclu du contexte) et **purgeable après 15 j d'inactivité**. Le principe directeur : **l'état actif est invisible** — un badge porté par 90 % des sujets actifs n'informe pas ; on lit le statut par soustraction (absence de badge = sujet actif).
+Transitions : `ouvert →(« Valider »)→ validé` ou `ouvert →(« Fermer »)→ fermé`. Le sujet **naît `ouvert`** ; ouvrir la fiche **ne change pas le statut** (il pose seulement `last_opened_at`, ce qui éteint le marqueur « Nouveau »). Les deux transitions terminales posent `closed_at` : la fenêtre se **fige** et les conversations portées **redeviennent orphelines**.
+
+**Il n'y a pas de « réouverture » d'un sujet clos.** Un nouveau message sur une conversation dont le sujet a été fermé ou validé n'y revient pas : la conversation est redevenue orpheline, et c'est un **nouveau** sujet qui sera ouvert (depuis une nouvelle ancre) si l'utilisateur le souhaite. C'est précisément pour éviter qu'un fil bavard reproposeindéfiniment de nouveaux sujets que Relvo suggère, à la fermeture, d'**ignorer la conversation**.
+
+Le principe directeur reste : **l'état par défaut est invisible** — un badge porté par 90 % des sujets n'informe pas ; on lit le statut par soustraction.
+
+> **Note historique.** `acknowledged` devient `ouvert`, `resolved` devient `validé`. **`archived`** est **retiré** : il n'exprimait rien qu'une fermeture n'exprime déjà. **`ignored`** est **retiré du sujet et migré sur la Conversation** (§5bis) : ce n'est pas un sujet qu'on veut faire taire, c'est une source. L'« ignorance collante » et la purge à 15 jours disparaissent avec lui (décision du 2026-07-20).
 
 **Axe 2 — Marqueurs d'état (cumulables, dérivés ou flags).** Orthogonaux au cycle de vie, plusieurs peuvent coexister sur une même carte :
 
@@ -288,14 +398,16 @@ Transitions : `acknowledged →(action « Terminer »)→ resolved →(inactivit
 
 ### Feed des ouverts et actions de swipe
 
-L'onglet **« Ouverts »** de Mon fil (et le widget de l'Accueil) liste tous les sujets ouverts (`status NOT IN (resolved, archived, ignored)`, soit tous les `acknowledged`), **urgents en tête** (`priority = urgent`). C'est `getOpenFeed`. Pas de feed « Priorité » distinct : la rareté du drapeau urgent suffit à hiérarchiser.
+L'onglet **« Ouverts »** de la page Sujets (et le widget de l'Accueil) liste tous les sujets `status = ouvert`, **urgents en tête** (`priority = urgent`). C'est `getOpenFeed`. Pas de feed « Priorité » distinct : la rareté du drapeau urgent suffit à hiérarchiser.
 
 Deux actions structurent le tri, exposées **en gestes de swipe** sur mobile (et en boutons sur la fiche / les cartes urgentes) :
 
-- **Ignorer** (swipe gauche, rouge, icône œil fermé) — passe le `status` à **`ignored`**. Le sujet quitte les ouverts, sort de la mémoire de Relvo et bascule dans l'onglet **Ignorés** (récupérable). L'ignorance est **collante** : un nouveau message ne le ressort jamais des ouverts (seule une récupération manuelle le réactive). Purgeable après 15 j d'inactivité. Disponible sur tout sujet ouvert. **Ignorer est un statut, pas une priorité.**
-- **Terminer** (swipe droite, vert, icône coche) — passe le `status` à `resolved`. Disponible sur tous les sujets. C'est l'action de clôture ; **« Terminer » remplace « Résoudre »** (vocabulaire trop éloigné des utilisateurs food/bâtiment), libellé de l'état résolu = **« Terminé »**.
+- **Fermer** (swipe gauche, rouge) — passe le `status` à **`fermé`** et pose `closed_at`. Le sujet quitte les ouverts ; ses conversations redeviennent orphelines. Relvo enchaîne avec la proposition « **Souhaitez-vous aussi ignorer la conversation ?** ».
+- **Valider** (swipe droite, vert, icône coche) — passe le `status` à **`validé`** et pose `closed_at`. C'est la clôture « travail fait ».
 
-**Pas de bouton « Archiver »** côté utilisateur : `archived` est un état **système** (auto après inactivité prolongée d'un sujet `resolved`). Les manières de sortir un sujet du flux sont ramenées à deux gestes clairs : **Ignorer** (écarter, `status = ignored`) et **Terminer** (clore, `status = resolved`).
+**On n'archive pas et on ne supprime pas un sujet : on le ferme.** Le vocabulaire est celui d'une fenêtre — *ouvrir / fermer* — et non celui d'un fichier — *créer / supprimer*.
+
+> **Note historique.** Le geste « Ignorer » (swipe gauche) **change de cible** sans changer de sens : il continue de vouloir dire « écarter », mais il s'applique désormais à une **conversation** (page Conversations), tandis que le swipe gauche sur un **sujet** signifie **Fermer**. « Terminer » devient « **Valider** » (décision du 2026-07-20).
 
 ### Distinction `last_activity_at` / `last_opened_at`
 
@@ -334,8 +446,9 @@ Cf. doc 04-ia §8 pour le détail UX et les règles d'invalidation.
 
 - `id: UUID`
 - `account_id: UUID`
-- `subject_id: UUID nullable`
-- `folder_id: UUID nullable` — **domaine assigné au message à la réception** (classification auto par Relvo). C'est ce domaine qui **donne ensuite son domaine au Sujet** créé depuis le message. Null = non classé.
+- `conversation_id: UUID` — **non nullable** : tout message appartient à une conversation, déterminée à la réception (cf. §5bis). C'est ce qui fait qu'il n'existe plus de message orphelin.
+- `subject_id: UUID nullable` — **appartenance sémantique**, décidée message par message. Null = ce message n'est couvert par aucun sujet.
+- `folder_id: UUID nullable` — **domaine assigné au message à la réception** (classification auto par Relvo). C'est ce domaine qui **donne ensuite son domaine au Sujet** ouvert depuis le message. Null = non classé.
 - `channel_id: UUID`
 - `sender_contact_id: UUID nullable`
 - `sender_raw: string nullable`
@@ -347,7 +460,7 @@ Cf. doc 04-ia §8 pour le détail UX et les règles d'invalidation.
 - `content: text nullable`
 - `received_at: datetime nullable`
 - `sent_at: datetime nullable`
-- `read_at: datetime nullable` — lu/non-lu d'un message entrant. Marqué lu à l'ouverture du sujet auquel il est rattaché **ou** de la page Messages. Null = non-lu. Sert le tri des orphelins et la pastille de non-lus.
+- `read_at: datetime nullable` — lu/non-lu d'un message entrant. Marqué lu à l'ouverture de la **conversation** (et non plus du sujet — cf. §5bis). Null = non-lu. Alimente la pastille de non-lus et la remontée en tête de la liste Conversations.
 - `status: enum(received, linked, sent, failed, ignored)`
 - `triage_hint: enum(too_short, ambiguous, prospection, unknown_sender, informative_only, other) nullable`
 - `created_at: datetime`
@@ -357,11 +470,12 @@ Cf. doc 04-ia §8 pour le détail UX et les règles d'invalidation.
 
 - `subject_line` est surtout utile pour l'email.
 - `external_thread_id` aide au rattachement d'un email à un fil existant.
-- `subject_id` reste **nullable** : c'est le mécanisme qui porte les messages "Sans sujet". Un message avec `subject_id = null` est un message que Relvo n'a pas su traiter. Ces orphelins forment une **pile d'événements reçus** (pas une messagerie ni une conversation) dans la page Messages, conservés **15 j** s'ils ne sont associés à aucun sujet (purge ensuite). Actions possibles sur un orphelin : **créer un sujet**, **rattacher à un sujet existant**, ou **créer un contact** depuis l'expéditeur.
+- `subject_id` reste **nullable**, mais son sens a changé : ce n'est plus « message que Relvo n'a pas su traiter », c'est « message **non couvert par une fenêtre de sujet** ». Il n'y a **plus de message orphelin** — le message est toujours rangé dans une conversation. C'est la **granularité fine** du modèle : elle permet de séparer des sujets **entrelacés** dans un même fil (Karim parle de la sauce blanche et de la facture emballages en alternance), ce qu'aucune fenêtre purement temporelle ne saurait faire.
+- **Comment `subject_id` se remplit.** À la réception, si la conversation du message porte un sujet `ouvert` (via `SubjectConversation`, cf. §6), le message lui est rattaché **automatiquement** — c'est la règle d'ancrage. L'utilisateur (et plus tard Relvo) peut ensuite **détacher** ou **déplacer** un message à la marge. L'ancrage est donc un **défaut**, pas une définition.
 - `folder_id` porte le **domaine** que Relvo assigne au message dès la réception. Lorsqu'un Sujet est ensuite créé à partir du message, il **hérite de ce domaine**. Relation `Folder?` (`onDelete: SetNull`) : le modèle `Folder` porte donc aussi `messages`.
 - Un message avec `status = ignored` est un message que l'utilisateur a volontairement écarté (spam, non pertinent) sans lui affecter de sujet.
 - `sender_contact_id` est **nullable**. Un message peut exister sans contact associé : c'est le cas quand l'expéditeur est inconnu et qu'aucun sujet n'a encore été créé. L'information brute de l'expéditeur (adresse email ou numéro de téléphone) est conservée dans `sender_raw` pour permettre la création ultérieure du contact si l'utilisateur décide de traiter le message.
-- `triage_hint` est renseigné **uniquement** quand `subject_id = null`, c'est-à-dire pour les messages que Relvo n'a pas su rattacher à un sujet. Il porte la raison synthétique de cette décision et aide l'utilisateur à trier rapidement (afficher dans la liste des messages "Sans sujet", choisir d'ignorer ou d'affecter). Il n'est pas affiché pour les messages rattachés à un sujet. Valeurs :
+- ⚠️ **`triage_hint` est caduc** (2026-07-20). Il expliquait *pourquoi* Relvo n'avait pas su rattacher un message et alimentait la pile « Sans sujet ». Le rangement en conversation étant désormais **déterministe et infaillible**, il n'y a plus d'échec à justifier. Le champ est conservé pour l'historique mais n'est plus alimenté ni affiché. Valeurs (historiques) :
   - `too_short` — message trop court pour être exploitable ("Ok merci", "Bien reçu")
   - `ambiguous` — intention floue, sens non identifiable
   - `prospection` — démarchage commercial probable
@@ -371,7 +485,13 @@ Cf. doc 04-ia §8 pour le détail UX et les règles d'invalidation.
 
 ### Affichage par conversation
 
-Au sein d'un **sujet**, les messages sont regroupés par `sender_contact_id` / `recipient_contact_id` pour former une **conversation par contact**, tous canaux confondus. Ce regroupement est un concept d'affichage, pas une entité de données distincte. La page **Messages** autonome, en revanche, ne regroupe pas : elle liste les seuls messages **« Sans sujet »** (`subject_id = null`) comme une **pile d'orphelins** (lu/non-lu via `read_at`, rétention 15 j), à rattacher à un sujet.
+La conversation **n'est plus un concept d'affichage** : c'est une **entité à part entière** (§5bis), calculée à la réception. La page **Conversations** — hors navigation, atteinte par le KPI « Sans sujet » — liste ces entités, **non-lus en tête**, avec les trois filtres décrits en §5bis. Ouvrir une conversation affiche ses messages dans l'ordre chronologique, façon messagerie.
+
+**Le cordon de sujet.** Dans une conversation, chaque message porte à sa gauche un **point de couleur** — la couleur du **domaine** (`Folder`) de son sujet. Les points de messages **consécutifs appartenant au même sujet** sont reliés par un trait, formant un **cordon**. Un message sans sujet porte un point creux, non relié. Quand plusieurs sujets s'entrelacent, le cordon **se brise** et les couleurs alternent : cette rupture visuelle *est* l'information — elle montre que le fil mélange plusieurs affaires. Un seul rail, quel que soit le nombre de sujets (des rails parallèles seraient illisibles sur mobile).
+
+Un tap sur un message ouvre une **pop-up** : si le message est rattaché, elle affiche son sujet et permet de l'en **détacher** ; s'il ne l'est pas, elle propose d'**ouvrir un sujet** à partir de ce message (il en devient l'ancre) ou de le **rattacher à un sujet existant**.
+
+> **Note historique.** Le modèle antérieur regroupait, au sein d'un sujet, les messages **par contact tous canaux confondus**, et la page **Messages** listait à part une **pile d'orphelins** (`subject_id = null`, rétention 15 j). Les deux disparaissent : le regroupement devient une entité déterministe, et la page Messages cède la place à **Conversations** (décision du 2026-07-20).
 
 ## 8. Attachment
 

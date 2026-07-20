@@ -1,6 +1,6 @@
 import { MobileFrame } from "@/components/layout/mobile-frame";
 
-// Squelette de chargement de l'historique des conversations (M9.19).
+// Squelette de chargement de l'historique des échanges avec Relvo (M9.19).
 
 export default function Loading() {
   return (

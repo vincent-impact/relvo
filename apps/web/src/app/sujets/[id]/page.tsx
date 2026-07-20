@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Actor } from "@relvo/db";
-import { getSubjectDetail } from "@relvo/db";
+import { getSubjectDetail, listSubjectConversations } from "@relvo/db";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { type MessageBubbleData } from "@/components/shared/message-bubble";
@@ -30,7 +30,7 @@ import { contactFullName, formatRelative, initialsFor } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
 // Fiche Sujet (M9.5, Direction B) — hero violet portant le status-strip + le
-// résumé Relvo, + Ignorer/Terminer en haut à droite (contexte de page). Onglets
+// résumé Relvo, + Fermer/Valider en haut à droite (contexte de page). Onglets
 // Messages / Tâches / Détail (le Détail paramètre les propriétés du sujet et
 // porte PJ + Journal). Bas = RecipientComposer (contact ↔ Relvo). Pas de tab bar.
 
@@ -97,17 +97,29 @@ export default async function SujetPage({
   const db = await getTenantDb();
   // folders + allContacts ne dépendent pas du sujet → on les charge dans la même
   // vague que getSubjectDetail (une seule attente DB au lieu de deux successives).
-  const [detail, folders, allContacts] = await Promise.all([
-    getSubjectDetail(db, id),
-    db.folder.findMany({
-      orderBy: [{ isDefault: "desc" }, { name: "asc" }],
-      select: { id: true, name: true, slug: true },
-    }),
-    db.contact.findMany({
-      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-      select: { id: true, firstName: true, lastName: true, company: true },
-    }),
-  ]);
+  const [detail, folders, allContacts, subjectConversations] =
+    await Promise.all([
+      getSubjectDetail(db, id),
+      db.folder.findMany({
+        orderBy: [{ isDefault: "desc" }, { name: "asc" }],
+        select: { id: true, name: true, slug: true },
+      }),
+      db.contact.findMany({
+        orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          company: true,
+          email: true,
+          phone: true,
+        },
+      }),
+      // Conversations portées par le sujet (M6bis) — elles donnent les CIBLES
+      // D'ENVOI, y compris pour un interlocuteur qui n'a encore rien écrit (cas
+      // S : on vient tout juste d'étendre le sujet à son adresse email).
+      listSubjectConversations(db, id),
+    ]);
   if (!detail) notFound();
 
   const { subject, contacts, messages, tasks, events, attachments, draft } =
@@ -194,6 +206,29 @@ export default async function SujetPage({
     string,
     { channelId: string; chatId: string }
   > = {};
+
+  // Base : les CONVERSATIONS du sujet. Une conversation dit par où répondre
+  // (canal + interlocuteur + fil), et elle existe DÈS le rattachement — alors
+  // que les messages, eux, n'arrivent qu'après. Sans ça, un interlocuteur ajouté
+  // par le cas S serait injoignable tant qu'il n'aurait pas écrit le premier,
+  // ce qui viderait l'extension de tout intérêt.
+  for (const c of subjectConversations) {
+    if (!c.contactId || !c.interlocutorRaw) continue;
+    if (c.channelType === "email") {
+      emailReplyTargets[c.contactId] = {
+        channelId: c.channelId,
+        email: c.interlocutorRaw,
+      };
+    } else if (c.externalThreadId) {
+      whatsappReplyTargets[c.contactId] = {
+        channelId: c.channelId,
+        chatId: c.externalThreadId,
+      };
+    }
+  }
+
+  // Puis les messages, qui priment : une adresse vue en vrai dans un message
+  // entrant est plus sûre que celle déduite de la fiche contact.
   for (const m of messages) {
     if (m.direction === "incoming" && m.senderContactId) {
       if (m.channel.type === "email" && m.senderRaw) {
@@ -238,6 +273,25 @@ export default async function SujetPage({
       }
     : null;
 
+  // Cas S (M6bis.12) — à qui d'autre peut-on écrire à propos de ce sujet ? Les
+  // contacts pas encore interlocuteurs, et joignables (email ou téléphone).
+  // Un sujet FERMÉ n'est plus extensible (la fenêtre est figée) → aucun candidat.
+  const extendCandidates =
+    subject.status === "open"
+      ? allContacts
+          .filter(
+            (c) =>
+              !subject.contactIds.includes(c.id) && Boolean(c.email || c.phone),
+          )
+          .map((c) => ({
+            id: c.id,
+            name: contactFullName(c),
+            company: c.company,
+            email: c.email,
+            phone: c.phone,
+          }))
+      : [];
+
   return (
     <MobileFrame>
       <AcknowledgeOnOpen subjectId={subject.id} />
@@ -262,6 +316,7 @@ export default async function SujetPage({
         whatsappReplyTargets={whatsappReplyTargets}
         isGroupSubject={isGroupSubject}
         groupWhatsappTarget={groupWhatsappTarget}
+        extendCandidates={extendCandidates}
         header={
           <RelvoHeader
             back={backHref}

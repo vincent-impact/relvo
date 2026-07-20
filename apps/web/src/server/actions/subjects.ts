@@ -5,16 +5,17 @@ import {
   type Priority,
   type SubjectStatus,
   type UpdateSubjectInput,
+  closeSubject,
   createSubject,
+  listIgnorableConversations,
   deleteSubject,
-  ignoreSubject,
   openSubject,
-  resolveSubject,
+  reopenSubject,
   suggestResolution,
-  unignoreSubject,
   updateSubject,
   updateSubjectPriority,
   updateSubjectStatus,
+  validateSubject,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
@@ -46,7 +47,7 @@ export async function createSubjectAction(input: CreateSubjectInput) {
 export async function listSubjectOptionsAction() {
   return domainAction(async (db) => {
     const subjects = await db.subject.findMany({
-      where: { status: { notIn: ["resolved", "archived", "ignored"] } },
+      where: { status: { notIn: ["validated", "closed"] } },
       orderBy: [{ lastActivityAt: "desc" }],
       select: {
         id: true,
@@ -93,27 +94,41 @@ export async function setSubjectPriorityAction(id: string, priority: Priority) {
   return result;
 }
 
-export async function ignoreSubjectAction(id: string) {
-  const result = await domainAction((db) => ignoreSubject(db, id));
+/**
+ * Fermer un sujet (cas Q) — et rapporter les conversations qu'il portait ENCORE
+ * ACTIVES, pour que l'appelant puisse enchaîner « souhaitez-vous aussi ignorer
+ * la conversation ? ».
+ *
+ * Fermer une fenêtre ne tarit pas la source : sans ignorance, le fil redevient
+ * orphelin et resollicitera l'utilisateur au message suivant. C'est le cœur du
+ * dispositif anti-« groupe WhatsApp bavard » — d'où le fait que la proposition
+ * soit portée par l'action de fermeture elle-même, et non par un écran à part.
+ */
+export async function closeSubjectAction(id: string) {
+  const result = await domainAction(async (db) => {
+    const subject = await closeSubject(db, id);
+    const ignorable = await listIgnorableConversations(db, id);
+    return { subject, ignorable };
+  });
   if (result.ok) revalidateSubjects();
   return result;
 }
 
-export async function resolveSubjectAction(id: string) {
-  const result = await domainAction((db) => resolveSubject(db, id));
+export async function validateSubjectAction(id: string) {
+  const result = await domainAction((db) => validateSubject(db, id));
   if (result.ok) revalidateSubjects();
   return result;
 }
 
-export async function unignoreSubjectAction(id: string) {
-  const result = await domainAction((db) => unignoreSubject(db, id));
+export async function reopenSubjectAction(id: string) {
+  const result = await domainAction((db) => reopenSubject(db, id));
   if (result.ok) revalidateSubjects();
   return result;
 }
 
 export async function openSubjectAction(id: string) {
   // Acquittement implicite. On ne revalide que si l'ouverture a EU un effet
-  // (statut new→acknowledged, ou messages passés en lus) : sinon, ré-ouvrir un
+  // (marqueur « Nouveau » levé, ou messages passés en lus) : sinon, ré-ouvrir un
   // sujet déjà vu garderait inutilement les caches froids. Cela rend les KPIs
   // de l'Accueil (« Nouveaux », « Ouverts ») et les pastilles du fil cohérents
   // en temps réel — un sujet ouvert quitte le compteur « Nouveaux ».

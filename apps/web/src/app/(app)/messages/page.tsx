@@ -1,7 +1,6 @@
 import { Suspense } from "react";
 import { PollRefresh } from "@/components/shared/poll-refresh";
-import { Clock } from "lucide-react";
-import { countOrphanMessages, listMessageEvents } from "@relvo/db";
+import { countUnsortedMessages, listMessageEvents } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { MessageStack } from "@/components/messages/message-stack";
@@ -11,28 +10,30 @@ import { getTenantDb } from "@/server/auth-context";
 
 // Messages (M9.9, Direction B) — UNIQUEMENT les messages « Sans sujet ». Relvo
 // n'est pas une boîte mail : les messages classés vivent dans leur sujet (seule
-// surface d'interaction, invariant n°4). Cette pile se vide au tri ; un orphelin
-// non rattaché est conservé 15 jours puis retiré automatiquement. Action de tri
-// principale : « Créer un sujet » depuis un message.
+// surface d'interaction, invariant n°4). Cette pile se vide au tri ; action de
+// tri principale : « Créer un sujet » depuis un message.
 //
-// PERF (M9.19, point 2) : le hero (compteur) + la note s'affichent
-// instantanément ; la pile stream dans un <Suspense>.
+// ⚠️ TRANSITOIRE (M6bis) — cette page raisonne encore en MESSAGES, alors que le
+// tri se fait désormais par CONVERSATION. Sa remplaçante est `/conversations` ;
+// en attendant, son compteur reste le reflet exact de la pile affichée (des
+// messages), et NON le KPI « Sans sujet » de la page Sujets (des conversations).
+//
+// PERF (M9.19, point 2) : le hero (compteur) s'affiche instantanément ; la pile
+// stream dans un <Suspense>.
 
-async function OrphanStack() {
+async function UnsortedStack() {
   const db = await getTenantDb();
-  const orphanPage = await listMessageEvents(db, {
-    filter: "orphan",
+  const page = await listMessageEvents(db, {
+    filter: "unsorted",
     limit: MESSAGES_PAGE_SIZE,
   });
-  const items = orphanPage.items.map(toMessageRowData);
-  return (
-    <MessageStack initialItems={items} initialCursor={orphanPage.nextCursor} />
-  );
+  const items = page.items.map(toMessageRowData);
+  return <MessageStack initialItems={items} initialCursor={page.nextCursor} />;
 }
 
 export default async function MessagesPage() {
   const db = await getTenantDb();
-  const orphanTotal = await countOrphanMessages(db);
+  const unsortedTotal = await countUnsortedMessages(db);
 
   return (
     <Screen>
@@ -41,27 +42,15 @@ export default async function MessagesPage() {
         back="/fil"
         title="Messages sans sujet"
         subtitle={
-          orphanTotal > 0
-            ? `${orphanTotal} message${orphanTotal > 1 ? "s" : ""} à trier`
+          unsortedTotal > 0
+            ? `${unsortedTotal} message${unsortedTotal > 1 ? "s" : ""} à trier`
             : "Tout est classé"
         }
         className="pb-9"
       />
 
-      <div className="mx-4 mt-4 mb-1 flex items-start gap-2.5 rounded-2xl border border-(--border-light) bg-(--surface) px-3.5 py-3">
-        <Clock
-          className="mt-px size-4 flex-none text-(--text-tertiary)"
-          strokeWidth={2}
-        />
-        <p className="text-[12.5px] leading-[1.45] text-(--text-tertiary)">
-          Les messages qui ne sont rattachés à aucun sujet sont conservés{" "}
-          <b className="font-bold text-(--text-secondary)">15 jours</b>, puis
-          automatiquement retirés de Relvo.
-        </p>
-      </div>
-
       <Suspense fallback={<RowsSkeleton count={5} />}>
-        <OrphanStack />
+        <UnsortedStack />
       </Suspense>
     </Screen>
   );

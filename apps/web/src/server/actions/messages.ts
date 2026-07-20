@@ -3,7 +3,6 @@
 import {
   type CreateContactInput,
   type CreateMessageInput,
-  type TriageHint,
   assignMessageToSubject,
   createContactFromMessageSender,
   createMessage,
@@ -13,7 +12,6 @@ import {
   listMessageEvents,
   markMessageRead,
   reassignMessage,
-  setTriageHint,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
@@ -43,7 +41,7 @@ export async function createMessageAction(input: CreateMessageInput) {
 
 /** Charge une page suivante de la pile Messages (scroll infini, côté client). */
 export async function loadMessageEventsAction(
-  filter: "all" | "orphan",
+  filter: "all" | "unsorted",
   cursor: string | null,
 ): Promise<
   | { ok: true; data: { items: MessageRowData[]; nextCursor: string | null } }
@@ -123,12 +121,6 @@ export async function detachMessageAction(id: string) {
 
 export async function ignoreMessageAction(id: string) {
   const result = await domainAction((db) => ignoreMessage(db, id));
-  if (result.ok) revalidateMessages();
-  return result;
-}
-
-export async function setTriageHintAction(id: string, hint: TriageHint) {
-  const result = await domainAction((db) => setTriageHint(db, id, hint));
   if (result.ok) revalidateMessages();
   return result;
 }

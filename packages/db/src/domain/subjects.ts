@@ -10,30 +10,29 @@ import { cursorArgs, paginationSchema, toPage } from "./pagination";
 import { nextSubjectReference } from "./reference";
 
 // Domaine Subjects (M3.7) — entité centrale. CRUD + transitions de statut
-// validées + dépriorisation (« Ignorer ») + acquittement implicite. Invariant :
+// validées (Ouvert / Validé / Fermé) + acquittement implicite. Invariant :
 // folder_id ne pointe jamais le Folder « Général » (documentaire transversal).
 
-// Cycle de vie (cf. invariant produit n°7) : acknowledged → resolved → archived,
-// + `ignored` (disposition « écarté »). `acknowledged` est l'état actif/ouvert
-// (défaut à la création). Le passage vers le même statut est un no-op toléré.
-// `archived` est système et quasi-terminal. `ignored` : sujet écarté des ouverts,
-// hors mémoire, purgeable — récupérable vers `acknowledged` (« désignorer »).
-// « Nouveau » n'est plus un statut : marqueur dérivé (lastOpenedAt null).
+// Cycle de vie : un Sujet est une FENÊTRE DE TRAVAIL temporaire, à trois états.
+// `open` = fenêtre ouverte (défaut à la création) ; `validated` = le travail est
+// fait ; `closed` = fenêtre refermée sans validation (sujet écarté). Valider comme
+// fermer figent la fenêtre (`closedAt`) ; rouvrir la rouvre (`closedAt` = null).
+// Le passage vers le même statut est un no-op toléré. Il n'y a plus d'« archivé »
+// ni d'« ignoré » côté sujet : l'ignorance vit désormais sur la Conversation.
+// « Nouveau » n'est pas un statut : marqueur dérivé (lastOpenedAt null).
 const TRANSITIONS: Record<SubjectStatus, SubjectStatus[]> = {
-  acknowledged: ["resolved", "archived", "ignored"],
-  resolved: ["acknowledged", "archived", "ignored"],
-  archived: ["acknowledged"],
-  ignored: ["acknowledged"],
+  open: ["validated", "closed"],
+  validated: ["open", "closed"],
+  closed: ["open"],
 };
 
 // Libellés FR pour le journal de bord (fidèles à l'UI) — un événement doit dire
 // CE QUI a changé et de quelle valeur vers quelle valeur, jamais un « modifié »
 // opaque. Le domaine ne dépend pas de l'UI : ces maps y sont donc dupliquées.
 const STATUS_LABELS: Record<SubjectStatus, string> = {
-  acknowledged: "En cours",
-  resolved: "Terminé",
-  archived: "Archivé",
-  ignored: "Ignoré",
+  open: "Ouvert",
+  validated: "Validé",
+  closed: "Fermé",
 };
 
 const PRIORITY_LABELS: Record<Priority, string> = {
@@ -325,12 +324,12 @@ export async function updateSubjectStatus(
       data: {
         status,
         lastActivityAt: now,
-        ...(status === SubjectStatus.resolved ? { resolvedAt: now } : {}),
-        // Sortie de l'état résolu : on efface la date de résolution.
-        ...(current.status === SubjectStatus.resolved &&
-        status !== SubjectStatus.archived
-          ? { resolvedAt: null }
-          : {}),
+        // Valider comme fermer figent la fenêtre de travail → `closedAt`.
+        // Rouvrir la dégèle : on efface `closedAt` ET la date de validation.
+        ...(status === SubjectStatus.open
+          ? { closedAt: null, resolvedAt: null }
+          : { closedAt: now }),
+        ...(status === SubjectStatus.validated ? { resolvedAt: now } : {}),
       },
     });
     ensureAffected(count, "Sujet");
@@ -339,10 +338,10 @@ export async function updateSubjectStatus(
       "Sujet",
     );
     const eventType =
-      status === SubjectStatus.resolved
-        ? EVENT_TYPES.subjectResolved
-        : status === SubjectStatus.archived
-          ? EVENT_TYPES.subjectArchived
+      status === SubjectStatus.validated
+        ? EVENT_TYPES.subjectValidated
+        : status === SubjectStatus.closed
+          ? EVENT_TYPES.subjectClosed
           : EVENT_TYPES.subjectStatusChanged;
     await logEvent(tx as Tx, {
       entityType: "subject",
@@ -357,20 +356,22 @@ export async function updateSubjectStatus(
   });
 }
 
-export function resolveSubject(
+/** « Valider » : le travail de la fenêtre est fait (ex-« Terminer »/`resolved`). */
+export function validateSubject(
   db: TenantDb,
   id: string,
   actor: Actor = Actor.user,
 ) {
-  return updateSubjectStatus(db, id, SubjectStatus.resolved, actor);
+  return updateSubjectStatus(db, id, SubjectStatus.validated, actor);
 }
 
-export function archiveSubject(
+/** « Fermer » : on referme la fenêtre de travail sans la valider (sujet écarté). */
+export function closeSubject(
   db: TenantDb,
   id: string,
   actor: Actor = Actor.user,
 ) {
-  return updateSubjectStatus(db, id, SubjectStatus.archived, actor);
+  return updateSubjectStatus(db, id, SubjectStatus.closed, actor);
 }
 
 export async function updateSubjectPriority(
@@ -408,45 +409,13 @@ export async function updateSubjectPriority(
   });
 }
 
-/**
- * Action « Ignorer » : écarte le sujet en posant le statut `ignored`. Décisif et
- * DURABLE — contrairement à une simple dépriorisation, le sujet quitte les
- * ouverts, n'alimente plus la mémoire et devient purgeable. L'« ignorance » est
- * collante : un nouveau message rattaché ne doit pas la lever (cf. pipeline
- * worker). Récupérable via `unignoreSubject` (onglet Ignorés).
- */
-export function ignoreSubject(
+/** « Rouvrir » : remet un sujet validé ou fermé dans le fil des ouverts. */
+export function reopenSubject(
   db: TenantDb,
   id: string,
   actor: Actor = Actor.user,
 ) {
-  return updateSubjectStatus(db, id, SubjectStatus.ignored, actor);
-}
-
-/** « Désignorer » : remet un sujet ignoré dans le fil (→ acknowledged). */
-export function unignoreSubject(
-  db: TenantDb,
-  id: string,
-  actor: Actor = Actor.user,
-) {
-  return updateSubjectStatus(db, id, SubjectStatus.acknowledged, actor);
-}
-
-/**
- * Purge des sujets ignorés inactifs depuis `olderThanDays` (15 j par défaut) —
- * comme les messages sans sujet. Sur INACTIVITÉ (lastActivityAt), pas en absolu :
- * un fil bavard ignoré ne doit pas être purgé puis recréé. Destiné à un job
- * planifié (worker/cron) ; NON branché automatiquement en V1.
- */
-export async function purgeIgnoredSubjects(
-  db: TenantDb,
-  olderThanDays = 15,
-): Promise<{ deleted: number }> {
-  const cutoff = new Date(Date.now() - olderThanDays * 86_400_000);
-  const { count } = await db.subject.deleteMany({
-    where: { status: SubjectStatus.ignored, lastActivityAt: { lt: cutoff } },
-  });
-  return { deleted: count };
+  return updateSubjectStatus(db, id, SubjectStatus.open, actor);
 }
 
 /**

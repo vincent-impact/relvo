@@ -9,18 +9,15 @@ import {
 import { Actor, SubjectStatus } from "../generated/prisma/enums";
 import type { TenantDb } from "../tenant";
 import { contactDisplayName } from "./contacts";
+import { countUnsortedConversations } from "./conversations";
 import { cursorArgs, paginationSchema, toPage } from "./pagination";
 
 // Requêtes d'agrégation (M3.13). Lectures seules : KPIs de l'Accueil, fil des
-// ouverts, liste « Sans sujet ». Toutes scopées par le client tenant.
+// ouverts. Toutes scopées par le client tenant.
 
-// « Hors fil principal » : terminé, archivé (système) ET ignoré (écarté). Un
-// sujet ignoré quitte les ouverts et n'alimente plus la mémoire (invariant n°7bis).
-const CLOSED_STATUSES = [
-  SubjectStatus.resolved,
-  SubjectStatus.archived,
-  SubjectStatus.ignored,
-];
+// « Hors fil principal » : la fenêtre de travail est refermée — validée (travail
+// fait) ou fermée (sujet écarté). Seul `open` alimente le fil et la mémoire.
+const CLOSED_STATUSES = [SubjectStatus.validated, SubjectStatus.closed];
 
 function dayBounds(now: Date): { start: Date; next: Date } {
   const start = new Date(
@@ -41,7 +38,12 @@ export type Kpis = {
   tasksToday: number;
   /** Total des tâches ouvertes (contexte sous « Tâches aujourd'hui »). */
   openTasksTotal: number;
-  messagesToTriage: number;
+  /**
+   * KPI « Sans sujet » de la page Sujets — compte des CONVERSATIONS actives dont
+   * le dernier message n'a pas de sujet (M6bis), et NON PLUS des messages :
+   * c'est la conversation qui sollicite l'utilisateur, pas le message isolé.
+   */
+  unsortedConversations: number;
   /** Messages écartés par Relvo (status `ignored`) → KPI « Messages ignorés » (Sujets). */
   ignoredMessages: number;
   /** % de tâches proposées par Relvo (source_actor=ai), ou null si aucune tâche. */
@@ -65,7 +67,7 @@ export async function getKpis(
     openSubjects,
     tasksToday,
     openTasksTotal,
-    messagesToTriage,
+    unsortedConversations,
     aiTasks,
     totalTasks,
     ignoredMessages,
@@ -88,9 +90,7 @@ export async function getKpis(
       },
     }),
     db.task.count({ where: { status: TaskStatus.open } }),
-    db.message.count({
-      where: { subjectId: null, status: { not: MessageStatus.ignored } },
-    }),
+    countUnsortedConversations(db),
     db.task.count({
       where: { sourceActor: Actor.ai, status: { not: TaskStatus.deleted } },
     }),
@@ -104,7 +104,7 @@ export async function getKpis(
     openSubjects,
     tasksToday,
     openTasksTotal,
-    messagesToTriage,
+    unsortedConversations,
     ignoredMessages,
     relvoAssistRate:
       totalTasks === 0 ? null : Math.round((aiTasks / totalTasks) * 100),
@@ -147,7 +147,7 @@ export async function getUpcomingTasks(
 }
 
 /**
- * Fil des OUVERTS : tous les sujets non clos (acknowledged), **urgents en tête**
+ * Fil des OUVERTS : tous les sujets non clos (`open`), **urgents en tête**
  * (priority desc) puis dernière activité. Sert l'onglet « Ouverts » du fil et le
  * brief Accueil (limit court → les plus prioritaires). Paginé par curseur.
  */
@@ -489,19 +489,4 @@ export async function getSubjectDetail(db: TenantDb, id: string) {
   }));
 
   return { subject, contacts, messages, tasks, events, attachments, draft };
-}
-
-/** Liste « Sans sujet » : messages non rattachés et non ignorés. */
-export async function listOrphanMessages(
-  db: TenantDb,
-  opts: { cursor?: string; limit?: number } = {},
-) {
-  const { limit } = paginationSchema.parse(opts);
-  const { _limit, ...args } = cursorArgs(opts);
-  const rows = await db.message.findMany({
-    ...args,
-    where: { subjectId: null, status: { not: MessageStatus.ignored } },
-    orderBy: { receivedAt: "desc" },
-  });
-  return toPage(rows, limit);
 }

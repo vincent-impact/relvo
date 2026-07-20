@@ -23,7 +23,9 @@ const CHANNEL_LABEL: Record<string, string> = {
 async function MessageBody({ data }: { data: MessageRowData }) {
   const db = await getTenantDb();
   const subjectRows = await db.subject.findMany({
-    where: { status: { not: "archived" } },
+    // On ne rattache pas un message à une fenêtre déjà refermée : un sujet
+    // `validated` ou `closed` n'est plus un candidat au rattachement.
+    where: { status: { notIn: ["validated", "closed"] } },
     orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
     take: 200,
     select: {

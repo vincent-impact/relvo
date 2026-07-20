@@ -25,6 +25,7 @@ import {
   isHostedAuthNotify,
   isMailWebhook,
   isMessagingWebhook,
+  unipileChatDirectory,
 } from "@/server/unipile";
 
 // Webhook unique du fournisseur d'intégration Unipile (M5.2/M5.3/M5.4/M5.8).
@@ -175,7 +176,8 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
 
   const db = tenantDb(config.accountId);
 
-  // Ingestion idempotente → Message orphelin (« Sans sujet »).
+  // Ingestion idempotente → Message rangé dans sa conversation (M6bis), rattaché
+  // au sujet si une fenêtre y est ouverte, « Sans sujet » sinon.
   const { message, created } = await ingestInboundEmail(
     db,
     toInboundEmail(mail, config.channelId),
@@ -271,13 +273,20 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
 
   const db = tenantDb(config.accountId);
 
-  // Ingestion idempotente → Message orphelin, ou rattaché au fil (chat_id) s'il
-  // existe déjà un sujet ouvert. Anti-loop : nos envois ont déjà posé un Message
+  // Ingestion idempotente → Message rangé dans sa conversation (M6bis, clé
+  // `chat_id` en groupe), rattaché au sujet si une fenêtre y est ouverte.
+  // Anti-loop : nos envois ont déjà posé un Message
   // sortant avec `externalId = message_id` → l'écho d'un message que NOUS avons
   // envoyé retombe sur l'idempotence (findFirst → created:false), aucun doublon.
+  // 3e argument (M6bis.7) : l'annuaire de fils. Il sert à nommer un groupe et à
+  // trancher son type d'après `Chat.type` (autoritaire) plutôt que d'après le
+  // `is_group` du webhook. Le domaine ne l'interroge qu'à la découverte d'un fil,
+  // ou tant qu'un groupe s'appelle encore « Groupe WhatsApp » — jamais à chaque
+  // message.
   const { message, created } = await ingestInboundWhatsApp(
     db,
     toInboundWhatsApp(evt, config.channelId),
+    unipileChatDirectory,
   );
 
   // Médias (M6.6) : même chemin que les PJ email — seulement au premier passage.

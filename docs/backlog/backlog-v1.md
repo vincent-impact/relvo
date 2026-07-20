@@ -17,7 +17,8 @@
 | **M4** — Stockage fichiers | ✅ **clos (2026-07-15)** | **Cloudflare R2** (bucket juridiction `eu`), package partagé `@relvo/storage`, upload navigateur pré-signé, download authentifié (URL stable → 307 vers URL signée 5 min, `?inline=1`), suppression par **outbox alimentée par trigger PostgreSQL** (seul mécanisme qui capte les cascades — Prisma en est aveugle), fixtures de démo en git. M4.1→M4.6 faits ; **M4.7** (uploads abandonnés → préfixe `pending/` + lifecycle R2) reporté **à M11**, qui apporte l'UI d'upload ; **M4.8** (balayage) reporté sur preuve de dérive. Détail inline en §4. |
 | **M5** — Ingestion email | ✅ **clos (2026-07-17)** | **Bascule Unipile** (agrégateur managé email + WhatsApp) — abandon du forwarding Postmark **et du worker Baileys**. Réception (orphelin + **auto-rattachement** interlocuteur+objet), **envoi HTML « au nom de » l'utilisateur**, PJ → R2 + **visualiseur** (lightbox/navigateur), **suppression de canal** (hard-delete + `account.delete` Unipile), UI Canaux (hosted auth un-clic). Validé end-to-end en prod. Détail + raffinements M5.9→M5.13 : §M5. |
 | **M6** — Ingestion WhatsApp | 🟡 **code livré (2026-07-18), validation prod à faire** | Via **Unipile** (webhooks serverless, plus de worker Baileys) — pattern M5 dupliqué : connexion QR hosted auth, réception (orphelin + **rattachement par fil `chat_id`**), envoi dans un fil existant, médias → R2. **Aucune migration** (modèle déjà channel-agnostic). 6 tests verts + typecheck propre. Reste : déclarer le webhook `messaging` côté Unipile + valider end-to-end (QR device réel, anti-loop écho). Détail : §M6. |
-| M7 → M8, M10 → M14 | ⬜ à faire | **M11 (Connaissances)** branche l'UI d'upload sur le socle M4 et débloque M7 **et** M10. M7 (pipeline IA) transforme les Messages orphelins de M5/M6 en Sujets. |
+| **M6bis** — Refonte « Conversation » | ✅ **livré (2026-07-20)** — 58 tests verts, `db`+`web` compilent, build OK. Migration **répétée sur base jetable** avec jeu d'essai (préfixes `Re:`, sortants, groupe, objet nul, 4 anciens statuts) : 0 message sans conversation. ⚠️ **À rejouer sur une copie de la prod avant application réelle.** | Introduit l'entité **`Conversation`** entre Message et Subject : le tri devient **déterministe à la réception** (clé par canal), et le `Subject` devient une **fenêtre de travail** ancrée sur un message, avec appartenance **message par message** (seule façon de traiter les sujets **entrelacés** d'un fil WhatsApp direct). Statuts sujet → `ouvert/validé/fermé` ; l'**ignoré migre sur la conversation**. **Bloque M7.** Rend caducs `/messages`, `assignMessageToSubject` et le balayage des frères. **Migration de données non triviale** (créer les conversations rétroactivement). Détail : §M6bis. |
+| M7 → M8, M10 → M14 | ⬜ à faire | **M11 (Connaissances)** branche l'UI d'upload sur le socle M4 et débloque M7 **et** M10. M7 (pipeline IA) ouvre des Sujets sur les **conversations orphelines** de M6bis — même mécanique d'ancrage que le mode manuel, seul l'acteur change. |
 
 > **⚠️ Migration de schéma requise avant/avec M9** — refonte UX mobile-first (2026-06-18). Le modèle de conception a évolué ([`02-modele-donnees.md`](../conception/02-modele-donnees.md)) ; à répercuter dans `packages/db/prisma/schema.prisma` :
 > - `Status` : `enum(new, to_do, waiting, unread, resolved, archived)` → **`enum(acknowledged, resolved, archived, ignored)`** (cycle de vie exclusif ; `to_do`/`waiting`/`unread` **et `new`** deviennent des marqueurs, pas des statuts — `new` retiré le 2026-06-27, « Nouveau » dérivé de `last_opened_at == null`).
@@ -255,6 +256,58 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 - **M6.8** ✅ — Risque TOS WhatsApp (ban possible du numéro) : **note d'avertissement dans l'UI Canaux** sous la tuile WhatsApp. Unipile ôte la charge opérationnelle, **pas** le risque TOS (connexion non officielle sous le capot).
 
 > **Reste à faire hors code** (config, comme M5) : déclarer le webhook Unipile `messaging` (`message_received`) via `node --env-file=.env.local scripts/unipile-webhook.mjs create-messaging <URL>`, puis valider end-to-end en prod (connexion QR sur téléphone réel, réception + média, réponse depuis le composer, **anti-loop de l'écho** de nos envois — à confirmer contre un vrai payload, cf. leçon M5 `in_reply_to`). Le pipeline IA orphelin→Sujet = **M7** ; l'étiquetage Haiku des médias = **M8**.
+
+---
+
+### M6bis — Refonte « Conversation » (couche de tri déterministe)
+
+**Objectif** : introduire l'entité **`Conversation`** entre `Message` et `Subject`, et faire du `Subject` une **fenêtre de travail temporaire** ancrée sur un message. Le tri quitte le moment « création de sujet » pour le moment « **réception** », et devient **déterministe, sans IA**. Conception : [`01-principes.md §2/§3/§9`](../conception/01-principes.md), [`02-modele-donnees.md §5bis/§6/§7`](../conception/02-modele-donnees.md), [`03-cas-usage.md` cas A→D, K→S](../conception/03-cas-usage.md).
+
+**Pourquoi maintenant** : le mur rencontré en usage réel (2026-07-20). WhatsApp n'a pas d'objet — un fil direct **entrelace** les sujets, et aucune règle de fenêtre temporelle ne sait les séparer. Il faut que la **granularité sémantique (le sujet) soit plus fine que la granularité de transport (la conversation)**, donc que le rattachement se décide **message par message**.
+
+**Dépendances** : M3, M5, M6. **Bloque M7** (le pipeline IA doit travailler sur des conversations, pas sur des messages orphelins).
+
+- [x] **M6bis.1** — Schéma : entité `Conversation` (`type`, `key` unique par compte, `title`, `contact_id`, `interlocutor_raw`, `external_thread_id`, `normalized_subject`, `status`, `last_message_at`), table `SubjectConversation(subject_id, conversation_id, anchor_message_id)`, `Message.conversation_id` **non nullable**
+- [x] **M6bis.2** — Schéma : `Subject.status` → `enum(ouvert, validé, fermé)` + `closed_at` ; **retrait** de `archived` et `ignored`
+- [x] **M6bis.3** — Domaine : `resolveConversation(message)` — calcul de la clé canonique (`email:<interloc>:<objet>`, `wa-group:<chat_id>`, `wa-direct:<numéro>`) + find-or-create, branché sur l'ingestion **email et WhatsApp**
+- [x] **M6bis.4** — Domaine : **règle d'ancrage** à la réception — si la conversation porte un sujet `ouvert`, le message reçoit son `subject_id` automatiquement
+- [x] **M6bis.5** — Domaine : `openSubjectFromMessage(messageId)` (crée le sujet + la ligne `SubjectConversation` avec l'ancre + le contact **sauf conversation de groupe**), `closeSubject` / `validateSubject` (posent `closed_at`), `ignoreConversation` / `reactivateConversation`
+- [x] **M6bis.6** — Domaine : glissement de l'ancre au détachement du message d'ancrage ; rattachement d'un message isolé **sans** déplacer la fenêtre active
+- [x] **M6bis.7** — Unipile : capter le **nom du groupe** et le **type** via `client.messaging.getChat({chat_id})` → `name` (titre de la conversation) et `type` (`SINGLE`/`GROUP`/`CHANNEL`, **discriminant autoritaire**, plus fiable que le `is_group` du webhook). Un seul appel **à la création de la conversation**, pas par message
+- [x] **M6bis.8** — UI : page `/conversations` (hors-nav, atteinte par le **KPI « Sans sujet »**) — liste triée par activité, non-lus en tête (fond distinct, gras, pastille), **3 filtres** (Sans sujet / Ignorées / Toutes) + filtre canal, **swipe gauche = Ignorer**
+- [x] **M6bis.9** — UI : détail d'une conversation — timeline façon messagerie + **cordon de sujet** (rail unique, point coloré au **domaine** du sujet, trait entre messages consécutifs d'un même sujet, point creux si non rattaché)
+- [x] **M6bis.10** — UI : **pop-up message** — si rattaché : affiche le sujet + « Détacher » ; sinon : « Ouvrir un sujet » (ce message devient l'ancre) ou « Rattacher à un sujet existant »
+- [x] **M6bis.11** — UI : swipes de la page Sujets → **Fermer** (gauche) / **Valider** (droite) ; **retrait de l'onglet Ignorés** ; proposition « ignorer la conversation ? » enchaînée à la fermeture
+- [x] **M6bis.12** — UI : étendre un sujet à une seconde conversation (cas S) — **créer** (email, objet pré-rempli par le titre du sujet) ou **rattacher avec une nouvelle ancre** (WhatsApp direct, une seule conversation directe par contact)
+- [x] **M6bis.13** — Tests : clés de conversation par type, idempotence, règle d'ancrage, entrelacement (détacher/déplacer), glissement d'ancre, fermeture → conversations orphelines, ignorance → sortie du KPI
+
+#### ⚠️ Ce que cette refonte rend caduc
+
+| Élément | Devenir |
+|---|---|
+| Pages `/messages` et `/messages/[id]` | **supprimées** → `/conversations` |
+| `assignMessageToSubject` + **balayage des frères orphelins** | **supprimés** — la conversation fait ce travail à la réception, mieux et plus tôt |
+| `Message.triage_hint` | **plus alimenté** (le tri ne peut plus échouer) ; champ conservé pour l'historique |
+| `Message.status = ignored` | remplacé par `Conversation.status = ignoré` (on ignore la **source**, pas l'événement) |
+| `Subject.status` `archived` / `ignored` | **retirés** |
+| Onglet « Ignorés » de la page Sujets, purge à 15 j | **supprimés** |
+| Réouverture auto d'un sujet `resolved` à réception | **supprimée** (contredit la métaphore de la fenêtre) |
+| KPI « Sans sujet » | **conservé mais recâblé** : compte des **conversations** dont le dernier message n'est rattaché à aucun sujet |
+
+`detachMessage` et `reassignMessage`, en revanche, **survivent et prennent tout leur sens** : ils portent la correction manuelle de l'entrelacement (puis, en M7, la correction par Relvo).
+
+#### ⚠️ Migration de données — le point délicat
+
+Il faut **inventer une conversation** pour chaque message existant. Ce n'est pas mécanique :
+
+1. **Emails** — recalculer la clé `(interlocuteur, objet normalisé)` depuis `sender_raw` / `subject_line`. Messages **sans objet** : repli sur une conversation `direct` par interlocuteur, à défaut de mieux.
+2. **WhatsApp** — `external_thread_id` donne le fil, mais le **type** (groupe vs direct) n'est fiable que depuis la capture de `is_group` (2026-07-18). Pour les messages antérieurs : repli sur l'heuristique **déjà en production** — un fil comptant **≥ 2 expéditeurs distincts** est un groupe.
+3. **Titres manquants** — le **nom des groupes** n'a jamais été stocké : prévoir une passe de rattrapage `getChat` par `chat_id`, avec repli sur le `chat_id` en attendant.
+4. **Sujets existants** — créer une ligne `SubjectConversation` par couple (sujet, conversation), avec **ancre = premier message du sujet dans cette conversation**.
+5. **`Message.subject_id` est conservé tel quel** : c'était déjà la vérité d'appartenance, rien à recalculer.
+6. **Statuts** — `acknowledged` → `ouvert`, `resolved` → `validé`, `archived` → `validé`, `ignored` → `fermé` (+ passer les conversations correspondantes en `ignoré`, pour préserver l'intention initiale de l'utilisateur).
+
+> La migration doit être **rejouable** et vérifiée sur une copie de la base de prod avant application : c'est la première migration du projet qui **crée de la donnée** plutôt que de déplacer des colonnes.
 
 ---
 

@@ -4,8 +4,6 @@ import {
   Actor,
   MessageDirection,
   MessageStatus,
-  SubjectStatus,
-  TriageHint,
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
 import {
@@ -14,17 +12,30 @@ import {
   createContact,
   splitFullName,
 } from "./contacts";
+import {
+  findOpenSubjectForConversation,
+  resolveConversation,
+  resolveWhatsAppChatIdentity,
+} from "./conversations";
 import type { EmailSenderPort } from "./email-port";
-import type { WhatsAppSenderPort } from "./whatsapp-port";
+import type {
+  WhatsAppChatDirectoryPort,
+  WhatsAppSenderPort,
+} from "./whatsapp-port";
 import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
-import { ensureAffected } from "./helpers";
+import { type TenantCreate, ensureAffected } from "./helpers";
 import { type Page, cursorArgs, paginationSchema, toPage } from "./pagination";
 import { createSubject } from "./subjects";
 
 // Domaine Messages (M3.8). Un message reste « Sans sujet » tant que subject_id
-// est null ; triage_hint n'est renseigné que dans ce cas. Tri humain : cas M
-// (rattachement), N (ignore), O (réaffectation / détachement).
+// est null. Tri humain : cas M (rattachement), N (ignore), O (réaffectation /
+// détachement).
+//
+// M6bis — `triage_hint` est CADUC et n'est plus jamais alimenté : il expliquait
+// pourquoi Relvo n'avait pas su ranger un message, or le rangement en
+// conversation est désormais déterministe et infaillible. La colonne survit pour
+// l'historique (cf. 02-modele-donnees §7), le code qui l'écrivait a disparu.
 
 export const createMessageSchema = z.object({
   channelId: z.uuid(),
@@ -38,12 +49,14 @@ export const createMessageSchema = z.object({
   externalThreadId: z.string().trim().max(255).optional().nullable(),
   // Message reçu dans un GROUPE (WhatsApp) → 1 groupe = 1 sujet, réponse à Tous.
   isGroup: z.boolean().optional(),
+  // Nom réel du groupe, quand l'appelant a su le lire (M6bis.7). Purement
+  // TRAVERSANT : il ne sert qu'à nommer la conversation, jamais le message.
+  groupTitle: z.string().trim().max(200).optional().nullable(),
   subjectLine: z.string().trim().max(500).optional().nullable(),
   content: z.string().optional().nullable(),
   receivedAt: z.date().optional().nullable(),
   sentAt: z.date().optional().nullable(),
   status: z.enum(MessageStatus).optional(),
-  triageHint: z.enum(TriageHint).optional().nullable(),
 });
 
 export type CreateMessageInput = z.infer<typeof createMessageSchema>;
@@ -83,21 +96,67 @@ export async function getMessage(db: TenantDb, id: string) {
 
 export async function createMessage(db: TenantDb, input: CreateMessageInput) {
   const data = createMessageSchema.parse(input);
-  // triage_hint n'a de sens que pour un message « Sans sujet ».
-  if (data.triageHint && data.subjectId) {
-    throw new DomainError(
-      "INVALID_STATE",
-      "triage_hint ne peut être renseigné que sur un message sans sujet.",
-    );
-  }
   const incoming = data.direction === MessageDirection.incoming;
+
+  // M6bis — tout message se range dans une conversation, et c'est ICI que ça se
+  // décide, pour TOUS les points d'entrée (ingestion email, ingestion WhatsApp,
+  // envoi sortant, seed, tests). Résoudre la conversation dans chaque appelant
+  // aurait garanti qu'un appelant finisse par l'oublier — or la colonne est NON
+  // NULLABLE, donc l'oubli casserait à l'exécution, pas à la compilation.
+  const channel = assertFound(
+    await db.channel.findFirst({
+      where: { id: data.channelId },
+      select: { id: true, type: true },
+    }),
+    "Canal",
+  );
+
+  // L'interlocuteur est l'AUTRE, quel que soit le sens du message : l'expéditeur
+  // d'un entrant, le destinataire d'un sortant. C'est ce qui range les deux sens
+  // de l'échange dans la même conversation.
+  const recipient = data.recipientContactId
+    ? await db.contact.findFirst({
+        where: { id: data.recipientContactId },
+        select: { email: true, phone: true, firstName: true, lastName: true },
+      })
+    : null;
+  const interlocutorRaw = incoming
+    ? (data.senderRaw ?? null)
+    : (recipient?.email ?? recipient?.phone ?? null);
+  const interlocutorName = incoming
+    ? (data.senderName ?? null)
+    : recipient
+      ? contactDisplayName(recipient)
+      : null;
+
+  const conversation = await resolveConversation(db, {
+    channelId: channel.id,
+    channelType: channel.type,
+    interlocutorRaw,
+    interlocutorName,
+    contactId:
+      (incoming ? data.senderContactId : data.recipientContactId) ?? null,
+    subjectLine: data.subjectLine ?? null,
+    externalThreadId: data.externalThreadId ?? null,
+    isGroup: data.isGroup ?? false,
+    groupTitle: data.groupTitle ?? null,
+  });
+
+  // Règle d'ancrage : à défaut de sujet imposé par l'appelant, le message rejoint
+  // la fenêtre ouverte sur sa conversation, s'il y en a une.
+  const subjectId =
+    data.subjectId ??
+    (await findOpenSubjectForConversation(db, conversation.id));
+
+  const occurredAt = (incoming ? data.receivedAt : data.sentAt) ?? new Date();
 
   return db.$transaction(async (tx) => {
     const message = await tx.message.create({
       data: {
         channelId: data.channelId,
+        conversationId: conversation.id,
         direction: data.direction,
-        subjectId: data.subjectId ?? null,
+        subjectId: subjectId ?? null,
         senderContactId: data.senderContactId ?? null,
         senderRaw: data.senderRaw ?? null,
         senderName: data.senderName ?? null,
@@ -109,11 +168,25 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
         content: data.content ?? null,
         receivedAt: data.receivedAt ?? (incoming ? new Date() : null),
         sentAt: data.sentAt ?? (incoming ? null : new Date()),
-        triageHint: data.triageHint ?? null,
         status:
           data.status ??
-          (incoming ? MessageStatus.received : MessageStatus.sent),
-      } as Prisma.MessageUncheckedCreateInput,
+          (subjectId
+            ? MessageStatus.linked
+            : incoming
+              ? MessageStatus.received
+              : MessageStatus.sent),
+        // `satisfies` plutôt qu'un cast nu : `accountId` est injecté par la
+        // couche tenant, mais TOUS les autres champs obligatoires restent
+        // vérifiés — dont `conversationId`. L'ancien `as ...UncheckedCreateInput`
+        // masquait justement ce genre d'oubli jusqu'à l'exécution.
+      } satisfies TenantCreate<Prisma.MessageUncheckedCreateInput> as Prisma.MessageUncheckedCreateInput,
+    });
+    // Dernier message de la conversation — pilote le tri de la liste ET le KPI
+    // « Sans sujet » (cf. Conversation.lastMessageId). Posé ici, dans la même
+    // transaction que la création : c'est le seul moment où il change.
+    await tx.conversation.updateMany({
+      where: { id: conversation.id },
+      data: { lastMessageId: message.id, lastMessageAt: occurredAt },
     });
     await logEvent(tx as Tx, {
       entityType: "message",
@@ -133,8 +206,9 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
 
 // ─────────────────────────────────────────────────────────────
 // Ingestion entrante (M5.3) — un email reçu via le fournisseur d'intégration
-// (Unipile) devient un Message ORPHELIN (« Sans sujet »). Le pipeline IA qui en
-// fait un Sujet est M7 ; ici on ne fait que persister l'événement brut.
+// (Unipile) tombe TOUJOURS dans une conversation (M6bis), rattaché à un sujet ou
+// non. Le pipeline IA qui en fait un Sujet est M7 ; ici on ne fait que persister
+// l'événement brut.
 // ─────────────────────────────────────────────────────────────
 
 export const ingestInboundEmailSchema = z.object({
@@ -152,96 +226,14 @@ export const ingestInboundEmailSchema = z.object({
 export type IngestInboundEmailInput = z.infer<typeof ingestInboundEmailSchema>;
 
 /**
- * Normalise un objet d'email pour le comparer d'un message à l'autre : retire
- * les préfixes de réponse/transfert (Re, Ré, Rép, Fwd, Tr, Aw, Answer…, y
- * compris répétés « Re: Re: »), écrase les espaces, passe en minuscules.
- */
-export function normalizeSubjectLine(raw: string): string {
-  return raw
-    .replace(
-      /^(\s*(re|ré|rep|rép|répondre|réf|ref|fw|fwd|tr|aw|antw|answer|rv)\s*(\[\d+\])?\s*[:：]\s*)+/i,
-      "",
-    )
-    .replace(/\s+/g, " ")
-    .trim()
-    .toLowerCase();
-}
-
-/**
- * Rattachement métier PRÉ-M7 (règle déterministe, remplaçable plus tard par
- * l'IA) : un email entrant rejoint un sujet existant si — et seulement si — il
- * partage le MÊME interlocuteur ET le MÊME objet normalisé qu'un message (ou le
- * titre) de ce sujet. On exclut les sujets `ignored` (l'ignorance est collante,
- * invariant n°7) et `archived` (système, inactif). Retourne l'id du sujet, ou
- * null (→ message orphelin « Sans sujet »).
- */
-async function findSubjectForInboundEmail(
-  db: TenantDb,
-  input: {
-    senderEmail: string | null;
-    senderContactId: string | null;
-    subjectLine: string | null;
-  },
-): Promise<string | null> {
-  const target = input.subjectLine
-    ? normalizeSubjectLine(input.subjectLine)
-    : "";
-  if (!target || !input.senderEmail) return null;
-
-  // Sujets où cet interlocuteur apparaît déjà : soit via un contact lié
-  // (contactIds / recipientContact), soit via l'expéditeur brut (sender_raw)
-  // quand l'email n'est pas encore un contact enregistré.
-  const orInterlocutor: Prisma.SubjectWhereInput[] = [
-    {
-      messages: {
-        some: { senderRaw: { equals: input.senderEmail, mode: "insensitive" } },
-      },
-    },
-    {
-      messages: {
-        some: {
-          recipientContact: {
-            email: { equals: input.senderEmail, mode: "insensitive" },
-          },
-        },
-      },
-    },
-  ];
-  if (input.senderContactId) {
-    orInterlocutor.push({ contactIds: { has: input.senderContactId } });
-  }
-
-  const candidates = await db.subject.findMany({
-    where: {
-      status: { in: [SubjectStatus.acknowledged, SubjectStatus.resolved] },
-      OR: orInterlocutor,
-    },
-    select: {
-      id: true,
-      title: true,
-      messages: { select: { subjectLine: true } },
-    },
-    orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
-  });
-
-  for (const s of candidates) {
-    const objects = [s.title, ...s.messages.map((m) => m.subjectLine)]
-      .filter((v): v is string => Boolean(v))
-      .map(normalizeSubjectLine);
-    if (objects.includes(target)) return s.id;
-  }
-  return null;
-}
-
-/**
- * Persiste un email entrant en Message, de façon IDEMPOTENTE : un webhook rejoué
- * (même `channelId` + `externalId`) ne crée pas de doublon. Double garde : check
- * applicatif (findFirst) + contrainte unique en base
- * (`messages_channel_id_external_id_key`) qui gagne en cas de course.
+ * Persiste un email entrant, de façon IDEMPOTENTE (même `channelId` +
+ * `externalId` → pas de doublon ; double garde applicative + contrainte unique).
  *
- * Rattachement automatique (pré-M7) : si l'email partage interlocuteur + objet
- * avec un sujet existant, il y est rangé (`linked`) plutôt que laissé orphelin.
- * Sinon il reste « Sans sujet » en attente de tri.
+ * Le RANGEMENT n'est plus fait ici : `createMessage` résout la conversation
+ * (interlocuteur + objet normalisé) et applique la règle d'ancrage. L'ancienne
+ * heuristique « même interlocuteur ET même objet qu'un message du sujet »
+ * a disparu avec elle — elle cherchait un sujet là où il fallait d'abord
+ * chercher une conversation.
  */
 export async function ingestInboundEmail(
   db: TenantDb,
@@ -280,17 +272,10 @@ export async function ingestInboundEmail(
       null)
     : null;
 
-  const subjectId = await findSubjectForInboundEmail(db, {
-    senderEmail,
-    senderContactId,
-    subjectLine: data.subjectLine ?? null,
-  });
-
   try {
     const message = await createMessage(db, {
       channelId: data.channelId,
       direction: MessageDirection.incoming,
-      subjectId,
       senderContactId,
       senderRaw: data.senderRaw ?? null,
       senderName: data.senderName ?? null,
@@ -299,13 +284,12 @@ export async function ingestInboundEmail(
       subjectLine: data.subjectLine ?? null,
       content: data.content ?? null,
       receivedAt: data.receivedAt ?? new Date(),
-      status: subjectId ? MessageStatus.linked : undefined,
     });
-    // Rangé dans un sujet → on remonte son activité (il refait surface dans le
-    // fil des ouverts). Best-effort, hors transaction du message.
-    if (subjectId) {
+    // Ancré dans une fenêtre ouverte → le sujet refait surface dans le fil des
+    // ouverts. Best-effort, hors transaction du message.
+    if (message.subjectId) {
       await db.subject.updateMany({
-        where: { id: subjectId },
+        where: { id: message.subjectId },
         data: { lastActivityAt: new Date() },
       });
     }
@@ -327,12 +311,10 @@ export async function ingestInboundEmail(
 }
 
 // ─────────────────────────────────────────────────────────────
-// Ingestion entrante WhatsApp (M6.4) — un message WhatsApp reçu via Unipile
-// devient un Message ORPHELIN, comme l'email. Différence structurante : WhatsApp
-// n'a PAS de ligne d'objet → le rattachement pré-M7 ne peut pas se faire sur
-// l'objet normalisé (règle email M5.9). On se cale sur le `chat_id` (fil), stocké
-// dans `externalThreadId` : un message rejoint un sujet ouvert qui contient DÉJÀ
-// un message du même fil. Le pipeline IA (M7) fera le vrai regroupement.
+// Ingestion entrante WhatsApp (M6.4) — même contrat que l'email. WhatsApp n'a
+// PAS de ligne d'objet : c'est le `chat_id` (groupe) ou le numéro (direct) qui
+// porte l'identité de la conversation. Cette asymétrie est absorbée par
+// `conversationIdentity()` — l'ingestion, elle, est identique des deux côtés.
 // ─────────────────────────────────────────────────────────────
 
 export const ingestInboundWhatsAppSchema = z.object({
@@ -359,42 +341,20 @@ export type IngestInboundWhatsAppInput = z.infer<
 >;
 
 /**
- * Rattachement pré-M7 pour WhatsApp (règle déterministe, remplacée par l'IA en
- * M7) : un message entrant rejoint un sujet existant si — et seulement si — le
- * sujet contient DÉJÀ un message du même fil (`chat_id` = `externalThreadId`).
- * On ne devine JAMAIS un nouveau sujet à partir d'un premier message de chat (il
- * reste orphelin). On exclut les sujets `ignored` (ignorance collante, invariant
- * n°7) et `archived` (système). Retourne l'id du sujet, ou null.
- */
-async function findSubjectByChatThread(
-  db: TenantDb,
-  externalThreadId: string | null,
-): Promise<string | null> {
-  if (!externalThreadId) return null;
-  const linked = await db.message.findFirst({
-    where: {
-      externalThreadId,
-      subjectId: { not: null },
-      subject: {
-        status: { in: [SubjectStatus.acknowledged, SubjectStatus.resolved] },
-      },
-    },
-    select: { subjectId: true },
-    orderBy: { createdAt: "desc" },
-  });
-  return linked?.subjectId ?? null;
-}
-
-/**
- * Persiste un message WhatsApp entrant en Message, de façon IDEMPOTENTE (même
- * `channelId` + `externalId` → pas de doublon ; double garde applicative + unique
- * en base). Rattachement automatique par fil (`chat_id`) si un sujet ouvert le
- * porte déjà ; sinon orphelin « Sans sujet ». Même contrat de retour que
- * `ingestInboundEmail`.
+ * Persiste un message WhatsApp entrant, de façon IDEMPOTENTE. Comme pour
+ * l'email, le rangement est délégué à `createMessage` (conversation + règle
+ * d'ancrage) : il n'y a plus de résolution de sujet propre à WhatsApp.
  */
 export async function ingestInboundWhatsApp(
   db: TenantDb,
   input: IngestInboundWhatsAppInput,
+  /**
+   * Annuaire des fils (M6bis.7) — OPTIONNEL : sans lui, l'ingestion se comporte
+   * exactement comme avant (type d'après `is_group`, groupe nommé « Groupe
+   * WhatsApp »). C'est ce qui laisse les tests et les seeds sans dépendance
+   * réseau.
+   */
+  chats?: WhatsAppChatDirectoryPort | null,
 ): Promise<{
   message: Awaited<ReturnType<typeof createMessage>>;
   created: boolean;
@@ -429,30 +389,33 @@ export async function ingestInboundWhatsApp(
       null)
     : null;
 
-  const subjectId = await findSubjectByChatThread(
+  // Nom et type réels du fil. Placé APRÈS le court-circuit d'idempotence : une
+  // re-livraison du même webhook ne doit rien coûter en réseau. En régime établi
+  // (fil déjà connu et nommé) la résolution se fait par une simple lecture en base.
+  const chat = await resolveWhatsAppChatIdentity(
     db,
-    data.externalThreadId ?? null,
+    { chatId: data.externalThreadId, isGroupHint: data.isGroup },
+    chats,
   );
 
   try {
     const message = await createMessage(db, {
       channelId: data.channelId,
       direction: MessageDirection.incoming,
-      subjectId,
       senderContactId,
       senderRaw: data.senderRaw ?? null,
       senderName: data.senderName ?? null,
       externalId: data.externalId,
       externalThreadId: data.externalThreadId ?? null,
-      isGroup: data.isGroup ?? false,
+      isGroup: chat.isGroup,
+      groupTitle: chat.groupTitle,
       // WhatsApp n'a pas d'objet → subjectLine reste null.
       content: data.content ?? null,
       receivedAt: data.receivedAt ?? new Date(),
-      status: subjectId ? MessageStatus.linked : undefined,
     });
-    if (subjectId) {
+    if (message.subjectId) {
       await db.subject.updateMany({
-        where: { id: subjectId },
+        where: { id: message.subjectId },
         data: { lastActivityAt: new Date() },
       });
     }
@@ -691,7 +654,58 @@ export async function createSubjectFromMessage(
     createdByActor: Actor.user,
   });
 
+  // M6bis — ouvrir un sujet, c'est OUVRIR UNE FENÊTRE sur la conversation du
+  // message, ancrée sur ce message. C'est le seul geste qui pose une ancre.
+  await db.subjectConversation.create({
+    data: {
+      subjectId: subject.id,
+      conversationId: message.conversationId,
+      anchorMessageId: message.id,
+    } satisfies TenantCreate<Prisma.SubjectConversationUncheckedCreateInput> as Prisma.SubjectConversationUncheckedCreateInput,
+  });
+
+  // La fenêtre s'ouvre À PARTIR de l'ancre : les messages de la conversation
+  // postérieurs à l'ancre et non encore couverts rejoignent le sujet ; les
+  // ANTÉRIEURS restent dans la conversation sans lui appartenir.
+  //
+  // C'est ce qui remplace l'ancien « balayage des frères orphelins » — avec une
+  // règle qui se justifie (la fenêtre) au lieu d'une heuristique de similarité.
+  const anchoredAt = message.receivedAt ?? message.sentAt ?? message.createdAt;
+  const covered = {
+    conversationId: message.conversationId,
+    subjectId: null,
+    status: { not: MessageStatus.ignored },
+    createdAt: { gte: message.createdAt },
+    OR: [{ receivedAt: { gte: anchoredAt } }, { sentAt: { gte: anchoredAt } }],
+  } satisfies Prisma.MessageWhereInput;
+
+  const [{ count: swept }] = await db.$transaction([
+    db.message.updateMany({
+      where: covered,
+      data: { subjectId: subject.id, status: MessageStatus.linked },
+    }),
+    db.attachment.updateMany({
+      where: { message: { is: covered } },
+      data: { subjectId: subject.id },
+    }),
+  ]);
+
   await assignMessageToSubject(db, messageId, subject.id);
+
+  // Un SEUL événement de synthèse si la fenêtre a emporté d'autres messages —
+  // pas N entrées de journal.
+  if (swept > 0) {
+    const plural = swept > 1 ? "s" : "";
+    await logEvent(db, {
+      entityType: "subject",
+      entityId: subject.id,
+      subjectId: subject.id,
+      eventType: EVENT_TYPES.messageLinked,
+      title: `${swept} message${plural} de la conversation couvert${plural} par le sujet`,
+      actor: "system",
+    });
+  }
+
   return subject;
 }
 
@@ -729,81 +743,18 @@ export async function createContactFromMessageSender(
 }
 
 /**
- * Calcule (lecture seule) les IDs des AUTRES orphelins du même GROUPE que
- * `source`. Le groupe suit les règles de rattachement de l'ingestion :
- *   • WhatsApp → même fil (`chat_id` = externalThreadId, portée par canal) ;
- *   • Email    → même interlocuteur ET même objet normalisé.
- * N'inclut jamais `source`, ni un message déjà classé/ignoré (invariant n°7) :
- * on ne considère que les orphelins ENTRANTS encore `received`.
- */
-async function findSiblingOrphanIds(
-  db: TenantDb,
-  source: {
-    id: string;
-    channelId: string;
-    channelType: string;
-    externalThreadId: string | null;
-    subjectLine: string | null;
-    senderRaw: string | null;
-    senderContactId: string | null;
-  },
-): Promise<string[]> {
-  const base: Prisma.MessageWhereInput = {
-    id: { not: source.id },
-    subjectId: null,
-    status: MessageStatus.received,
-    direction: MessageDirection.incoming,
-  };
-
-  if (source.channelType === "whatsapp" && source.externalThreadId) {
-    const rows = await db.message.findMany({
-      where: {
-        ...base,
-        channelId: source.channelId,
-        externalThreadId: source.externalThreadId,
-      },
-      select: { id: true },
-    });
-    return rows.map((r) => r.id);
-  }
-
-  if (source.subjectLine) {
-    const target = normalizeSubjectLine(source.subjectLine);
-    const senderEmail = source.senderRaw?.trim() || null;
-    // Même interlocuteur : contact lié à défaut expéditeur brut (email).
-    const orInterlocutor: Prisma.MessageWhereInput[] = [];
-    if (source.senderContactId)
-      orInterlocutor.push({ senderContactId: source.senderContactId });
-    if (senderEmail)
-      orInterlocutor.push({
-        senderRaw: { equals: senderEmail, mode: "insensitive" },
-      });
-    if (orInterlocutor.length === 0) return [];
-    const rows = await db.message.findMany({
-      where: { ...base, OR: orInterlocutor },
-      select: { id: true, subjectLine: true },
-    });
-    // L'objet normalisé se compare en JS (regex de préfixes Re/Fwd…), comme à
-    // l'ingestion — pas d'équivalent SQL fidèle.
-    return rows
-      .filter(
-        (r) => r.subjectLine && normalizeSubjectLine(r.subjectLine) === target,
-      )
-      .map((r) => r.id);
-  }
-
-  return [];
-}
-
-/**
- * Cas M : rattacher un message « Sans sujet » à un sujet, ET tous les autres
- * orphelins du MÊME groupe (même fil WhatsApp / même objet + interlocuteur
- * email — règle déterministe pré-M7 que l'IA affinera, validé Vincent).
+ * Rattache UN message à un sujet — un seul, jamais ses voisins.
  *
- * Conçu PLAT : le nombre de requêtes est CONSTANT quel que soit le nombre de
- * messages rattachés — un `updateMany` pour TOUS les messages, un pour LEURS PJ
- * (transaction en lot = un aller-retour, pas une transaction interactive qui
- * multiplie les allers-retours et avait fait exploser le budget 5 s → P2028).
+ * Le balayage des « frères orphelins » a disparu avec M6bis : il rattrapait à la
+ * main ce que la règle d'ancrage fait maintenant à la réception. Surtout, il
+ * était incompatible avec les sujets ENTRELACÉS — dans un fil WhatsApp direct où
+ * Karim parle de la sauce blanche et de la facture emballages en alternance,
+ * rattacher un message emportait tout le fil.
+ *
+ * Conformément au modèle, ce rattachement NE DÉPLACE PAS la fenêtre active :
+ * seule l'ouverture d'un sujet pose une ancre (cf. `openSubjectFromMessage`).
+ * Un message peut donc appartenir au sujet A pendant que la conversation reste
+ * ancrée sur le sujet B.
  */
 export async function assignMessageToSubject(
   db: TenantDb,
@@ -814,40 +765,18 @@ export async function assignMessageToSubject(
     await db.subject.findFirst({ where: { id: subjectId } }),
     "Sujet",
   );
-  const source = assertFound(
-    await db.message.findFirst({
-      where: { id },
-      include: { channel: { select: { type: true } } },
-    }),
-    "Message",
-  );
 
-  const siblingIds = await findSiblingOrphanIds(db, {
-    id: source.id,
-    channelId: source.channelId,
-    channelType: source.channel.type,
-    externalThreadId: source.externalThreadId,
-    subjectLine: source.subjectLine,
-    senderRaw: source.senderRaw,
-    senderContactId: source.senderContactId,
-  });
-  const allIds = [id, ...siblingIds];
-
-  // Rattachement atomique et PLAT : deux updateMany groupés (transaction en lot).
-  // Les PJ suivent leur message (box « Pièces jointes » de la fiche).
-  await db.$transaction([
+  // Les PJ suivent leur message (box « Pièces jointes » de la fiche). Deux
+  // updateMany groupés = nombre de requêtes CONSTANT (cf. incident P2028).
+  const [{ count }] = await db.$transaction([
     db.message.updateMany({
-      where: { id: { in: allIds } },
-      data: { subjectId, status: MessageStatus.linked, triageHint: null },
+      where: { id },
+      data: { subjectId, status: MessageStatus.linked },
     }),
-    db.attachment.updateMany({
-      where: { messageId: { in: allIds } },
-      data: { subjectId },
-    }),
+    db.attachment.updateMany({ where: { messageId: id }, data: { subjectId } }),
   ]);
+  ensureAffected(count, "Message");
 
-  // Journal : un événement pour le message rattaché par l'utilisateur, plus UN
-  // seul événement de synthèse si des frères ont suivi (pas N entrées).
   await logEvent(db, {
     entityType: "message",
     entityId: id,
@@ -857,17 +786,6 @@ export async function assignMessageToSubject(
     title: "Message rattaché à un sujet",
     actor: "user",
   });
-  if (siblingIds.length > 0) {
-    const plural = siblingIds.length > 1 ? "s" : "";
-    await logEvent(db, {
-      entityType: "subject",
-      entityId: subjectId,
-      subjectId,
-      eventType: EVENT_TYPES.messageLinked,
-      title: `${siblingIds.length} autre${plural} message${plural} du même fil rattaché${plural}`,
-      actor: "system",
-    });
-  }
 
   return assertFound(await db.message.findFirst({ where: { id } }), "Message");
 }
@@ -908,7 +826,7 @@ export async function reassignMessage(
     );
     const { count } = await tx.message.updateMany({
       where: { id },
-      data: { subjectId, status: MessageStatus.linked, triageHint: null },
+      data: { subjectId, status: MessageStatus.linked },
     });
     ensureAffected(count, "Message");
     await tx.attachment.updateMany({
@@ -931,9 +849,27 @@ export async function reassignMessage(
   });
 }
 
-/** Cas O : détacher un message (retour « Sans sujet »). */
+/**
+ * Cas O : détacher un message de son sujet.
+ *
+ * ⚠️ Si ce message était l'ANCRE d'une fenêtre, l'ancre GLISSE au message
+ * suivant du sujet dans cette conversation. Sans ce glissement, la fenêtre
+ * resterait accrochée à un message qui n'appartient plus au sujet — et la
+ * suppression de l'ancre (FK `SetNull`) laisserait une fenêtre sans point de
+ * départ. Si le sujet ne couvre plus aucun message de la conversation, la
+ * fenêtre elle-même est retirée : le sujet n'a plus lieu d'y capter les
+ * nouveaux messages.
+ */
 export async function detachMessage(db: TenantDb, id: string) {
-  return db.$transaction(async (tx) => {
+  const before = assertFound(
+    await db.message.findFirst({
+      where: { id },
+      select: { id: true, subjectId: true, conversationId: true },
+    }),
+    "Message",
+  );
+
+  const result = await db.$transaction(async (tx) => {
     const { count } = await tx.message.updateMany({
       where: { id },
       data: { subjectId: null, status: MessageStatus.received },
@@ -956,30 +892,61 @@ export async function detachMessage(db: TenantDb, id: string) {
       "Message",
     );
   });
-}
 
-/** Renseigne le triage_hint d'un message « Sans sujet ». */
-export async function setTriageHint(
-  db: TenantDb,
-  id: string,
-  hint: TriageHint,
-) {
-  const message = assertFound(
-    await db.message.findFirst({ where: { id } }),
-    "Message",
-  );
-  if (message.subjectId) {
-    throw new DomainError(
-      "INVALID_STATE",
-      "triage_hint ne s'applique qu'aux messages sans sujet.",
-    );
+  // Glissement d'ancre — hors transaction : ce sont des requêtes de réparation,
+  // pas la mutation demandée par l'utilisateur (cf. incident P2028, on ne fait
+  // pas grossir une transaction interactive).
+  if (before.subjectId) {
+    const window = await db.subjectConversation.findFirst({
+      where: {
+        subjectId: before.subjectId,
+        conversationId: before.conversationId,
+      },
+      select: { id: true, anchorMessageId: true },
+    });
+    if (window?.anchorMessageId === id) {
+      const next = await db.message.findFirst({
+        where: {
+          subjectId: before.subjectId,
+          conversationId: before.conversationId,
+        },
+        select: { id: true },
+        orderBy: [
+          { receivedAt: "asc" },
+          { sentAt: "asc" },
+          { createdAt: "asc" },
+        ],
+      });
+      if (next) {
+        await db.subjectConversation.updateMany({
+          where: { id: window.id },
+          data: { anchorMessageId: next.id },
+        });
+        await logEvent(db, {
+          entityType: "subject",
+          entityId: before.subjectId,
+          subjectId: before.subjectId,
+          eventType: EVENT_TYPES.anchorMoved,
+          title: "Ancre déplacée au message suivant",
+          actor: "system",
+        });
+      } else {
+        // Plus aucun message du sujet dans cette conversation : la fenêtre n'a
+        // plus d'objet, on la retire (les nouveaux messages redeviennent libres).
+        await db.subjectConversation.deleteMany({ where: { id: window.id } });
+        await logEvent(db, {
+          entityType: "subject",
+          entityId: before.subjectId,
+          subjectId: before.subjectId,
+          eventType: EVENT_TYPES.conversationDetached,
+          title: "Fenêtre refermée sur la conversation (plus aucun message)",
+          actor: "system",
+        });
+      }
+    }
   }
-  const { count } = await db.message.updateMany({
-    where: { id },
-    data: { triageHint: hint },
-  });
-  ensureAffected(count, "Message");
-  return { id, triageHint: hint };
+
+  return result;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1012,11 +979,11 @@ export type MessageEventItem = {
   /** Domaine (dossier) assigné au message à la réception ; null = non classé. */
   folder: { id: string; name: string; slug: string } | null;
   receivedAt: Date;
-  /** Lu = `readAt` posé (à l'ouverture du sujet). Null pour les orphelins. */
+  /** Lu = `readAt` posé (à l'ouverture du sujet ou de la conversation). */
   read: boolean;
   subject: { id: string; reference: string; title: string } | null;
   /** Pièces jointes du message (photos WhatsApp, PJ email…) — pour l'aperçu du
-   *  détail, y compris quand le message est encore orphelin. */
+   *  détail, y compris quand le message n'est rattaché à aucun sujet. */
   attachments: {
     id: string;
     name: string;
@@ -1088,12 +1055,12 @@ function toMessageEventItem(m: MessageEventRow): MessageEventItem {
 }
 
 /**
- * Pile paginée des messages reçus (curseur), filtrable sur les orphelins.
+ * Pile paginée des messages reçus (curseur), filtrable sur les non rattachés.
  * Exclut l'envoyé (`outgoing`) et les messages ignorés.
  */
 export async function listMessageEvents(
   db: TenantDb,
-  opts: { filter?: "all" | "orphan"; cursor?: string; limit?: number } = {},
+  opts: { filter?: "all" | "unsorted"; cursor?: string; limit?: number } = {},
 ): Promise<Page<MessageEventItem>> {
   const { limit } = paginationSchema.parse(opts);
   const { _limit, ...args } = cursorArgs(opts);
@@ -1102,7 +1069,7 @@ export async function listMessageEvents(
     where: {
       direction: MessageDirection.incoming,
       status: { not: MessageStatus.ignored },
-      ...(opts.filter === "orphan" ? { subjectId: null } : {}),
+      ...(opts.filter === "unsorted" ? { subjectId: null } : {}),
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
     include: MESSAGE_EVENT_INCLUDE,
@@ -1128,25 +1095,35 @@ export async function getMessageEvent(
 
 /**
  * Compteurs de NON-LUS pour les badges d'onglets : « Tous » (tous les messages
- * reçus non-lus, classés ou non) et « Sans sujet » (orphelins, tous non-lus).
+ * reçus non-lus, classés ou non) et « Sans sujet » (non rattachés, non lus).
+ *
+ * ⚠️ Le non-lu de référence vit désormais sur la CONVERSATION
+ * (`markConversationRead`) : ces compteurs ne servent que la page `/messages`,
+ * transitoire jusqu'à `/conversations`.
  */
 export async function countUnreadMessages(
   db: TenantDb,
-): Promise<{ all: number; orphan: number }> {
+): Promise<{ all: number; unsorted: number }> {
   const base = {
     direction: MessageDirection.incoming,
     status: { not: MessageStatus.ignored },
     readAt: null,
   } as const;
-  const [all, orphan] = await Promise.all([
+  const [all, unsorted] = await Promise.all([
     db.message.count({ where: base }),
     db.message.count({ where: { ...base, subjectId: null } }),
   ]);
-  return { all, orphan };
+  return { all, unsorted };
 }
 
-/** Nombre de messages « Sans sujet » en attente de tri (lus ou non). */
-export async function countOrphanMessages(db: TenantDb): Promise<number> {
+/**
+ * Nombre de messages reçus non rattachés à un sujet.
+ *
+ * ⚠️ Ce n'est PAS le KPI « Sans sujet » — celui-ci compte des CONVERSATIONS
+ * (`countUnsortedConversations`). Ce compteur ne sert qu'à titrer la pile de la
+ * page `/messages`, dont il doit rester l'exact reflet.
+ */
+export async function countUnsortedMessages(db: TenantDb): Promise<number> {
   return db.message.count({
     where: {
       direction: MessageDirection.incoming,
@@ -1157,10 +1134,10 @@ export async function countOrphanMessages(db: TenantDb): Promise<number> {
 }
 
 /**
- * Marque un message comme LU (idempotent). Pour un orphelin, « lire » = déplier
- * son contenu (il n'a pas de sujet à ouvrir) ; ça aide à distinguer ce qu'on a
- * déjà regardé de ce qui est nouveau. Aucun log (un coup d'œil n'est pas un
- * événement du journal).
+ * Marque un message comme LU (idempotent). Pour un message non rattaché,
+ * « lire » = déplier son contenu ; ça aide à distinguer ce qu'on a déjà regardé
+ * de ce qui est nouveau. Aucun log (un coup d'œil n'est pas un événement du
+ * journal).
  */
 export async function markMessageRead(db: TenantDb, id: string) {
   await db.message.updateMany({
@@ -1168,25 +1145,4 @@ export async function markMessageRead(db: TenantDb, id: string) {
     data: { readAt: new Date() },
   });
   return { id };
-}
-
-/**
- * Purge des messages « Sans sujet » trop anciens (rétention 15 j par défaut) :
- * un message jamais rattaché à un sujet n'a pas vocation à rester — Relvo
- * n'archive pas la boîte de réception. Destiné à un job planifié (worker/cron) ;
- * NON branché automatiquement en V1.
- */
-export async function purgeStaleOrphanMessages(
-  db: TenantDb,
-  olderThanDays = 15,
-): Promise<{ deleted: number }> {
-  const cutoff = new Date(Date.now() - olderThanDays * 86_400_000);
-  const { count } = await db.message.deleteMany({
-    where: {
-      subjectId: null,
-      direction: MessageDirection.incoming,
-      createdAt: { lt: cutoff },
-    },
-  });
-  return { deleted: count };
 }

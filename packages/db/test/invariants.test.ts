@@ -8,13 +8,12 @@ import {
   deleteFolder,
   getSubject,
   prisma,
-  setTriageHint,
   tenantDb,
   updateSubjectStatus,
 } from "../src/index";
 
 // Tests d'invariants critiques (M3.14) : isolation tenant, Folder « Général »
-// documentaire, transitions de statut, triage_hint réservé aux messages orphelins.
+// documentaire, transitions de statut.
 
 /** Crée un compte + son Folder « Général » et renvoie un client tenant scellé. */
 async function makeAccount(email: string) {
@@ -60,11 +59,11 @@ describe("Isolation tenant", () => {
     const subject = await createSubject(a.db, { title: "Sujet de A" });
 
     await expect(
-      updateSubjectStatus(b.db, subject.id, SubjectStatus.acknowledged),
+      updateSubjectStatus(b.db, subject.id, SubjectStatus.open),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
-    // L'état chez A est inchangé (défaut « acknowledged »).
+    // L'état chez A est inchangé (défaut « open » = fenêtre ouverte).
     expect((await getSubject(a.db, subject.id)).status).toBe(
-      SubjectStatus.acknowledged,
+      SubjectStatus.open,
     );
   });
 });
@@ -86,31 +85,36 @@ describe("Folder « Général » documentaire", () => {
 });
 
 describe("Transitions de statut", () => {
-  it("rejette une transition interdite (archived → resolved)", async () => {
+  // Une fenêtre refermée (`closed`) ne peut que se ROUVRIR : on ne valide pas un
+  // travail qu'on avait écarté sans le rouvrir d'abord.
+  it("rejette une transition interdite (closed → validated)", async () => {
     const a = await makeAccount("e@test.fr");
     const subject = await createSubject(a.db, {
-      title: "Sujet archivé",
-      status: SubjectStatus.archived,
+      title: "Sujet fermé",
+      status: SubjectStatus.closed,
     });
     await expect(
-      updateSubjectStatus(a.db, subject.id, SubjectStatus.resolved),
+      updateSubjectStatus(a.db, subject.id, SubjectStatus.validated),
     ).rejects.toMatchObject({ code: "INVALID_STATUS_TRANSITION" });
   });
 
-  it("autorise une transition valide (acknowledged → resolved)", async () => {
+  it("autorise une transition valide (open → validated)", async () => {
     const a = await makeAccount("f@test.fr");
     const subject = await createSubject(a.db, { title: "Sujet neuf" });
     const updated = await updateSubjectStatus(
       a.db,
       subject.id,
-      SubjectStatus.resolved,
+      SubjectStatus.validated,
     );
-    expect(updated.status).toBe(SubjectStatus.resolved);
+    expect(updated.status).toBe(SubjectStatus.validated);
   });
 });
 
-describe("triage_hint", () => {
-  it("est refusé sur un message rattaché à un sujet", async () => {
+// M6bis — remplace l'ancien test « triage_hint refusé sur un message rattaché » :
+// le triage_hint est caduc, et l'invariant qui compte désormais est qu'AUCUN
+// message ne peut exister hors d'une conversation (plus de message orphelin).
+describe("conversation obligatoire", () => {
+  it("range tout message créé dans une conversation", async () => {
     const a = await makeAccount("g@test.fr");
     const channel = await a.db.channel.create({
       data: { name: "Mail", type: "email", identifier: "x@test.fr" },
@@ -122,8 +126,6 @@ describe("triage_hint", () => {
       subjectId: subject.id,
       content: "Bonjour",
     });
-    await expect(
-      setTriageHint(a.db, message.id, "ambiguous"),
-    ).rejects.toMatchObject({ code: "INVALID_STATE" });
+    expect(message.conversationId).toBeTruthy();
   });
 });

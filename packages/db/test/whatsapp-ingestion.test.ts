@@ -2,22 +2,24 @@ import { describe, expect, it } from "vitest";
 import {
   MessageDirection,
   MessageStatus,
+  SubjectStatus,
   assignMessageToSubject,
-  createMessage,
   createSubject,
   createSubjectFromMessage,
   ingestInboundWhatsApp,
   prisma,
   tenantDb,
+  updateSubjectStatus,
 } from "../src/index";
 
-// Ingestion WhatsApp entrante (M6) — mêmes garanties que l'email, plus une
-// spécificité : WhatsApp n'a PAS d'objet, donc le rattachement pré-M7 se fait sur
-// le FIL (chat_id = externalThreadId), pas sur l'objet normalisé. On vérifie :
-//   1. un message reçu devient un Message ORPHELIN (« Sans sujet ») ;
+// Ingestion WhatsApp entrante (M6/M6bis) — mêmes garanties que l'email, plus une
+// spécificité : WhatsApp n'a PAS d'objet, donc l'identité de la conversation
+// tient au FIL (`wa-group:<chat_id>`) ou au numéro (`wa-direct:<numéro>`), pas à
+// un objet normalisé. On vérifie :
+//   1. un message reçu hors de toute fenêtre reste « Sans sujet » ;
 //   2. idempotence (channelId + externalId) ;
-//   3. rattachement au sujet qui porte déjà un message du même chat_id ;
-//   4. ignorance collante (un sujet `ignored` n'est jamais exhumé) ;
+//   3. règle d'ancrage : la fenêtre ouverte capte la suite du fil ;
+//   4. un sujet FERMÉ ne capte plus rien ;
 //   5. isolation par canal.
 
 async function makeAccountWithChannel(email: string) {
@@ -106,34 +108,28 @@ describe("ingestInboundWhatsApp (M6)", () => {
   });
 });
 
-describe("rattachement WhatsApp pré-M7 (par fil / chat_id)", () => {
-  /** Sème un sujet portant un message d'un fil (chat_id) donné. */
-  async function seedSubjectWithChat(
+describe("règle d'ancrage à la réception (WhatsApp)", () => {
+  /** Ingère un 1er message d'un fil PUIS ouvre une fenêtre de sujet dessus. */
+  async function openWindowOnChat(
     db: ReturnType<typeof tenantDb>,
     channelId: string,
-    opts: { title: string; chatId: string; sender: string },
+    opts: { externalId: string; chatId: string; sender: string },
   ) {
-    const subject = await createSubject(db, {
-      title: opts.title,
-      contactIds: [],
-      createdByActor: "user",
-    });
-    await createMessage(db, {
+    const { message } = await ingestInboundWhatsApp(db, {
       channelId,
-      direction: MessageDirection.incoming,
-      subjectId: subject.id,
-      senderRaw: opts.sender,
+      externalId: opts.externalId,
       externalThreadId: opts.chatId,
+      senderRaw: opts.sender,
       content: "Message initial",
-      status: MessageStatus.linked,
     });
-    return subject;
+    expect(message.subjectId).toBeNull();
+    return { message, subject: await createSubjectFromMessage(db, message.id) };
   }
 
-  it("range le message dans le sujet quand le fil (chat_id) est déjà rattaché", async () => {
+  it("la suite du fil tombe dans le sujet de la fenêtre ouverte", async () => {
     const { channel, db } = await makeAccountWithChannel("wa-attach@test.fr");
-    const subject = await seedSubjectWithChat(db, channel.id, {
-      title: "Commande sauce",
+    const { subject } = await openWindowOnChat(db, channel.id, {
+      externalId: "wa-anchor",
       chatId: "chat-karim",
       sender: "33600000001@s.whatsapp.net",
     });
@@ -150,10 +146,10 @@ describe("rattachement WhatsApp pré-M7 (par fil / chat_id)", () => {
     expect(message.status).toBe(MessageStatus.linked);
   });
 
-  it("laisse orphelin le premier message d'un fil inconnu", async () => {
+  it("laisse sans sujet le premier message d'un fil inconnu", async () => {
     const { channel, db } = await makeAccountWithChannel("wa-new@test.fr");
-    await seedSubjectWithChat(db, channel.id, {
-      title: "Commande sauce",
+    await openWindowOnChat(db, channel.id, {
+      externalId: "wa-anchor-2",
       chatId: "chat-karim",
       sender: "33600000001@s.whatsapp.net",
     });
@@ -169,21 +165,21 @@ describe("rattachement WhatsApp pré-M7 (par fil / chat_id)", () => {
     expect(message.subjectId).toBeNull();
   });
 
-  it("n'exhume pas un sujet ignoré même si le fil correspond (ignorance collante, invariant n°7)", async () => {
-    const { channel, db } = await makeAccountWithChannel("wa-ignored@test.fr");
-    const subject = await seedSubjectWithChat(db, channel.id, {
-      title: "Groupe bavard",
+  // Remède au « groupe WhatsApp bavard » côté sujet : la fenêtre refermée ne
+  // capte plus rien. (L'autre remède, plus radical, est d'ignorer la
+  // conversation elle-même — cf. conversations.test.ts.)
+  it("un sujet fermé ne capte plus les nouveaux messages du fil", async () => {
+    const { channel, db } = await makeAccountWithChannel("wa-closed@test.fr");
+    const { subject } = await openWindowOnChat(db, channel.id, {
+      externalId: "wa-anchor-closed",
       chatId: "chat-bavard",
       sender: "33600000002@s.whatsapp.net",
     });
-    await db.subject.update({
-      where: { id: subject.id },
-      data: { status: "ignored" },
-    });
+    await updateSubjectStatus(db, subject.id, SubjectStatus.closed);
 
     const { message } = await ingestInboundWhatsApp(db, {
       channelId: channel.id,
-      externalId: "wa-into-ignored",
+      externalId: "wa-into-closed",
       externalThreadId: "chat-bavard",
       senderRaw: "33600000002@s.whatsapp.net",
       content: "Encore un message.",
@@ -193,8 +189,11 @@ describe("rattachement WhatsApp pré-M7 (par fil / chat_id)", () => {
   });
 });
 
-describe("balayage des frères orphelins au rattachement (par fil / chat_id)", () => {
-  it("rattacher un orphelin embarque les autres orphelins du même fil", async () => {
+// Le balayage des « frères orphelins » est SUPPRIMÉ (M6bis) : dans un fil
+// WhatsApp direct où l'on parle tour à tour de la sauce blanche et de la facture
+// emballages, rattacher un message emportait tout le fil. On teste le contraire.
+describe("assignMessageToSubject ne touche qu'un message (WhatsApp)", () => {
+  it("rattacher un message laisse les autres messages du fil intacts", async () => {
     const { channel, db } = await makeAccountWithChannel("wa-sweep@test.fr");
     const a = await ingestInboundWhatsApp(db, {
       channelId: channel.id,
@@ -210,14 +209,7 @@ describe("balayage des frères orphelins au rattachement (par fil / chat_id)", (
       senderRaw: "33600000010@s.whatsapp.net",
       content: "Deuxième message, même fil.",
     });
-    // Un orphelin d'un AUTRE fil ne doit pas être embarqué.
-    const other = await ingestInboundWhatsApp(db, {
-      channelId: channel.id,
-      externalId: "wa-sweep-other",
-      externalThreadId: "chat-autre",
-      senderRaw: "33600000099@s.whatsapp.net",
-      content: "Fil différent.",
-    });
+    expect(a.message.conversationId).toBe(b.message.conversationId);
     expect(a.message.subjectId).toBeNull();
     expect(b.message.subjectId).toBeNull();
 
@@ -228,13 +220,13 @@ describe("balayage des frères orphelins au rattachement (par fil / chat_id)", (
     });
     await assignMessageToSubject(db, a.message.id, subject.id);
 
+    const aAfter = await db.message.findFirst({ where: { id: a.message.id } });
     const bAfter = await db.message.findFirst({ where: { id: b.message.id } });
-    const otherAfter = await db.message.findFirst({
-      where: { id: other.message.id },
-    });
-    expect(bAfter?.subjectId).toBe(subject.id);
-    expect(bAfter?.status).toBe(MessageStatus.linked);
-    expect(otherAfter?.subjectId).toBeNull();
+    expect(aAfter?.subjectId).toBe(subject.id);
+    expect(aAfter?.status).toBe(MessageStatus.linked);
+    // Le voisin du même fil ne suit PAS, et aucune fenêtre n'est ouverte.
+    expect(bAfter?.subjectId).toBeNull();
+    expect(await db.subjectConversation.count()).toBe(0);
   });
 });
 

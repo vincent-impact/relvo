@@ -2,13 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   MessageDirection,
   MessageStatus,
+  SubjectStatus,
   assignMessageToSubject,
-  createMessage,
   createSubject,
+  createSubjectFromMessage,
   ingestInboundEmail,
   normalizeSubjectLine,
   prisma,
   tenantDb,
+  updateSubjectStatus,
 } from "../src/index";
 
 // Ingestion email entrante (M5) — deux garanties qui portent tout le flux :
@@ -99,34 +101,33 @@ describe("ingestInboundEmail (M5)", () => {
   });
 });
 
-describe("rattachement automatique pré-M7 (interlocuteur + objet)", () => {
-  /** Sème un sujet portant un message du même interlocuteur et du même objet. */
-  async function seedSubjectWith(
+// Règle d'ancrage (M6bis) — remplace l'ancienne heuristique « même interlocuteur
+// ET même objet qu'un message du sujet ». Ce n'est plus le SUJET qu'on cherche à
+// la réception mais la CONVERSATION (email:<interlocuteur>:<objet normalisé>) :
+// si elle porte une fenêtre de sujet OUVERTE, le message y tombe tout seul.
+describe("règle d'ancrage à la réception (email)", () => {
+  /** Ingère un 1er email PUIS ouvre une fenêtre de sujet dessus. */
+  async function openWindowOn(
     db: ReturnType<typeof tenantDb>,
     channelId: string,
-    opts: { title: string; sender: string; subjectLine: string },
+    opts: { externalId: string; sender: string; subjectLine: string },
   ) {
-    const subject = await createSubject(db, {
-      title: opts.title,
-      contactIds: [],
-      createdByActor: "user",
-    });
-    await createMessage(db, {
+    const { message } = await ingestInboundEmail(db, {
       channelId,
-      direction: MessageDirection.incoming,
-      subjectId: subject.id,
+      externalId: opts.externalId,
       senderRaw: opts.sender,
       subjectLine: opts.subjectLine,
       content: "Message initial",
-      status: MessageStatus.linked,
     });
-    return subject;
+    // Aucune fenêtre encore ouverte → le 1er message est bien sans sujet.
+    expect(message.subjectId).toBeNull();
+    return { message, subject: await createSubjectFromMessage(db, message.id) };
   }
 
-  it("range l'email dans le sujet quand interlocuteur + objet correspondent (préfixe Re: ignoré)", async () => {
+  it("la réponse tombe dans le sujet de la fenêtre ouverte (préfixe Re: et casse ignorés)", async () => {
     const { channel, db } = await makeAccountWithChannel("attach@test.fr");
-    const subject = await seedSubjectWith(db, channel.id, {
-      title: "Livraison sauce blanche",
+    const { subject } = await openWindowOn(db, channel.id, {
+      externalId: "anchor-mail",
       sender: "karim@sogood.fr",
       subjectLine: "Livraison sauce blanche",
     });
@@ -134,7 +135,7 @@ describe("rattachement automatique pré-M7 (interlocuteur + objet)", () => {
     const { message } = await ingestInboundEmail(db, {
       channelId: channel.id,
       externalId: "reply-attach",
-      senderRaw: "Karim@SoGood.fr", // casse différente : matching insensible
+      senderRaw: "Karim@SoGood.fr", // casse différente : même clé de conversation
       subjectLine: "Re: Livraison sauce blanche",
       content: "Merci, bien reçu.",
     });
@@ -143,10 +144,10 @@ describe("rattachement automatique pré-M7 (interlocuteur + objet)", () => {
     expect(message.status).toBe(MessageStatus.linked);
   });
 
-  it("laisse orphelin si l'objet diffère (même interlocuteur)", async () => {
+  it("reste sans sujet si l'objet diffère (autre conversation, même interlocuteur)", async () => {
     const { channel, db } = await makeAccountWithChannel("obj@test.fr");
-    await seedSubjectWith(db, channel.id, {
-      title: "Livraison sauce blanche",
+    await openWindowOn(db, channel.id, {
+      externalId: "anchor-obj",
       sender: "karim@sogood.fr",
       subjectLine: "Livraison sauce blanche",
     });
@@ -162,10 +163,10 @@ describe("rattachement automatique pré-M7 (interlocuteur + objet)", () => {
     expect(message.subjectId).toBeNull();
   });
 
-  it("laisse orphelin si l'interlocuteur diffère (même objet)", async () => {
+  it("reste sans sujet si l'interlocuteur diffère (autre conversation, même objet)", async () => {
     const { channel, db } = await makeAccountWithChannel("who@test.fr");
-    await seedSubjectWith(db, channel.id, {
-      title: "Livraison sauce blanche",
+    await openWindowOn(db, channel.id, {
+      externalId: "anchor-who",
       sender: "karim@sogood.fr",
       subjectLine: "Livraison sauce blanche",
     });
@@ -181,21 +182,20 @@ describe("rattachement automatique pré-M7 (interlocuteur + objet)", () => {
     expect(message.subjectId).toBeNull();
   });
 
-  it("n'exhume pas un sujet ignoré (ignorance collante, invariant n°7)", async () => {
-    const { channel, db } = await makeAccountWithChannel("ignored@test.fr");
-    const subject = await seedSubjectWith(db, channel.id, {
-      title: "Groupe bavard",
+  // Fermer un sujet, c'est REFERMER la fenêtre : la conversation continue de
+  // vivre (rien n'est perdu) mais ses nouveaux messages ne sont plus captés.
+  it("un sujet fermé ne capte plus les nouveaux messages de sa conversation", async () => {
+    const { channel, db } = await makeAccountWithChannel("closed@test.fr");
+    const { subject } = await openWindowOn(db, channel.id, {
+      externalId: "anchor-closed",
       sender: "spam@groupe.fr",
       subjectLine: "Groupe bavard",
     });
-    await db.subject.update({
-      where: { id: subject.id },
-      data: { status: "ignored" },
-    });
+    await updateSubjectStatus(db, subject.id, SubjectStatus.closed);
 
     const { message } = await ingestInboundEmail(db, {
       channelId: channel.id,
-      externalId: "into-ignored",
+      externalId: "into-closed",
       senderRaw: "spam@groupe.fr",
       subjectLine: "Re: Groupe bavard",
       content: "Encore un message.",
@@ -205,8 +205,11 @@ describe("rattachement automatique pré-M7 (interlocuteur + objet)", () => {
   });
 });
 
-describe("balayage des frères orphelins au rattachement (interlocuteur + objet)", () => {
-  it("rattacher un orphelin embarque les autres orphelins de même interlocuteur + objet", async () => {
+// Le « balayage des frères orphelins » est SUPPRIMÉ avec M6bis : il emportait
+// tout un fil au premier rattachement, ce qui rendait impossibles les sujets
+// entrelacés. On teste donc explicitement le contraire.
+describe("assignMessageToSubject ne touche qu'un message (email)", () => {
+  it("rattacher un message laisse les autres messages de la conversation intacts", async () => {
     const { channel, db } = await makeAccountWithChannel("sweep@test.fr");
     const a = await ingestInboundEmail(db, {
       channelId: channel.id,
@@ -218,29 +221,16 @@ describe("balayage des frères orphelins au rattachement (interlocuteur + objet)
     const b = await ingestInboundEmail(db, {
       channelId: channel.id,
       externalId: "sweep-b",
-      senderRaw: "Karim@SoGood.fr", // casse différente : matching insensible
+      senderRaw: "Karim@SoGood.fr", // casse différente : MÊME conversation
       subjectLine: "Re: Livraison sauce blanche",
       content: "Relance, même objet.",
     });
-    // Objet différent (même interlocuteur) → ne doit pas suivre.
-    const otherObj = await ingestInboundEmail(db, {
-      channelId: channel.id,
-      externalId: "sweep-other-obj",
-      senderRaw: "karim@sogood.fr",
-      subjectLine: "Facture avril",
-      content: "Autre objet.",
-    });
-    // Interlocuteur différent (même objet) → ne doit pas suivre.
-    const otherSender = await ingestInboundEmail(db, {
-      channelId: channel.id,
-      externalId: "sweep-other-sender",
-      senderRaw: "sophie@autre.fr",
-      subjectLine: "Livraison sauce blanche",
-      content: "Autre expéditeur.",
-    });
+    expect(a.message.conversationId).toBe(b.message.conversationId);
     expect(a.message.subjectId).toBeNull();
     expect(b.message.subjectId).toBeNull();
 
+    // `createSubject` (et non `createSubjectFromMessage`) : aucune fenêtre n'est
+    // ouverte ici, on ne teste que le rattachement d'un message isolé.
     const subject = await createSubject(db, {
       title: "Commande sauce",
       contactIds: [],
@@ -248,17 +238,13 @@ describe("balayage des frères orphelins au rattachement (interlocuteur + objet)
     });
     await assignMessageToSubject(db, a.message.id, subject.id);
 
+    const aAfter = await db.message.findFirst({ where: { id: a.message.id } });
     const bAfter = await db.message.findFirst({ where: { id: b.message.id } });
-    const objAfter = await db.message.findFirst({
-      where: { id: otherObj.message.id },
-    });
-    const senderAfter = await db.message.findFirst({
-      where: { id: otherSender.message.id },
-    });
-    expect(bAfter?.subjectId).toBe(subject.id);
-    expect(bAfter?.status).toBe(MessageStatus.linked);
-    expect(objAfter?.subjectId).toBeNull();
-    expect(senderAfter?.subjectId).toBeNull();
+    expect(aAfter?.subjectId).toBe(subject.id);
+    expect(aAfter?.status).toBe(MessageStatus.linked);
+    // Le voisin ne suit PAS — et aucune fenêtre n'a été ouverte au passage.
+    expect(bAfter?.subjectId).toBeNull();
+    expect(await db.subjectConversation.count()).toBe(0);
   });
 });
 

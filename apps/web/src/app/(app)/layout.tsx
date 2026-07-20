@@ -4,8 +4,8 @@ import { requireAccount } from "@/server/auth-context";
 
 // Chrome mobile-first commun aux vues structurées (cf. ux-mobile-first §2/§3).
 // Colonne unique pleine hauteur : en-tête + corps scrollable (fournis par chaque
-// page) → composer Relvo persistant → barre d'onglets basse. Les conversations
-// plein écran (/conversation, /conversations) vivent HORS de ce groupe.
+// page) → composer Relvo persistant → barre d'onglets basse. Les échanges
+// plein écran avec Relvo (/relvo, /relvo/historique) vivent HORS de ce groupe.
 //
 // On centre la colonne à une largeur lisible sur grand écran ; le rail latéral
 // desktop (lg) est un enrichissement ultérieur (cf. §8).

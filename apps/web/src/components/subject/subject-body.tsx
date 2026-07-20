@@ -12,8 +12,13 @@ import {
   RecipientComposer,
   type Recipient,
 } from "@/components/shared/recipient-composer";
+import {
+  ExtendSubjectDialog,
+  type ExtendCandidate,
+} from "@/components/subject/extend-subject-dialog";
 import { sendEmailReplyAction } from "@/server/actions/email";
 import { sendWhatsAppReplyAction } from "@/server/actions/whatsapp";
+import { ensureSubjectAnchorsAction } from "@/server/actions/subject-conversations";
 
 // Orchestrateur de la fiche Sujet (corps interactif) — possède l'ONGLET ACTIF et
 // l'INTERLOCUTEUR sélectionné, partagés entre le fil (zone scrollable) et le
@@ -42,6 +47,7 @@ export function SubjectBody({
   whatsappReplyTargets,
   isGroupSubject = false,
   groupWhatsappTarget = null,
+  extendCandidates = [],
 }: {
   header: React.ReactNode;
   defaultTab?: Tab;
@@ -65,9 +71,12 @@ export function SubjectBody({
   isGroupSubject?: boolean;
   /** Fil du groupe (chat_id + canal) pour l'envoi « Tous » réel, ou null. */
   groupWhatsappTarget?: { channelId: string; chatId: string } | null;
+  /** Contacts joignables pas encore interlocuteurs du sujet (cas S, M6bis.12). */
+  extendCandidates?: ExtendCandidate[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
+  const [extending, setExtending] = useState(false);
   const multi = interlocuteurs.length > 1;
   // Sujet de groupe → « Tous » est l'interlocuteur par défaut (le groupe entier).
   const [selected, setSelected] = useState<string>(
@@ -75,6 +84,16 @@ export function SubjectBody({
       ? "all"
       : (defaultInterlocuteurKey ?? interlocuteurs[0]?.key ?? "all"),
   );
+
+  // Après un envoi réussi : on pose les ancres manquantes. Une conversation
+  // ajoutée par le cas S est rattachée AVANT que le moindre message n'existe —
+  // c'est le premier message envoyé qui devient son ancre, donc le point de
+  // départ de la fenêtre sur ce nouveau fil. Idempotent : sans effet si tout est
+  // déjà ancré (le cas courant).
+  async function afterSend() {
+    await ensureSubjectAnchorsAction(subjectId);
+    router.refresh();
+  }
 
   // Envoi réel d'une réponse (M5.6 email / M6.5 WhatsApp), routé selon le canal
   // par lequel l'interlocuteur est joignable. Retourne `false` pour que le
@@ -95,7 +114,7 @@ export function SubjectBody({
           return false;
         }
         toast.success("Message envoyé au groupe");
-        router.refresh();
+        await afterSend();
         return true;
       }
       toast.info("La diffusion à tous les interlocuteurs arrive après la V1.");
@@ -119,7 +138,7 @@ export function SubjectBody({
         return false;
       }
       toast.success("Email envoyé");
-      router.refresh();
+      await afterSend();
       return true;
     }
 
@@ -137,7 +156,7 @@ export function SubjectBody({
         return false;
       }
       toast.success("Message WhatsApp envoyé");
-      router.refresh();
+      await afterSend();
       return true;
     }
 
@@ -215,8 +234,19 @@ export function SubjectBody({
           value={selected}
           onRecipientChange={setSelected}
           onSend={handleSend}
+          // Cas S : on n'offre l'extension que s'il reste quelqu'un à ajouter.
+          onAddRecipient={
+            extendCandidates.length > 0 ? () => setExtending(true) : undefined
+          }
         />
       ) : null}
+
+      <ExtendSubjectDialog
+        subjectId={subjectId}
+        candidates={extendCandidates}
+        open={extending}
+        onOpenChange={setExtending}
+      />
     </>
   );
 }

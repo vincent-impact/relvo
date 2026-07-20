@@ -20,12 +20,17 @@ export function SwipeToRemove({
   onTap,
   label = "Retirer",
   icon: Icon = EyeOff,
+  tone = "danger",
   children,
 }: {
   onRemove: () => void;
   onTap?: () => void;
   label?: string;
   icon?: LucideIcon;
+  /** Couleur du fond révélé. `success` (vert) pour un geste qui REND quelque
+   *  chose plutôt qu'il ne l'écarte — ex. « Réactiver » une conversation
+   *  ignorée : même geste, sens inverse, donc couleur inverse. */
+  tone?: "danger" | "success";
   children: React.ReactNode;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -100,8 +105,13 @@ export function SwipeToRemove({
       )}
     >
       <div className="relative overflow-hidden">
-        {/* Fond Retirer (rouge), révélé en glissant à gauche : libellé à droite. */}
-        <div className="absolute inset-0 flex items-center justify-end gap-2 bg-brand-accent pr-6 text-white">
+        {/* Fond de l'action, révélé en glissant à gauche : libellé à droite. */}
+        <div
+          className={cn(
+            "absolute inset-0 flex items-center justify-end gap-2 pr-6 text-white",
+            tone === "success" ? "bg-(--green-600)" : "bg-brand-accent",
+          )}
+        >
           <span className="text-[11px] font-bold tracking-[0.3px]">
             {label}
           </span>

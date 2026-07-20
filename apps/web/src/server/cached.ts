@@ -2,7 +2,7 @@ import "server-only";
 import { revalidateTag, unstable_cache, updateTag } from "next/cache";
 import {
   type Kpis,
-  countOrphanMessages,
+  countUnsortedConversations,
   enrichSubjects,
   enrichTasks,
   getKpis,
@@ -49,8 +49,10 @@ export const TENANT_DATA_TAG = "tenant-data";
 // d'isNew/newSubjects recalculée, forme inchangée) ; v6 = Kpis (+ ignoredMessages)
 // + KPI tâches + feed tâches + titre de sujet dans l'agenda ; v7 = TaskItemData
 // (+ subjectId) + agenda servi en tâches (cachedAgendaTasks) ; v8 = TaskItemData
-// (+ folderSlug, rail de couleur par domaine). Suivant = "v9".
-const CACHE_V = "v8";
+// (+ folderSlug, rail de couleur par domaine) ; v9 = SubjectStatus à 3 valeurs
+// (open/validated/closed) → CachedFeed { ouverts, valides, fermes }.
+// Suivant = "v10".
+const CACHE_V = "v9";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
@@ -174,54 +176,55 @@ export const cachedTaskFeed = unstable_cache(
 export const cachedOpenCount = unstable_cache(
   (accountId: string): Promise<number> =>
     tenantDb(accountId).subject.count({
-      where: { status: { notIn: ["resolved", "archived", "ignored"] } },
+      where: { status: { notIn: ["validated", "closed"] } },
     }),
   ["open-count", CACHE_V],
   CACHE,
 );
 
-// ── Fil (Mon fil) — 3 paniers de SubjectRowData[] + compteur d'orphelins ─────
+// ── Fil (Mon fil) — 3 paniers de SubjectRowData[] + KPI « Sans sujet » ───────
 export type CachedFeed = {
   ouverts: SubjectRowData[];
-  termines: SubjectRowData[];
-  ignores: SubjectRowData[];
-  orphanCount: number;
+  valides: SubjectRowData[];
+  fermes: SubjectRowData[];
+  /** Conversations actives dont le dernier message n'a pas de sujet (M6bis). */
+  unsortedCount: number;
 };
 
 export const cachedFilFeed = unstable_cache(
   async (accountId: string): Promise<CachedFeed> => {
     const db = tenantDb(accountId);
-    const [openFeed, resolvedSubjects, ignoredSubjects, orphanCount] =
+    const [openFeed, validatedSubjects, closedSubjects, unsortedCount] =
       await Promise.all([
         getOpenFeed(db, { limit: 40 }),
         db.subject.findMany({
-          where: { status: "resolved" },
-          orderBy: [{ resolvedAt: "desc" }],
+          where: { status: "validated" },
+          orderBy: [{ closedAt: "desc" }],
           take: 40,
         }),
         db.subject.findMany({
-          where: { status: "ignored" },
-          orderBy: [{ lastActivityAt: "desc" }],
+          where: { status: "closed" },
+          orderBy: [{ closedAt: "desc" }],
           take: 40,
         }),
-        countOrphanMessages(db),
+        countUnsortedConversations(db),
       ]);
 
     // Un seul enrichSubjects pour les 3 paniers (6 requêtes batchées), redécoupé
     // par longueur (enrichSubjects préserve l'ordre), puis mappé en formes plates.
     const enriched = await enrichSubjects(db, [
       ...openFeed.items,
-      ...resolvedSubjects,
-      ...ignoredSubjects,
+      ...validatedSubjects,
+      ...closedSubjects,
     ]);
     const rows = enriched.map(toSubjectRowData);
     const openLen = openFeed.items.length;
-    const resolvedLen = resolvedSubjects.length;
+    const validatedLen = validatedSubjects.length;
     return {
       ouverts: rows.slice(0, openLen),
-      termines: rows.slice(openLen, openLen + resolvedLen),
-      ignores: rows.slice(openLen + resolvedLen),
-      orphanCount,
+      valides: rows.slice(openLen, openLen + validatedLen),
+      fermes: rows.slice(openLen + validatedLen),
+      unsortedCount,
     };
   },
   ["fil-feed", CACHE_V],

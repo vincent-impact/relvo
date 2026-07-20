@@ -1,6 +1,6 @@
 import { MobileFrame } from "@/components/layout/mobile-frame";
 
-// Squelette de chargement de la conversation plein écran (M9.19) — hero violet +
+// Squelette de chargement de l'échange plein écran avec Relvo (M9.19) — hero violet +
 // orb central. Affiché le temps de résoudre le contexte page-aware.
 
 export default function Loading() {

@@ -144,7 +144,7 @@ export function MessageStack({
     if (loadingRef.current || !cursor) return;
     loadingRef.current = true;
     setLoading(true);
-    const res = await loadMessageEventsAction("orphan", cursor);
+    const res = await loadMessageEventsAction("unsorted", cursor);
     if (res.ok) {
       setItems((prev) => [...prev, ...res.data.items]);
       setCursor(res.data.nextCursor);

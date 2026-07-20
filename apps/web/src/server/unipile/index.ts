@@ -1,5 +1,9 @@
-import type { EmailSenderPort, WhatsAppSenderPort } from "@relvo/db";
-import { sendEmail, sendWhatsAppMessage } from "./client";
+import type {
+  EmailSenderPort,
+  WhatsAppChatDirectoryPort,
+  WhatsAppSenderPort,
+} from "@relvo/db";
+import { getChatIdentity, sendEmail, sendWhatsAppMessage } from "./client";
 
 // Point d'entrée du module Unipile (M5/M6). Réexporte le client + les adaptateurs
 // qui satisfont les ports d'envoi du domaine (`EmailSenderPort`,
@@ -19,4 +23,14 @@ export const unipileEmailSender: EmailSenderPort = {
 /** Adaptateur WhatsApp : réponse dans un fil existant (chat_id). */
 export const unipileWhatsAppSender: WhatsAppSenderPort = {
   sendMessage: ({ chatId, text }) => sendWhatsAppMessage({ chatId, text }),
+};
+
+/**
+ * Adaptateur d'annuaire de fils (M6bis.7) : c'est par lui que le domaine apprend
+ * le nom d'un groupe WhatsApp, sans jamais savoir qu'Unipile existe. `getChatIdentity`
+ * est déjà best-effort (renvoie `null` plutôt que de lever), le contrat du port l'est
+ * aussi — l'ingestion continue quoi qu'il arrive.
+ */
+export const unipileChatDirectory: WhatsAppChatDirectoryPort = {
+  getChatIdentity: (chatId) => getChatIdentity(chatId),
 };

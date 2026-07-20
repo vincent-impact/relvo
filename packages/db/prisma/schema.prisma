@@ -55,16 +55,41 @@ enum ChannelConfigStatus {
   disabled
 }
 
-/// Cycle de vie d'un Subject — exclusif et séquentiel (4 valeurs).
-/// `acknowledged` (état actif/ouvert, défaut) → `resolved` (Terminé) →
-/// `archived` (système, auto après inactivité). `ignored` = écarté.
-/// « Nouveau » N'EST PLUS un statut : c'est un marqueur DÉRIVÉ (lastOpenedAt
+/// Cycle de vie d'un Subject — exclusif, 3 valeurs (M6bis, 2026-07-20).
+/// Un sujet est une FENÊTRE DE TRAVAIL temporaire ouverte sur des conversations :
+/// `open` (ouverte, défaut) → `validated` (travail fait) ou `closed` (écarté).
+/// Valider comme fermer posent `closedAt` : la fenêtre se fige, et les
+/// conversations qu'elle portait redeviennent orphelines.
+/// `archived` est SUPPRIMÉ (personne ne l'utilisait) et `ignored` a MIGRÉ sur la
+/// Conversation — on n'ignore pas une fenêtre, on ignore une source.
+/// « Nouveau » N'EST PAS un statut : c'est un marqueur DÉRIVÉ (lastOpenedAt
 /// null = jamais ouvert), au même titre que « Urgent » (priority) ou « À faire »
-/// (tâches ouvertes). Les ex-statuts to_do/waiting/unread/new sont des marqueurs.
+/// (tâches ouvertes).
 enum SubjectStatus {
-  acknowledged
-  resolved
-  archived
+  open
+  validated
+  closed
+}
+
+/// Les trois façons dont un message se range TOUT SEUL, sans IA. Chaque valeur
+/// porte son propre discriminant, matérialisé par `Conversation.key` :
+///  - `email_subject`   → `email:<interlocuteur>:<objet normalisé>`
+///  - `whatsapp_group`  → `wa-group:<chat_id>`
+///  - `whatsapp_direct` → `wa-direct:<numéro>`
+/// Le type encode le canal parce que le discriminant lui-même en dépend :
+/// WhatsApp n'a pas de ligne d'objet, l'email n'a pas de fil de groupe.
+enum ConversationType {
+  email_subject
+  whatsapp_group
+  whatsapp_direct
+}
+
+/// `ignored` = Relvo cesse d'analyser, de résumer et de trier cette source (le
+/// remède au « groupe WhatsApp bavard »). Les messages continuent d'ARRIVER et
+/// d'être stockés — on ne perd rien, ils sortent seulement du champ de travail
+/// de l'assistant. Réversible par le seul utilisateur.
+enum ConversationStatus {
+  active
   ignored
 }
 
@@ -184,17 +209,19 @@ model Account {
   createdAt     DateTime    @default(now()) @map("created_at")
   updatedAt     DateTime    @updatedAt @map("updated_at")
 
-  folders            Folder[]
-  contacts           Contact[]
-  channels           Channel[]
-  channelConfigs     ChannelConfig[]
-  subjects           Subject[]
-  messages           Message[]
-  attachments        Attachment[]
-  tasks              Task[]
-  actions            Action[]
-  eventLogs          EventLog[]
-  knowledgeDocuments KnowledgeDocument[]
+  folders              Folder[]
+  contacts             Contact[]
+  channels             Channel[]
+  channelConfigs       ChannelConfig[]
+  conversations        Conversation[]
+  subjectConversations SubjectConversation[]
+  subjects             Subject[]
+  messages             Message[]
+  attachments          Attachment[]
+  tasks                Task[]
+  actions              Action[]
+  eventLogs            EventLog[]
+  knowledgeDocuments   KnowledgeDocument[]
 
   @@map("accounts")
 }
@@ -249,10 +276,11 @@ model Contact {
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  account          Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  defaultFolder    Folder?    @relation("ContactDefaultFolder", fields: [defaultFolderId], references: [id], onDelete: SetNull)
-  sentMessages     Message[]  @relation("MessageSenderContact")
-  receivedMessages Message[]  @relation("MessageRecipientContact")
+  account          Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  defaultFolder    Folder?        @relation("ContactDefaultFolder", fields: [defaultFolderId], references: [id], onDelete: SetNull)
+  sentMessages     Message[]      @relation("MessageSenderContact")
+  receivedMessages Message[]      @relation("MessageRecipientContact")
+  conversations    Conversation[]
   eventLogs        EventLog[]
 
   @@index([accountId])
@@ -275,10 +303,11 @@ model Channel {
   createdAt  DateTime    @default(now()) @map("created_at")
   updatedAt  DateTime    @updatedAt @map("updated_at")
 
-  account  Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  config   ChannelConfig?
-  subjects Subject[]
-  messages Message[]
+  account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  config        ChannelConfig?
+  conversations Conversation[]
+  subjects      Subject[]
+  messages      Message[]
 
   @@index([accountId])
   @@map("channels")
@@ -289,27 +318,122 @@ model Channel {
 // ─────────────────────────────────────────────────────────────
 
 model ChannelConfig {
-  id             String              @id @default(uuid()) @db.Uuid
-  accountId      String              @map("account_id") @db.Uuid
-  channelId      String              @unique @map("channel_id") @db.Uuid
-  provider       String
-  connectionData Json?               @map("connection_data")
+  id                String              @id @default(uuid()) @db.Uuid
+  accountId         String              @map("account_id") @db.Uuid
+  channelId         String              @unique @map("channel_id") @db.Uuid
+  provider          String
+  connectionData    Json?               @map("connection_data")
   // Identifiant du compte chez le fournisseur d'intégration (Unipile
   // `account_id`, ex. `acc_imap_…`). C'est la CLÉ de résolution du tenant dans
   // le webhook, qui arrive NON authentifié : on ne connaît pas encore
   // l'accountId, on le retrouve via ce champ (unique global, comme le fait le
   // cron M4.6 avec un accès Prisma hors tenant).
-  externalAccountId String?          @unique @map("external_account_id")
-  status         ChannelConfigStatus @default(pending)
-  lastSyncAt     DateTime?           @map("last_sync_at")
-  createdAt      DateTime            @default(now()) @map("created_at")
-  updatedAt      DateTime            @updatedAt @map("updated_at")
+  externalAccountId String?             @unique @map("external_account_id")
+  status            ChannelConfigStatus @default(pending)
+  lastSyncAt        DateTime?           @map("last_sync_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
 
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
   channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
 
   @@index([accountId])
   @@map("channel_configs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5bis. Conversation — couche de TRANSPORT et d'IDENTITÉ (M6bis)
+//
+// Le regroupement déterministe des messages, calculé À LA RÉCEPTION, sans IA.
+// C'est ce qui fait qu'il n'existe plus de « message orphelin » : tout message
+// tombe dans une conversation, toujours, parce que le calcul de `key` ne peut
+// pas échouer. Une conversation est DURABLE — elle ne se supprime pas et ne se
+// termine jamais ; c'est le Subject qui est temporaire (cf. §6).
+//
+// Une conversation n'est JAMAIS découpée par thème : il faudrait inférer le
+// sujet, donc de l'IA à la réception, ce qui ruinerait le déterminisme et
+// rendrait son identité instable. La séparation des sujets se joue au niveau du
+// MESSAGE (cf. Message.subjectId).
+// ─────────────────────────────────────────────────────────────
+
+model Conversation {
+  id                String             @id @default(uuid()) @db.Uuid
+  accountId         String             @map("account_id") @db.Uuid
+  channelId         String             @map("channel_id") @db.Uuid
+  type              ConversationType
+  /// Clé canonique — LE discriminant, calculé à la réception (cf. enum
+  /// ConversationType). Unique par compte : c'est elle qui fait le find-or-create.
+  key               String
+  /// Objet de l'email, nom du groupe WhatsApp, ou nom de l'interlocuteur.
+  title             String
+  /// L'interlocuteur, quand c'est un contact enregistré. TOUJOURS null pour un
+  /// groupe : un groupe n'a pas d'interlocuteur unique, il EST l'interlocuteur.
+  contactId         String?            @map("contact_id") @db.Uuid
+  /// Email ou numéro brut, tant que l'interlocuteur n'est pas un contact.
+  interlocutorRaw   String?            @map("interlocutor_raw")
+  /// `chat_id` WhatsApp — sert aussi de CIBLE D'ENVOI pour la réponse.
+  externalThreadId  String?            @map("external_thread_id")
+  /// Objet normalisé (type `email_subject` uniquement) — mémorisé pour l'audit
+  /// et le débogage ; la clé fait déjà foi.
+  normalizedSubject String?            @map("normalized_subject")
+  status            ConversationStatus @default(active)
+  /// Pilote le tri de la liste (plus récent en tête).
+  lastMessageAt     DateTime?          @map("last_message_at")
+  /// Dernier message reçu/envoyé — dénormalisé, et c'est délibéré : le KPI
+  /// « Sans sujet » se définit comme « le DERNIER message n'est rattaché à
+  /// aucun sujet », ce que Prisma ne sait pas exprimer (pas d'ordre dans un
+  /// filtre `some`). L'approximation « au moins un message sans sujet » serait
+  /// FAUSSE : les messages antérieurs à l'ancre restent sans sujet par
+  /// conception, et le KPI ne retomberait jamais à zéro.
+  /// Ne bouge qu'à l'ARRIVÉE d'un message — jamais lors d'un rattachement,
+  /// puisque rattacher ne change pas l'identité du dernier message.
+  lastMessageId     String?            @unique @map("last_message_id") @db.Uuid
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+
+  account     Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  channel     Channel               @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  contact     Contact?              @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  lastMessage Message?              @relation("ConversationLastMessage", fields: [lastMessageId], references: [id], onDelete: SetNull)
+  messages    Message[]
+  subjects    SubjectConversation[]
+
+  @@unique([accountId, key])
+  @@index([accountId])
+  @@index([accountId, status, lastMessageAt])
+  @@index([accountId, channelId])
+  @@map("conversations")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5ter. SubjectConversation — « ce sujet est la FENÊTRE ACTIVE sur cette
+// conversation », donc les nouveaux messages lui reviennent (règle d'ancrage).
+//
+// ⚠️ Cette table ne porte PAS l'appartenance des messages, qui vit sur
+// Message.subjectId. Deux liens, deux rôles distincts — c'est la seule
+// redondance assumée du modèle.
+// ─────────────────────────────────────────────────────────────
+
+model SubjectConversation {
+  id              String   @id @default(uuid()) @db.Uuid
+  accountId       String   @map("account_id") @db.Uuid
+  subjectId       String   @map("subject_id") @db.Uuid
+  conversationId  String   @map("conversation_id") @db.Uuid
+  /// Le message à partir duquel la fenêtre s'ouvre sur cette conversation. Les
+  /// messages ANTÉRIEURS restent dans la conversation sans appartenir au sujet.
+  /// Si ce message est détaché, l'ancre GLISSE au message suivant du sujet.
+  anchorMessageId String?  @map("anchor_message_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  account       Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  subject       Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  conversation  Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  anchorMessage Message?     @relation("SubjectConversationAnchor", fields: [anchorMessageId], references: [id], onDelete: SetNull)
+
+  @@unique([subjectId, conversationId])
+  @@index([accountId])
+  @@index([conversationId])
+  @@map("subject_conversations")
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -324,7 +448,10 @@ model Subject {
   summary               String?       @db.Text
   folderId              String?       @map("folder_id") @db.Uuid
   contactIds            String[]      @default([]) @map("contact_ids") @db.Uuid
-  status                SubjectStatus @default(acknowledged)
+  status                SubjectStatus @default(open)
+  /// Date de validation OU de fermeture — BORNE HAUTE DE LA FENÊTRE : un message
+  /// postérieur n'appartient plus au sujet. Null tant que le sujet est ouvert.
+  closedAt              DateTime?     @map("closed_at")
   priority              Priority      @default(normal)
   // Marqueur « En attente » (cumulable, distinct du statut) — posé par Relvo
   // quand un sujet attend une réponse externe. Cf. invariant produit n°7.
@@ -339,9 +466,10 @@ model Subject {
   createdAt             DateTime      @default(now()) @map("created_at")
   updatedAt             DateTime      @updatedAt @map("updated_at")
 
-  account       Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  folder        Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  sourceChannel Channel?     @relation(fields: [sourceChannelId], references: [id], onDelete: SetNull)
+  account       Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  folder        Folder?               @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  sourceChannel Channel?              @relation(fields: [sourceChannelId], references: [id], onDelete: SetNull)
+  conversations SubjectConversation[]
   messages      Message[]
   attachments   Attachment[]
   tasks         Task[]
@@ -363,6 +491,16 @@ model Subject {
 model Message {
   id                 String           @id @default(uuid()) @db.Uuid
   accountId          String           @map("account_id") @db.Uuid
+  /// NON NULLABLE : tout message appartient à une conversation, déterminée à la
+  /// réception (cf. Conversation). C'est ce qui fait qu'il n'existe PLUS de
+  /// message orphelin — le rangement ne peut pas échouer.
+  conversationId     String           @map("conversation_id") @db.Uuid
+  /// APPARTENANCE SÉMANTIQUE, décidée message par message. Null = ce message
+  /// n'est couvert par aucune fenêtre de sujet. Ce n'est plus « message que
+  /// Relvo n'a pas su traiter » : c'est la granularité fine qui permet de
+  /// séparer des sujets ENTRELACÉS dans un même fil (Karim parle de la sauce
+  /// blanche et de la facture emballages en alternance), ce qu'aucune fenêtre
+  /// purement temporelle ne saurait faire.
   subjectId          String?          @map("subject_id") @db.Uuid
   // Domaine assigné au message à la réception (classification Relvo). Donne
   // ensuite son domaine au sujet créé à partir du message. Null = non classé.
@@ -386,36 +524,41 @@ model Message {
   content            String?          @db.Text
   receivedAt         DateTime?        @map("received_at")
   sentAt             DateTime?        @map("sent_at")
-  // Lecture d'un message (incoming) : posé quand on OUVRE le sujet auquel il est
-  // rattaché. Null = non-lu. Les orphelins (sans sujet) restent non-lus jusqu'au
-  // tri (création d'un sujet). Sert la pile d'événements de la page Messages.
+  // Lecture d'un message (incoming) : posé quand on ouvre la CONVERSATION (et
+  // non plus le sujet — M6bis). C'est là que les messages arrivent, et tout
+  // message a une conversation : plus de message condamné à rester non-lu faute
+  // de sujet. Null = non-lu → pastille et remontée en tête de liste.
   readAt             DateTime?        @map("read_at")
   status             MessageStatus    @default(received)
   triageHint         TriageHint?      @map("triage_hint")
   createdAt          DateTime         @default(now()) @map("created_at")
   updatedAt          DateTime         @updatedAt @map("updated_at")
 
-  account         Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  subject         Subject?     @relation(fields: [subjectId], references: [id], onDelete: SetNull)
-  folder          Folder?      @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  channel         Channel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
-  senderContact   Contact?     @relation("MessageSenderContact", fields: [senderContactId], references: [id], onDelete: SetNull)
-  recipientContact Contact?    @relation("MessageRecipientContact", fields: [recipientContactId], references: [id], onDelete: SetNull)
-  attachments     Attachment[]
-  tasks           Task[]
-  actions         Action[]
-  eventLogs       EventLog[]
+  account          Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  conversation     Conversation          @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  subject          Subject?              @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+  folder           Folder?               @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  channel          Channel               @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  senderContact    Contact?              @relation("MessageSenderContact", fields: [senderContactId], references: [id], onDelete: SetNull)
+  recipientContact Contact?              @relation("MessageRecipientContact", fields: [recipientContactId], references: [id], onDelete: SetNull)
+  attachments      Attachment[]
+  tasks            Task[]
+  actions          Action[]
+  eventLogs        EventLog[]
+  anchorFor        SubjectConversation[] @relation("SubjectConversationAnchor")
+  lastMessageOf    Conversation?         @relation("ConversationLastMessage")
 
-  @@index([accountId])
-  @@index([accountId, subjectId])
-  @@index([accountId, externalId])
-  @@index([accountId, externalThreadId])
   // Idempotence des webhooks : un provider rejoue ses livraisons. Un même
   // (canal, id externe) ne peut créer qu'un seul Message. NB : Postgres autorise
   // plusieurs NULL sur une contrainte unique → les messages sans id externe
   // (créés en interne) ne sont pas contraints. La dédup applicative reste en
   // ceinture-bretelles côté route webhook (findFirst par externalId).
   @@unique([channelId, externalId])
+  @@index([accountId])
+  @@index([accountId, subjectId])
+  @@index([accountId, conversationId])
+  @@index([accountId, externalId])
+  @@index([accountId, externalThreadId])
   @@map("messages")
 }
 
@@ -424,24 +567,24 @@ model Message {
 // ─────────────────────────────────────────────────────────────
 
 model Attachment {
-  id          String    @id @default(uuid()) @db.Uuid
-  accountId   String    @map("account_id") @db.Uuid
-  messageId   String    @map("message_id") @db.Uuid
-  subjectId   String?   @map("subject_id") @db.Uuid
-  name        String
-  mimeType    String?   @map("mime_type")
+  id           String    @id @default(uuid()) @db.Uuid
+  accountId    String    @map("account_id") @db.Uuid
+  messageId    String    @map("message_id") @db.Uuid
+  subjectId    String?   @map("subject_id") @db.Uuid
+  name         String
+  mimeType     String?   @map("mime_type")
   /// Clé de l'objet dans le stockage (R2), pas une URL : le bucket est privé et
   /// les URLs pré-signées expirent. Toujours signer via `@relvo/storage`.
-  storageKey  String    @map("storage_key")
-  fileSize    Int?      @map("file_size")
-  aiLabel     String?   @map("ai_label")
-  aiSummary   String?   @map("ai_summary") @db.Text
-  aiAnalysis  String?   @map("ai_analysis") @db.Text
-  aiLabelAt   DateTime? @map("ai_label_at")
-  aiSummaryAt DateTime? @map("ai_summary_at")
+  storageKey   String    @map("storage_key")
+  fileSize     Int?      @map("file_size")
+  aiLabel      String?   @map("ai_label")
+  aiSummary    String?   @map("ai_summary") @db.Text
+  aiAnalysis   String?   @map("ai_analysis") @db.Text
+  aiLabelAt    DateTime? @map("ai_label_at")
+  aiSummaryAt  DateTime? @map("ai_summary_at")
   aiAnalysisAt DateTime? @map("ai_analysis_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   account Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
   message Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
@@ -478,10 +621,10 @@ model Task {
   createdAt        DateTime       @default(now()) @map("created_at")
   updatedAt        DateTime       @updatedAt @map("updated_at")
 
-  account Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  message Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
-  actions Action[]
+  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  subject   Subject?   @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  message   Message?   @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  actions   Action[]
   eventLogs EventLog[]
 
   @@index([accountId])
@@ -511,10 +654,10 @@ model Action {
   createdAt       DateTime     @default(now()) @map("created_at")
   updatedAt       DateTime     @updatedAt @map("updated_at")
 
-  account Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  subject Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  task    Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  message Message? @relation(fields: [messageId], references: [id], onDelete: SetNull)
+  account   Account    @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  subject   Subject    @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  task      Task?      @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  message   Message?   @relation(fields: [messageId], references: [id], onDelete: SetNull)
   eventLogs EventLog[]
 
   @@index([accountId])
@@ -562,29 +705,29 @@ model EventLog {
 // ─────────────────────────────────────────────────────────────
 
 model KnowledgeDocument {
-  id              String        @id @default(uuid()) @db.Uuid
-  accountId       String        @map("account_id") @db.Uuid
-  folderId        String        @map("folder_id") @db.Uuid
-  kind            KnowledgeKind
-  name            String
-  description     String?       @db.Text
+  id               String           @id @default(uuid()) @db.Uuid
+  accountId        String           @map("account_id") @db.Uuid
+  folderId         String           @map("folder_id") @db.Uuid
+  kind             KnowledgeKind
+  name             String
+  description      String?          @db.Text
   // kind = file
-  mimeType        String?       @map("mime_type")
+  mimeType         String?          @map("mime_type")
   /// Clé de l'objet dans le stockage (R2), pas une URL — cf. Attachment.storageKey.
-  storageKey      String?       @map("storage_key")
-  fileSize        Int?          @map("file_size")
-  anthropicFileId String?       @map("anthropic_file_id")
+  storageKey       String?          @map("storage_key")
+  fileSize         Int?             @map("file_size")
+  anthropicFileId  String?          @map("anthropic_file_id")
   // État d'absorption (kind=file) : Relvo a lu (✦) ou écarté le document.
   absorptionStatus AbsorptionStatus @default(read) @map("absorption_status")
-  aiLabel         String?       @map("ai_label")
-  aiSummary       String?       @map("ai_summary") @db.Text
+  aiLabel          String?          @map("ai_label")
+  aiSummary        String?          @map("ai_summary") @db.Text
   // kind = note
-  content         String?       @db.Text
+  content          String?          @db.Text
   // traçabilité
-  createdByActor  Actor         @map("created_by_actor")
-  updatedByActor  Actor?        @map("updated_by_actor")
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  createdByActor   Actor            @map("created_by_actor")
+  updatedByActor   Actor?           @map("updated_by_actor")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @map("updated_at")
 
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
   folder  Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
@@ -627,11 +770,11 @@ model VerificationToken {
 /// ⚠️ Aucune FK vers l'entité d'origine, et c'est voulu : la ligne source
 /// n'existe précisément plus quand on arrive ici.
 model PendingFileDeletion {
-  id         BigInt    @id @default(autoincrement())
-  storageKey String    @map("storage_key")
-  enqueuedAt DateTime  @default(now()) @map("enqueued_at") @db.Timestamptz
-  attempts   Int       @default(0)
-  lastError  String?   @map("last_error") @db.Text
+  id         BigInt   @id @default(autoincrement())
+  storageKey String   @map("storage_key")
+  enqueuedAt DateTime @default(now()) @map("enqueued_at") @db.Timestamptz
+  attempts   Int      @default(0)
+  lastError  String?  @map("last_error") @db.Text
 
   @@index([enqueuedAt])
   @@map("pending_file_deletions")

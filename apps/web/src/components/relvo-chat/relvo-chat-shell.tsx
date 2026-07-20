@@ -12,7 +12,7 @@ import { RelvoHeader } from "@/components/layout/relvo-header";
 // pré-remplissent) + composer violet « Liquid Glass ». SANS IA : le streaming,
 // les tools et le stockage IndexedDB arrivent en M10.
 
-export function ConversationShell({
+export function RelvoChatShell({
   backHref,
   contextLabel,
   prompts,
@@ -50,7 +50,7 @@ export function ConversationShell({
         relvo={false}
         action={
           <Link
-            href="/conversations"
+            href="/relvo/historique"
             aria-label="Historique des conversations"
             className="grid size-[38px] flex-none place-items-center rounded-full active:scale-95"
             style={{ background: "rgb(255 255 255 / 0.16)" }}
@@ -66,7 +66,7 @@ export function ConversationShell({
             Contexte : {contextLabel}
           </span>
           <Link
-            href="/conversation"
+            href="/relvo"
             aria-label="Discussion générale"
             className="ml-auto grid size-6 place-items-center rounded-full bg-(--surface-2) text-(--text-tertiary)"
           >

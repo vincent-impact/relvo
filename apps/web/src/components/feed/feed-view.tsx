@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { type Basket, FeedFilterBar } from "@/components/feed/feed-filter-bar";
-import { IgnoredSubject } from "@/components/feed/ignored-subject";
+import { ClosedSubject } from "@/components/feed/closed-subject";
 import { SwipeableSubject } from "@/components/feed/swipeable-subject";
 import {
   SubjectRow,
@@ -12,30 +12,30 @@ import {
 
 // Vue complète de Mon fil (client) — UNE barre de filtres rapides + liste filtrée.
 // Le filtrage est INSTANTANÉ (côté client) sur les lignes déjà chargées, 4
-// dimensions cumulables : Statut (Ouvert/Terminé/Ignoré/Tous), Urgent, Nouveau,
+// dimensions cumulables : Statut (Ouvert/Validé/Fermé/Tous), Urgent, Nouveau,
 // Domaine. Chaque ligne est rendue selon SON panier d'origine (swipe pour les
-// ouverts, restauration pour les ignorés, barré pour les terminés) — y compris
+// ouverts, réouverture pour les fermés, barré pour les validés) — y compris
 // dans « Tous », où les trois familles cohabitent.
 
-type Tagged = { row: SubjectRowData; basket: "ouvert" | "termine" | "ignore" };
+type Tagged = { row: SubjectRowData; basket: "ouvert" | "valide" | "ferme" };
 
 export function FeedView({
   ouverts,
-  termines,
-  ignores,
+  valides,
+  fermes,
   folderNames,
 }: {
   ouverts: SubjectRowData[];
-  termines: SubjectRowData[];
-  ignores: SubjectRowData[];
+  valides: SubjectRowData[];
+  fermes: SubjectRowData[];
   folderNames: Record<string, string>;
 }) {
   // État initial des filtres lu depuis l'URL (KPI de l'Accueil → Mon fil filtré) :
-  // ?urgent=1 · ?nouveau=1 · ?statut=ouvert|termine|ignore|tous · ?domaine=<slug>.
+  // ?urgent=1 · ?nouveau=1 · ?statut=ouvert|valide|ferme|tous · ?domaine=<slug>.
   const params = useSearchParams();
   const initialStatut = (() => {
     const s = params.get("statut");
-    return s === "termine" || s === "ignore" || s === "tous" ? s : "ouvert";
+    return s === "valide" || s === "ferme" || s === "tous" ? s : "ouvert";
   })();
   const [statut, setStatut] = useState<Basket>(initialStatut);
   const [urgent, setUrgent] = useState(params.get("urgent") === "1");
@@ -47,13 +47,13 @@ export function FeedView({
   // Liste de base selon le statut sélectionné, chaque ligne taguée par panier.
   const base: Tagged[] = useMemo(() => {
     const o = ouverts.map((row) => ({ row, basket: "ouvert" as const }));
-    const t = termines.map((row) => ({ row, basket: "termine" as const }));
-    const i = ignores.map((row) => ({ row, basket: "ignore" as const }));
+    const v = valides.map((row) => ({ row, basket: "valide" as const }));
+    const f = fermes.map((row) => ({ row, basket: "ferme" as const }));
     if (statut === "ouvert") return o;
-    if (statut === "termine") return t;
-    if (statut === "ignore") return i;
-    return [...o, ...t, ...i];
-  }, [statut, ouverts, termines, ignores]);
+    if (statut === "valide") return v;
+    if (statut === "ferme") return f;
+    return [...o, ...v, ...f];
+  }, [statut, ouverts, valides, fermes]);
 
   // Domaines réellement présents dans la liste de base (chips pertinentes).
   const availableDomains = useMemo(() => {
@@ -79,18 +79,18 @@ export function FeedView({
         <SwipeableSubject
           key={row.id}
           subjectId={row.id}
-          canIgnore
+          canClose
           rounded={false}
         >
           <SubjectRow data={row} linkable={false} />
         </SwipeableSubject>
       );
     }
-    if (basket === "ignore") {
+    if (basket === "ferme") {
       return (
-        <IgnoredSubject key={row.id} subjectId={row.id}>
+        <ClosedSubject key={row.id} subjectId={row.id}>
           <SubjectRow data={row} tone="done" />
-        </IgnoredSubject>
+        </ClosedSubject>
       );
     }
     return <SubjectRow key={row.id} data={row} tone="done" />;

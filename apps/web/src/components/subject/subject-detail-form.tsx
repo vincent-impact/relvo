@@ -34,9 +34,9 @@ const PRIORITIES: { value: Priority; label: string }[] = [
 ];
 
 const STATUSES: { value: SubjectStatus; label: string }[] = [
-  { value: "acknowledged", label: "Ouvert" },
-  { value: "resolved", label: "Terminé" },
-  { value: "ignored", label: "Ignoré" },
+  { value: "open", label: "Ouvert" },
+  { value: "validated", label: "Validé" },
+  { value: "closed", label: "Fermé" },
 ];
 
 function FieldLabel({ children }: { children: React.ReactNode }) {

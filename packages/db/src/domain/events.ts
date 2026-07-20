@@ -33,9 +33,16 @@ export const EVENT_TYPES = {
   subjectStatusChanged: "subject_status_changed",
   subjectPriorityChanged: "subject_priority_changed",
   subjectResolved: "subject_resolved",
-  subjectArchived: "subject_archived",
+  subjectValidated: "subject_validated",
+  subjectClosed: "subject_closed",
   subjectOpened: "subject_opened",
   resolutionSuggested: "resolution_suggested",
+  // Conversations (M6bis)
+  conversationIgnored: "conversation_ignored",
+  conversationReactivated: "conversation_reactivated",
+  conversationAttached: "conversation_attached",
+  conversationDetached: "conversation_detached",
+  anchorMoved: "anchor_moved",
   // Messages
   messageIncomingReceived: "message_incoming_received",
   messageOutgoingSent: "message_outgoing_sent",

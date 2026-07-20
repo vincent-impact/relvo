@@ -13,7 +13,7 @@
  * fast-food — poulet, riz, sauces) et gérant du restaurant d'Épinay-sur-Seine.
  * Jeu de données étoffé (M9.24) : ~26 sujets répartis sur 6 domaines, 120+ tâches
  * datées sur juin-juillet (agenda + planning bien remplis), messages, brouillons,
- * pièces jointes, connaissances, et des cas « ignoré » / « terminé » / « orphelin ».
+ * pièces jointes, connaissances, et des cas « fermé » / « validé » / « sans sujet ».
  */
 import { Prisma, prisma, tenantDb } from "./index";
 import { seedDemoFiles, seedFileKey } from "./seed-files";
@@ -37,8 +37,8 @@ import {
   createSubject,
   createTask,
   completeTask,
-  ignoreSubject,
-  resolveSubject,
+  closeSubject,
+  validateSubject,
   setAiLabel,
   suggestResolution,
 } from "./index";
@@ -349,7 +349,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
 
   // ===== FOURNISSEURS =====
 
-  // SUB-0142 — Rupture sauce blanche (Karim / SoGood) — URGENT, acknowledged.
+  // SUB-0142 — Rupture sauce blanche (Karim / SoGood) — URGENT, open.
   const sub142 = await createSubject(db, {
     reference: "SUB-0142",
     title: "Rupture sauce blanche",
@@ -357,7 +357,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Karim (SoGood) signale une rupture sur la sauce blanche réf. SB-200 jusqu'à fin de semaine et propose la réf. SB-210 (même recette) en remplacement.",
     folderId: fournisseurs.id,
     contactIds: [karim.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.urgent,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -418,7 +418,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "PackPlus propose un réassort de papier kraft. Commande validée de notre côté ; on attend leur confirmation de livraison.",
     folderId: fournisseurs.id,
     contactIds: [packplus.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     waitingForReply: true,
     sourceChannelId: emailSupport.id,
@@ -449,7 +449,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
   });
   await completeTask(db, task103.id); // répondu → reste « En attente »
 
-  // SUB-0205 — Hausse tarif poulet (Avipro) — acknowledged, décision.
+  // SUB-0205 — Hausse tarif poulet (Avipro) — open, décision.
   const sub205 = await createSubject(db, {
     reference: "SUB-0205",
     title: "Hausse de tarif sur le poulet",
@@ -457,7 +457,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Avipro annonce +6 % sur les filets de poulet à compter du 1er juillet. Impact direct sur la marge du menu signature — arbitrage à faire (absorber / ajuster prix / négocier volume).",
     folderId: fournisseurs.id,
     contactIds: [avipro.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -499,7 +499,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Grands Moulins annonce un retard de 2 jours sur la livraison de riz basmati. Risque de tension sur le stock pour le week-end.",
     folderId: fournisseurs.id,
     contactIds: [moulins.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -527,7 +527,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     },
   ]);
 
-  // SUB-0219 — Contrat boissons (France Boissons) — acknowledged.
+  // SUB-0219 — Contrat boissons (France Boissons) — open.
   const sub219 = await createSubject(db, {
     reference: "SUB-0219",
     title: "Nouveau contrat boissons",
@@ -535,7 +535,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "France Boissons propose un contrat annuel avec tarifs dégressifs et installation d'une fontaine. À comparer avec le fournisseur actuel.",
     folderId: fournisseurs.id,
     contactIds: [boissons.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -572,7 +572,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Lot de frites trop pâles signalé par l'équipe. Échange avec le fournisseur, lot remplacé, problème clos.",
     folderId: fournisseurs.id,
     contactIds: [karim.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -589,7 +589,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
   await addTasks(sub188.id, [
     { title: "Contrôler le nouveau lot de frites à réception", off: -3 },
   ]);
-  await resolveSubject(db, sub188.id);
+  await validateSubject(db, sub188.id);
 
   // ===== RH =====
 
@@ -601,7 +601,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Sophie informe de son départ en congé maternité le mois prochain et demande l'organisation de son remplacement.",
     folderId: rh.id,
     contactIds: [sophie.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailRh.id,
     createdByActor: Actor.ai,
@@ -628,7 +628,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     },
   ]);
 
-  // SUB-0221 — Recrutement équipier (Aïcha) — acknowledged.
+  // SUB-0221 — Recrutement équipier (Aïcha) — open.
   const sub221 = await createSubject(db, {
     reference: "SUB-0221",
     title: "Recrutement équipier polyvalent",
@@ -636,7 +636,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Candidature d'Aïcha Ndiaye pour un poste d'équipier polyvalent. Entretien à planifier ; bon profil pour le service du midi.",
     folderId: rh.id,
     contactIds: [aicha.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailRh.id,
     createdByActor: Actor.ai,
@@ -665,7 +665,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     },
   ]);
 
-  // SUB-0224 — Arrêt maladie équipier (Yacine) — acknowledged.
+  // SUB-0224 — Arrêt maladie équipier (Yacine) — open.
   const sub224 = await createSubject(db, {
     reference: "SUB-0224",
     title: "Arrêt maladie — réorganisation des shifts",
@@ -673,7 +673,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Yacine est en arrêt 5 jours. Shifts du service du soir à recouvrir cette semaine.",
     folderId: rh.id,
     contactIds: [yacine.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: wa.id,
     createdByActor: Actor.ai,
@@ -708,7 +708,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Un équipier ancien demande une revalorisation salariale. À cadrer avec la grille du réseau et le budget du restaurant.",
     folderId: rh.id,
     contactIds: [yacine.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: wa.id,
     createdByActor: Actor.ai,
@@ -743,7 +743,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Session de formation hygiène HACCP organisée pour l'équipe. Attestations reçues, dossier clos.",
     folderId: rh.id,
     contactIds: [sophie.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailRh.id,
     createdByActor: Actor.ai,
@@ -751,11 +751,11 @@ export async function seedDemoAccount(storage?: SeedStorage) {
   await addTasks(sub190.id, [
     { title: "Classer les attestations HACCP", off: -8 },
   ]);
-  await resolveSubject(db, sub190.id);
+  await validateSubject(db, sub190.id);
 
   // ===== JURIDIQUE =====
 
-  // SUB-0082 — Renouvellement contrat clim (ClimaPro) — acknowledged.
+  // SUB-0082 — Renouvellement contrat clim (ClimaPro) — open.
   const sub82 = await createSubject(db, {
     reference: "SUB-0082",
     title: "Renouvellement contrat climatisation",
@@ -763,7 +763,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "ClimaPro annonce une reconduction tacite du contrat de maintenance ; échéance d'opposition à arbitrer.",
     folderId: juridique.id,
     contactIds: [climapro.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -791,7 +791,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     },
   ]);
 
-  // SUB-0214 — Contrôle DDPP / hygiène — URGENT, acknowledged.
+  // SUB-0214 — Contrôle DDPP / hygiène — URGENT, open.
   const sub214 = await createSubject(db, {
     reference: "SUB-0214",
     title: "Contrôle hygiène DDPP annoncé",
@@ -799,7 +799,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "La DDPP 93 annonce un contrôle d'hygiène inopiné dans les prochains jours. Préparer le plan de maîtrise sanitaire et les relevés de températures.",
     folderId: juridique.id,
     contactIds: [ddpp.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.urgent,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -833,7 +833,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     },
   ]);
 
-  // SUB-0216 — Renouvellement bail commercial — acknowledged.
+  // SUB-0216 — Renouvellement bail commercial — open.
   const sub216 = await createSubject(db, {
     reference: "SUB-0216",
     title: "Renouvellement du bail commercial",
@@ -841,7 +841,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Le bailleur (SCI Les Tilleuls) propose un renouvellement de bail avec révision du loyer. À étudier et négocier.",
     folderId: juridique.id,
     contactIds: [bailleur.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -872,7 +872,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Mise à jour des fiches allergènes et de l'affichage en salle. Conforme, dossier clos.",
     folderId: juridique.id,
     contactIds: [siege.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -880,11 +880,11 @@ export async function seedDemoAccount(storage?: SeedStorage) {
   await addTasks(sub192.id, [
     { title: "Imprimer et afficher les nouvelles fiches allergènes", off: -10 },
   ]);
-  await resolveSubject(db, sub192.id);
+  await validateSubject(db, sub192.id);
 
   // ===== BUSINESS =====
 
-  // SUB-0131 — Virement client Le Palais — acknowledged (+ suggestion de résolution).
+  // SUB-0131 — Virement client Le Palais — open (+ suggestion de résolution).
   const sub131 = await createSubject(db, {
     reference: "SUB-0131",
     title: "Virement client à rapprocher",
@@ -892,7 +892,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Le Palais signale un virement effectué (prestation traiteur) à rapprocher d'une facture.",
     folderId: business.id,
     contactIds: [palais.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -914,7 +914,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     },
   ]);
 
-  // SUB-0222 — Renégociation commission Uber Eats — acknowledged.
+  // SUB-0222 — Renégociation commission Uber Eats — open.
   const sub222 = await createSubject(db, {
     reference: "SUB-0222",
     title: "Renégociation commission Uber Eats",
@@ -922,7 +922,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "La commission Uber Eats pèse sur la marge des commandes en livraison. Tenter une renégociation ou ajuster les prix sur la plateforme.",
     folderId: business.id,
     contactIds: [ubereats.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -958,7 +958,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Recul du midi en semaine constaté par le siège. Lancer une opération (menu étudiant, offre midi) pour relancer le trafic.",
     folderId: business.id,
     contactIds: [siege.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -988,7 +988,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
 
   // ===== PRODUCTION =====
 
-  // SUB-0117 — Panne congélateur (FroidExpert) — acknowledged, créneau confirmé.
+  // SUB-0117 — Panne congélateur (FroidExpert) — open, créneau confirmé.
   const sub117 = await createSubject(db, {
     reference: "SUB-0117",
     title: "Panne congélateur — réserve",
@@ -996,7 +996,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Congélateur de la réserve en défaut. FroidExpert propose une intervention ; créneau confirmé pour demain matin.",
     folderId: production.id,
     contactIds: [froidexpert.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -1025,7 +1025,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     },
   ]);
 
-  // SUB-0227 — Friteuse en panne — URGENT? non, acknowledged mais bloquant.
+  // SUB-0227 — Friteuse en panne — URGENT? non, open mais bloquant.
   const sub227 = await createSubject(db, {
     reference: "SUB-0227",
     title: "Friteuse n°2 hors service",
@@ -1033,7 +1033,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "La friteuse n°2 ne chauffe plus — capacité de production réduite aux heures de pointe. SAV CuisinePro à mobiliser en urgence.",
     folderId: production.id,
     contactIds: [cuisinepro.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: wa.id,
     createdByActor: Actor.ai,
@@ -1069,7 +1069,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Dégraissage annuel de la hotte aspirante réalisé par un prestataire. Certificat reçu, dossier clos.",
     folderId: production.id,
     contactIds: [cuisinepro.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.ai,
@@ -1077,11 +1077,11 @@ export async function seedDemoAccount(storage?: SeedStorage) {
   await addTasks(sub194.id, [
     { title: "Récupérer le certificat de dégraissage", off: -6 },
   ]);
-  await resolveSubject(db, sub194.id);
+  await validateSubject(db, sub194.id);
 
   // ===== COMMUNICATION =====
 
-  // SUB-0230 — Partenariat influenceur (@ParisFoodGuide) — acknowledged.
+  // SUB-0230 — Partenariat influenceur (@ParisFoodGuide) — open.
   const sub230 = await createSubject(db, {
     reference: "SUB-0230",
     title: "Partenariat @ParisFoodGuide",
@@ -1089,7 +1089,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Camille Roy (@ParisFoodGuide, 120k abonnés) propose une vidéo de découverte du resto d'Épinay en échange d'un menu offert + un cachet. Bon levier de visibilité locale.",
     folderId: communication.id,
     contactIds: [influenceur.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailCom.id,
     createdByActor: Actor.ai,
@@ -1133,7 +1133,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Un créateur TikTok local souhaite tourner un challenge « le plus gros menu poulet ». Visibilité intéressante mais à cadrer (hygiène, affluence).",
     folderId: communication.id,
     contactIds: [],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailCom.id,
     createdByActor: Actor.ai,
@@ -1155,7 +1155,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     },
   ]);
 
-  // SUB-0232 — Sponsoring club de foot Épinay — acknowledged.
+  // SUB-0232 — Sponsoring club de foot Épinay — open.
   const sub232 = await createSubject(db, {
     reference: "SUB-0232",
     title: "Sponsoring AS Épinay Football",
@@ -1163,7 +1163,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "L'AS Épinay propose un partenariat (panneau au stade + logo sur les maillots des U15) pour la saison. Ancrage local fort pour la marque.",
     folderId: communication.id,
     contactIds: [club.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailCom.id,
     createdByActor: Actor.ai,
@@ -1199,7 +1199,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Opération Instagram réalisée : tirage au sort effectué, gagnant contacté. Bon engagement, dossier clos.",
     folderId: communication.id,
     contactIds: [],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailCom.id,
     createdByActor: Actor.ai,
@@ -1207,7 +1207,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
   await addTasks(sub196.id, [
     { title: "Effectuer le tirage au sort et contacter le gagnant", off: -5 },
   ]);
-  await resolveSubject(db, sub196.id);
+  await validateSubject(db, sub196.id);
 
   // ===== SUJETS « OPÉRATIONS » (hôtes des tâches récurrentes — agenda dense) =====
   const subOpsLiv = await createSubject(db, {
@@ -1217,7 +1217,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Suivi des livraisons récurrentes du restaurant (poulet, riz & sauces, boissons, emballages) — réceptions et contrôles à quai.",
     folderId: fournisseurs.id,
     contactIds: [karim.id, avipro.id, moulins.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.user,
@@ -1229,7 +1229,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Routines d'exploitation : relevés de températures, nettoyages, inventaires et contrôles de l'équipement.",
     folderId: production.id,
     contactIds: [],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailSupport.id,
     createdByActor: Actor.user,
@@ -1241,7 +1241,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Organisation des services (midi/soir), briefings et points d'équipe du restaurant d'Épinay.",
     folderId: rh.id,
     contactIds: [sophie.id],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: emailRh.id,
     createdByActor: Actor.user,
@@ -1329,7 +1329,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     }
   }
 
-  // ===== SUJET IGNORÉ (groupe WhatsApp bavard) =====
+  // ===== SUJET FERMÉ (groupe WhatsApp bavard) =====
   const sub156 = await createSubject(db, {
     reference: "SUB-0156",
     title: "Groupe « Commerçants quartier »",
@@ -1337,7 +1337,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       "Fil du groupe WhatsApp des commerçants du quartier — animations, voirie, tour de rôle des poubelles. Volume élevé, peu prioritaire.",
     folderId: undefined,
     contactIds: [],
-    status: SubjectStatus.acknowledged,
+    status: SubjectStatus.open,
     priority: Priority.normal,
     sourceChannelId: wa.id,
     createdByActor: Actor.ai,
@@ -1350,9 +1350,9 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     content:
       "Rappel : la réunion de quartier est décalée à jeudi 18h. Pensez à sortir les poubelles ce soir 🗑️",
   });
-  await ignoreSubject(db, sub156.id);
+  await closeSubject(db, sub156.id);
 
-  // ===== 7. Messages « Sans sujet » (orphelins) =====
+  // ===== 7. Messages « Sans sujet » =====
   await createMessage(db, {
     channelId: emailCom.id,
     direction: "incoming",
@@ -1360,14 +1360,12 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     subjectLine: "Boostez votre visibilité Google",
     content:
       "Bonjour, je me permets de vous contacter pour vous présenter nos services de référencement local…",
-    triageHint: "prospection",
   });
   await createMessage(db, {
     channelId: emailRh.id,
     direction: "incoming",
     senderRaw: "Marie Campos",
     content: "Ok merci, c'est noté.",
-    triageHint: "too_short",
   });
   await createMessage(db, {
     channelId: emailSupport.id,
@@ -1376,14 +1374,12 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     subjectLine: "Vos promos de la semaine",
     content:
       "Découvrez nos offres de la semaine sur les produits frais et l'épicerie…",
-    triageHint: "informative_only",
   });
   await createMessage(db, {
     channelId: wa.id,
     direction: "incoming",
     senderRaw: "+33 6 12 34 56 78",
     content: "Bonjour, vous êtes bien le Tasty Crousty d'Épinay ? 😊",
-    triageHint: "ambiguous",
   });
 
   // ===== 8. Suggestion de résolution (sujet stabilisé) =====

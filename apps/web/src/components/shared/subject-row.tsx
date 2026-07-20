@@ -157,7 +157,7 @@ export function toSubjectRowData(e: EnrichedSubject): SubjectRowData {
     // « Nouveau » = sujet ouvert jamais consulté (marqueur dérivé de lastOpenedAt).
     isNew:
       e.subject.lastOpenedAt == null &&
-      !["resolved", "archived", "ignored"].includes(e.subject.status),
+      !["validated", "closed"].includes(e.subject.status),
     taskDone: e.taskDone,
     taskTotal: e.taskTotal,
     suggestionCount: e.suggestionCount,

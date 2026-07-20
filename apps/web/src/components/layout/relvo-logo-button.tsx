@@ -4,12 +4,12 @@ import { cn } from "@/lib/utils";
 
 // Bouton logo Relvo — pastille translucide blanche + liseré interne + logo Relvo.
 // Forme « bouton » réutilisable sur n'importe quel fond foncé (header violet,
-// composer de conversation…). `href` paramétrable : c'est l'accès à Relvo, posé
+// composer d’échange…). `href` paramétrable : c'est l'accès à Relvo, posé
 // désormais en HAUT À DROITE du header (cf. RelvoHeaderButton, page-aware).
 
 export function RelvoLogoButton({
   size = 42,
-  href = "/conversations",
+  href = "/relvo/historique",
   label = "Demander à Relvo",
   className,
 }: {

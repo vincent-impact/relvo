@@ -244,6 +244,45 @@ export async function sendWhatsAppMessage(input: {
 }
 
 /**
+ * Identité d'un fil WhatsApp (M6bis.7) — le seul endroit où l'on apprend le
+ * **nom d'un groupe** et son **type** de façon fiable.
+ *
+ * Pourquoi ne pas se contenter du webhook : son `is_group` n'a jamais été
+ * confirmé contre un vrai payload, alors que `Chat.type` est un discriminant
+ * explicite de l'API (`SINGLE` = 0, `GROUP` = 1, `CHANNEL` = 2). Et le nom du
+ * groupe, lui, n'est **pas** dans le webhook du tout : sans cet appel, tous les
+ * groupes s'appellent « Groupe WhatsApp ».
+ *
+ * ⚠️ Appelé UNE fois, à la CRÉATION de la conversation — pas à chaque message :
+ * ce serait un aller-retour réseau par message reçu, dans un webhook.
+ *
+ * Best-effort : `null` si non configuré ou si l'appel échoue. Ne jamais faire
+ * échouer une ingestion parce qu'on n'a pas su lire un nom de groupe — le
+ * message compte, son étiquette non.
+ */
+export async function getChatIdentity(chatId: string): Promise<{
+  name: string | null;
+  isGroup: boolean;
+} | null> {
+  const ctx = getClient();
+  if (!ctx) return null;
+  try {
+    // Signature réelle du SDK 1.9.3 : `getChat(chatId: string)` — un identifiant
+    // nu, PAS l'objet `{ chat_id }` des autres méthodes messaging. Vérifié dans
+    // les `.d.ts` du paquet, pas supposé par analogie.
+    const chat = await ctx.client.messaging.getChat(chatId);
+    // `type` : 0 = SINGLE, 1 = GROUP, 2 = CHANNEL. Un CHANNEL (diffusion) se
+    // comporte comme un groupe de notre point de vue : on ne s'adresse pas à un
+    // membre en particulier.
+    const isGroup = chat.type === 1 || chat.type === 2;
+    return { name: chat.name?.trim() || null, isGroup };
+  } catch (err) {
+    console.warn(`[unipile] getChat(${chatId}) a échoué :`, err);
+    return null;
+  }
+}
+
+/**
  * Récupère les octets d'un média de message (M6.6) pour le pousser dans R2.
  * Calque `fetchAttachment` (email) sur le namespace messaging. R2 reste la source
  * de vérité, Unipile n'est qu'un transport.
