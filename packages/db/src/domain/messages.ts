@@ -729,49 +729,14 @@ export async function createContactFromMessageSender(
 }
 
 /**
- * Rattache UN message à un sujet dans une transaction (message `linked`, PJ qui
- * suivent le sujet, journal). Brique commune au rattachement simple ET au
- * balayage des frères orphelins ci-dessous — elle ne se rappelle jamais
- * elle-même (le balayage ne se re-déclenche pas en cascade).
- */
-async function linkMessageTx(tx: Tx, id: string, subjectId: string) {
-  const { count } = await tx.message.updateMany({
-    where: { id },
-    data: { subjectId, status: MessageStatus.linked, triageHint: null },
-  });
-  ensureAffected(count, "Message");
-  // Les PJ du message suivent son sujet (box « Pièces jointes » de la fiche).
-  await tx.attachment.updateMany({
-    where: { messageId: id },
-    data: { subjectId },
-  });
-  await logEvent(tx, {
-    entityType: "message",
-    entityId: id,
-    messageId: id,
-    subjectId,
-    eventType: EVENT_TYPES.messageLinked,
-    title: "Message rattaché à un sujet",
-    actor: "user",
-  });
-}
-
-/**
- * Balaye les AUTRES orphelins du même GROUPE que `source` et les range dans le
- * même sujet. Le groupe suit les règles de rattachement de l'ingestion :
+ * Calcule (lecture seule) les IDs des AUTRES orphelins du même GROUPE que
+ * `source`. Le groupe suit les règles de rattachement de l'ingestion :
  *   • WhatsApp → même fil (`chat_id` = externalThreadId, portée par canal) ;
  *   • Email    → même interlocuteur ET même objet normalisé.
- * Rattacher manuellement un orphelin « ouvre » ainsi tout son fil d'un coup —
- * règle déterministe pré-M7, que l'IA de classement affinera (validé Vincent).
- * On ne touche qu'aux orphelins ENTRANTS encore `received` (jamais un message
- * déjà classé ou ignoré, invariant n°7).
- *
- * ⚠️ Tourne HORS de la transaction principale, en 2 `updateMany` groupés (best
- * effort) : le mettre DANS la transaction interactive du rattachement faisait
- * exploser son budget de 5 s sur la base distante → `P2028` en prod (le
- * rattachement du message principal, lui, reste atomique).
+ * N'inclut jamais `source`, ni un message déjà classé/ignoré (invariant n°7) :
+ * on ne considère que les orphelins ENTRANTS encore `received`.
  */
-async function linkSiblingOrphans(
+async function findSiblingOrphanIds(
   db: TenantDb,
   source: {
     id: string;
@@ -782,8 +747,7 @@ async function linkSiblingOrphans(
     senderRaw: string | null;
     senderContactId: string | null;
   },
-  subjectId: string,
-) {
+): Promise<string[]> {
   const base: Prisma.MessageWhereInput = {
     id: { not: source.id },
     subjectId: null,
@@ -791,7 +755,6 @@ async function linkSiblingOrphans(
     direction: MessageDirection.incoming,
   };
 
-  let siblingIds: string[] = [];
   if (source.channelType === "whatsapp" && source.externalThreadId) {
     const rows = await db.message.findMany({
       where: {
@@ -801,8 +764,10 @@ async function linkSiblingOrphans(
       },
       select: { id: true },
     });
-    siblingIds = rows.map((r) => r.id);
-  } else if (source.subjectLine) {
+    return rows.map((r) => r.id);
+  }
+
+  if (source.subjectLine) {
     const target = normalizeSubjectLine(source.subjectLine);
     const senderEmail = source.senderRaw?.trim() || null;
     // Même interlocuteur : contact lié à défaut expéditeur brut (email).
@@ -813,88 +778,96 @@ async function linkSiblingOrphans(
       orInterlocutor.push({
         senderRaw: { equals: senderEmail, mode: "insensitive" },
       });
-    if (orInterlocutor.length === 0) return;
+    if (orInterlocutor.length === 0) return [];
     const rows = await db.message.findMany({
       where: { ...base, OR: orInterlocutor },
       select: { id: true, subjectLine: true },
     });
     // L'objet normalisé se compare en JS (regex de préfixes Re/Fwd…), comme à
     // l'ingestion — pas d'équivalent SQL fidèle.
-    siblingIds = rows
+    return rows
       .filter(
         (r) => r.subjectLine && normalizeSubjectLine(r.subjectLine) === target,
       )
       .map((r) => r.id);
   }
 
-  if (siblingIds.length === 0) return;
-
-  // Rattachement groupé (2 updateMany) + PJ qui suivent, hors transaction.
-  await db.message.updateMany({
-    where: { id: { in: siblingIds } },
-    data: { subjectId, status: MessageStatus.linked, triageHint: null },
-  });
-  await db.attachment.updateMany({
-    where: { messageId: { in: siblingIds } },
-    data: { subjectId },
-  });
-  // Journal : un événement par frère rattaché (best effort ; TenantDb est
-  // assignable à Tx). Les échecs isolés n'annulent pas le rattachement.
-  for (const siblingId of siblingIds) {
-    await logEvent(db, {
-      entityType: "message",
-      entityId: siblingId,
-      messageId: siblingId,
-      subjectId,
-      eventType: EVENT_TYPES.messageLinked,
-      title: "Message rattaché à un sujet",
-      actor: "user",
-    });
-  }
+  return [];
 }
 
 /**
- * Cas M : rattacher un message « Sans sujet » à un sujet. Range ENSUITE (hors
- * transaction, best effort) les autres orphelins du MÊME groupe (même fil
- * WhatsApp / même objet + interlocuteur email) — cf. `linkSiblingOrphans`.
+ * Cas M : rattacher un message « Sans sujet » à un sujet, ET tous les autres
+ * orphelins du MÊME groupe (même fil WhatsApp / même objet + interlocuteur
+ * email — règle déterministe pré-M7 que l'IA affinera, validé Vincent).
+ *
+ * Conçu PLAT : le nombre de requêtes est CONSTANT quel que soit le nombre de
+ * messages rattachés — un `updateMany` pour TOUS les messages, un pour LEURS PJ
+ * (transaction en lot = un aller-retour, pas une transaction interactive qui
+ * multiplie les allers-retours et avait fait exploser le budget 5 s → P2028).
  */
 export async function assignMessageToSubject(
   db: TenantDb,
   id: string,
   subjectId: string,
 ) {
-  // 1. Rattachement du message principal — ATOMIQUE et court (tient le budget de
-  //    la transaction interactive, contrairement au balayage complet).
-  const source = await db.$transaction(async (tx) => {
-    assertFound(
-      await tx.subject.findFirst({ where: { id: subjectId } }),
-      "Sujet",
-    );
-    const src = assertFound(
-      await tx.message.findFirst({
-        where: { id },
-        include: { channel: { select: { type: true } } },
-      }),
-      "Message",
-    );
-    await linkMessageTx(tx as Tx, id, subjectId);
-    return src;
-  });
-
-  // 2. Balayage des frères orphelins — hors transaction (best effort).
-  await linkSiblingOrphans(
-    db,
-    {
-      id: source.id,
-      channelId: source.channelId,
-      channelType: source.channel.type,
-      externalThreadId: source.externalThreadId,
-      subjectLine: source.subjectLine,
-      senderRaw: source.senderRaw,
-      senderContactId: source.senderContactId,
-    },
-    subjectId,
+  assertFound(
+    await db.subject.findFirst({ where: { id: subjectId } }),
+    "Sujet",
   );
+  const source = assertFound(
+    await db.message.findFirst({
+      where: { id },
+      include: { channel: { select: { type: true } } },
+    }),
+    "Message",
+  );
+
+  const siblingIds = await findSiblingOrphanIds(db, {
+    id: source.id,
+    channelId: source.channelId,
+    channelType: source.channel.type,
+    externalThreadId: source.externalThreadId,
+    subjectLine: source.subjectLine,
+    senderRaw: source.senderRaw,
+    senderContactId: source.senderContactId,
+  });
+  const allIds = [id, ...siblingIds];
+
+  // Rattachement atomique et PLAT : deux updateMany groupés (transaction en lot).
+  // Les PJ suivent leur message (box « Pièces jointes » de la fiche).
+  await db.$transaction([
+    db.message.updateMany({
+      where: { id: { in: allIds } },
+      data: { subjectId, status: MessageStatus.linked, triageHint: null },
+    }),
+    db.attachment.updateMany({
+      where: { messageId: { in: allIds } },
+      data: { subjectId },
+    }),
+  ]);
+
+  // Journal : un événement pour le message rattaché par l'utilisateur, plus UN
+  // seul événement de synthèse si des frères ont suivi (pas N entrées).
+  await logEvent(db, {
+    entityType: "message",
+    entityId: id,
+    messageId: id,
+    subjectId,
+    eventType: EVENT_TYPES.messageLinked,
+    title: "Message rattaché à un sujet",
+    actor: "user",
+  });
+  if (siblingIds.length > 0) {
+    const plural = siblingIds.length > 1 ? "s" : "";
+    await logEvent(db, {
+      entityType: "subject",
+      entityId: subjectId,
+      subjectId,
+      eventType: EVENT_TYPES.messageLinked,
+      title: `${siblingIds.length} autre${plural} message${plural} du même fil rattaché${plural}`,
+      actor: "system",
+    });
+  }
 
   return assertFound(await db.message.findFirst({ where: { id } }), "Message");
 }
