@@ -51,17 +51,24 @@ De cette asymétrie découle la contrainte la plus structurante du modèle :
 
 C'est pourquoi le rattachement à un sujet se décide **message par message**, et non conversation par conversation (cf. §9).
 
-### L'ancre est la prothèse d'un objet manquant — décision du 2026-07-20
+### Un fil d'email EST un sujet ; une conversation WhatsApp est un flux — décision du 2026-07-21
 
 L'asymétrie ne s'arrête pas au discriminant : elle se lit **dans la clé elle-même**.
 
 | Clé canonique | Ce qu'elle contient | Ce qu'est la conversation |
 |---|---|---|
-| `email:<interlocuteur>:<objet>` | la personne **et l'affaire** | ≈ un sujet, presque par construction |
+| `email:<interlocuteur>:<objet>` | la personne **et l'affaire** | **un sujet**, par construction |
 | `wa-direct:<numéro>` | la personne **seule** | un flux, qui charrie des affaires successives |
 | `wa-group:<chat_id>` | le groupe **seul** | un flux, qui charrie des affaires successives |
 
-Un objet d'email **est déjà** une délimitation d'affaire, posée par l'expéditeur lui-même. Une conversation email a donc un début et une fin sémantiques ; il n'y a rien à découper. Un fil WhatsApp direct n'a que la personne : il coule, indéfiniment, et mélange.
+> ## 🔑 L'énoncé central
+>
+> **Un fil d'email EST un sujet.**
+> **Une conversation WhatsApp est un FLUX ; la fenêtre et son ancre y FABRIQUENT l'objet que le médium ne fournit pas.**
+>
+> Tout ce qui suit — l'ancre, ses deux bornes, la réouverture, la pause — découle de cette seule phrase. Quand une règle paraît arbitraire, c'est ici qu'il faut revenir.
+
+Un objet d'email **est déjà** une délimitation d'affaire, posée par l'expéditeur lui-même. Il n'y a **rien à découper**, et donc **rien à borner** : le lien entre une conversation email et son sujet est **1:1 et permanent**. Un fil WhatsApp direct n'a que la personne : il coule, indéfiniment, et mélange. C'est là — et **seulement** là — que la fenêtre doit fabriquer un objet, en posant des bornes que le médium ne donne pas.
 
 > **Un groupe WhatsApp se comporte exactement comme un direct** (précision du 2026-07-20). La tentation est de voir dans le **nom du groupe** l'équivalent d'un objet d'email — « Chantier Narbonne », « Équipe Marne-la-Vallée ». C'est faux : un nom de groupe désigne un **collectif**, pas une **affaire**. Le groupe « Tasty Crousty Marne-la-Vallée » parlera successivement d'une livraison en retard, d'un planning de congés et d'un congélateur en panne — exactement le mélange que l'objet d'email évite. Le groupe est donc **ancré comme un direct**, sans exception ni règle particulière.
 
@@ -69,11 +76,22 @@ D'où le renversement de lecture :
 
 > **L'ancre n'a jamais été un concept du modèle. C'est la PROTHÈSE d'un objet manquant.**
 >
-> Là où l'objet existe (email), la fenêtre est **inutile** : le fil entier appartient au sujet. Là où il manque (WhatsApp), elle est **indispensable** : sans elle, ouvrir un sujet embarquerait des mois de bavardage.
+> Là où l'objet existe (email), **il n'y a AUCUNE notion de fenêtre** : le fil entier, passé et à venir, appartient au sujet, sans borne. Là où il manque (WhatsApp), la fenêtre est **indispensable** : sans elle, ouvrir un sujet embarquerait des mois de bavardage.
 
-Conséquence directe, actée le 2026-07-20 : **l'ancre est nulle pour l'email** et posée pour WhatsApp (détail en §9 et `02-modele-donnees.md §6`). Ce n'est pas une exception bricolée, c'est le modèle qui devient visible.
+⚠️ **Correction du 2026-07-21.** La rédaction du 2026-07-20 parlait encore, côté email, d'une « fenêtre » dont l'ancre serait simplement nulle, et d'un sujet couvrant « tout le fil non encore couvert ». Les deux formulations sont **supprimées** : il n'y a **jamais** de second sujet sur un fil email, donc rien à « ne pas encore couvrir ». C'est **tout le fil**, littéralement, sans borne basse ni borne haute.
 
 Et comme toute prothèse, elle est **temporaire**. Quand le pipeline IA (M7) saura découper un flux WhatsApp **par le sens**, il produira ce que l'objet d'email donne gratuitement — et l'ancre tombera, exactement comme la « fenêtre active » (cf. l'encadré ⚠️ de §9, qui la décrit déjà comme un échafaudage du mode manuel). Les deux sont le même échafaudage vu sous deux angles.
+
+### Appartenance et statut sont deux choses distinctes — décision du 2026-07-21
+
+C'est l'erreur qu'il ne faut pas refaire, et elle a été commise une fois : `closed_at` était décrit comme « la borne haute de la fenêtre », ce qui faisait **gouverner l'appartenance par le statut**.
+
+| | Question posée | Ce qui y répond |
+|---|---|---|
+| **Appartenance** | *quels messages sont dans ce sujet ?* | les **ancres** (`anchor_message_id`, `closing_message_id`) — jamais le statut |
+| **Statut** | *où en est cette affaire ?* | `Subject.status` (`ouvert` / `validé` / `fermé`) |
+
+Les confondre produisait des effets absurdes : valider un sujet amputait silencieusement son périmètre, et un sujet ne pouvait plus être rouvert sans réécrire son appartenance. Les deux axes sont désormais **indépendants** (détail en §9 et `02-modele-donnees.md §6`).
 
 ### Ce qu'une conversation n'est pas
 
@@ -221,7 +239,7 @@ Range le message dès sa réception, selon un discriminant déterministe propre 
 
 ### Subject
 
-Ouvre une **fenêtre de travail temporaire** sur un ou plusieurs fils, et donne un sens métier à un sous-ensemble de messages.
+Donne un sens métier à un ensemble de messages : **tout** un fil d'email, ou une **fenêtre** découpée dans un flux WhatsApp (cf. §3).
 
 ### Task
 
@@ -239,24 +257,56 @@ Trace ce qui s'est passé.
 
 ## 9. Cycle de vie d'un sujet — une fenêtre de travail
 
-Un Sujet n'est pas un fil de discussion : c'est une **fenêtre de travail temporaire ouverte sur des conversations**. On l'**ouvre**, on l'utilise, on la **ferme** — comme une fenêtre. La conversation, elle, existe avant, pendant et après.
+Un Sujet est un **espace de travail ouvert sur des conversations**. On l'**ouvre**, on l'utilise, on le **ferme**. La conversation, elle, existe avant, pendant et après.
+
+La métaphore de la **fenêtre** — un début, une fin, un périmètre découpé dans un flux — vaut **côté WhatsApp** (cf. §3). **Côté email elle ne s'applique pas** : le fil *est* le sujet, entier et pour toujours, il n'y a rien à cadrer. On dira donc « fenêtre » quand on parle d'une conversation WhatsApp, et simplement « sujet » quand on parle d'un fil email (précision du 2026-07-21).
 
 Le vocabulaire est délibéré : on ne « crée » ni ne « supprime » un sujet, on l'**ouvre** et on le **ferme**.
 
-### Ouvrir un sujet : avec ancre (WhatsApp) ou sans (email)
+### Ouvrir un sujet : UNE seule primitive, à ancre optionnelle
 
-**L'ancre dépend du canal** — parce qu'elle n'est que la prothèse d'un objet manquant (cf. §3, décision du 2026-07-20).
+> **Décision du 2026-07-21 — une primitive, pas deux.** Le domaine expose **une seule** fonction : *ouvrir un sujet **sur une conversation**, avec une ancre **OPTIONNELLE***.
+>
+> - **ancre nulle** → le sujet couvre **tout le fil** ;
+> - **ancre posée** → le sujet part **de cette ancre**.
+>
+> ⚠️ **La logique métier teste l'ANCRE, jamais le canal.** C'est exactement la garde déjà écrite plus haut : *le canal décide du geste, jamais de la fonction appelée*. Un `if (channel === 'email')` dans le domaine est le premier pas vers deux produits.
+
+**Le point d'entrée est TOUJOURS la conversation, jamais le message** (décision du 2026-07-21). On ouvre un sujet **depuis une conversation**. Côté WhatsApp, le tap sur un message reste disponible pour **désigner l'ancre** — il ne crée pas un autre chemin d'ouverture, il renseigne un paramètre. Côté email, il n'y a **pas de tap sur un message**.
+
+Ce que le canal détermine, c'est donc uniquement **quelle valeur d'ancre le geste transmet** :
 
 | | **email** (conversation `objet`) | **WhatsApp** (`direct` / `groupe`) |
 |---|---|---|
-| Ancre | **aucune** (`anchor_message_id = null`) | le **message de départ** choisi |
-| Ce qui appartient au sujet | **tout le fil** — y compris les messages **antérieurs** à l'ouverture du sujet | les messages **à partir de l'ancre** |
-| Glissement d'ancre au détachement | **sans objet** | s'applique |
-| Ouvrir un sujet depuis un **message** | **impossible** — seulement depuis la conversation | possible (tap sur message) |
+| Ancre transmise | **aucune** (`null`) | le **message de départ** (défaut : le dernier message reçu) |
+| Ce qui appartient au sujet | **tout le fil**, passé **et à venir**, sans borne | les messages **à partir de l'ancre**, jusqu'à l'éventuelle borne de fin |
+| Lien conversation ↔ sujet | **1:1 et permanent** | fenêtre, ajustable et refermable |
+| Ouvrir un sujet depuis un **message** | **impossible** | le tap **désigne l'ancre**, il n'ouvre pas un second chemin |
 
-⚠️ **Ouvrir un sujet sur une conversation email balaie le fil ENTIER, en amont comme en aval.** Un échange de six emails déjà reçus doit produire un sujet portant les **six** messages, pas le dernier. C'est le contraire de la règle WhatsApp (« à partir de l'ancre »), et c'est délibéré : l'objet a déjà délimité l'affaire, il n'y a aucune raison d'en amputer le début.
+⚠️ **Ouvrir un sujet sur une conversation email balaie le fil ENTIER, en amont comme en aval.** Un échange de six emails déjà reçus doit produire un sujet portant les **six** messages, pas le dernier. L'objet a déjà délimité l'affaire ; il n'y a aucune raison d'en amputer le début.
+
+**Le swipe droite ne *crée* pas le lien : il DÉCLARE que ce fil mérite d'être suivi.** Tous les fils email ne sont pas des affaires — une newsletter, un accusé de réception, un démarchage n'ont pas à devenir des sujets. Le geste de l'utilisateur ne fabrique donc pas une correspondance qui n'existerait pas, il **reconnaît** celle que l'objet a déjà posée. C'est M7 qui prendra cette décision à sa place, plus tard.
 
 Côté WhatsApp — **directs et groupes indifféremment** (cf. §3) — le message d'ancrage marque le début du sujet : les messages **antérieurs** restent dans la conversation sans lui appartenir.
+
+### Deux bornes, et deux gestes d'extinction qu'il ne faut pas confondre (2026-07-21)
+
+Une fenêtre WhatsApp a **un début** (l'ancre) et peut recevoir **une fin** (`closing_message_id`, cf. `02-modele-donnees.md §6`). L'un et l'autre désignent **un message**, jamais une date.
+
+| Geste | Effet sur l'alimentation | Ancre de fin |
+|---|---|---|
+| **Ignorer la conversation** | **PAUSE** — le sujet cesse d'être alimenté par cette conversation | **aucune** ancre de fin n'est posée |
+| **Valider** ou **fermer le sujet** | **FIN** — le cordon se referme sur le dernier message reçu | **posée** |
+
+**Pourquoi cette distinction est indispensable.** Ignorer une conversation est **réversible** (cf. §3) : la réactiver doit faire **reprendre** l'alimentation du sujet. Si l'ignorance posait une ancre de fin, réactiver ne servirait à rien — la fenêtre serait déjà refermée et la réactivation n'aurait aucun effet observable. On distingue donc « **je n'écoute plus cette source pour l'instant** » de « **cette affaire est terminée** ».
+
+### Un sujet email se ROUVRE à la réception d'un nouveau message (2026-07-21)
+
+Un nouvel email de même objet et de même interlocuteur rejoint **toujours** son sujet — et le fait **repasser en `ouvert`** s'il était `validé` ou `fermé`.
+
+**Pourquoi.** De l'activité sur une affaire signifie que l'affaire est **vivante** : la déclarer close pendant que l'interlocuteur continue d'écrire ne décrit plus la réalité. Et l'appartenance ne dépend pas du statut (cf. §3) : le message serait de toute façon dans le sujet — autant que le statut le dise.
+
+> **Un seul mécanisme d'extinction, pas deux qui se ressemblent.** Le **seul** geste qui fait durablement taire un fil est **d'ignorer la conversation**. Si la validation faisait *aussi* taire le fil, l'utilisateur aurait deux gestes voisins aux effets subtilement différents, et ne saurait jamais lequel employer.
 
 **Le défaut, quand l'utilisateur ne désigne pas d'ancre (swipe droite), est le DERNIER message. Toujours.** Pas de calcul, pas d'exception, pas de borne temporelle.
 
@@ -270,9 +320,17 @@ Dans les deux cas, tant que le sujet reste ouvert, les **nouveaux messages de la
 
 Règles associées :
 
-- **Au plus un sujet actif par conversation** — règle métier V1. Sans IA capable de trancher, une conversation n'a qu'une fenêtre ouverte à la fois, ce qui rend la destination d'un nouveau message non ambiguë. **Le modèle, lui, en supporte plusieurs** : la règle pourra être levée sans migration de schéma le jour où l'IA saura séparer les sujets entrelacés.
+- **Au plus un sujet ouvert par conversation** — règle métier V1. Sans IA capable de trancher, une conversation n'a qu'une fenêtre ouverte à la fois, ce qui rend la destination d'un nouveau message non ambiguë. **Le modèle, lui, en supporte plusieurs** (cf. encadré ci-dessous).
 - Si le message d'ancrage est **détaché**, l'ancre **glisse** au message suivant du sujet *(WhatsApp uniquement — une conversation email n'a pas d'ancre à faire glisser)*.
 - Rattacher un message **isolé** à un autre sujet **ne déplace pas** la fenêtre active : seule l'ouverture d'un sujet pose une ancre.
+
+> **Plusieurs sujets SIMULTANÉS sur une même conversation — écarté de la V1 (2026-07-21).**
+>
+> L'hypothèse est **mise de côté**, et cela ne coûte rien : `SubjectConversation` est **déjà** une table de liaison plusieurs-à-plusieurs, donc le schéma l'autorise depuis le premier jour. Ce qui l'interdit n'est qu'une **règle métier**, levable **sans migration**.
+>
+> Le jour où on la lève, il n'y a que du **rendu** à faire — aligner plusieurs cordons horizontalement dans la conversation — et **aucune donnée à reprendre**.
+>
+> Le cas jugé le plus probable, lui, **fonctionne déjà** : des sujets **successifs** sur un même fil, sans chevauchement, sont simplement des **fenêtres disjointes** sur le même flux, exprimées par la paire début/fin (`anchor_message_id` / `closing_message_id`).
 
 > ⚠️ **La « fenêtre active » est un échafaudage du mode manuel, pas une règle métier durable.**
 >
@@ -296,7 +354,12 @@ C'est à ce niveau — et non plus au niveau de la conversation — que se fait 
 - **`validé`** — le travail est fait. Clos via **« Valider »** (swipe droite, vert).
 - **`fermé`** — le sujet n'avait pas lieu d'être, ou n'intéresse pas l'utilisateur. Clos via **« Fermer »** (swipe gauche, rouge).
 
-Dans les deux cas terminaux la **fenêtre se fige** : les messages postérieurs à la fermeture n'appartiennent plus à ce sujet, et les conversations qu'il portait **redeviennent orphelines**. Les fenêtres successives sur une même conversation sont donc **séquentielles et sans chevauchement**.
+**Ce que « valider » ou « fermer » fait à l'appartenance dépend du canal — et de lui seul** (précision du 2026-07-21) :
+
+- **WhatsApp** — une **ancre de fin** est posée sur le dernier message reçu : le cordon se **referme**, les messages suivants n'appartiennent plus au sujet, et la conversation **redevient orpheline**. Les fenêtres successives sur un même flux sont donc **séquentielles et sans chevauchement**.
+- **Email** — **rien ne change à l'appartenance** : le lien est 1:1 et permanent, le fil reste entièrement dans son sujet, et un nouveau message **rouvre** le sujet (cf. ci-dessus). Le statut dit seulement où en est l'affaire.
+
+> ⚠️ **Formulation retirée le 2026-07-21 : « les deux transitions terminales figent la fenêtre ».** Elle était vraie pour WhatsApp et fausse pour l'email, où il n'y a pas de fenêtre à figer. Elle reposait sur `closed_at` comme borne d'appartenance — c'est précisément ce qui vient d'être supprimé (cf. §3, « appartenance ≠ statut »).
 
 À la fermeture, Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » — c'est le geste qui empêche un fil bavard de reproposer indéfiniment de nouveaux sujets. L'ignorance vit désormais sur la **conversation** (cf. §3), pas sur le sujet : ce n'est pas un sujet qu'on veut faire taire, c'est une **source**.
 
@@ -456,7 +519,7 @@ Puisque l'agent est central, ses réponses ne sont pas que du texte : Relvo **re
 Les écrans de consultation/traitement (**Mon fil**, **Sujet**, **Mémoire**, **Planning**, **Messages**, **Contacts**) existent toujours — pour la lecture profonde et le travail soutenu — mais deviennent des **destinations**, atteintes via une carte du chat ou via la **navigation par onglets**. Tous sont repensés **mobile-first**, en colonne unique (fini les split-views 2 colonnes, tables 7 colonnes et panneaux droits 340px fixes).
 
 - **Sujets** reste l'espace de **traitement** : feed de cartes-sujets enrichies, organisé en **2 onglets de statut** — **Ouverts** (urgents en tête) et **Validés**. Sur chaque carte, deux gestes de **swipe** : **Fermer** (gauche, rouge → `status = fermé`) et **Valider** (droite, vert → `status = validé`). C'est l'« inbox structurée par sujets ».
-- **Conversations** est l'espace de **tri**, et il reste **hors navigation** : on y accède par le **KPI « Sans sujet »** de la page Sujets. Non-lus en tête, swipe gauche = **Ignorer la conversation**. C'est depuis un message d'une conversation qu'on **ouvre un sujet** (cf. principe 9).
+- **Conversations** est l'espace de **tri**, et il reste **hors navigation** : on y accède par le **KPI « Sans sujet »** de la page Sujets. Non-lus en tête, swipe gauche = **Ignorer la conversation**. C'est **depuis une conversation** — jamais depuis un message — qu'on **ouvre un sujet** (cf. principe 9, décision du 2026-07-21).
 - La **navigation** se fait par une **barre d'onglets basse**, pas une sidebar : **4 entrées** — **Actions** ✅ (les tâches du jour), **Sujets** 📥, **Mémoire 🧠** (cf. principe 12), **Réglages** ⚙️. Planning, Contacts et **Conversations** sont **hors-nav**, atteints depuis ces écrans.
 
 > **⚠️ MISE À JOUR 2026-07-20 — la page Messages devient Conversations.** La pile de messages orphelins **disparaît** au profit de la liste des **conversations**, atteinte par le même point d'entrée qu'avant : le **KPI « Sans sujet »**. Ce KPI ne compte plus des messages mais des **conversations dont le dernier message n'est rattaché à aucun sujet** — c'est-à-dire celles qui **peuvent solliciter l'utilisateur**. L'onglet **Ignorés** de Sujets disparaît (l'ignorance vit désormais sur la conversation, filtrable depuis Conversations). Le dock, lui, **ne change pas**.
