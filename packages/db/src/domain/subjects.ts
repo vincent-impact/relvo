@@ -211,8 +211,38 @@ export async function getSubject(db: TenantDb, id: string) {
   return assertFound(await db.subject.findFirst({ where: { id } }), "Sujet");
 }
 
+/**
+ * Crée un sujet, en RETENTANT si deux créations concurrentes ont calculé la même
+ * référence. `nextSubjectReference` lit le maximum puis incrémente : entre la
+ * lecture et l'écriture, un autre appel peut avoir pris le numéro. La contrainte
+ * `@@unique([accountId, reference])` l'attrape (P2002) et on recalcule.
+ *
+ * Ne retente QUE sur la référence auto-calculée : une référence imposée par
+ * l'appelant qui entre en collision est une vraie erreur, pas une course.
+ */
 export async function createSubject(db: TenantDb, input: CreateSubjectInput) {
   const data = createSubjectSchema.parse(input);
+  const MAX_ATTEMPTS = 3;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await createSubjectOnce(db, data);
+    } catch (err) {
+      const isReferenceRace =
+        err instanceof Prisma.PrismaClientKnownRequestError &&
+        err.code === "P2002" &&
+        !data.reference &&
+        attempt < MAX_ATTEMPTS;
+      if (!isReferenceRace) throw err;
+    }
+  }
+}
+
+async function createSubjectOnce(
+  db: TenantDb,
+  // Type de SORTIE du schéma (défauts appliqués), pas `CreateSubjectInput` qui
+  // est le type d'ENTRÉE — `createdByActor` y est encore optionnel.
+  data: ReturnType<typeof createSubjectSchema.parse>,
+): Promise<Awaited<ReturnType<typeof getSubject>>> {
   return db.$transaction(async (tx) => {
     if (data.folderId) await assertFolderAssignable(tx as Tx, data.folderId);
 
