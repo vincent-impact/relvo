@@ -765,9 +765,14 @@ async function linkMessageTx(tx: Tx, id: string, subjectId: string) {
  * règle déterministe pré-M7, que l'IA de classement affinera (validé Vincent).
  * On ne touche qu'aux orphelins ENTRANTS encore `received` (jamais un message
  * déjà classé ou ignoré, invariant n°7).
+ *
+ * ⚠️ Tourne HORS de la transaction principale, en 2 `updateMany` groupés (best
+ * effort) : le mettre DANS la transaction interactive du rattachement faisait
+ * exploser son budget de 5 s sur la base distante → `P2028` en prod (le
+ * rattachement du message principal, lui, reste atomique).
  */
 async function linkSiblingOrphans(
-  tx: Tx,
+  db: TenantDb,
   source: {
     id: string;
     channelId: string;
@@ -788,7 +793,7 @@ async function linkSiblingOrphans(
 
   let siblingIds: string[] = [];
   if (source.channelType === "whatsapp" && source.externalThreadId) {
-    const rows = await tx.message.findMany({
+    const rows = await db.message.findMany({
       where: {
         ...base,
         channelId: source.channelId,
@@ -809,7 +814,7 @@ async function linkSiblingOrphans(
         senderRaw: { equals: senderEmail, mode: "insensitive" },
       });
     if (orInterlocutor.length === 0) return;
-    const rows = await tx.message.findMany({
+    const rows = await db.message.findMany({
       where: { ...base, OR: orInterlocutor },
       select: { id: true, subjectLine: true },
     });
@@ -822,27 +827,50 @@ async function linkSiblingOrphans(
       .map((r) => r.id);
   }
 
+  if (siblingIds.length === 0) return;
+
+  // Rattachement groupé (2 updateMany) + PJ qui suivent, hors transaction.
+  await db.message.updateMany({
+    where: { id: { in: siblingIds } },
+    data: { subjectId, status: MessageStatus.linked, triageHint: null },
+  });
+  await db.attachment.updateMany({
+    where: { messageId: { in: siblingIds } },
+    data: { subjectId },
+  });
+  // Journal : un événement par frère rattaché (best effort ; TenantDb est
+  // assignable à Tx). Les échecs isolés n'annulent pas le rattachement.
   for (const siblingId of siblingIds) {
-    await linkMessageTx(tx, siblingId, subjectId);
+    await logEvent(db, {
+      entityType: "message",
+      entityId: siblingId,
+      messageId: siblingId,
+      subjectId,
+      eventType: EVENT_TYPES.messageLinked,
+      title: "Message rattaché à un sujet",
+      actor: "user",
+    });
   }
 }
 
 /**
- * Cas M : rattacher un message « Sans sujet » à un sujet. Range dans la foulée
- * les autres orphelins du MÊME groupe (même fil WhatsApp / même objet +
- * interlocuteur email) — cf. `linkSiblingOrphans`.
+ * Cas M : rattacher un message « Sans sujet » à un sujet. Range ENSUITE (hors
+ * transaction, best effort) les autres orphelins du MÊME groupe (même fil
+ * WhatsApp / même objet + interlocuteur email) — cf. `linkSiblingOrphans`.
  */
 export async function assignMessageToSubject(
   db: TenantDb,
   id: string,
   subjectId: string,
 ) {
-  return db.$transaction(async (tx) => {
+  // 1. Rattachement du message principal — ATOMIQUE et court (tient le budget de
+  //    la transaction interactive, contrairement au balayage complet).
+  const source = await db.$transaction(async (tx) => {
     assertFound(
       await tx.subject.findFirst({ where: { id: subjectId } }),
       "Sujet",
     );
-    const source = assertFound(
+    const src = assertFound(
       await tx.message.findFirst({
         where: { id },
         include: { channel: { select: { type: true } } },
@@ -850,24 +878,25 @@ export async function assignMessageToSubject(
       "Message",
     );
     await linkMessageTx(tx as Tx, id, subjectId);
-    await linkSiblingOrphans(
-      tx as Tx,
-      {
-        id: source.id,
-        channelId: source.channelId,
-        channelType: source.channel.type,
-        externalThreadId: source.externalThreadId,
-        subjectLine: source.subjectLine,
-        senderRaw: source.senderRaw,
-        senderContactId: source.senderContactId,
-      },
-      subjectId,
-    );
-    return assertFound(
-      await tx.message.findFirst({ where: { id } }),
-      "Message",
-    );
+    return src;
   });
+
+  // 2. Balayage des frères orphelins — hors transaction (best effort).
+  await linkSiblingOrphans(
+    db,
+    {
+      id: source.id,
+      channelId: source.channelId,
+      channelType: source.channel.type,
+      externalThreadId: source.externalThreadId,
+      subjectLine: source.subjectLine,
+      senderRaw: source.senderRaw,
+      senderContactId: source.senderContactId,
+    },
+    subjectId,
+  );
+
+  return assertFound(await db.message.findFirst({ where: { id } }), "Message");
 }
 
 /** Cas N : ignorer un message « Sans sujet » (spam, non pertinent). */
