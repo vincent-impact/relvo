@@ -36,6 +36,8 @@ export const createMessageSchema = z.object({
   recipientContactId: z.uuid().optional().nullable(),
   externalId: z.string().trim().max(255).optional().nullable(),
   externalThreadId: z.string().trim().max(255).optional().nullable(),
+  // Message reçu dans un GROUPE (WhatsApp) → 1 groupe = 1 sujet, réponse à Tous.
+  isGroup: z.boolean().optional(),
   subjectLine: z.string().trim().max(500).optional().nullable(),
   content: z.string().optional().nullable(),
   receivedAt: z.date().optional().nullable(),
@@ -102,6 +104,7 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
         recipientContactId: data.recipientContactId ?? null,
         externalId: data.externalId ?? null,
         externalThreadId: data.externalThreadId ?? null,
+        isGroup: data.isGroup ?? false,
         subjectLine: data.subjectLine ?? null,
         content: data.content ?? null,
         receivedAt: data.receivedAt ?? (incoming ? new Date() : null),
@@ -344,6 +347,9 @@ export const ingestInboundWhatsAppSchema = z.object({
   senderRaw: z.string().trim().max(320).optional().nullable(),
   // Nom de profil WhatsApp (« Leroy Frederique ») — label lisible avant contact.
   senderName: z.string().trim().max(200).optional().nullable(),
+  // Message reçu dans un GROUPE WhatsApp (`is_group` du webhook). Marque le sujet
+  // comme « de groupe » → réponse par défaut à Tous (cf. composer fiche sujet).
+  isGroup: z.boolean().optional().nullable(),
   content: z.string().optional().nullable(),
   receivedAt: z.date().optional().nullable(),
 });
@@ -438,6 +444,7 @@ export async function ingestInboundWhatsApp(
       senderName: data.senderName ?? null,
       externalId: data.externalId,
       externalThreadId: data.externalThreadId ?? null,
+      isGroup: data.isGroup ?? false,
       // WhatsApp n'a pas d'objet → subjectLine reste null.
       content: data.content ?? null,
       receivedAt: data.receivedAt ?? new Date(),
@@ -644,12 +651,20 @@ export async function createSubjectFromMessage(
     );
   }
 
-  // Contact : on réutilise celui du message, sinon on le matérialise depuis
-  // l'expéditeur brut (sender_raw) — un expéditeur inconnu devient un contact.
+  // Groupe WhatsApp (hypothèse métier pré-M7 : 1 groupe = 1 sujet) → le sujet
+  // représente le GROUPE, pas un membre. On n'enregistre AUCUN contact en masse
+  // (invariant n°12 : jamais de contact « dans le vide ») : les participants
+  // restent visibles via le `senderName` de chaque message, et le composer
+  // répondra à « Tous » (le fil). Sinon (1:1) on matérialise l'expéditeur en
+  // contact : on réutilise celui du message, sinon on le crée depuis sender_raw.
   // On PRIVILÉGIE le nom de profil (« Leroy Frederique ») pour le prénom/nom, et
   // on classe l'identifiant brut en email ou téléphone selon sa forme.
   let contactId = message.senderContactId;
-  if (!contactId && (message.senderName || message.senderRaw)) {
+  if (
+    !message.isGroup &&
+    !contactId &&
+    (message.senderName || message.senderRaw)
+  ) {
     const rawId = message.senderRaw?.trim() || null;
     const isEmail = rawId?.includes("@") ?? false;
     const contact = await createContact(db, {
@@ -671,7 +686,8 @@ export async function createSubjectFromMessage(
       overrides?.title ??
       deriveSubjectTitle(message.subjectLine, message.content),
     folderId: overrides?.folderId ?? message.folderId ?? null,
-    contactIds: contactId ? [contactId] : [],
+    // Sujet de groupe → aucun interlocuteur individuel (réponse à Tous).
+    contactIds: !message.isGroup && contactId ? [contactId] : [],
     createdByActor: Actor.user,
   });
 
@@ -712,7 +728,110 @@ export async function createContactFromMessageSender(
   return contact;
 }
 
-/** Cas M : rattacher un message « Sans sujet » à un sujet. */
+/**
+ * Rattache UN message à un sujet dans une transaction (message `linked`, PJ qui
+ * suivent le sujet, journal). Brique commune au rattachement simple ET au
+ * balayage des frères orphelins ci-dessous — elle ne se rappelle jamais
+ * elle-même (le balayage ne se re-déclenche pas en cascade).
+ */
+async function linkMessageTx(tx: Tx, id: string, subjectId: string) {
+  const { count } = await tx.message.updateMany({
+    where: { id },
+    data: { subjectId, status: MessageStatus.linked, triageHint: null },
+  });
+  ensureAffected(count, "Message");
+  // Les PJ du message suivent son sujet (box « Pièces jointes » de la fiche).
+  await tx.attachment.updateMany({
+    where: { messageId: id },
+    data: { subjectId },
+  });
+  await logEvent(tx, {
+    entityType: "message",
+    entityId: id,
+    messageId: id,
+    subjectId,
+    eventType: EVENT_TYPES.messageLinked,
+    title: "Message rattaché à un sujet",
+    actor: "user",
+  });
+}
+
+/**
+ * Balaye les AUTRES orphelins du même GROUPE que `source` et les range dans le
+ * même sujet. Le groupe suit les règles de rattachement de l'ingestion :
+ *   • WhatsApp → même fil (`chat_id` = externalThreadId, portée par canal) ;
+ *   • Email    → même interlocuteur ET même objet normalisé.
+ * Rattacher manuellement un orphelin « ouvre » ainsi tout son fil d'un coup —
+ * règle déterministe pré-M7, que l'IA de classement affinera (validé Vincent).
+ * On ne touche qu'aux orphelins ENTRANTS encore `received` (jamais un message
+ * déjà classé ou ignoré, invariant n°7).
+ */
+async function linkSiblingOrphans(
+  tx: Tx,
+  source: {
+    id: string;
+    channelId: string;
+    channelType: string;
+    externalThreadId: string | null;
+    subjectLine: string | null;
+    senderRaw: string | null;
+    senderContactId: string | null;
+  },
+  subjectId: string,
+) {
+  const base: Prisma.MessageWhereInput = {
+    id: { not: source.id },
+    subjectId: null,
+    status: MessageStatus.received,
+    direction: MessageDirection.incoming,
+  };
+
+  let siblingIds: string[] = [];
+  if (source.channelType === "whatsapp" && source.externalThreadId) {
+    const rows = await tx.message.findMany({
+      where: {
+        ...base,
+        channelId: source.channelId,
+        externalThreadId: source.externalThreadId,
+      },
+      select: { id: true },
+    });
+    siblingIds = rows.map((r) => r.id);
+  } else if (source.subjectLine) {
+    const target = normalizeSubjectLine(source.subjectLine);
+    const senderEmail = source.senderRaw?.trim() || null;
+    // Même interlocuteur : contact lié à défaut expéditeur brut (email).
+    const orInterlocutor: Prisma.MessageWhereInput[] = [];
+    if (source.senderContactId)
+      orInterlocutor.push({ senderContactId: source.senderContactId });
+    if (senderEmail)
+      orInterlocutor.push({
+        senderRaw: { equals: senderEmail, mode: "insensitive" },
+      });
+    if (orInterlocutor.length === 0) return;
+    const rows = await tx.message.findMany({
+      where: { ...base, OR: orInterlocutor },
+      select: { id: true, subjectLine: true },
+    });
+    // L'objet normalisé se compare en JS (regex de préfixes Re/Fwd…), comme à
+    // l'ingestion — pas d'équivalent SQL fidèle.
+    siblingIds = rows
+      .filter(
+        (r) => r.subjectLine && normalizeSubjectLine(r.subjectLine) === target,
+      )
+      .map((r) => r.id);
+  }
+
+  for (const siblingId of siblingIds) {
+    await linkMessageTx(tx, siblingId, subjectId);
+  }
+}
+
+/**
+ * Cas M : rattacher un message « Sans sujet » à un sujet. Range dans la foulée
+ * les autres orphelins du MÊME groupe (même fil WhatsApp / même objet +
+ * interlocuteur email) — cf. `linkSiblingOrphans`.
+ */
 export async function assignMessageToSubject(
   db: TenantDb,
   id: string,
@@ -723,25 +842,27 @@ export async function assignMessageToSubject(
       await tx.subject.findFirst({ where: { id: subjectId } }),
       "Sujet",
     );
-    const { count } = await tx.message.updateMany({
-      where: { id },
-      data: { subjectId, status: MessageStatus.linked, triageHint: null },
-    });
-    ensureAffected(count, "Message");
-    // Les PJ du message suivent son sujet (box « Pièces jointes » de la fiche).
-    await tx.attachment.updateMany({
-      where: { messageId: id },
-      data: { subjectId },
-    });
-    await logEvent(tx as Tx, {
-      entityType: "message",
-      entityId: id,
-      messageId: id,
+    const source = assertFound(
+      await tx.message.findFirst({
+        where: { id },
+        include: { channel: { select: { type: true } } },
+      }),
+      "Message",
+    );
+    await linkMessageTx(tx as Tx, id, subjectId);
+    await linkSiblingOrphans(
+      tx as Tx,
+      {
+        id: source.id,
+        channelId: source.channelId,
+        channelType: source.channel.type,
+        externalThreadId: source.externalThreadId,
+        subjectLine: source.subjectLine,
+        senderRaw: source.senderRaw,
+        senderContactId: source.senderContactId,
+      },
       subjectId,
-      eventType: EVENT_TYPES.messageLinked,
-      title: "Message rattaché à un sujet",
-      actor: "user",
-    });
+    );
     return assertFound(
       await tx.message.findFirst({ where: { id } }),
       "Message",

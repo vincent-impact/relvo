@@ -148,6 +148,8 @@ export function toInboundWhatsApp(
     senderRaw: whatsAppSenderRaw(evt),
     // Nom de profil WhatsApp (« Leroy Frederique ») → label lisible avant contact.
     senderName: profileName,
+    // Groupe → 1 groupe = 1 sujet, réponse à Tous (composer fiche sujet).
+    isGroup: evt.is_group ?? false,
     content,
     receivedAt: messagingReceivedAt(evt.timestamp),
   };

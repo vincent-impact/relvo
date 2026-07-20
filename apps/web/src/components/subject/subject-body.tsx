@@ -40,6 +40,8 @@ export function SubjectBody({
   subjectTitle,
   emailReplyTargets,
   whatsappReplyTargets,
+  isGroupSubject = false,
+  groupWhatsappTarget = null,
 }: {
   header: React.ReactNode;
   defaultTab?: Tab;
@@ -58,12 +60,20 @@ export function SubjectBody({
   emailReplyTargets: Record<string, { channelId: string; email: string }>;
   /** Par interlocuteur joignable par WhatsApp : le fil (chat_id) + le canal. */
   whatsappReplyTargets: Record<string, { channelId: string; chatId: string }>;
+  /** Sujet issu d'un GROUPE WhatsApp (1 groupe = 1 sujet) → réponse à Tous par
+   *  défaut, pas à un membre (invariant : le groupe est l'interlocuteur). */
+  isGroupSubject?: boolean;
+  /** Fil du groupe (chat_id + canal) pour l'envoi « Tous » réel, ou null. */
+  groupWhatsappTarget?: { channelId: string; chatId: string } | null;
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
   const multi = interlocuteurs.length > 1;
+  // Sujet de groupe → « Tous » est l'interlocuteur par défaut (le groupe entier).
   const [selected, setSelected] = useState<string>(
-    defaultInterlocuteurKey ?? interlocuteurs[0]?.key ?? "all",
+    isGroupSubject
+      ? "all"
+      : (defaultInterlocuteurKey ?? interlocuteurs[0]?.key ?? "all"),
   );
 
   // Envoi réel d'une réponse (M5.6 email / M6.5 WhatsApp), routé selon le canal
@@ -71,6 +81,23 @@ export function SubjectBody({
   // composer NE vide PAS le champ si l'envoi n'a pas eu lieu (texte préservé).
   async function handleSend(text: string, recipientKey: string) {
     if (recipientKey === "all") {
+      // Groupe WhatsApp : « Tous » = le fil du groupe (chat_id) → UN SEUL envoi
+      // réel (ce n'est pas la diffusion fan-out email, reportée après la V1).
+      if (isGroupSubject && groupWhatsappTarget) {
+        const res = await sendWhatsAppReplyAction({
+          subjectId,
+          channelId: groupWhatsappTarget.channelId,
+          chatId: groupWhatsappTarget.chatId,
+          body: text,
+        });
+        if (!res.ok) {
+          toast.error(res.message);
+          return false;
+        }
+        toast.success("Message envoyé au groupe");
+        router.refresh();
+        return true;
+      }
       toast.info("La diffusion à tous les interlocuteurs arrive après la V1.");
       return false;
     }
@@ -126,10 +153,12 @@ export function SubjectBody({
     { value: "detail", label: "Détails" },
   ];
 
-  // « Tous » (diffusion) proposé en tête du select dès qu'il y a > 1 interlocuteur.
-  const composerRecipients: Recipient[] = multi
-    ? [{ key: "all", name: "Tous", kind: "all" }, ...interlocuteurs]
-    : interlocuteurs;
+  // « Tous » proposé en tête du select dès qu'il y a > 1 interlocuteur, OU pour un
+  // sujet de groupe (où « Tous » = le groupe entier, même sans contact enregistré).
+  const composerRecipients: Recipient[] =
+    isGroupSubject || multi
+      ? [{ key: "all", name: "Tous", kind: "all" }, ...interlocuteurs]
+      : interlocuteurs;
 
   // Fil filtré : « Tous » (ou sujet mono-interlocuteur) → tout ; sinon les
   // messages où l'interlocuteur est l'expéditeur (entrant) ou le destinataire
@@ -172,7 +201,7 @@ export function SubjectBody({
         {tab === "detail" ? detailPane : null}
       </main>
 
-      {tab === "messages" && interlocuteurs.length > 0 ? (
+      {tab === "messages" && (interlocuteurs.length > 0 || isGroupSubject) ? (
         <RecipientComposer
           recipients={composerRecipients}
           value={selected}

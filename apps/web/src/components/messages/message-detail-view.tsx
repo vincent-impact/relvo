@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AttachmentPreview } from "@/components/shared/attachment-preview";
+import { LinkifiedText } from "@/components/shared/linkified-text";
 import {
   assignMessageAction,
   createSubjectFromMessageAction,
@@ -244,11 +245,20 @@ export function MessageDetailView({
               />
               <span className="truncate font-semibold">{channel.label}</span>
             </span>
-            <span className="mt-0.5 block truncate text-[12px] text-(--text-tertiary)">
-              {[data.channelName, data.channelIdentifier]
-                .filter(Boolean)
-                .join(" · ")}
-            </span>
+            {(() => {
+              // Nom + identifiant du canal, DÉDUPLIQUÉS : pour un email le nom du
+              // canal EST souvent l'adresse → évite « adresse · adresse ».
+              const detail = Array.from(
+                new Set(
+                  [data.channelName, data.channelIdentifier].filter(Boolean),
+                ),
+              ).join(" · ");
+              return detail ? (
+                <span className="mt-0.5 block truncate text-[12px] text-(--text-tertiary)">
+                  {detail}
+                </span>
+              ) : null;
+            })()}
           </Meta>
 
           <Meta label="Sujet">
@@ -278,10 +288,11 @@ export function MessageDetailView({
         </h2>
       ) : null}
 
-      {/* Texte complet — l'info prioritaire, désormais visible sans scroller */}
-      <p className="mt-2.5 text-[15px] leading-[1.55] whitespace-pre-wrap text-(--text-primary)">
-        {data.content?.trim() || "—"}
-      </p>
+      {/* Texte complet — l'info prioritaire, désormais visible sans scroller.
+          Les URLs sont cliquables et se coupent (pas de scroll horizontal). */}
+      <div className="mt-2.5 text-[15px] leading-[1.55] text-(--text-primary)">
+        {data.content?.trim() ? <LinkifiedText text={data.content} /> : "—"}
+      </div>
 
       {/* Pièces jointes (photos WhatsApp, PJ email) — visibles même orphelin.
           Image → miniature + lightbox, PDF/autre → carte + navigateur. */}

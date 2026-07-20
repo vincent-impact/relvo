@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   MessageDirection,
   MessageStatus,
+  assignMessageToSubject,
   createMessage,
   createSubject,
   ingestInboundEmail,
@@ -201,6 +202,63 @@ describe("rattachement automatique pré-M7 (interlocuteur + objet)", () => {
     });
 
     expect(message.subjectId).toBeNull();
+  });
+});
+
+describe("balayage des frères orphelins au rattachement (interlocuteur + objet)", () => {
+  it("rattacher un orphelin embarque les autres orphelins de même interlocuteur + objet", async () => {
+    const { channel, db } = await makeAccountWithChannel("sweep@test.fr");
+    const a = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "sweep-a",
+      senderRaw: "karim@sogood.fr",
+      subjectLine: "Livraison sauce blanche",
+      content: "Premier message.",
+    });
+    const b = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "sweep-b",
+      senderRaw: "Karim@SoGood.fr", // casse différente : matching insensible
+      subjectLine: "Re: Livraison sauce blanche",
+      content: "Relance, même objet.",
+    });
+    // Objet différent (même interlocuteur) → ne doit pas suivre.
+    const otherObj = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "sweep-other-obj",
+      senderRaw: "karim@sogood.fr",
+      subjectLine: "Facture avril",
+      content: "Autre objet.",
+    });
+    // Interlocuteur différent (même objet) → ne doit pas suivre.
+    const otherSender = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "sweep-other-sender",
+      senderRaw: "sophie@autre.fr",
+      subjectLine: "Livraison sauce blanche",
+      content: "Autre expéditeur.",
+    });
+    expect(a.message.subjectId).toBeNull();
+    expect(b.message.subjectId).toBeNull();
+
+    const subject = await createSubject(db, {
+      title: "Commande sauce",
+      contactIds: [],
+      createdByActor: "user",
+    });
+    await assignMessageToSubject(db, a.message.id, subject.id);
+
+    const bAfter = await db.message.findFirst({ where: { id: b.message.id } });
+    const objAfter = await db.message.findFirst({
+      where: { id: otherObj.message.id },
+    });
+    const senderAfter = await db.message.findFirst({
+      where: { id: otherSender.message.id },
+    });
+    expect(bAfter?.subjectId).toBe(subject.id);
+    expect(bAfter?.status).toBe(MessageStatus.linked);
+    expect(objAfter?.subjectId).toBeNull();
+    expect(senderAfter?.subjectId).toBeNull();
   });
 });
 

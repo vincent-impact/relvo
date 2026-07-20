@@ -210,6 +210,27 @@ export default async function SujetPage({
     }
   }
 
+  // Sujet issu d'un GROUPE WhatsApp (1 groupe = 1 sujet) → le composer répond au
+  // GROUPE (« Tous ») par défaut, pas à un membre. La cible = le fil du groupe
+  // (chat_id) du dernier message entrant WhatsApp — envoi réel en un seul message.
+  const isGroupSubject = messages.some((m) => m.isGroup);
+  const groupWaMessage = isGroupSubject
+    ? [...messages]
+        .reverse()
+        .find(
+          (m) =>
+            m.channel.type === "whatsapp" &&
+            m.direction === "incoming" &&
+            m.externalThreadId,
+        )
+    : undefined;
+  const groupWhatsappTarget = groupWaMessage?.externalThreadId
+    ? {
+        channelId: groupWaMessage.channelId,
+        chatId: groupWaMessage.externalThreadId,
+      }
+    : null;
+
   return (
     <MobileFrame>
       <AcknowledgeOnOpen subjectId={subject.id} />
@@ -232,6 +253,8 @@ export default async function SujetPage({
         subjectTitle={subject.title}
         emailReplyTargets={emailReplyTargets}
         whatsappReplyTargets={whatsappReplyTargets}
+        isGroupSubject={isGroupSubject}
+        groupWhatsappTarget={groupWhatsappTarget}
         header={
           <RelvoHeader
             back={backHref}

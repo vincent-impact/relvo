@@ -2,21 +2,14 @@ import { notFound } from "next/navigation";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { ContactCard } from "@/components/contacts/contact-card";
-import {
-  MessageBubble,
-  type MessageBubbleData,
-} from "@/components/shared/message-bubble";
-import { SectionLabel } from "@/components/shared/section-label";
-import { contactFullName, formatRelative } from "@/lib/display";
+import { ContactDeleteButton } from "@/components/contacts/contact-delete-button";
+import { contactFullName } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
-// Fiche Contact (M9.11, Direction B) — coordonnées éditables (auto → complete)
-// + fil des échanges, tous canaux confondus (invariant n°11).
-
-const CHANNEL_LABEL: Record<string, string> = {
-  whatsapp: "WhatsApp",
-  email: "Email",
-};
+// Fiche Contact (M9.11, Direction B) — page PUREMENT INFORMATIVE : coordonnées
+// (prénom, nom, téléphone, email) + suppression. Pas de fil des échanges ici
+// (la conversation vit dans la fiche Sujet, invariant n°11) — la fiche contact
+// reste volontairement minimale.
 
 export default async function ContactPage({
   params,
@@ -26,30 +19,8 @@ export default async function ContactPage({
   const { id } = await params;
   const db = await getTenantDb();
 
-  // Les messages se filtrent sur l'id de la route (pas sur l'objet contact) →
-  // les deux requêtes partent en parallèle ; on vérifie l'existence ensuite.
-  const [contact, messages] = await Promise.all([
-    db.contact.findFirst({ where: { id } }),
-    db.message.findMany({
-      where: {
-        OR: [{ senderContactId: id }, { recipientContactId: id }],
-      },
-      orderBy: { createdAt: "asc" },
-      take: 60,
-      include: { channel: { select: { type: true } } },
-    }),
-  ]);
+  const contact = await db.contact.findFirst({ where: { id } });
   if (!contact) notFound();
-
-  const bubbles: MessageBubbleData[] = messages.map((m) => ({
-    id: m.id,
-    direction: m.direction,
-    actor: m.direction === "outgoing" ? "user" : "contact",
-    senderName: m.direction === "outgoing" ? "Moi" : contactFullName(contact),
-    channel: CHANNEL_LABEL[m.channel.type] ?? null,
-    time: formatRelative(m.receivedAt ?? m.sentAt ?? m.createdAt),
-    content: m.content ?? "",
-  }));
 
   return (
     <Screen>
@@ -65,18 +36,10 @@ export default async function ContactPage({
 
       <ContactCard contact={contact} />
 
-      <SectionLabel title="Échanges" />
-      {bubbles.length === 0 ? (
-        <p className="px-[22px] py-6 text-center text-[13.5px] text-(--text-tertiary)">
-          Aucun échange enregistré.
-        </p>
-      ) : (
-        <div className="flex flex-col gap-[15px] px-[18px] pt-2">
-          {bubbles.map((b) => (
-            <MessageBubble key={b.id} data={b} />
-          ))}
-        </div>
-      )}
+      <ContactDeleteButton
+        contactId={contact.id}
+        contactName={contactFullName(contact)}
+      />
     </Screen>
   );
 }

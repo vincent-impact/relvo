@@ -378,6 +378,10 @@ model Message {
   direction          MessageDirection
   externalId         String?          @map("external_id")
   externalThreadId   String?          @map("external_thread_id")
+  // true = message reçu dans une conversation de GROUPE (WhatsApp). Hypothèse
+  // métier pré-M7 : 1 groupe = 1 sujet, et on répond toujours au GROUPE entier
+  // (composer par défaut « Tous » = un envoi au chat_id), pas à un membre.
+  isGroup            Boolean          @default(false) @map("is_group")
   subjectLine        String?          @map("subject_line")
   content            String?          @db.Text
   receivedAt         DateTime?        @map("received_at")

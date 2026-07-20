@@ -3,6 +3,7 @@ import type { Actor } from "@relvo/db";
 import { cn } from "@/lib/utils";
 import { initialsFor } from "@/lib/display";
 import { AttachmentPreview } from "@/components/shared/attachment-preview";
+import { LinkifiedText } from "@/components/shared/linkified-text";
 
 // Bulle de message partagée (fil d'un sujet, fil de conversation par contact),
 // style « Direction B ». Sortant (Moi) = bulle bleue à droite. Entrant = en-tête
@@ -83,14 +84,17 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
             const boxClass = cn(
               // Les e-mails très longs sont tronqués dans le fil (≈12 lignes) pour
               // ne pas saturer la conversation ; la page détail donne le texte
-              // complet.
-              "line-clamp-[12] px-3.5 py-[11px] text-[15px] leading-[1.45] whitespace-pre-wrap",
+              // complet. `overflow-wrap:anywhere` : une URL interminable se coupe
+              // au lieu d'élargir l'écran (jamais de scroll horizontal).
+              "line-clamp-[12] px-3.5 py-[11px] text-[15px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere]",
               outgoing
                 ? "rounded-[18px_18px_5px_18px] bg-brand text-white"
                 : relvo
                   ? "rounded-[5px_18px_18px_18px] border border-(--purple-100) bg-relvo-bg text-(--text-primary)"
                   : "rounded-[5px_18px_18px_18px] border border-[#ececea] bg-white text-(--text-primary) shadow-(--shadow-card)",
             );
+            // Bulle cliquable (→ page détail) : pas de lien imbriqué, on garde le
+            // texte brut. Sinon on rend les URLs cliquables directement.
             return data.href ? (
               <Link
                 href={data.href}
@@ -99,7 +103,9 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
                 {data.content}
               </Link>
             ) : (
-              <div className={boxClass}>{data.content}</div>
+              <div className={boxClass}>
+                <LinkifiedText text={data.content} />
+              </div>
             );
           })()
         : null}

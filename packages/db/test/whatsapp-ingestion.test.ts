@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   MessageDirection,
   MessageStatus,
+  assignMessageToSubject,
   createMessage,
   createSubject,
+  createSubjectFromMessage,
   ingestInboundWhatsApp,
   prisma,
   tenantDb,
@@ -188,5 +190,94 @@ describe("rattachement WhatsApp pré-M7 (par fil / chat_id)", () => {
     });
 
     expect(message.subjectId).toBeNull();
+  });
+});
+
+describe("balayage des frères orphelins au rattachement (par fil / chat_id)", () => {
+  it("rattacher un orphelin embarque les autres orphelins du même fil", async () => {
+    const { channel, db } = await makeAccountWithChannel("wa-sweep@test.fr");
+    const a = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "wa-sweep-a",
+      externalThreadId: "chat-sweep",
+      senderRaw: "33600000010@s.whatsapp.net",
+      content: "Premier message du fil.",
+    });
+    const b = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "wa-sweep-b",
+      externalThreadId: "chat-sweep",
+      senderRaw: "33600000010@s.whatsapp.net",
+      content: "Deuxième message, même fil.",
+    });
+    // Un orphelin d'un AUTRE fil ne doit pas être embarqué.
+    const other = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "wa-sweep-other",
+      externalThreadId: "chat-autre",
+      senderRaw: "33600000099@s.whatsapp.net",
+      content: "Fil différent.",
+    });
+    expect(a.message.subjectId).toBeNull();
+    expect(b.message.subjectId).toBeNull();
+
+    const subject = await createSubject(db, {
+      title: "Commande sauce",
+      contactIds: [],
+      createdByActor: "user",
+    });
+    await assignMessageToSubject(db, a.message.id, subject.id);
+
+    const bAfter = await db.message.findFirst({ where: { id: b.message.id } });
+    const otherAfter = await db.message.findFirst({
+      where: { id: other.message.id },
+    });
+    expect(bAfter?.subjectId).toBe(subject.id);
+    expect(bAfter?.status).toBe(MessageStatus.linked);
+    expect(otherAfter?.subjectId).toBeNull();
+  });
+});
+
+describe("sujet issu d'un groupe WhatsApp (1 groupe = 1 sujet, invariant n°12)", () => {
+  it("un message de groupe → aucun contact enregistré, sujet sans interlocuteur", async () => {
+    const { channel, db } = await makeAccountWithChannel("wa-group@test.fr");
+    const { message } = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "wa-group-1",
+      externalThreadId: "group-xyz@g.us",
+      senderRaw: "33600000020@s.whatsapp.net",
+      senderName: "Karim Benali",
+      isGroup: true,
+      content: "Salut l'équipe !",
+    });
+    expect(message.isGroup).toBe(true);
+
+    const subject = await createSubjectFromMessage(db, message.id);
+
+    // Le groupe est l'interlocuteur → pas de contact matérialisé en masse.
+    expect(subject.contactIds).toEqual([]);
+    expect(await db.contact.count()).toBe(0);
+    // Le message reste rattaché ET conserve son expéditeur brut (attribution).
+    const linked = await db.message.findFirst({ where: { id: message.id } });
+    expect(linked?.subjectId).toBe(subject.id);
+    expect(linked?.senderContactId).toBeNull();
+  });
+
+  it("un message 1:1 (non-groupe) matérialise bien le contact interlocuteur", async () => {
+    const { channel, db } = await makeAccountWithChannel("wa-solo@test.fr");
+    const { message } = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "wa-solo-1",
+      externalThreadId: "chat-solo",
+      senderRaw: "33600000021@s.whatsapp.net",
+      senderName: "Sophie Blanchard",
+      isGroup: false,
+      content: "Bonjour",
+    });
+
+    const subject = await createSubjectFromMessage(db, message.id);
+
+    expect(subject.contactIds).toHaveLength(1);
+    expect(await db.contact.count()).toBe(1);
   });
 });
