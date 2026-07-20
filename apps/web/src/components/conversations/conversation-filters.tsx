@@ -2,16 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { SegTabs } from "@/components/shared/seg-tabs";
-import { SegmentedControl } from "@/components/shared/segmented-control";
 import type { ConversationFilterSlug } from "@/lib/conversation-row";
 
-// Filtres de /conversations (M6bis.8). Deux niveaux, volontairement distincts :
-//   - le filtre PRINCIPAL (Sans sujet / Ignorées / Toutes) répond à « qu'est-ce
-//     que je regarde » → SegTabs, à cheval sur le hero, comme les onglets de
-//     page ailleurs dans l'app ;
-//   - le filtre CANAL est un raffinement → segmented discret, sous les onglets.
+// Filtres de /conversations (M6bis.8). UN SEUL niveau : « qu'est-ce que je
+// regarde » (Sans sujet / Ignorées / Toutes) → SegTabs, à cheval sur le hero,
+// comme les onglets de page ailleurs dans l'app.
 //
-// Les deux vivent dans l'URL : la page reste linkable (le KPI « Sans sujet »
+// Le filtre CANAL (email/WhatsApp) a été RETIRÉ (2026-07-20, retour de prod) :
+// il occupait une ligne entière sous les onglets pour un besoin qui ne se
+// présente pas — on trie par conversation, pas par tuyau, et le canal est déjà
+// lisible sur chaque ligne (ChannelTag). Sur une surface de tri mobile-first,
+// une rangée de contrôles qu'on ne touche jamais coûte plus qu'elle ne rapporte.
+// L'option `channelType` reste disponible côté domaine (cf. `conversations.ts`).
+//
+// Le filtre vit dans l'URL : la page reste linkable (le KPI « Sans sujet »
 // pointe droit sur `?filtre=sans-sujet`) et c'est la base qui filtre. Le
 // composant est donc rendu HORS du <Suspense> de la liste : les filtres
 // s'affichent immédiatement, seule la liste attend la base.
@@ -22,44 +26,19 @@ const FILTER_OPTIONS: { value: ConversationFilterSlug; label: string }[] = [
   { value: "toutes", label: "Toutes" },
 ];
 
-const CHANNEL_OPTIONS = [
-  { value: "tous", label: "Tous les canaux" },
-  { value: "email", label: "Email" },
-  { value: "whatsapp", label: "WhatsApp" },
-];
-
 export function ConversationFilters({
   filter,
-  channel,
 }: {
   filter: ConversationFilterSlug;
-  channel: "email" | "whatsapp" | null;
 }) {
   const router = useRouter();
 
-  function navigate(next: { filtre?: string; canal?: string | null }) {
-    const params = new URLSearchParams();
-    params.set("filtre", next.filtre ?? filter);
-    const canal = next.canal === undefined ? channel : next.canal;
-    if (canal) params.set("canal", canal);
-    router.push(`/conversations?${params.toString()}`);
-  }
-
   return (
-    <>
-      <SegTabs
-        options={FILTER_OPTIONS}
-        value={filter}
-        onValueChange={(v) => navigate({ filtre: v })}
-        overlap
-      />
-      <div className="px-4 pt-3.5 pb-1">
-        <SegmentedControl
-          options={CHANNEL_OPTIONS}
-          value={channel ?? "tous"}
-          onValueChange={(v) => navigate({ canal: v === "tous" ? null : v })}
-        />
-      </div>
-    </>
+    <SegTabs
+      options={FILTER_OPTIONS}
+      value={filter}
+      onValueChange={(v) => router.push(`/conversations?filtre=${v}`)}
+      overlap
+    />
   );
 }

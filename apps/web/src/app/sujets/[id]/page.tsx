@@ -20,6 +20,7 @@ import { AddTask } from "@/components/subject/add-task";
 import { RelvoDraftBlock } from "@/components/subject/relvo-draft-block";
 import { RelvoSummary } from "@/components/subject/relvo-summary";
 import { SubjectBody } from "@/components/subject/subject-body";
+import { SubjectTitleInline } from "@/components/subject/subject-title-inline";
 import {
   SubjectDangerZone,
   SubjectDetailForm,
@@ -102,7 +103,15 @@ export default async function SujetPage({
       getSubjectDetail(db, id),
       db.folder.findMany({
         orderBy: [{ isDefault: "desc" }, { name: "asc" }],
-        select: { id: true, name: true, slug: true },
+        // color/icon : le logo du domaine alimente la pastille de la pop-up
+        // « tap sur un message » (folderVisual), pas seulement le slug du seed.
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          color: true,
+          icon: true,
+        },
       }),
       db.contact.findMany({
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
@@ -155,7 +164,11 @@ export default async function SujetPage({
           mimeType: m.attachments[0].mimeType,
         }
       : null,
-    href: `/messages/${m.id}`,
+    // Plus de `href` (2026-07-20) : taper une bulle n'ouvre plus DIRECTEMENT la
+    // fiche du message mais la pop-up d'affectation, identique à celle de
+    // /conversations. La fiche message y reste accessible (« Ouvrir le
+    // message ») — un lien enveloppant aurait de toute façon désarmé le tap
+    // (garde `closest("a")` de MessageTapArea).
     // Interlocuteur du message → filtrage du fil par conversation.
     senderContactId: m.senderContactId,
     recipientContactId: m.recipientContactId,
@@ -312,6 +325,12 @@ export default async function SujetPage({
         defaultInterlocuteurKey={defaultInterlocuteurKey}
         subjectId={subject.id}
         subjectTitle={subject.title}
+        subjectRef={{
+          id: subject.id,
+          reference: subject.reference,
+          title: subject.title,
+          folder: folders.find((f) => f.id === subject.folderId) ?? null,
+        }}
         emailReplyTargets={emailReplyTargets}
         whatsappReplyTargets={whatsappReplyTargets}
         isGroupSubject={isGroupSubject}
@@ -320,7 +339,15 @@ export default async function SujetPage({
         header={
           <RelvoHeader
             back={backHref}
-            title={subject.title}
+            // Titre ÉDITABLE sur place : renommer un sujet est le geste de
+            // correction le plus fréquent (Relvo devine l'intitulé), il ne doit
+            // pas coûter un détour par l'onglet Détails — qui reste disponible.
+            title={
+              <SubjectTitleInline
+                subjectId={subject.id}
+                title={subject.title}
+              />
+            }
             subtitle={
               mainContact
                 ? `${subject.reference} · ${[mainContact.name, mainContact.company].filter(Boolean).join(" — ")}`

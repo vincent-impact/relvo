@@ -1,29 +1,14 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Link2, Loader2, Plus, Unlink } from "lucide-react";
-import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  SubjectPickerDialog,
-  type SubjectPickerOption,
-} from "@/components/messages/subject-picker-dialog";
+import { useState } from "react";
+import type { SubjectPickerOption } from "@/components/messages/subject-picker-dialog";
 import { MessageBubble } from "@/components/shared/message-bubble";
 import {
-  assignMessageAction,
-  createSubjectFromMessageAction,
-  detachMessageAction,
-} from "@/server/actions/messages";
+  MessageSubjectDialog,
+  MessageTapArea,
+} from "@/components/shared/message-subject-dialog";
 import type { ThreadMessageData } from "@/lib/conversation-row";
 import { folderVisual } from "@/lib/folders";
-import { cn } from "@/lib/utils";
 
 // Fil d'une conversation (M6bis.9/.10) — timeline chronologique façon messagerie
 // + LE CORDON DE SUJET.
@@ -113,62 +98,8 @@ export function ConversationThread({
   /** Page d'origine, transmise aux liens vers une fiche sujet (`?from=`). */
   backTo: string;
 }) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [picking, setPicking] = useState(false);
-
   const selected = messages.find((m) => m.id === selectedId) ?? null;
-
-  function close() {
-    setSelectedId(null);
-    setPicking(false);
-  }
-
-  function detach() {
-    if (!selected) return;
-    startTransition(async () => {
-      const res = await detachMessageAction(selected.id);
-      if (res.ok) {
-        toast.success("Message détaché");
-        close();
-        router.refresh();
-      } else {
-        toast.error(res.message);
-      }
-    });
-  }
-
-  /** « Ouvrir un sujet » : CE message devient l'ancre de la nouvelle fenêtre. */
-  function openSubject() {
-    if (!selected) return;
-    startTransition(async () => {
-      const res = await createSubjectFromMessageAction(selected.id);
-      if (res.ok) {
-        toast.success("Sujet ouvert");
-        close();
-        router.push(
-          `/sujets/${res.data.id}?from=${encodeURIComponent(backTo)}`,
-        );
-      } else {
-        toast.error(res.message);
-      }
-    });
-  }
-
-  function attach(subjectId: string) {
-    if (!selected) return;
-    startTransition(async () => {
-      const res = await assignMessageAction(selected.id, subjectId);
-      if (res.ok) {
-        toast.success("Message rattaché au sujet");
-        close();
-        router.refresh();
-      } else {
-        toast.error(res.message);
-      }
-    });
-  }
 
   return (
     <>
@@ -201,25 +132,13 @@ export function ConversationThread({
                 linkedUp={linkedUp}
                 linkedDown={linkedDown}
               />
-              {/* Tap sur le message → pop-up d'affectation. On n'enveloppe PAS
-                  la bulle dans un <button> : elle contient des liens (URLs
-                  cliquables), et imbriquer un <a> dans un <button> est invalide.
-                  D'où la garde sur `closest("a")` : un clic sur un lien ouvre le
-                  lien, tout le reste ouvre la pop-up. */}
-              <div
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  if ((e.target as HTMLElement).closest("a")) return;
-                  setSelectedId(m.id);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") setSelectedId(m.id);
-                }}
-                className={cn(
-                  "flex min-w-0 flex-1 cursor-pointer flex-col",
-                  selectedId === m.id && "opacity-80",
-                )}
+              {/* Tap sur le message → pop-up d'affectation, partagée avec le fil
+                  d'un sujet (MessageSubjectDialog). Le détail « <a> dans la
+                  bulle » est encapsulé par MessageTapArea. */}
+              <MessageTapArea
+                onTap={() => setSelectedId(m.id)}
+                active={selectedId === m.id}
+                className="flex min-w-0 flex-1 flex-col"
               >
                 <MessageBubble
                   data={{
@@ -232,99 +151,19 @@ export function ConversationThread({
                     attachment: m.attachment,
                   }}
                 />
-              </div>
+              </MessageTapArea>
             </div>
           );
         })}
       </div>
 
-      {/* Pop-up message (M6bis.10) — deux visages selon que le message est
-          couvert par une fenêtre ou non. */}
-      <Dialog
-        open={selected != null && !picking}
-        onOpenChange={(o) => (o ? null : close())}
-      >
-        <DialogContent className="gap-4 p-5">
-          <DialogHeader>
-            <DialogTitle>
-              {selected?.subject ? "Message rattaché" : "Message sans sujet"}
-            </DialogTitle>
-          </DialogHeader>
-
-          {selected?.subject ? (
-            <>
-              <Link
-                href={`/sujets/${selected.subject.id}?from=${encodeURIComponent(backTo)}`}
-                className="flex items-center gap-3 rounded-xl border border-(--border-light) px-3.5 py-3 active:opacity-90"
-              >
-                <span
-                  className="size-[10px] flex-none rounded-full"
-                  style={{ background: cordColor(selected) }}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[14.5px] font-semibold">
-                    {selected.subject.title}
-                  </span>
-                  <span className="font-numeric text-[11.5px] text-(--text-tertiary)">
-                    {selected.subject.reference}
-                  </span>
-                </span>
-              </Link>
-
-              <button
-                type="button"
-                disabled={pending}
-                onClick={detach}
-                className="flex items-center justify-center gap-2 rounded-xl border border-(--border) py-3 text-[14px] font-bold text-(--text-secondary) disabled:opacity-60"
-              >
-                {pending ? (
-                  <Loader2 className="size-4 animate-spin" strokeWidth={2} />
-                ) : (
-                  <Unlink className="size-4" strokeWidth={2.2} />
-                )}
-                Détacher
-              </button>
-            </>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                disabled={pending}
-                onClick={openSubject}
-                className="flex items-center justify-center gap-2 rounded-xl bg-relvo py-3 text-[14px] font-bold text-white disabled:opacity-60"
-              >
-                {pending ? (
-                  <Loader2 className="size-4 animate-spin" strokeWidth={2} />
-                ) : (
-                  <Plus className="size-4" strokeWidth={2.4} />
-                )}
-                Ouvrir un sujet
-              </button>
-              <p className="px-1 text-[12px] leading-[1.45] text-(--text-tertiary)">
-                Ce message devient l&apos;ancre du sujet : les messages qui
-                suivront dans cette conversation lui reviendront
-                automatiquement.
-              </p>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => setPicking(true)}
-                className="mt-1 flex items-center justify-center gap-2 rounded-xl border border-(--border) py-3 text-[14px] font-bold text-(--text-secondary) disabled:opacity-60"
-              >
-                <Link2 className="size-4" strokeWidth={2.2} />
-                Rattacher à un sujet existant
-              </button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <SubjectPickerDialog
-        open={picking}
-        onOpenChange={(o) => (o ? setPicking(true) : close())}
+      {/* Pop-up message (M6bis.10) — SOURCE PARTAGÉE avec le fil d'un sujet
+          (uniformisée le 2026-07-20) : même geste, même objet, même menu. */}
+      <MessageSubjectDialog
+        message={selected}
+        onClose={() => setSelectedId(null)}
         subjects={subjects}
-        onSelect={attach}
-        pending={pending}
+        backTo={backTo}
       />
     </>
   );

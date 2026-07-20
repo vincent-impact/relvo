@@ -164,13 +164,10 @@ function ConversationRow({
 
 export function ConversationList({
   filter,
-  channel,
   initialItems,
   initialCursor,
 }: {
   filter: ConversationFilterSlug;
-  /** Filtre canal courant (`email` | `whatsapp`), ou null = tous. */
-  channel: "email" | "whatsapp" | null;
   initialItems: ConversationRowData[];
   initialCursor: string | null;
 }) {
@@ -204,7 +201,6 @@ export function ConversationList({
     setLoading(true);
     const res = await loadConversationsAction(
       CONVERSATION_FILTER_SLUGS[filter],
-      channel,
       cursor,
     );
     if (res.ok) {
@@ -216,7 +212,7 @@ export function ConversationList({
     }
     setLoading(false);
     loadingRef.current = false;
-  }, [cursor, filter, channel]);
+  }, [cursor, filter]);
 
   useEffect(() => {
     const el = sentinelRef.current;

@@ -1,9 +1,5 @@
 import { Suspense } from "react";
-import {
-  ChannelType,
-  countUnsortedConversations,
-  listConversationItems,
-} from "@relvo/db";
+import { countUnsortedConversations, listConversationItems } from "@relvo/db";
 import { PollRefresh } from "@/components/shared/poll-refresh";
 import { ConversationFilters } from "@/components/conversations/conversation-filters";
 import { ConversationList } from "@/components/conversations/conversation-list";
@@ -14,7 +10,6 @@ import {
   CONVERSATIONS_PAGE_SIZE,
   CONVERSATION_FILTER_SLUGS,
   type ConversationFilterSlug,
-  parseChannelSlug,
   parseFilterSlug,
   toConversationRowData,
 } from "@/lib/conversation-row";
@@ -25,38 +20,26 @@ import { getTenantDb } from "@/server/auth-context";
 // qui raisonnait en MESSAGES orphelins alors que le tri se décide désormais par
 // CONVERSATION (déterministe, calculé à la réception).
 //
-// Le filtre vit dans l'URL (`?filtre=…&canal=…`) : la page est linkable, et
-// c'est la BASE qui filtre — jamais un tri côté navigateur sur une liste
-// tronquée par la pagination.
+// Le filtre vit dans l'URL (`?filtre=…`) : la page est linkable, et c'est la
+// BASE qui filtre — jamais un tri côté navigateur sur une liste tronquée par la
+// pagination. Le second filtre `?canal=` (email/WhatsApp) a été retiré le
+// 2026-07-20 : cf. `conversation-filters.tsx`.
 //
 // PERF (M9.19) : le hero (compteur) s'affiche instantanément ; la liste stream
 // dans un <Suspense>.
 
-async function List({
-  filter,
-  channel,
-}: {
-  filter: ConversationFilterSlug;
-  channel: "email" | "whatsapp" | null;
-}) {
+async function List({ filter }: { filter: ConversationFilterSlug }) {
   const db = await getTenantDb();
   const page = await listConversationItems(db, {
     filter: CONVERSATION_FILTER_SLUGS[filter],
-    ...(channel
-      ? {
-          channelType:
-            channel === "email" ? ChannelType.email : ChannelType.whatsapp,
-        }
-      : {}),
     limit: CONVERSATIONS_PAGE_SIZE,
   });
   return (
     <ConversationList
       // La clé force un remontage à chaque changement de filtre : l'état local
       // (scroll infini, retraits optimistes) appartient au filtre affiché.
-      key={`${filter}:${channel ?? "tous"}`}
+      key={filter}
       filter={filter}
-      channel={channel}
       initialItems={page.items.map(toConversationRowData)}
       initialCursor={page.nextCursor}
     />
@@ -66,11 +49,10 @@ async function List({
 export default async function ConversationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filtre?: string; canal?: string }>;
+  searchParams: Promise<{ filtre?: string }>;
 }) {
-  const { filtre, canal } = await searchParams;
+  const { filtre } = await searchParams;
   const filter = parseFilterSlug(filtre);
-  const channel = parseChannelSlug(canal);
 
   const db = await getTenantDb();
   const unsorted = await countUnsortedConversations(db);
@@ -89,10 +71,10 @@ export default async function ConversationsPage({
         className="pb-[46px]"
       />
 
-      <ConversationFilters filter={filter} channel={channel} />
+      <ConversationFilters filter={filter} />
 
       <Suspense fallback={<RowsSkeleton count={5} />}>
-        <List filter={filter} channel={channel} />
+        <List filter={filter} />
       </Suspense>
     </Screen>
   );

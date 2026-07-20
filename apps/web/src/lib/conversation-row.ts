@@ -96,8 +96,6 @@ export function parseFilterSlug(raw?: string | null): ConversationFilterSlug {
     : "sans-sujet";
 }
 
-export function parseChannelSlug(
-  raw?: string | null,
-): "email" | "whatsapp" | null {
-  return raw === "email" || raw === "whatsapp" ? raw : null;
-}
+// `parseChannelSlug` (ex-`?canal=`) a été supprimé le 2026-07-20 avec le filtre
+// canal de l'écran : plus aucun appelant. Le canal reste porté par chaque ligne
+// (`channelType`) et affiché par le ChannelTag.

@@ -9,6 +9,11 @@ import {
   type MessageBubbleData,
 } from "@/components/shared/message-bubble";
 import {
+  MessageSubjectDialog,
+  type MessageSubjectRef,
+  MessageTapArea,
+} from "@/components/shared/message-subject-dialog";
+import {
   RecipientComposer,
   type Recipient,
 } from "@/components/shared/recipient-composer";
@@ -43,6 +48,7 @@ export function SubjectBody({
   defaultInterlocuteurKey,
   subjectId,
   subjectTitle,
+  subjectRef,
   emailReplyTargets,
   whatsappReplyTargets,
   isGroupSubject = false,
@@ -62,6 +68,9 @@ export function SubjectBody({
   defaultInterlocuteurKey: string | null;
   subjectId: string;
   subjectTitle: string;
+  /** Le sujet courant, tel qu'affiché dans la pop-up « tap sur un message » :
+   *  tout message du fil est rattaché à CE sujet par construction. */
+  subjectRef: MessageSubjectRef;
   /** Par interlocuteur joignable par email : son adresse + le canal à utiliser. */
   emailReplyTargets: Record<string, { channelId: string; email: string }>;
   /** Par interlocuteur joignable par WhatsApp : le fil (chat_id) + le canal. */
@@ -77,6 +86,11 @@ export function SubjectBody({
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
   const [extending, setExtending] = useState(false);
+  // Message tapé dans le fil → pop-up d'affectation. MÊME pop-up que
+  // /conversations (2026-07-20) : un même geste sur un même objet doit produire
+  // le même menu. Ici le sujet est connu d'avance (tout le fil lui appartient),
+  // donc c'est toujours le visage « rattaché » qui s'affiche.
+  const [tappedMessageId, setTappedMessageId] = useState<string | null>(null);
   const multi = interlocuteurs.length > 1;
   // Sujet de groupe → « Tous » est l'interlocuteur par défaut (le groupe entier).
   const [selected, setSelected] = useState<string>(
@@ -218,7 +232,16 @@ export function SubjectBody({
                   : "Aucun message avec cet interlocuteur."}
               </p>
             ) : (
-              shown.map((b) => <MessageBubble key={b.id} data={b} />)
+              shown.map((b) => (
+                <MessageTapArea
+                  key={b.id}
+                  onTap={() => setTappedMessageId(b.id)}
+                  active={tappedMessageId === b.id}
+                  className="flex min-w-0 flex-col"
+                >
+                  <MessageBubble data={b} />
+                </MessageTapArea>
+              ))
             )}
             {draft}
           </div>
@@ -240,6 +263,18 @@ export function SubjectBody({
           }
         />
       ) : null}
+
+      {/* Pop-up « tap sur un message » — composant PARTAGÉ avec /conversations.
+          `backTo` = cette fiche : après un détachement on y revient, et le lien
+          de sujet de la pop-up rappelle simplement quelle fenêtre couvre le
+          message (ici, celle qu'on regarde). */}
+      <MessageSubjectDialog
+        message={
+          tappedMessageId ? { id: tappedMessageId, subject: subjectRef } : null
+        }
+        onClose={() => setTappedMessageId(null)}
+        backTo={`/sujets/${subjectId}`}
+      />
 
       <ExtendSubjectDialog
         subjectId={subjectId}
