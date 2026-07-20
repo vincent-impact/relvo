@@ -153,11 +153,19 @@ export function SubjectBody({
     { value: "detail", label: "Détails" },
   ];
 
-  // « Tous » proposé en tête du select dès qu'il y a > 1 interlocuteur, OU pour un
-  // sujet de groupe (où « Tous » = le groupe entier, même sans contact enregistré).
+  // Destinataire « tout le monde » en tête du select : « Groupe » pour un sujet
+  // de groupe WhatsApp (icône groupe → on s'adresse à tous les participants),
+  // « Tous » pour une diffusion multi-interlocuteurs classique (> 1 contact).
   const composerRecipients: Recipient[] =
     isGroupSubject || multi
-      ? [{ key: "all", name: "Tous", kind: "all" }, ...interlocuteurs]
+      ? [
+          {
+            key: "all",
+            name: isGroupSubject ? "Groupe" : "Tous",
+            kind: "all",
+          },
+          ...interlocuteurs,
+        ]
       : interlocuteurs;
 
   // Fil filtré : « Tous » (ou sujet mono-interlocuteur) → tout ; sinon les

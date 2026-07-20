@@ -211,18 +211,25 @@ export default async function SujetPage({
   }
 
   // Sujet issu d'un GROUPE WhatsApp (1 groupe = 1 sujet) → le composer répond au
-  // GROUPE (« Tous ») par défaut, pas à un membre. La cible = le fil du groupe
-  // (chat_id) du dernier message entrant WhatsApp — envoi réel en un seul message.
-  const isGroupSubject = messages.some((m) => m.isGroup);
+  // GROUPE (« Groupe ») par défaut, pas à un membre. Détection robuste :
+  //   • signal principal = le flag `is_group` du webhook ;
+  //   • repli = un fil WhatsApp avec ≥ 2 expéditeurs distincts EST un groupe
+  //     (couvre les messages ingérés AVANT la capture de is_group, ou un webhook
+  //     qui ne le renseignerait pas).
+  // Cible d'envoi = le fil (chat_id) du dernier message entrant WhatsApp — un
+  // seul envoi réel au groupe.
+  const waIncoming = messages.filter(
+    (m) => m.channel.type === "whatsapp" && m.direction === "incoming",
+  );
+  const distinctWaSenders = new Set(
+    waIncoming
+      .map((m) => m.senderContactId ?? m.senderRaw)
+      .filter((v): v is string => Boolean(v)),
+  );
+  const isGroupSubject =
+    messages.some((m) => m.isGroup) || distinctWaSenders.size > 1;
   const groupWaMessage = isGroupSubject
-    ? [...messages]
-        .reverse()
-        .find(
-          (m) =>
-            m.channel.type === "whatsapp" &&
-            m.direction === "incoming" &&
-            m.externalThreadId,
-        )
+    ? waIncoming.filter((m) => m.externalThreadId).at(-1)
     : undefined;
   const groupWhatsappTarget = groupWaMessage?.externalThreadId
     ? {
