@@ -59,8 +59,11 @@ L'asymétrie ne s'arrête pas au discriminant : elle se lit **dans la clé elle-
 |---|---|---|
 | `email:<interlocuteur>:<objet>` | la personne **et l'affaire** | ≈ un sujet, presque par construction |
 | `wa-direct:<numéro>` | la personne **seule** | un flux, qui charrie des affaires successives |
+| `wa-group:<chat_id>` | le groupe **seul** | un flux, qui charrie des affaires successives |
 
 Un objet d'email **est déjà** une délimitation d'affaire, posée par l'expéditeur lui-même. Une conversation email a donc un début et une fin sémantiques ; il n'y a rien à découper. Un fil WhatsApp direct n'a que la personne : il coule, indéfiniment, et mélange.
+
+> **Un groupe WhatsApp se comporte exactement comme un direct** (précision du 2026-07-20). La tentation est de voir dans le **nom du groupe** l'équivalent d'un objet d'email — « Chantier Narbonne », « Équipe Marne-la-Vallée ». C'est faux : un nom de groupe désigne un **collectif**, pas une **affaire**. Le groupe « Tasty Crousty Marne-la-Vallée » parlera successivement d'une livraison en retard, d'un planning de congés et d'un congélateur en panne — exactement le mélange que l'objet d'email évite. Le groupe est donc **ancré comme un direct**, sans exception ni règle particulière.
 
 D'où le renversement de lecture :
 
@@ -84,7 +87,17 @@ Forcer une UX unique sur l'email et sur WhatsApp est contre-productif : la **tai
 
 | | Commun aux deux canaux | Divergent par canal |
 |---|---|---|
-| Quoi | le **domaine** : ouverture de sujet, ancre, rattachement, détachement, ignorance, statuts | le **rendu** (bulles vs pleine largeur) et les **gestes** (libellés, couleurs, tap) |
+| Quoi | le **domaine** : ouverture de sujet, ancre, rattachement, détachement, ignorance, statuts | le **rendu** (bulles vs pleine largeur), les **gestes** (libellés, couleurs, tap) et la **granularité du signal d'appartenance** (cf. ci-dessous) |
+
+### Où se pose le signal « ce fil est suivi par un sujet » — décision du 2026-07-20
+
+Le **cordon** (un point de couleur par message, relié en trait continu) est le signal d'appartenance côté **WhatsApp**. Il n'a **pas d'équivalent par message côté email**, et ce n'est pas une perte : c'est une **conséquence directe du modèle**.
+
+> Côté email, l'ancre est nulle et **tout le fil** appartient au sujet. Un signal posé sur chaque message serait donc **identique partout** — donc porteur d'**aucune information**. Un signal qui ne varie jamais n'est pas un signal, c'est du décor.
+
+Le cordon garde tout son sens en WhatsApp précisément parce que l'appartenance y **varie d'un message à l'autre** : le cordon se brise, les couleurs alternent, et cette rupture *est* l'information.
+
+La bonne granularité pour l'email est donc l'**en-tête de conversation** — un **bandeau « Suivi dans : *titre du sujet* »**, accompagné d'une **pastille de couleur du domaine** (`Folder`) et **cliquable vers la fiche du sujet**. Une conversation, un état, un signal.
 
 > ⚠️ **Garde explicite.** Le jour où l'on duplique la **logique métier** « parce que l'email est différent », on aura **deux produits** à maintenir, et Relvo perdra ce qui fait sa valeur : réunifier des canaux dans une même fenêtre de travail. Un swipe peut changer de libellé et de couleur ; il ne doit **jamais** changer de fonction appelée. Le détail est en `02-modele-donnees.md §5bis` (décision du 2026-07-20).
 
@@ -243,7 +256,15 @@ Le vocabulaire est délibéré : on ne « crée » ni ne « supprime » un sujet
 
 ⚠️ **Ouvrir un sujet sur une conversation email balaie le fil ENTIER, en amont comme en aval.** Un échange de six emails déjà reçus doit produire un sujet portant les **six** messages, pas le dernier. C'est le contraire de la règle WhatsApp (« à partir de l'ancre »), et c'est délibéré : l'objet a déjà délimité l'affaire, il n'y a aucune raison d'en amputer le début.
 
-Côté WhatsApp, le message d'ancrage marque le début du sujet : les messages **antérieurs** restent dans la conversation sans lui appartenir. L'ancre est **visible et déplaçable** depuis le sujet (« le sujet commence ici ») — la remonter fait entrer les messages antérieurs, la descendre les fait sortir.
+Côté WhatsApp — **directs et groupes indifféremment** (cf. §3) — le message d'ancrage marque le début du sujet : les messages **antérieurs** restent dans la conversation sans lui appartenir.
+
+**Le défaut, quand l'utilisateur ne désigne pas d'ancre (swipe droite), est le DERNIER message. Toujours.** Pas de calcul, pas d'exception, pas de borne temporelle.
+
+> **Pourquoi un défaut aussi bête.** On avait d'abord écrit une règle savante (« le plus ancien message non couvert, borné par la fenêtre précédente », plus une exception pour les conversations vierges). Elle était **juste plus souvent** — et **prévisible jamais**. Or l'utilisateur ne compare pas le défaut à l'idéal : il compare **ce qu'il attendait** à ce qu'il obtient. Un défaut qu'on ne peut pas anticiper produit une surprise à chaque swipe, même quand il tombe juste ; un défaut trivial (« ça part d'ici, du dernier message ») s'anticipe sans y penser et se corrige d'un geste (cf. la poignée d'ancre ci-dessous).
+>
+> **Un défaut simple et prévisible, corrigé à la main quand il se trompe, vaut mieux qu'une règle savante que personne ne peut anticiper.** C'est aussi la seule règle qui ne casse pas sur un fil vieux de deux ans.
+
+L'ancre est ensuite **visible et saisissable** depuis le sujet : le **nœud de départ du cordon est une poignée** que l'on **attrape et fait glisser** vers le haut ou vers le bas — la remonter fait entrer les messages antérieurs, la descendre les fait sortir. C'est le mécanisme de correction du défaut (détail en `03-cas-usage.md`, cas T).
 
 Dans les deux cas, tant que le sujet reste ouvert, les **nouveaux messages de la conversation lui sont rattachés automatiquement**. L'ancrage est donc une **règle d'affectation par défaut, pas une définition** : l'appartenance réelle se décide **message par message**, et l'utilisateur — plus tard Relvo — peut détacher ou déplacer un message à la marge. C'est ce qui permet de traiter des sujets **entrelacés** dans un même fil, cas impossible à représenter avec une simple fenêtre temporelle (cf. §3).
 

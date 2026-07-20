@@ -71,16 +71,17 @@ Le message est visible **dans sa conversation**. La conversation remonte en têt
 
 #### Résultat
 
-Les messages **antérieurs** à l'ancre restent dans la conversation sans appartenir au sujet. Le **cordon de couleur** apparaît dans la conversation à partir de l'ancre. La conversation sort du KPI « Sans sujet ». L'ancre reste **visible et déplaçable** depuis le sujet (cf. Cas T).
+Les messages **antérieurs** à l'ancre restent dans la conversation sans appartenir au sujet. Le **cordon de couleur** apparaît dans la conversation à partir de l'ancre. La conversation sort du KPI « Sans sujet ». L'ancre reste **saisissable** dans le cordon (cf. Cas T).
+
+> **Directs et groupes, même régime** (précision du 2026-07-20). Un groupe WhatsApp s'ancre **exactement** comme une conversation directe. Le **nom du groupe ne fait pas office d'objet d'email** : « Tasty Crousty Marne-la-Vallée » nomme un collectif, pas une affaire — le fil y mélangera livraisons, congés et pannes. Seule différence, déjà actée : **aucun contact n'est créé** pour un groupe.
 
 #### Variante — swipe droite sans désigner de message
 
-L'utilisateur qui swipe la conversation vers la droite ne choisit **pas** d'ancre : **un défaut réparable en un geste bat un choix imposé à chaque fois**. Le défaut est calculé :
+L'utilisateur qui swipe la conversation vers la droite ne choisit **pas** d'ancre : **un défaut réparable en un geste bat un choix imposé à chaque fois**.
 
-| Situation | Ancre posée | Pourquoi |
-|---|---|---|
-| La conversation a **déjà porté** un sujet | le **plus ancien message non couvert** par un sujet, borné par la fenêtre précédente | ce sont exactement les messages **non triés** — c'est pour eux que la conversation apparaît dans « Sans sujet » |
-| La conversation **n'a JAMAIS porté** de sujet | le **dernier** message | ⚠️ sinon le défaut remonterait à des **mois** d'historique. On ne devine pas |
+> **L'ancre par défaut est le DERNIER message de la conversation. Toujours** (décision du 2026-07-20). Aucun cas particulier, aucune borne temporelle, aucune dépendance aux sujets passés du fil.
+
+Une règle plus fine avait été écrite (« le plus ancien message non couvert, borné par la fenêtre précédente », plus une exception pour les fils vierges) : elle tombait juste plus souvent, mais **personne ne pouvait l'anticiper** sans reconstituer de tête l'historique de rattachement de la conversation. Un défaut imprévisible surprend même quand il a raison. « Ça part du dernier message » se retient une fois, se vérifie d'un coup d'œil, et se corrige en attrapant la poignée d'ancre (Cas T).
 
 Pas de sélecteur dans le parcours du swipe : il deviendrait redondant avec le tap message et perdrait sa vitesse, et il exigerait une décision au mauvais moment — le geste réel est « **ça devient un sujet** », le « où ça commence » vient après.
 
@@ -99,7 +100,9 @@ Pas de sélecteur dans le parcours du swipe : il deviendrait redondant avec le t
 
 #### Résultat
 
-Le sujet porte les **six** emails, pas le dernier. Le cordon de couleur couvre **tout** le fil.
+Le sujet porte les **six** emails, pas le dernier.
+
+La conversation affiche désormais, **en en-tête**, un bandeau **« Suivi dans : *Retard livraison sauce blanche* »** avec la **pastille de couleur du domaine**, **cliquable vers la fiche du sujet**. **Aucun cordon, aucun rail de couleur par message** (décision du 2026-07-20) : l'ancre étant nulle, les six emails appartiennent **tous** au sujet — un marqueur sur chacun d'eux serait rigoureusement identique, donc muet. Le signal se pose là où il varie : au niveau de la **conversation**.
 
 ⚠️ **Piège d'implémentation.** La règle en place ne balaie que les messages **postérieurs ou égaux à l'ancre** — héritage WhatsApp, où elle est juste. Appliquée telle quelle à l'email, elle produirait un sujet à **un seul message** sur un fil de six. C'est le point le plus coûteux à rater de cette décision.
 
@@ -341,7 +344,7 @@ Caractéristiques de la liste :
 - **trois filtres** : **Sans sujet** (défaut — dernier message non rattaché), **Ignorées**, **Toutes** ; plus un filtre par **canal**
 - **swipe gauche = écarter la conversation** (cf. Cas N) — libellé et couleur **par canal**, mécanisme unique
 - **swipe droite = ouvrir un sujet** (cf. Cas B), sur les deux canaux
-- ouvrir une conversation affiche ses messages en **timeline**, avec le **cordon de sujet** (cf. `02-modele-donnees.md §7`)
+- ouvrir une conversation affiche ses messages en **timeline** ; le **cordon de sujet** n'y figure **qu'en WhatsApp** — l'email porte à la place un **bandeau « Suivi dans »** en en-tête (cf. `02-modele-donnees.md §7`)
 
 ### Rendu par canal — décision du 2026-07-20
 
@@ -351,12 +354,15 @@ Après test en production de M6bis : forcer la même UX sur l'email et sur Whats
 |---|---|---|
 | Rendu d'un message | **pleine largeur**, enchaînés au fil du scroll | **bulles** |
 | Fond | **blanc dans les deux sens**, jamais teinté | teinté |
-| Entrant / sortant | l'**en-tête** porte l'info (avatar + expéditeur + date) ; le sortant se signale par « **Moi** » + un **rail de couleur discret** à gauche | position et teinte de la bulle |
+| Entrant / sortant | l'**en-tête** porte l'info (avatar + expéditeur + date) ; le sortant se signale par « **Moi** » | position et teinte de la bulle |
+| Signal « suivi par un sujet » | **bandeau en en-tête de conversation** : « Suivi dans : *titre* » + pastille du domaine, cliquable vers la fiche — **pas de cordon, pas de rail de couleur** | le **cordon**, point coloré par message, **épaissi** et à **poignée d'ancre saisissable** |
 | Tap sur un message | **aucun** | pop-up (cf. Cas M, D, O) |
 | Ouvrir un sujet | **depuis la conversation uniquement** | depuis la conversation **ou** un message |
 | Swipe gauche | « **Supprimer** », **rouge** | « **Ignorer** », **orange** |
 
 ⚠️ **Pas de fond coloré sur l'email.** Sur du texte long, un fond teinté fatigue et abîme la lisibilité — or c'est exactement ce qu'on vient chercher en sortant de la bulle. Gmail, Superhuman et Outlook font le même choix. Si la distinction s'avère insuffisante à l'usage, on ajoutera une teinte **très légère au sortant seulement**, jamais aux deux.
+
+⚠️ **Pas de rail de couleur non plus sur l'email** (décision du 2026-07-20). Ce n'est pas un oubli : côté email l'ancre est nulle, **tout le fil appartient au sujet**, donc un signal par message serait **identique sur chaque message** — porteur d'aucune information. L'appartenance ne varie qu'au niveau de la **conversation**, c'est donc là que le signal se pose : le **bandeau « Suivi dans »**. Le cordon, lui, garde tout son sens en WhatsApp, où l'appartenance **varie d'un message à l'autre** (cf. Cas D).
 
 > ⚠️ **La divergence s'arrête au rendu et aux gestes.** Ouverture de sujet, ancre, rattachement, détachement, ignorance, statuts : **tout le domaine reste commun**. Le jour où l'on duplique la logique métier « parce que l'email est différent », on aura deux produits.
 
@@ -379,7 +385,7 @@ Un message n'est rattaché à aucun sujet (ou l'est au mauvais), et l'utilisateu
 
 ### Résultat
 
-- le message rejoint le fil du sujet et son point prend la **couleur du domaine** de ce sujet dans le cordon
+- le message rejoint le fil du sujet et son point prend la **couleur du domaine** de ce sujet dans le cordon *(WhatsApp — le tap message, donc ce cas, n'existe pas côté email)*
 - ⚠️ **la fenêtre active ne bouge pas** : rattacher un message isolé **ne pose pas d'ancre**. Les messages suivants continuent d'aller au sujet ancré sur cette conversation (cf. Cas D)
 
 ## Cas N — Écarter une conversation (« Ignorer » / « Supprimer »)
@@ -531,25 +537,40 @@ Le sujet « Retard livraison sauce blanche », parti du groupe WhatsApp, doit se
 - c'est **à ce niveau** que se fait la réunification entre canaux : le fil WhatsApp et le fil email coexistent dans une même fenêtre de travail
 - ⚠️ Même bouton côté interface, **deux mécaniques distinctes** : *créer* (email) ou *rattacher avec une nouvelle ancre* (WhatsApp direct)
 
-## Cas T — Déplacer l'ancre d'un sujet (WhatsApp)
+## Cas T — Faire glisser la poignée d'ancre (WhatsApp)
 
-> Nouveau cas, décision du 2026-07-20. Corollaire direct du principe « **un défaut réparable en un geste bat un choix imposé à chaque fois** » : puisqu'on ne demande pas l'ancre au moment du swipe, il faut pouvoir la corriger après.
+> Nouveau cas, décision du 2026-07-20. Corollaire direct du principe « **un défaut réparable en un geste bat un choix imposé à chaque fois** » : puisque l'ancre par défaut est volontairement grossière (**le dernier message, toujours** — cf. Cas B1), sa correction doit être **immédiate et physique**.
 
 ### Contexte
 
-Un sujet a été ouvert par swipe droite sur une conversation WhatsApp. L'ancre par défaut est trop basse (l'affaire avait commencé trois messages plus haut) ou trop haute (elle embarque du bavardage sans rapport).
+Un sujet vient d'être ouvert par swipe droite sur une conversation WhatsApp. L'ancre s'est posée sur le dernier message, alors que l'affaire avait commencé **trois messages plus haut**. Cas inverse, plus rare : l'utilisateur a ancré trop haut par un tap et embarque du bavardage sans rapport.
+
+### Le cordon est épaissi pour devenir saisissable
+
+Le cordon de sujet (`02-modele-donnees.md §7`) n'est plus seulement un indicateur : il est **épaissi**, et son **nœud de départ — l'ancre — devient une poignée**. On l'**attrape** et on la **fait glisser** vers le haut ou vers le bas à l'intérieur du cordon. Le sujet **s'étend** ou **se réduit** sous le doigt.
+
+C'est le bon geste parce qu'il est **isomorphe à ce qu'il fait** : on tire le début du sujet vers le haut, et le sujet couvre davantage. Rien à lire, rien à choisir dans une liste.
 
 ### Traitement
 
-1. depuis la fiche du sujet, l'utilisateur voit **où le sujet commence** — l'ancre est matérialisée par un repère « **le sujet commence ici** »
-2. il la **déplace** sur un autre message de la conversation
-3. `SubjectConversation.anchor_message_id` est mis à jour et l'appartenance **recomposée** :
+1. dans la conversation (ou depuis la fiche du sujet), l'ancre est **matérialisée par la poignée** en tête du cordon
+2. l'utilisateur l'**attrape et la fait glisser** sur un autre message
+3. ⚠️ **pendant le drag**, l'interface **montre en direct** ce qui bascule : les messages qui **entrent** dans le sujet se surlignent à la couleur du domaine, ceux qui en **sortent** s'estompent, et le cordon s'étire ou se rétracte en suivant le doigt
+4. au relâchement, `SubjectConversation.anchor_message_id` est mis à jour et l'appartenance **recomposée** :
    - **remonter** l'ancre → les messages antérieurs **entrent** dans le sujet
    - **descendre** l'ancre → les messages traversés **sortent** du sujet (`subject_id = null`)
-4. produire les `EventLog`
+5. produire les `EventLog`
+
+### ⚠️ Le retour visuel pendant le drag est une exigence, pas un raffinement
+
+Déplacer l'ancre **change ce qui appartient au sujet** : le geste réécrit des `Message.subject_id`, il n'ajuste pas un repère décoratif. Sans aperçu en direct, l'utilisateur **relâche à l'aveugle** et ne découvre qu'après coup ce qu'il vient de décider — exactement le défaut qu'on reprochait à la règle d'ancre savante, réintroduit par la porte de derrière. **Le geste doit se contrôler du regard pendant qu'on le fait.**
+
+### Note technique
+
+**dnd-kit est déjà utilisé dans le projet** — drag-and-drop des tâches dans le semainier de l'Accueil et dans le planning mois (`/planning`). **On le réutilise pour la poignée d'ancre.** Introduire une seconde librairie de drag pour un second geste de drag serait une dette gratuite ; les réglages déjà éprouvés (collision `pointerWithin` — c'est la **position du curseur** qui désigne la cible —, `DragOverlay` centré sur le curseur) sont le point de départ.
 
 ### Résultat
 
 - le **cordon** s'allonge ou se raccourcit dans la conversation
-- ⚠️ **sans objet côté email** : `anchor_message_id = null`, le fil entier appartient au sujet, il n'y a pas de repère à déplacer
+- ⚠️ **sans objet côté email** : `anchor_message_id = null`, le fil entier appartient au sujet — il n'y a ni cordon, ni poignée, ni rien à déplacer. Le bandeau **« Suivi dans »** dit tout ce qu'il y a à dire (cf. préambule Conversations)
 - les messages **explicitement rattachés à un autre sujet** ne sont pas repris par un déplacement d'ancre : la décision manuelle prime sur le défaut (cf. Cas D et M)
