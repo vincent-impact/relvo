@@ -6,7 +6,7 @@
 
 ## État d'avancement
 
-> Suivi haut niveau. Légende : ✅ fait · 🟡 partiel · ⏸️ reporté · ⬜ à faire. Dernière mise à jour : 2026-07-15.
+> Suivi haut niveau. Légende : ✅ fait · 🟡 partiel · ⏸️ reporté · ⬜ à faire. Dernière mise à jour : 2026-07-20.
 
 | Module | État | Note |
 |---|---|---|
@@ -18,6 +18,7 @@
 | **M5** — Ingestion email | ✅ **clos (2026-07-17)** | **Bascule Unipile** (agrégateur managé email + WhatsApp) — abandon du forwarding Postmark **et du worker Baileys**. Réception (orphelin + **auto-rattachement** interlocuteur+objet), **envoi HTML « au nom de » l'utilisateur**, PJ → R2 + **visualiseur** (lightbox/navigateur), **suppression de canal** (hard-delete + `account.delete` Unipile), UI Canaux (hosted auth un-clic). Validé end-to-end en prod. Détail + raffinements M5.9→M5.13 : §M5. |
 | **M6** — Ingestion WhatsApp | 🟡 **code livré (2026-07-18), validation prod à faire** | Via **Unipile** (webhooks serverless, plus de worker Baileys) — pattern M5 dupliqué : connexion QR hosted auth, réception (orphelin + **rattachement par fil `chat_id`**), envoi dans un fil existant, médias → R2. **Aucune migration** (modèle déjà channel-agnostic). 6 tests verts + typecheck propre. Reste : déclarer le webhook `messaging` côté Unipile + valider end-to-end (QR device réel, anti-loop écho). Détail : §M6. |
 | **M6bis** — Refonte « Conversation » | ✅ **livré (2026-07-20)** — 58 tests verts, `db`+`web` compilent, build OK. Migration **répétée sur base jetable** avec jeu d'essai (préfixes `Re:`, sortants, groupe, objet nul, 4 anciens statuts) : 0 message sans conversation. ⚠️ **À rejouer sur une copie de la prod avant application réelle.** | Introduit l'entité **`Conversation`** entre Message et Subject : le tri devient **déterministe à la réception** (clé par canal), et le `Subject` devient une **fenêtre de travail** ancrée sur un message, avec appartenance **message par message** (seule façon de traiter les sujets **entrelacés** d'un fil WhatsApp direct). Statuts sujet → `ouvert/validé/fermé` ; l'**ignoré migre sur la conversation**. **Bloque M7.** Rend caducs `/messages`, `assignMessageToSubject` et le balayage des frères. **Migration de données non triviale** (créer les conversations rétroactivement). Détail : §M6bis. |
+| **M6ter** — UX par canal (email ≠ WhatsApp) | ⬜ **à faire** — décidé le **2026-07-20** après test en production de M6bis | Cesse de forcer une UX unique sur deux canaux qui n'ont ni la même forme de message ni le même système d'objet. **Ancre `null` pour l'email** + ⚠️ **balayage du fil ENTIER à l'ouverture** (amont compris — la règle actuelle « ≥ ancre » ne rattacherait qu'**un** email sur un fil de six) ; **rendu email pleine largeur sans fond coloré** (bulles conservées en WhatsApp) ; **gestes par canal** (« Supprimer »/rouge vs « Ignorer »/orange — ⚠️ **même `ignoreConversation`, aucune donnée supprimée**) ; **tap message = WhatsApp uniquement** ; **ancre déplaçable** + défaut d'ancre et son exception. **Aucune migration** (`anchor_message_id` déjà nullable). Fond de la décision : **l'ancre est la prothèse d'un objet manquant** — elle tombera avec M7. Détail : §M6ter. |
 | M7 → M8, M10 → M14 | ⬜ à faire | **M11 (Connaissances)** branche l'UI d'upload sur le socle M4 et débloque M7 **et** M10. M7 (pipeline IA) ouvre des Sujets sur les **conversations orphelines** de M6bis — même mécanique d'ancrage que le mode manuel, seul l'acteur change. |
 
 > **⚠️ Migration de schéma requise avant/avec M9** — refonte UX mobile-first (2026-06-18). Le modèle de conception a évolué ([`02-modele-donnees.md`](../conception/02-modele-donnees.md)) ; à répercuter dans `packages/db/prisma/schema.prisma` :
@@ -308,6 +309,48 @@ Il faut **inventer une conversation** pour chaque message existant. Ce n'est pas
 6. **Statuts** — `acknowledged` → `ouvert`, `resolved` → `validé`, `archived` → `validé`, `ignored` → `fermé` (+ passer les conversations correspondantes en `ignoré`, pour préserver l'intention initiale de l'utilisateur).
 
 > La migration doit être **rejouable** et vérifiée sur une copie de la base de prod avant application : c'est la première migration du projet qui **crée de la donnée** plutôt que de déplacer des colonnes.
+
+---
+
+### M6ter — UX par canal (email ≠ WhatsApp)
+
+**Objectif** : cesser de forcer une **UX unique** sur deux canaux qui n'ont ni la même forme de message ni le même système d'objet. La divergence porte sur le **rendu** et les **gestes** ; le **domaine reste commun**. Conception : [`01-principes.md §3/§9`](../conception/01-principes.md), [`02-modele-donnees.md §5bis/§6/§7`](../conception/02-modele-donnees.md), [`03-cas-usage.md` cas B, M, N, O, S, T](../conception/03-cas-usage.md).
+
+**Pourquoi maintenant** : constat du **test en production de M6bis** (2026-07-20). Deux causes — la **taille et la forme** des messages email (longs, structurés, HTML : la bulle les étrangle), et le **système d'objet**, inexistant en WhatsApp.
+
+**La raison profonde** — ce n'est pas une scission subie, c'est le **modèle qui devient visible**. Les clés de conversation le disaient déjà :
+
+| Clé | Contient | Nature |
+|---|---|---|
+| `email:<interlocuteur>:<objet>` | la personne **et l'affaire** | ≈ un sujet, par construction |
+| `wa-direct:<numéro>` | la personne **seule** | un flux d'affaires successives |
+
+> **L'ancre n'a jamais été un concept du modèle : c'est la PROTHÈSE d'un objet manquant.** Là où l'objet existe (email), la fenêtre est inutile ; là où il manque (WhatsApp), elle est indispensable. Quand M7 saura découper un flux **par le sens**, cette prothèse tombera — exactement comme la « fenêtre active », déjà documentée comme un échafaudage (`01-principes.md §9`).
+
+**Dépendances** : M6bis. **Aucune migration** — `SubjectConversation.anchor_message_id` est déjà nullable.
+
+- [ ] **M6ter.1** — Domaine : **ancre nulle pour l'email**. `openSubjectFromConversation` pose `anchor_message_id = null` sur une conversation de type `objet` ; l'ancre reste posée pour `direct` / `groupe`.
+- [ ] **M6ter.2** — Domaine : ⚠️ **balayage du fil ENTIER à l'ouverture d'un sujet email**, en **amont comme en aval**. La règle actuelle ne balaie que les messages **≥ ancre** (héritée de WhatsApp, où elle est juste) : telle quelle, ouvrir un sujet sur un fil de **six** emails n'en rattacherait qu'**un**. Le glissement d'ancre au détachement devient **sans objet** quand l'ancre est nulle.
+- [ ] **M6ter.3** — UI : **rendu email pleine largeur** dans le détail de conversation — emails enchaînés au fil du scroll (reprise de l'ancien `/messages/[id]`), **fond blanc dans les deux sens**, en-tête porteur (avatar + expéditeur + date), sortant signalé par « **Moi** » + **rail de couleur discret** à gauche. **WhatsApp conserve les bulles.** ⚠️ **Pas de fond teinté sur l'email** : sur du texte long il fatigue et abîme la lisibilité — c'est précisément ce qu'on vient gagner en sortant de la bulle (cf. Gmail / Superhuman / Outlook). Repli si insuffisant à l'usage : teinte **très légère au sortant seulement**.
+- [ ] **M6ter.4** — UI : **swipe gauche par canal** — email « **Supprimer** » / **rouge**, WhatsApp « **Ignorer** » / **orange**. ⚠️ **Même mécanisme dessous : `ignoreConversation`. Aucune donnée supprimée.** L'email vit toujours dans la boîte Gmail de l'utilisateur (nous n'en avons qu'une copie), supprimer détruirait notre historique (sujets, tâches, PJ), et le fil restant chez Unipile, un nouveau message sur le même objet recréerait la conversation **vide de son passé**. Ce que l'utilisateur veut, c'est que ça **sorte de sa pile de tri** — c'est `ignoré`.
+- [ ] **M6ter.5** — UI : **swipe droite = ouvrir un sujet**, sur les **deux** canaux.
+- [ ] **M6ter.6** — UI : **tap sur message = WhatsApp uniquement**. Retrait de la pop-up message côté email, et **impossibilité d'ouvrir un sujet depuis un message email** — le sujet s'ouvre depuis la **conversation** (l'objet délimite déjà l'affaire).
+- [ ] **M6ter.7** — Domaine + UI : **défaut d'ancre au swipe droite (WhatsApp)** — le **plus ancien message non encore couvert** par un sujet, borné par la fenêtre précédente (ce sont exactement les messages non triés, ceux pour qui la conversation apparaît dans « Sans sujet »). ⚠️ **Exception** : sur une conversation n'ayant **jamais** porté de sujet, ce défaut remonterait à des mois d'historique → ancre sur le **dernier** message. Pas de sélecteur dans le parcours du swipe (redondant avec le tap message, tue sa vitesse, décision au mauvais moment).
+- [ ] **M6ter.8** — UI + domaine : **ancre visible et déplaçable** depuis le sujet (« le sujet commence ici ») — la remonter fait **entrer** les messages antérieurs, la descendre les fait **sortir** (cas T). Sans objet côté email.
+- [ ] **M6ter.9** — Tests : ouverture email → ancre `null` **et fil entier rattaché** (y compris messages antérieurs) ; ouverture WhatsApp → ancre posée, messages ≥ ancre ; swipe gauche email → `Conversation.status = ignoré` et **aucune suppression** ; défaut d'ancre dans les deux situations (conversation déjà sujettée / vierge) ; déplacement d'ancre dans les deux sens.
+
+#### ⚠️ Ce que ce module rend caduc
+
+| Élément | Devenir |
+|---|---|
+| « Un sujet s'ouvre **toujours** depuis un message d'ancrage » | **faux depuis le 2026-07-20** : vrai en WhatsApp, **faux en email** (ouverture depuis la conversation, ancre `null`) |
+| Balayage « messages ≥ ancre » **appliqué à l'email** | **caduc** — l'email balaie le fil **entier**, amont compris |
+| Bulles de message côté email | **remplacées** par le rendu pleine largeur |
+| Pop-up « tap sur message » côté email | **retirée** (WhatsApp uniquement) |
+| Swipe gauche à libellé unique « Ignorer » | **habillage par canal** (mécanisme inchangé) |
+| « Chaque conversation d'un sujet a **sa propre ancre** » | reformulé : chaque conversation a le **régime d'ancre de son canal** |
+
+**Ce qui ne bouge pas, et ne doit pas bouger** : le domaine — ouverture de sujet, ancre, rattachement, détachement, ignorance, statuts. ⚠️ **Le jour où l'on duplique la logique métier « parce que l'email est différent », on aura deux produits.** Un swipe peut changer de libellé et de couleur ; il ne doit **jamais** changer de fonction appelée.
 
 ---
 

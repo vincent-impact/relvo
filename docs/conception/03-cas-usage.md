@@ -44,26 +44,66 @@ Un fournisseur inconnu envoie un email « Retard livraison sauce blanche ». Ou 
 
 Le message est visible **dans sa conversation**. La conversation remonte en tête de la liste, en **non-lu** (fond distinct, gras, pastille compteur), et elle est comptée dans le **KPI « Sans sujet »** puisque son dernier message n'est rattaché à rien.
 
-## Cas B — Ouvrir un sujet depuis un message d'ancrage
+## Cas B — Ouvrir un sujet : deux parcours, un seul domaine
 
-### Exemple
+> **Décision du 2026-07-20.** Le parcours d'ouverture **diverge par canal**, parce que l'ancre n'est que la **prothèse d'un objet manquant** (cf. `01-principes.md §3`). La logique métier appelée reste **la même** — seul le point d'entrée et le périmètre balayé changent.
 
-Dans le groupe « Tasty Crousty Marne‑la‑Vallée », l'utilisateur repère le message qui lance vraiment l'affaire : « La livraison de sauce blanche a 3 jours de retard ». C'est de **là** que le sujet doit partir.
+| | **B1 — WhatsApp** | **B2 — email** |
+|---|---|---|
+| Point d'entrée | **tap sur un message** (ou swipe droite sur la conversation) | **swipe droite sur la conversation** — pas de tap message |
+| Ancre | le message choisi | **`null`** |
+| Périmètre balayé | messages **≥ ancre** | **tout le fil, amont ET aval** |
 
-### Traitement
+### B1 — WhatsApp : ouvrir depuis un message d'ancrage
+
+**Exemple.** Dans le groupe « Tasty Crousty Marne‑la‑Vallée », l'utilisateur repère le message qui lance vraiment l'affaire : « La livraison de sauce blanche a 3 jours de retard ». C'est de **là** que le sujet doit partir.
+
+#### Traitement
 
 1. l'utilisateur ouvre la conversation, tape sur ce message → **pop-up**
 2. le message n'est rattaché à aucun sujet → la pop-up propose **« Ouvrir un sujet »** ou **« Rattacher à un sujet existant »**
 3. il choisit « Ouvrir un sujet » :
-   - création du `Subject` en `status = ouvert`, titre pré-rempli (objet de l'email **ou** nom du groupe), domaine hérité de `Message.folder_id`
+   - création du `Subject` en `status = ouvert`, titre pré-rempli (nom du groupe ou du contact), domaine hérité de `Message.folder_id`
    - création de `SubjectConversation(subject_id, conversation_id, anchor_message_id = ce message)`
-   - le message reçoit `subject_id`
-   - **création automatique du contact** si la conversation est de type **objet** ou **direct** ; **aucun contact** si elle est de type **groupe**
+   - **tous les messages ≥ ancre** reçoivent `subject_id`
+   - **création automatique du contact** si la conversation est de type **direct** ; **aucun contact** si elle est de type **groupe**
 4. `EventLog` : sujet ouvert, contact créé le cas échéant
 
-### Résultat
+#### Résultat
 
-Les messages **antérieurs** à l'ancre restent dans la conversation sans appartenir au sujet. Le **cordon de couleur** apparaît dans la conversation à partir de l'ancre. La conversation sort du KPI « Sans sujet » (son dernier message est désormais couvert).
+Les messages **antérieurs** à l'ancre restent dans la conversation sans appartenir au sujet. Le **cordon de couleur** apparaît dans la conversation à partir de l'ancre. La conversation sort du KPI « Sans sujet ». L'ancre reste **visible et déplaçable** depuis le sujet (cf. Cas T).
+
+#### Variante — swipe droite sans désigner de message
+
+L'utilisateur qui swipe la conversation vers la droite ne choisit **pas** d'ancre : **un défaut réparable en un geste bat un choix imposé à chaque fois**. Le défaut est calculé :
+
+| Situation | Ancre posée | Pourquoi |
+|---|---|---|
+| La conversation a **déjà porté** un sujet | le **plus ancien message non couvert** par un sujet, borné par la fenêtre précédente | ce sont exactement les messages **non triés** — c'est pour eux que la conversation apparaît dans « Sans sujet » |
+| La conversation **n'a JAMAIS porté** de sujet | le **dernier** message | ⚠️ sinon le défaut remonterait à des **mois** d'historique. On ne devine pas |
+
+Pas de sélecteur dans le parcours du swipe : il deviendrait redondant avec le tap message et perdrait sa vitesse, et il exigerait une décision au mauvais moment — le geste réel est « **ça devient un sujet** », le « où ça commence » vient après.
+
+### B2 — Email : ouvrir depuis la conversation, ancre nulle
+
+**Exemple.** Six emails ont déjà été échangés avec SoGood Distribution sous l'objet « Retard livraison sauce blanche ». L'utilisateur décide d'en faire un sujet.
+
+#### Traitement
+
+1. l'utilisateur **swipe la conversation vers la droite** (ou utilise l'action « Ouvrir un sujet » de la conversation) — il n'y a **pas** d'ouverture depuis un message
+2. création du `Subject` en `status = ouvert`, titre pré-rempli avec l'**objet de l'email**, domaine hérité de `Message.folder_id`
+3. création de `SubjectConversation(subject_id, conversation_id, anchor_message_id = **null**)`
+4. ⚠️ **balayage de la conversation ENTIÈRE** : **tous** les messages du fil reçoivent `subject_id`, **y compris ceux antérieurs** à l'ouverture du sujet
+5. **création automatique du contact** (conversation de type `objet`)
+6. `EventLog` : sujet ouvert, contact créé le cas échéant
+
+#### Résultat
+
+Le sujet porte les **six** emails, pas le dernier. Le cordon de couleur couvre **tout** le fil.
+
+⚠️ **Piège d'implémentation.** La règle en place ne balaie que les messages **postérieurs ou égaux à l'ancre** — héritage WhatsApp, où elle est juste. Appliquée telle quelle à l'email, elle produirait un sujet à **un seul message** sur un fil de six. C'est le point le plus coûteux à rater de cette décision.
+
+**Pourquoi aucune ancre côté email ?** Parce que l'**objet** *est* déjà la délimitation de l'affaire, posée par l'expéditeur lui-même. Une ancre n'y ajouterait rien : elle ne pourrait que retrancher le début du fil.
 
 ## Cas C — Un nouveau message arrive pendant qu'un sujet est ouvert
 
@@ -299,8 +339,26 @@ Caractéristiques de la liste :
 - **tri par activité** : la conversation dont le dernier message est le plus récent remonte en tête
 - **non-lu** = fond distinct, police grasse, **pastille compteur** ; `read_at` se pose à l'ouverture de la **conversation**
 - **trois filtres** : **Sans sujet** (défaut — dernier message non rattaché), **Ignorées**, **Toutes** ; plus un filtre par **canal**
-- **swipe gauche = Ignorer la conversation** (cf. Cas N)
+- **swipe gauche = écarter la conversation** (cf. Cas N) — libellé et couleur **par canal**, mécanisme unique
+- **swipe droite = ouvrir un sujet** (cf. Cas B), sur les deux canaux
 - ouvrir une conversation affiche ses messages en **timeline**, avec le **cordon de sujet** (cf. `02-modele-donnees.md §7`)
+
+### Rendu par canal — décision du 2026-07-20
+
+Après test en production de M6bis : forcer la même UX sur l'email et sur WhatsApp dessert les deux, pour deux raisons — la **taille et la forme** des messages email, et le **système d'objet**, inexistant en WhatsApp (sauf partiellement via le groupe).
+
+| | email | WhatsApp |
+|---|---|---|
+| Rendu d'un message | **pleine largeur**, enchaînés au fil du scroll | **bulles** |
+| Fond | **blanc dans les deux sens**, jamais teinté | teinté |
+| Entrant / sortant | l'**en-tête** porte l'info (avatar + expéditeur + date) ; le sortant se signale par « **Moi** » + un **rail de couleur discret** à gauche | position et teinte de la bulle |
+| Tap sur un message | **aucun** | pop-up (cf. Cas M, D, O) |
+| Ouvrir un sujet | **depuis la conversation uniquement** | depuis la conversation **ou** un message |
+| Swipe gauche | « **Supprimer** », **rouge** | « **Ignorer** », **orange** |
+
+⚠️ **Pas de fond coloré sur l'email.** Sur du texte long, un fond teinté fatigue et abîme la lisibilité — or c'est exactement ce qu'on vient chercher en sortant de la bulle. Gmail, Superhuman et Outlook font le même choix. Si la distinction s'avère insuffisante à l'usage, on ajoutera une teinte **très légère au sortant seulement**, jamais aux deux.
+
+> ⚠️ **La divergence s'arrête au rendu et aux gestes.** Ouverture de sujet, ancre, rattachement, détachement, ignorance, statuts : **tout le domaine reste commun**. Le jour où l'on duplique la logique métier « parce que l'email est différent », on aura deux produits.
 
 > **Note historique.** La page `/messages` affichait une **pile de messages orphelins** (`subject_id = null`), avec rétention 15 jours et une page de détail par message (`/messages/[id]`). Les deux disparaissent : il n'y a plus de message orphelin, et le détail se lit dans la conversation.
 
@@ -309,6 +367,8 @@ Caractéristiques de la liste :
 ### Contexte
 
 Un message n'est rattaché à aucun sujet (ou l'est au mauvais), et l'utilisateur sait à quel sujet **déjà ouvert** il appartient. C'est le pendant du Cas B (*ouvrir* un sujet) : ici on **rejoint** un sujet existant.
+
+> ⚠️ **WhatsApp uniquement** (2026-07-20). Le tap sur message n'existe plus côté email : une conversation email est déjà délimitée par son objet, et son fil entier appartient au sujet — il n'y a pas de message isolé à rattacher.
 
 ### Traitement
 
@@ -322,17 +382,34 @@ Un message n'est rattaché à aucun sujet (ou l'est au mauvais), et l'utilisateu
 - le message rejoint le fil du sujet et son point prend la **couleur du domaine** de ce sujet dans le cordon
 - ⚠️ **la fenêtre active ne bouge pas** : rattacher un message isolé **ne pose pas d'ancre**. Les messages suivants continuent d'aller au sujet ancré sur cette conversation (cf. Cas D)
 
-## Cas N — Ignorer une conversation
+## Cas N — Écarter une conversation (« Ignorer » / « Supprimer »)
 
 ### Contexte
 
-L'utilisateur identifie une **source** qui ne l'intéresse pas : groupe bavard, démarchage récurrent, fil personnel sans enjeu professionnel. Ce n'est pas un message qu'il veut faire taire, c'est le **fil entier**.
+L'utilisateur identifie une **source** qui ne l'intéresse pas : groupe bavard, démarchage récurrent, fil personnel sans enjeu professionnel, ou simplement un échange email traité dont il veut se débarrasser. Ce n'est pas un message qu'il veut faire taire, c'est le **fil entier**.
 
 ### Traitement
 
-1. **swipe gauche** sur la conversation dans la liste (ou proposition de Relvo à la fermeture d'un sujet — cf. Cas Q)
-2. la `Conversation` passe en **`status = ignoré`**
+1. **swipe gauche** sur la conversation dans la liste (ou proposition de Relvo à la fermeture d'un sujet — cf. Cas Q). **L'habillage dépend du canal** (2026-07-20) :
+
+   | Canal | Libellé | Couleur |
+   |---|---|---|
+   | WhatsApp | « **Ignorer** » | **orange** |
+   | email | « **Supprimer** » | **rouge** |
+
+2. ⚠️ **dans les deux cas, le même appel : `ignoreConversation`.** La `Conversation` passe en **`status = ignoré`**. **Aucune donnée n'est supprimée.**
 3. produire un `EventLog` (conversation ignorée, actor: user)
+
+### ⚠️ Pourquoi « Supprimer » ne supprime rien
+
+Le libellé colle au vocabulaire attendu d'une boîte mail ; le mécanisme, lui, reste l'ignorance. Quatre raisons :
+
+1. **L'email existe toujours dans la boîte Gmail de l'utilisateur** — Relvo n'en a qu'une **copie**. Supprimer la nôtre ne libère rien de ce que l'utilisateur croit libérer.
+2. Cela **détruirait notre historique** : sujets, tâches, pièces jointes rattachés à ces messages.
+3. Le fil restant chez **Unipile**, un nouveau message sur le même objet **recréerait la conversation**, vide de son passé — un état pire que celui de départ.
+4. Ce que l'utilisateur veut réellement, c'est que **ça sorte de sa pile de tri**. C'est exactement ce que fait `ignoré`.
+
+**Habillage différent, mécanisme identique** — et c'est un cas d'école de la garde énoncée plus haut : on diverge sur le mot et la couleur, jamais sur la fonction appelée.
 
 ### Résultat
 
@@ -349,6 +426,8 @@ L'utilisateur identifie une **source** qui ne l'intéresse pas : groupe bavard, 
 
 Un message est rattaché au mauvais sujet — typiquement parce que la **règle d'ancrage** l'a versé par défaut dans le sujet ouvert, alors qu'il relève d'une autre affaire (cas des sujets **entrelacés**, cf. Cas D).
 
+> ⚠️ **WhatsApp uniquement** (2026-07-20) : le tap sur message n'existe plus côté email. L'entrelacement est d'ailleurs un problème de **flux**, donc de WhatsApp — en email, l'objet sépare déjà les affaires.
+
 ### Traitement
 
 1. dans la conversation, l'utilisateur tape le message → la pop-up affiche **le sujet rattaché**
@@ -360,7 +439,7 @@ Un message est rattaché au mauvais sujet — typiquement parce que la **règle 
 ### Résultat
 
 - le **cordon se recompose** : les couleurs alternent là où les sujets s'entrelacent
-- si le message détaché était l'**ancre**, l'**ancre glisse** au message suivant du sujet
+- si le message détaché était l'**ancre**, l'**ancre glisse** au message suivant du sujet — *sans objet sur une conversation email, dont l'ancre est `null`*
 - le journal de bord trace le changement
 
 > En V1 ces corrections sont manuelles. En M7, Relvo les proposera — **par la même mécanique**.
@@ -440,14 +519,37 @@ Le sujet « Retard livraison sauce blanche », parti du groupe WhatsApp, doit se
 
 1. depuis la fiche du sujet, l'utilisateur choisit d'écrire à un interlocuteur qui n'est pas encore dans le sujet
 2. le comportement dépend du canal — c'est l'**asymétrie** structurante (cf. `02-modele-donnees.md §5bis`) :
-   - **email** → une **nouvelle conversation** de type `objet` est créée, clé `email:<fournisseur>:<objet>`, l'objet étant **pré-rempli avec le titre du sujet**. Le premier message sortant en est l'**ancre**. Les réponses du fournisseur rejoindront automatiquement cette conversation, donc ce sujet.
-   - **WhatsApp direct** → il ne peut exister **qu'une seule** conversation directe par contact : la conversation **existante est rattachée** au sujet, avec une **nouvelle ancre** posée sur le premier message envoyé.
-3. création de la ligne `SubjectConversation(subject_id, conversation_id, anchor_message_id)`
+   - **email** → une **nouvelle conversation** de type `objet` est créée, clé `email:<fournisseur>:<objet>`, l'objet étant **pré-rempli avec le titre du sujet**. Son **ancre est `null`** : la conversation naissant avec le sujet, elle lui appartient **entière**, et le restera. Les réponses du fournisseur rejoindront automatiquement cette conversation, donc ce sujet.
+   - **WhatsApp direct** → il ne peut exister **qu'une seule** conversation directe par contact : la conversation **existante est rattachée** au sujet, avec une **nouvelle ancre** posée sur le premier message envoyé. L'ancre est ici indispensable — sans elle, tout l'historique du fil basculerait dans le sujet.
+3. création de la ligne `SubjectConversation(subject_id, conversation_id, anchor_message_id)` — `null` en email, le message de départ en WhatsApp
 4. **création du contact** si nécessaire (conversation `objet` ou `direct`)
 5. produire les `EventLog`
 
 ### Résultat
 
-- le sujet porte **deux conversations**, chacune avec sa propre ancre
+- le sujet porte **deux conversations**, chacune avec le **régime d'ancre de son canal**
 - c'est **à ce niveau** que se fait la réunification entre canaux : le fil WhatsApp et le fil email coexistent dans une même fenêtre de travail
 - ⚠️ Même bouton côté interface, **deux mécaniques distinctes** : *créer* (email) ou *rattacher avec une nouvelle ancre* (WhatsApp direct)
+
+## Cas T — Déplacer l'ancre d'un sujet (WhatsApp)
+
+> Nouveau cas, décision du 2026-07-20. Corollaire direct du principe « **un défaut réparable en un geste bat un choix imposé à chaque fois** » : puisqu'on ne demande pas l'ancre au moment du swipe, il faut pouvoir la corriger après.
+
+### Contexte
+
+Un sujet a été ouvert par swipe droite sur une conversation WhatsApp. L'ancre par défaut est trop basse (l'affaire avait commencé trois messages plus haut) ou trop haute (elle embarque du bavardage sans rapport).
+
+### Traitement
+
+1. depuis la fiche du sujet, l'utilisateur voit **où le sujet commence** — l'ancre est matérialisée par un repère « **le sujet commence ici** »
+2. il la **déplace** sur un autre message de la conversation
+3. `SubjectConversation.anchor_message_id` est mis à jour et l'appartenance **recomposée** :
+   - **remonter** l'ancre → les messages antérieurs **entrent** dans le sujet
+   - **descendre** l'ancre → les messages traversés **sortent** du sujet (`subject_id = null`)
+4. produire les `EventLog`
+
+### Résultat
+
+- le **cordon** s'allonge ou se raccourcit dans la conversation
+- ⚠️ **sans objet côté email** : `anchor_message_id = null`, le fil entier appartient au sujet, il n'y a pas de repère à déplacer
+- les messages **explicitement rattachés à un autre sujet** ne sont pas repris par un déplacement d'ancre : la décision manuelle prime sur le défaut (cf. Cas D et M)

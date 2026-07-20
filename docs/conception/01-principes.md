@@ -51,11 +51,42 @@ De cette asymétrie découle la contrainte la plus structurante du modèle :
 
 C'est pourquoi le rattachement à un sujet se décide **message par message**, et non conversation par conversation (cf. §9).
 
+### L'ancre est la prothèse d'un objet manquant — décision du 2026-07-20
+
+L'asymétrie ne s'arrête pas au discriminant : elle se lit **dans la clé elle-même**.
+
+| Clé canonique | Ce qu'elle contient | Ce qu'est la conversation |
+|---|---|---|
+| `email:<interlocuteur>:<objet>` | la personne **et l'affaire** | ≈ un sujet, presque par construction |
+| `wa-direct:<numéro>` | la personne **seule** | un flux, qui charrie des affaires successives |
+
+Un objet d'email **est déjà** une délimitation d'affaire, posée par l'expéditeur lui-même. Une conversation email a donc un début et une fin sémantiques ; il n'y a rien à découper. Un fil WhatsApp direct n'a que la personne : il coule, indéfiniment, et mélange.
+
+D'où le renversement de lecture :
+
+> **L'ancre n'a jamais été un concept du modèle. C'est la PROTHÈSE d'un objet manquant.**
+>
+> Là où l'objet existe (email), la fenêtre est **inutile** : le fil entier appartient au sujet. Là où il manque (WhatsApp), elle est **indispensable** : sans elle, ouvrir un sujet embarquerait des mois de bavardage.
+
+Conséquence directe, actée le 2026-07-20 : **l'ancre est nulle pour l'email** et posée pour WhatsApp (détail en §9 et `02-modele-donnees.md §6`). Ce n'est pas une exception bricolée, c'est le modèle qui devient visible.
+
+Et comme toute prothèse, elle est **temporaire**. Quand le pipeline IA (M7) saura découper un flux WhatsApp **par le sens**, il produira ce que l'objet d'email donne gratuitement — et l'ancre tombera, exactement comme la « fenêtre active » (cf. l'encadré ⚠️ de §9, qui la décrit déjà comme un échafaudage du mode manuel). Les deux sont le même échafaudage vu sous deux angles.
+
 ### Ce qu'une conversation n'est pas
 
 Elle **n'est jamais découpée par thème**. Découper un fil WhatsApp par sujet supposerait d'**inférer** le sujet — donc de faire intervenir l'IA à la réception. On y perdrait deux choses : le déterminisme (un message n'aurait plus de place garantie) et la stabilité de l'identité (une erreur d'inférence rangerait durablement un message au mauvais endroit, et le corriger reviendrait à déplacer des messages un à un — c'est-à-dire à faire, en plus compliqué, ce que le modèle fait déjà).
 
 La conversation est la couche **transport et identité** ; le sujet est la couche **sémantique**.
+
+### Où l'on diverge par canal — et où l'on NE diverge PAS
+
+Forcer une UX unique sur l'email et sur WhatsApp est contre-productif : la **taille et la forme** des messages n'ont rien de commun, et le **système d'objet** n'existe pas dans WhatsApp. Le produit assume donc une divergence — mais **bornée**, et la borne est un principe, pas une préférence :
+
+| | Commun aux deux canaux | Divergent par canal |
+|---|---|---|
+| Quoi | le **domaine** : ouverture de sujet, ancre, rattachement, détachement, ignorance, statuts | le **rendu** (bulles vs pleine largeur) et les **gestes** (libellés, couleurs, tap) |
+
+> ⚠️ **Garde explicite.** Le jour où l'on duplique la **logique métier** « parce que l'email est différent », on aura **deux produits** à maintenir, et Relvo perdra ce qui fait sa valeur : réunifier des canaux dans une même fenêtre de travail. Un swipe peut changer de libellé et de couleur ; il ne doit **jamais** changer de fonction appelée. Le détail est en `02-modele-donnees.md §5bis` (décision du 2026-07-20).
 
 ### Le statut « ignoré »
 
@@ -199,16 +230,27 @@ Un Sujet n'est pas un fil de discussion : c'est une **fenêtre de travail tempor
 
 Le vocabulaire est délibéré : on ne « crée » ni ne « supprime » un sujet, on l'**ouvre** et on le **ferme**.
 
-### Ouvrir un sujet : depuis un message d'ancrage
+### Ouvrir un sujet : avec ancre (WhatsApp) ou sans (email)
 
-Un sujet s'ouvre **à partir d'un message précis** d'une conversation — son **message d'ancrage**. Ce message marque le début du sujet : les messages **antérieurs** restent dans la conversation sans lui appartenir.
+**L'ancre dépend du canal** — parce qu'elle n'est que la prothèse d'un objet manquant (cf. §3, décision du 2026-07-20).
 
-Tant que le sujet reste ouvert, les **nouveaux messages de la conversation lui sont rattachés automatiquement**. L'ancrage est donc une **règle d'affectation par défaut, pas une définition** : l'appartenance réelle se décide **message par message**, et l'utilisateur — plus tard Relvo — peut détacher ou déplacer un message à la marge. C'est ce qui permet de traiter des sujets **entrelacés** dans un même fil, cas impossible à représenter avec une simple fenêtre temporelle (cf. §3).
+| | **email** (conversation `objet`) | **WhatsApp** (`direct` / `groupe`) |
+|---|---|---|
+| Ancre | **aucune** (`anchor_message_id = null`) | le **message de départ** choisi |
+| Ce qui appartient au sujet | **tout le fil** — y compris les messages **antérieurs** à l'ouverture du sujet | les messages **à partir de l'ancre** |
+| Glissement d'ancre au détachement | **sans objet** | s'applique |
+| Ouvrir un sujet depuis un **message** | **impossible** — seulement depuis la conversation | possible (tap sur message) |
+
+⚠️ **Ouvrir un sujet sur une conversation email balaie le fil ENTIER, en amont comme en aval.** Un échange de six emails déjà reçus doit produire un sujet portant les **six** messages, pas le dernier. C'est le contraire de la règle WhatsApp (« à partir de l'ancre »), et c'est délibéré : l'objet a déjà délimité l'affaire, il n'y a aucune raison d'en amputer le début.
+
+Côté WhatsApp, le message d'ancrage marque le début du sujet : les messages **antérieurs** restent dans la conversation sans lui appartenir. L'ancre est **visible et déplaçable** depuis le sujet (« le sujet commence ici ») — la remonter fait entrer les messages antérieurs, la descendre les fait sortir.
+
+Dans les deux cas, tant que le sujet reste ouvert, les **nouveaux messages de la conversation lui sont rattachés automatiquement**. L'ancrage est donc une **règle d'affectation par défaut, pas une définition** : l'appartenance réelle se décide **message par message**, et l'utilisateur — plus tard Relvo — peut détacher ou déplacer un message à la marge. C'est ce qui permet de traiter des sujets **entrelacés** dans un même fil, cas impossible à représenter avec une simple fenêtre temporelle (cf. §3).
 
 Règles associées :
 
 - **Au plus un sujet actif par conversation** — règle métier V1. Sans IA capable de trancher, une conversation n'a qu'une fenêtre ouverte à la fois, ce qui rend la destination d'un nouveau message non ambiguë. **Le modèle, lui, en supporte plusieurs** : la règle pourra être levée sans migration de schéma le jour où l'IA saura séparer les sujets entrelacés.
-- Si le message d'ancrage est **détaché**, l'ancre **glisse** au message suivant du sujet.
+- Si le message d'ancrage est **détaché**, l'ancre **glisse** au message suivant du sujet *(WhatsApp uniquement — une conversation email n'a pas d'ancre à faire glisser)*.
 - Rattacher un message **isolé** à un autre sujet **ne déplace pas** la fenêtre active : seule l'ouverture d'un sujet pose une ancre.
 
 > ⚠️ **La « fenêtre active » est un échafaudage du mode manuel, pas une règle métier durable.**
@@ -216,12 +258,14 @@ Règles associées :
 > Elle n'existe que pour une raison : tant qu'aucune IA ne sait à quel sujet appartient un message, il faut bien une règle mécanique pour que les messages successifs d'une conversation atterrissent au même endroit. Quand le pipeline IA (M7) arrivera, **c'est lui qui décidera**, message par message — et cette règle sera **remplacée**, pas complétée.
 >
 > C'est écrit ici parce que ce genre de règle se fossilise : sans cette note, quelqu'un lira « au plus un sujet actif par conversation » comme une contrainte du domaine et cherchera à la préserver, alors que tout le modèle a été conçu pour qu'elle puisse **disparaître sans migration**. L'appartenance vit sur le message (`subject_id`), jamais sur la conversation — c'est précisément ce qui rend l'échafaudage démontable.
+>
+> **L'ancre est le même échafaudage** (ajout du 2026-07-20). Elle n'est pas un concept du domaine : c'est la **prothèse d'un objet manquant** (cf. §3). La preuve tient en une observation — là où l'objet existe (email), l'ancre est **nulle** et personne ne s'en aperçoit ; là où il manque (WhatsApp), elle est indispensable. Le jour où M7 saura découper un flux par le sens, il fera ce que l'objet d'email fait gratuitement, et l'ancre **tombera** — sans migration, `anchor_message_id` étant déjà nullable.
 
 ### Un sujet agrège 0, 1 ou n conversations
 
 - **0** — un sujet sans échange, purement personnel : une liste de tâches (« Préparer l'inventaire »).
 - **1** — le cas courant : une fenêtre ouverte sur un fil de groupe ou sur un objet d'email.
-- **n** — le sujet s'étend : parti d'un fil WhatsApp (« Retard livraison sauce blanche »), l'utilisateur écrit **par email** à son fournisseur pour la même affaire. Le sujet porte alors deux conversations, chacune avec **sa propre ancre**.
+- **n** — le sujet s'étend : parti d'un fil WhatsApp (« Retard livraison sauce blanche »), l'utilisateur écrit **par email** à son fournisseur pour la même affaire. Le sujet porte alors deux conversations, **chacune avec le régime d'ancre de son canal** — ancre posée côté WhatsApp, ancre nulle côté email (le fil email entier appartient au sujet).
 
 C'est à ce niveau — et non plus au niveau de la conversation — que se fait la **réunification entre canaux**.
 
