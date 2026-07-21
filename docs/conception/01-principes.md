@@ -57,7 +57,7 @@ L'asymétrie ne s'arrête pas au discriminant : elle se lit **dans la clé elle-
 
 | Clé canonique | Ce qu'elle contient | Ce qu'est la conversation |
 |---|---|---|
-| `email:<interlocuteur>:<objet>` | la personne **et l'affaire** | **un sujet**, par construction |
+| `email:<interlocuteur>:<objet>` | la personne **et l'affaire** | **un sujet**, par construction — *un seul, et le même à vie* |
 | `wa-direct:<numéro>` | la personne **seule** | un flux, qui charrie des affaires successives |
 | `wa-group:<chat_id>` | le groupe **seul** | un flux, qui charrie des affaires successives |
 
@@ -69,6 +69,25 @@ L'asymétrie ne s'arrête pas au discriminant : elle se lit **dans la clé elle-
 > Tout ce qui suit — l'écoute, ses deux bornes, son extension, son arrêt — découle de cette seule phrase. Quand une règle paraît arbitraire, c'est ici qu'il faut revenir.
 
 Un objet d'email **est déjà** une délimitation d'affaire, posée par l'expéditeur lui-même. Il n'y a **rien à découper**, et donc **rien à borner** : un sujet email **n'écoute rien**, il **EST** le fil. Un fil WhatsApp direct n'a que la personne : il coule, indéfiniment, et mélange. C'est là — et **seulement** là — qu'un sujet doit se **brancher** sur le flux pour en extraire une affaire.
+
+#### ⚠️ Cette phrase est DIRECTIONNELLE — précision du 2026-07-21
+
+« Un fil d'email EST un sujet » se lit **de la conversation vers le sujet**, jamais dans l'autre sens. C'est la lecture la plus facile à rater du modèle, et la rater **bloque l'implémentation** — elle interdirait d'un coup les cas M, S et X.
+
+| Sens de lecture | Cardinalité | Énoncé |
+|---|---|---|
+| **conversation → sujet** | **1:1** | une conversation email a **UN** sujet, un seul, pour toute sa vie |
+| **sujet → conversations** | **1:N** | un sujet porte **0, 1 ou n** conversations, email et/ou WhatsApp |
+
+**Ce qui est unique, c'est le sujet d'une conversation — pas la conversation d'un sujet.** Un sujet reste un espace de travail qui **agrège** ; c'est même sa raison d'être, puisque c'est à son niveau que se fait la réunification entre canaux (cf. §9).
+
+#### Un interlocuteur qui change d'adresse en cours d'affaire — décision du 2026-07-21
+
+Karim écrit d'abord depuis `karim@gmail.com`, puis répond sur le même objet depuis `karim@sogood.fr`. L'interlocuteur ayant changé, **la clé change** : Relvo crée une **seconde conversation**, qui remonte dans la pile de tri.
+
+> **Décision : rien de spécial n'est fait.** L'utilisateur **rattache la nouvelle conversation au même sujet**, d'un swipe droite — le geste du Cas M, qu'il connaît déjà. L'affaire redevient une.
+
+**Détecter automatiquement « même objet, autre adresse » exigerait d'inférer à la réception**, exactement ce que refuse la section « Ce qu'une conversation n'est pas » ci-dessous. On y perdrait le **déterminisme** (une clé qui se devine peut se tromper) et la **stabilité de l'identité** (une fusion à tort ne se défait qu'en déplaçant des messages un à un). Ici, **c'est l'humain qui tranche** — un rattachement manuel occasionnel contre une clé qui reste calculable et infaillible. Détail et modèle : `02-modele-donnees.md §5bis` ; scénario complet : `03-cas-usage.md` **Cas X**.
 
 ### « Écoute » remplace « fenêtre » — décision du 2026-07-21
 
@@ -344,6 +363,8 @@ Ce qui suit décrit **l'arrêt des écoutes**. Or **un sujet email n'écoute rie
 
 ⚠️ **Les deux premières lignes ne s'appliquent qu'aux conversations WhatsApp du sujet.** Ses conversations email restent rattachées : elles continuent de l'alimenter, et le rouvrent. Seul le dernier geste — **arrêter l'écoute depuis la fiche**, action délibérée et ciblée — détache un fil email d'un sujet.
 
+> ⚠️ **Nuance de vocabulaire, à ne pas lire comme une contradiction.** Sur un fil email il n'y a **pas d'écoute à arrêter** — le geste y **détache** la conversation du sujet. Le libellé « arrêter l'écoute » est celui de la feuille de gestion, commune aux deux canaux ; **côté email il faut l'entendre comme « détacher ce fil »**. C'est la **seule** façon de défaire un rattachement email, et c'est aussi la marche arrière des cas M, S et X — sans elle, un rattachement erroné serait irréversible.
+
 **Ignorer une conversation est une PAUSE, pas une FIN.** L'ignorance est réversible (cf. §3) : la réactiver doit faire **reprendre** l'alimentation. Si elle posait une ancre de fin, « Réactiver » serait un bouton sans effet observable.
 
 ⚠️ **Le swipe gauche sur une conversation écoutée ouvre d'abord une CONFIRMATION, qui NOMME les sujets concernés.** Pas « un ou plusieurs sujets » : le nom. **On ne demande pas à quelqu'un de confirmer un risque sans lui dire lequel** — c'est la différence entre une confirmation utile et un dialogue qu'on clique sans lire.
@@ -590,7 +611,7 @@ Puisque l'agent est central, ses réponses ne sont pas que du texte : Relvo **re
 Les écrans de consultation/traitement (**Mon fil**, **Sujet**, **Mémoire**, **Planning**, **Messages**, **Contacts**) existent toujours — pour la lecture profonde et le travail soutenu — mais deviennent des **destinations**, atteintes via une carte du chat ou via la **navigation par onglets**. Tous sont repensés **mobile-first**, en colonne unique (fini les split-views 2 colonnes, tables 7 colonnes et panneaux droits 340px fixes).
 
 - **Sujets** reste l'espace de **traitement** : feed de cartes-sujets enrichies, organisé en **2 onglets de statut** — **Ouverts** (urgents en tête) et **Validés**. Sur chaque carte, deux gestes de **swipe** : **Fermer** (gauche, rouge → `status = fermé`) et **Valider** (droite, vert → `status = validé`). C'est l'« inbox structurée par sujets ».
-- **Conversations** est l'espace de **tri**, et il reste **hors navigation** : on y accède par le **KPI « Sans sujet »** de la page Sujets. Non-lus en tête, swipe gauche = **Ignorer la conversation**. C'est **depuis une conversation** — jamais depuis un message — qu'on **ouvre un sujet** (cf. principe 9, décision du 2026-07-21).
+- **Conversations** est l'espace de **tri**, et il reste **hors navigation** : on y accède par le **KPI « Sans sujet »** de la page Sujets. Non-lus en tête, swipe gauche = **Ignorer la conversation**. ⚠️ **Le geste d'ouverture dépend du canal** (cf. §9) : **email** → swipe droite sur la **conversation** (« ouvrir un sujet » **ou** « rattacher à un sujet existant ») ; **WhatsApp** → swipe droite sur le **message** qui lance l'affaire. Il n'y a **pas** de swipe droite sur une ligne de conversation WhatsApp.
 - La **navigation** se fait par une **barre d'onglets basse**, pas une sidebar : **4 entrées** — **Actions** ✅ (les tâches du jour), **Sujets** 📥, **Mémoire 🧠** (cf. principe 12), **Réglages** ⚙️. Planning, Contacts et **Conversations** sont **hors-nav**, atteints depuis ces écrans.
 
 > **⚠️ MISE À JOUR 2026-07-20 — la page Messages devient Conversations.** La pile de messages orphelins **disparaît** au profit de la liste des **conversations**, atteinte par le même point d'entrée qu'avant : le **KPI « Sans sujet »**. Ce KPI ne compte plus des messages mais des **conversations dont le dernier message n'est rattaché à aucun sujet** — c'est-à-dire celles qui **peuvent solliciter l'utilisateur**. L'onglet **Ignorés** de Sujets disparaît (l'ignorance vit désormais sur la conversation, filtrable depuis Conversations). Le dock, lui, **ne change pas**.

@@ -26,6 +26,8 @@ Ce point a été « unifié » un temps, par déduction erronée, puis **rétabl
 | Si le sujet était `validé` / `fermé` | il **repasse en `ouvert`** | rien ne se passe — le message reste sans sujet |
 | Faire taire le fil | **ignorer la conversation**, et rien d'autre | ignorer la conversation, ou arrêter l'écoute |
 
+⚠️ **« Un fil d'email EST un sujet » est DIRECTIONNEL** (précision du 2026-07-21) : une conversation email a **un** sujet, un seul, à vie (**1:1**) ; mais **un sujet porte 0, 1 ou n conversations** (**1:N**). Les tournures « le sujet **EST** le fil » employées ci-dessous se lisent donc **de la conversation vers le sujet** — jamais l'inverse, sans quoi les cas **M**, **S** et **X** deviendraient impossibles. Cf. `01-principes.md §3`.
+
 **Pourquoi l'email rouvre.** Un sujet email **n'écoute rien** : il **EST** le fil. Un nouvel email de même objet et de même interlocuteur *est*, par construction, la suite de cette affaire — la ranger ailleurs reviendrait à nier l'énoncé central. Et l'enjeu est concret : un fournisseur relance sur une affaire validée il y a trois jours. Soit son message **rouvre le sujet et remonte dans le fil**, soit il s'y range **en silence** — et l'utilisateur rate exactement le message qu'il ne fallait pas rater. De l'activité sur une affaire signifie qu'elle est **vivante**.
 
 **Pourquoi WhatsApp ne rouvre pas.** Là, la conversation n'est pas l'affaire : c'est un flux qui charrie des affaires successives. Un message qui arrive après l'arrêt d'une écoute ne parle pas forcément de la même chose — le rattacher serait un pari, et rouvrir un sujet sur ce pari serait un pari sur un pari.
@@ -349,7 +351,7 @@ L'IA peut suggérer la validation ("Résolution suggérée") mais ne clôt jamai
 
 ## La page Conversations — le tri, pas une boîte mail
 
-> Préambule aux cas M, N, O. Relvo **n'est pas un client de messagerie** : la surface de travail reste le **Sujet** (invariant n°4). La page `/conversations` est un **outil de tri**, volontairement **hors navigation** : on l'atteint par le **KPI « Sans sujet »** de la page Sujets, et par défaut elle ne montre que **ce qui n'est pas traité**.
+> Préambule aux cas **M**, **N** et **X** *(le cas O est supprimé — cf. plus bas)*. Relvo **n'est pas un client de messagerie** : la surface de travail reste le **Sujet** (invariant n°4). La page `/conversations` est un **outil de tri**, volontairement **hors navigation** : on l'atteint par le **KPI « Sans sujet »** de la page Sujets, et par défaut elle ne montre que **ce qui n'est pas traité**.
 
 Caractéristiques de la liste :
 
@@ -387,7 +389,16 @@ Après test en production de M6bis : forcer la même UX sur l'email et sur Whats
 
 ### Contexte
 
-Un fil d'email arrive sur une affaire **déjà suivie** : le fournisseur ouvre un nouvel objet (« RE: palette bloquée ») pour une histoire qui relève du sujet « Retard livraison sauce blanche ». On ne veut pas d'un second sujet, on veut **rejoindre** celui qui existe.
+Un fil d'email arrive sur une affaire **déjà suivie**. On ne veut pas d'un second sujet, on veut **rejoindre** celui qui existe. **Deux déclencheurs, un seul geste** — dans les deux cas, la clé de conversation diffère de celle du fil déjà rattaché, donc Relvo a créé une conversation distincte :
+
+| Déclencheur | Ce qui a changé dans la clé `email:<interlocuteur>:<objet>` | Détail |
+|---|---|---|
+| **Changement d'objet** | le fournisseur ouvre « RE: palette bloquée » pour une histoire qui relève de « Retard livraison sauce blanche » | *ici* |
+| **Changement d'adresse** | Karim répond sur le **même objet** depuis `karim@sogood.fr` au lieu de `karim@gmail.com` | **Cas X** |
+
+⚠️ **C'est ce geste, et lui seul, qui traite le changement d'adresse d'un interlocuteur** (décision du 2026-07-21). Aucun rapprochement automatique n'est tenté à la réception : cela demanderait de l'inférence, et ruinerait le déterminisme de la clé (cf. Cas X, `02-modele-donnees.md §5bis`).
+
+⚠️ **Ce cas est la preuve que « un fil d'email EST un sujet » est DIRECTIONNELLE.** Une conversation a un sujet unique ; **un sujet peut porter plusieurs conversations**. Lue comme bidirectionnelle, la phrase interdirait ce cas — cf. la table de cardinalité en `01-principes.md §3`.
 
 > ⚠️ **Email uniquement** (2026-07-21). Le rattachement porte sur une **conversation entière**, jamais sur un message isolé — il n'y a plus de geste par message côté email, et le rattachement message par message a disparu de l'interface sur les deux canaux (cf. Cas D).
 >
@@ -715,3 +726,53 @@ Si l'utilisateur ne veut vraiment plus rien entendre de ce fil, il **ignore la c
 
 - ⚠️ **Ce n'est pas la règle WhatsApp.** Un message qui arrive après l'arrêt d'une écoute **ne rouvre rien** : la conversation redevient orpheline et sollicite l'utilisateur via le KPI « Sans sujet ». Là, la conversation n'est pas l'affaire — rouvrir sur ce message serait un pari sur son contenu.
 - **Ce n'est pas « Remettre ».** « Remettre » (Cas V) est un geste **utilisateur** sur un sujet **fermé**, qui ne redémarre aucune écoute. La réouverture décrite ici est **automatique**, déclenchée par une **arrivée de message**, et propre à l'email.
+- ⚠️ **Ce n'est pas non plus le cas du changement d'adresse.** Ici l'interlocuteur **et** l'objet sont inchangés : la clé est la même, le message tombe donc dans **la même conversation**, donc dans le même sujet. Si l'adresse change, la clé change et une **seconde conversation** naît — c'est le **Cas X**, qui se règle à la main.
+
+## Cas X — Un interlocuteur répond depuis une AUTRE adresse
+
+> **Décision du 2026-07-21.** Rien de spécial n'est fait à la réception. La nouvelle conversation est **rattachée au même sujet**, par le geste du Cas M.
+
+### Contexte
+
+Karim Benali (SoGood Distribution) écrit d'abord depuis `karim@gmail.com` sur l'objet « Retard livraison sauce blanche ». Trois jours plus tard, il répond **sur le même objet** depuis son adresse professionnelle `karim@sogood.fr` — alias, changement d'employeur, ou simple réponse envoyée depuis un mobile mal configuré.
+
+La clé de conversation est `email:<interlocuteur>:<objet normalisé>`. **L'interlocuteur a changé, donc la clé change.**
+
+### Traitement
+
+1. le message arrive ; la clé calculée est `email:karim@sogood.fr:retard livraison sauce blanche` — **aucune conversation ne la porte**
+2. Relvo **crée une seconde conversation**, de type `objet`, titrée par le même objet
+3. cette conversation n'est écoutée par aucun sujet ouvert → elle remonte dans le **KPI « Sans sujet »**, en non-lu
+4. l'utilisateur l'ouvre, reconnaît l'affaire, **swipe la conversation vers la droite** → **« Rattacher à un sujet existant »** → « Retard livraison sauce blanche » (Cas M)
+5. création de `SubjectConversation(subject_id, conversation_id, anchor_message_id = null, closing_message_id = null)` — le sujet couvre **le fil entier** de cette seconde conversation
+6. `EventLog` : conversation rattachée, actor `user`
+
+### Résultat
+
+- le sujet porte désormais **deux conversations email** — l'affaire est de nouveau **une seule**
+- les réponses suivantes de Karim depuis `karim@sogood.fr` rejoignent **automatiquement** cette seconde conversation, donc le sujet, avec le régime email complet (elles le **rouvrent** s'il a été validé — Cas W)
+- la fiche du sujet n'en affiche **qu'une à la fois** : la **ligne sélecteur** permet de basculer (Cas U)
+- ⚠️ **les deux clés ne fusionnent jamais.** Deux conversations restent deux entités ; ce qui les réunit est le **sujet**, pas la clé
+
+### Pourquoi on n'automatise pas
+
+Détecter « même objet, autre adresse » demanderait de l'**inférence à la réception** — exactement ce que le modèle refuse depuis le premier jour (cf. `01-principes.md §3`). Le coût de l'automatisation ne se paie pas en lignes de code, il se paie en **garanties perdues** :
+
+| Ce qu'on gagnerait | Ce qu'on perdrait |
+|---|---|
+| un rattachement manuel occasionnel en moins | le **déterminisme** du rangement — une clé qui se devine peut se tromper, le tri cesse d'être infaillible |
+| | la **stabilité de l'identité** d'une conversation — une fusion à tort ne se défait qu'en déplaçant des messages un à un, ce que le modèle a précisément supprimé |
+| | la **simplicité de la clé** — « adresses proches » n'a pas de définition stable (même domaine ? même nom d'affichage ? distance d'édition ?) |
+
+Ici, **c'est l'humain qui tranche**, et il tranche en un geste qu'il connaît déjà : il n'y a **rien de nouveau à apprendre ni à construire**. C'est la même logique que le renoncement à découper une conversation par thème (§3) — devant une ambiguïté, on préfère un geste explicite à une devinette silencieuse.
+
+⚠️ **Ce n'est pas une lacune à corriger plus tard par un « matcher d'adresses ».** Quand M7 saura lire un fil par le sens, il pourra **proposer** le rattachement dans l'interface (comme il proposera d'ouvrir un sujet) — mais il ne l'imposera **jamais à la réception** : la clé de conversation doit rester calculable, pas inférée.
+
+### Cas voisins, à ne pas confondre
+
+| Situation | Ce qui change | Le cas |
+|---|---|---|
+| même interlocuteur, **même** objet | rien — même clé, même conversation | *(Cas A / Cas C ; Cas W si le sujet était terminé)* |
+| même interlocuteur, **autre** objet | nouvelle conversation, à rattacher | **Cas M** |
+| **autre** adresse, même objet | nouvelle conversation, à rattacher | **Cas X** *(ici)* |
+| l'affaire se poursuit sur **un autre canal** | nouvelle conversation, créée depuis le sujet | **Cas S** |

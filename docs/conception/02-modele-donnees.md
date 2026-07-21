@@ -258,12 +258,41 @@ Plus profondément, la clé dit **ce qu'est** la conversation :
 
 | Clé | Contient | Nature |
 |---|---|---|
-| `email:<interlocuteur>:<objet>` | la personne **et l'affaire** | **un sujet**, par construction |
+| `email:<interlocuteur>:<objet>` | la personne **et l'affaire** | **un sujet**, par construction — *un seul, et le même à vie* |
 | `wa-direct:<numéro>` / `wa-group:<chat_id>` | la personne / le groupe **seuls** | un flux d'affaires successives |
 
 > **Énoncé central (2026-07-21).** **Un fil d'email EST un sujet. Une conversation WhatsApp est un FLUX ; un sujet l'ÉCOUTE, à partir d'un message, jusqu'à ce qu'il cesse d'écouter.**
 
 C'est de là que découle le **régime d'écoute par canal** (§6) : l'écoute n'est que la prothèse d'un objet manquant (cf. `01-principes.md §3`). Côté email, **il n'y a rien à écouter** — le fil *est* le sujet.
+
+#### ⚠️ « Un fil d'email EST un sujet » est une phrase DIRECTIONNELLE — précision du 2026-07-21
+
+C'est le point le plus facile à mal lire de tout le modèle, et le mal lire **bloque l'implémentation**. L'énoncé se lit **de la conversation vers le sujet**, jamais dans l'autre sens :
+
+| Sens de lecture | Cardinalité | Énoncé |
+|---|---|---|
+| **conversation → sujet** | **1:1** | une conversation email a **UN** sujet, un seul, pour toute sa vie |
+| **sujet → conversations** | **1:N** | un sujet porte **0, 1 ou n** conversations, email et/ou WhatsApp (cf. §6) |
+
+Autrement dit : **ce qui est unique, c'est le sujet d'une conversation — pas la conversation d'un sujet.** Un sujet reste un **espace de travail** qui agrège ce qu'il faut pour mener l'affaire ; ce sont les cas S (étendre à une seconde conversation), M (rattacher un fil à un sujet existant) et X (changement d'adresse) de `03-cas-usage.md`.
+
+Lue comme bidirectionnelle, la phrase interdirait ces trois cas d'un coup, et retirerait au sujet sa raison d'être : **réunifier des canaux**.
+
+#### Changement d'adresse d'un interlocuteur en cours d'affaire — décision du 2026-07-21
+
+Cas concret : un fournisseur écrit d'abord depuis `karim@gmail.com`, puis répond sur le même objet depuis `karim@sogood.fr` — alias, changement d'employeur, ou réponse envoyée depuis un mobile. La clé étant `email:<interlocuteur>:<objet normalisé>`, **l'interlocuteur ayant changé, la clé change** : Relvo crée une **seconde conversation**, qui apparaît dans le KPI « Sans sujet ».
+
+> **Décision : on ne touche à rien côté tri.** La nouvelle conversation est **rattachée au même sujet**, par le geste qui existe déjà — **swipe droite sur la conversation email → « Rattacher à un sujet existant »** (Cas M). L'affaire redevient une, sans aucun mécanisme nouveau.
+
+**Pourquoi ne pas détecter automatiquement « même objet, autre adresse ».** Parce que cela demanderait de l'**inférence à la réception** — exactement ce que le modèle refuse depuis le premier jour (cf. `01-principes.md §3`, « Ce qu'une conversation n'est pas »). Trois choses seraient perdues :
+
+1. **Le déterminisme du rangement.** Aujourd'hui la clé se calcule ; demain elle se devinerait. Une clé qui se devine peut se tromper, et le tri cesse d'être infaillible.
+2. **La stabilité de l'identité d'une conversation.** Une conversation dont l'appartenance dépend d'une heuristique peut être fusionnée à tort — et défusionner après coup, c'est déplacer des messages un à un, précisément ce que le modèle a supprimé.
+3. **La simplicité de la clé.** Toute règle « même objet, adresses proches » (même domaine ? même nom d'affichage ? distance d'édition ?) est une pente sans palier stable.
+
+**Le coût est un rattachement manuel occasionnel ; le bénéfice est que la clé reste calculable et infaillible.** Ici c'est l'humain qui tranche — et il tranche par un geste qu'il connaît déjà, sans rien à apprendre. Le jour où M7 saura lire un fil par le sens, il pourra **proposer** ce rattachement ; il ne l'imposera toujours pas à la réception.
+
+⚠️ **Conséquence sur les clés : elles ne fusionnent JAMAIS.** Les deux conversations restent deux entités distinctes, avec leurs deux clés. Ce qui les réunit est le **sujet**, via deux lignes `SubjectConversation` — c'est exactement le mécanisme du Cas S, et c'est ce que la lecture directionnelle du 1:1 autorise.
 
 ⚠️ **Le `groupe` suit le régime du `direct`, sans exception** (précision du 2026-07-20). Le **nom du groupe ne joue PAS le rôle d'un objet d'email** : il nomme un collectif, pas une affaire. Un groupe parle successivement de livraisons, de congés et de pannes — c'est un flux, il **s'écoute** comme un direct.
 
@@ -437,7 +466,7 @@ Un sujet agrège **0, 1 ou n conversations**. Chaque ligne de cette table est un
 |---|---|---|
 | **Fermer le sujet** (`fermé`) | **toutes les ÉCOUTES** du sujet s'arrêtent ; la conversation ne référence plus ce sujet | **posée** sur le dernier message reçu, pour chaque conversation **WhatsApp** |
 | **Valider le sujet** (`validé`) | la conversation **WhatsApp** n'alimente plus le sujet | **posée** sur le dernier message reçu (**WhatsApp**) |
-| **Arrêter l'écoute** (feuille des conversations du sujet) | **cette conversation-là seulement** ; les autres continuent | **posée** sur le dernier message reçu — **seul geste qui détache un fil email** |
+| **Arrêter l'écoute** (feuille des conversations du sujet) | **cette conversation-là seulement** ; les autres continuent | **posée** sur le dernier message reçu — **seul geste qui détache un fil email** *(sur email, lire « **détacher ce fil** » : il n'y a pas d'écoute à arrêter)* |
 | **Ignorer la conversation** (mute) | **PAUSE** — elle n'alimente plus **aucun** des sujets ouverts qui l'écoutent | ⚠️ **aucune** — réactiver la conversation fait **reprendre** l'alimentation |
 
 Sans la dernière ligne, la réactivation d'une conversation ignorée n'aurait **aucun effet observable** : l'écoute serait déjà close.
@@ -452,8 +481,10 @@ Sans la dernière ligne, la réactivation d'une conversation ignorée n'aurait *
 | `closing_message_id` | ⚠️ **jamais posé par un changement de statut** — uniquement par « arrêter l'écoute » (détachement délibéré) | posé à la validation / fermeture / à l'arrêt de l'écoute |
 | Message entrant après un statut terminal | **rejoint le sujet et le ROUVRE** (`→ ouvert`) | reste sans sujet ; la conversation redevient orpheline |
 | Ce qui appartient au sujet | **tout le fil**, amont compris | les messages **entre les deux bornes** |
-| Écoutes **successives** sur le même fil | **sans objet** — un fil email n'a qu'un sujet, pour toute sa vie | possibles (plages disjointes) |
+| Écoutes **successives** sur le même fil | **sans objet** — une conversation email a **un** sujet, un seul, pour toute sa vie *(sens conversation → sujet ; l'inverse est 1:N, cf. §5bis)* | possibles (plages disjointes) |
 | Signal d'appartenance dans la conversation | **bandeau « Suivi dans »** en en-tête | **le même bandeau** |
+
+⚠️ **La ligne « écoutes successives » ne dit RIEN sur le nombre de conversations d'un sujet.** Elle borne la conversation, pas le sujet : un sujet email peut parfaitement porter **plusieurs** conversations — un second fil ouvert sous un autre objet (Cas M), un fil parti d'une **autre adresse** du même interlocuteur (Cas X), ou une conversation WhatsApp (Cas S). Cf. la table de cardinalité directionnelle en §5bis.
 
 #### Une seule primitive de domaine — décision du 2026-07-21
 
@@ -597,7 +628,7 @@ Deux actions structurent le tri, exposées **en gestes de swipe** sur mobile (et
 - **Fermer** (swipe gauche, rouge) — passe le `status` à **`fermé`** et pose `closed_at`. Le sujet quitte les ouverts et rejoint l'onglet **Fermés**, d'où « **Remettre** » le ramène. Relvo enchaîne avec la proposition « **Souhaitez-vous aussi ignorer la conversation ?** ».
 - **Valider** (swipe droite, vert, icône coche) — passe le `status` à **`validé`** et pose `closed_at`. C'est la clôture « travail fait ».
 
-Dans les deux cas, **sur les deux canaux**, `closing_message_id` est posé sur chaque conversation écoutée : l'alimentation cesse et la conversation **redevient orpheline** (2026-07-21).
+Dans les deux cas, `closing_message_id` est posé sur chaque conversation **écoutée** — ⚠️ **donc sur les conversations WhatsApp UNIQUEMENT** (rétabli le 2026-07-21) : leur alimentation cesse et elles **redeviennent orphelines**. Les conversations **email** du sujet ne sont **pas** touchées : elles ne sont pas écoutées, elles *sont* le sujet — elles continuent de l'alimenter et le **rouvrent** au message suivant (cf. §5bis, §6 « Régime par canal », et `03-cas-usage.md` Cas W). Le seul geste qui fasse taire un fil email est **d'ignorer la conversation**.
 
 **On n'archive pas et on ne supprime pas un sujet : on le ferme, et on peut le remettre.** Le vocabulaire est celui d'un dossier qu'on met de côté — *ouvrir / fermer / remettre* — et non celui d'un fichier — *créer / supprimer*.
 
