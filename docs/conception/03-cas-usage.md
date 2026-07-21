@@ -12,12 +12,10 @@ Lorsqu'un message est reçu, le système suit cette logique — **entièrement d
    - WhatsApp direct → `wa-direct:<numéro>`
 4. **rattacher le message à la `Conversation`** correspondante — ou la créer si elle n'existe pas
 5. **classer le message dans un domaine (`Folder`)** — ce domaine donnera son domaine au sujet ouvert depuis ce message
-6. si la conversation porte un sujet (via `SubjectConversation`), rattacher le message à ce sujet (`subject_id`) — c'est la **règle d'ancrage** ; sinon `subject_id = null`. Précision du **2026-07-21** :
-   - **email** — rattachement **inconditionnel** (lien 1:1 permanent) ; si le sujet était `validé` ou `fermé`, il **repasse en `ouvert`** (cf. Cas U)
-   - **WhatsApp** — rattachement **seulement si la fenêtre est encore ouverte** (`closing_message_id = null`) ; une fenêtre refermée ne reprend rien, et la conversation est orpheline
+6. si un sujet **écoute** la conversation (via `SubjectConversation`) **et que l'écoute est en cours** (`closing_message_id = null`), rattacher le message à ce sujet (`subject_id`) ; sinon `subject_id = null` et la conversation est **orpheline**. ⚠️ **Même règle sur les deux canaux** (2026-07-21) : une écoute arrêtée ne reprend rien, et **aucun message ne rouvre un sujet** — la réouverture est manuelle (« Remettre », cf. Cas V)
 7. produire les événements de journal (`EventLog`)
 
-**Règle fondamentale** : le rangement en conversation **ne peut pas échouer**. Tout message a une place dès la première seconde, sans qu'aucune IA n'ait à comprendre quoi que ce soit. **Il n'y a plus de message « Sans sujet »** — il y a des **conversations dont le dernier message n'est couvert par aucun sujet**, et ce sont elles qui sollicitent l'utilisateur (KPI « Sans sujet »).
+**Règle fondamentale** : le rangement en conversation **ne peut pas échouer**. Tout message a une place dès la première seconde, sans qu'aucune IA n'ait à comprendre quoi que ce soit. **Il n'y a plus de message « Sans sujet »** — il y a des **conversations qu'aucun sujet ouvert n'écoute**, et ce sont elles qui sollicitent l'utilisateur (KPI « Sans sujet »).
 
 **Règle sur les contacts** : un contact n'est créé automatiquement qu'à l'**ouverture d'un sujet**, et uniquement depuis une conversation de type **objet** ou **direct**. Une conversation de **groupe** ne crée **jamais** de contact : son interlocuteur est le groupe lui-même. Cela garantit que l'annuaire ne se remplit pas de participants qu'on n'a jamais choisis.
 
@@ -46,49 +44,41 @@ Un fournisseur inconnu envoie un email « Retard livraison sauce blanche ». Ou 
 
 Le message est visible **dans sa conversation**. La conversation remonte en tête de la liste, en **non-lu** (fond distinct, gras, pastille compteur), et elle est comptée dans le **KPI « Sans sujet »** puisque son dernier message n'est rattaché à rien.
 
-## Cas B — Ouvrir un sujet : un seul geste, une ancre optionnelle
+## Cas B — Ouvrir un sujet : un seul geste par canal
 
-> **Décision du 2026-07-21.** **Un fil d'email EST un sujet ; une conversation WhatsApp est un flux** où la fenêtre et son ancre **fabriquent** l'objet que le médium ne fournit pas (cf. `01-principes.md §3`).
+> **Décision du 2026-07-21.** **Un fil d'email EST un sujet ; une conversation WhatsApp est un flux** qu'un sujet **écoute**, à partir d'un message (cf. `01-principes.md §3`).
 >
-> Conséquence : **on ouvre toujours un sujet DEPUIS UNE CONVERSATION**, jamais depuis un message, et le domaine expose **une seule primitive** — *ouvrir un sujet sur une conversation, avec une ancre **optionnelle***. Ancre nulle → tout le fil ; ancre posée → à partir d'elle. ⚠️ **La logique métier teste l'ancre, jamais le canal.**
+> Le domaine expose **une seule primitive** — *ouvrir un sujet sur une conversation, avec une ancre **optionnelle***. Ancre nulle → tout le fil ; ancre posée → l'écoute commence là. ⚠️ **La logique métier teste l'ancre, jamais le canal.** Ce qui diffère, c'est **sur quoi porte le geste**.
 
 | | **B1 — WhatsApp** | **B2 — email** |
 |---|---|---|
-| Point d'entrée | **la conversation** (swipe droite) ; le tap sur un message sert à **désigner l'ancre** | **la conversation** (swipe droite) — pas de tap message |
-| Ancre transmise | le message choisi, ou par défaut **le dernier message reçu** | **`null`** |
-| Périmètre couvert | messages **≥ ancre**, jusqu'à l'éventuelle ancre de fin | **tout le fil, amont ET aval, sans borne** |
-| Lien conversation ↔ sujet | fenêtre, ajustable et refermable | **1:1 et permanent** |
+| Le geste porte sur… | **le MESSAGE** (swipe droite dans le fil) | **la CONVERSATION** (swipe droite dans la liste) |
+| Ce qu'il propose | « ce message est important » → commencer l'écoute ici | ouvrir un **nouveau sujet** ou **rattacher à un sujet existant** |
+| Ancre transmise | le **message swipé** | **`null`** |
+| Périmètre couvert | messages **≥ ancre**, jusqu'à l'éventuelle borne de fin | **tout le fil, amont ET aval** |
 
-### B1 — WhatsApp : ouvrir en désignant un message d'ancrage
+⚠️ **Le tap ne sert plus qu'à ouvrir une pièce jointe**, sur les deux canaux. Il n'y a plus aucune pop-up de message.
+
+### B1 — WhatsApp : swipe droite sur le message qui lance l'affaire
 
 **Exemple.** Dans le groupe « Tasty Crousty Marne‑la‑Vallée », l'utilisateur repère le message qui lance vraiment l'affaire : « La livraison de sauce blanche a 3 jours de retard ». C'est de **là** que le sujet doit partir.
 
 #### Traitement
 
-1. l'utilisateur ouvre la conversation, tape sur ce message → **pop-up**
-2. le message n'est rattaché à aucun sujet → la pop-up propose **« Ouvrir un sujet »** ou **« Rattacher à un sujet existant »**
-3. il choisit « Ouvrir un sujet » — ⚠️ **le sujet s'ouvre sur la CONVERSATION**, le message tapé ne faisant que **renseigner l'ancre** (2026-07-21) :
+1. l'utilisateur ouvre la conversation et **swipe ce message vers la droite** — un seul geste, qui **choisit l'ancre ET crée le sujet** :
    - création du `Subject` en `status = ouvert`, titre pré-rempli (nom du groupe ou du contact), domaine hérité de `Message.folder_id`
    - création de `SubjectConversation(subject_id, conversation_id, anchor_message_id = ce message, closing_message_id = null)`
    - **tous les messages ≥ ancre** reçoivent `subject_id`
    - **création automatique du contact** si la conversation est de type **direct** ; **aucun contact** si elle est de type **groupe**
-4. `EventLog` : sujet ouvert, contact créé le cas échéant
+2. `EventLog` : sujet ouvert, contact créé le cas échéant
+
+**Pourquoi un seul geste.** L'intention réelle de l'utilisateur est indivisible : « **ça, c'est important, et l'affaire commence là** ». La découper en deux étapes (choisir l'ancre, puis ouvrir) demanderait deux décisions là où il n'y en a qu'une. C'est aussi ce qui **supprime tout défaut d'ancre à calculer** : il n'y a plus de règle à anticiper, puisque l'utilisateur désigne toujours le message lui-même.
 
 #### Résultat
 
-Les messages **antérieurs** à l'ancre restent dans la conversation sans appartenir au sujet. Le **cordon de couleur** apparaît dans la conversation à partir de l'ancre. La conversation sort du KPI « Sans sujet ». L'ancre reste **saisissable** dans le cordon (cf. Cas T).
+Les messages **antérieurs** à l'ancre restent dans la conversation sans appartenir au sujet. La conversation affiche en en-tête le **bandeau « Suivi dans : … »** et sort du KPI « Sans sujet ». L'écoute peut ensuite être **remontée** d'un même geste sur un message plus ancien (cf. Cas T).
 
-> **Directs et groupes, même régime** (précision du 2026-07-20). Un groupe WhatsApp s'ancre **exactement** comme une conversation directe. Le **nom du groupe ne fait pas office d'objet d'email** : « Tasty Crousty Marne-la-Vallée » nomme un collectif, pas une affaire — le fil y mélangera livraisons, congés et pannes. Seule différence, déjà actée : **aucun contact n'est créé** pour un groupe.
-
-#### Variante — swipe droite sans désigner de message
-
-L'utilisateur qui swipe la conversation vers la droite ne choisit **pas** d'ancre : **un défaut réparable en un geste bat un choix imposé à chaque fois**.
-
-> **L'ancre par défaut est le DERNIER message de la conversation. Toujours** (décision du 2026-07-20). Aucun cas particulier, aucune borne temporelle, aucune dépendance aux sujets passés du fil.
-
-Une règle plus fine avait été écrite (« le plus ancien message non couvert, borné par la fenêtre précédente », plus une exception pour les fils vierges) : elle tombait juste plus souvent, mais **personne ne pouvait l'anticiper** sans reconstituer de tête l'historique de rattachement de la conversation. Un défaut imprévisible surprend même quand il a raison. « Ça part du dernier message » se retient une fois, se vérifie d'un coup d'œil, et se corrige en attrapant la poignée d'ancre (Cas T).
-
-Pas de sélecteur dans le parcours du swipe : il deviendrait redondant avec le tap message et perdrait sa vitesse, et il exigerait une décision au mauvais moment — le geste réel est « **ça devient un sujet** », le « où ça commence » vient après.
+> **Directs et groupes, même régime** (précision du 2026-07-20). Un groupe WhatsApp s'écoute **exactement** comme une conversation directe. Le **nom du groupe ne fait pas office d'objet d'email** : « Tasty Crousty Marne-la-Vallée » nomme un collectif, pas une affaire — le fil y mélangera livraisons, congés et pannes. Seule différence, déjà actée : **aucun contact n'est créé** pour un groupe.
 
 ### B2 — Email : ouvrir depuis la conversation, sans aucune ancre
 
@@ -96,7 +86,7 @@ Pas de sélecteur dans le parcours du swipe : il deviendrait redondant avec le t
 
 #### Traitement
 
-1. l'utilisateur **swipe la conversation vers la droite** (ou utilise l'action « Ouvrir un sujet » de la conversation) — il n'y a **pas** d'ouverture depuis un message
+1. l'utilisateur **swipe la conversation vers la droite** → deux choix : **« Ouvrir un sujet »** ou **« Rattacher à un sujet existant »** (cf. Cas M). Il n'y a **pas** d'ouverture depuis un message.
 2. création du `Subject` en `status = ouvert`, titre pré-rempli avec l'**objet de l'email**, domaine hérité de `Message.folder_id`
 3. création de `SubjectConversation(subject_id, conversation_id, anchor_message_id = **null**, closing_message_id = **null**)` — **aucune borne, ni basse ni haute**
 4. ⚠️ **balayage de la conversation ENTIÈRE** : **tous** les messages du fil reçoivent `subject_id`, **y compris ceux antérieurs** à l'ouverture du sujet
@@ -107,11 +97,9 @@ Pas de sélecteur dans le parcours du swipe : il deviendrait redondant avec le t
 
 #### Résultat
 
-Le sujet porte les **six** emails, pas le dernier — **et tous ceux à venir, sans limite de temps** : le lien conversation ↔ sujet est **1:1 et permanent**. Il n'y aura **jamais** de second sujet sur ce fil.
+Le sujet porte les **six** emails, pas le dernier — **et tous ceux à venir** tant qu'il reste `ouvert`. Il n'y a rien qui reste « non couvert » sur un fil email : c'est **tout le fil**, littéralement.
 
-⚠️ **Formulation retirée le 2026-07-21 : « le sujet couvre tout le fil non encore couvert ».** Il n'y a rien qui reste « non couvert » sur un fil email, puisqu'il n'y a jamais qu'un sujet. C'est **tout le fil**, littéralement.
-
-La conversation affiche désormais, **en en-tête**, un bandeau **« Suivi dans : *Retard livraison sauce blanche* »** avec la **pastille de couleur du domaine**, **cliquable vers la fiche du sujet**. **Aucun cordon, aucun rail de couleur par message** (décision du 2026-07-20) : l'ancre étant nulle, les six emails appartiennent **tous** au sujet — un marqueur sur chacun d'eux serait rigoureusement identique, donc muet. Le signal se pose là où il varie : au niveau de la **conversation**.
+La conversation affiche désormais, **en en-tête**, un bandeau **« Suivi dans : *Retard livraison sauce blanche* »** avec la **pastille de couleur du domaine**, **cliquable vers la fiche du sujet**. **Aucun marqueur par message** — sur aucun canal (2026-07-21) : tous les messages de la plage appartiennent au sujet, un signal répété sur chacun serait rigoureusement identique, donc muet.
 
 ⚠️ **Piège d'implémentation.** La règle en place ne balaie que les messages **postérieurs ou égaux à l'ancre** — héritage WhatsApp, où elle est juste. Appliquée telle quelle à l'email, elle produirait un sujet à **un seul message** sur un fil de six. C'est le point le plus coûteux à rater de cette décision.
 
@@ -126,37 +114,38 @@ Le fournisseur répond dans le même fil : « Livraison reprogrammée jeudi ».
 ### Traitement
 
 1. réception normale (cas A) → le message rejoint sa conversation
-2. la conversation porte un sujet `ouvert` → le message reçoit **automatiquement** son `subject_id` (règle d'ancrage)
+2. **un sujet ouvert écoute cette conversation** (`closing_message_id = null`) → le message reçoit **automatiquement** son `subject_id`
 3. `last_activity_at` du sujet est remonté
 4. Relvo peut lever `waiting_for_reply`, proposer des tâches, suggérer la validation
 
 ### Résultat
 
-Le message apparaît **à la fois** dans la conversation (cordon continu) et dans la fiche du sujet. Le statut du sujet reste **`ouvert`** — seuls les **marqueurs** bougent (« À faire », « En attente », pastille de non-lus sur la conversation).
+Le message apparaît **à la fois** dans la conversation et dans la fiche du sujet — **c'est la même ligne en base**, pas une copie (cf. `02-modele-donnees.md §6`). Le statut du sujet reste **`ouvert`** — seuls les **marqueurs** bougent (« À faire », « En attente », pastille de non-lus sur la conversation).
 
-## Cas D — Deux sujets entrelacés dans une conversation directe
+## Cas D — Deux affaires entrelacées dans une conversation directe — RENONCEMENT ASSUMÉ
 
 ### Exemple
 
-Karim, en WhatsApp direct, alterne : sauce blanche, facture emballages, sauce blanche. Un seul fil, deux affaires. C'est le cas que le modèle existe pour traiter.
+Karim, en WhatsApp direct, alterne : sauce blanche, facture emballages, sauce blanche. Un seul fil, deux affaires.
 
-### Traitement
+### Ce qui se passe en V1
 
-1. un sujet « Retard sauce blanche » est ouvert sur la conversation → les nouveaux messages lui sont rattachés **par défaut**
-2. le message sur la facture arrive et se retrouve donc, à tort, dans ce sujet
-3. l'utilisateur tape ce message → la pop-up affiche le sujet rattaché → il le **détache**, puis le **rattache à un sujet existant** (ou en ouvre un autre)
-4. `EventLog` pour chaque déplacement
+Un sujet « Retard sauce blanche » **écoute** la conversation. Les messages sur la facture, arrivant dans la plage d'écoute, **entrent dans ce sujet** — et **l'utilisateur ne peut pas les en sortir**.
 
-### Résultat
+> ⚠️ **L'entrelacement n'est plus exprimable dans l'interface** (décision du 2026-07-21). Il n'y a plus de rattachement ni de détachement message par message : dans la plage d'écoute, **tous** les messages appartiennent au sujet ; hors plage, **aucun**.
 
-Dans la conversation, le **cordon se brise** : les points alternent entre la couleur du domaine « Fournisseurs » et celle de « Comptabilité ». Cette rupture visuelle *est* l'information — elle dit que le fil mélange deux affaires.
+### Pourquoi ce renoncement
 
-Deux règles s'appliquent :
+C'était pourtant l'argument fondateur du modèle. Trois raisons de l'assumer :
 
-- rattacher un message **isolé** au second sujet **ne déplace pas la fenêtre active** : les messages suivants continuent d'aller au sujet ancré ;
-- si le message **d'ancrage** est détaché, l'**ancre glisse** au message suivant du sujet.
+1. **Le modèle, lui, le permet toujours** — `Message.subject_id` est décidé message par message. On ne perd aucune capacité, on retire une **commande d'interface**.
+2. **Séparer des affaires entrelacées est exactement le travail de M7.** Construire une mécanique manuelle sophistiquée pour six mois, en sachant qu'une machine la remplacera, c'est de la dette payée deux fois.
+3. **Un peu de bruit dans un sujet vaut mieux qu'une UI incompréhensible.** Le dispositif qui exprimait l'entrelacement (rail coloré par message, ruptures, poignée glissante) demandait à un dirigeant de raisonner sur des plages et des appartenances — pour un gain que M7 apportera sans lui rien demander.
 
-> En V1, seul l'utilisateur fait ces corrections. En M7, c'est Relvo qui les proposera — **par la même mécanique**, sans changement de modèle.
+### Ce qui reste possible
+
+- **remonter le début de l'écoute** (Cas T) pour faire entrer des messages antérieurs ;
+- **arrêter l'écoute** (Cas U) quand le fil part sur autre chose, puis **rouvrir un sujet** plus loin — des écoutes **successives**, qui sont le cas normal.
 
 ## Cas E — Message compréhensible mais sans tâche immédiate
 
@@ -179,8 +168,8 @@ Le message informe simplement d'un état, sans demander d'action.
 
 ### Résultat
 
-- si c'est un nouveau sujet : `Subject.status = acknowledged` (jamais ouvert → marqueur dérivé **« Nouveau »**)
-- si c'est un sujet existant : le **statut reste inchangé** (`acknowledged`) ; le nouveau message allume la **pastille de non-lus**, et s'il répond à une attente, Relvo lève `waiting_for_reply`
+- si c'est un nouveau sujet : `Subject.status = ouvert` (jamais consulté → marqueur dérivé **« Nouveau »**)
+- si c'est un sujet existant : le **statut reste inchangé** (`ouvert`) ; le nouveau message allume la **pastille de non-lus**, et s'il répond à une attente, Relvo lève `waiting_for_reply`
 
 ### Règle
 
@@ -209,7 +198,7 @@ Le fournisseur dit :
 
 ### Résultat
 
-- `Subject.status` inchangé (`acknowledged` ; marqueur **« Nouveau »** si le sujet vient d'être créé) **+ marqueur « À faire »**
+- `Subject.status` inchangé (`ouvert` ; marqueur **« Nouveau »** si le sujet vient d'être créé) **+ marqueur « À faire »**
 
 ### Point important
 
@@ -281,7 +270,7 @@ Une réponse a été envoyée au fournisseur, et on attend son retour.
 
 ### Résultat
 
-- `Subject.waiting_for_reply = true` (marqueur), `status` **inchangé** (`acknowledged`)
+- `Subject.waiting_for_reply = true` (marqueur), `status` **inchangé** (`ouvert`)
 
 ### Remarque
 
@@ -300,12 +289,12 @@ Le fournisseur répond à la suite d'une demande.
 3. Relvo **lève `waiting_for_reply`** (un retour est arrivé) et relit la situation globale
 4. selon le contenu :
    - de nouvelles `Task` → marqueur **« À faire »**
-   - sujet réglé → Relvo **suggère « Terminer »** (`resolution_suggested_at`) ; la clôture reste humaine
+   - sujet réglé → Relvo **suggère « Valider »** (`resolution_suggested_at`) ; la clôture reste humaine
    - message informatif sans action → **pastille de non-lus** seule
    - toujours en attente d'un autre tiers → Relvo repose **`waiting_for_reply = true`**
 5. produire les `EventLog`
 
-## Cas K — Validation du sujet (fermeture de la fenêtre)
+## Cas K — Validation du sujet (arrêt des écoutes)
 
 ### Conditions possibles
 
@@ -320,27 +309,21 @@ Le sujet peut être validé si :
 
 1. constater que le travail utile est terminé
 2. l'utilisateur déclenche l'action **« Valider »** (bouton sur la fiche, ou swipe droite sur la carte) → `status = validé`, `closed_at` posé — **une date, rien d'autre**. L'IA peut l'avoir **suggérée** mais ne l'applique jamais elle-même.
-3. **valider est une FIN** — et ce qu'elle referme dépend du canal (2026-07-21) :
-
-   | Canal | Effet sur l'appartenance |
-   |---|---|
-   | **WhatsApp** | ⚠️ **`closing_message_id` est posé sur le dernier message reçu** : le cordon se **referme**, la conversation **redevient orpheline** |
-   | **Email** | **rien** — lien 1:1 permanent, le fil reste entier dans son sujet, et un nouveau message **rouvrira** le sujet (cf. **Cas U**) |
-
-4. Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » (cf. Cas N) — c'est le **seul** geste qui fait durablement taire un fil
+3. **valider ARRÊTE les écoutes du sujet** — même comportement sur les deux canaux (2026-07-21) : `closing_message_id` est posé sur le dernier message reçu de **chaque** conversation écoutée. Le sujet n'est plus alimenté ; les conversations **redeviennent orphelines**.
+4. Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » (cf. Cas N) — c'est le geste qui empêche le fil de solliciter de nouveau l'utilisateur au message suivant
 5. produire un `EventLog`
 
 ### Résultat
 
 - `Subject.status = validé` (libellé UI : **« Validé »**), `closed_at` renseigné
-- **WhatsApp** — la conversation **réapparaît dans le KPI « Sans sujet »** dès qu'un nouveau message y arrive sans rattachement
-- **email** — la conversation reste couverte par son sujet ; un nouveau message **rouvre** le sujet plutôt que de solliciter un tri (Cas U)
+- la conversation **réapparaît dans le KPI « Sans sujet »** dès qu'un nouveau message y arrive
+- le sujet reste **récupérable** — il vit dans l'onglet **Validés**
 
 ### Remarque
 
 L'IA peut suggérer la validation ("Résolution suggérée") mais ne clôt jamais un sujet d'elle-même. C'est toujours l'utilisateur qui confirme.
 
-> **Note historique.** « Terminer » / `resolved` devient « **Valider** » / `validé` (2026-07-20). ⚠️ **La règle « il n'y a pas de réouverture d'un sujet clos », écrite le 2026-07-20, est SUPPRIMÉE le 2026-07-21** : elle reposait sur `closed_at` comme **borne haute de la fenêtre**, hypothèse abandonnée. Elle reste vraie **côté WhatsApp** (la fenêtre y est refermée par une ancre de fin), elle est **fausse côté email**.
+> **Note historique.** « Terminer » / `resolved` devient « **Valider** » / `validé` (2026-07-20). ⚠️ **La réouverture automatique d'un sujet email à la réception d'un nouveau message, écrite le 2026-07-21 au matin, est SUPPRIMÉE le même jour** : elle contredit « un sujet validé n'est plus alimenté ». La réouverture est désormais **manuelle** sur les deux canaux, et un nouveau message laisse simplement la conversation orpheline.
 
 ## Cas L — ⚠️ CADUC — Archivage du sujet (système)
 
@@ -355,10 +338,10 @@ Caractéristiques de la liste :
 - une ligne par **conversation** (et non par message) : titre, interlocuteur (contact **ou** groupe), icône de canal, type
 - **tri par activité** : la conversation dont le dernier message est le plus récent remonte en tête
 - **non-lu** = fond distinct, police grasse, **pastille compteur** ; `read_at` se pose à l'ouverture de la **conversation**
-- **trois filtres** : **Sans sujet** (défaut — dernier message non rattaché), **Ignorées**, **Toutes** ; plus un filtre par **canal**
-- **swipe gauche = écarter la conversation** (cf. Cas N) — libellé et couleur **par canal**, mécanisme unique
-- **swipe droite = ouvrir un sujet** (cf. Cas B), sur les deux canaux
-- ouvrir une conversation affiche ses messages en **timeline** ; le **cordon de sujet** n'y figure **qu'en WhatsApp** — l'email porte à la place un **bandeau « Suivi dans »** en en-tête (cf. `02-modele-donnees.md §7`)
+- **trois filtres** : **Sans sujet** (défaut — aucun sujet ouvert ne l'écoute), **Ignorées**, **Toutes** ; plus un filtre par **canal**
+- **swipe gauche = écarter la conversation** (cf. Cas N) — libellé et couleur **par canal**, mécanisme unique, **confirmation nommant les sujets** si elle est écoutée
+- **swipe droite sur la ligne de conversation = ouvrir un sujet** (cf. Cas B2) — **email uniquement** : côté WhatsApp, le geste d'ouverture porte sur un **message**, dans le fil
+- ouvrir une conversation affiche ses messages en **timeline**, avec le **bandeau « Suivi dans »** en en-tête — **sur les deux canaux** (cf. `02-modele-donnees.md §5bis`)
 
 ### Rendu par canal — décision du 2026-07-20
 
@@ -369,38 +352,40 @@ Après test en production de M6bis : forcer la même UX sur l'email et sur Whats
 | Rendu d'un message | **pleine largeur**, enchaînés au fil du scroll | **bulles** |
 | Fond | **blanc dans les deux sens**, jamais teinté | teinté |
 | Entrant / sortant | l'**en-tête** porte l'info (avatar + expéditeur + date) ; le sortant se signale par « **Moi** » | position et teinte de la bulle |
-| Signal « suivi par un sujet » | **bandeau en en-tête de conversation** : « Suivi dans : *titre* » + pastille du domaine, cliquable vers la fiche — **pas de cordon, pas de rail de couleur** | le **cordon**, point coloré par message, **épaissi** et à **poignée d'ancre saisissable** |
-| Tap sur un message | **aucun** | pop-up (cf. Cas M, D, O) |
-| Ouvrir un sujet | **depuis la conversation**, sans ancre | **depuis la conversation** ; le tap sur un message sert seulement à **désigner l'ancre** |
-| Swipe gauche | « **Supprimer** », **rouge** | « **Ignorer** », **orange** |
+| Signal « suivi par un sujet » | **bandeau en en-tête de conversation** : « Suivi dans : *titre* » + pastille du domaine + « N sujets passés », cliquable vers la fiche | **le même bandeau** (2026-07-21) |
+| Tap sur un message | **ouvrir une pièce jointe**, rien d'autre | **ouvrir une pièce jointe**, rien d'autre |
+| Ouvrir un sujet | **swipe droite sur la CONVERSATION**, sans ancre | **swipe droite sur le MESSAGE** qui lance l'affaire |
+| Swipe gauche (conversation) | « **Supprimer** », **rouge** | « **Ignorer** », **orange** |
 
 ⚠️ **Pas de fond coloré sur l'email.** Sur du texte long, un fond teinté fatigue et abîme la lisibilité — or c'est exactement ce qu'on vient chercher en sortant de la bulle. Gmail, Superhuman et Outlook font le même choix. Si la distinction s'avère insuffisante à l'usage, on ajoutera une teinte **très légère au sortant seulement**, jamais aux deux.
 
-⚠️ **Pas de rail de couleur non plus sur l'email** (décision du 2026-07-20). Ce n'est pas un oubli : côté email l'ancre est nulle, **tout le fil appartient au sujet**, donc un signal par message serait **identique sur chaque message** — porteur d'aucune information. L'appartenance ne varie qu'au niveau de la **conversation**, c'est donc là que le signal se pose : le **bandeau « Suivi dans »**. Le cordon, lui, garde tout son sens en WhatsApp, où l'appartenance **varie d'un message à l'autre** (cf. Cas D).
+⚠️ **Aucun marqueur d'appartenance par message, sur aucun canal** (décision du 2026-07-21). Une conversation est **écoutée par un sujet ouvert, ou pas** : dans la plage d'écoute tous les messages appartiennent au sujet, hors plage aucun. Il n'y a donc qu'**un état à dire par conversation** — le bandeau suffit, et un signal répété message par message ne serait que du décor.
 
-> ⚠️ **La divergence s'arrête au rendu et aux gestes.** Ouverture de sujet, ancre, rattachement, détachement, ignorance, statuts : **tout le domaine reste commun**. Le jour où l'on duplique la logique métier « parce que l'email est différent », on aura deux produits.
+> ⚠️ **La divergence s'arrête au rendu et aux gestes.** Ouverture de sujet, écoute, arrêt d'écoute, ignorance, statuts : **tout le domaine reste commun**. Le jour où l'on duplique la logique métier « parce que l'email est différent », on aura deux produits.
 
 > **Note historique.** La page `/messages` affichait une **pile de messages orphelins** (`subject_id = null`), avec rétention 15 jours et une page de détail par message (`/messages/[id]`). Les deux disparaissent : il n'y a plus de message orphelin, et le détail se lit dans la conversation.
 
-## Cas M — Rattacher un message à un sujet existant
+## Cas M — Rattacher une CONVERSATION EMAIL à un sujet existant
 
 ### Contexte
 
-Un message n'est rattaché à aucun sujet (ou l'est au mauvais), et l'utilisateur sait à quel sujet **déjà ouvert** il appartient. C'est le pendant du Cas B (*ouvrir* un sujet) : ici on **rejoint** un sujet existant.
+Un fil d'email arrive sur une affaire **déjà suivie** : le fournisseur ouvre un nouvel objet (« RE: palette bloquée ») pour une histoire qui relève du sujet « Retard livraison sauce blanche ». On ne veut pas d'un second sujet, on veut **rejoindre** celui qui existe.
 
-> ⚠️ **WhatsApp uniquement** (2026-07-20). Le tap sur message n'existe plus côté email : une conversation email est déjà délimitée par son objet, et son fil entier appartient au sujet — il n'y a pas de message isolé à rattacher.
+> ⚠️ **Email uniquement** (2026-07-21). Le rattachement porte sur une **conversation entière**, jamais sur un message isolé — il n'y a plus de geste par message côté email, et le rattachement message par message a disparu de l'interface sur les deux canaux (cf. Cas D).
+>
+> Côté WhatsApp, l'équivalent est le **swipe droite sur un message** : soit il ouvre un sujet, soit il **remonte l'écoute** d'un sujet existant (Cas T).
 
 ### Traitement
 
-1. dans la conversation, l'utilisateur tape le message → **pop-up**
-2. il choisit **« Rattacher à un sujet existant »** et sélectionne le sujet
-3. le `Message` reçoit son `subject_id` (`status = linked`)
-4. produire un `EventLog` (message rattaché, actor: user)
+1. l'utilisateur **swipe la conversation vers la droite** → il choisit **« Rattacher à un sujet existant »** et sélectionne le sujet
+2. création de `SubjectConversation(subject_id, conversation_id, anchor_message_id = null, closing_message_id = null)` — le sujet couvre **le fil entier**
+3. **tous** les messages du fil reçoivent le `subject_id` (`status = linked`)
+4. produire un `EventLog` (conversation rattachée, actor: user)
 
 ### Résultat
 
-- le message rejoint le fil du sujet et son point prend la **couleur du domaine** de ce sujet dans le cordon *(WhatsApp — le tap message, donc ce cas, n'existe pas côté email)*
-- ⚠️ **la fenêtre active ne bouge pas** : rattacher un message isolé **ne pose pas d'ancre**. Les messages suivants continuent d'aller au sujet ancré sur cette conversation (cf. Cas D)
+- le sujet porte désormais **deux conversations** ; sa fiche n'en affiche **qu'une à la fois** (ligne sélecteur en tête de l'onglet Conversations — cf. Cas U)
+- la conversation affiche le bandeau **« Suivi dans : … »** et sort du KPI « Sans sujet »
 
 ## Cas N — Écarter une conversation (« Ignorer » / « Supprimer »)
 
@@ -417,20 +402,29 @@ L'utilisateur identifie une **source** qui ne l'intéresse pas : groupe bavard, 
    | WhatsApp | « **Ignorer** » | **orange** |
    | email | « **Supprimer** » | **rouge** |
 
-2. ⚠️ **dans les deux cas, le même appel : `ignoreConversation`.** La `Conversation` passe en **`status = ignoré`**. **Aucune donnée n'est supprimée.**
-3. ⚠️ **AUCUNE ancre de fin n'est posée** : `closing_message_id` reste `null` (2026-07-21)
-4. produire un `EventLog` (conversation ignorée, actor: user)
+2. ⚠️ **si la conversation est écoutée par un ou plusieurs sujets ouverts, une CONFIRMATION s'ouvre d'abord — et elle NOMME ces sujets** :
+
+   > Ignorer cette conversation ? Elle n'alimentera plus **Retard livraison sauce blanche**.
+
+   **Jamais « un ou plusieurs sujets ».** On ne demande pas de confirmer un risque sans dire lequel : une confirmation qui n'apporte pas l'information qu'elle réclame de valider se clique sans être lue et cesse d'être une protection. Si aucun sujet ouvert n'écoute le fil, **pas de confirmation** — il n'y a rien à perdre.
+
+3. ⚠️ **dans les deux cas, le même appel : `ignoreConversation`.** La `Conversation` passe en **`status = ignoré`**. **Aucune donnée n'est supprimée.**
+4. ⚠️ **AUCUNE borne de fin n'est posée** : `closing_message_id` reste `null` (2026-07-21)
+5. produire un `EventLog` (conversation ignorée, actor: user)
 
 ### ⚠️ Ignorer est une PAUSE, pas une FIN
 
-C'est la distinction structurante du 2026-07-21, et elle est facile à écraser par inadvertance :
+C'est la distinction structurante, et elle est facile à écraser par inadvertance :
 
-| Geste | Nature | Ancre de fin | Le sujet… |
+| Geste | Nature | Borne de fin | Le sujet… |
 |---|---|---|---|
 | **Ignorer la conversation** | **PAUSE** | **aucune** | ne disparaît pas ; il **cesse d'être alimenté** par cette conversation |
-| **Valider / fermer le sujet** | **FIN** | **posée** (WhatsApp) | le cordon se **referme** sur le dernier message reçu |
+| **Valider / fermer le sujet** | **FIN** | **posée** | l'écoute **s'arrête** sur le dernier message reçu |
+| **Arrêter l'écoute** (depuis la fiche) | **FIN**, ciblée | **posée** | il cesse d'écouter **cette** conversation, garde les autres |
 
-**Pourquoi c'est indispensable.** Ignorer est réversible (Cas R). Si l'ignorance posait une ancre de fin, **réactiver la conversation ne servirait à rien** : la fenêtre serait déjà refermée et la réactivation n'aurait aucun effet observable. Parce qu'aucune borne n'est posée, réactiver fait **reprendre** l'alimentation du sujet, exactement là où elle s'était arrêtée.
+**Pourquoi c'est indispensable.** Ignorer est réversible (Cas R). Si l'ignorance posait une borne de fin, **réactiver la conversation ne servirait à rien** : l'écoute serait déjà close et la réactivation n'aurait aucun effet observable. Parce qu'aucune borne n'est posée, réactiver fait **reprendre** l'alimentation, exactement là où elle s'était arrêtée.
+
+⚠️ **L'ignorance s'applique à TOUS les sujets ouverts qui écoutent le fil**, pas seulement à celui qu'on avait en tête. C'est bien pour cela que la confirmation les nomme.
 
 ### ⚠️ Pourquoi « Supprimer » ne supprime rien
 
@@ -446,36 +440,16 @@ Le libellé colle au vocabulaire attendu d'une boîte mail ; le mécanisme, lui,
 ### Résultat
 
 - **Relvo cesse d'analyser, de résumer et de trier** les messages de cette conversation
-- **le sujet qu'elle alimentait cesse d'être alimenté par elle** — mais il **reste ouvert** et garde tout ce qu'il portait déjà
+- **les sujets qu'elle alimentait cessent de l'être** — mais ils **restent ouverts** et gardent tout ce qu'ils portaient déjà
 - elle sort du KPI « Sans sujet » et du filtre par défaut ; on la retrouve via le filtre **« Ignorées »**
 - **les messages continuent d'arriver et d'être stockés** — on ne perd rien, on cesse seulement de s'en occuper
 - seule une action **explicite de l'utilisateur** la réactive, et l'alimentation **reprend** (cf. Cas R)
 
 > **Note historique.** L'ancien Cas N retirait un **message** isolé (`Message.status = ignored`). On ignore désormais la **source**, pas l'événement : écarter les messages un à un ne réglait jamais le problème du groupe bavard.
 
-## Cas O — Changement de rattachement d'un message
+## Cas O — ⚠️ SUPPRIMÉ — Changement de rattachement d'un message
 
-### Contexte
-
-Un message est rattaché au mauvais sujet — typiquement parce que la **règle d'ancrage** l'a versé par défaut dans le sujet ouvert, alors qu'il relève d'une autre affaire (cas des sujets **entrelacés**, cf. Cas D).
-
-> ⚠️ **WhatsApp uniquement** (2026-07-20) : le tap sur message n'existe plus côté email. L'entrelacement est d'ailleurs un problème de **flux**, donc de WhatsApp — en email, l'objet sépare déjà les affaires.
-
-### Traitement
-
-1. dans la conversation, l'utilisateur tape le message → la pop-up affiche **le sujet rattaché**
-2. il peut :
-   - **détacher** le message (`subject_id = null`) — il reste dans sa conversation, son point devient **creux** dans le cordon
-   - **déplacer** le message vers un autre sujet (`subject_id` modifié)
-3. produire les `EventLog` (message détaché ou déplacé, actor: user)
-
-### Résultat
-
-- le **cordon se recompose** : les couleurs alternent là où les sujets s'entrelacent
-- si le message détaché était l'**ancre**, l'**ancre glisse** au message suivant du sujet — *sans objet sur une conversation email, dont l'ancre est `null`*
-- le journal de bord trace le changement
-
-> En V1 ces corrections sont manuelles. En M7, Relvo les proposera — **par la même mécanique**.
+> **Supprimé le 2026-07-21.** Le rattachement et le détachement **message par message** n'existent plus dans l'interface : le tap sur un message est réservé aux **pièces jointes**, et l'appartenance se règle désormais par **plage d'écoute**. `Message.subject_id` reste dans le modèle, à destination de M7. Le raisonnement complet est en **Cas D** (« renoncement assumé ») ; les gestes qui subsistent sont **Cas T** (remonter une écoute) et **Cas U** (arrêter une écoute).
 
 ## Cas P — Complétion d'une fiche contact
 
@@ -500,32 +474,38 @@ L'IA a créé un contact "Karim Benali" à partir d'une signature email, mais il
 - le contact disparaît du filtre "À compléter"
 - le `default_folder_id` sera utilisé pour faciliter le classement des prochains messages de ce contact
 
-## Cas Q — Fermer un sujet (« Fermer »)
+## Cas Q — Fermer un sujet : une SUPPRESSION DOUCE
 
 ### Contexte
 
 L'utilisateur juge qu'un sujet ne le concerne pas : échange sans suite, fausse alerte, sujet ouvert à tort. Il le **ferme** plutôt que de le valider — le travail n'a pas été fait, il n'avait simplement pas lieu d'être.
 
+> **Décision du 2026-07-21.** L'utilisateur voyait « fermer » et « supprimer » comme la même action. **C'est un statut, jamais une destruction.**
+
 ### Traitement
 
 1. l'utilisateur déclenche **« Fermer »** — geste **swipe gauche** (rouge) sur la carte, **symétrique** de « Valider » (swipe droite, vert — cf. Cas K)
-2. le `Subject` passe en **`status = fermé`**, `closed_at` posé — **une date, rien d'autre**. **Fermer est une FIN**, et ce qu'elle referme dépend du canal (2026-07-21) :
-   - **WhatsApp** → `closing_message_id` posé sur le dernier message reçu ; la fenêtre se **referme**, la conversation **redevient orpheline**
-   - **email** → **rien ne change à l'appartenance** ; le fil reste entier dans son sujet, et un nouveau message **rouvrira** le sujet (Cas U)
+2. le `Subject` passe en **`status = fermé`**, `closed_at` posé — **une date, rien d'autre**. **Toutes ses écoutes s'arrêtent** : `closing_message_id` est posé sur le dernier message reçu de chaque conversation, qui **redevient orpheline** et ne référence plus ce sujet. **Même comportement sur les deux canaux.**
 3. Relvo enchaîne avec la proposition : « **Souhaitez-vous aussi ignorer la conversation ?** »
    - **oui** → la `Conversation` passe en `ignoré` (cf. Cas N) : le fil cesse d'être analysé et ne repropose plus rien
-   - **non** → **WhatsApp** : la conversation reste active, un nouveau message la fera réapparaître dans le KPI « Sans sujet ». **Email** : un nouveau message **rouvrira le sujet** — c'est pourquoi la proposition d'ignorance est **le seul moyen de faire taire un fil email**
+   - **non** → la conversation reste active ; un nouveau message la fera réapparaître dans le KPI « Sans sujet »
 4. produire les `EventLog` (sujet fermé ; conversation ignorée le cas échéant)
 
 ### Résultat
 
-- `Subject.status = fermé` — le sujet quitte le fil des ouverts
+- `Subject.status = fermé` — le sujet quitte le fil des ouverts et rejoint l'onglet **« Fermés »**
+- il reste **entièrement récupérable** : bouton **« Remettre »** (cf. Cas V)
+
+### Vocabulaire : « Fermer » / « Fermés » / « Remettre » — jamais « Supprimer » / « Corbeille »
+
+Deux raisons, à ne pas réinterpréter :
+
+1. **C'est honnête.** Rien n'est détruit — autant que le mot le dise. Un vocabulaire de destruction pour une opération réversible produit soit l'hésitation (on n'ose plus fermer, la pile enfle), soit la fausse confiance (on croit avoir fait le ménage).
+2. **Un sujet est le SEUL endroit où vivent les tâches et le journal des décisions.** Un message supprimé par erreur existe encore dans Gmail ; une **tâche** supprimée par erreur n'existe **nulle part ailleurs**. Le coût d'une fausse manœuvre n'est pas symétrique — le vocabulaire doit refléter cette asymétrie.
 
 ### Règle — l'ignorance vit sur la source, pas sur le sujet
 
 C'est le cœur du dispositif anti-« groupe WhatsApp bavard ». Fermer un sujet ne suffit pas : sans ignorance, la conversation redevient orpheline et sollicitera de nouveau l'utilisateur au message suivant. **C'est la conversation qu'on fait taire, pas le sujet** — et c'est pourquoi la proposition d'ignorance est enchaînée automatiquement à la fermeture.
-
-> **Un seul mécanisme d'extinction, pas deux qui se ressemblent** (2026-07-21). Côté email, la portée de cette règle est encore plus nette : puisqu'un nouveau message **rouvre** le sujet, **ignorer la conversation est le SEUL geste qui fasse taire un fil**. Si la fermeture faisait *aussi* taire le fil, l'utilisateur disposerait de deux gestes voisins aux effets subtilement différents, sans jamais savoir lequel employer.
 
 > **Note historique.** « Ignorer un sujet » (`Subject.status = ignored`, ignorance collante, purge à 15 j, onglet « Ignorés ») est **supprimé**. Le geste swipe gauche garde son sens (« écarter ») mais change de cible selon la surface : **Fermer** sur un sujet, **Ignorer** sur une conversation (2026-07-20).
 
@@ -539,14 +519,14 @@ L'utilisateur a ignoré une conversation par erreur, ou la situation a changé :
 
 1. depuis la page Conversations, filtre **« Ignorées »**, il déclenche **« Réactiver »**
 2. la `Conversation` repasse en **`status = actif`** : Relvo recommence à analyser, résumer et trier ses messages
-3. ⚠️ **l'alimentation du sujet REPREND** (2026-07-21) : puisque l'ignorance n'avait posé **aucune ancre de fin** (`closing_message_id = null`, cf. Cas N), le sujet qui portait cette conversation recommence à recevoir ses nouveaux messages
+3. ⚠️ **l'alimentation des sujets REPREND** : puisque l'ignorance n'avait posé **aucune borne de fin** (`closing_message_id = null`, cf. Cas N), les sujets ouverts qui écoutaient cette conversation recommencent à recevoir ses nouveaux messages
 4. produire un `EventLog` (conversation réactivée, actor: user)
 
 ### Résultat
 
-- `Conversation.status = actif` — elle réintègre le filtre par défaut et, si son dernier message n'est rattaché à aucun sujet, le **KPI « Sans sujet »**
-- **le sujet mis en pause reprend son alimentation** — c'est tout l'intérêt de la distinction pause / fin. Sans elle, « réactiver » serait un bouton sans effet.
-- en revanche, un sujet **réellement clos** ne se rouvre pas de ce fait : côté **WhatsApp** son ancre de fin l'a refermé et c'est un **nouveau** sujet qu'il faudra ouvrir ; côté **email**, c'est l'arrivée d'un message qui le rouvre (Cas U), pas la réactivation elle-même
+- `Conversation.status = actif` — elle réintègre le filtre par défaut et, si aucun sujet ouvert ne l'écoute, le **KPI « Sans sujet »**
+- **les écoutes mises en pause reprennent** — c'est tout l'intérêt de la distinction pause / fin. Sans elle, « réactiver » serait un bouton sans effet.
+- en revanche, un sujet **validé ou fermé** ne se rouvre pas de ce fait : ses écoutes ont une **borne de fin**. Il faut le **Remettre** (Cas V), ou ouvrir un nouveau sujet.
 
 ## Cas S — Étendre un sujet à une seconde conversation
 
@@ -558,83 +538,106 @@ Le sujet « Retard livraison sauce blanche », parti du groupe WhatsApp, doit se
 
 1. depuis la fiche du sujet, l'utilisateur choisit d'écrire à un interlocuteur qui n'est pas encore dans le sujet
 2. le comportement dépend du canal — c'est l'**asymétrie** structurante (cf. `02-modele-donnees.md §5bis`) :
-   - **email** → une **nouvelle conversation** de type `objet` est créée, clé `email:<fournisseur>:<objet>`, l'objet étant **pré-rempli avec le titre du sujet**. Ses **deux ancres sont `null`** : la conversation naissant avec le sujet, elle lui appartient **entière**, et le restera — lien **1:1 et permanent**. Les réponses du fournisseur rejoindront automatiquement cette conversation, donc ce sujet, **même après validation** (le sujet se rouvrira, cf. Cas U).
-   - **WhatsApp direct** → il ne peut exister **qu'une seule** conversation directe par contact : la conversation **existante est rattachée** au sujet, avec une **nouvelle ancre** posée sur le premier message envoyé. L'ancre est ici indispensable — sans elle, tout l'historique du fil basculerait dans le sujet.
+   - **email** → une **nouvelle conversation** de type `objet` est créée, clé `email:<fournisseur>:<objet>`, l'objet étant **pré-rempli avec le titre du sujet**. Ses **deux bornes sont `null`** : la conversation naissant avec le sujet, elle lui appartient **entière** tant que le sujet reste ouvert. Les réponses du fournisseur rejoindront automatiquement cette conversation, donc ce sujet.
+   - **WhatsApp direct** → il ne peut exister **qu'une seule** conversation directe par contact : le sujet **commence à écouter** la conversation existante, à partir du premier message envoyé. L'ancre est ici indispensable — sans elle, tout l'historique du fil basculerait dans le sujet.
 3. création de la ligne `SubjectConversation(subject_id, conversation_id, anchor_message_id)` — `null` en email, le message de départ en WhatsApp
 4. **création du contact** si nécessaire (conversation `objet` ou `direct`)
 5. produire les `EventLog`
 
 ### Résultat
 
-- le sujet porte **deux conversations**, chacune avec le **régime d'ancre de son canal**
-- c'est **à ce niveau** que se fait la réunification entre canaux : le fil WhatsApp et le fil email coexistent dans une même fenêtre de travail
-- ⚠️ Même bouton côté interface, **deux mécaniques distinctes** : *créer* (email) ou *rattacher avec une nouvelle ancre* (WhatsApp direct)
+- le sujet porte **deux conversations**, chacune avec le régime de son canal
+- c'est **à ce niveau** que se fait la réunification entre canaux : le fil WhatsApp et le fil email coexistent dans un même espace de travail
+- ⚠️ la fiche du sujet n'en affiche **qu'une à la fois** : la **ligne sélecteur** en tête de l'onglet Conversations permet de basculer, et le **composer** suit (cf. Cas U)
+- ⚠️ Même bouton côté interface, **deux mécaniques distinctes** : *créer une conversation* (email) ou *commencer à en écouter une* (WhatsApp direct)
 
-## Cas T — Faire glisser la poignée d'ancre (WhatsApp)
+## Cas T — Remonter une écoute (WhatsApp) — le MÊME geste que l'ouverture
 
-> Nouveau cas, décision du 2026-07-20. Corollaire direct du principe « **un défaut réparable en un geste bat un choix imposé à chaque fois** » : puisque l'ancre par défaut est volontairement grossière (**le dernier message, toujours** — cf. Cas B1), sa correction doit être **immédiate et physique**.
-
-### Contexte
-
-Un sujet vient d'être ouvert par swipe droite sur une conversation WhatsApp. L'ancre s'est posée sur le dernier message, alors que l'affaire avait commencé **trois messages plus haut**. Cas inverse, plus rare : l'utilisateur a ancré trop haut par un tap et embarque du bavardage sans rapport.
-
-### Le cordon est épaissi pour devenir saisissable
-
-Le cordon de sujet (`02-modele-donnees.md §7`) n'est plus seulement un indicateur : il est **épaissi**, et son **nœud de départ — l'ancre — devient une poignée**. On l'**attrape** et on la **fait glisser** vers le haut ou vers le bas à l'intérieur du cordon. Le sujet **s'étend** ou **se réduit** sous le doigt.
-
-C'est le bon geste parce qu'il est **isomorphe à ce qu'il fait** : on tire le début du sujet vers le haut, et le sujet couvre davantage. Rien à lire, rien à choisir dans une liste.
-
-### Traitement
-
-1. dans la conversation (ou depuis la fiche du sujet), l'ancre est **matérialisée par la poignée** en tête du cordon
-2. l'utilisateur l'**attrape et la fait glisser** sur un autre message
-3. ⚠️ **pendant le drag**, l'interface **montre en direct** ce qui bascule : les messages qui **entrent** dans le sujet se surlignent à la couleur du domaine, ceux qui en **sortent** s'estompent, et le cordon s'étire ou se rétracte en suivant le doigt
-4. au relâchement, `SubjectConversation.anchor_message_id` est mis à jour et l'appartenance **recomposée** :
-   - **remonter** l'ancre → les messages antérieurs **entrent** dans le sujet
-   - **descendre** l'ancre → les messages traversés **sortent** du sujet (`subject_id = null`)
-5. produire les `EventLog`
-
-### ⚠️ Le retour visuel pendant le drag est une exigence, pas un raffinement
-
-Déplacer l'ancre **change ce qui appartient au sujet** : le geste réécrit des `Message.subject_id`, il n'ajuste pas un repère décoratif. Sans aperçu en direct, l'utilisateur **relâche à l'aveugle** et ne découvre qu'après coup ce qu'il vient de décider — exactement le défaut qu'on reprochait à la règle d'ancre savante, réintroduit par la porte de derrière. **Le geste doit se contrôler du regard pendant qu'on le fait.**
-
-### Note technique
-
-**dnd-kit est déjà utilisé dans le projet** — drag-and-drop des tâches dans le semainier de l'Accueil et dans le planning mois (`/planning`). **On le réutilise pour la poignée d'ancre.** Introduire une seconde librairie de drag pour un second geste de drag serait une dette gratuite ; les réglages déjà éprouvés (collision `pointerWithin` — c'est la **position du curseur** qui désigne la cible —, `DragOverlay` centré sur le curseur) sont le point de départ.
-
-### Résultat
-
-- le **cordon** s'allonge ou se raccourcit dans la conversation
-- ⚠️ **sans objet côté email** : `anchor_message_id = null`, le fil entier appartient au sujet — il n'y a ni cordon, ni poignée, ni rien à déplacer. Le bandeau **« Suivi dans »** dit tout ce qu'il y a à dire (cf. préambule Conversations)
-- les messages **explicitement rattachés à un autre sujet** ne sont pas repris par un déplacement d'ancre : la décision manuelle prime sur le défaut (cf. Cas D et M)
-
-### La poignée déplace l'ancre de DÉBUT — pas celle de fin
-
-La poignée agit sur `anchor_message_id`. L'**ancre de fin** (`closing_message_id`, 2026-07-21) n'est **pas manipulable directement** en V1 : elle est posée par la validation ou la fermeture du sujet (Cas K, Cas Q), et retirée par une réouverture. Si l'usage montre le besoin de la déplacer, ce sera **la même poignée à l'autre extrémité du cordon** — même geste, même mécanique, aucune migration.
-
-## Cas U — Un nouveau message rouvre un sujet email (2026-07-21)
+> **Décision du 2026-07-21.** Ce cas remplace « faire glisser la poignée d'ancre » (2026-07-20), **supprimé** avec le cordon et le drag-and-drop d'ancre.
 
 ### Contexte
 
-Le sujet « Retard livraison sauce blanche » a été **validé** : l'affaire semblait réglée. Trois jours plus tard, SoGood Distribution répond dans le **même fil** (même objet, même interlocuteur) : « Finalement, la palette est bloquée en douane. »
+Un sujet écoute la conversation depuis le message « La palette est bloquée en douane ». En relisant le fil, l'utilisateur voit que l'affaire avait en réalité commencé **trois messages plus haut**.
 
 ### Traitement
 
-1. réception normale (Cas A) → le message rejoint sa `Conversation`, dont la clé `email:<sogood>:<retard livraison sauce blanche>` est inchangée
-2. la conversation porte un sujet — **et le lien est 1:1 et permanent** : le message reçoit son `subject_id`, **que le sujet soit `ouvert`, `validé` ou `fermé`**
-3. ⚠️ **le sujet REPASSE en `status = ouvert`** ; `closed_at` est effacé
-4. `last_activity_at` remonté, marqueur **Nouveau** non ré-allumé (`last_opened_at` est déjà posé), pastille de non-lus sur la conversation
-5. `EventLog` : message reçu, **sujet rouvert** (actor: `system`)
+1. l'utilisateur **swipe vers la droite** le message plus ancien — **exactement le même geste** que pour ouvrir un sujet
+2. le système constate qu'un sujet **écoute déjà** cette conversation, et que le message est **antérieur** à l'ancre → l'**écoute remonte** :
+   - `SubjectConversation.anchor_message_id` est réécrit sur ce message
+   - les messages traversés reçoivent le `subject_id` du sujet
+3. produire les `EventLog`
 
-### Pourquoi
+### Pourquoi le même geste, et pas un dispositif dédié
 
-**De l'activité sur une affaire signifie que l'affaire est vivante.** La déclarer close pendant que l'interlocuteur continue d'écrire ne décrit plus la réalité — et l'utilisateur retrouverait le message dans un sujet marqué « Validé », ce qui est exactement le genre de contradiction qui fait perdre confiance en un assistant.
+L'utilisateur n'a **qu'une intention** à exprimer — « **l'affaire commence ici** » — et elle ne change pas selon qu'un sujet existe déjà ou non. Un seul geste qui **crée ou étend** selon le contexte, c'est **une règle à retenir au lieu de deux**.
 
-Par ailleurs **l'appartenance ne dépend pas du statut** (cf. `01-principes.md §3`) : le message serait de toute façon dans le sujet. Autant que le statut le dise.
+C'est aussi ce qui rend inutile toute mécanique de correction : il n'y a plus de **défaut d'ancre** à réparer, puisqu'il n'y a plus de défaut du tout — l'ancre est **toujours désignée** par l'utilisateur.
 
-> ⚠️ **Le seul geste qui fait taire un fil est d'IGNORER LA CONVERSATION** (Cas N). Un utilisateur qui ne veut plus entendre parler de cette affaire ne doit pas chercher un second bouton : il ignore la source. **Un mécanisme d'extinction, pas deux qui se ressemblent.**
+> **Ce qui a été supprimé avec ce cas** : le cordon épaissi, la poignée saisissable, le drag-and-drop d'ancre (dnd-kit), et l'aperçu en direct pendant le drag. Un geste de drag précis sur mobile, dans un fil qui défile, pour un réglage que le swipe exprime en une fois : le coût de construction et d'usage était sans rapport avec le gain.
 
 ### Résultat
 
-- le sujet réapparaît dans le feed des ouverts, avec le nouveau message dans ses conversations
-- **côté WhatsApp, ce cas n'existe pas** : la validation y a posé une **ancre de fin** (`closing_message_id`), la fenêtre est refermée, et le nouveau message laisse la conversation **orpheline** — c'est un **nouveau** sujet qui sera ouvert si l'utilisateur le souhaite (Cas K)
+- la plage d'écoute s'étend vers le haut ; le bandeau « Suivi dans » reste inchangé (l'état, lui, ne change pas : la conversation était déjà écoutée)
+- ⚠️ **sans objet côté email** : le sujet couvre déjà le fil entier, il n'y a rien à remonter
+
+### Ce que ce geste ne fait PAS
+
+- il ne **réduit** pas une écoute — swiper un message **postérieur** à l'ancre n'ampute pas le sujet. Pour arrêter, on **arrête l'écoute** (Cas U) ;
+- il ne déplace pas la **borne de fin** (`closing_message_id`), posée par la validation, la fermeture ou l'arrêt d'écoute. Si l'usage montre le besoin de la déplacer, ce sera **le même geste sur un message**, sans migration.
+
+## Cas U — Changer de conversation, et arrêter une écoute depuis le sujet
+
+### Contexte
+
+Le sujet « Retard livraison sauce blanche » porte **deux conversations** : le groupe WhatsApp d'où il est parti, et le fil email ouvert avec le fournisseur (cf. Cas S). Le groupe s'est remis à parler d'autre chose : l'utilisateur veut que le sujet **cesse de l'écouter**, sans toucher au fil email.
+
+### Traitement
+
+1. dans la fiche du sujet, onglet **Conversations**, une **ligne unique** en tête nomme la conversation affichée : **icône du canal + nom + état d'écoute** (« écoutée depuis le 14 juillet »)
+2. l'utilisateur **tape cette ligne** → une **feuille** s'ouvre, listant **toutes** les conversations du sujet, chacune avec son état
+3. il peut :
+   - **sélectionner** une autre conversation → elle devient la conversation affichée, et le **sélecteur du composer suit**
+   - déclencher « **arrêter l'écoute** » sur l'une d'elles → `closing_message_id` est posé sur son dernier message reçu
+4. produire les `EventLog`
+
+### Pourquoi une ligne, et pas des onglets ni un carrousel
+
+| Écartée | Raison |
+|---|---|
+| **Flux chronologique fusionné** | l'email s'affiche **pleine largeur**, WhatsApp en **bulles** : les entremêler produirait exactement le chaos visuel que la divergence par canal cherche à éviter |
+| **Carrousel horizontal** | le **swipe est déjà pris** par le geste sur les messages — les deux entreraient en collision |
+| **Onglets** | l'onglet Conversations vit déjà dans une barre à 3 onglets (Tâches / Conversations / Détails) : **on ne met pas des onglets dans des onglets** |
+
+La ligne est à la fois le **sélecteur** et la **surface de gestion des écoutes** — cohérent, puisqu'on arrête une écoute là où l'on voit ce qu'elle alimente. Elle coûte **une ligne de hauteur** et **monte à N conversations sans rien changer**.
+
+### Résultat
+
+- la conversation dont l'écoute est arrêtée **redevient orpheline** : elle réapparaîtra dans le KPI « Sans sujet » à son prochain message
+- les **autres écoutes du sujet continuent** — c'est toute la différence avec « Valider » ou « Fermer », qui les arrêtent **toutes**
+- côté conversation, l'écoute passée reste consultable via le « **N sujets passés** » du bandeau d'en-tête
+
+## Cas V — Remettre un sujet fermé
+
+### Contexte
+
+Un sujet a été **fermé** — à tort, ou parce que la situation a changé. Il porte des **tâches** et un **journal de décisions** qui n'existent nulle part ailleurs.
+
+### Traitement
+
+1. page Sujets, onglet **« Fermés »**, l'utilisateur ouvre le sujet et déclenche **« Remettre »**
+2. le `Subject` repasse en **`status = ouvert`**, `closed_at` effacé
+3. ⚠️ **les écoutes ne redémarrent PAS d'elles-mêmes** : leurs bornes de fin restent posées. L'utilisateur relance celle qu'il veut — swipe droite sur un message (WhatsApp) ou rattachement de la conversation (email, Cas M)
+4. produire un `EventLog` (sujet remis, actor: user)
+
+### Pourquoi « Remettre » et pas « Restaurer » ni « Annuler la suppression »
+
+**Parce que rien n'a été supprimé.** « Fermer » range le sujet, « Remettre » le ressort : deux mots du même registre, qui décrivent exactement l'opération effectuée. Un vocabulaire de restauration laisserait entendre qu'il y a eu destruction — et ferait craindre, à chaque fermeture, de perdre quelque chose.
+
+### Pourquoi les écoutes ne redémarrent pas seules
+
+Un sujet fermé il y a trois semaines, dont l'écoute reprendrait d'un coup, avalerait tout ce que la conversation a charrié entre-temps. **Remettre un sujet dit « je reprends cette affaire », pas « rattrape tout ce que j'ai manqué ».** Relancer l'écoute est un geste séparé, et c'est le même que d'habitude.
+
+### Résultat
+
+- le sujet réapparaît dans le feed des ouverts, avec ses tâches et son journal intacts
+- ses conversations restent orphelines tant qu'une écoute n'a pas été relancée

@@ -49,7 +49,7 @@ De cette asymétrie découle la contrainte la plus structurante du modèle :
 
 > **La granularité sémantique (le sujet) est forcément plus fine que la granularité de transport (la conversation).**
 
-C'est pourquoi le rattachement à un sujet se décide **message par message**, et non conversation par conversation (cf. §9).
+C'est pourquoi le rattachement à un sujet se décide, **dans le modèle**, message par message (`Message.subject_id`) et non conversation par conversation. ⚠️ **L'interface, elle, ne l'expose plus** depuis le 2026-07-21 : elle ne connaît que des **plages d'écoute** (cf. §9, « Deux renoncements assumés »). Le modèle garde la finesse ; c'est M7 qui s'en servira.
 
 ### Un fil d'email EST un sujet ; une conversation WhatsApp est un flux — décision du 2026-07-21
 
@@ -64,23 +64,33 @@ L'asymétrie ne s'arrête pas au discriminant : elle se lit **dans la clé elle-
 > ## 🔑 L'énoncé central
 >
 > **Un fil d'email EST un sujet.**
-> **Une conversation WhatsApp est un FLUX ; la fenêtre et son ancre y FABRIQUENT l'objet que le médium ne fournit pas.**
+> **Une conversation WhatsApp est un FLUX ; un sujet l'ÉCOUTE, à partir d'un message, jusqu'à ce qu'il cesse d'écouter.**
 >
-> Tout ce qui suit — l'ancre, ses deux bornes, la réouverture, la pause — découle de cette seule phrase. Quand une règle paraît arbitraire, c'est ici qu'il faut revenir.
+> Tout ce qui suit — l'écoute, ses deux bornes, son extension, son arrêt — découle de cette seule phrase. Quand une règle paraît arbitraire, c'est ici qu'il faut revenir.
 
-Un objet d'email **est déjà** une délimitation d'affaire, posée par l'expéditeur lui-même. Il n'y a **rien à découper**, et donc **rien à borner** : le lien entre une conversation email et son sujet est **1:1 et permanent**. Un fil WhatsApp direct n'a que la personne : il coule, indéfiniment, et mélange. C'est là — et **seulement** là — que la fenêtre doit fabriquer un objet, en posant des bornes que le médium ne donne pas.
+Un objet d'email **est déjà** une délimitation d'affaire, posée par l'expéditeur lui-même. Il n'y a **rien à découper**, et donc **rien à borner** : un sujet email **n'écoute rien**, il **EST** le fil. Un fil WhatsApp direct n'a que la personne : il coule, indéfiniment, et mélange. C'est là — et **seulement** là — qu'un sujet doit se **brancher** sur le flux pour en extraire une affaire.
 
-> **Un groupe WhatsApp se comporte exactement comme un direct** (précision du 2026-07-20). La tentation est de voir dans le **nom du groupe** l'équivalent d'un objet d'email — « Chantier Narbonne », « Équipe Marne-la-Vallée ». C'est faux : un nom de groupe désigne un **collectif**, pas une **affaire**. Le groupe « Tasty Crousty Marne-la-Vallée » parlera successivement d'une livraison en retard, d'un planning de congés et d'un congélateur en panne — exactement le mélange que l'objet d'email évite. Le groupe est donc **ancré comme un direct**, sans exception ni règle particulière.
+### « Écoute » remplace « fenêtre » — décision du 2026-07-21
+
+Le mot **« fenêtre »** décrivait une **plage subie** : une tranche découpée dans un flux, observée de l'extérieur. Le mot **« écoute »** décrit une **action du sujet** : il se **branche** sur une conversation, puis il s'en **débranche**. Le changement de mot n'est pas cosmétique — il déplace trois choses :
+
+1. **L'initiative revient au sujet.** Ce n'est pas la conversation qui *appartient* à une plage : c'est le sujet qui **décide** d'écouter, à partir d'où, et jusqu'à quand.
+2. **La commande se déplace dans la fiche du sujet.** On arrête une écoute là où l'on voit ce qu'elle alimente — pas depuis la conversation.
+3. **Le vocabulaire dit l'état** : une conversation est **écoutée** par un sujet ouvert, ou elle ne l'est pas. C'est **binaire**, et c'est ce qui rend l'interface lisible (cf. §9).
+
+⚠️ **Le modèle ne change pas d'un octet.** `anchor_message_id` et `closing_message_id` **SONT** le début et la fin d'une écoute. Renommer le concept ne renomme aucune colonne, ne demande aucune migration.
+
+**L'écoute est un concept exclusivement « thread sans objet », donc exclusivement WhatsApp.** Côté email il n'y a rien à écouter, puisqu'il n'y a rien à découper.
+
+> **Un groupe WhatsApp se comporte exactement comme un direct** (précision du 2026-07-20). La tentation est de voir dans le **nom du groupe** l'équivalent d'un objet d'email — « Chantier Narbonne », « Équipe Marne-la-Vallée ». C'est faux : un nom de groupe désigne un **collectif**, pas une **affaire**. Le groupe « Tasty Crousty Marne-la-Vallée » parlera successivement d'une livraison en retard, d'un planning de congés et d'un congélateur en panne — exactement le mélange que l'objet d'email évite. Un groupe **s'écoute comme un direct**, sans exception ni règle particulière.
 
 D'où le renversement de lecture :
 
-> **L'ancre n'a jamais été un concept du modèle. C'est la PROTHÈSE d'un objet manquant.**
+> **L'écoute n'a jamais été un concept du modèle. C'est la PROTHÈSE d'un objet manquant.**
 >
-> Là où l'objet existe (email), **il n'y a AUCUNE notion de fenêtre** : le fil entier, passé et à venir, appartient au sujet, sans borne. Là où il manque (WhatsApp), la fenêtre est **indispensable** : sans elle, ouvrir un sujet embarquerait des mois de bavardage.
+> Là où l'objet existe (email), **il n'y a rien à écouter** : le fil est le sujet. Là où il manque (WhatsApp), l'écoute est **indispensable** : sans elle, ouvrir un sujet embarquerait des mois de bavardage.
 
-⚠️ **Correction du 2026-07-21.** La rédaction du 2026-07-20 parlait encore, côté email, d'une « fenêtre » dont l'ancre serait simplement nulle, et d'un sujet couvrant « tout le fil non encore couvert ». Les deux formulations sont **supprimées** : il n'y a **jamais** de second sujet sur un fil email, donc rien à « ne pas encore couvrir ». C'est **tout le fil**, littéralement, sans borne basse ni borne haute.
-
-Et comme toute prothèse, elle est **temporaire**. Quand le pipeline IA (M7) saura découper un flux WhatsApp **par le sens**, il produira ce que l'objet d'email donne gratuitement — et l'ancre tombera, exactement comme la « fenêtre active » (cf. l'encadré ⚠️ de §9, qui la décrit déjà comme un échafaudage du mode manuel). Les deux sont le même échafaudage vu sous deux angles.
+Et comme toute prothèse, elle est **temporaire**. Quand le pipeline IA (M7) saura découper un flux WhatsApp **par le sens**, il produira ce que l'objet d'email donne gratuitement — et l'écoute tombera, exactement comme l'**écoute active** (cf. l'encadré ⚠️ de §9, qui la décrit déjà comme un échafaudage du mode manuel). Les deux sont le même échafaudage vu sous deux angles.
 
 ### Appartenance et statut sont deux choses distinctes — décision du 2026-07-21
 
@@ -105,19 +115,21 @@ Forcer une UX unique sur l'email et sur WhatsApp est contre-productif : la **tai
 
 | | Commun aux deux canaux | Divergent par canal |
 |---|---|---|
-| Quoi | le **domaine** : ouverture de sujet, ancre, rattachement, détachement, ignorance, statuts | le **rendu** (bulles vs pleine largeur), les **gestes** (libellés, couleurs, tap) et la **granularité du signal d'appartenance** (cf. ci-dessous) |
+| Quoi | le **domaine** : ouverture de sujet, écoute, arrêt d'écoute, ignorance, statuts — **et le signal d'appartenance** | le **rendu** (bulles vs pleine largeur) et les **gestes** (sur quoi porte le swipe, libellés, couleurs) |
 
-### Où se pose le signal « ce fil est suivi par un sujet » — décision du 2026-07-20
+### Où se pose le signal « ce fil est suivi par un sujet » — décision du 2026-07-21
 
-Le **cordon** (un point de couleur par message, relié en trait continu) est le signal d'appartenance côté **WhatsApp**. Il n'a **pas d'équivalent par message côté email**, et ce n'est pas une perte : c'est une **conséquence directe du modèle**.
+**Un bandeau en en-tête de conversation, sur les DEUX canaux.** Il annonce le rattachement au sujet en cours :
 
-> Côté email, l'ancre est nulle et **tout le fil** appartient au sujet. Un signal posé sur chaque message serait donc **identique partout** — donc porteur d'**aucune information**. Un signal qui ne varie jamais n'est pas un signal, c'est du décor.
+> ● **Suivi dans : Retard livraison sauce blanche** · *3 sujets passés*
 
-Le cordon garde tout son sens en WhatsApp précisément parce que l'appartenance y **varie d'un message à l'autre** : le cordon se brise, les couleurs alternent, et cette rupture *est* l'information.
+— une **pastille de couleur du domaine** (`Folder` du sujet) + le **titre du sujet**, l'ensemble **cliquable vers la fiche**. Il porte en plus un discret « **N sujets passés** » qui **déplie la liste des écoutes terminées** sur cette conversation.
 
-La bonne granularité pour l'email est donc l'**en-tête de conversation** — un **bandeau « Suivi dans : *titre du sujet* »**, accompagné d'une **pastille de couleur du domaine** (`Folder`) et **cliquable vers la fiche du sujet**. Une conversation, un état, un signal.
+**Pourquoi un seul et même signal partout.** Une conversation est désormais **soit écoutée par un sujet ouvert, soit pas** — il n'y a plus d'état intermédiaire à représenter message par message. La granularité juste est donc la **conversation**, sur les deux canaux : un état, un signal.
 
-> ⚠️ **Garde explicite.** Le jour où l'on duplique la **logique métier** « parce que l'email est différent », on aura **deux produits** à maintenir, et Relvo perdra ce qui fait sa valeur : réunifier des canaux dans une même fenêtre de travail. Un swipe peut changer de libellé et de couleur ; il ne doit **jamais** changer de fonction appelée. Le détail est en `02-modele-donnees.md §5bis` (décision du 2026-07-20).
+**Pourquoi « N sujets passés » n'est pas un ornement.** Sans ce dépliant, les écoutes terminées **n'existeraient plus nulle part côté conversation** : rien, en lisant un fil WhatsApp, ne dirait qu'une affaire y a été suivie et close. C'est la contrepartie explicite du renoncement décrit en §9.
+
+> ⚠️ **Garde explicite.** Le jour où l'on duplique la **logique métier** « parce que l'email est différent », on aura **deux produits** à maintenir, et Relvo perdra ce qui fait sa valeur : réunifier des canaux dans un même espace de travail. Un swipe peut changer de libellé et de couleur ; il ne doit **jamais** changer de fonction appelée. Le détail est en `02-modele-donnees.md §5bis` (décision du 2026-07-20).
 
 ### Le statut « ignoré »
 
@@ -239,7 +251,7 @@ Range le message dès sa réception, selon un discriminant déterministe propre 
 
 ### Subject
 
-Donne un sens métier à un ensemble de messages : **tout** un fil d'email, ou une **fenêtre** découpée dans un flux WhatsApp (cf. §3).
+Donne un sens métier à un ensemble de messages : **tout** un fil d'email, ou une **plage écoutée** dans un flux WhatsApp (cf. §3).
 
 ### Task
 
@@ -253,13 +265,13 @@ Permet d'exécuter concrètement une partie du travail.
 
 Trace ce qui s'est passé.
 
-> **Note historique.** La chaîne s'écrivait `Message → Task → Action → LogEvent` : le message se rattachait directement au sujet, et le regroupement était refait à chaque création de sujet. L'insertion de **Conversation** (rangement déterministe à la réception) et de **Subject** (fenêtre de travail) rend explicite ce qui se jouait implicitement entre les deux (décision du 2026-07-20).
+> **Note historique.** La chaîne s'écrivait `Message → Task → Action → LogEvent` : le message se rattachait directement au sujet, et le regroupement était refait à chaque création de sujet. L'insertion de **Conversation** (rangement déterministe à la réception) et de **Subject** (espace de travail) rend explicite ce qui se jouait implicitement entre les deux (décision du 2026-07-20).
 
-## 9. Cycle de vie d'un sujet — une fenêtre de travail
+## 9. Cycle de vie d'un sujet — un espace de travail qui écoute
 
 Un Sujet est un **espace de travail ouvert sur des conversations**. On l'**ouvre**, on l'utilise, on le **ferme**. La conversation, elle, existe avant, pendant et après.
 
-La métaphore de la **fenêtre** — un début, une fin, un périmètre découpé dans un flux — vaut **côté WhatsApp** (cf. §3). **Côté email elle ne s'applique pas** : le fil *est* le sujet, entier et pour toujours, il n'y a rien à cadrer. On dira donc « fenêtre » quand on parle d'une conversation WhatsApp, et simplement « sujet » quand on parle d'un fil email (précision du 2026-07-21).
+**Ce qui relie les deux est une ÉCOUTE** : le sujet se branche sur une conversation WhatsApp à partir d'un message, et s'en débranche. **Côté email il n'y a pas d'écoute** — le fil *est* le sujet (cf. §3). On dira donc « le sujet écoute cette conversation » pour WhatsApp, et simplement « ce fil est ce sujet » pour l'email.
 
 Le vocabulaire est délibéré : on ne « crée » ni ne « supprime » un sujet, on l'**ouvre** et on le **ferme**.
 
@@ -267,101 +279,138 @@ Le vocabulaire est délibéré : on ne « crée » ni ne « supprime » un sujet
 
 > **Décision du 2026-07-21 — une primitive, pas deux.** Le domaine expose **une seule** fonction : *ouvrir un sujet **sur une conversation**, avec une ancre **OPTIONNELLE***.
 >
-> - **ancre nulle** → le sujet couvre **tout le fil** ;
-> - **ancre posée** → le sujet part **de cette ancre**.
+> - **ancre nulle** → le sujet couvre **tout le fil** (email) ;
+> - **ancre posée** → l'écoute **commence à ce message** (WhatsApp).
 >
 > ⚠️ **La logique métier teste l'ANCRE, jamais le canal.** C'est exactement la garde déjà écrite plus haut : *le canal décide du geste, jamais de la fonction appelée*. Un `if (channel === 'email')` dans le domaine est le premier pas vers deux produits.
 
-**Le point d'entrée est TOUJOURS la conversation, jamais le message** (décision du 2026-07-21). On ouvre un sujet **depuis une conversation**. Côté WhatsApp, le tap sur un message reste disponible pour **désigner l'ancre** — il ne crée pas un autre chemin d'ouverture, il renseigne un paramètre. Côté email, il n'y a **pas de tap sur un message**.
-
-Ce que le canal détermine, c'est donc uniquement **quelle valeur d'ancre le geste transmet** :
+Ce que le canal détermine, c'est **sur quoi porte le geste** — et donc quelle valeur d'ancre il transmet :
 
 | | **email** (conversation `objet`) | **WhatsApp** (`direct` / `groupe`) |
 |---|---|---|
-| Ancre transmise | **aucune** (`null`) | le **message de départ** (défaut : le dernier message reçu) |
-| Ce qui appartient au sujet | **tout le fil**, passé **et à venir**, sans borne | les messages **à partir de l'ancre**, jusqu'à l'éventuelle borne de fin |
-| Lien conversation ↔ sujet | **1:1 et permanent** | fenêtre, ajustable et refermable |
-| Ouvrir un sujet depuis un **message** | **impossible** | le tap **désigne l'ancre**, il n'ouvre pas un second chemin |
+| Le geste porte sur… | la **CONVERSATION** (swipe droite dans la liste) | le **MESSAGE** (swipe droite dans le fil) |
+| Ce qu'il propose | ouvrir un **nouveau sujet**, ou **rattacher à un sujet existant** | « ce message est important » → **commencer l'écoute ici** et ouvrir le sujet |
+| Ancre transmise | **aucune** (`null`) | le **message swipé** |
+| Ce qui appartient au sujet | **tout le fil**, amont compris | les messages **à partir de l'ancre**, jusqu'à l'éventuelle borne de fin |
 
 ⚠️ **Ouvrir un sujet sur une conversation email balaie le fil ENTIER, en amont comme en aval.** Un échange de six emails déjà reçus doit produire un sujet portant les **six** messages, pas le dernier. L'objet a déjà délimité l'affaire ; il n'y a aucune raison d'en amputer le début.
 
-**Le swipe droite ne *crée* pas le lien : il DÉCLARE que ce fil mérite d'être suivi.** Tous les fils email ne sont pas des affaires — une newsletter, un accusé de réception, un démarchage n'ont pas à devenir des sujets. Le geste de l'utilisateur ne fabrique donc pas une correspondance qui n'existerait pas, il **reconnaît** celle que l'objet a déjà posée. C'est M7 qui prendra cette décision à sa place, plus tard.
+**Côté email, le swipe droite ne *crée* pas le lien : il DÉCLARE que ce fil mérite d'être suivi.** Tous les fils email ne sont pas des affaires — une newsletter, un accusé de réception, un démarchage n'ont pas à devenir des sujets. Le geste ne fabrique pas une correspondance qui n'existerait pas, il **reconnaît** celle que l'objet a déjà posée. C'est M7 qui prendra cette décision à sa place, plus tard.
 
-Côté WhatsApp — **directs et groupes indifféremment** (cf. §3) — le message d'ancrage marque le début du sujet : les messages **antérieurs** restent dans la conversation sans lui appartenir.
+**Côté WhatsApp, un seul geste choisit l'ancre ET crée le sujet.** Le swipe droite sur un message dit « **ça, c'est important — je commence à écouter ici** ». Il n'y a **aucun défaut d'ancre à calculer**, puisque l'utilisateur désigne toujours le message lui-même : les règles antérieures de « défaut d'ancre » n'ont plus d'objet.
 
-### Deux bornes, et deux gestes d'extinction qu'il ne faut pas confondre (2026-07-21)
+### Étendre une écoute : le MÊME geste, sur un message plus ancien
 
-Une fenêtre WhatsApp a **un début** (l'ancre) et peut recevoir **une fin** (`closing_message_id`, cf. `02-modele-donnees.md §6`). L'un et l'autre désignent **un message**, jamais une date.
+Si un sujet écoute déjà la conversation et que l'utilisateur swipe un message **antérieur à l'ancre**, l'écoute **remonte jusqu'à ce message** — les messages traversés entrent dans le sujet.
 
-| Geste | Effet sur l'alimentation | Ancre de fin |
+**Pourquoi le même geste.** L'utilisateur n'a qu'une intention à exprimer, « **l'affaire commence ici** », et elle ne change pas selon qu'un sujet existe déjà ou non. Un seul geste qui **crée** ou qui **étend** selon le contexte, c'est une règle à retenir au lieu de deux ; c'est aussi ce qui rend inutile tout dispositif de correction dédié.
+
+### ⚠️ Le tap est RÉSERVÉ à l'ouverture des pièces jointes
+
+Sur les deux canaux, **taper un message n'ouvre plus aucun menu**. Le tap sert exclusivement à ouvrir une pièce jointe. Il n'y a plus de pop-up de rattachement, de détachement ou de choix d'ancre.
+
+**Pourquoi.** Un geste qui fait deux choses selon l'endroit exact où le doigt tombe est un geste qu'on n'ose plus faire. Le tap étant le geste le plus naturel sur un message, il doit avoir l'effet le plus prévisible et le plus inoffensif — regarder une pièce jointe. Tout ce qui **modifie** l'appartenance passe par le **swipe**, geste délibéré.
+
+### Les deux bornes d'une écoute
+
+Une écoute WhatsApp a **un début** (`anchor_message_id`) et peut recevoir **une fin** (`closing_message_id`, cf. `02-modele-donnees.md §6`). L'un et l'autre désignent **un message**, jamais une date — une borne calculée sur un horodatage devient fausse dès que deux messages arrivent dans la même seconde.
+
+Tant que le sujet reste ouvert et qu'aucune borne de fin n'est posée, les **nouveaux messages de la conversation lui sont rattachés automatiquement**.
+
+### L'arrêt des écoutes — trois gestes, un seul effet à retenir
+
+| Geste | Ce qui s'arrête | Ancre de fin |
 |---|---|---|
-| **Ignorer la conversation** | **PAUSE** — le sujet cesse d'être alimenté par cette conversation | **aucune** ancre de fin n'est posée |
-| **Valider** ou **fermer le sujet** | **FIN** — le cordon se referme sur le dernier message reçu | **posée** |
+| **Fermer le sujet** (`fermé`) | **toutes** ses écoutes ; la conversation ne référence plus ce sujet | posée |
+| **Valider le sujet** (`validé`) | la conversation n'alimente plus le sujet | posée |
+| **Ignorer la conversation** (mute) | elle n'alimente plus **aucun** des sujets ouverts qui l'écoutent | aucune — l'ignorance est réversible |
+| **Arrêter l'écoute** (depuis la fiche du sujet) | cette conversation-là seulement ; les autres continuent | posée |
 
-**Pourquoi cette distinction est indispensable.** Ignorer une conversation est **réversible** (cf. §3) : la réactiver doit faire **reprendre** l'alimentation du sujet. Si l'ignorance posait une ancre de fin, réactiver ne servirait à rien — la fenêtre serait déjà refermée et la réactivation n'aurait aucun effet observable. On distingue donc « **je n'écoute plus cette source pour l'instant** » de « **cette affaire est terminée** ».
+**Ignorer une conversation est une PAUSE, pas une FIN.** L'ignorance est réversible (cf. §3) : la réactiver doit faire **reprendre** l'alimentation. Si elle posait une ancre de fin, « Réactiver » serait un bouton sans effet observable.
 
-### Un sujet email se ROUVRE à la réception d'un nouveau message (2026-07-21)
+⚠️ **Le swipe gauche sur une conversation écoutée ouvre d'abord une CONFIRMATION, qui NOMME les sujets concernés.** Pas « un ou plusieurs sujets » : le nom. **On ne demande pas à quelqu'un de confirmer un risque sans lui dire lequel** — c'est la différence entre une confirmation utile et un dialogue qu'on clique sans lire.
 
-Un nouvel email de même objet et de même interlocuteur rejoint **toujours** son sujet — et le fait **repasser en `ouvert`** s'il était `validé` ou `fermé`.
+### Deux renoncements assumés
 
-**Pourquoi.** De l'activité sur une affaire signifie que l'affaire est **vivante** : la déclarer close pendant que l'interlocuteur continue d'écrire ne décrit plus la réalité. Et l'appartenance ne dépend pas du statut (cf. §3) : le message serait de toute façon dans le sujet — autant que le statut le dise.
+Ces deux points ne sont pas des oublis. Ils sont **écrits pour être relus**, parce qu'ils reviendront sur la table.
 
-> **Un seul mécanisme d'extinction, pas deux qui se ressemblent.** Le **seul** geste qui fait durablement taire un fil est **d'ignorer la conversation**. Si la validation faisait *aussi* taire le fil, l'utilisateur aurait deux gestes voisins aux effets subtilement différents, et ne saurait jamais lequel employer.
+**1. L'entrelacement dans une plage d'écoute n'est plus exprimable dans l'UI.** C'était l'argument fondateur du modèle : un fournisseur qui alterne deux affaires dans le même fil. **Le modèle le permet toujours** — `Message.subject_id` demeure, décidé message par message — mais **l'interface ne l'expose plus** : plus de rattachement ni de détachement message par message. Dans une plage d'écoute, **tous** les messages appartiennent au sujet ; hors plage, **aucun**.
 
-**Le défaut, quand l'utilisateur ne désigne pas d'ancre (swipe droite), est le DERNIER message. Toujours.** Pas de calcul, pas d'exception, pas de borne temporelle.
+> **Arbitrage assumé.** Séparer des affaires entrelacées est **exactement le travail de M7** (le pipeline IA). En attendant, **un peu de bruit dans un sujet vaut mieux qu'une UI que personne ne comprend**. On ne construit pas une mécanique manuelle sophistiquée pour six mois, en sachant qu'une machine la remplacera.
 
-> **Pourquoi un défaut aussi bête.** On avait d'abord écrit une règle savante (« le plus ancien message non couvert, borné par la fenêtre précédente », plus une exception pour les conversations vierges). Elle était **juste plus souvent** — et **prévisible jamais**. Or l'utilisateur ne compare pas le défaut à l'idéal : il compare **ce qu'il attendait** à ce qu'il obtient. Un défaut qu'on ne peut pas anticiper produit une surprise à chaque swipe, même quand il tombe juste ; un défaut trivial (« ça part d'ici, du dernier message ») s'anticipe sans y penser et se corrige d'un geste (cf. la poignée d'ancre ci-dessous).
->
-> **Un défaut simple et prévisible, corrigé à la main quand il se trompe, vaut mieux qu'une règle savante que personne ne peut anticiper.** C'est aussi la seule règle qui ne casse pas sur un fil vieux de deux ans.
+**2. Les écoutes passées deviennent invisibles côté conversation.** Rien, dans le fil lui-même, ne dit plus qu'une affaire y a été suivie puis close. C'est ce que **rattrape le « N sujets passés »** du bandeau d'en-tête (cf. §3) : sans lui, cette mémoire n'existerait plus nulle part côté conversation.
 
-L'ancre est ensuite **visible et saisissable** depuis le sujet : le **nœud de départ du cordon est une poignée** que l'on **attrape et fait glisser** vers le haut ou vers le bas — la remonter fait entrer les messages antérieurs, la descendre les fait sortir. C'est le mécanisme de correction du défaut (détail en `03-cas-usage.md`, cas T).
+### Une seule conversation affichée à la fois dans un sujet
 
-Dans les deux cas, tant que le sujet reste ouvert, les **nouveaux messages de la conversation lui sont rattachés automatiquement**. L'ancrage est donc une **règle d'affectation par défaut, pas une définition** : l'appartenance réelle se décide **message par message**, et l'utilisateur — plus tard Relvo — peut détacher ou déplacer un message à la marge. C'est ce qui permet de traiter des sujets **entrelacés** dans un même fil, cas impossible à représenter avec une simple fenêtre temporelle (cf. §3).
+Un sujet peut écouter plusieurs conversations (cf. ci-dessous). **L'onglet Conversations de la fiche n'en affiche qu'UNE à la fois.**
+
+Trois solutions ont été **écartées**, et il faut savoir pourquoi avant de les reproposer :
+
+| Écartée | Raison |
+|---|---|
+| **Flux chronologique fusionné** | l'email s'affiche **pleine largeur**, WhatsApp en **bulles** ; les entremêler produirait exactement le chaos visuel que la divergence par canal cherche à éviter |
+| **Carrousel horizontal** | le **swipe est déjà pris** par le geste sur les messages — les deux entreraient en collision |
+| **Onglets** | l'onglet Conversations vit déjà dans une barre à 3 onglets (Tâches / Conversations / Détails) : **on ne met pas des onglets dans des onglets** |
+
+**Solution retenue : une seule LIGNE**, en tête de l'onglet Conversations, qui nomme la conversation affichée — **icône du canal + nom + état d'écoute**. Elle est **tapable** et ouvre une **feuille** listant **toutes** les conversations du sujet, chacune avec son état, et l'action « **arrêter l'écoute** ».
+
+Cette ligne est donc à la fois le **sélecteur** de conversation et la **surface de gestion des écoutes** — c'est cohérent : on arrête une écoute là où l'on voit ce qu'elle alimente. Elle coûte **une ligne de hauteur**, ne ressemble à aucun système d'onglets, et **monte à N conversations sans rien changer**.
+
+Le **sélecteur du composer** reste synchronisé avec elle : il désigne désormais une **conversation**, et non plus un contact (cf. CLAUDE.md invariant n°11).
 
 Règles associées :
 
-- **Au plus un sujet ouvert par conversation** — règle métier V1. Sans IA capable de trancher, une conversation n'a qu'une fenêtre ouverte à la fois, ce qui rend la destination d'un nouveau message non ambiguë. **Le modèle, lui, en supporte plusieurs** (cf. encadré ci-dessous).
-- Si le message d'ancrage est **détaché**, l'ancre **glisse** au message suivant du sujet *(WhatsApp uniquement — une conversation email n'a pas d'ancre à faire glisser)*.
-- Rattacher un message **isolé** à un autre sujet **ne déplace pas** la fenêtre active : seule l'ouverture d'un sujet pose une ancre.
+- **Au plus un sujet ouvert par conversation** — règle métier V1. Une conversation est **écoutée ou pas**, sans ambiguïté sur la destination d'un nouveau message. **Le modèle, lui, en supporte plusieurs** (cf. encadré ci-dessous).
+- Des **écoutes successives** sur un même flux, sans chevauchement, sont le cas normal : ce sont des plages disjointes exprimées par la paire `anchor_message_id` / `closing_message_id`.
 
 > **Plusieurs sujets SIMULTANÉS sur une même conversation — écarté de la V1 (2026-07-21).**
 >
 > L'hypothèse est **mise de côté**, et cela ne coûte rien : `SubjectConversation` est **déjà** une table de liaison plusieurs-à-plusieurs, donc le schéma l'autorise depuis le premier jour. Ce qui l'interdit n'est qu'une **règle métier**, levable **sans migration**.
 >
-> Le jour où on la lève, il n'y a que du **rendu** à faire — aligner plusieurs cordons horizontalement dans la conversation — et **aucune donnée à reprendre**.
->
-> Le cas jugé le plus probable, lui, **fonctionne déjà** : des sujets **successifs** sur un même fil, sans chevauchement, sont simplement des **fenêtres disjointes** sur le même flux, exprimées par la paire début/fin (`anchor_message_id` / `closing_message_id`).
+> C'est aussi ce qui rend l'UI binaire tenable : tant qu'une conversation n'est écoutée que par un sujet ouvert à la fois, « écoutée / pas écoutée » suffit à tout dire.
 
-> ⚠️ **La « fenêtre active » est un échafaudage du mode manuel, pas une règle métier durable.**
+> ⚠️ **L'« écoute active » est un échafaudage du mode manuel, pas une règle métier durable.**
 >
 > Elle n'existe que pour une raison : tant qu'aucune IA ne sait à quel sujet appartient un message, il faut bien une règle mécanique pour que les messages successifs d'une conversation atterrissent au même endroit. Quand le pipeline IA (M7) arrivera, **c'est lui qui décidera**, message par message — et cette règle sera **remplacée**, pas complétée.
 >
 > C'est écrit ici parce que ce genre de règle se fossilise : sans cette note, quelqu'un lira « au plus un sujet actif par conversation » comme une contrainte du domaine et cherchera à la préserver, alors que tout le modèle a été conçu pour qu'elle puisse **disparaître sans migration**. L'appartenance vit sur le message (`subject_id`), jamais sur la conversation — c'est précisément ce qui rend l'échafaudage démontable.
 >
-> **L'ancre est le même échafaudage** (ajout du 2026-07-20). Elle n'est pas un concept du domaine : c'est la **prothèse d'un objet manquant** (cf. §3). La preuve tient en une observation — là où l'objet existe (email), l'ancre est **nulle** et personne ne s'en aperçoit ; là où il manque (WhatsApp), elle est indispensable. Le jour où M7 saura découper un flux par le sens, il fera ce que l'objet d'email fait gratuitement, et l'ancre **tombera** — sans migration, `anchor_message_id` étant déjà nullable.
+> **L'écoute est le même échafaudage.** Elle n'est pas un concept du domaine : c'est la **prothèse d'un objet manquant** (cf. §3). Le jour où M7 saura découper un flux par le sens, il fera ce que l'objet d'email fait gratuitement, et l'écoute **tombera** — sans migration, `anchor_message_id` étant déjà nullable.
 
 ### Un sujet agrège 0, 1 ou n conversations
 
 - **0** — un sujet sans échange, purement personnel : une liste de tâches (« Préparer l'inventaire »).
-- **1** — le cas courant : une fenêtre ouverte sur un fil de groupe ou sur un objet d'email.
-- **n** — le sujet s'étend : parti d'un fil WhatsApp (« Retard livraison sauce blanche »), l'utilisateur écrit **par email** à son fournisseur pour la même affaire. Le sujet porte alors deux conversations, **chacune avec le régime d'ancre de son canal** — ancre posée côté WhatsApp, ancre nulle côté email (le fil email entier appartient au sujet).
+- **1** — le cas courant : une écoute sur un fil de groupe, ou un fil d'email.
+- **n** — le sujet s'étend : parti d'un fil WhatsApp (« Retard livraison sauce blanche »), l'utilisateur écrit **par email** à son fournisseur pour la même affaire. Le sujet porte alors deux conversations — une **écoute** côté WhatsApp, un **fil entier** côté email — et n'en affiche **qu'une à la fois** (cf. ci-dessus).
 
 C'est à ce niveau — et non plus au niveau de la conversation — que se fait la **réunification entre canaux**.
 
 ### Les statuts : 3 états exclusifs
 
+| Statut | Sens | Alimenté ? | Récupérable ? |
+|---|---|---|---|
+| `ouvert` | l'affaire est **en cours** | oui | — |
+| `validé` | le travail est **fait** | non | oui |
+| `fermé` | l'affaire est **écartée** — jamais traitée, abandonnée | non | oui |
+
 - **`ouvert`** — état par défaut, posé à l'ouverture. **Invisible** (aucun badge) : un état porté par la quasi-totalité des sujets n'informe pas. On lit « ouvert » par l'**absence** de badge.
 - **`validé`** — le travail est fait. Clos via **« Valider »** (swipe droite, vert).
 - **`fermé`** — le sujet n'avait pas lieu d'être, ou n'intéresse pas l'utilisateur. Clos via **« Fermer »** (swipe gauche, rouge).
 
-**Ce que « valider » ou « fermer » fait à l'appartenance dépend du canal — et de lui seul** (précision du 2026-07-21) :
+**La distinction entre les deux terminaux compte**, et c'est pour la relecture dans six mois qu'elle est écrite : `validé` dit « **c'est fait** », `fermé` dit « **on ne l'a pas fait, et on ne le fera pas** ». Les confondre reviendrait à ne plus pouvoir répondre à « qu'est-ce que j'ai réellement traité ce mois-ci ? ».
 
-- **WhatsApp** — une **ancre de fin** est posée sur le dernier message reçu : le cordon se **referme**, les messages suivants n'appartiennent plus au sujet, et la conversation **redevient orpheline**. Les fenêtres successives sur un même flux sont donc **séquentielles et sans chevauchement**.
-- **Email** — **rien ne change à l'appartenance** : le lien est 1:1 et permanent, le fil reste entièrement dans son sujet, et un nouveau message **rouvre** le sujet (cf. ci-dessus). Le statut dit seulement où en est l'affaire.
+### « Fermer » est une SUPPRESSION DOUCE — décision du 2026-07-21
 
-> ⚠️ **Formulation retirée le 2026-07-21 : « les deux transitions terminales figent la fenêtre ».** Elle était vraie pour WhatsApp et fausse pour l'email, où il n'y a pas de fenêtre à figer. Elle reposait sur `closed_at` comme borne d'appartenance — c'est précisément ce qui vient d'être supprimé (cf. §3, « appartenance ≠ statut »).
+L'utilisateur voit spontanément « fermer » et « supprimer » comme la même action. **Décision : c'est un statut, jamais une destruction.** Fermer pose `status = fermé`, le sujet sort de la vue, ses écoutes cessent — et il reste **récupérable** via l'onglet **« Fermés »** et son bouton **« Remettre »**.
 
-À la fermeture, Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » — c'est le geste qui empêche un fil bavard de reproposer indéfiniment de nouveaux sujets. L'ignorance vit désormais sur la **conversation** (cf. §3), pas sur le sujet : ce n'est pas un sujet qu'on veut faire taire, c'est une **source**.
+**Vocabulaire retenu : « Fermer » / « Fermés » / « Remettre ».** Pas « Supprimer » / « Corbeille ». Deux raisons :
+
+1. **C'est honnête.** Rien n'est détruit — autant que le mot le dise. Un vocabulaire de destruction pour une opération réversible entraîne soit l'hésitation (on n'ose plus fermer), soit la fausse confiance (on croit avoir fait le ménage).
+2. **Un sujet est le SEUL endroit où vivent les tâches et le journal des décisions.** Un message supprimé par erreur existe encore dans Gmail ; une **tâche** supprimée par erreur n'existe **nulle part ailleurs**. Le coût d'une fausse manœuvre n'est pas symétrique — le vocabulaire doit refléter cette asymétrie.
+
+**Ce que « valider » ou « fermer » fait aux écoutes** : les deux transitions les **arrêtent** — une ancre de fin est posée sur chaque conversation écoutée. Un sujet `fermé` ne référence plus aucune conversation ; un sujet `validé` n'est plus alimenté par les siennes.
+
+À la fermeture, Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » — c'est le geste qui empêche un fil bavard de reproposer indéfiniment de nouveaux sujets. L'ignorance vit sur la **conversation** (cf. §3), pas sur le sujet : ce n'est pas un sujet qu'on veut faire taire, c'est une **source**.
 
 > **Note historique.** Le cycle comptait 4 états : `acknowledged`, `resolved`, `archived`, `ignored`. **`archived`** (automatique après inactivité) est retiré : il n'exprimait rien qu'une fermeture n'exprime déjà. **`ignored`** est retiré du sujet et **migre sur la conversation**. Le vocabulaire « créer / supprimer / terminer / ignorer » devient « **ouvrir / fermer / valider** » (décision du 2026-07-20).
 
