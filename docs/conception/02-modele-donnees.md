@@ -435,21 +435,24 @@ Un sujet agrège **0, 1 ou n conversations**. Chaque ligne de cette table est un
 
 | Geste | Sens | `closing_message_id` |
 |---|---|---|
-| **Fermer le sujet** (`fermé`) | **toutes** les écoutes du sujet s'arrêtent ; la conversation ne référence plus ce sujet | **posée** sur le dernier message reçu, pour chaque conversation |
-| **Valider le sujet** (`validé`) | la conversation **n'alimente plus** le sujet | **posée** sur le dernier message reçu |
-| **Arrêter l'écoute** (feuille des conversations du sujet) | **cette conversation-là seulement** ; les autres continuent | **posée** sur le dernier message reçu |
+| **Fermer le sujet** (`fermé`) | **toutes les ÉCOUTES** du sujet s'arrêtent ; la conversation ne référence plus ce sujet | **posée** sur le dernier message reçu, pour chaque conversation **WhatsApp** |
+| **Valider le sujet** (`validé`) | la conversation **WhatsApp** n'alimente plus le sujet | **posée** sur le dernier message reçu (**WhatsApp**) |
+| **Arrêter l'écoute** (feuille des conversations du sujet) | **cette conversation-là seulement** ; les autres continuent | **posée** sur le dernier message reçu — **seul geste qui détache un fil email** |
 | **Ignorer la conversation** (mute) | **PAUSE** — elle n'alimente plus **aucun** des sujets ouverts qui l'écoutent | ⚠️ **aucune** — réactiver la conversation fait **reprendre** l'alimentation |
 
 Sans la dernière ligne, la réactivation d'une conversation ignorée n'aurait **aucun effet observable** : l'écoute serait déjà close.
+
+⚠️ **Les deux premières lignes ne concernent QUE les conversations WhatsApp** (rétabli le 2026-07-21). Elles décrivent l'**arrêt des écoutes** — or un sujet email **n'écoute rien**, il *est* le fil (cf. §5bis). Une conversation email reste rattachée à son sujet quel que soit le statut de celui-ci : elle continue de l'alimenter et le **rouvre** (cf. « Réouverture » ci-dessous et `03-cas-usage.md` Cas W).
 
 #### Régime par canal
 
 | | **email** (`objet`) | **WhatsApp** (`direct` / `groupe`) |
 |---|---|---|
 | `anchor_message_id` | **`null`** — rien à écouter, le fil *est* le sujet | le **message swipé** |
-| `closing_message_id` | posé à la validation / fermeture / à l'arrêt de la liaison | posé à la validation / fermeture / à l'arrêt de l'écoute |
+| `closing_message_id` | ⚠️ **jamais posé par un changement de statut** — uniquement par « arrêter l'écoute » (détachement délibéré) | posé à la validation / fermeture / à l'arrêt de l'écoute |
+| Message entrant après un statut terminal | **rejoint le sujet et le ROUVRE** (`→ ouvert`) | reste sans sujet ; la conversation redevient orpheline |
 | Ce qui appartient au sujet | **tout le fil**, amont compris | les messages **entre les deux bornes** |
-| Écoutes **successives** sur le même fil | possibles (après un statut terminal) | possibles |
+| Écoutes **successives** sur le même fil | **sans objet** — un fil email n'a qu'un sujet, pour toute sa vie | possibles (plages disjointes) |
 | Signal d'appartenance dans la conversation | **bandeau « Suivi dans »** en en-tête | **le même bandeau** |
 
 #### Une seule primitive de domaine — décision du 2026-07-21
@@ -510,9 +513,9 @@ Un sujet est ouvert par l'utilisateur — et plus tard par Relvo, via exactement
 
 Un sujet démarre en `ouvert` avec `last_opened_at = null` — c'est ce champ (et non le statut) qui porte « jamais ouvert » et allume le marqueur dérivé **« Nouveau »**. Les tâches identifiées **ne changent pas le statut** : elles allument le marqueur dérivé **« À faire »**. L'ouverture de la fiche **pose `last_opened_at`** (acquittement implicite) et éteint « Nouveau » ; le statut **reste `ouvert`**.
 
-À la validation ou à la fermeture, `closed_at` est posé — **c'est une date, rien d'autre**. Ce qui arrive aux **écoutes**, en revanche, est le même sur les deux canaux (2026-07-21) : `closing_message_id` est posé sur le dernier message reçu de **chaque** conversation, l'alimentation cesse, et la conversation **redevient orpheline** (elle réapparaîtra dans le KPI « Sans sujet » à son prochain message).
+À la validation ou à la fermeture, `closed_at` est posé — **c'est une date, rien d'autre**. Ce qui arrive aux **écoutes** dépend du canal (rétabli le 2026-07-21) : `closing_message_id` est posé sur le dernier message reçu de chaque conversation **WhatsApp**, qui **redevient orpheline** (elle réapparaîtra dans le KPI « Sans sujet » à son prochain message). Les conversations **email** ne sont pas touchées — il n'y a pas d'écoute à arrêter sur un fil qui *est* le sujet.
 
-Relvo propose alors « **Souhaitez-vous aussi ignorer la conversation ?** » — c'est le geste qui empêche un fil bavard de solliciter de nouveau l'utilisateur au message suivant.
+Relvo propose alors « **Souhaitez-vous aussi ignorer la conversation ?** » — c'est le geste qui empêche un fil bavard de solliciter de nouveau l'utilisateur au message suivant, **et le seul qui fasse taire un fil email**.
 
 ### La fiche du sujet — une seule conversation affichée à la fois
 
@@ -545,7 +548,7 @@ Un Sujet est un **espace de travail** ouvert sur des conversations — une **éc
 
 **La distinction entre les deux terminaux compte à la relecture.** `validé` = « c'est fait » ; `fermé` = « on ne l'a pas fait, et on ne le fera pas ». Les confondre rendrait impossible de répondre à « qu'ai-je réellement traité ce mois-ci ? ».
 
-Transitions : `ouvert →(« Valider »)→ validé` ou `ouvert →(« Fermer »)→ fermé`. Le sujet **naît `ouvert`** ; ouvrir la fiche **ne change pas le statut** (il pose seulement `last_opened_at`, ce qui éteint le marqueur « Nouveau »). Les deux transitions terminales posent `closed_at` — **une date, pas une borne d'appartenance** — et **arrêtent les écoutes** du sujet (`closing_message_id` posé sur chaque conversation).
+Transitions : `ouvert →(« Valider »)→ validé` ou `ouvert →(« Fermer »)→ fermé`, plus la transition inverse `validé | fermé →(nouveau message EMAIL)→ ouvert` (cf. « Réouverture »). Le sujet **naît `ouvert`** ; ouvrir la fiche **ne change pas le statut** (il pose seulement `last_opened_at`, ce qui éteint le marqueur « Nouveau »). Les deux transitions terminales posent `closed_at` — **une date, pas une borne d'appartenance** — et **arrêtent les écoutes** du sujet, donc ses conversations **WhatsApp** (`closing_message_id` posé sur chacune).
 
 **« Fermer » est une SUPPRESSION DOUCE — décision du 2026-07-21.** L'utilisateur assimile spontanément « fermer » et « supprimer ». La décision est tranchée : **c'est un statut, jamais une destruction**. Le sujet sort de la vue, ses écoutes cessent, et il reste **récupérable** via l'onglet **« Fermés »** et son bouton **« Remettre »** (qui le repasse en `ouvert` ; les écoutes ne redémarrent **pas** d'elles-mêmes — l'utilisateur relance celle qu'il veut).
 
@@ -554,9 +557,18 @@ Transitions : `ouvert →(« Valider »)→ validé` ou `ouvert →(« Fermer »
 1. **C'est honnête** — rien n'est détruit, autant que le mot le dise. Un vocabulaire de destruction pour une opération réversible produit soit l'hésitation (on n'ose plus fermer, la pile enfle), soit la fausse confiance (on croit avoir fait le ménage).
 2. **Un sujet est le seul endroit où vivent les tâches et le journal des décisions.** Un message supprimé par erreur existe encore dans Gmail ; une **tâche** supprimée par erreur n'existe **nulle part ailleurs**. Le coût d'une fausse manœuvre est asymétrique — le mot doit le refléter.
 
-**Réouverture.** Elle est **manuelle**, sur les deux canaux : c'est « **Remettre** » (onglet Fermés) ou la réouverture d'un sujet validé. Un nouveau message sur une conversation dont l'écoute est arrêtée **ne rouvre rien** : la conversation redevient **orpheline** et réapparaît dans le KPI « Sans sujet », où l'utilisateur décide.
+⚠️ **Aucune purge des sujets fermés.** Ni rétention, ni expiration, ni ménage automatique — jamais. Pour la raison exacte du point 2 ci-dessus : **c'est le seul endroit où vivent les tâches et le journal des décisions**, introuvables ailleurs. Une purge ferait d'une opération annoncée comme réversible une **destruction différée**. (La purge à 15 jours a existé, attachée à l'ancien `Subject.status = ignored` retiré le 2026-07-20 ; elle **ne doit pas** être réintroduite sur `fermé`.)
 
-> ⚠️ **Mécanisme supprimé le 2026-07-21 : la réouverture automatique d'un sujet email à la réception.** Écrite la veille, elle est incompatible avec la règle « un sujet `validé` n'est plus alimenté ». Un seul comportement d'arrêt, identique sur les deux canaux, vaut mieux qu'une exception par canal — c'est précisément le genre de divergence que la garde du §5bis interdit.
+**Réouverture — deux mécanismes, selon le canal (rétabli le 2026-07-21).**
+
+| | **email** | **WhatsApp** |
+|---|---|---|
+| Sur message entrant | **automatique** : le message rejoint le sujet, qui repasse en `ouvert` et `closed_at` est effacé | **aucune** : le message reste sans sujet, la conversation redevient orpheline |
+| Manuelle | « **Remettre** » (onglet Fermés) — mais rarement nécessaire, le fil rouvre de lui-même | « **Remettre** », puis relance d'écoute au swipe (elle ne redémarre **pas** seule) |
+
+**Pourquoi l'email rouvre automatiquement.** De l'activité sur une affaire signifie qu'elle est **vivante**. Un fournisseur qui relance sur une affaire validée il y a trois jours : soit son message rouvre le sujet et remonte dans le fil, soit il s'y range en silence — et l'utilisateur rate exactement le message qu'il ne fallait pas rater. **Le seul geste qui doit faire taire un fil est d'ignorer la conversation** (`Conversation.status = ignoré`), pas un statut de sujet.
+
+> **Note historique.** Cette règle a été retirée un matin de 2026-07-21, sur une lecture erronée de « quand le sujet est validé, la conversation n'alimente plus le sujet » — phrase écrite dans une section « **arrêt des écoutes** », donc portant exclusivement sur WhatsApp, puisqu'un sujet email n'écoute rien. **Rétablie le même jour.** Ce n'est pas une entorse à la garde du §5bis : la garde interdit de dupliquer la **fonction appelée**, pas de reconnaître que deux conversations de nature différente n'ont pas la même règle d'appartenance — asymétrie déjà portée par `anchor_message_id` (`null` en email) depuis l'origine.
 
 Le principe directeur reste : **l'état par défaut est invisible** — un badge porté par 90 % des sujets n'informe pas ; on lit le statut par soustraction.
 
@@ -653,7 +665,9 @@ Cf. doc 04-ia §8 pour le détail UX et les règles d'invalidation.
 - `subject_line` est surtout utile pour l'email.
 - `external_thread_id` aide au rattachement d'un email à un fil existant.
 - `subject_id` reste **nullable**, mais son sens a changé : ce n'est plus « message que Relvo n'a pas su traiter », c'est « message **hors de toute plage d'écoute** ». Il n'y a **plus de message orphelin** — le message est toujours rangé dans une conversation. C'est la **granularité fine** du modèle : elle permettrait de séparer des sujets **entrelacés** dans un même fil (Karim parle de la sauce blanche et de la facture emballages en alternance). ⚠️ **Cette finesse n'est plus exposée dans l'interface** depuis le 2026-07-21 — elle reste dans le modèle, à destination de M7 (cf. `01-principes.md §9`).
-- **Comment `subject_id` se remplit.** À la réception, le message est rattaché **automatiquement** au sujet qui **écoute** sa conversation (via `SubjectConversation`, cf. §6) — à condition que l'écoute soit **en cours** (`closing_message_id = null`) et que la conversation ne soit pas `ignoré`. Une écoute arrêtée ne reprend rien : le message reste sans sujet et la conversation réapparaît dans le KPI « Sans sujet ». **Même règle sur les deux canaux.**
+- **Comment `subject_id` se remplit — règle CANAL-DÉPENDANTE** (rétablie le 2026-07-21). À la réception, le message est rattaché au sujet lié à sa conversation (via `SubjectConversation`, cf. §6), à condition que la conversation ne soit pas `ignoré` — et ensuite :
+  - **email** — le rattachement a lieu **quel que soit le statut du sujet** (le fil *est* le sujet), et un sujet `validé` / `fermé` **repasse en `ouvert`**. Le seul moyen de couper l'alimentation est d'**ignorer la conversation**, ou de **détacher le fil** depuis la fiche.
+  - **WhatsApp** — le rattachement n'a lieu que si l'**écoute est en cours** (`closing_message_id = null`, sujet `ouvert`) et que le message est **≥ ancre**. Une écoute arrêtée ne reprend rien : le message reste sans sujet et la conversation réapparaît dans le KPI « Sans sujet ».
 - `folder_id` porte le **domaine** que Relvo assigne au message dès la réception. Lorsqu'un Sujet est ensuite créé à partir du message, il **hérite de ce domaine**. Relation `Folder?` (`onDelete: SetNull`) : le modèle `Folder` porte donc aussi `messages`.
 - Un message avec `status = ignored` est un message que l'utilisateur a volontairement écarté (spam, non pertinent) sans lui affecter de sujet.
 - `sender_contact_id` est **nullable**. Un message peut exister sans contact associé : c'est le cas quand l'expéditeur est inconnu et qu'aucun sujet n'a encore été créé. L'information brute de l'expéditeur (adresse email ou numéro de téléphone) est conservée dans `sender_raw` pour permettre la création ultérieure du contact si l'utilisateur décide de traiter le message.

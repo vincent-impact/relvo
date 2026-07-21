@@ -12,8 +12,25 @@ Lorsqu'un message est reçu, le système suit cette logique — **entièrement d
    - WhatsApp direct → `wa-direct:<numéro>`
 4. **rattacher le message à la `Conversation`** correspondante — ou la créer si elle n'existe pas
 5. **classer le message dans un domaine (`Folder`)** — ce domaine donnera son domaine au sujet ouvert depuis ce message
-6. si un sujet **écoute** la conversation (via `SubjectConversation`) **et que l'écoute est en cours** (`closing_message_id = null`), rattacher le message à ce sujet (`subject_id`) ; sinon `subject_id = null` et la conversation est **orpheline**. ⚠️ **Même règle sur les deux canaux** (2026-07-21) : une écoute arrêtée ne reprend rien, et **aucun message ne rouvre un sujet** — la réouverture est manuelle (« Remettre », cf. Cas V)
+6. rattacher le message au sujet, **selon une règle qui dépend du canal** (cf. ci-dessous)
 7. produire les événements de journal (`EventLog`)
+
+### La règle de rattachement est CANAL-DÉPENDANTE — décision du 2026-07-21
+
+Ce point a été « unifié » un temps, par déduction erronée, puis **rétabli le 2026-07-21**. Les deux canaux ne se comportent pas pareil parce qu'ils ne sont pas la même chose (cf. `01-principes.md §3`) :
+
+| | **email** | **WhatsApp** |
+|---|---|---|
+| Ce qu'est la conversation | **le sujet lui-même** | un **flux** qu'un sujet **écoute** |
+| Le message rejoint le sujet… | **TOUJOURS**, quel que soit le statut du sujet | **seulement si l'écoute est active** : sujet `ouvert`, conversation non ignorée, message dans la plage d'écoute |
+| Si le sujet était `validé` / `fermé` | il **repasse en `ouvert`** | rien ne se passe — le message reste sans sujet |
+| Faire taire le fil | **ignorer la conversation**, et rien d'autre | ignorer la conversation, ou arrêter l'écoute |
+
+**Pourquoi l'email rouvre.** Un sujet email **n'écoute rien** : il **EST** le fil. Un nouvel email de même objet et de même interlocuteur *est*, par construction, la suite de cette affaire — la ranger ailleurs reviendrait à nier l'énoncé central. Et l'enjeu est concret : un fournisseur relance sur une affaire validée il y a trois jours. Soit son message **rouvre le sujet et remonte dans le fil**, soit il s'y range **en silence** — et l'utilisateur rate exactement le message qu'il ne fallait pas rater. De l'activité sur une affaire signifie qu'elle est **vivante**.
+
+**Pourquoi WhatsApp ne rouvre pas.** Là, la conversation n'est pas l'affaire : c'est un flux qui charrie des affaires successives. Un message qui arrive après l'arrêt d'une écoute ne parle pas forcément de la même chose — le rattacher serait un pari, et rouvrir un sujet sur ce pari serait un pari sur un pari.
+
+⚠️ **Le seul geste qui fait taire un fil email est d'IGNORER LA CONVERSATION** (cf. Cas N). C'est pour cela que Relvo l'enchaîne automatiquement à la validation et à la fermeture d'un sujet (cf. Cas K et Cas Q) : c'est là, et seulement là, que l'utilisateur dit « je ne veux plus rien entendre de ce fil ».
 
 **Règle fondamentale** : le rangement en conversation **ne peut pas échouer**. Tout message a une place dès la première seconde, sans qu'aucune IA n'ait à comprendre quoi que ce soit. **Il n'y a plus de message « Sans sujet »** — il y a des **conversations qu'aucun sujet ouvert n'écoute**, et ce sont elles qui sollicitent l'utilisateur (KPI « Sans sujet »).
 
@@ -309,21 +326,22 @@ Le sujet peut être validé si :
 
 1. constater que le travail utile est terminé
 2. l'utilisateur déclenche l'action **« Valider »** (bouton sur la fiche, ou swipe droite sur la carte) → `status = validé`, `closed_at` posé — **une date, rien d'autre**. L'IA peut l'avoir **suggérée** mais ne l'applique jamais elle-même.
-3. **valider ARRÊTE les écoutes du sujet** — même comportement sur les deux canaux (2026-07-21) : `closing_message_id` est posé sur le dernier message reçu de **chaque** conversation écoutée. Le sujet n'est plus alimenté ; les conversations **redeviennent orphelines**.
-4. Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » (cf. Cas N) — c'est le geste qui empêche le fil de solliciter de nouveau l'utilisateur au message suivant
+3. **valider arrête les ÉCOUTES du sujet — donc WhatsApp seulement** (2026-07-21) : `closing_message_id` est posé sur le dernier message reçu de chaque conversation **WhatsApp** écoutée, qui **redevient orpheline**. ⚠️ **Les conversations EMAIL restent rattachées** : le fil *est* le sujet, il n'y a pas d'écoute à arrêter. Un nouvel email **rejoint le sujet et le rouvre** (cf. Cas W).
+4. Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » (cf. Cas N) — c'est le geste qui empêche le fil de solliciter de nouveau l'utilisateur au message suivant. **Côté email, c'est le SEUL moyen de le faire taire.**
 5. produire un `EventLog`
 
 ### Résultat
 
 - `Subject.status = validé` (libellé UI : **« Validé »**), `closed_at` renseigné
-- la conversation **réapparaît dans le KPI « Sans sujet »** dès qu'un nouveau message y arrive
+- **WhatsApp** — la conversation **réapparaît dans le KPI « Sans sujet »** dès qu'un nouveau message y arrive
+- **email** — la conversation **reste rattachée** ; un nouveau message **rouvre** le sujet, qui remonte dans le fil des ouverts
 - le sujet reste **récupérable** — il vit dans l'onglet **Validés**
 
 ### Remarque
 
 L'IA peut suggérer la validation ("Résolution suggérée") mais ne clôt jamais un sujet d'elle-même. C'est toujours l'utilisateur qui confirme.
 
-> **Note historique.** « Terminer » / `resolved` devient « **Valider** » / `validé` (2026-07-20). ⚠️ **La réouverture automatique d'un sujet email à la réception d'un nouveau message, écrite le 2026-07-21 au matin, est SUPPRIMÉE le même jour** : elle contredit « un sujet validé n'est plus alimenté ». La réouverture est désormais **manuelle** sur les deux canaux, et un nouveau message laisse simplement la conversation orpheline.
+> **Note historique.** « Terminer » / `resolved` devient « **Valider** » / `validé` (2026-07-20). ⚠️ La **réouverture automatique d'un sujet email** a été retirée un matin de 2026-07-21, sur une lecture erronée de « quand le sujet est validé, la conversation n'alimente plus le sujet » — phrase écrite dans une section « **arrêt des écoutes** », donc portant **exclusivement sur les écoutes**, c'est-à-dire sur WhatsApp. Un sujet email n'écoute rien. La règle est **rétablie le même jour** (cf. Cas W).
 
 ## Cas L — ⚠️ CADUC — Archivage du sujet (système)
 
@@ -340,7 +358,7 @@ Caractéristiques de la liste :
 - **non-lu** = fond distinct, police grasse, **pastille compteur** ; `read_at` se pose à l'ouverture de la **conversation**
 - **trois filtres** : **Sans sujet** (défaut — aucun sujet ouvert ne l'écoute), **Ignorées**, **Toutes** ; plus un filtre par **canal**
 - **swipe gauche = écarter la conversation** (cf. Cas N) — libellé et couleur **par canal**, mécanisme unique, **confirmation nommant les sujets** si elle est écoutée
-- **swipe droite sur la ligne de conversation = ouvrir un sujet** (cf. Cas B2) — **email uniquement** : côté WhatsApp, le geste d'ouverture porte sur un **message**, dans le fil
+- **swipe droite sur la ligne de conversation = ouvrir un sujet** (cf. Cas B2) — ⚠️ **email uniquement**. **Une ligne de conversation WhatsApp ne porte AUCUN swipe droite** : le geste d'ouverture y porte sur le **message**, dans le fil. Swiper une ligne de groupe reviendrait à dire « ce groupe est une affaire », ce qu'il n'est précisément jamais.
 - ouvrir une conversation affiche ses messages en **timeline**, avec le **bandeau « Suivi dans »** en en-tête — **sur les deux canaux** (cf. `02-modele-donnees.md §5bis`)
 
 ### Rendu par canal — décision du 2026-07-20
@@ -485,16 +503,27 @@ L'utilisateur juge qu'un sujet ne le concerne pas : échange sans suite, fausse 
 ### Traitement
 
 1. l'utilisateur déclenche **« Fermer »** — geste **swipe gauche** (rouge) sur la carte, **symétrique** de « Valider » (swipe droite, vert — cf. Cas K)
-2. le `Subject` passe en **`status = fermé`**, `closed_at` posé — **une date, rien d'autre**. **Toutes ses écoutes s'arrêtent** : `closing_message_id` est posé sur le dernier message reçu de chaque conversation, qui **redevient orpheline** et ne référence plus ce sujet. **Même comportement sur les deux canaux.**
+2. le `Subject` passe en **`status = fermé`**, `closed_at` posé — **une date, rien d'autre**. **Toutes ses écoutes s'arrêtent** : `closing_message_id` est posé sur le dernier message reçu de chaque conversation **WhatsApp**, qui redevient orpheline. ⚠️ **Les conversations EMAIL restent rattachées** — il n'y a pas d'écoute à arrêter sur un fil qui *est* le sujet.
 3. Relvo enchaîne avec la proposition : « **Souhaitez-vous aussi ignorer la conversation ?** »
    - **oui** → la `Conversation` passe en `ignoré` (cf. Cas N) : le fil cesse d'être analysé et ne repropose plus rien
-   - **non** → la conversation reste active ; un nouveau message la fera réapparaître dans le KPI « Sans sujet »
+   - **non** → **WhatsApp** : la conversation reste active, un nouveau message la fera réapparaître dans le KPI « Sans sujet » ; **email** : un nouveau message **rouvrira le sujet** (cf. Cas W)
+
+⚠️ **C'est pour l'email que cette proposition compte le plus.** Fermer un sujet email sans ignorer son fil ne le fait pas taire : le prochain message le rouvrira. Le geste qui met fin à une affaire email est donc **la paire** « Fermer + Ignorer », et c'est exactement pour cela que Relvo les enchaîne.
 4. produire les `EventLog` (sujet fermé ; conversation ignorée le cas échéant)
 
 ### Résultat
 
 - `Subject.status = fermé` — le sujet quitte le fil des ouverts et rejoint l'onglet **« Fermés »**
 - il reste **entièrement récupérable** : bouton **« Remettre »** (cf. Cas V)
+- ⚠️ **un sujet fermé n'est JAMAIS purgé** — ni après 15 jours, ni après un an, ni jamais
+
+### ⚠️ Aucune purge des sujets fermés
+
+Il n'existe **aucune rétention, aucune expiration, aucun ménage automatique** sur les sujets fermés. La raison est celle-là même qui impose le vocabulaire « Fermer / Remettre » : **un sujet est le seul endroit où vivent les tâches et le journal des décisions.** Un message purgé par erreur existe encore dans Gmail ; une **tâche** et une **décision datée** purgées n'existent **nulle part ailleurs** — elles ne sont récupérables d'aucune source externe.
+
+Une purge automatique transformerait donc une opération présentée comme réversible en destruction différée, ce qui est la pire des deux options : le vocabulaire promet la réversibilité, le système la retire en silence quelques semaines plus tard.
+
+> **Note historique.** La purge à 15 jours a existé — elle était attachée à l'ancien statut `ignored` du sujet, retiré le 2026-07-20. Elle **ne doit pas être réintroduite** sur `fermé` : l'ignorance portait sur du bruit entrant, la fermeture porte sur un espace de travail.
 
 ### Vocabulaire : « Fermer » / « Fermés » / « Remettre » — jamais « Supprimer » / « Corbeille »
 
@@ -526,7 +555,9 @@ L'utilisateur a ignoré une conversation par erreur, ou la situation a changé :
 
 - `Conversation.status = actif` — elle réintègre le filtre par défaut et, si aucun sujet ouvert ne l'écoute, le **KPI « Sans sujet »**
 - **les écoutes mises en pause reprennent** — c'est tout l'intérêt de la distinction pause / fin. Sans elle, « réactiver » serait un bouton sans effet.
-- en revanche, un sujet **validé ou fermé** ne se rouvre pas de ce fait : ses écoutes ont une **borne de fin**. Il faut le **Remettre** (Cas V), ou ouvrir un nouveau sujet.
+- ⚠️ **selon le canal**, la réactivation n'a pas la même portée sur un sujet terminé :
+  - **WhatsApp** — un sujet **validé ou fermé** ne se rouvre pas : ses écoutes portent une **borne de fin**. Il faut le **Remettre** (Cas V), ou ouvrir un nouveau sujet.
+  - **email** — le fil est resté rattaché ; réactiver la conversation fait donc **reprendre l'alimentation du sujet, et le prochain message le rouvrira** (cf. Cas W). C'est cohérent : réactiver un fil email, c'est dire « je veux de nouveau entendre cette affaire ».
 
 ## Cas S — Étendre un sujet à une seconde conversation
 
@@ -626,18 +657,61 @@ Un sujet a été **fermé** — à tort, ou parce que la situation a changé. Il
 
 1. page Sujets, onglet **« Fermés »**, l'utilisateur ouvre le sujet et déclenche **« Remettre »**
 2. le `Subject` repasse en **`status = ouvert`**, `closed_at` effacé
-3. ⚠️ **les écoutes ne redémarrent PAS d'elles-mêmes** : leurs bornes de fin restent posées. L'utilisateur relance celle qu'il veut — swipe droite sur un message (WhatsApp) ou rattachement de la conversation (email, Cas M)
+3. ⚠️ **« Remettre » ne redémarre PAS les écoutes** : leurs bornes de fin restent posées. L'utilisateur relance celle qu'il veut, par **swipe droite sur un message** (WhatsApp). Côté **email**, il n'y a **rien à redémarrer** : le fil n'a jamais été détaché, il est le sujet — et il l'alimente de nouveau puisque le sujet est redevenu `ouvert`.
 4. produire un `EventLog` (sujet remis, actor: user)
 
 ### Pourquoi « Remettre » et pas « Restaurer » ni « Annuler la suppression »
 
 **Parce que rien n'a été supprimé.** « Fermer » range le sujet, « Remettre » le ressort : deux mots du même registre, qui décrivent exactement l'opération effectuée. Un vocabulaire de restauration laisserait entendre qu'il y a eu destruction — et ferait craindre, à chaque fermeture, de perdre quelque chose.
 
-### Pourquoi les écoutes ne redémarrent pas seules
+### Pourquoi « Remettre » ne redémarre pas les écoutes
 
-Un sujet fermé il y a trois semaines, dont l'écoute reprendrait d'un coup, avalerait tout ce que la conversation a charrié entre-temps. **Remettre un sujet dit « je reprends cette affaire », pas « rattrape tout ce que j'ai manqué ».** Relancer l'écoute est un geste séparé, et c'est le même que d'habitude.
+Un sujet WhatsApp fermé il y a trois semaines, dont l'écoute reprendrait d'un coup, **avalerait d'un bloc tout ce que la conversation a charrié entre-temps** — trois semaines de bavardage de groupe versées dans une affaire qu'on vient à peine de reprendre. **Remettre un sujet dit « je reprends cette affaire », pas « rattrape tout ce que j'ai manqué ».** Relancer une écoute est un geste séparé, et c'est le même que d'habitude (swipe droite sur le message où l'on veut repartir).
+
+Le raisonnement ne s'applique pas à l'email, et c'est logique : un fil email ne charrie **que** cette affaire, il n'y a donc rien à « avaler ».
 
 ### Résultat
 
 - le sujet réapparaît dans le feed des ouverts, avec ses tâches et son journal intacts
-- ses conversations restent orphelines tant qu'une écoute n'a pas été relancée
+- ses conversations **WhatsApp** restent orphelines tant qu'une écoute n'a pas été relancée
+- ses conversations **email** l'alimentent de nouveau immédiatement
+
+## Cas W — Un email arrive sur un sujet terminé : le fil ROUVRE le sujet
+
+> **Rétabli le 2026-07-21.** Cette règle avait été retirée le matin même, par généralisation abusive d'une phrase qui ne visait que les **écoutes** (donc WhatsApp). Un sujet email n'écoute rien : il **EST** le fil.
+
+### Contexte
+
+Le sujet « Retard livraison sauce blanche » a été **validé** il y a trois jours : la livraison était reprogrammée, l'affaire semblait close. Karim Benali répond dans le même fil : « Finalement je ne pourrai pas livrer jeudi non plus. »
+
+### Traitement
+
+1. réception normale (cas A) → le message rejoint sa conversation `email:karim@sogood.fr:retard livraison sauce blanche`
+2. cette conversation est **rattachée** au sujet — elle l'est restée à la validation, puisqu'il n'y avait aucune écoute à arrêter
+3. le message reçoit **le `subject_id` du sujet**, quel que soit le statut de celui-ci
+4. ⚠️ **le sujet repasse en `status = ouvert`**, `closed_at` est effacé ; `last_activity_at` remonte
+5. `EventLog` : sujet rouvert par activité entrante (actor: `system`)
+
+### Résultat
+
+- le sujet **remonte dans le fil des ouverts**, avec ses tâches et son journal intacts
+- le message est **lisible là où l'utilisateur le cherchera** : dans l'affaire, pas dans une pile de tri
+- Relvo relit la situation : il peut proposer de nouvelles tâches, lever `waiting_for_reply`, ou re-suggérer la validation
+
+### Pourquoi c'est la bonne règle — l'enjeu, concrètement
+
+Un fournisseur relance sur une affaire validée il y a trois jours. Deux issues possibles :
+
+- **son message rouvre le sujet** et remonte dans le fil → l'utilisateur le voit ;
+- **son message s'y range en silence** → l'utilisateur rate **exactement le message qu'il ne fallait pas rater**.
+
+**De l'activité sur une affaire signifie qu'elle est vivante.** Un fil qui repart n'est pas un fil clos, quoi qu'en dise un statut posé trois jours plus tôt : le statut décrit ce que l'utilisateur *croyait* au moment où il l'a posé, le message entrant décrit ce qui *est*. Quand les deux se contredisent, c'est le message qui a raison.
+
+### Le seul geste qui fait taire un fil email : ignorer la conversation
+
+Si l'utilisateur ne veut vraiment plus rien entendre de ce fil, il **ignore la conversation** (Cas N). C'est délibéré, nommé, réversible — et c'est le geste que Relvo lui propose déjà à chaque validation et à chaque fermeture (Cas K, Cas Q). **Un statut de sujet ne fait pas taire une source ; seule l'ignorance de la source le fait.** C'est le même principe qui fait vivre l'ignorance sur la conversation et non sur le sujet (cf. Cas Q, « l'ignorance vit sur la source »).
+
+### Ce que ce cas n'est PAS
+
+- ⚠️ **Ce n'est pas la règle WhatsApp.** Un message qui arrive après l'arrêt d'une écoute **ne rouvre rien** : la conversation redevient orpheline et sollicite l'utilisateur via le KPI « Sans sujet ». Là, la conversation n'est pas l'affaire — rouvrir sur ce message serait un pari sur son contenu.
+- **Ce n'est pas « Remettre ».** « Remettre » (Cas V) est un geste **utilisateur** sur un sujet **fermé**, qui ne redémarre aucune écoute. La réouverture décrite ici est **automatique**, déclenchée par une **arrivée de message**, et propre à l'email.

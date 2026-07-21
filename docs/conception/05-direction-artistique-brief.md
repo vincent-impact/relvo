@@ -69,13 +69,20 @@ la DA) :
 
 1. **« L'UI sert à accéder à l'info, Relvo sert à agir. »** L'essentiel des actions
    passe par la **conversation**, pas par les écrans. La conversation avec Relvo est
-   la **surface par défaut**, plein écran, accessible partout via un **composer
-   persistant** (« Demander à Relvo… ») fixé au-dessus de la navigation. Les écrans
-   structurés sont des *destinations* où l'on creuse — pas le centre de gravité.
-2. **Mobile-first, agent au centre.** L'utilisateur ouvre l'app et il est, de fait,
-   déjà en train de parler à Relvo. L'**Accueil** fusionne *brief* (ce qui m'attend
-   aujourd'hui : KPIs + agenda + 2-3 sujets prioritaires) **et** *conversation* (le
-   composer en pied de page) — le brief est le **premier tour de parole de Relvo**.
+   une **surface plein écran**, accessible partout via un **bouton Relvo en haut à
+   droite du header violet**. Les écrans structurés sont des *destinations* où l'on
+   creuse — pas le centre de gravité.
+2. **Mobile-first, agent au centre.** L'**Accueil** s'appelle **« Actions »** : c'est
+   la page des **tâches** (barre KPI Tâches + onglets *Agenda* / *À trier*), avec un
+   header « Bonjour … · Actions du jour ». Le bouton Relvo y est comme partout
+   ailleurs, en haut à droite.
+
+> ⚠️ **Deux dispositifs décrits dans les versions antérieures de ce brief sont
+> ABANDONNÉS** (décisions des 2026-06-27 et 2026-06-28) : le **composer persistant**
+> en bas d'écran (« Demander à Relvo… ») — encombrant, hidden-menu, confondu avec le
+> composer destinataire d'un sujet — et le **« Brief du jour »** de l'Accueil, retiré
+> faute de valeur. L'Accueil n'est plus un brief conversationnel : c'est une page de
+> tâches.
 
 **Trois acteurs, un code couleur identitaire** (le triptyque structure toute la
 lecture de l'app — c'est un pilier de la DA) :
@@ -119,22 +126,37 @@ Neutres       blanc #fff · gris #f7f7f5 / #eeecea · texte #1a1a1a / #6b6b6b / 
 
 ### Système d'état des sujets (à rendre visuellement, sans le complexifier)
 
-- **Statut = cycle de vie à 4 valeurs, exclusif** : `acknowledged` (état actif par
-  défaut **INVISIBLE**, posé dès la création, aucun badge : on lit « actif » par
-  l'absence de badge) → `resolved` (Terminé) →
-  `archived` (système, hors flux) + `ignored` (Ignoré — sujet écarté, hors mémoire
-  de Relvo, récupérable). **Seul « Terminé » est un statut visible** ; « Nouveau »
-  est désormais un **marqueur dérivé** (voir ci-dessous), pas un statut. Les ignorés
-  vivent dans leur propre onglet.
+- **Statut = cycle de vie à 3 valeurs, exclusif** :
+
+  | Statut | Sens | Libellé UI |
+  |---|---|---|
+  | `ouvert` | l'affaire est **en cours** — défaut à la création | *(aucun badge)* |
+  | `validé` | le travail est **fait** | **Validé** + coche |
+  | `fermé` | l'affaire est **écartée**, jamais traitée | hors du flux des ouverts |
+
+  L'état `ouvert` est **INVISIBLE** : un badge porté par la quasi-totalité des sujets
+  n'informe pas, on lit « ouvert » par **l'absence** de badge. Les sujets `validé` et
+  `fermé` vivent dans leurs onglets respectifs (**Validés** / **Fermés** → bouton
+  **« Remettre »**), et ne sont **jamais purgés**.
 - **Marqueurs = cumulables, indépendants du statut** (plusieurs à la fois sur une
   carte) : 🆕 **Nouveau** (badge bleu — sujet jamais ouvert, `last_opened_at == null` ;
-  disparaît à l'ouverture de la fiche, le statut restant `acknowledged`),
+  disparaît à l'ouverture de la fiche, le statut restant `ouvert`),
   🚩 **Urgent** (drapeau rouge — *uniquement* si priorité `urgent` ; la
   **rareté est le signal**, 1-2 sujets sur 24), **À faire** (tâches ouvertes),
-  **En attente** (on attend un retour d'un tiers), **pastille non-lus** (compteur
-  façon WhatsApp).
+  **En attente** (on attend un retour d'un tiers).
+- **La pastille de non-lus a quitté le sujet** : elle se lit sur la **conversation**,
+  là où les messages arrivent.
 - **Priorité à 2 valeurs** : `normal` / `urgent`. Un seul drapeau urgent
   rouge, levé seulement sur `urgent`.
+
+> ⚠️ **Caduc, à ne pas ressortir d'une ancienne version de ce brief** : le statut
+> `archived` (**supprimé** — il n'exprimait rien qu'une fermeture n'exprime déjà) et
+> le statut `ignored` du sujet, qui a **migré sur la Conversation** (`actif` /
+> `ignoré`). **On n'ignore pas un sujet, on ignore une SOURCE** — c'est le remède au
+> « groupe WhatsApp bavard ». Les gestes de swipe ont suivi : sur une **carte-sujet**,
+> ← **Fermer** (rouge) / → **Valider** (vert) ; sur une **ligne de conversation**,
+> ← **Ignorer** (orange en WhatsApp) ou **Supprimer** (rouge en email — même
+> mécanisme, rien n'est détruit).
 
 → Enjeu DA : **hiérarchiser ces signaux sans saturer la carte**. L'urgent doit
 sauter aux yeux *parce qu'il est rare*. Le reste doit rester discret et lisible.
@@ -152,28 +174,38 @@ La DA doit produire un **langage de composants** cohérent. Les pièces (toutes
 visibles dans la maquette, cf. §8) :
 
 **Navigation & chrome**
-- **Barre d'onglets basse** — 4 entrées : Accueil 🏠 · Mon fil ✉️ · Mémoire 🧠 ·
-  Réglages. Se rétracte au scroll (draw down/up).
-- **App bar** — titre + sous-titre + action.
-- **Composer Relvo persistant** — barre fixe « Demander à Relvo… » avec ✦ (historique),
-  champ, 📷 photo, 🎙 vocal. **Élément signature.**
+- **Barre d'onglets basse, fixe, sur fond violet** — 4 entrées : **Actions** ✅ ·
+  **Sujets** 📥 · **Mémoire** 🧠 · **Réglages** ⚙️. *(Contacts a quitté le dock : c'est
+  un onglet des Réglages.)*
+- **Header violet** — titre + sous-titre + **bouton Relvo en haut à droite**
+  (présent sur toutes les pages). **Élément signature** : c'est le point d'entrée
+  unique de l'agent. Les boutons propres à la page (ex. « + ») se posent **à sa
+  gauche**.
 
 **Cartes & blocs (la brique de base — réutilisés dans les écrans ET dans le chat)**
 - **SubjectCard** — la carte-sujet enrichie (avatar contact, titre, référence, badges
-  de statut/marqueurs, drapeau urgent, badge « ✦ N suggérées », pastille non-lus,
-  barre de progression). **Le composant le plus important du produit.**
-- **KpiTile** — tuiles du bandeau Accueil (Sujets ouverts, Messages à trier, Tâches
-  du jour, **% d'aide Relvo** — cette dernière en violet, c'est le KPI fierté de
-  l'agent).
-- **TaskCard** — tâche cochable, avec pastille de source (✦ Relvo / Moi) et dates.
-- **MessageBubble** — bulle de message (entrant/sortant), indicateur de canal
-  (email / WhatsApp).
+  de statut/marqueurs, drapeau urgent, badge « ✦ N suggérées », barre de progression).
+  **Le composant le plus important du produit.**
+- **KpiTile** — tuiles de la barre KPI, **contextuelle par page** : KPI **Tâches** sur
+  Actions (RDV · Aujourd'hui · En retard · À trier), KPI **Sujets** sur la page Sujets
+  (Urgents · Nouveaux · Ouverts · **Sans sujet ↗**). Jamais les deux lentilles sur un
+  même écran.
+- **TaskItem** — présentation **unique** d'une tâche partout : case à cocher, titre,
+  sujet, rail de couleur du domaine, heure/date en colonne droite.
+- **Message** — ⚠️ **le rendu DIVERGE par canal** : **bulles** en WhatsApp ;
+  **pleine largeur, fond blanc dans les deux sens**, en-tête avatar + expéditeur +
+  date, « Moi » pour le sortant, en **email** (un fond teinté fatigue sur du texte
+  long).
+- **Bandeau « Suivi dans »** — en en-tête de conversation, **sur les deux canaux** :
+  pastille de couleur du domaine + titre du sujet, cliquable, plus un discret
+  « N sujets passés ». Il n'y a **aucun marqueur d'appartenance message par message**.
 - **ActorPill** — pastille Moi / Relvo / Externe (le triptyque couleur).
-- **Badges & marqueurs** — StatusBadge (Terminé), badge Nouveau (marqueur dérivé), drapeau Urgent, « À faire »,
-  « En attente », badge suggestions, pastille non-lus.
-- **AgendaCard / mini-calendrier** — agenda semaine (Accueil) + vue mois (Planning),
-  tâches colorées par dossier.
-- **SegmentedControl** — filtres/onglets (Priorité / Ouverts / Terminés ;
+- **Badges & marqueurs** — StatusBadge (**Validé**), badge Nouveau (marqueur dérivé),
+  drapeau Urgent, « À faire », « En attente », badge suggestions ; **pastille non-lus
+  sur la conversation**, pas sur le sujet.
+- **AgendaCard / semainier** — rail de jours slidable (Accueil) + vue mois (Planning),
+  tâches colorées par dossier, drag-and-drop sur les deux surfaces.
+- **SegmentedControl** — onglets (Ouverts / Validés / Fermés ; Agenda / À trier ;
   Instructions / Documents / Sujets).
 
 **Surfaces conversationnelles**
@@ -195,8 +227,9 @@ visibles dans la maquette, cf. §8) :
 | Figé (ne pas toucher) | Libre (terrain de jeu de la DA) |
 |---|---|
 | L'UX, les écrans, la nav 4 onglets, les flux (cf. maquette) | Couleurs (température, accents), profondeur, ombres, matière |
-| Les rôles sémantiques de couleur (Moi/Relvo/Externe, urgent, terminé) | **Typographie** (la maquette est en système par défaut — à définir !) |
-| Le système statut/marqueurs (4+marqueurs) et la rareté de l'urgent | Iconographie, illustrations, micro-interactions, motion |
+| Les rôles sémantiques de couleur (Moi/Relvo/Externe, urgent, validé) | **Typographie** (la maquette est en système par défaut — à définir !) |
+| Le système **statut à 3 valeurs** + marqueurs, et la rareté de l'urgent | Iconographie, illustrations, micro-interactions, motion |
+| La **divergence de rendu par canal** (bulles WhatsApp vs email pleine largeur) | Le détail de cette divergence (typo, en-têtes, séparateurs) |
 | Mobile-first, colonne unique | Forme/rayon des cartes, style des badges, signature de l'orbe ✦ Relvo |
 | Stack : Tailwind v4 + shadcn/ui (base-ui) — la DA doit rester **implémentable en tokens CSS + variants** | Densité, espacements, ambiance générale (clair/sombre, chaud/froid) |
 
@@ -215,12 +248,19 @@ Donne à Claude Design le dossier **`mockup/mobile/`** — HTML/CSS statique, mo
 qu'il manipule parfaitement. C'est la **référence UX figée** : layout, inventaire de
 composants, hiérarchie. La DA habille ce squelette, elle ne le refait pas.
 
+> ⚠️ **La maquette a plusieurs décisions de retard sur les documents de conception.**
+> En cas de désaccord, **ce sont `01-principes.md`, `02-modele-donnees.md` et
+> `03-cas-usage.md` qui font foi**. Écarts connus : le **composer persistant** en bas
+> d'écran (supprimé), l'**Accueil-brief** (devenu la page des tâches « Actions »), les
+> swipes **Ignorer/Terminer** sur un sujet (devenus **Fermer/Valider**), et les pages
+> `messages.html` / `messages-thread.html` (remplacées par **`/conversations`**).
+
 - **`css/app.css`** — *à lire en premier* : porte tous les tokens actuels (le `:root`
   cité au §5), la structure des composants, le device-frame mobile.
-- **`index.html`** — Accueil (brief : KPIs + agenda + sujets prioritaires + composer).
-- **`fil.html`** — Mon fil (feed de SubjectCards + filtres + swipe Ignorer/Terminer).
+- **`index.html`** — Accueil (aujourd'hui : **Actions**, KPI Tâches + agenda).
+- **`fil.html`** — la page **Sujets** (feed de SubjectCards + filtres + swipe).
 - **`sujet.html`** — fiche Sujet (header, status-strip, résumé Relvo, onglets
-  Messages/Tâches/Journal/PJ, composer avec brouillon).
+  Tâches/Conversations/Détails, composer avec brouillon).
 - **`conversation.html`** / `conversations.html` / `conversation-thread.html` — la
   surface agent (empty-state, historique, fil de discussion).
 - **`dossiers.html`** / `dossier.html` — la Mémoire (cartes Dossier, 3 onglets).

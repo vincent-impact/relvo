@@ -299,6 +299,8 @@ Ce que le canal détermine, c'est **sur quoi porte le geste** — et donc quelle
 
 **Côté WhatsApp, un seul geste choisit l'ancre ET crée le sujet.** Le swipe droite sur un message dit « **ça, c'est important — je commence à écouter ici** ». Il n'y a **aucun défaut d'ancre à calculer**, puisque l'utilisateur désigne toujours le message lui-même : les règles antérieures de « défaut d'ancre » n'ont plus d'objet.
 
+⚠️ **Corollaire : une ligne de conversation WhatsApp ne porte AUCUN swipe droite.** Le geste y porte sur le **message**, jamais sur le fil. L'offrir sur la ligne reviendrait à proposer « faire de ce groupe une affaire » — or un groupe n'est jamais une affaire, c'est un collectif qui en charrie plusieurs. Le swipe droite sur une ligne de conversation est **email uniquement** ; le swipe **gauche** (écarter la source), lui, existe bien sur les deux canaux.
+
 ### Étendre une écoute : le MÊME geste, sur un message plus ancien
 
 Si un sujet écoute déjà la conversation et que l'utilisateur swipe un message **antérieur à l'ancre**, l'écoute **remonte jusqu'à ce message** — les messages traversés entrent dans le sujet.
@@ -317,7 +319,21 @@ Une écoute WhatsApp a **un début** (`anchor_message_id`) et peut recevoir **un
 
 Tant que le sujet reste ouvert et qu'aucune borne de fin n'est posée, les **nouveaux messages de la conversation lui sont rattachés automatiquement**.
 
-### L'arrêt des écoutes — trois gestes, un seul effet à retenir
+### ⚠️ La règle de réception est CANAL-DÉPENDANTE — rétablie le 2026-07-21
+
+Ce qui suit décrit **l'arrêt des écoutes**. Or **un sujet email n'écoute rien** (cf. §3) : ces règles ne le concernent donc pas, et les lui appliquer est l'erreur commise — puis corrigée — le 2026-07-21.
+
+| | **email** | **WhatsApp** |
+|---|---|---|
+| Un message entrant rejoint le sujet… | **TOUJOURS**, quel que soit son statut | **seulement** si l'écoute est active (sujet `ouvert`, conversation non ignorée, message dans la plage) |
+| Sujet `validé` ou `fermé` | le message le **ROUVRE** (`→ ouvert`) | rien : le message reste sans sujet, la conversation redevient orpheline |
+| Comment faire taire le fil | **ignorer la conversation**, et rien d'autre | ignorer la conversation, ou arrêter l'écoute |
+
+**Pourquoi l'email rouvre.** De l'activité sur une affaire signifie qu'elle est **vivante**. Un fournisseur relance sur une affaire validée il y a trois jours : soit son message rouvre le sujet et **remonte dans le fil**, soit il s'y range **en silence** — et l'utilisateur rate exactement le message qu'il ne fallait pas rater. Le statut dit ce que l'utilisateur *croyait* en le posant ; le message entrant dit ce qui *est*. Quand les deux se contredisent, c'est le message qui a raison.
+
+**Pourquoi WhatsApp ne rouvre pas.** Là, la conversation n'est pas l'affaire mais un flux qui charrie des affaires successives : un message arrivé après l'arrêt d'une écoute ne parle pas forcément de la même chose. Le rattacher serait un pari ; rouvrir un sujet dessus serait un pari sur un pari.
+
+### L'arrêt des écoutes — donc, structurellement, WhatsApp
 
 | Geste | Ce qui s'arrête | Ancre de fin |
 |---|---|---|
@@ -325,6 +341,8 @@ Tant que le sujet reste ouvert et qu'aucune borne de fin n'est posée, les **nou
 | **Valider le sujet** (`validé`) | la conversation n'alimente plus le sujet | posée |
 | **Ignorer la conversation** (mute) | elle n'alimente plus **aucun** des sujets ouverts qui l'écoutent | aucune — l'ignorance est réversible |
 | **Arrêter l'écoute** (depuis la fiche du sujet) | cette conversation-là seulement ; les autres continuent | posée |
+
+⚠️ **Les deux premières lignes ne s'appliquent qu'aux conversations WhatsApp du sujet.** Ses conversations email restent rattachées : elles continuent de l'alimenter, et le rouvrent. Seul le dernier geste — **arrêter l'écoute depuis la fiche**, action délibérée et ciblée — détache un fil email d'un sujet.
 
 **Ignorer une conversation est une PAUSE, pas une FIN.** L'ignorance est réversible (cf. §3) : la réactiver doit faire **reprendre** l'alimentation. Si elle posait une ancre de fin, « Réactiver » serait un bouton sans effet observable.
 
@@ -408,9 +426,13 @@ L'utilisateur voit spontanément « fermer » et « supprimer » comme la même 
 1. **C'est honnête.** Rien n'est détruit — autant que le mot le dise. Un vocabulaire de destruction pour une opération réversible entraîne soit l'hésitation (on n'ose plus fermer), soit la fausse confiance (on croit avoir fait le ménage).
 2. **Un sujet est le SEUL endroit où vivent les tâches et le journal des décisions.** Un message supprimé par erreur existe encore dans Gmail ; une **tâche** supprimée par erreur n'existe **nulle part ailleurs**. Le coût d'une fausse manœuvre n'est pas symétrique — le vocabulaire doit refléter cette asymétrie.
 
-**Ce que « valider » ou « fermer » fait aux écoutes** : les deux transitions les **arrêtent** — une ancre de fin est posée sur chaque conversation écoutée. Un sujet `fermé` ne référence plus aucune conversation ; un sujet `validé` n'est plus alimenté par les siennes.
+**Ce que « valider » ou « fermer » fait aux écoutes** : les deux transitions les **arrêtent** — une ancre de fin est posée sur chaque conversation **écoutée**, donc sur les conversations **WhatsApp**. ⚠️ **Les conversations email ne sont pas concernées** : elles ne sont pas écoutées, elles *sont* le sujet. Elles continuent de l'alimenter et le **rouvrent** au message suivant (cf. l'encadré canal-dépendant plus haut, et `03-cas-usage.md` Cas W).
 
-À la fermeture, Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » — c'est le geste qui empêche un fil bavard de reproposer indéfiniment de nouveaux sujets. L'ignorance vit sur la **conversation** (cf. §3), pas sur le sujet : ce n'est pas un sujet qu'on veut faire taire, c'est une **source**.
+À la fermeture, Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » — c'est le geste qui empêche un fil bavard de reproposer indéfiniment de nouveaux sujets, **et le seul qui fasse taire un fil email**. L'ignorance vit sur la **conversation** (cf. §3), pas sur le sujet : ce n'est pas un sujet qu'on veut faire taire, c'est une **source**.
+
+**⚠️ « Remettre » ne redémarre pas les écoutes.** Les bornes de fin restent posées ; l'utilisateur relance l'écoute qu'il veut, d'un swipe droite sur le message où il veut repartir. Sans cela, un sujet WhatsApp remis après trois semaines **avalerait d'un bloc** tout ce que le fil a charrié entre-temps. Remettre dit « je reprends cette affaire », pas « rattrape tout ce que j'ai manqué ». Côté email il n'y a **rien à redémarrer** : le fil n'a jamais été détaché.
+
+**⚠️ Un sujet fermé n'est JAMAIS purgé.** Aucune rétention, aucune expiration. Pour la raison exacte qui impose le vocabulaire « Remettre » : **c'est le seul endroit où vivent les tâches et le journal des décisions**, et rien de tout cela n'est récupérable d'une source externe. Une purge automatique ferait d'une opération annoncée comme réversible une destruction différée — le pire des deux mondes. (La purge à 15 jours qui a existé était attachée à l'ancien `Subject.status = ignored`, retiré le 2026-07-20 ; elle ne doit pas être réintroduite sur `fermé`.)
 
 > **Note historique.** Le cycle comptait 4 états : `acknowledged`, `resolved`, `archived`, `ignored`. **`archived`** (automatique après inactivité) est retiré : il n'exprimait rien qu'une fermeture n'exprime déjà. **`ignored`** est retiré du sujet et **migre sur la conversation**. Le vocabulaire « créer / supprimer / terminer / ignorer » devient « **ouvrir / fermer / valider** » (décision du 2026-07-20).
 
