@@ -289,6 +289,22 @@ export default async function SujetPage({
   // Cas S (M6bis.12) — à qui d'autre peut-on écrire à propos de ce sujet ? Les
   // contacts pas encore interlocuteurs, et joignables (email ou téléphone).
   // Un sujet FERMÉ n'est plus extensible (la fenêtre est figée) → aucun candidat.
+  // Conversations du sujet pour le sélecteur + la feuille des écoutes (M6ter,
+  // invariant n°11). État dérivé : ignorée = pause ; borne de fin posée = écoute
+  // terminée ; sinon active. La clé de synchro avec le composer est le contact
+  // (« all » pour un groupe, sans interlocuteur individuel).
+  const conversationOptions = subjectConversations.map((c) => ({
+    conversationId: c.conversationId,
+    title: c.title,
+    channelType: c.channelType,
+    contactKey: c.contactId ?? "all",
+    state: (c.status === "ignored"
+      ? "paused"
+      : c.closingMessageId != null
+        ? "ended"
+        : "active") as "active" | "paused" | "ended",
+  }));
+
   const extendCandidates =
     subject.status === "open"
       ? allContacts
@@ -322,6 +338,7 @@ export default async function SujetPage({
         bubbles={bubbles}
         draft={draftContent ? <RelvoDraftBlock text={draftContent} /> : null}
         interlocuteurs={interlocuteurs}
+        conversations={conversationOptions}
         defaultInterlocuteurKey={defaultInterlocuteurKey}
         subjectId={subject.id}
         subjectTitle={subject.title}

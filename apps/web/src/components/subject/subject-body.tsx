@@ -18,6 +18,10 @@ import {
   type Recipient,
 } from "@/components/shared/recipient-composer";
 import {
+  ConversationSelector,
+  type SubjectConversationOption,
+} from "@/components/subject/conversation-selector";
+import {
   ExtendSubjectDialog,
   type ExtendCandidate,
 } from "@/components/subject/extend-subject-dialog";
@@ -45,6 +49,7 @@ export function SubjectBody({
   tachesPane,
   detailPane,
   interlocuteurs,
+  conversations = [],
   defaultInterlocuteurKey,
   subjectId,
   subjectTitle,
@@ -64,6 +69,8 @@ export function SubjectBody({
   detailPane: React.ReactNode;
   /** Interlocuteurs du sujet (key = id du contact). */
   interlocuteurs: Recipient[];
+  /** Conversations du sujet (M6ter) — sélecteur + feuille des écoutes. */
+  conversations?: SubjectConversationOption[];
   /** Dernier interlocuteur actif (sélection par défaut), ou null. */
   defaultInterlocuteurKey: string | null;
   subjectId: string;
@@ -222,6 +229,18 @@ export function SubjectBody({
           onValueChange={(v) => setTab(v as Tab)}
           overlap
         />
+
+        {tab === "messages" && conversations.length > 0 ? (
+          // Ligne unique + feuille des écoutes (M6ter, invariant n°11) — sélecteur
+          // ET gestion des écoutes. Synchronisé avec le composer via `selected`
+          // (la clé d'une conversation = son contact, « all » pour un groupe).
+          <ConversationSelector
+            conversations={conversations}
+            selectedKey={selected}
+            onSelect={setSelected}
+            subjectId={subjectId}
+          />
+        ) : null}
 
         {tab === "messages" ? (
           <div className="flex flex-col gap-[15px] px-[18px] pt-4 pb-3">

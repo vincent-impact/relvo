@@ -2,6 +2,7 @@
 
 import {
   type ChannelType,
+  detachConversationFromSubject,
   ensureSubjectAnchors,
   extendSubjectToConversation,
 } from "@relvo/db";
@@ -44,4 +45,26 @@ export async function extendSubjectToConversationAction(input: {
  */
 export async function ensureSubjectAnchorsAction(subjectId: string) {
   return domainAction((db) => ensureSubjectAnchors(db, subjectId));
+}
+
+/**
+ * « Arrêter l'écoute » (feuille de la fiche sujet, M6ter) — détache CETTE
+ * conversation du sujet. C'est le SEUL geste qui détache un fil email d'un sujet
+ * (invariant n°13bis). La conversation continue de vivre ; elle cesse simplement
+ * d'alimenter ce sujet, et redevient « Sans sujet » si aucun autre ne l'écoute.
+ */
+export async function detachConversationFromSubjectAction(input: {
+  subjectId: string;
+  conversationId: string;
+}) {
+  const result = await domainAction((db) =>
+    detachConversationFromSubject(db, input.subjectId, input.conversationId),
+  );
+  if (result.ok) {
+    revalidatePath(`/sujets/${input.subjectId}`);
+    revalidatePath("/conversations");
+    revalidatePath("/fil");
+    revalidateTenantData();
+  }
+  return result;
 }

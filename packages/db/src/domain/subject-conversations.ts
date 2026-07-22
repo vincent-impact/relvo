@@ -175,6 +175,8 @@ export type SubjectConversationLink = {
   id: string;
   conversationId: string;
   anchorMessageId: string | null;
+  /** Borne de fin de l'écoute (M6ter) — non nulle = écoute terminée. */
+  closingMessageId: string | null;
   title: string;
   type: ConversationType;
   status: ConversationStatus;
@@ -202,6 +204,7 @@ export async function listSubjectConversations(
     id: row.id,
     conversationId: row.conversationId,
     anchorMessageId: row.anchorMessageId,
+    closingMessageId: row.closingMessageId,
     title: row.conversation.title,
     type: row.conversation.type,
     status: row.conversation.status,
