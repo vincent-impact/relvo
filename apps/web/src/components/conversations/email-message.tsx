@@ -1,7 +1,6 @@
 import { AttachmentPreview } from "@/components/shared/attachment-preview";
 import { EmailHtmlFrame } from "@/components/conversations/email-html-frame";
 import { LinkifiedText } from "@/components/shared/linkified-text";
-import type { ThreadMessageData } from "@/lib/conversation-row";
 import { initialsFor } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
@@ -10,8 +9,26 @@ import { cn } from "@/lib/utils";
 // l'étrangle (cf. Gmail/Superhuman/Outlook). C'est l'EN-TÊTE qui porte
 // l'information (avatar + expéditeur + date), le sortant se signalant par « Moi »
 // et une teinte TRÈS légère — le texte reste sur fond clair dans les deux sens.
+//
+// Type STRUCTUREL délibérément minimal : le fil de conversation
+// (ThreadMessageData) ET la fiche sujet (MessageBubbleData) le satisfont tous
+// deux, ce qui rend le rendu e-mail identique sur les deux surfaces.
 
-export function EmailMessage({ data }: { data: ThreadMessageData }) {
+export type EmailMessageData = {
+  direction: "incoming" | "outgoing";
+  senderName?: string | null;
+  time?: string | null;
+  content: string;
+  contentHtml?: string | null;
+  attachment?: {
+    id?: string;
+    name: string;
+    label?: string | null;
+    mimeType?: string | null;
+  } | null;
+};
+
+export function EmailMessage({ data }: { data: EmailMessageData }) {
   const outgoing = data.direction === "outgoing";
   const senderName = outgoing ? "Moi" : (data.senderName ?? "Externe");
   const initials = outgoing ? "M" : (initialsFor(data.senderName) ?? "E");

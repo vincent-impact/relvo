@@ -154,8 +154,10 @@ export default async function SujetPage({
     actor: m.direction === "outgoing" ? "user" : "contact",
     senderName: m.senderContact?.name ?? m.senderName ?? m.senderRaw,
     channel: CHANNEL_LABEL[m.channel.type] ?? null,
+    channelType: m.channel.type,
     time: formatRelative(m.receivedAt ?? m.sentAt ?? m.createdAt),
     content: m.content ?? "",
+    contentHtml: m.contentHtml,
     attachment: m.attachments[0]
       ? {
           id: m.attachments[0].id,
@@ -342,12 +344,6 @@ export default async function SujetPage({
         defaultInterlocuteurKey={defaultInterlocuteurKey}
         subjectId={subject.id}
         subjectTitle={subject.title}
-        subjectRef={{
-          id: subject.id,
-          reference: subject.reference,
-          title: subject.title,
-          folder: folders.find((f) => f.id === subject.folderId) ?? null,
-        }}
         emailReplyTargets={emailReplyTargets}
         whatsappReplyTargets={whatsappReplyTargets}
         isGroupSubject={isGroupSubject}

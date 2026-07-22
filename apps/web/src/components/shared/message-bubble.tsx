@@ -19,6 +19,10 @@ export type MessageBubbleData = {
   /** Horodatage relatif (« 35 min »), affiché après le canal. */
   time?: string | null;
   content: string;
+  /** Corps HTML d'un e-mail (rendu isolé sur la fiche sujet comme dans le fil). */
+  contentHtml?: string | null;
+  /** `email` | `whatsapp` — décide du rendu (e-mail pleine largeur vs bulle). */
+  channelType?: string | null;
   attachment?: {
     id?: string;
     name: string;
