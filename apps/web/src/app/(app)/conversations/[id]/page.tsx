@@ -1,66 +1,23 @@
-import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { getConversationThread } from "@relvo/db";
 import { ConversationThread } from "@/components/conversations/conversation-thread";
 import { MarkConversationRead } from "@/components/conversations/mark-conversation-read";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
-import { RowsSkeleton } from "@/components/shared/screen-skeletons";
-import {
-  type ThreadMessageData,
-  toThreadMessageData,
-} from "@/lib/conversation-row";
+import { toThreadMessageData } from "@/lib/conversation-row";
 import { getTenantDb } from "@/server/auth-context";
 
-// Détail d'une conversation (M6bis.9) — timeline chronologique + cordon de sujet.
-// Ouvrir la page vaut LECTURE de ses messages entrants (MarkConversationRead).
+// Détail d'une conversation (M6ter) — timeline chronologique + BANDEAU « Suivi
+// dans ». Le cordon a disparu (écoute binaire). Ouvrir la page vaut LECTURE de
+// ses messages entrants (MarkConversationRead).
 //
 // Le retour pointe sur le filtre d'où l'on vient (`?filtre=…`) : arriver de
 // « Ignorées » et repartir sur « Sans sujet » perdrait le fil du tri en cours.
-//
-// PERF (M9.19) : hero + fil dès que la conversation répond ; la liste des sujets
-// candidats (jusqu'à 200) stream dans un <Suspense>.
 
 const CHANNEL_LABEL: Record<string, string> = {
   email: "Email",
   whatsapp: "WhatsApp",
 };
-
-async function ThreadBody({
-  messages,
-  backTo,
-}: {
-  messages: ThreadMessageData[];
-  backTo: string;
-}) {
-  const db = await getTenantDb();
-  const subjectRows = await db.subject.findMany({
-    // On ne rattache pas un message à une fenêtre déjà refermée : un sujet
-    // `validated` ou `closed` n'est plus un candidat.
-    where: { status: { notIn: ["validated", "closed"] } },
-    orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
-    take: 200,
-    select: {
-      id: true,
-      reference: true,
-      title: true,
-      folder: { select: { slug: true } },
-    },
-  });
-
-  return (
-    <ConversationThread
-      messages={messages}
-      subjects={subjectRows.map((s) => ({
-        id: s.id,
-        reference: s.reference,
-        title: s.title,
-        folderSlug: s.folder?.slug ?? null,
-      }))}
-      backTo={backTo}
-    />
-  );
-}
 
 export default async function ConversationDetailPage({
   params,
@@ -94,9 +51,12 @@ export default async function ConversationDetailPage({
         className="pb-8"
       />
 
-      <Suspense fallback={<RowsSkeleton count={3} />}>
-        <ThreadBody messages={messages} backTo={backTo} />
-      </Suspense>
+      <ConversationThread
+        messages={messages}
+        channelType={thread.channelType}
+        listenings={thread.listenings}
+        backTo={backTo}
+      />
     </Screen>
   );
 }

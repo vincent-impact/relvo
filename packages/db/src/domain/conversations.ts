@@ -580,6 +580,16 @@ export type ConversationMessageItem = {
   }[];
 };
 
+/** Un sujet qui écoute (ou a écouté) la conversation — matière du bandeau. */
+export type ConversationListening = {
+  subjectId: string;
+  reference: string;
+  title: string;
+  folder: { slug: string; color: string | null; icon: string | null } | null;
+  /** L'écoute est-elle encore ouverte (borne de fin non posée) ? */
+  active: boolean;
+};
+
 export type ConversationThread = {
   id: string;
   title: string;
@@ -589,6 +599,12 @@ export type ConversationThread = {
   contactId: string | null;
   interlocutorRaw: string | null;
   messages: ConversationMessageItem[];
+  /**
+   * Écoutes du fil (M6ter) — le signal d'appartenance côté conversation. L'UI en
+   * fait le bandeau « Suivi dans : … » (écoute ACTIVE) + « N sujets passés »
+   * (écoutes terminées). Une conversation email n'a qu'une écoute, permanente.
+   */
+  listenings: ConversationListening[];
 };
 
 const CONVERSATION_MESSAGE_INCLUDE = {
@@ -637,6 +653,31 @@ export async function getConversationThread(
     include: CONVERSATION_MESSAGE_INCLUDE,
   });
 
+  // Écoutes du fil — actives d'abord, puis passées (les plus récentes en tête).
+  const links = await db.subjectConversation.findMany({
+    where: { conversationId: id },
+    orderBy: { createdAt: "desc" },
+    include: {
+      subject: {
+        select: {
+          id: true,
+          reference: true,
+          title: true,
+          folder: { select: { slug: true, color: true, icon: true } },
+        },
+      },
+    },
+  });
+  const listenings: ConversationListening[] = links
+    .map((l) => ({
+      subjectId: l.subject.id,
+      reference: l.subject.reference,
+      title: l.subject.title,
+      folder: l.subject.folder,
+      active: l.closingMessageId == null,
+    }))
+    .sort((a, b) => Number(b.active) - Number(a.active));
+
   return {
     id: conversation.id,
     title: conversation.title,
@@ -645,6 +686,7 @@ export async function getConversationThread(
     channelType: conversation.channel.type,
     contactId: conversation.contactId,
     interlocutorRaw: conversation.interlocutorRaw,
+    listenings,
     messages: rows.map((m) => ({
       id: m.id,
       direction: m.direction,
