@@ -19,6 +19,9 @@ type SwipeAction = {
   label: string;
   icon: LucideIcon;
   tone: "danger" | "success" | "warning" | "brand";
+  /** Ne PAS replier la ligne au déclenchement — elle revient en place et `onAct`
+   *  prend le relais (ex. ouvrir une confirmation avant d'écarter). */
+  keepOnAct?: boolean;
 };
 
 const TONE_BG: Record<SwipeAction["tone"], string> = {
@@ -95,9 +98,15 @@ export function SwipeRow({
     if (!s.active) return;
     s.active = false;
     if (s.horiz && s.dx < -THRESHOLD && left) {
-      setX(-window.innerWidth, true);
-      setLeaving(true);
-      left.onAct();
+      if (left.keepOnAct) {
+        // La ligne revient en place ; l'action (confirmation) prend le relais.
+        setX(0, true);
+        left.onAct();
+      } else {
+        setX(-window.innerWidth, true);
+        setLeaving(true);
+        left.onAct();
+      }
     } else if (s.horiz && s.dx > THRESHOLD && right) {
       // Le swipe droite ne « retire » pas la ligne : on la remet en place, c'est
       // l'action (navigation, création de sujet) qui prend le relais.

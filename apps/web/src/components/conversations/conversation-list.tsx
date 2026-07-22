@@ -20,6 +20,16 @@ import {
 } from "@/server/actions/conversations";
 import { SwipeRow } from "@/components/shared/swipe-row";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   CONVERSATION_FILTER_SLUGS,
   type ConversationFilterSlug,
   type ConversationRowData,
@@ -84,10 +94,14 @@ function ConversationRow({
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const unread = data.unreadCount > 0;
   // Dans « Ignorées », le geste rend la source au flux ; ailleurs il l'en sort.
   const reviving = filter === "ignorees";
   const isEmail = data.channelType === "email";
+  // Un fil ÉCOUTÉ par un ou des sujets ouverts : écarter n'est pas anodin, on
+  // NOMME les sujets avant (invariant n°8). Jamais « un ou plusieurs sujets ».
+  const listened = !reviving && data.listeningSubjects.length > 0;
 
   function swipeLeft() {
     startTransition(async () => {
@@ -125,6 +139,9 @@ function ConversationRow({
   // Habillage du swipe gauche par canal : « Supprimer »/rouge (email),
   // « Ignorer »/orange (WhatsApp) — même `ignoreConversation` dessous, AUCUNE
   // donnée supprimée. Réactivation (filtre Ignorées) : vert dans les deux cas.
+  // Fil écouté → le geste ouvre d'abord la confirmation (la ligne revient en
+  // place, `keepOnAct`) ; sinon il écarte directement.
+  const onLeft = listened ? () => setConfirmOpen(true) : swipeLeft;
   const leftAction = reviving
     ? {
         onAct: swipeLeft,
@@ -134,16 +151,18 @@ function ConversationRow({
       }
     : isEmail
       ? {
-          onAct: swipeLeft,
+          onAct: onLeft,
           label: "Supprimer",
           icon: Trash2,
           tone: "danger" as const,
+          keepOnAct: listened,
         }
       : {
-          onAct: swipeLeft,
+          onAct: onLeft,
           label: "Ignorer",
           icon: EyeOff,
           tone: "warning" as const,
+          keepOnAct: listened,
         };
 
   return (
@@ -214,6 +233,52 @@ function ConversationRow({
           </div>
         </div>
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isEmail ? "Supprimer ce fil ?" : "Ignorer ce fil ?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {data.listeningSubjects.length === 1 ? (
+                <>
+                  Le sujet{" "}
+                  <span className="font-semibold text-(--text-primary)">
+                    « {data.listeningSubjects[0]!.title} »
+                  </span>{" "}
+                  écoute encore ce fil. Il ne sera plus alimenté par ces
+                  messages. Aucune donnée n'est supprimée.
+                </>
+              ) : (
+                <>
+                  Ces sujets écoutent encore ce fil et ne seront plus alimentés
+                  :
+                  <span className="mt-1.5 block font-semibold text-(--text-primary)">
+                    {data.listeningSubjects
+                      .map((s) => `« ${s.title} »`)
+                      .join(", ")}
+                  </span>
+                  <span className="mt-1.5 block">
+                    Aucune donnée n'est supprimée.
+                  </span>
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmOpen(false);
+                swipeLeft();
+              }}
+            >
+              {isEmail ? "Supprimer" : "Ignorer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </SwipeRow>
   );
 }

@@ -22,6 +22,8 @@ export type ConversationRowData = {
   channelType: string;
   unreadCount: number;
   ignored: boolean;
+  /** Sujets écoutant encore ce fil — nomment la confirmation du swipe gauche. */
+  listeningSubjects: { id: string; title: string }[];
 };
 
 export function toConversationRowData(
@@ -35,6 +37,7 @@ export function toConversationRowData(
     channelType: item.channelType,
     unreadCount: item.unreadCount,
     ignored: item.status === "ignored",
+    listeningSubjects: item.listeningSubjects,
   };
 }
 

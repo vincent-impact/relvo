@@ -408,12 +408,23 @@ export type ConversationListItem = {
   unreadCount: number;
   /** Le dernier message est-il couvert par un sujet ? (définition du KPI) */
   lastMessageSorted: boolean;
+  /**
+   * Sujets qui ÉCOUTENT encore ce fil (borne de fin non posée). Sert la
+   * CONFIRMATION du swipe gauche (M6ter, invariant n°8) : écarter un fil écouté
+   * ouvre une confirmation qui NOMME les sujets concernés — jamais « un ou
+   * plusieurs sujets ». Vide = pas de confirmation, on écarte directement.
+   */
+  listeningSubjects: { id: string; title: string }[];
 };
 
 const CONVERSATION_ITEM_INCLUDE = {
   channel: { select: { type: true } },
   lastMessage: {
     select: { content: true, subjectLine: true, subjectId: true },
+  },
+  subjects: {
+    where: { closingMessageId: null },
+    select: { subject: { select: { id: true, title: true } } },
   },
   _count: {
     select: {
@@ -443,6 +454,10 @@ function toConversationListItem(c: ConversationItemRow): ConversationListItem {
     preview,
     unreadCount: c._count.messages,
     lastMessageSorted: c.lastMessage?.subjectId != null,
+    listeningSubjects: c.subjects.map((s) => ({
+      id: s.subject.id,
+      title: s.subject.title,
+    })),
   };
 }
 
