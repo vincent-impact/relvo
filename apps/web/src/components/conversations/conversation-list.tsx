@@ -2,14 +2,23 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { EyeOff, Loader2, Mail, MessageCircle, RotateCcw } from "lucide-react";
+import {
+  EyeOff,
+  Loader2,
+  Mail,
+  MessageCircle,
+  RotateCcw,
+  Sparkles,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
+  createSubjectFromConversationAction,
   ignoreConversationAction,
   loadConversationsAction,
   reactivateConversationAction,
 } from "@/server/actions/conversations";
-import { SwipeToRemove } from "@/components/shared/swipe-to-remove";
+import { SwipeRow } from "@/components/shared/swipe-row";
 import {
   CONVERSATION_FILTER_SLUGS,
   type ConversationFilterSlug,
@@ -78,8 +87,9 @@ function ConversationRow({
   const unread = data.unreadCount > 0;
   // Dans « Ignorées », le geste rend la source au flux ; ailleurs il l'en sort.
   const reviving = filter === "ignorees";
+  const isEmail = data.channelType === "email";
 
-  function swipe() {
+  function swipeLeft() {
     startTransition(async () => {
       const res = reviving
         ? await reactivateConversationAction(data.id)
@@ -97,13 +107,59 @@ function ConversationRow({
     });
   }
 
+  // Swipe droite EMAIL — ouvrir un sujet sur le fil (le sujet EST le fil, ancre
+  // nulle, tout est balayé). WhatsApp n'a pas ce geste ici : côté WhatsApp, on
+  // ouvre un sujet depuis un MESSAGE, dans le fil (invariant n°13bis).
+  function openSubject() {
+    startTransition(async () => {
+      const res = await createSubjectFromConversationAction(data.id);
+      if (res.ok) {
+        toast.success("Sujet créé");
+        router.push(`/sujets/${res.data.id}?from=/conversations`);
+      } else {
+        toast.error(res.message);
+      }
+    });
+  }
+
+  // Habillage du swipe gauche par canal : « Supprimer »/rouge (email),
+  // « Ignorer »/orange (WhatsApp) — même `ignoreConversation` dessous, AUCUNE
+  // donnée supprimée. Réactivation (filtre Ignorées) : vert dans les deux cas.
+  const leftAction = reviving
+    ? {
+        onAct: swipeLeft,
+        label: "Réactiver",
+        icon: RotateCcw,
+        tone: "success" as const,
+      }
+    : isEmail
+      ? {
+          onAct: swipeLeft,
+          label: "Supprimer",
+          icon: Trash2,
+          tone: "danger" as const,
+        }
+      : {
+          onAct: swipeLeft,
+          label: "Ignorer",
+          icon: EyeOff,
+          tone: "warning" as const,
+        };
+
   return (
-    <SwipeToRemove
-      onRemove={swipe}
+    <SwipeRow
       onTap={() => router.push(`/conversations/${data.id}`)}
-      label={reviving ? "Réactiver" : "Ignorer"}
-      icon={reviving ? RotateCcw : EyeOff}
-      tone={reviving ? "success" : "danger"}
+      left={leftAction}
+      right={
+        !reviving && isEmail
+          ? {
+              onAct: openSubject,
+              label: "Nouveau sujet",
+              icon: Sparkles,
+              tone: "brand" as const,
+            }
+          : undefined
+      }
     >
       <div
         className={cn(
@@ -158,7 +214,7 @@ function ConversationRow({
           </div>
         </div>
       </div>
-    </SwipeToRemove>
+    </SwipeRow>
   );
 }
 

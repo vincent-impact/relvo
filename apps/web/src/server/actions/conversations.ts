@@ -2,6 +2,7 @@
 
 import {
   type ConversationFilter,
+  createSubjectFromConversation,
   ignoreConversation,
   listConversationItems,
   markConversationRead,
@@ -38,6 +39,22 @@ export async function ignoreConversationAction(id: string) {
 export async function reactivateConversationAction(id: string) {
   const result = await domainAction((db) => reactivateConversation(db, id));
   if (result.ok) revalidateConversations();
+  return result;
+}
+
+/**
+ * Ouvre un sujet SUR une conversation email — swipe droite sur la conversation
+ * (invariant n°13bis). Le sujet EST le fil : ancre nulle, tout le fil est
+ * balayé (amont compris). Renvoie l'id du sujet créé pour naviguer vers sa fiche.
+ */
+export async function createSubjectFromConversationAction(id: string) {
+  const result = await domainAction((db) =>
+    createSubjectFromConversation(db, id),
+  );
+  if (result.ok) {
+    revalidateConversations();
+    revalidatePath("/sujets/[id]", "page");
+  }
   return result;
 }
 

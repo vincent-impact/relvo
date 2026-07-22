@@ -1,7 +1,7 @@
 import type { ConversationListening } from "@relvo/db";
 import { EmailMessage } from "@/components/conversations/email-message";
 import { FollowedInBanner } from "@/components/conversations/followed-in-banner";
-import { MessageBubble } from "@/components/shared/message-bubble";
+import { WhatsAppMessageRow } from "@/components/conversations/whatsapp-message-row";
 import type { ThreadMessageData } from "@/lib/conversation-row";
 
 // Fil d'une conversation (M6ter, invariant n°13bis) — timeline chronologique.
@@ -36,42 +36,36 @@ export function ConversationThread({
 }) {
   const isEmail = channelType === "email";
 
+  const empty =
+    messages.length === 0 ? (
+      <p className="py-10 text-center text-[13.5px] text-(--text-tertiary)">
+        Aucun message dans cette conversation.
+      </p>
+    ) : null;
+
   return (
     <>
       <FollowedInBanner listenings={listenings} backTo={backTo} />
 
-      <div
-        className={
-          isEmail
-            ? "flex flex-col gap-2.5 px-[18px] pt-3.5 pb-3"
-            : "flex flex-col gap-[15px] px-[18px] pt-4 pb-3"
-        }
-      >
-        {messages.length === 0 ? (
-          <p className="py-10 text-center text-[13.5px] text-(--text-tertiary)">
-            Aucun message dans cette conversation.
-          </p>
-        ) : null}
-
-        {messages.map((m) =>
-          isEmail ? (
+      {isEmail ? (
+        // Email — conteneur paddé, messages pleine largeur (pas de geste ici :
+        // on ouvre un sujet email depuis la CONVERSATION, dans la liste).
+        <div className="flex flex-col gap-2.5 px-[18px] pt-3.5 pb-3">
+          {empty}
+          {messages.map((m) => (
             <EmailMessage key={m.id} data={m} />
-          ) : (
-            <MessageBubble
-              key={m.id}
-              data={{
-                id: m.id,
-                direction: m.direction,
-                actor: m.direction === "outgoing" ? "user" : "contact",
-                senderName: m.senderName,
-                time: m.time,
-                content: m.content,
-                attachment: m.attachment,
-              }}
-            />
-          ),
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        // WhatsApp — chaque message est une ligne pleine largeur (fond de swipe
+        // bord à bord), swipe droite = ouvrir/étendre l'écoute sur ce message.
+        <div className="flex flex-col pt-1.5 pb-3">
+          {empty}
+          {messages.map((m) => (
+            <WhatsAppMessageRow key={m.id} data={m} />
+          ))}
+        </div>
+      )}
     </>
   );
 }
