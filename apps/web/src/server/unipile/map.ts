@@ -72,6 +72,17 @@ function plainContent(mail: UnipileMailWebhook): string | null {
 }
 
 /**
+ * Corps HTML d'origine, conservé pour un rendu FIDÈLE (l'iframe isolé s'occupe de
+ * l'isolation CSS et bloque le JS). On retire tout de même les `<script>` par
+ * ceinture-bretelles. Null si l'e-mail n'a pas de partie HTML.
+ */
+function htmlContent(mail: UnipileMailWebhook): string | null {
+  if (!mail.body?.trim()) return null;
+  const html = mail.body.replace(/<script[\s\S]*?<\/script>/gi, "").trim();
+  return html || null;
+}
+
+/**
  * Convertit un `mail_received` en entrée `ingestInboundEmail`. `senderRaw` porte
  * l'adresse email brute (cf. modèle : « L'information brute de l'expéditeur
  * (adresse email ou numéro) »). `channelId` provient de la résolution du tenant
@@ -96,6 +107,7 @@ export function toInboundEmail(
     senderName: mail.from_attendee?.display_name ?? null,
     subjectLine: mail.subject ?? null,
     content: plainContent(mail),
+    contentHtml: htmlContent(mail),
     receivedAt:
       receivedAt && !Number.isNaN(receivedAt.getTime()) ? receivedAt : null,
   };

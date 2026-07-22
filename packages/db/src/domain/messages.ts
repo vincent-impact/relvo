@@ -56,6 +56,8 @@ export const createMessageSchema = z.object({
   groupTitle: z.string().trim().max(200).optional().nullable(),
   subjectLine: z.string().trim().max(500).optional().nullable(),
   content: z.string().optional().nullable(),
+  /** Corps HTML d'un e-mail (rendu isolé). Null hors email. */
+  contentHtml: z.string().optional().nullable(),
   receivedAt: z.date().optional().nullable(),
   sentAt: z.date().optional().nullable(),
   status: z.enum(MessageStatus).optional(),
@@ -179,6 +181,7 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
         isGroup: data.isGroup ?? false,
         subjectLine: data.subjectLine ?? null,
         content: data.content ?? null,
+        contentHtml: data.contentHtml ?? null,
         receivedAt: data.receivedAt ?? (incoming ? new Date() : null),
         sentAt: data.sentAt ?? (incoming ? null : new Date()),
         status:
@@ -240,6 +243,7 @@ export const ingestInboundEmailSchema = z.object({
   senderName: z.string().trim().max(200).optional().nullable(),
   subjectLine: z.string().trim().max(500).optional().nullable(),
   content: z.string().optional().nullable(),
+  contentHtml: z.string().optional().nullable(),
   receivedAt: z.date().optional().nullable(),
 });
 
@@ -303,6 +307,7 @@ export async function ingestInboundEmail(
       externalThreadId: data.externalThreadId ?? null,
       subjectLine: data.subjectLine ?? null,
       content: data.content ?? null,
+      contentHtml: data.contentHtml ?? null,
       receivedAt: data.receivedAt ?? new Date(),
     });
     // Ancré dans une fenêtre ouverte → le sujet refait surface dans le fil des

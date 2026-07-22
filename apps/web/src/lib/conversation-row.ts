@@ -48,6 +48,8 @@ export type ThreadMessageData = {
   direction: "incoming" | "outgoing";
   senderName: string;
   content: string;
+  /** Corps HTML d'un e-mail (rendu isolé), ou null → repli texte. */
+  contentHtml: string | null;
   time: string;
   /** Sujet couvrant ce message — porte AUSSI la matière du cordon (domaine). */
   subject: {
@@ -72,6 +74,7 @@ export function toThreadMessageData(
     direction: m.direction,
     senderName: m.senderName,
     content: m.content ?? "",
+    contentHtml: m.contentHtml,
     time: formatRelative(m.sentAt) ?? "",
     subject: m.subject,
     // Une seule pièce jointe rendue sous la bulle, comme dans le fil d'un sujet

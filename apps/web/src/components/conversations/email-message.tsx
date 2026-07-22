@@ -1,4 +1,5 @@
 import { AttachmentPreview } from "@/components/shared/attachment-preview";
+import { EmailHtmlFrame } from "@/components/conversations/email-html-frame";
 import { LinkifiedText } from "@/components/shared/linkified-text";
 import type { ThreadMessageData } from "@/lib/conversation-row";
 import { initialsFor } from "@/lib/display";
@@ -45,8 +46,13 @@ export function EmailMessage({ data }: { data: ThreadMessageData }) {
         ) : null}
       </header>
 
-      {data.content.trim() ? (
-        <div className="text-[15px] leading-[1.5] [overflow-wrap:anywhere] whitespace-pre-wrap text-(--text-primary)">
+      {data.contentHtml ? (
+        // Rendu fidèle du HTML d'origine, isolé dans un iframe.
+        <EmailHtmlFrame html={data.contentHtml} />
+      ) : data.content.trim() ? (
+        // Repli texte : e-mails sans partie HTML, nos envois, e-mails d'avant la
+        // capture du HTML (migration sans backfill).
+        <div className="text-[15px] leading-normal wrap-anywhere whitespace-pre-wrap text-(--text-primary)">
           <LinkifiedText text={data.content} />
         </div>
       ) : null}

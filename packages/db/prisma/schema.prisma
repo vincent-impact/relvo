@@ -538,6 +538,11 @@ model Message {
   isGroup            Boolean          @default(false) @map("is_group")
   subjectLine        String?          @map("subject_line")
   content            String?          @db.Text
+  /// Corps HTML original d'un e-mail (M6ter+). `content` reste le texte brut
+  /// (aperçus de liste, recherche, IA) ; `contentHtml` porte la mise en forme
+  /// d'origine, rendue dans un iframe ISOLÉ (le CSS d'un e-mail est envahissant,
+  /// son JS hostile). Null pour WhatsApp et nos envois (texte simple).
+  contentHtml        String?          @db.Text @map("content_html")
   receivedAt         DateTime?        @map("received_at")
   sentAt             DateTime?        @map("sent_at")
   // Lecture d'un message (incoming) : posé quand on ouvre la CONVERSATION (et

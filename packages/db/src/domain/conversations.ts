@@ -574,6 +574,8 @@ export type ConversationMessageItem = {
   id: string;
   direction: MessageDirection;
   content: string | null;
+  /** Corps HTML d'un e-mail, pour un rendu fidèle (iframe isolé). Null sinon. */
+  contentHtml: string | null;
   subjectLine: string | null;
   /** Nom lisible de l'expéditeur (contact > nom de profil > identifiant brut). */
   senderName: string;
@@ -706,6 +708,7 @@ export async function getConversationThread(
       id: m.id,
       direction: m.direction,
       content: m.content,
+      contentHtml: m.contentHtml,
       subjectLine: m.subjectLine,
       senderName: m.senderContact
         ? contactDisplayName(m.senderContact)
