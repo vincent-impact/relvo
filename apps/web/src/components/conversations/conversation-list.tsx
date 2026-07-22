@@ -19,6 +19,9 @@ import {
   reactivateConversationAction,
 } from "@/server/actions/conversations";
 import { SwipeRow } from "@/components/shared/swipe-row";
+import { OpenOrAttachDialog } from "@/components/conversations/open-or-attach-dialog";
+import type { SubjectPickerOption } from "@/components/messages/subject-picker-dialog";
+import { attachConversationToSubjectAction } from "@/server/actions/subject-conversations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -87,14 +90,17 @@ function ConversationRow({
   data,
   filter,
   onRemove,
+  subjects,
 }: {
   data: ConversationRowData;
   filter: ConversationFilterSlug;
   onRemove: (id: string) => void;
+  subjects: SubjectPickerOption[];
 }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [openAttach, setOpenAttach] = useState(false);
   const unread = data.unreadCount > 0;
   // Dans « Ignorées », le geste rend la source au flux ; ailleurs il l'en sort.
   const reviving = filter === "ignorees";
@@ -130,6 +136,22 @@ function ConversationRow({
       if (res.ok) {
         toast.success("Sujet créé");
         router.push(`/sujets/${res.data.id}?from=/conversations`);
+      } else {
+        toast.error(res.message);
+      }
+    });
+  }
+
+  // 2e option du swipe droite email : rattacher le fil à un sujet EXISTANT.
+  function attachTo(subjectId: string) {
+    startTransition(async () => {
+      const res = await attachConversationToSubjectAction({
+        subjectId,
+        conversationId: data.id,
+      });
+      if (res.ok) {
+        toast.success("Fil rattaché au sujet");
+        router.push(`/sujets/${res.data.subjectId}?from=/conversations`);
       } else {
         toast.error(res.message);
       }
@@ -172,8 +194,10 @@ function ConversationRow({
       right={
         !reviving && isEmail
           ? {
-              onAct: openSubject,
-              label: "Nouveau sujet",
+              // Deux issues (nouveau / rattacher) → on ouvre le dialog, la ligne
+              // revient en place.
+              onAct: () => setOpenAttach(true),
+              label: "Sujet",
               icon: Sparkles,
               tone: "brand" as const,
             }
@@ -279,6 +303,21 @@ function ConversationRow({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <OpenOrAttachDialog
+        open={openAttach}
+        onOpenChange={setOpenAttach}
+        subjects={subjects}
+        pending={pending}
+        onNew={() => {
+          setOpenAttach(false);
+          openSubject();
+        }}
+        onAttach={(subjectId) => {
+          setOpenAttach(false);
+          attachTo(subjectId);
+        }}
+      />
     </SwipeRow>
   );
 }
@@ -287,10 +326,13 @@ export function ConversationList({
   filter,
   initialItems,
   initialCursor,
+  subjects = [],
 }: {
   filter: ConversationFilterSlug;
   initialItems: ConversationRowData[];
   initialCursor: string | null;
+  /** Sujets ouverts candidats au « rattacher à un sujet existant ». */
+  subjects?: SubjectPickerOption[];
 }) {
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(initialCursor);
@@ -368,6 +410,7 @@ export function ConversationList({
             data={c}
             filter={filter}
             onRemove={remove}
+            subjects={subjects}
           />
         ))
       )}

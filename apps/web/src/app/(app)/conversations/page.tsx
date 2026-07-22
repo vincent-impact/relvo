@@ -30,10 +30,25 @@ import { getTenantDb } from "@/server/auth-context";
 
 async function List({ filter }: { filter: ConversationFilterSlug }) {
   const db = await getTenantDb();
-  const page = await listConversationItems(db, {
-    filter: CONVERSATION_FILTER_SLUGS[filter],
-    limit: CONVERSATIONS_PAGE_SIZE,
-  });
+  const [page, subjectRows] = await Promise.all([
+    listConversationItems(db, {
+      filter: CONVERSATION_FILTER_SLUGS[filter],
+      limit: CONVERSATIONS_PAGE_SIZE,
+    }),
+    // Sujets OUVERTS candidats au « rattacher à un sujet existant » (swipe droite
+    // email). Un sujet validé/fermé n'écoute plus : ce n'est pas un candidat.
+    db.subject.findMany({
+      where: { status: "open" },
+      orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
+      take: 200,
+      select: {
+        id: true,
+        reference: true,
+        title: true,
+        folder: { select: { slug: true } },
+      },
+    }),
+  ]);
   return (
     <ConversationList
       // La clé force un remontage à chaque changement de filtre : l'état local
@@ -42,6 +57,12 @@ async function List({ filter }: { filter: ConversationFilterSlug }) {
       filter={filter}
       initialItems={page.items.map(toConversationRowData)}
       initialCursor={page.nextCursor}
+      subjects={subjectRows.map((s) => ({
+        id: s.id,
+        reference: s.reference,
+        title: s.title,
+        folderSlug: s.folder?.slug ?? null,
+      }))}
     />
   );
 }

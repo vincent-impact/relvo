@@ -2,6 +2,7 @@
 
 import {
   type ChannelType,
+  attachEmailConversationToSubject,
   detachConversationFromSubject,
   ensureSubjectAnchors,
   extendSubjectToConversation,
@@ -45,6 +46,32 @@ export async function extendSubjectToConversationAction(input: {
  */
 export async function ensureSubjectAnchorsAction(subjectId: string) {
   return domainAction((db) => ensureSubjectAnchors(db, subjectId));
+}
+
+/**
+ * « Rattacher à un sujet existant » (2e option du swipe droite email, M6ter) —
+ * attache le fil au sujet choisi et y balaie tout l'amont. Renvoie l'id du sujet
+ * pour naviguer vers sa fiche.
+ */
+export async function attachConversationToSubjectAction(input: {
+  subjectId: string;
+  conversationId: string;
+}) {
+  const result = await domainAction(async (db) => {
+    await attachEmailConversationToSubject(
+      db,
+      input.subjectId,
+      input.conversationId,
+    );
+    return { subjectId: input.subjectId };
+  });
+  if (result.ok) {
+    revalidatePath(`/sujets/${input.subjectId}`);
+    revalidatePath("/conversations");
+    revalidatePath("/fil");
+    revalidateTenantData();
+  }
+  return result;
 }
 
 /**

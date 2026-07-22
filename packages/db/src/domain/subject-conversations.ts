@@ -313,6 +313,29 @@ export async function attachConversationToSubject(
   });
 }
 
+/**
+ * Rattache un fil EMAIL à un sujet EXISTANT (2e option du swipe droite email,
+ * M6ter) — attache la conversation ET balaie tout le fil dans le sujet : le sujet
+ * EST le fil, ancre nulle, amont compris. La garde V1 d'`attachConversationToSubject`
+ * empêche de rattacher un fil déjà écouté par un sujet ouvert.
+ */
+export async function attachEmailConversationToSubject(
+  db: TenantDb,
+  subjectId: string,
+  conversationId: string,
+) {
+  const link = await attachConversationToSubject(db, {
+    subjectId,
+    conversationId,
+  });
+  await sweepConversationIntoSubject(db, {
+    conversationId,
+    subjectId,
+    anchorMessageId: null,
+  });
+  return link;
+}
+
 export async function detachConversationFromSubject(
   db: TenantDb,
   subjectId: string,

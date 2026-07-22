@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   ChannelType,
   SubjectStatus,
+  attachEmailConversationToSubject,
   closeSubject,
+  createSubject,
   createSubjectFromConversation,
   createSubjectFromMessage,
   ignoreConversation,
@@ -128,6 +130,34 @@ describe("email : ouvrir un sujet balaie le fil ENTIER", () => {
 
     const aAfter = await db.message.findFirst({ where: { id: a.message.id } });
     expect(aAfter?.subjectId).toBe(subject.id);
+  });
+
+  it("rattacher un fil email à un sujet existant balaie tout le fil", async () => {
+    const { db, emailChannel } = await makeAccount("mail-attach@test.fr");
+    const a = await mailInto(db, emailChannel.id, "at-1", "1");
+    const b = await mailInto(
+      db,
+      emailChannel.id,
+      "at-2",
+      "2",
+      "Re: Livraison sauce blanche",
+    );
+    const subject = await createSubject(db, {
+      title: "Sujet existant",
+      contactIds: [],
+      createdByActor: "user",
+    });
+
+    await attachEmailConversationToSubject(
+      db,
+      subject.id,
+      a.message.conversationId,
+    );
+
+    for (const m of [a, b]) {
+      const after = await db.message.findFirst({ where: { id: m.message.id } });
+      expect(after?.subjectId).toBe(subject.id);
+    }
   });
 
   it("ignorer un fil email le fait taire : un nouvel email ne ROUVRE plus", async () => {
