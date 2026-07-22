@@ -406,8 +406,15 @@ model Conversation {
 }
 
 // ─────────────────────────────────────────────────────────────
-// 5ter. SubjectConversation — « ce sujet est la FENÊTRE ACTIVE sur cette
-// conversation », donc les nouveaux messages lui reviennent (règle d'ancrage).
+// 5ter. SubjectConversation — « ce sujet ÉCOUTE cette conversation », donc les
+// nouveaux messages lui reviennent (règle d'ancrage). L'écoute a DEUX bornes :
+// `anchorMessageId` (début) et `closingMessageId` (fin). Cf. invariant n°13bis.
+//
+//   • email    → écoute PERMANENTE : les deux bornes restent NULL, le sujet EST
+//                le fil, il balaie tout l'amont et le futur, un nouvel email le
+//                rouvre. On ne pose JAMAIS de borne sur un lien email.
+//   • WhatsApp → écoute BORNÉE : ancre à l'ouverture, borne de fin posée quand
+//                le sujet est validé/fermé (l'écoute s'arrête là).
 //
 // ⚠️ Cette table ne porte PAS l'appartenance des messages, qui vit sur
 // Message.subjectId. Deux liens, deux rôles distincts — c'est la seule
@@ -419,16 +426,23 @@ model SubjectConversation {
   accountId       String   @map("account_id") @db.Uuid
   subjectId       String   @map("subject_id") @db.Uuid
   conversationId  String   @map("conversation_id") @db.Uuid
-  /// Le message à partir duquel la fenêtre s'ouvre sur cette conversation. Les
-  /// messages ANTÉRIEURS restent dans la conversation sans appartenir au sujet.
-  /// Si ce message est détaché, l'ancre GLISSE au message suivant du sujet.
+  /// DÉBUT de l'écoute. Les messages ANTÉRIEURS restent dans la conversation sans
+  /// appartenir au sujet. NULL = pas d'ancre = tout le fil (cas email : le sujet
+  /// EST le fil). Sur un fil WhatsApp, un swipe droite sur un message plus ancien
+  /// la fait REMONTER jusqu'à lui.
   anchorMessageId String?  @map("anchor_message_id") @db.Uuid
+  /// FIN de l'écoute — posée quand le sujet est validé/fermé (WhatsApp). Les
+  /// messages POSTÉRIEURS n'appartiennent plus au sujet et retombent orphelins.
+  /// NULL = écoute encore ouverte (ou lien email, jamais borné). Sans backfill :
+  /// une colonne ajoutée par M6ter, vide sur les liens existants.
+  closingMessageId String? @map("closing_message_id") @db.Uuid
   createdAt       DateTime @default(now()) @map("created_at")
 
-  account       Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  subject       Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
-  conversation  Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  anchorMessage Message?     @relation("SubjectConversationAnchor", fields: [anchorMessageId], references: [id], onDelete: SetNull)
+  account        Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  subject        Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  anchorMessage  Message?     @relation("SubjectConversationAnchor", fields: [anchorMessageId], references: [id], onDelete: SetNull)
+  closingMessage Message?     @relation("SubjectConversationClosing", fields: [closingMessageId], references: [id], onDelete: SetNull)
 
   @@unique([subjectId, conversationId])
   @@index([accountId])
@@ -449,8 +463,10 @@ model Subject {
   folderId              String?       @map("folder_id") @db.Uuid
   contactIds            String[]      @default([]) @map("contact_ids") @db.Uuid
   status                SubjectStatus @default(open)
-  /// Date de validation OU de fermeture — BORNE HAUTE DE LA FENÊTRE : un message
-  /// postérieur n'appartient plus au sujet. Null tant que le sujet est ouvert.
+  /// Date de validation OU de fermeture — SIMPLE DATE (déclassée par M6ter). Elle
+  /// ne gouverne plus l'appartenance : ce sont les bornes d'écoute
+  /// (SubjectConversation.anchor/closing) qui disent quels messages sont dans le
+  /// sujet. Null tant que le sujet est ouvert. Cf. invariant n°13bis.
   closedAt              DateTime?     @map("closed_at")
   priority              Priority      @default(normal)
   // Marqueur « En attente » (cumulable, distinct du statut) — posé par Relvo
@@ -546,6 +562,7 @@ model Message {
   actions          Action[]
   eventLogs        EventLog[]
   anchorFor        SubjectConversation[] @relation("SubjectConversationAnchor")
+  closingFor       SubjectConversation[] @relation("SubjectConversationClosing")
   lastMessageOf    Conversation?         @relation("ConversationLastMessage")
 
   // Idempotence des webhooks : un provider rejoue ses livraisons. Un même

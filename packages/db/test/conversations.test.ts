@@ -434,14 +434,15 @@ describe("countUnsortedConversations (KPI « Sans sujet »)", () => {
     });
     expect(await countUnsortedConversations(db)).toBe(1);
 
-    // Fenêtre ouverte sur le DERNIER message : le 1er reste sans sujet par
-    // conception (antérieur à l'ancre), mais la conversation n'a plus rien à
-    // trier — sinon le KPI ne retomberait jamais à zéro.
-    await createSubjectFromMessage(db, second.message.id);
+    // ⚠️ EMAIL (M6ter) — le sujet EST le fil : ouvrir un sujet depuis N'IMPORTE
+    // quel message d'un fil email balaie le fil ENTIER, amont compris. Le 1er
+    // message rejoint donc le sujet lui aussi (fini le balayage partiel qui n'en
+    // rattachait qu'un). Et la conversation sort du KPI « Sans sujet ».
+    const subject = await createSubjectFromMessage(db, second.message.id);
     expect(
       (await db.message.findFirst({ where: { id: first.message.id } }))
         ?.subjectId,
-    ).toBeNull();
+    ).toBe(subject.id);
     expect(await countUnsortedConversations(db)).toBe(0);
   });
 

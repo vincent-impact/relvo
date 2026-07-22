@@ -182,26 +182,33 @@ describe("règle d'ancrage à la réception (email)", () => {
     expect(message.subjectId).toBeNull();
   });
 
-  // Fermer un sujet, c'est REFERMER la fenêtre : la conversation continue de
-  // vivre (rien n'est perdu) mais ses nouveaux messages ne sont plus captés.
-  it("un sujet fermé ne capte plus les nouveaux messages de sa conversation", async () => {
+  // ⚠️ ASYMÉTRIE M6ter (invariant n°7) — un fil d'email EST un sujet : fermer ne
+  // pose AUCUNE borne de fin sur un lien email (contrairement à WhatsApp). Un
+  // nouvel email de même objet + même interlocuteur REJOINT le sujet et le
+  // ROUVRE. Le seul geste qui fait taire un fil email est `ignoreConversation`.
+  it("un email de même objet ROUVRE un sujet fermé et le rejoint", async () => {
     const { channel, db } = await makeAccountWithChannel("closed@test.fr");
     const { subject } = await openWindowOn(db, channel.id, {
       externalId: "anchor-closed",
-      sender: "spam@groupe.fr",
-      subjectLine: "Groupe bavard",
+      sender: "karim@sogood.fr",
+      subjectLine: "Livraison sauce blanche",
     });
     await updateSubjectStatus(db, subject.id, SubjectStatus.closed);
 
     const { message } = await ingestInboundEmail(db, {
       channelId: channel.id,
       externalId: "into-closed",
-      senderRaw: "spam@groupe.fr",
-      subjectLine: "Re: Groupe bavard",
+      senderRaw: "karim@sogood.fr",
+      subjectLine: "Re: Livraison sauce blanche",
       content: "Encore un message.",
     });
 
-    expect(message.subjectId).toBeNull();
+    // Le message rejoint le sujet…
+    expect(message.subjectId).toBe(subject.id);
+    // …et le sujet est repassé en OUVERT, sa date de clôture effacée.
+    const reopened = await db.subject.findFirst({ where: { id: subject.id } });
+    expect(reopened?.status).toBe(SubjectStatus.open);
+    expect(reopened?.closedAt).toBeNull();
   });
 });
 

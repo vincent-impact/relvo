@@ -291,25 +291,46 @@ export async function resolveWhatsAppChatIdentity(
 }
 
 /**
- * RÈGLE D'ANCRAGE (M6bis.4) — destination par défaut d'un message qui arrive.
- * Si la conversation porte une fenêtre de sujet OUVERTE, le message lui revient
- * automatiquement.
+ * RÈGLE D'ANCRAGE (M6bis.4, révisée M6ter) — destination d'un message qui arrive.
+ * On cherche l'ÉCOUTE encore ouverte sur la conversation : un lien
+ * `SubjectConversation` dont la BORNE DE FIN n'est pas posée
+ * (`closingMessageId == null`). Cette seule condition tient les DEUX régimes sans
+ * jamais tester le canal (invariant n°13bis) :
  *
- * ⚠️ C'est un DÉFAUT, pas une définition : l'utilisateur (et plus tard Relvo)
- * peut détacher ou déplacer un message à la marge. C'est aussi un ÉCHAFAUDAGE
- * du mode manuel — quand l'IA saura séparer des sujets entrelacés, c'est elle
- * qui décidera, et cette règle disparaîtra sans changer le modèle.
+ *   • email    → le lien permanent n'a jamais de borne → toujours à l'écoute →
+ *     le message rejoint le sujet, et s'il était validé/fermé il ROUVRE (n°7).
+ *   • WhatsApp → après validation/fermeture la borne est posée → plus d'écoute →
+ *     le message retombe orphelin (la conversation redevient « Sans sujet »).
+ *
+ * `needsReopen` distingue les deux sans que l'appelant ait à connaître le canal :
+ * il vaut `true` quand l'écoute couvre le message mais que le sujet n'est plus
+ * ouvert — cas qui, structurellement, ne survient que pour l'email (un lien
+ * WhatsApp d'un sujet fermé porterait une borne, donc ne serait pas trouvé ici).
+ *
+ * ⚠️ Une conversation IGNORÉE (mute) est une PAUSE : aucun message ne l'alimente,
+ * sans borne de fin — « Réactiver » reprend là où on s'était arrêté.
  */
-export async function findOpenSubjectForConversation(
+export async function findListeningSubjectForConversation(
   db: Tx,
   conversationId: string,
-): Promise<string | null> {
+): Promise<{ subjectId: string; needsReopen: boolean } | null> {
+  const conversation = await db.conversation.findFirst({
+    where: { id: conversationId },
+    select: { status: true },
+  });
+  if (!conversation || conversation.status === ConversationStatus.ignored) {
+    return null; // pause : rien ne capte tant que la source est en sourdine
+  }
   const link = await db.subjectConversation.findFirst({
-    where: { conversationId, subject: { status: SubjectStatus.open } },
-    select: { subjectId: true },
+    where: { conversationId, closingMessageId: null },
+    select: { subjectId: true, subject: { select: { status: true } } },
     orderBy: { createdAt: "desc" },
   });
-  return link?.subjectId ?? null;
+  if (!link) return null;
+  return {
+    subjectId: link.subjectId,
+    needsReopen: link.subject.status !== SubjectStatus.open,
+  };
 }
 
 export async function getConversation(db: TenantDb, id: string) {

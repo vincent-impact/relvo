@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Prisma } from "../generated/prisma/client";
 import {
   Actor,
+  ConversationType,
   MessageDirection,
   MessageStatus,
 } from "../generated/prisma/enums";
@@ -13,7 +14,7 @@ import {
   splitFullName,
 } from "./contacts";
 import {
-  findOpenSubjectForConversation,
+  findListeningSubjectForConversation,
   resolveConversation,
   resolveWhatsAppChatIdentity,
 } from "./conversations";
@@ -26,7 +27,8 @@ import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { type TenantCreate, ensureAffected } from "./helpers";
 import { type Page, cursorArgs, paginationSchema, toPage } from "./pagination";
-import { createSubject } from "./subjects";
+import { sweepConversationIntoSubject } from "./subject-conversations";
+import { createSubject, getSubject, reopenSubject } from "./subjects";
 
 // Domaine Messages (M3.8). Un message reste « Sans sujet » tant que subject_id
 // est null. Tri humain : cas M (rattachement), N (ignore), O (réaffectation /
@@ -142,15 +144,26 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
     groupTitle: data.groupTitle ?? null,
   });
 
-  // Règle d'ancrage : à défaut de sujet imposé par l'appelant, le message rejoint
-  // la fenêtre ouverte sur sa conversation, s'il y en a une.
-  const subjectId =
-    data.subjectId ??
-    (await findOpenSubjectForConversation(db, conversation.id));
+  // Règle d'ancrage (M6ter) : à défaut de sujet imposé par l'appelant, un message
+  // ENTRANT rejoint l'écoute encore ouverte sur sa conversation, s'il y en a une.
+  // Un sortant, lui, porte toujours son sujet explicitement (c'est une réponse).
+  let subjectId = data.subjectId ?? null;
+  let reopenSubjectId: string | null = null;
+  if (!subjectId && incoming) {
+    const routed = await findListeningSubjectForConversation(
+      db,
+      conversation.id,
+    );
+    if (routed) {
+      subjectId = routed.subjectId;
+      // Écoute permanente d'un sujet email non-ouvert → il ROUVRE (invariant n°7).
+      if (routed.needsReopen) reopenSubjectId = routed.subjectId;
+    }
+  }
 
   const occurredAt = (incoming ? data.receivedAt : data.sentAt) ?? new Date();
 
-  return db.$transaction(async (tx) => {
+  const message = await db.$transaction(async (tx) => {
     const message = await tx.message.create({
       data: {
         channelId: data.channelId,
@@ -202,6 +215,13 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
     });
     return message;
   });
+
+  // Réouverture HORS transaction de création : `reopenSubject` porte sa propre
+  // transaction (statut + journal + reprise des écoutes). Le message est déjà
+  // rattaché ; rouvrir ne fait que redonner de la vie au sujet côté fil.
+  if (reopenSubjectId) await reopenSubject(db, reopenSubjectId);
+
+  return message;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -598,115 +618,265 @@ function deriveSubjectTitle(
  * (invariant n°12 : un contact naît à la création d'un sujet), rattache le
  * message au nouveau sujet (`linked`) et journalise. Retourne le sujet créé.
  */
+export const openSubjectOnConversationSchema = z.object({
+  conversationId: z.uuid(),
+  /**
+   * DÉBUT de l'écoute. **null → tout le fil** (cas email : le sujet EST le fil,
+   * amont compris). **posée → à partir de ce message** (cas WhatsApp). La logique
+   * de balayage teste CETTE ancre, jamais le canal (invariant n°13bis).
+   */
+  anchorMessageId: z.uuid().optional().nullable(),
+  title: z.string().trim().min(1).max(200).optional(),
+  folderId: z.uuid().optional().nullable(),
+  createdByActor: z.enum(Actor).optional(),
+});
+
+export type OpenSubjectOnConversationInput = z.infer<
+  typeof openSubjectOnConversationSchema
+>;
+
+/**
+ * PRIMITIVE UNIQUE de M6ter — ouvrir un sujet EN ÉCOUTE sur une conversation,
+ * avec une ancre OPTIONNELLE. C'est le seul geste qui ouvre une écoute ; les deux
+ * entrées de l'UI (`createSubjectFromConversation` pour l'email,
+ * `createSubjectFromMessage` pour un message WhatsApp) ne font que choisir
+ * l'ancre à sa place. Le balayage (`sweepConversationIntoSubject`) teste l'ancre,
+ * pas le canal : ancre nulle = tout le fil, ancre posée = à partir d'elle.
+ *
+ * ⚠️ GARDE V1 : une conversation ne porte qu'UNE écoute active à la fois — un
+ * lien dont la borne de fin n'est pas posée (`closingMessageId == null`). Cette
+ * seule condition couvre les deux régimes sans tester le canal : email (lien
+ * permanent, toujours actif → 1:1 permanent) et WhatsApp (borne posée à la
+ * clôture → un nouveau sujet peut rouvrir une écoute sur le même fil).
+ */
+export async function openSubjectOnConversation(
+  db: TenantDb,
+  input: OpenSubjectOnConversationInput,
+) {
+  const data = openSubjectOnConversationSchema.parse(input);
+
+  const conversation = assertFound(
+    await db.conversation.findFirst({ where: { id: data.conversationId } }),
+    "Conversation",
+  );
+
+  const active = await db.subjectConversation.findFirst({
+    where: { conversationId: conversation.id, closingMessageId: null },
+    select: { subjectId: true },
+  });
+  if (active) {
+    throw new DomainError(
+      "CONFLICT",
+      "Cette conversation est déjà écoutée par un sujet ouvert.",
+    );
+  }
+
+  // Message « graine » : l'ancre si fournie, sinon le PLUS ANCIEN message du fil
+  // (cas email — on lit l'objet et l'interlocuteur du fil au démarrage).
+  const seed = await db.message.findFirst({
+    where: data.anchorMessageId
+      ? { id: data.anchorMessageId }
+      : { conversationId: conversation.id },
+    orderBy: data.anchorMessageId
+      ? undefined
+      : [{ createdAt: "asc" }, { id: "asc" }],
+  });
+
+  // Groupe : le sujet représente le GROUPE, pas un membre → aucun contact
+  // matérialisé en masse (invariant n°12). On lit le TYPE sur la conversation,
+  // plus fiable que le `isGroup` d'un message isolé.
+  const isGroup = conversation.type === ConversationType.whatsapp_group;
+
+  // Contact : le fil s'il en porte un, sinon l'expéditeur de la graine réutilisé
+  // ou matérialisé depuis son `sender_raw` (nom de profil privilégié).
+  let contactId = isGroup
+    ? null
+    : (conversation.contactId ?? seed?.senderContactId ?? null);
+  if (!isGroup && !contactId && seed && (seed.senderName || seed.senderRaw)) {
+    const rawId = seed.senderRaw?.trim() || null;
+    const isEmail = rawId?.includes("@") ?? false;
+    const contact = await createContact(db, {
+      ...splitFullName(seed.senderName ?? rawId ?? ""),
+      email: isEmail ? rawId : null,
+      phone: rawId && !isEmail ? rawId : null,
+      sourceActor: Actor.user,
+    });
+    contactId = contact.id;
+    if (seed.senderContactId == null) {
+      await db.message.updateMany({
+        where: { id: seed.id },
+        data: { senderContactId: contactId },
+      });
+    }
+    if (!conversation.contactId) {
+      await db.conversation.updateMany({
+        where: { id: conversation.id },
+        data: { contactId },
+      });
+    }
+  }
+
+  // Titre : avec ancre, on le dérive du message d'ancre ; sans ancre (email),
+  // l'objet du fil EST le titre (c'est le titre de la conversation).
+  const title =
+    data.title ??
+    (data.anchorMessageId && seed
+      ? deriveSubjectTitle(seed.subjectLine, seed.content)
+      : conversation.title);
+
+  const subject = await createSubject(db, {
+    title,
+    folderId: data.folderId ?? seed?.folderId ?? null,
+    contactIds: contactId ? [contactId] : [],
+    createdByActor: data.createdByActor ?? Actor.user,
+  });
+
+  await db.subjectConversation.create({
+    data: {
+      subjectId: subject.id,
+      conversationId: conversation.id,
+      anchorMessageId: data.anchorMessageId ?? null,
+    } satisfies TenantCreate<Prisma.SubjectConversationUncheckedCreateInput> as Prisma.SubjectConversationUncheckedCreateInput,
+  });
+
+  const { swept } = await sweepConversationIntoSubject(db, {
+    conversationId: conversation.id,
+    subjectId: subject.id,
+    anchorMessageId: data.anchorMessageId ?? null,
+  });
+
+  await db.subject.updateMany({
+    where: { id: subject.id },
+    data: { lastActivityAt: new Date() },
+  });
+
+  // Un SEUL événement de synthèse si l'écoute a emporté d'autres messages.
+  if (swept > 1) {
+    const others = swept - 1;
+    const plural = others > 1 ? "s" : "";
+    await logEvent(db, {
+      entityType: "subject",
+      entityId: subject.id,
+      subjectId: subject.id,
+      eventType: EVENT_TYPES.messageLinked,
+      title: `${others} message${plural} de la conversation couvert${plural} par le sujet`,
+      actor: "system",
+    });
+  }
+
+  return getSubject(db, subject.id);
+}
+
+/**
+ * ENTRÉE EMAIL — swipe droite sur la CONVERSATION. Le sujet EST le fil : ancre
+ * nulle, on balaie tout l'amont compris. C'est le geste qui corrige le bug où
+ * ouvrir un sujet sur un fil de six emails n'en rattachait qu'un.
+ */
+export async function createSubjectFromConversation(
+  db: TenantDb,
+  conversationId: string,
+  overrides?: { title?: string; folderId?: string | null },
+) {
+  return openSubjectOnConversation(db, {
+    conversationId,
+    anchorMessageId: null,
+    ...overrides,
+  });
+}
+
+/**
+ * ENTRÉE PAR MESSAGE — le réflexe « Relvo aurait dû m'en faire un sujet ».
+ *
+ *   • email    → on ignore le message précis et on ouvre sur TOUT le fil (le
+ *     sujet EST le fil). C'est ce qui répare le balayage partiel.
+ *   • WhatsApp → l'ancre est CE message. Et si une écoute existe déjà sur le fil,
+ *     un swipe droite sur un message plus ANCIEN la fait REMONTER jusqu'à lui —
+ *     un seul geste qui crée OU qui étend (invariant n°8).
+ */
 export async function createSubjectFromMessage(
   db: TenantDb,
   messageId: string,
   overrides?: { title?: string; folderId?: string | null },
 ) {
   const message = assertFound(
-    await db.message.findFirst({ where: { id: messageId } }),
+    await db.message.findFirst({
+      where: { id: messageId },
+      select: {
+        id: true,
+        subjectId: true,
+        conversationId: true,
+        createdAt: true,
+        conversation: { select: { type: true } },
+      },
+    }),
     "Message",
   );
-  if (message.subjectId) {
-    throw new DomainError(
-      "INVALID_STATE",
-      "Ce message est déjà rattaché à un sujet.",
-    );
+
+  // Déjà couvert par une écoute → geste sans effet, on renvoie son sujet.
+  if (message.subjectId) return getSubject(db, message.subjectId);
+
+  // Email : le message n'est qu'un point d'entrée vers le FIL entier.
+  if (message.conversation.type === ConversationType.email_subject) {
+    return createSubjectFromConversation(db, message.conversationId, overrides);
   }
 
-  // Groupe WhatsApp (hypothèse métier pré-M7 : 1 groupe = 1 sujet) → le sujet
-  // représente le GROUPE, pas un membre. On n'enregistre AUCUN contact en masse
-  // (invariant n°12 : jamais de contact « dans le vide ») : les participants
-  // restent visibles via le `senderName` de chaque message, et le composer
-  // répondra à « Tous » (le fil). Sinon (1:1) on matérialise l'expéditeur en
-  // contact : on réutilise celui du message, sinon on le crée depuis sender_raw.
-  // On PRIVILÉGIE le nom de profil (« Leroy Frederique ») pour le prénom/nom, et
-  // on classe l'identifiant brut en email ou téléphone selon sa forme.
-  let contactId = message.senderContactId;
-  if (
-    !message.isGroup &&
-    !contactId &&
-    (message.senderName || message.senderRaw)
-  ) {
-    const rawId = message.senderRaw?.trim() || null;
-    const isEmail = rawId?.includes("@") ?? false;
-    const contact = await createContact(db, {
-      ...splitFullName(message.senderName ?? rawId ?? ""),
-      email: isEmail ? rawId : null,
-      phone: rawId && !isEmail ? rawId : null,
-      sourceActor: Actor.user,
-    });
-    contactId = contact.id;
-    await db.message.updateMany({
-      where: { id: messageId },
-      data: { senderContactId: contactId },
-    });
-  }
-
-  // Le domaine du message « donne » son domaine au sujet (sauf override).
-  const subject = await createSubject(db, {
-    title:
-      overrides?.title ??
-      deriveSubjectTitle(message.subjectLine, message.content),
-    folderId: overrides?.folderId ?? message.folderId ?? null,
-    // Sujet de groupe → aucun interlocuteur individuel (réponse à Tous).
-    contactIds: !message.isGroup && contactId ? [contactId] : [],
-    createdByActor: Actor.user,
+  // WhatsApp : une écoute est-elle déjà ouverte sur ce fil ? Alors on ÉTEND
+  // (remontée d'ancre) au lieu d'ouvrir un second sujet.
+  const active = await db.subjectConversation.findFirst({
+    where: { conversationId: message.conversationId, closingMessageId: null },
+    select: { id: true, subjectId: true, anchorMessageId: true },
   });
-
-  // M6bis — ouvrir un sujet, c'est OUVRIR UNE FENÊTRE sur la conversation du
-  // message, ancrée sur ce message. C'est le seul geste qui pose une ancre.
-  await db.subjectConversation.create({
-    data: {
-      subjectId: subject.id,
+  if (active) {
+    return extendListeningToMessage(db, active, {
+      id: message.id,
       conversationId: message.conversationId,
-      anchorMessageId: message.id,
-    } satisfies TenantCreate<Prisma.SubjectConversationUncheckedCreateInput> as Prisma.SubjectConversationUncheckedCreateInput,
-  });
-
-  // La fenêtre s'ouvre À PARTIR de l'ancre : les messages de la conversation
-  // postérieurs à l'ancre et non encore couverts rejoignent le sujet ; les
-  // ANTÉRIEURS restent dans la conversation sans lui appartenir.
-  //
-  // C'est ce qui remplace l'ancien « balayage des frères orphelins » — avec une
-  // règle qui se justifie (la fenêtre) au lieu d'une heuristique de similarité.
-  const anchoredAt = message.receivedAt ?? message.sentAt ?? message.createdAt;
-  const covered = {
-    conversationId: message.conversationId,
-    subjectId: null,
-    status: { not: MessageStatus.ignored },
-    createdAt: { gte: message.createdAt },
-    OR: [{ receivedAt: { gte: anchoredAt } }, { sentAt: { gte: anchoredAt } }],
-  } satisfies Prisma.MessageWhereInput;
-
-  const [{ count: swept }] = await db.$transaction([
-    db.message.updateMany({
-      where: covered,
-      data: { subjectId: subject.id, status: MessageStatus.linked },
-    }),
-    db.attachment.updateMany({
-      where: { message: { is: covered } },
-      data: { subjectId: subject.id },
-    }),
-  ]);
-
-  await assignMessageToSubject(db, messageId, subject.id);
-
-  // Un SEUL événement de synthèse si la fenêtre a emporté d'autres messages —
-  // pas N entrées de journal.
-  if (swept > 0) {
-    const plural = swept > 1 ? "s" : "";
-    await logEvent(db, {
-      entityType: "subject",
-      entityId: subject.id,
-      subjectId: subject.id,
-      eventType: EVENT_TYPES.messageLinked,
-      title: `${swept} message${plural} de la conversation couvert${plural} par le sujet`,
-      actor: "system",
+      createdAt: message.createdAt,
     });
   }
 
-  return subject;
+  return openSubjectOnConversation(db, {
+    conversationId: message.conversationId,
+    anchorMessageId: message.id,
+    ...overrides,
+  });
+}
+
+/**
+ * Remonte l'ancre d'une écoute WhatsApp existante jusqu'à un message plus ancien
+ * et balaie le segment nouvellement couvert. Idempotent : si le message est déjà
+ * dans l'écoute (≥ ancre), rien à faire.
+ */
+async function extendListeningToMessage(
+  db: TenantDb,
+  link: { id: string; subjectId: string; anchorMessageId: string | null },
+  message: { id: string; conversationId: string; createdAt: Date },
+) {
+  if (link.anchorMessageId) {
+    const anchor = await db.message.findFirst({
+      where: { id: link.anchorMessageId },
+      select: { createdAt: true },
+    });
+    if (anchor && message.createdAt < anchor.createdAt) {
+      await db.subjectConversation.updateMany({
+        where: { id: link.id },
+        data: { anchorMessageId: message.id },
+      });
+      await sweepConversationIntoSubject(db, {
+        conversationId: message.conversationId,
+        subjectId: link.subjectId,
+        anchorMessageId: message.id,
+      });
+      await logEvent(db, {
+        entityType: "subject",
+        entityId: link.subjectId,
+        subjectId: link.subjectId,
+        eventType: EVENT_TYPES.anchorMoved,
+        title: "Écoute remontée à un message plus ancien",
+        actor: "user",
+      });
+    }
+  }
+  return getSubject(db, link.subjectId);
 }
 
 /**

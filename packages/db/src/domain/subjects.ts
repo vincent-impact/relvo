@@ -8,6 +8,10 @@ import { EVENT_TYPES, logEvent } from "./events";
 import { ensureAffected } from "./helpers";
 import { cursorArgs, paginationSchema, toPage } from "./pagination";
 import { nextSubjectReference } from "./reference";
+import {
+  closeListeningsForSubject,
+  resumeListeningsForSubject,
+} from "./subject-conversations";
 
 // Domaine Subjects (M3.7) — entité centrale. CRUD + transitions de statut
 // validées (Ouvert / Validé / Fermé) + acquittement implicite. Invariant :
@@ -363,6 +367,17 @@ export async function updateSubjectStatus(
       },
     });
     ensureAffected(count, "Sujet");
+
+    // M6ter — l'appartenance suit le STATUT côté WhatsApp seulement : valider ou
+    // fermer POSE la borne de fin des écoutes WhatsApp (elles cessent d'alimenter
+    // le sujet) ; rouvrir les REPREND. Les liens email sont intouchés — le sujet
+    // EST le fil, un nouvel email le rouvre (invariant n°13bis).
+    if (status === SubjectStatus.open) {
+      await resumeListeningsForSubject(tx as Tx, id);
+    } else {
+      await closeListeningsForSubject(tx as Tx, id);
+    }
+
     const subject = assertFound(
       await tx.subject.findFirst({ where: { id } }),
       "Sujet",

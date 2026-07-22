@@ -43,6 +43,9 @@ export const EVENT_TYPES = {
   conversationAttached: "conversation_attached",
   conversationDetached: "conversation_detached",
   anchorMoved: "anchor_moved",
+  // Écoute d'un sujet sur une conversation (M6ter) — début (ancre) et fin.
+  listeningClosed: "listening_closed",
+  listeningResumed: "listening_resumed",
   // Messages
   messageIncomingReceived: "message_incoming_received",
   messageOutgoingSent: "message_outgoing_sent",

@@ -4,6 +4,7 @@ import {
   ChannelType,
   ConversationStatus,
   ConversationType,
+  MessageStatus,
   SubjectStatus,
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
@@ -20,6 +21,144 @@ import type { TenantCreate } from "./helpers";
 // Le cas d'usage central de ce fichier est le cas S : un sujet parti d'un fil
 // WhatsApp se poursuit par email. C'est là que se fait la réunification entre
 // canaux — un sujet porte alors deux conversations, chacune avec son ancre.
+
+// ─────────────────────────────────────────────────────────────
+// Balayage — le cœur PARTAGÉ de l'ouverture et du rattachement
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Balaie les messages d'une conversation dans un sujet. Teste l'ANCRE, jamais le
+ * canal (invariant n°13bis) :
+ *
+ *   • ancre NULLE → tout le fil (amont compris). C'est le cas EMAIL : le sujet
+ *     EST le fil, il n'y a pas de « à partir d'où », il n'y a que « tout ».
+ *   • ancre POSÉE → du message d'ancre jusqu'à la fin. C'est le cas WhatsApp :
+ *     l'écoute commence là où l'utilisateur l'a décidé.
+ *
+ * Ne prend QUE les messages encore sans sujet et non ignorés : on ne vole jamais
+ * un message déjà rattaché ailleurs (l'entrelacement, invisible en UI jusqu'à M7,
+ * reste vrai dans le modèle). Nombre de requêtes CONSTANT (cf. incident P2028).
+ */
+export async function sweepConversationIntoSubject(
+  db: TenantDb,
+  opts: {
+    conversationId: string;
+    subjectId: string;
+    anchorMessageId?: string | null;
+  },
+): Promise<{ swept: number }> {
+  const anchorAt = opts.anchorMessageId
+    ? ((
+        await db.message.findFirst({
+          where: { id: opts.anchorMessageId },
+          select: { createdAt: true },
+        })
+      )?.createdAt ?? null)
+    : null;
+
+  const covered = {
+    conversationId: opts.conversationId,
+    subjectId: null,
+    status: { not: MessageStatus.ignored },
+    // Ancre posée → ordre d'insertion ≥ ancre (l'ancre elle-même incluse).
+    ...(anchorAt ? { createdAt: { gte: anchorAt } } : {}),
+  } satisfies Prisma.MessageWhereInput;
+
+  const [{ count: swept }] = await db.$transaction([
+    db.message.updateMany({
+      where: covered,
+      data: { subjectId: opts.subjectId, status: MessageStatus.linked },
+    }),
+    db.attachment.updateMany({
+      where: { message: { is: covered } },
+      data: { subjectId: opts.subjectId },
+    }),
+  ]);
+  return { swept };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Arrêt / reprise des écoutes — piloté par les transitions de statut
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Arrête les écoutes WhatsApp d'un sujet qu'on VALIDE ou FERME : chaque lien
+ * WhatsApp encore ouvert (`closingMessageId == null`) reçoit sa BORNE DE FIN = le
+ * dernier message du sujet dans cette conversation. Les messages postérieurs
+ * retomberont donc orphelins.
+ *
+ * ⚠️ Les liens EMAIL sont INTOUCHÉS : le sujet EST le fil, il n'a pas de fin — un
+ * nouvel email le rouvre (invariant n°7). On distingue par le TYPE de la
+ * conversation (email = permanent), une propriété de donnée, pas « le canal ».
+ * Appelée DANS la transaction de changement de statut.
+ */
+export async function closeListeningsForSubject(
+  tx: Tx,
+  subjectId: string,
+): Promise<number> {
+  const links = await tx.subjectConversation.findMany({
+    where: {
+      subjectId,
+      closingMessageId: null,
+      conversation: { is: { type: { not: ConversationType.email_subject } } },
+    },
+    select: { id: true, conversationId: true },
+  });
+  let closed = 0;
+  for (const link of links) {
+    const last = await tx.message.findFirst({
+      where: { subjectId, conversationId: link.conversationId },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      select: { id: true },
+    });
+    if (!last) continue; // écoute sans aucun message couvert : rien à borner
+    await tx.subjectConversation.updateMany({
+      where: { id: link.id },
+      data: { closingMessageId: last.id },
+    });
+    closed += 1;
+  }
+  return closed;
+}
+
+/**
+ * Reprend les écoutes d'un sujet qu'on ROUVRE : on efface la borne de fin de ses
+ * liens. Symétrique de `closeListeningsForSubject`. Les liens email n'en avaient
+ * pas — sans effet sur eux.
+ *
+ * ⚠️ On ne relance PAS une écoute sur une conversation qu'un AUTRE sujet écoute
+ * déjà (garde V1 : au plus une écoute active par conversation). Le lien reste
+ * alors borné : le vieux sujet garde ses anciens messages, le fil continue
+ * d'alimenter le concurrent. Dégradation silencieuse plutôt qu'une erreur au clic
+ * sur « Remettre ». Appelée DANS la transaction de changement de statut.
+ */
+export async function resumeListeningsForSubject(
+  tx: Tx,
+  subjectId: string,
+): Promise<number> {
+  const links = await tx.subjectConversation.findMany({
+    where: { subjectId, closingMessageId: { not: null } },
+    select: { id: true, conversationId: true },
+  });
+  let resumed = 0;
+  for (const link of links) {
+    const competing = await tx.subjectConversation.findFirst({
+      where: {
+        conversationId: link.conversationId,
+        closingMessageId: null,
+        subjectId: { not: subjectId },
+      },
+      select: { id: true },
+    });
+    if (competing) continue; // une autre écoute occupe déjà le fil
+    await tx.subjectConversation.updateMany({
+      where: { id: link.id },
+      data: { closingMessageId: null },
+    });
+    resumed += 1;
+  }
+  return resumed;
+}
 
 // ─────────────────────────────────────────────────────────────
 // Lecture
@@ -136,17 +275,17 @@ export async function attachConversationToSubject(
   });
   if (existing) return existing; // no-op idempotent : aucun événement en double
 
+  // Garde V1 (alignée M6ter) : une écoute active = un lien sans borne de fin.
+  // Couvre le 1:1 permanent de l'email (lien toujours actif) ET le « un seul
+  // sujet ouvert à la fois » du WhatsApp, sans tester le canal.
   const competing = await db.subjectConversation.findFirst({
-    where: {
-      conversationId: data.conversationId,
-      subject: { is: { status: SubjectStatus.open } },
-    },
+    where: { conversationId: data.conversationId, closingMessageId: null },
     select: { subjectId: true },
   });
   if (competing) {
     throw new DomainError(
       "CONFLICT",
-      "Cette conversation est déjà couverte par un sujet ouvert.",
+      "Cette conversation est déjà écoutée par un sujet ouvert.",
     );
   }
 
@@ -210,7 +349,13 @@ export async function detachConversationFromSubject(
  */
 export async function ensureSubjectAnchors(db: TenantDb, subjectId: string) {
   const pending = await db.subjectConversation.findMany({
-    where: { subjectId, anchorMessageId: null },
+    where: {
+      subjectId,
+      anchorMessageId: null,
+      // Les liens EMAIL n'ont PAS d'ancre : le sujet EST le fil (ancre nulle =
+      // tout le fil). Seules les écoutes WhatsApp ont un point de départ à poser.
+      conversation: { is: { type: { not: ConversationType.email_subject } } },
+    },
     select: { id: true, conversationId: true },
   });
   if (pending.length === 0) return { anchored: 0 };

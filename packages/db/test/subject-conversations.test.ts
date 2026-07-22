@@ -302,7 +302,7 @@ describe("attachConversationToSubject", () => {
         subjectId: other.id,
         conversationId: firstMessage.conversationId,
       }),
-    ).rejects.toThrow(/déjà couverte/i);
+    ).rejects.toThrow(/déjà écoutée/i);
 
     // Une fois la première fenêtre refermée, la conversation redevient libre.
     await closeSubject(db, subject.id);
@@ -336,7 +336,11 @@ describe("attachConversationToSubject", () => {
 // ─────────────────────────────────────────────────────────────
 
 describe("ensureSubjectAnchors", () => {
-  it("ancre la conversation étendue sur le premier message du sujet qui y arrive", async () => {
+  // ⚠️ M6ter — un lien EMAIL n'est JAMAIS ancré : le sujet EST le fil, ancre
+  // nulle = tout le fil. L'appartenance d'un email au sujet passe par le lien
+  // PERMANENT (règle d'ancrage à la réception), pas par une borne de début.
+  // `ensureSubjectAnchors` ne pose donc d'ancre que sur les écoutes WhatsApp.
+  it("ne pose AUCUNE ancre sur une conversation email étendue (le fil entier appartient au sujet)", async () => {
     const { db, emailChannel, subject } = await subjectFromWhatsApp(
       "anchor-late@test.fr",
     );
@@ -354,7 +358,7 @@ describe("ensureSubjectAnchors", () => {
       channelType: ChannelType.email,
     });
 
-    // Au rattachement, le premier message n'existe pas encore : ancre nulle.
+    // Au rattachement, ancre nulle (le premier message n'existe pas encore).
     const links = await listSubjectConversations(db, subject.id);
     expect(
       links.find((l) => l.conversationId === res.conversation.id)
@@ -369,16 +373,17 @@ describe("ensureSubjectAnchors", () => {
       content: "Bien reçu",
     });
 
+    // Le message rejoint bien le sujet — via le lien permanent, pas une ancre.
+    expect(reply.message.subjectId).toBe(subject.id);
+
+    // Et l'ancre du lien email RESTE nulle : rien à poser (email ≠ WhatsApp).
     const { anchored } = await ensureSubjectAnchors(db, subject.id);
-    expect(anchored).toBe(1);
+    expect(anchored).toBe(0);
     const after = await listSubjectConversations(db, subject.id);
     expect(
       after.find((l) => l.conversationId === res.conversation.id)
         ?.anchorMessageId,
-    ).toBe(reply.message.id);
-
-    // Idempotent : un second passage ne réécrit rien.
-    expect((await ensureSubjectAnchors(db, subject.id)).anchored).toBe(0);
+    ).toBeNull();
   });
 });
 
