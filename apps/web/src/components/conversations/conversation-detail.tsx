@@ -3,7 +3,15 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Folder, Mail, MessageCircle, Sparkles, Users, X } from "lucide-react";
+import {
+  EyeOff,
+  Folder,
+  Mail,
+  MessageCircle,
+  Sparkles,
+  Users,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { ConversationListening } from "@relvo/db";
 import { ConversationThread } from "@/components/conversations/conversation-thread";
@@ -203,25 +211,35 @@ export function ConversationDetail({
         />
       </Screen>
 
-      {/* Bas de page ANCRÉ (remplace le dock sur cet écran). Deux modes :
-          sélection WhatsApp (consigne + Annuler) ou boutons d'action. */}
+      {/* DOCK d'action ANCRÉ — même chrome violet que la barre d'onglets (verre
+          Relvo), pour que ces boutons se lisent comme des ACTIONS DE L'APP, pas
+          comme des CTA de l'e-mail. Convention : un primaire blanc plein
+          (« Ouvrir un sujet ») + un secondaire fantôme translucide (« Ignorer »).
+          Deux modes : sélection WhatsApp (consigne + Annuler) ou actions. */}
       <div
-        className="absolute inset-x-0 bottom-0 z-30 border-t border-(--border) bg-white px-4 pt-2.5"
-        style={{ paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}
+        className="absolute inset-x-0 bottom-0 z-30 px-4 pt-3"
+        style={{
+          paddingBottom: "max(calc(env(safe-area-inset-bottom) - 12px), 8px)",
+          background:
+            "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
+          backdropFilter: "blur(28px) saturate(170%)",
+          WebkitBackdropFilter: "blur(28px) saturate(170%)",
+          boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.22)",
+        }}
       >
         {selecting ? (
-          <div className="flex items-center gap-2 py-0.5">
+          <div className="flex items-center gap-2 py-1">
             <Sparkles
-              className="size-4 flex-none text-brand"
+              className="size-4 flex-none text-white"
               strokeWidth={2.2}
             />
-            <span className="flex-1 text-[13px] font-semibold text-brand">
+            <span className="flex-1 text-[13px] font-semibold text-white">
               Choisissez le message qui démarre le suivi
             </span>
             <button
               type="button"
               onClick={() => setSelecting(false)}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-[12.5px] font-bold text-(--text-tertiary) active:opacity-70"
+              className="inline-flex items-center gap-1 rounded-full border border-white/35 px-3 py-1.5 text-[12.5px] font-bold text-white active:opacity-70"
             >
               <X className="size-4" strokeWidth={2.4} />
               Annuler
@@ -229,19 +247,22 @@ export function ConversationDetail({
           </div>
         ) : (
           <div className="flex gap-2.5">
+            {/* Secondaire — fantôme translucide (action d'écartement, recule). */}
             <button
               type="button"
               disabled={pending}
               onClick={ignore}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-brand-accent py-2.5 text-[14px] font-bold text-white active:opacity-90 disabled:opacity-50"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-white/35 py-2.5 text-[14px] font-bold text-white active:bg-white/10 disabled:opacity-50"
             >
+              <EyeOff className="size-[17px]" strokeWidth={2} />
               Ignorer
             </button>
+            {/* Primaire — blanc plein, texte violet (action constructive). */}
             <button
               type="button"
               disabled={pending}
               onClick={openSubject}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-brand py-2.5 text-[14px] font-bold text-white active:opacity-90 disabled:opacity-50"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-[14px] font-bold text-relvo active:opacity-90 disabled:opacity-50"
             >
               <Sparkles className="size-[17px]" strokeWidth={2.2} />
               Ouvrir un sujet
