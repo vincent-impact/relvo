@@ -50,9 +50,10 @@ export const TENANT_DATA_TAG = "tenant-data";
 // + KPI tâches + feed tâches + titre de sujet dans l'agenda ; v7 = TaskItemData
 // (+ subjectId) + agenda servi en tâches (cachedAgendaTasks) ; v8 = TaskItemData
 // (+ folderSlug, rail de couleur par domaine) ; v9 = SubjectStatus à 3 valeurs
-// (open/validated/closed) → CachedFeed { ouverts, valides, fermes }.
-// Suivant = "v10".
-const CACHE_V = "v9";
+// (open/validated/closed) → CachedFeed { ouverts, valides, fermes } ; v10 =
+// SubjectRowData (+ folderColor/folderIcon → icône de domaine fidèle au logo).
+// Suivant = "v11".
+const CACHE_V = "v10";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 

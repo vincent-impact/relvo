@@ -1,139 +1,133 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { CalendarDays, Info, MessagesSquare, Settings } from "lucide-react";
+import {
+  CalendarDays,
+  Info,
+  Mail,
+  MessageCircle,
+  MessagesSquare,
+  Pause,
+  Play,
+  Settings,
+  Users,
+} from "lucide-react";
 import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 import {
   MessageBubble,
   type MessageBubbleData,
 } from "@/components/shared/message-bubble";
 import { EmailMessage } from "@/components/conversations/email-message";
-import {
-  RecipientComposer,
-  type Recipient,
-} from "@/components/shared/recipient-composer";
-import {
-  ConversationSelector,
-  type SubjectConversationOption,
-} from "@/components/subject/conversation-selector";
+import { RecipientComposer } from "@/components/shared/recipient-composer";
 import { sendEmailReplyAction } from "@/server/actions/email";
 import { sendWhatsAppReplyAction } from "@/server/actions/whatsapp";
+import {
+  ignoreConversationAction,
+  reactivateConversationAction,
+} from "@/server/actions/conversations";
 import { ensureSubjectAnchorsAction } from "@/server/actions/subject-conversations";
+import { cn } from "@/lib/utils";
 
-// Orchestrateur de la fiche Sujet (corps interactif) — possède l'ONGLET ACTIF et
-// l'INTERLOCUTEUR sélectionné, partagés entre le fil (zone scrollable) et le
-// composer (collé en bas, hors du scroll). Permet :
-//  - de n'afficher le composer QUE dans l'onglet « Conversations » ;
-//  - de FILTRER le fil sur l'interlocuteur choisi dans le select du composer
-//    (un sujet peut porter plusieurs interlocuteurs) — « Tous » = fil complet.
-// Le header et les panneaux Tâches/Détails sont des Server Components passés en
-// props (rendus côté serveur, simplement insérés ici).
+// Orchestrateur de la fiche Sujet (corps interactif). L'onglet « Conversations »
+// affiche UN ONGLET PAR CONVERSATION (2026-07-23) : les messages ne se mélangent
+// JAMAIS entre deux conversations d'un même sujet. Chaque onglet porte le canal,
+// le nom du contact et le nombre de non-lus, plus un bouton Pause/Play pour
+// suspendre l'écoute d'une conversation qui déborde du sujet.
 
 type Tab = "informations" | "messages" | "taches" | "detail";
+
+/** Cible d'envoi d'une conversation (le canal par lequel on répond). */
+export type ReplyTarget =
+  | {
+      kind: "email";
+      channelId: string;
+      email: string;
+      contactId: string | null;
+    }
+  | {
+      kind: "whatsapp";
+      channelId: string;
+      chatId: string;
+      contactId: string | null;
+    }
+  | { kind: "none" };
+
+/** Une conversation du sujet, avec SES messages (jamais fusionnés). */
+export type SubjectConversationPane = {
+  conversationId: string;
+  channelType: string;
+  /** Nom du contact (ou du groupe) — titre de l'onglet. */
+  title: string;
+  isGroup: boolean;
+  unreadCount: number;
+  /** active = écoute en cours ; paused = en sourdine ; ended = écoute terminée. */
+  state: "active" | "paused" | "ended";
+  messages: MessageBubbleData[];
+  reply: ReplyTarget;
+};
+
+const CHANNEL_ICON: Record<string, typeof Mail> = {
+  email: Mail,
+  whatsapp: MessageCircle,
+};
 
 export function SubjectBody({
   header,
   defaultTab = "informations",
   tasksCount,
-  bubbles,
   draft,
   informationsPane,
   tachesPane,
   detailPane,
-  interlocuteurs,
-  conversations = [],
-  defaultInterlocuteurKey,
   subjectId,
   subjectTitle,
-  emailReplyTargets,
-  whatsappReplyTargets,
-  isGroupSubject = false,
-  groupWhatsappTarget = null,
+  conversationPanes,
 }: {
   header: React.ReactNode;
   defaultTab?: Tab;
   tasksCount: number;
-  bubbles: MessageBubbleData[];
   draft: React.ReactNode;
-  /** Onglet Informations — descriptif éditable + rapport d'activité Relvo. */
   informationsPane: React.ReactNode;
   tachesPane: React.ReactNode;
   detailPane: React.ReactNode;
-  /** Interlocuteurs du sujet (key = id du contact). */
-  interlocuteurs: Recipient[];
-  /** Conversations du sujet (M6ter) — sélecteur + feuille des écoutes. */
-  conversations?: SubjectConversationOption[];
-  /** Dernier interlocuteur actif (sélection par défaut), ou null. */
-  defaultInterlocuteurKey: string | null;
   subjectId: string;
   subjectTitle: string;
-  /** Par interlocuteur joignable par email : son adresse + le canal à utiliser. */
-  emailReplyTargets: Record<string, { channelId: string; email: string }>;
-  /** Par interlocuteur joignable par WhatsApp : le fil (chat_id) + le canal. */
-  whatsappReplyTargets: Record<string, { channelId: string; chatId: string }>;
-  /** Sujet issu d'un GROUPE WhatsApp (1 groupe = 1 sujet) → réponse à Tous par
-   *  défaut, pas à un membre (invariant : le groupe est l'interlocuteur). */
-  isGroupSubject?: boolean;
-  /** Fil du groupe (chat_id + canal) pour l'envoi « Tous » réel, ou null. */
-  groupWhatsappTarget?: { channelId: string; chatId: string } | null;
+  conversationPanes: SubjectConversationPane[];
 }) {
   const router = useRouter();
+  const [, startTransition] = useTransition();
   const [tab, setTab] = useState<Tab>(defaultTab);
-  const multi = interlocuteurs.length > 1;
-  // Sujet de groupe → « Tous » est l'interlocuteur par défaut (le groupe entier).
-  const [selected, setSelected] = useState<string>(
-    isGroupSubject
-      ? "all"
-      : (defaultInterlocuteurKey ?? interlocuteurs[0]?.key ?? "all"),
-  );
 
-  // Après un envoi réussi : on pose les ancres manquantes. Une conversation
-  // ajoutée par le cas S est rattachée AVANT que le moindre message n'existe —
-  // c'est le premier message envoyé qui devient son ancre, donc le point de
-  // départ de la fenêtre sur ce nouveau fil. Idempotent : sans effet si tout est
-  // déjà ancré (le cas courant).
+  // Conversation active : la première encore en écoute, sinon la première.
+  const [activeConvId, setActiveConvId] = useState<string>(
+    () =>
+      (
+        conversationPanes.find((c) => c.state === "active") ??
+        conversationPanes[0]
+      )?.conversationId ?? "",
+  );
+  const active =
+    conversationPanes.find((c) => c.conversationId === activeConvId) ??
+    conversationPanes[0] ??
+    null;
+
   async function afterSend() {
     await ensureSubjectAnchorsAction(subjectId);
     router.refresh();
   }
 
-  // Envoi réel d'une réponse (M5.6 email / M6.5 WhatsApp), routé selon le canal
-  // par lequel l'interlocuteur est joignable. Retourne `false` pour que le
-  // composer NE vide PAS le champ si l'envoi n'a pas eu lieu (texte préservé).
-  async function handleSend(text: string, recipientKey: string) {
-    if (recipientKey === "all") {
-      // Groupe WhatsApp : « Tous » = le fil du groupe (chat_id) → UN SEUL envoi
-      // réel (ce n'est pas la diffusion fan-out email, reportée après la V1).
-      if (isGroupSubject && groupWhatsappTarget) {
-        const res = await sendWhatsAppReplyAction({
-          subjectId,
-          channelId: groupWhatsappTarget.channelId,
-          chatId: groupWhatsappTarget.chatId,
-          body: text,
-        });
-        if (!res.ok) {
-          toast.error(res.message);
-          return false;
-        }
-        toast.success("Message envoyé au groupe");
-        await afterSend();
-        return true;
-      }
-      toast.info("La diffusion à tous les interlocuteurs arrive après la V1.");
-      return false;
-    }
-    const name = interlocuteurs.find((r) => r.key === recipientKey)?.name;
-
-    // Email prioritaire s'il est disponible ; sinon WhatsApp (fil existant).
-    const emailTarget = emailReplyTargets[recipientKey];
-    if (emailTarget) {
+  // Envoi routé par la conversation ACTIVE (jamais d'ambiguïté d'interlocuteur).
+  async function handleSend(text: string) {
+    if (!active) return false;
+    const r = active.reply;
+    if (r.kind === "email") {
       const res = await sendEmailReplyAction({
         subjectId,
-        channelId: emailTarget.channelId,
-        to: { identifier: emailTarget.email, displayName: name },
-        recipientContactId: recipientKey,
+        channelId: r.channelId,
+        to: { identifier: r.email, displayName: active.title },
+        recipientContactId: r.contactId ?? undefined,
         subject: `Re: ${subjectTitle}`,
         body: text,
       });
@@ -145,33 +139,48 @@ export function SubjectBody({
       await afterSend();
       return true;
     }
-
-    const waTarget = whatsappReplyTargets[recipientKey];
-    if (waTarget) {
+    if (r.kind === "whatsapp") {
       const res = await sendWhatsAppReplyAction({
         subjectId,
-        channelId: waTarget.channelId,
-        chatId: waTarget.chatId,
-        recipientContactId: recipientKey,
+        channelId: r.channelId,
+        chatId: r.chatId,
+        recipientContactId: r.contactId ?? undefined,
         body: text,
       });
       if (!res.ok) {
         toast.error(res.message);
         return false;
       }
-      toast.success("Message WhatsApp envoyé");
+      toast.success(
+        active.isGroup ? "Message envoyé au groupe" : "Message envoyé",
+      );
       await afterSend();
       return true;
     }
-
-    toast.error(
-      "Réponse indisponible pour cet interlocuteur (aucun email ni fil WhatsApp connu).",
-    );
+    toast.error("Réponse indisponible pour cette conversation.");
     return false;
   }
 
-  // Onglets à ICÔNES (2026-07-23) — 4 entrées tiennent sur mobile sans rogner
-  // l'horizontal. Ordre : Informations · Tâches · Conversations · Détails.
+  // Pause/Play d'une écoute = sourdine réversible de la conversation (invariant :
+  // on fait taire une SOURCE, pas un sujet — l'écoute cesse d'alimenter le sujet
+  // sans rien détruire).
+  function togglePause(pane: SubjectConversationPane) {
+    startTransition(async () => {
+      const res =
+        pane.state === "paused"
+          ? await reactivateConversationAction(pane.conversationId)
+          : await ignoreConversationAction(pane.conversationId);
+      if (res.ok) {
+        toast.success(
+          pane.state === "paused" ? "Écoute reprise" : "Écoute en pause",
+        );
+        router.refresh();
+      } else {
+        toast.error(res.message);
+      }
+    });
+  }
+
   const options: SegTabOption[] = [
     { value: "informations", label: "Informations", icon: Info },
     { value: "taches", label: "Tâches", icon: CalendarDays, count: tasksCount },
@@ -179,31 +188,12 @@ export function SubjectBody({
     { value: "detail", label: "Détails", icon: Settings },
   ];
 
-  // Destinataire « tout le monde » en tête du select : « Groupe » pour un sujet
-  // de groupe WhatsApp (icône groupe → on s'adresse à tous les participants),
-  // « Tous » pour une diffusion multi-interlocuteurs classique (> 1 contact).
-  const composerRecipients: Recipient[] =
-    isGroupSubject || multi
-      ? [
-          {
-            key: "all",
-            name: isGroupSubject ? "Groupe" : "Tous",
-            kind: "all",
-          },
-          ...interlocuteurs,
-        ]
-      : interlocuteurs;
-
-  // Fil filtré : « Tous » (ou sujet mono-interlocuteur) → tout ; sinon les
-  // messages où l'interlocuteur est l'expéditeur (entrant) ou le destinataire
-  // (sortant).
-  const shown =
-    selected === "all" || !multi
-      ? bubbles
-      : bubbles.filter(
-          (b) =>
-            b.senderContactId === selected || b.recipientContactId === selected,
-        );
+  // Placeholder du composer, dérivé de la conversation active.
+  const composerPlaceholder = !active
+    ? "Répondre…"
+    : active.isGroup
+      ? "Répondre au groupe…"
+      : `Répondre à ${active.title}…`;
 
   return (
     <>
@@ -219,50 +209,126 @@ export function SubjectBody({
 
         {tab === "informations" ? informationsPane : null}
 
-        {tab === "messages" && conversations.length > 0 ? (
-          // Ligne unique + feuille des écoutes (M6ter, invariant n°11) — sélecteur
-          // ET gestion des écoutes. Synchronisé avec le composer via `selected`
-          // (la clé d'une conversation = son contact, « all » pour un groupe).
-          <ConversationSelector
-            conversations={conversations}
-            selectedKey={selected}
-            onSelect={setSelected}
-            subjectId={subjectId}
-          />
-        ) : null}
-
         {tab === "messages" ? (
-          <div className="flex flex-col gap-[15px] px-2.5 pt-4 pb-3">
-            {shown.length === 0 ? (
-              <p className="text-[13.5px] text-(--text-tertiary)">
-                {bubbles.length === 0
-                  ? "Aucun message."
-                  : "Aucun message avec cet interlocuteur."}
-              </p>
-            ) : (
-              // Rendu par canal, IDENTIQUE au fil de conversation (homogénéité) :
-              // e-mail pleine largeur + HTML isolé, WhatsApp en bulle. Le tap est
-              // réservé aux pièces jointes — plus de pop-up de message.
-              shown.map((b) =>
-                b.channelType === "email" ? (
-                  <EmailMessage key={b.id} data={b} />
+          conversationPanes.length === 0 ? (
+            <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
+              Aucune conversation rattachée à ce sujet.
+            </p>
+          ) : (
+            <>
+              {/* Barre d'onglets par conversation + Pause/Play de l'active. */}
+              <div className="flex items-center gap-2 border-b border-(--border) bg-(--surface-2) px-3 py-2">
+                <div className="flex min-w-0 flex-1 [scrollbar-width:none] gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
+                  {conversationPanes.map((c) => {
+                    const Icon = c.isGroup
+                      ? Users
+                      : (CHANNEL_ICON[c.channelType] ?? Mail);
+                    const isActive = c.conversationId === activeConvId;
+                    return (
+                      <button
+                        key={c.conversationId}
+                        type="button"
+                        onClick={() => setActiveConvId(c.conversationId)}
+                        className={cn(
+                          "inline-flex flex-none items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold transition-colors",
+                          isActive
+                            ? "border-transparent bg-relvo text-white"
+                            : c.state === "paused"
+                              ? "border-(--border) bg-white text-(--text-tertiary)"
+                              : "border-(--border) bg-white text-(--text-secondary)",
+                        )}
+                      >
+                        <Icon
+                          className="size-[14px] flex-none"
+                          strokeWidth={2.2}
+                        />
+                        <span className="max-w-[120px] truncate">
+                          {c.title}
+                        </span>
+                        {c.unreadCount > 0 ? (
+                          <span
+                            className={cn(
+                              "inline-flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1 text-[10px] font-extrabold",
+                              isActive
+                                ? "bg-white/30 text-white"
+                                : "bg-brand text-white",
+                            )}
+                          >
+                            {c.unreadCount}
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Pause/Play de la conversation active (sauf écoute terminée). */}
+                {active && active.state !== "ended" ? (
+                  <button
+                    type="button"
+                    onClick={() => togglePause(active)}
+                    aria-label={
+                      active.state === "paused"
+                        ? "Reprendre l'écoute"
+                        : "Mettre l'écoute en pause"
+                    }
+                    className={cn(
+                      "grid size-8 flex-none place-items-center rounded-full border",
+                      active.state === "paused"
+                        ? "border-(--green-600) text-(--green-600)"
+                        : "border-(--border) text-(--text-secondary)",
+                    )}
+                  >
+                    {active.state === "paused" ? (
+                      <Play
+                        className="size-4"
+                        strokeWidth={2.2}
+                        fill="currentColor"
+                      />
+                    ) : (
+                      <Pause
+                        className="size-4"
+                        strokeWidth={2.2}
+                        fill="currentColor"
+                      />
+                    )}
+                  </button>
+                ) : null}
+              </div>
+
+              {active && active.state === "paused" ? (
+                <p className="bg-(--surface-2) px-4 py-1.5 text-center text-[12px] font-semibold text-(--amber-600)">
+                  Écoute en pause — cette conversation n'alimente plus le sujet.
+                </p>
+              ) : null}
+
+              <div className="flex flex-col gap-[15px] px-2.5 pt-4 pb-3">
+                {!active || active.messages.length === 0 ? (
+                  <p className="text-[13.5px] text-(--text-tertiary)">
+                    Aucun message dans cette conversation.
+                  </p>
                 ) : (
-                  <MessageBubble key={b.id} data={b} />
-                ),
-              )
-            )}
-            {draft}
-          </div>
+                  active.messages.map((b) =>
+                    b.channelType === "email" ? (
+                      <EmailMessage key={b.id} data={b} />
+                    ) : (
+                      <MessageBubble key={b.id} data={b} />
+                    ),
+                  )
+                )}
+                {draft}
+              </div>
+            </>
+          )
         ) : null}
 
         {tab === "taches" ? tachesPane : null}
         {tab === "detail" ? detailPane : null}
       </main>
 
-      {tab === "messages" && (interlocuteurs.length > 0 || isGroupSubject) ? (
+      {tab === "messages" && active && active.reply.kind !== "none" ? (
         <RecipientComposer
-          recipients={composerRecipients}
-          value={selected}
+          placeholder={composerPlaceholder}
           onSend={handleSend}
         />
       ) : null}

@@ -315,6 +315,10 @@ export type EnrichedSubject = {
   folderSlug: string | null;
   /** Nom du dossier de rattachement, ou null. */
   folderName: string | null;
+  /** Clé de couleur STOCKÉE sur le dossier (logo personnalisé), ou null. */
+  folderColor: string | null;
+  /** Clé d'icône STOCKÉE sur le dossier, ou null. */
+  folderIcon: string | null;
 };
 
 export async function enrichSubjects(
@@ -343,9 +347,23 @@ export async function enrichSubjects(
       folderIds.length
         ? db.folder.findMany({
             where: { id: { in: folderIds } },
-            select: { id: true, name: true, slug: true },
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+              color: true,
+              icon: true,
+            },
           })
-        : Promise.resolve([] as { id: string; name: string; slug: string }[]),
+        : Promise.resolve(
+            [] as {
+              id: string;
+              name: string;
+              slug: string;
+              color: string | null;
+              icon: string | null;
+            }[],
+          ),
       db.task.findMany({
         where: { subjectId: { in: ids }, status: { not: TaskStatus.deleted } },
         select: { subjectId: true, status: true, sourceActor: true },
@@ -398,6 +416,8 @@ export async function enrichSubjects(
       taskDone: doneTasks.length,
       folderSlug: folder?.slug ?? null,
       folderName: folder?.name ?? null,
+      folderColor: folder?.color ?? null,
+      folderIcon: folder?.icon ?? null,
     };
   });
 }

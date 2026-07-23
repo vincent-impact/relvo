@@ -12,14 +12,17 @@ import { getSubjectDetail, listSubjectConversations } from "@relvo/db";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { type MessageBubbleData } from "@/components/shared/message-bubble";
-import { type Recipient } from "@/components/shared/recipient-composer";
 import { AcknowledgeOnOpen } from "@/components/subject/acknowledge-on-open";
 import { PollRefresh } from "@/components/shared/poll-refresh";
 import { AttachmentViewer } from "@/components/shared/attachment-viewer";
 import { AddTask } from "@/components/subject/add-task";
 import { RelvoDraftBlock } from "@/components/subject/relvo-draft-block";
 import { InformationsPane } from "@/components/subject/informations-pane";
-import { SubjectBody } from "@/components/subject/subject-body";
+import {
+  SubjectBody,
+  type ReplyTarget,
+  type SubjectConversationPane,
+} from "@/components/subject/subject-body";
 import { SubjectTitleInline } from "@/components/subject/subject-title-inline";
 import {
   SubjectDangerZone,
@@ -27,7 +30,7 @@ import {
 } from "@/components/subject/subject-detail-form";
 import { TaskItem } from "@/components/subject/task-item";
 import { cn } from "@/lib/utils";
-import { contactFullName, formatRelative, initialsFor } from "@/lib/display";
+import { contactFullName, formatRelative } from "@/lib/display";
 import { folderVisual } from "@/lib/folders";
 import { getTenantDb } from "@/server/auth-context";
 
@@ -132,8 +135,7 @@ export default async function SujetPage({
     ]);
   if (!detail) notFound();
 
-  const { subject, contacts, messages, tasks, events, attachments, draft } =
-    detail;
+  const { subject, messages, tasks, events, attachments, draft } = detail;
   const allContactOptions = allContacts.map((c) => ({
     id: c.id,
     name: contactFullName(c),
@@ -163,164 +165,85 @@ export default async function SujetPage({
   const FolderIcon = folderViz.icon;
   const domainName = subjectFolder?.name ?? "Non classé";
 
-  const bubbles: MessageBubbleData[] = messages.map((m) => ({
-    id: m.id,
-    direction: m.direction,
-    actor: m.direction === "outgoing" ? "user" : "contact",
-    senderName: m.senderContact?.name ?? m.senderName ?? m.senderRaw,
-    channel: CHANNEL_LABEL[m.channel.type] ?? null,
-    channelType: m.channel.type,
-    time: formatRelative(m.receivedAt ?? m.sentAt ?? m.createdAt),
-    content: m.content ?? "",
-    contentHtml: m.contentHtml,
-    attachment: m.attachments[0]
-      ? {
-          id: m.attachments[0].id,
-          name: m.attachments[0].name,
-          label: m.attachments[0].aiLabel,
-          mimeType: m.attachments[0].mimeType,
-        }
-      : null,
-    // Plus de `href` (2026-07-20) : taper une bulle n'ouvre plus DIRECTEMENT la
-    // fiche du message mais la pop-up d'affectation, identique à celle de
-    // /conversations. La fiche message y reste accessible (« Ouvrir le
-    // message ») — un lien enveloppant aurait de toute façon désarmé le tap
-    // (garde `closest("a")` de MessageTapArea).
-    // Interlocuteur du message → filtrage du fil par conversation.
-    senderContactId: m.senderContactId,
-    recipientContactId: m.recipientContactId,
-  }));
+  const contactNameById = new Map(
+    allContacts.map((c) => [c.id, contactFullName(c)]),
+  );
 
-  // Interlocuteurs = les contacts du sujet (un sujet peut en porter plusieurs →
-  // le select permet de switcher de conversation). Relvo n'est PLUS un
-  // interlocuteur ici : il s'atteint via le bouton Relvo du header (décision
-  // 2026-06-27). Le canal n'est connu que pour le dernier message — affiché sur
-  // le contact correspondant. La clé = id du contact (= sender/recipientContactId).
-  const lastMessage = messages.at(-1);
-  const lastChannel = CHANNEL_LABEL[lastMessage?.channel.type ?? ""] ?? null;
-  // Dernier interlocuteur actif = contact du dernier message (expéditeur si
-  // entrant, destinataire si sortant) — sélection par défaut des Conversations.
-  const lastActiveContactId =
-    (lastMessage?.direction === "outgoing"
-      ? lastMessage?.recipientContactId
-      : lastMessage?.senderContactId) ?? null;
-  const interlocuteurs: Recipient[] = contacts.map((c) => ({
-    key: c.id,
-    name: c.name,
-    kind: "human",
-    initials: initialsFor(c.name) ?? undefined,
-    sublabel:
-      [c.company, c.id === lastActiveContactId ? lastChannel : null]
-        .filter(Boolean)
-        .join(" · ") || undefined,
-  }));
-  const defaultInterlocuteurKey =
-    interlocuteurs.find((r) => r.key === lastActiveContactId)?.key ??
-    interlocuteurs[0]?.key ??
-    null;
-
-  // Cibles de réponse EMAIL par interlocuteur : dernier message ENTRANT reçu
-  // par email de ce contact → son adresse (senderRaw) + le canal email à
-  // réutiliser pour répondre. Un interlocuteur sans entrée ici n'est pas
-  // joignable par email (sujet créé à la main, ou canal WhatsApp = M6) → le
-  // composer le signalera au lieu d'envoyer.
-  const emailReplyTargets: Record<
-    string,
-    { channelId: string; email: string }
-  > = {};
-  // Cibles de réponse WHATSAPP par interlocuteur : dernier message ENTRANT reçu
-  // par WhatsApp de ce contact → le fil (chat_id = externalThreadId) + le canal à
-  // réutiliser pour répondre. Un interlocuteur sans fil ici n'est pas joignable
-  // par WhatsApp → le composer bascule sur l'email ou le signale.
-  const whatsappReplyTargets: Record<
-    string,
-    { channelId: string; chatId: string }
-  > = {};
-
-  // Base : les CONVERSATIONS du sujet. Une conversation dit par où répondre
-  // (canal + interlocuteur + fil), et elle existe DÈS le rattachement — alors
-  // que les messages, eux, n'arrivent qu'après. Sans ça, un interlocuteur ajouté
-  // par le cas S serait injoignable tant qu'il n'aurait pas écrit le premier,
-  // ce qui viderait l'extension de tout intérêt.
-  for (const c of subjectConversations) {
-    if (!c.contactId || !c.interlocutorRaw) continue;
-    if (c.channelType === "email") {
-      emailReplyTargets[c.contactId] = {
-        channelId: c.channelId,
-        email: c.interlocutorRaw,
-      };
-    } else if (c.externalThreadId) {
-      whatsappReplyTargets[c.contactId] = {
-        channelId: c.channelId,
-        chatId: c.externalThreadId,
-      };
-    }
+  function toBubble(m: (typeof messages)[number]): MessageBubbleData {
+    return {
+      id: m.id,
+      direction: m.direction,
+      actor: m.direction === "outgoing" ? "user" : "contact",
+      senderName: m.senderContact?.name ?? m.senderName ?? m.senderRaw,
+      channel: CHANNEL_LABEL[m.channel.type] ?? null,
+      channelType: m.channel.type,
+      time: formatRelative(m.receivedAt ?? m.sentAt ?? m.createdAt),
+      content: m.content ?? "",
+      contentHtml: m.contentHtml,
+      attachment: m.attachments[0]
+        ? {
+            id: m.attachments[0].id,
+            name: m.attachments[0].name,
+            label: m.attachments[0].aiLabel,
+            mimeType: m.attachments[0].mimeType,
+          }
+        : null,
+    };
   }
 
-  // Puis les messages, qui priment : une adresse vue en vrai dans un message
-  // entrant est plus sûre que celle déduite de la fiche contact.
-  for (const m of messages) {
-    if (m.direction === "incoming" && m.senderContactId) {
-      if (m.channel.type === "email" && m.senderRaw) {
-        emailReplyTargets[m.senderContactId] = {
-          channelId: m.channelId,
-          email: m.senderRaw,
-        };
-      } else if (m.channel.type === "whatsapp" && m.externalThreadId) {
-        whatsappReplyTargets[m.senderContactId] = {
-          channelId: m.channelId,
-          chatId: m.externalThreadId,
-        };
-      }
-    }
-  }
-
-  // Sujet issu d'un GROUPE WhatsApp (1 groupe = 1 sujet) → le composer répond au
-  // GROUPE (« Groupe ») par défaut, pas à un membre. Détection robuste :
-  //   • signal principal = le flag `is_group` du webhook ;
-  //   • repli = un fil WhatsApp avec ≥ 2 expéditeurs distincts EST un groupe
-  //     (couvre les messages ingérés AVANT la capture de is_group, ou un webhook
-  //     qui ne le renseignerait pas).
-  // Cible d'envoi = le fil (chat_id) du dernier message entrant WhatsApp — un
-  // seul envoi réel au groupe.
-  const waIncoming = messages.filter(
-    (m) => m.channel.type === "whatsapp" && m.direction === "incoming",
+  // UN ONGLET PAR CONVERSATION (2026-07-23) — les messages ne se MÉLANGENT jamais
+  // entre deux conversations d'un même sujet. Chaque conversation porte SES
+  // messages (filtrés par `conversationId`), son état d'écoute (Pause/Play) et sa
+  // cible d'envoi (canal + interlocuteur + fil).
+  const conversationPanes: SubjectConversationPane[] = subjectConversations.map(
+    (c) => {
+      const convMessages = messages.filter(
+        (m) => m.conversationId === c.conversationId,
+      );
+      const isGroup = c.type === "whatsapp_group";
+      const contactName = c.contactId
+        ? (contactNameById.get(c.contactId) ?? null)
+        : null;
+      const title = isGroup
+        ? c.title || "Groupe"
+        : (contactName ?? c.interlocutorRaw ?? "Interlocuteur");
+      const state: "active" | "paused" | "ended" =
+        c.status === "ignored"
+          ? "paused"
+          : c.closingMessageId != null
+            ? "ended"
+            : "active";
+      const unreadCount = convMessages.filter(
+        (m) => m.direction === "incoming" && m.readAt == null,
+      ).length;
+      const reply: ReplyTarget =
+        c.channelType === "email" && c.interlocutorRaw
+          ? {
+              kind: "email",
+              channelId: c.channelId,
+              email: c.interlocutorRaw,
+              contactId: c.contactId,
+            }
+          : c.channelType === "whatsapp" && c.externalThreadId
+            ? {
+                kind: "whatsapp",
+                channelId: c.channelId,
+                chatId: c.externalThreadId,
+                contactId: c.contactId,
+              }
+            : { kind: "none" };
+      return {
+        conversationId: c.conversationId,
+        channelType: c.channelType,
+        title,
+        isGroup,
+        unreadCount,
+        state,
+        messages: convMessages.map(toBubble),
+        reply,
+      };
+    },
   );
-  const distinctWaSenders = new Set(
-    waIncoming
-      .map((m) => m.senderContactId ?? m.senderRaw)
-      .filter((v): v is string => Boolean(v)),
-  );
-  const isGroupSubject =
-    messages.some((m) => m.isGroup) || distinctWaSenders.size > 1;
-  const groupWaMessage = isGroupSubject
-    ? waIncoming.filter((m) => m.externalThreadId).at(-1)
-    : undefined;
-  const groupWhatsappTarget = groupWaMessage?.externalThreadId
-    ? {
-        channelId: groupWaMessage.channelId,
-        chatId: groupWaMessage.externalThreadId,
-      }
-    : null;
-
-  // Cas S (M6bis.12) — à qui d'autre peut-on écrire à propos de ce sujet ? Les
-  // contacts pas encore interlocuteurs, et joignables (email ou téléphone).
-  // Un sujet FERMÉ n'est plus extensible (la fenêtre est figée) → aucun candidat.
-  // Conversations du sujet pour le sélecteur + la feuille des écoutes (M6ter,
-  // invariant n°11). État dérivé : ignorée = pause ; borne de fin posée = écoute
-  // terminée ; sinon active. La clé de synchro avec le composer est le contact
-  // (« all » pour un groupe, sans interlocuteur individuel).
-  const conversationOptions = subjectConversations.map((c) => ({
-    conversationId: c.conversationId,
-    title: c.title,
-    channelType: c.channelType,
-    contactKey: c.contactId ?? "all",
-    state: (c.status === "ignored"
-      ? "paused"
-      : c.closingMessageId != null
-        ? "ended"
-        : "active") as "active" | "paused" | "ended",
-  }));
 
   return (
     <MobileFrame>
@@ -336,7 +259,6 @@ export default async function SujetPage({
             : "informations"
         }
         tasksCount={tasks.length}
-        bubbles={bubbles}
         draft={draftContent ? <RelvoDraftBlock text={draftContent} /> : null}
         informationsPane={
           <InformationsPane
@@ -344,15 +266,9 @@ export default async function SujetPage({
             description={subject.description}
           />
         }
-        interlocuteurs={interlocuteurs}
-        conversations={conversationOptions}
-        defaultInterlocuteurKey={defaultInterlocuteurKey}
         subjectId={subject.id}
         subjectTitle={subject.title}
-        emailReplyTargets={emailReplyTargets}
-        whatsappReplyTargets={whatsappReplyTargets}
-        isGroupSubject={isGroupSubject}
-        groupWhatsappTarget={groupWhatsappTarget}
+        conversationPanes={conversationPanes}
         header={
           <RelvoHeader
             back={backHref}

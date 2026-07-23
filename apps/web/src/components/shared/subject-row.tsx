@@ -15,6 +15,9 @@ export type SubjectRowData = {
   title: string;
   summary?: string | null;
   folderSlug?: string | null;
+  /** Clés STOCKÉES sur le dossier (logo personnalisé) — priment sur le slug. */
+  folderColor?: string | null;
+  folderIcon?: string | null;
   urgent: boolean;
   /** Marqueur DÉRIVÉ « Nouveau » (jamais ouvert) → fond bleu + badge « Nouveau ». */
   isNew: boolean;
@@ -37,7 +40,11 @@ export function SubjectRow({
   /** false : le parent gère le tap/swipe (feed swipable) — pas de lien étiré. */
   linkable?: boolean;
 }) {
-  const { color, icon: Icon } = folderVisual(data.folderSlug);
+  const { color, icon: Icon } = folderVisual({
+    slug: data.folderSlug,
+    color: data.folderColor,
+    icon: data.folderIcon,
+  });
   const urgent = data.urgent && tone !== "done";
   const isNew = data.isNew && tone !== "done";
   const done = tone === "done";
@@ -153,6 +160,8 @@ export function toSubjectRowData(e: EnrichedSubject): SubjectRowData {
     title: e.subject.title,
     summary: e.subject.summary,
     folderSlug: e.folderSlug,
+    folderColor: e.folderColor,
+    folderIcon: e.folderIcon,
     urgent: e.subject.priority === "urgent",
     // « Nouveau » = sujet ouvert jamais consulté (marqueur dérivé de lastOpenedAt).
     isNew:
