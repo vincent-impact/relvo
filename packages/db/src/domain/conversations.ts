@@ -462,14 +462,14 @@ function toConversationListItem(c: ConversationItemRow): ConversationListItem {
 }
 
 /**
- * Page de la liste /conversations : activité décroissante, **non-lus en tête**.
+ * Page de la liste /conversations : **ordre purement TEMPOREL** (activité
+ * décroissante), comme une messagerie.
  *
- * ⚠️ Arbitrage assumé : la remontée des non-lus est un tri de PRÉSENTATION,
- * appliqué à la page chargée — Postgres saurait le faire, mais pas via un
- * `orderBy` Prisma sur un compte de relation FILTRÉ, et la pagination curseur
- * exige un ordre stable côté base. Comme les non-lus sont par nature récents,
- * les deux ordres coïncident presque toujours ; le seul cas divergent (un vieux
- * message jamais ouvert) ne remonterait de toute façon pas au-delà de sa page.
+ * ⚠️ La remontée des non-lus en tête a été RETIRÉE (2026-07-23) : elle brisait
+ * le fil temporel — une vieille conversation non lue sautait par-dessus des
+ * échanges récents, cassant le repère chronologique que l'utilisateur attend
+ * d'un fil. Le non-lu reste signalé par la pastille et le fond de la ligne, pas
+ * par la position.
  */
 export async function listConversationItems(
   db: TenantDb,
@@ -495,9 +495,6 @@ export async function listConversationItems(
   });
   const page = toPage(rows, limit);
   const items = page.items.map(toConversationListItem);
-  // Tri stable : les non-lus passent devant, l'ordre d'activité est préservé
-  // à l'intérieur de chaque groupe (Array.prototype.sort est stable en ES2019+).
-  items.sort((a, b) => Number(b.unreadCount > 0) - Number(a.unreadCount > 0));
   return { items, nextCursor: page.nextCursor };
 }
 
@@ -613,8 +610,12 @@ export type ConversationThread = {
   type: ConversationType;
   status: ConversationStatus;
   channelType: ChannelType;
+  /** Nom du canal connecté (boîte mail, compte WhatsApp) — affiché en en-tête. */
+  channelName: string;
   contactId: string | null;
   interlocutorRaw: string | null;
+  /** Nom lisible de l'interlocuteur (contact > brut) — null pour un groupe. */
+  interlocutorName: string | null;
   messages: ConversationMessageItem[];
   /**
    * Écoutes du fil (M6ter) — le signal d'appartenance côté conversation. L'UI en
@@ -658,10 +659,23 @@ export async function getConversationThread(
   const conversation = assertFound(
     await db.conversation.findFirst({
       where: { id },
-      include: { channel: { select: { type: true } } },
+      include: {
+        channel: { select: { type: true, name: true } },
+        contact: { select: { firstName: true, lastName: true } },
+      },
     }),
     "Conversation",
   );
+
+  // Nom de l'interlocuteur : le contact rattaché s'il existe, sinon l'adresse/
+  // numéro brut. Un GROUPE n'a pas d'interlocuteur unique → null (le titre du
+  // fil EST le nom du groupe).
+  const interlocutorName =
+    conversation.type === ConversationType.whatsapp_group
+      ? null
+      : conversation.contact
+        ? contactDisplayName(conversation.contact)
+        : (conversation.interlocutorRaw ?? null);
 
   const rows = await db.message.findMany({
     where: { conversationId: id },
@@ -701,8 +715,10 @@ export async function getConversationThread(
     type: conversation.type,
     status: conversation.status,
     channelType: conversation.channel.type,
+    channelName: conversation.channel.name,
     contactId: conversation.contactId,
     interlocutorRaw: conversation.interlocutorRaw,
+    interlocutorName,
     listenings,
     messages: rows.map((m) => ({
       id: m.id,

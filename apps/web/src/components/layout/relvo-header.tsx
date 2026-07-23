@@ -17,6 +17,7 @@ export function RelvoHeader({
   action,
   relvo = true,
   rounded = true,
+  wrapTitle = false,
   children,
   className,
 }: {
@@ -29,6 +30,8 @@ export function RelvoHeader({
   /** Affiche le bouton d'accès à Relvo (défaut true ; false dans la conversation). */
   relvo?: boolean;
   rounded?: boolean;
+  /** Titre sur 2 lignes (lisible en entier) au lieu de tronqué — mode détail. */
+  wrapTitle?: boolean;
   /** Brief, MetricsCard, SegTabs, status-strip… logés dans la zone violette. */
   children?: React.ReactNode;
   className?: string;
@@ -75,7 +78,12 @@ export function RelvoHeader({
             <ChevronLeft className="size-5" strokeWidth={2.2} />
           </Link>
           <div className="min-w-0 flex-1">
-            <h1 className="truncate font-heading text-[19px] font-extrabold tracking-[-0.3px]">
+            <h1
+              className={cn(
+                "font-heading text-[19px] font-extrabold tracking-[-0.3px]",
+                wrapTitle ? "line-clamp-2 leading-[1.15]" : "truncate",
+              )}
+            >
               {title}
             </h1>
             {subtitle ? (

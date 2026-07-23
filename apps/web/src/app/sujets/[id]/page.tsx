@@ -18,7 +18,7 @@ import { PollRefresh } from "@/components/shared/poll-refresh";
 import { AttachmentViewer } from "@/components/shared/attachment-viewer";
 import { AddTask } from "@/components/subject/add-task";
 import { RelvoDraftBlock } from "@/components/subject/relvo-draft-block";
-import { RelvoSummary } from "@/components/subject/relvo-summary";
+import { InformationsPane } from "@/components/subject/informations-pane";
 import { SubjectBody } from "@/components/subject/subject-body";
 import { SubjectTitleInline } from "@/components/subject/subject-title-inline";
 import {
@@ -28,6 +28,7 @@ import {
 import { TaskItem } from "@/components/subject/task-item";
 import { cn } from "@/lib/utils";
 import { contactFullName, formatRelative, initialsFor } from "@/lib/display";
+import { folderVisual } from "@/lib/folders";
 import { getTenantDb } from "@/server/auth-context";
 
 // Fiche Sujet (M9.5, Direction B) — hero violet portant le status-strip + le
@@ -147,6 +148,21 @@ export default async function SujetPage({
     draft && typeof draft.payload === "object" && draft.payload
       ? ((draft.payload as { content?: string }).content ?? null)
       : null;
+
+  // Domaine du sujet (affiché dans le hero) — le Folder rattaché, ou « Non
+  // classé » tant qu'aucun domaine n'est assigné. Icône + couleur du domaine.
+  const subjectFolder = folders.find((f) => f.id === subject.folderId) ?? null;
+  const folderViz = folderVisual(
+    subjectFolder
+      ? {
+          slug: subjectFolder.slug,
+          color: subjectFolder.color,
+          icon: subjectFolder.icon,
+        }
+      : "general",
+  );
+  const FolderIcon = folderViz.icon;
+  const domainName = subjectFolder?.name ?? "Non classé";
 
   const bubbles: MessageBubbleData[] = messages.map((m) => ({
     id: m.id,
@@ -330,15 +346,21 @@ export default async function SujetPage({
 
       <SubjectBody
         defaultTab={
-          (["messages", "taches", "detail"] as const).includes(
-            (tab ?? "") as "messages" | "taches" | "detail",
+          (["informations", "messages", "taches", "detail"] as const).includes(
+            (tab ?? "") as "informations" | "messages" | "taches" | "detail",
           )
-            ? (tab as "messages" | "taches" | "detail")
-            : "messages"
+            ? (tab as "informations" | "messages" | "taches" | "detail")
+            : "informations"
         }
         tasksCount={tasks.length}
         bubbles={bubbles}
         draft={draftContent ? <RelvoDraftBlock text={draftContent} /> : null}
+        informationsPane={
+          <InformationsPane
+            subjectId={subject.id}
+            description={subject.description}
+          />
+        }
         interlocuteurs={interlocuteurs}
         conversations={conversationOptions}
         defaultInterlocuteurKey={defaultInterlocuteurKey}
@@ -352,28 +374,33 @@ export default async function SujetPage({
         header={
           <RelvoHeader
             back={backHref}
-            // Titre ÉDITABLE sur place : renommer un sujet est le geste de
-            // correction le plus fréquent (Relvo devine l'intitulé), il ne doit
-            // pas coûter un détour par l'onglet Détails — qui reste disponible.
+            // Titre ÉDITABLE sur place, LISIBLE EN ENTIER (2 lignes) : renommer
+            // un sujet est le geste de correction le plus fréquent (Relvo devine
+            // l'intitulé), il ne doit pas coûter un détour par l'onglet Détails.
+            wrapTitle
             title={
               <SubjectTitleInline
                 subjectId={subject.id}
                 title={subject.title}
               />
             }
+            // Sous-titre = référence + interlocuteur. Plus de « canal » ici : un
+            // sujet n'est pas toujours lié à un canal ou une conversation.
             subtitle={
               mainContact
-                ? `${subject.reference} · ${[mainContact.name, mainContact.company].filter(Boolean).join(" — ")}`
+                ? `${subject.reference} · ${mainContact.name}`
                 : subject.reference
             }
             className="pb-10"
           >
             <div className="px-[22px] pt-3.5">
-              {subject.summary ? (
-                <RelvoSummary text={subject.summary} tone="hero" />
-              ) : null}
+              {/* Domaine du sujet, dans le hero (item 2026-07-23). */}
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[12px] font-bold text-white">
+                <FolderIcon className="size-3.5" strokeWidth={2.2} />
+                {domainName}
+              </span>
               {/* Progress bar récapitulative de l'avancement des tâches (rappel du
-                fil) — posée sous le résumé Relvo, dans le hero violet. */}
+                fil) — posée sous le domaine, dans le hero violet. */}
               {taskTotal > 0 ? (
                 <div className="mt-3.5 flex items-center gap-2.5">
                   <SquareCheck

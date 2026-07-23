@@ -220,10 +220,12 @@ function ConversationRow({
         </span>
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          {/* Titre sur 2 lignes max — lisible EN ENTIER (item 2, souvent =
+              l'objet d'un email) ; l'heure se cale en haut à droite. */}
+          <div className="flex items-start gap-2">
             <span
               className={cn(
-                "min-w-0 flex-1 truncate text-[15px]",
+                "line-clamp-2 min-w-0 flex-1 text-[15px] leading-[1.3]",
                 unread
                   ? "font-bold text-(--text-primary)"
                   : "font-semibold text-(--text-tertiary)",
@@ -231,16 +233,17 @@ function ConversationRow({
             >
               {data.title}
             </span>
-            <ChannelTag type={data.channelType} />
-            <span className="flex-none text-[11.5px] text-(--text-tertiary)">
+            <span className="mt-px flex-none text-[11.5px] text-(--text-tertiary)">
               {data.time}
             </span>
           </div>
 
-          <div className="mt-1 flex items-end gap-2">
+          {/* Ligne méta compacte : canal + aperçu (une ligne) + pastille. */}
+          <div className="mt-1 flex items-center gap-2">
+            <ChannelTag type={data.channelType} />
             <p
               className={cn(
-                "line-clamp-2 min-w-0 flex-1 text-[13.5px] leading-[1.45]",
+                "line-clamp-1 min-w-0 flex-1 text-[13px] leading-[1.4]",
                 unread ? "text-(--text-secondary)" : "text-(--text-tertiary)",
               )}
             >

@@ -116,9 +116,7 @@ export function SubjectTitleInline({
         }}
         aria-label="Nom du sujet"
         // Même typo que le <h1> parent : le titre ne doit pas sauter de taille
-        // au moment où l'on commence à écrire. Aucune marge horizontale non
-        // plus — le <h1> du header est en `truncate` (overflow hidden), tout ce
-        // qui déborderait sur les côtés serait rogné.
+        // au moment où l'on commence à écrire.
         className="w-full border-b-2 border-white/70 bg-white/10 font-heading text-[19px] font-extrabold tracking-[-0.3px] text-white outline-none"
       />
     );
@@ -130,11 +128,11 @@ export function SubjectTitleInline({
       onClick={open}
       title="Renommer le sujet"
       aria-label={`Renommer le sujet : ${shown}`}
-      // Affordance DISCRÈTE : un liseré pointillé très pâle sous le titre — il
-      // dit « ce texte s'édite » sans transformer le hero en formulaire. Posé
-      // à l'intérieur de la boîte de texte (aucune marge négative) pour ne pas
-      // être rogné par le `truncate` du <h1> parent.
-      className="block w-full cursor-text truncate border-b border-dashed border-white/30 text-left font-heading text-[19px] font-extrabold tracking-[-0.3px] text-white transition-colors hover:border-white/70 hover:bg-white/10"
+      // Titre lisible EN ENTIER (2 lignes) — plus de liseré pointillé sous le
+      // titre (retiré le 2026-07-23) : l'affordance passe par le curseur texte
+      // et le voile au survol, pas par une barre décorative qui encombrait le
+      // hero.
+      className="block w-full cursor-text text-left font-heading text-[19px] leading-[1.15] font-extrabold tracking-[-0.3px] text-white transition-colors hover:bg-white/10"
     >
       {shown}
     </button>

@@ -460,6 +460,10 @@ model Subject {
   reference             String
   title                 String
   summary               String?       @db.Text
+  /// Descriptif rédigé par l'UTILISATEUR (onglet Informations) — aide l'IA à
+  /// rattacher un domaine et à chercher dans les bonnes conversations. Distinct
+  /// de `summary`, qui héberge le futur rapport d'activité généré par Relvo.
+  description           String?       @db.Text
   folderId              String?       @map("folder_id") @db.Uuid
   contactIds            String[]      @default([]) @map("contact_ids") @db.Uuid
   status                SubjectStatus @default(open)

@@ -474,11 +474,11 @@ describe("countUnsortedConversations (KPI « Sans sujet »)", () => {
 // ─────────────────────────────────────────────────────────────
 
 describe("liste et fil de la page /conversations", () => {
-  it("liste : aperçu du dernier message, non-lus comptés et remontés en tête", async () => {
+  it("liste : aperçu du dernier message, ordre PUREMENT temporel (le non-lu ne double plus)", async () => {
     const { emailChannel, waChannel, db } =
       await makeAccountWithChannels("ui-list@test.fr");
 
-    // Conversation LA PLUS RÉCENTE, mais entièrement lue.
+    // Conversation LA PLUS RÉCENTE, entièrement lue.
     const lue = await ingestInboundEmail(db, {
       channelId: emailChannel.id,
       externalId: "ui-lu-1",
@@ -487,8 +487,8 @@ describe("liste et fil de la page /conversations", () => {
       content: "Bonjour, je vous confirme les dates.",
     });
 
-    // Conversation plus ANCIENNE mais non lue : c'est elle qui doit passer
-    // devant — le non-lu prime sur l'activité (M6bis.8).
+    // Conversation plus ANCIENNE et non lue. Depuis le 2026-07-23, le non-lu ne
+    // la fait PLUS remonter : l'ordre est purement temporel, elle reste derrière.
     const nonLue = await ingestInboundWhatsApp(db, {
       channelId: waChannel.id,
       externalId: "ui-nonlu-1",
@@ -506,16 +506,19 @@ describe("liste et fil de la page /conversations", () => {
 
     const page = await listConversationItems(db, { filter: "all" });
     expect(page.items.map((c) => c.id)).toEqual([
-      nonLue.message.conversationId,
       lue.message.conversationId,
+      nonLue.message.conversationId,
     ]);
     const [premier, second] = page.items;
-    expect(premier!.unreadCount).toBe(1);
+    // Le plus récent d'abord (lu), le non-lu ancien ensuite — position dictée par
+    // le temps, pas par l'état de lecture. Le non-lu reste signalé par le compteur.
+    expect(premier!.unreadCount).toBe(0);
+    expect(premier!.channelType).toBe(ChannelType.email);
+    expect(second!.unreadCount).toBe(1);
     // L'aperçu aplatit les blancs — une ligne de liste ne doit jamais hériter
     // de la mise en forme du corps du message.
-    expect(premier!.preview).toBe("Où en est la sauce ?");
-    expect(premier!.channelType).toBe(ChannelType.whatsapp);
-    expect(second!.unreadCount).toBe(0);
+    expect(second!.preview).toBe("Où en est la sauce ?");
+    expect(second!.channelType).toBe(ChannelType.whatsapp);
     expect(second!.lastMessageSorted).toBe(false);
 
     // Filtre canal : le fil e-mail sort de la liste WhatsApp.

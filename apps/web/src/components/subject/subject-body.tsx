@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { CalendarDays, Info, MessagesSquare, Settings } from "lucide-react";
 import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 import {
   MessageBubble,
@@ -34,14 +35,15 @@ import { ensureSubjectAnchorsAction } from "@/server/actions/subject-conversatio
 // Le header et les panneaux Tâches/Détails sont des Server Components passés en
 // props (rendus côté serveur, simplement insérés ici).
 
-type Tab = "messages" | "taches" | "detail";
+type Tab = "informations" | "messages" | "taches" | "detail";
 
 export function SubjectBody({
   header,
-  defaultTab = "messages",
+  defaultTab = "informations",
   tasksCount,
   bubbles,
   draft,
+  informationsPane,
   tachesPane,
   detailPane,
   interlocuteurs,
@@ -60,6 +62,8 @@ export function SubjectBody({
   tasksCount: number;
   bubbles: MessageBubbleData[];
   draft: React.ReactNode;
+  /** Onglet Informations — descriptif éditable + rapport d'activité Relvo. */
+  informationsPane: React.ReactNode;
   tachesPane: React.ReactNode;
   detailPane: React.ReactNode;
   /** Interlocuteurs du sujet (key = id du contact). */
@@ -174,10 +178,13 @@ export function SubjectBody({
     return false;
   }
 
+  // Onglets à ICÔNES (2026-07-23) — 4 entrées tiennent sur mobile sans rogner
+  // l'horizontal. Ordre : Informations · Tâches · Conversations · Détails.
   const options: SegTabOption[] = [
-    { value: "taches", label: "Tâches", count: tasksCount },
-    { value: "messages", label: "Conversations" },
-    { value: "detail", label: "Détails" },
+    { value: "informations", label: "Informations", icon: Info },
+    { value: "taches", label: "Tâches", icon: CalendarDays, count: tasksCount },
+    { value: "messages", label: "Conversations", icon: MessagesSquare },
+    { value: "detail", label: "Détails", icon: Settings },
   ];
 
   // Destinataire « tout le monde » en tête du select : « Groupe » pour un sujet
@@ -215,7 +222,10 @@ export function SubjectBody({
           value={tab}
           onValueChange={(v) => setTab(v as Tab)}
           overlap
+          iconOnly
         />
+
+        {tab === "informations" ? informationsPane : null}
 
         {tab === "messages" && conversations.length > 0 ? (
           // Ligne unique + feuille des écoutes (M6ter, invariant n°11) — sélecteur
@@ -230,7 +240,7 @@ export function SubjectBody({
         ) : null}
 
         {tab === "messages" ? (
-          <div className="flex flex-col gap-[15px] px-[18px] pt-4 pb-3">
+          <div className="flex flex-col gap-[15px] px-2.5 pt-4 pb-3">
             {shown.length === 0 ? (
               <p className="text-[13.5px] text-(--text-tertiary)">
                 {bubbles.length === 0

@@ -70,6 +70,7 @@ async function describeSubjectChanges(
   current: {
     title: string;
     summary: string | null;
+    description: string | null;
     folderId: string | null;
     contactIds: string[];
   },
@@ -108,6 +109,17 @@ async function describeSubjectChanges(
       title: current.summary ? "Résumé modifié" : "Résumé ajouté",
       description: data.summary ?? null,
       metadata: { field: "summary" },
+    });
+  }
+
+  if (
+    data.description !== undefined &&
+    (data.description ?? null) !== (current.description ?? null)
+  ) {
+    changes.push({
+      title: current.description ? "Descriptif modifié" : "Descriptif ajouté",
+      description: data.description ?? null,
+      metadata: { field: "description" },
     });
   }
 
@@ -166,6 +178,7 @@ export const createSubjectSchema = z.object({
 export const updateSubjectSchema = z.object({
   title: z.string().trim().min(1).max(200).optional(),
   summary: z.string().trim().max(5000).optional().nullable(),
+  description: z.string().trim().max(5000).optional().nullable(),
   folderId: z.uuid().optional().nullable(),
   contactIds: z.array(z.uuid()).optional(),
 });
@@ -303,6 +316,9 @@ export async function updateSubject(
       data: {
         ...(data.title !== undefined ? { title: data.title } : {}),
         ...(data.summary !== undefined ? { summary: data.summary } : {}),
+        ...(data.description !== undefined
+          ? { description: data.description }
+          : {}),
         ...(data.folderId !== undefined ? { folderId: data.folderId } : {}),
         ...(data.contactIds !== undefined
           ? { contactIds: data.contactIds }

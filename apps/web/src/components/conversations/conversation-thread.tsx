@@ -1,38 +1,38 @@
-import type { ConversationListening } from "@relvo/db";
+"use client";
+
+import { Circle } from "lucide-react";
 import { EmailMessage } from "@/components/conversations/email-message";
-import { FollowedInBanner } from "@/components/conversations/followed-in-banner";
+import { MessageBubble } from "@/components/shared/message-bubble";
 import { WhatsAppMessageRow } from "@/components/conversations/whatsapp-message-row";
 import type { ThreadMessageData } from "@/lib/conversation-row";
 
 // Fil d'une conversation (M6ter, invariant n°13bis) — timeline chronologique.
-//
-// ── Le cordon a DISPARU ──────────────────────────────────────────────────────
-// Une conversation est désormais soit ÉCOUTÉE par un sujet ouvert, soit pas :
-// binaire. Un rail qui alternait des couleurs par message n'avait plus rien à
-// montrer. Le signal d'appartenance remonte dans le BANDEAU « Suivi dans : … »
-// en tête de fil (les deux canaux). L'entrelacement dans une plage d'écoute n'est
-// plus exprimé dans l'UI — c'est le travail de M7 ; en attendant, un peu de bruit
-// vaut mieux qu'une interface incompréhensible.
+// Le signal d'appartenance (« Suivi dans ») remonte désormais dans le HEADER
+// enrichi de la conversation (ConversationDetail) ; ce composant ne rend plus
+// que les messages.
 //
 // ── On diverge sur le RENDU, jamais sur le domaine ───────────────────────────
-//   • email    → PLEINE LARGEUR (EmailMessage), pas de bulle : un email est long
-//     et structuré, la bulle l'étrangle.
+//   • email    → PLEINE LARGEUR (EmailMessage), pas de bulle.
 //   • WhatsApp → BULLES conservées (MessageBubble).
 //
-// Le TAP est réservé à l'ouverture des pièces jointes (géré par AttachmentPreview
-// à l'intérieur de chaque message) : plus aucune pop-up de message, sur aucun
-// canal.
+// ── Mode SÉLECTION (WhatsApp uniquement) ─────────────────────────────────────
+// Quand l'utilisateur lance « Ouvrir un sujet » sur un fil WhatsApp, on n'ouvre
+// PAS un nouvel écran : chaque message reçoit une pastille à cocher, et le tap
+// démarre l'écoute à partir de ce message (invariant n°8, geste « swipe droite »
+// exprimé ici en sélection explicite). Le swipe est désactivé pendant ce mode.
 
 export function ConversationThread({
   messages,
   channelType,
-  listenings,
-  backTo,
+  selecting = false,
+  onPick,
 }: {
   messages: ThreadMessageData[];
   channelType: string;
-  listenings: ConversationListening[];
-  backTo: string;
+  /** Mode sélection d'un message de départ (WhatsApp) — pose des pastilles. */
+  selecting?: boolean;
+  /** Message choisi comme point de départ de l'écoute. */
+  onPick?: (messageId: string) => void;
 }) {
   const isEmail = channelType === "email";
 
@@ -43,29 +43,52 @@ export function ConversationThread({
       </p>
     ) : null;
 
-  return (
-    <>
-      <FollowedInBanner listenings={listenings} backTo={backTo} />
+  if (isEmail) {
+    return (
+      <div className="flex flex-col gap-2.5 px-2.5 pt-3.5 pb-3">
+        {empty}
+        {messages.map((m) => (
+          <EmailMessage key={m.id} data={m} />
+        ))}
+      </div>
+    );
+  }
 
-      {isEmail ? (
-        // Email — conteneur paddé, messages pleine largeur (pas de geste ici :
-        // on ouvre un sujet email depuis la CONVERSATION, dans la liste).
-        <div className="flex flex-col gap-2.5 px-[18px] pt-3.5 pb-3">
-          {empty}
-          {messages.map((m) => (
-            <EmailMessage key={m.id} data={m} />
-          ))}
-        </div>
-      ) : (
-        // WhatsApp — chaque message est une ligne pleine largeur (fond de swipe
-        // bord à bord), swipe droite = ouvrir/étendre l'écoute sur ce message.
-        <div className="flex flex-col pt-1.5 pb-3">
-          {empty}
-          {messages.map((m) => (
-            <WhatsAppMessageRow key={m.id} data={m} />
-          ))}
-        </div>
+  return (
+    <div className="flex flex-col pt-1.5 pb-3">
+      {empty}
+      {messages.map((m) =>
+        selecting ? (
+          // Ligne SÉLECTIONNABLE : pastille + bulle (inerte au tap, l'action
+          // vit sur le bouton parent). Tap = démarrer l'écoute ici.
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => onPick?.(m.id)}
+            className="flex w-full items-start gap-2.5 px-[18px] py-[7px] text-left active:bg-(--surface-2)"
+          >
+            <Circle
+              className="mt-3 size-5 flex-none text-brand"
+              strokeWidth={2}
+            />
+            <div className="pointer-events-none min-w-0 flex-1">
+              <MessageBubble
+                data={{
+                  id: m.id,
+                  direction: m.direction,
+                  actor: m.direction === "outgoing" ? "user" : "contact",
+                  senderName: m.senderName,
+                  time: m.time,
+                  content: m.content,
+                  attachment: m.attachment,
+                }}
+              />
+            </div>
+          </button>
+        ) : (
+          <WhatsAppMessageRow key={m.id} data={m} />
+        ),
       )}
-    </>
+    </div>
   );
 }

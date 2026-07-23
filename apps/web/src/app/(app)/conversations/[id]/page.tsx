@@ -1,23 +1,19 @@
 import { notFound } from "next/navigation";
 import { getConversationThread } from "@relvo/db";
-import { ConversationThread } from "@/components/conversations/conversation-thread";
+import { ConversationDetail } from "@/components/conversations/conversation-detail";
 import { MarkConversationRead } from "@/components/conversations/mark-conversation-read";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { toThreadMessageData } from "@/lib/conversation-row";
 import { getTenantDb } from "@/server/auth-context";
 
-// Détail d'une conversation (M6ter) — timeline chronologique + BANDEAU « Suivi
-// dans ». Le cordon a disparu (écoute binaire). Ouvrir la page vaut LECTURE de
-// ses messages entrants (MarkConversationRead).
+// Détail d'une conversation (M6ter, header enrichi 2026-07-23) — le HEADER
+// violet ne porte plus que la flèche retour + le titre (objet) sur 2 lignes ;
+// tout le contexte (interlocuteur, canal, domaine, résumé, sujets, menu) vit
+// dans la carte enrichie de `ConversationDetail`, juste en dessous. Ouvrir la
+// page vaut LECTURE de ses messages entrants (MarkConversationRead).
 //
-// Le retour pointe sur le filtre d'où l'on vient (`?filtre=…`) : arriver de
-// « Ignorées » et repartir sur « Sans sujet » perdrait le fil du tri en cours.
-
-const CHANNEL_LABEL: Record<string, string> = {
-  email: "Email",
-  whatsapp: "WhatsApp",
-};
+// Le retour pointe sur le filtre d'où l'on vient (`?filtre=…`).
 
 export default async function ConversationDetailPage({
   params,
@@ -35,7 +31,7 @@ export default async function ConversationDetailPage({
 
   const messages = thread.messages.map(toThreadMessageData);
   const backTo = `/conversations?filtre=${filtre ?? "sans-sujet"}`;
-  const unsorted = messages.filter((m) => !m.subject).length;
+  const isGroup = thread.type === "whatsapp_group";
 
   return (
     <Screen>
@@ -43,18 +39,20 @@ export default async function ConversationDetailPage({
       <RelvoHeader
         back={backTo}
         title={thread.title}
-        subtitle={`${CHANNEL_LABEL[thread.channelType] ?? "Canal"} · ${
-          messages.length
-        } message${messages.length > 1 ? "s" : ""}${
-          unsorted > 0 ? ` · ${unsorted} sans sujet` : ""
-        }`}
-        className="pb-8"
+        wrapTitle
+        relvo={false}
+        subtitle={`${messages.length} message${messages.length > 1 ? "s" : ""}`}
+        className="pb-6"
       />
 
-      <ConversationThread
-        messages={messages}
+      <ConversationDetail
+        conversationId={id}
         channelType={thread.channelType}
+        channelName={thread.channelName}
+        interlocutorName={thread.interlocutorName}
+        isGroup={isGroup}
         listenings={thread.listenings}
+        messages={messages}
         backTo={backTo}
       />
     </Screen>

@@ -36,7 +36,9 @@ export function EmailMessage({ data }: { data: EmailMessageData }) {
   return (
     <article
       className={cn(
-        "rounded-[14px] border px-4 py-3.5",
+        // Padding resserré : sur mobile l'espace horizontal est rare, la bulle
+        // e-mail ne doit pas le gaspiller (item 2026-07-23).
+        "rounded-[13px] border px-2.5 py-2.5",
         // Repli assumé de l'invariant : teinte très légère au SORTANT seulement,
         // pour distinguer « Moi » sans jamais teinter du texte long.
         outgoing
