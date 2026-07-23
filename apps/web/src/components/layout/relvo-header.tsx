@@ -18,6 +18,7 @@ export function RelvoHeader({
   relvo = true,
   rounded = true,
   wrapTitle = false,
+  titleFull = false,
   children,
   className,
 }: {
@@ -32,6 +33,8 @@ export function RelvoHeader({
   rounded?: boolean;
   /** Titre sur 2 lignes (lisible en entier) au lieu de tronqué — mode détail. */
   wrapTitle?: boolean;
+  /** Titre affiché EN ENTIER, sans aucune troncature (conversation). */
+  titleFull?: boolean;
   /** Brief, MetricsCard, SegTabs, status-strip… logés dans la zone violette. */
   children?: React.ReactNode;
   className?: string;
@@ -81,7 +84,11 @@ export function RelvoHeader({
             <h1
               className={cn(
                 "font-heading text-[19px] font-extrabold tracking-[-0.3px]",
-                wrapTitle ? "line-clamp-2 leading-[1.15]" : "truncate",
+                titleFull
+                  ? "leading-[1.2]"
+                  : wrapTitle
+                    ? "line-clamp-2 leading-[1.15]"
+                    : "truncate",
               )}
             >
               {title}

@@ -16,10 +16,18 @@ import { useEffect, useRef, useState } from "react";
 // La hauteur suit le contenu, images comprises (ResizeObserver sur le body, qui
 // grandit quand les images finissent de charger).
 
+// Aucun SCROLL HORIZONTAL possible (exigence mobile) : on borne tout à la
+// largeur de la bulle. `overflow-x:hidden` supprime la barre ; `max-width:100%`
+// sur *tout* (images, tableaux à largeur fixe façon newsletters, <pre>…) empêche
+// le moindre débordement ; `box-sizing:border-box` évite qu'un padding pousse
+// au-delà. `table-layout:fixed` force les colonnes à se répartir dans la largeur
+// disponible plutôt que d'imposer leurs largeurs codées en dur.
 const RESET = `
-  html,body{margin:0;padding:0;background:transparent}
+  html,body{margin:0;padding:0;background:transparent;overflow-x:hidden;width:100%}
+  *{max-width:100%!important;box-sizing:border-box}
   body{font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1a1128;overflow-wrap:anywhere;word-break:break-word}
-  img{max-width:100%;height:auto}
+  img{height:auto}
+  table{table-layout:fixed}
   a{color:#2b6fe0}
 `;
 

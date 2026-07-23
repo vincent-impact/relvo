@@ -3,18 +3,12 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import {
-  EyeOff,
-  Folder,
-  Mail,
-  MessageCircle,
-  Sparkles,
-  Users,
-  X,
-} from "lucide-react";
+import { Folder, Mail, MessageCircle, Sparkles, Users, X } from "lucide-react";
 import { toast } from "sonner";
 import type { ConversationListening } from "@relvo/db";
 import { ConversationThread } from "@/components/conversations/conversation-thread";
+import { RelvoHeader } from "@/components/layout/relvo-header";
+import { Screen } from "@/components/layout/screen";
 import {
   createSubjectFromConversationAction,
   ignoreConversationAction,
@@ -25,18 +19,15 @@ import { initialsFor } from "@/lib/display";
 import type { ThreadMessageData } from "@/lib/conversation-row";
 import { cn } from "@/lib/utils";
 
-// Header ENRICHI d'une conversation (2026-07-23) + orchestration de la surface.
-// Il condense en un coup d'œil : l'interlocuteur, le canal (icône + boîte), le
-// domaine (placeholder « Général » tant que Relvo ne le détecte pas), un espace
-// résumé (placeholder), les sujets attachés, et un menu à DEUX gestes —
-// « Ignorer » / « Ouvrir un sujet ». Plus de bouton Relvo ici (décision : on
-// n'appelle pas l'assistant depuis une conversation).
+// Détail d'une conversation (header enrichi 2026-07-23, v2). TOUT le contexte —
+// interlocuteur, canal + boîte, domaine, sujets suivis, résumé — vit DANS le
+// hero violet (RelvoHeader children). Le dock 4-icônes cède la place, en bas, à
+// DEUX boutons d'action : « Ignorer » (rouge) / « Ouvrir un sujet » (bleu).
 //
 // « Ouvrir un sujet » :
-//   • email    → le fil EST le sujet → création immédiate sur toute la
-//     conversation, puis navigation vers la fiche ;
-//   • WhatsApp → on passe le FIL en mode SÉLECTION (pastilles sur les messages,
-//     sans changer d'écran) : le message choisi démarre l'écoute.
+//   • email    → le fil EST le sujet → création immédiate sur tout le fil ;
+//   • WhatsApp → mode SÉLECTION in-place (pastille par message) : le message
+//     choisi démarre l'écoute. Le bas de page devient alors la consigne + Annuler.
 
 const CHANNEL_ICON: Record<string, typeof Mail> = {
   email: Mail,
@@ -45,6 +36,7 @@ const CHANNEL_ICON: Record<string, typeof Mail> = {
 
 export function ConversationDetail({
   conversationId,
+  title,
   channelType,
   channelName,
   interlocutorName,
@@ -54,6 +46,7 @@ export function ConversationDetail({
   backTo,
 }: {
   conversationId: string;
+  title: string;
   channelType: string;
   channelName: string;
   /** Nom de l'interlocuteur (null pour un groupe → on montre le titre du fil). */
@@ -74,10 +67,6 @@ export function ConversationDetail({
     : (interlocutorName ?? "Interlocuteur inconnu");
   const initials = isGroup ? null : initialsFor(interlocutorName);
 
-  // Domaine : placeholder « Général » tant qu'aucune détection Relvo n'existe
-  // (M7). Emplacement réservé, honnête — comme le résumé ci-dessous.
-  const domain = folderVisual("general");
-
   function ignore() {
     startTransition(async () => {
       const res = await ignoreConversationAction(conversationId);
@@ -91,7 +80,6 @@ export function ConversationDetail({
   }
 
   function openSubject() {
-    // WhatsApp : on ne crée pas sur tout le fil — on demande le point de départ.
     if (!isEmail) {
       setSelecting(true);
       return;
@@ -121,88 +109,108 @@ export function ConversationDetail({
 
   return (
     <>
-      <div className="border-b border-(--border) bg-white px-4 pt-3.5 pb-4">
-        {/* Interlocuteur + canal + domaine */}
-        <div className="flex items-center gap-2.5">
-          <span
-            className={cn(
-              "grid size-[38px] flex-none place-items-center rounded-full text-[13px] font-extrabold text-white",
-              isGroup ? "bg-(--text-tertiary)" : "bg-(--amber-600)",
-            )}
-          >
-            {isGroup ? (
-              <Users className="size-[18px]" strokeWidth={2.2} />
-            ) : (
-              (initials ?? "?")
-            )}
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[15px] font-bold text-(--text-primary)">
-              {senderLabel}
-            </div>
-            <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-(--text-tertiary)">
-              <ChannelIcon className="size-[13px] flex-none" strokeWidth={2} />
-              <span className="truncate">{channelName}</span>
-            </div>
-          </div>
-          {/* Domaine détecté par Relvo (placeholder) */}
-          <span
-            className="inline-flex flex-none items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold"
-            style={{ color: domain.color, background: "var(--surface-2)" }}
-          >
-            <Folder className="size-3.5" strokeWidth={2.2} />
-            Général
-          </span>
-        </div>
-
-        {/* Sujets attachés à la conversation (rien si aucun) */}
-        {listenings.length > 0 ? (
-          <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5">
-            <span className="text-[11.5px] font-semibold text-(--text-tertiary)">
-              Suivi dans
-            </span>
-            {listenings.map((l) => {
-              const color = folderVisual(l.folder ?? undefined).color;
-              return (
-                <Link
-                  key={l.subjectId}
-                  href={`/sujets/${l.subjectId}?from=${encodeURIComponent(backTo)}`}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-(--border) px-2 py-0.5 active:opacity-80"
-                >
-                  <span
-                    className="size-2 flex-none rounded-full"
-                    style={{ background: color }}
+      <Screen>
+        <RelvoHeader
+          back={backTo}
+          relvo={false}
+          titleFull
+          title={title}
+          className="pb-6"
+        >
+          <div className="space-y-3 px-[22px] pt-3.5">
+            {/* Interlocuteur + canal + domaine (sur fond violet) */}
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-[38px] flex-none place-items-center rounded-full bg-white/20 text-[13px] font-extrabold text-white">
+                {isGroup ? (
+                  <Users className="size-[18px]" strokeWidth={2.2} />
+                ) : (
+                  (initials ?? "?")
+                )}
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[14.5px] font-bold text-white">
+                  {senderLabel}
+                </div>
+                <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-(--on-violet)">
+                  <ChannelIcon
+                    className="size-[13px] flex-none"
+                    strokeWidth={2}
                   />
-                  <span
-                    className={cn(
-                      "text-[12.5px] font-semibold",
-                      l.active
-                        ? "text-(--text-primary)"
-                        : "text-(--text-tertiary) line-through decoration-(--text-tertiary)/40",
-                    )}
-                  >
-                    {l.title}
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        ) : null}
+                  <span className="truncate">{channelName}</span>
+                </div>
+              </div>
+              {/* Domaine détecté par Relvo (placeholder « Général ») */}
+              <span className="inline-flex flex-none items-center gap-1 rounded-full border border-white/20 bg-white/15 px-2 py-1 text-[11px] font-bold text-white">
+                <Folder className="size-3.5" strokeWidth={2.2} />
+                Général
+              </span>
+            </div>
 
-        {/* Espace résumé (placeholder — 3 derniers messages, à venir) */}
-        <div className="mt-3 rounded-xl border border-(--border) bg-(--surface-2) px-3 py-2.5">
-          <div className="mb-1 flex items-center gap-1.5 text-[10.5px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase">
-            <Sparkles className="size-3" fill="currentColor" strokeWidth={0} />
-            Résumé
-          </div>
-          <p className="text-[13px] text-(--text-tertiary) italic">
-            Pas de résumé disponible pour le moment
-          </p>
-        </div>
+            {/* Sujets suivis (rien si aucun) */}
+            {listenings.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                <span className="text-[11.5px] font-semibold text-(--on-violet)">
+                  Suivi dans
+                </span>
+                {listenings.map((l) => {
+                  const color = folderVisual(l.folder ?? undefined).color;
+                  return (
+                    <Link
+                      key={l.subjectId}
+                      href={`/sujets/${l.subjectId}?from=${encodeURIComponent(backTo)}`}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-2 py-0.5 active:opacity-80"
+                    >
+                      <span
+                        className="size-2 flex-none rounded-full"
+                        style={{ background: color }}
+                      />
+                      <span
+                        className={cn(
+                          "text-[12.5px] font-semibold text-white",
+                          !l.active && "line-through decoration-white/40",
+                        )}
+                      >
+                        {l.title}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            ) : null}
 
-        {/* Menu — Ignorer | Ouvrir un sujet. En sélection WhatsApp : consigne. */}
+            {/* Espace résumé (placeholder — 3 derniers messages, à venir) */}
+            <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2.5">
+              <div className="mb-1 flex items-center gap-1.5 text-[10.5px] font-bold tracking-[0.3px] text-(--on-violet) uppercase">
+                <Sparkles
+                  className="size-3"
+                  fill="currentColor"
+                  strokeWidth={0}
+                />
+                Résumé
+              </div>
+              <p className="text-[13px] text-white/75 italic">
+                Pas de résumé disponible pour le moment
+              </p>
+            </div>
+          </div>
+        </RelvoHeader>
+
+        <ConversationThread
+          messages={messages}
+          channelType={channelType}
+          selecting={selecting}
+          onPick={pickAnchor}
+        />
+      </Screen>
+
+      {/* Bas de page ANCRÉ (remplace le dock sur cet écran). Deux modes :
+          sélection WhatsApp (consigne + Annuler) ou boutons d'action. */}
+      <div
+        className="absolute inset-x-0 bottom-0 z-30 border-t border-(--border) bg-white px-4 pt-2.5"
+        style={{ paddingBottom: "calc(10px + env(safe-area-inset-bottom))" }}
+      >
         {selecting ? (
-          <div className="mt-3.5 flex items-center gap-2 rounded-xl border border-(--blue-100) bg-(--blue-50) px-3 py-2.5">
+          <div className="flex items-center gap-2 py-0.5">
             <Sparkles
               className="size-4 flex-none text-brand"
               strokeWidth={2.2}
@@ -213,28 +221,27 @@ export function ConversationDetail({
             <button
               type="button"
               onClick={() => setSelecting(false)}
-              className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-[12.5px] font-bold text-(--text-tertiary) active:opacity-70"
+              className="inline-flex items-center gap-1 rounded-full px-2 py-1.5 text-[12.5px] font-bold text-(--text-tertiary) active:opacity-70"
             >
               <X className="size-4" strokeWidth={2.4} />
               Annuler
             </button>
           </div>
         ) : (
-          <div className="mt-3.5 flex gap-2">
+          <div className="flex gap-2.5">
             <button
               type="button"
               disabled={pending}
               onClick={ignore}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-(--border) bg-white py-2.5 text-[13.5px] font-bold text-(--text-secondary) active:bg-(--surface-2) disabled:opacity-50"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-brand-accent py-2.5 text-[14px] font-bold text-white active:opacity-90 disabled:opacity-50"
             >
-              <EyeOff className="size-[17px]" strokeWidth={2} />
               Ignorer
             </button>
             <button
               type="button"
               disabled={pending}
               onClick={openSubject}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-brand py-2.5 text-[13.5px] font-bold text-white active:opacity-90 disabled:opacity-50"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-brand py-2.5 text-[14px] font-bold text-white active:opacity-90 disabled:opacity-50"
             >
               <Sparkles className="size-[17px]" strokeWidth={2.2} />
               Ouvrir un sujet
@@ -242,13 +249,6 @@ export function ConversationDetail({
           </div>
         )}
       </div>
-
-      <ConversationThread
-        messages={messages}
-        channelType={channelType}
-        selecting={selecting}
-        onPick={pickAnchor}
-      />
     </>
   );
 }
