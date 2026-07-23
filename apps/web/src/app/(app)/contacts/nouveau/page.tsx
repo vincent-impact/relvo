@@ -6,8 +6,14 @@ import { NewContactForm } from "@/components/contacts/new-contact-form";
 export const metadata: Metadata = { title: "Nouveau contact — Relvo" };
 
 // Création manuelle d'un contact (M9.22) — formulaire aux mêmes champs que la
-// fiche. Accessible via le bouton + du hero de l'annuaire /contacts.
-export default function NouveauContactPage() {
+// fiche. Accessible via le bouton + du hero de l'annuaire /contacts, ou via
+// l'avatar « ? » d'une conversation inconnue (pré-remplit email/téléphone).
+export default async function NouveauContactPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ email?: string; phone?: string }>;
+}) {
+  const { email, phone } = await searchParams;
   return (
     <Screen>
       <RelvoHeader
@@ -16,7 +22,7 @@ export default function NouveauContactPage() {
         subtitle="Renseignez les coordonnées"
         className="pb-9"
       />
-      <NewContactForm />
+      <NewContactForm initial={{ email, phone }} />
     </Screen>
   );
 }

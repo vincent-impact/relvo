@@ -27,16 +27,21 @@ const FIELDS: { key: keyof FormState; label: string; type?: string }[] = [
   { key: "phone", label: "Téléphone", type: "tel" },
 ];
 
-export function NewContactForm() {
+export function NewContactForm({
+  initial,
+}: {
+  /** Pré-remplissage (ex. depuis l'avatar « ? » d'une conversation inconnue). */
+  initial?: Partial<FormState>;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [form, setForm] = useState<FormState>({
-    firstName: "",
-    lastName: "",
-    jobTitle: "",
-    company: "",
-    email: "",
-    phone: "",
+    firstName: initial?.firstName ?? "",
+    lastName: initial?.lastName ?? "",
+    jobTitle: initial?.jobTitle ?? "",
+    company: initial?.company ?? "",
+    email: initial?.email ?? "",
+    phone: initial?.phone ?? "",
   });
 
   function set(key: keyof FormState, value: string) {

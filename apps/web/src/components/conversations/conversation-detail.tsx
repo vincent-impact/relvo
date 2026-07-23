@@ -8,6 +8,7 @@ import {
   Folder,
   Mail,
   MessageCircle,
+  Plus,
   Sparkles,
   Users,
   X,
@@ -42,12 +43,18 @@ const CHANNEL_ICON: Record<string, typeof Mail> = {
   whatsapp: MessageCircle,
 };
 
+const CHANNEL_LABEL: Record<string, string> = {
+  email: "E-mail",
+  whatsapp: "WhatsApp",
+};
+
 export function ConversationDetail({
   conversationId,
   title,
   channelType,
-  channelName,
   interlocutorName,
+  contactId,
+  interlocutorRaw,
   isGroup,
   listenings,
   messages,
@@ -56,9 +63,12 @@ export function ConversationDetail({
   conversationId: string;
   title: string;
   channelType: string;
-  channelName: string;
   /** Nom de l'interlocuteur (null pour un groupe → on montre le titre du fil). */
   interlocutorName: string | null;
+  /** Contact rattaché (avatar → sa fiche) ou null (avatar « ? » → nouveau contact). */
+  contactId: string | null;
+  /** Email/numéro brut de l'interlocuteur — pré-remplit la création de contact. */
+  interlocutorRaw: string | null;
   isGroup: boolean;
   listenings: ConversationListening[];
   messages: ThreadMessageData[];
@@ -70,10 +80,26 @@ export function ConversationDetail({
 
   const isEmail = channelType === "email";
   const ChannelIcon = CHANNEL_ICON[channelType] ?? Mail;
+  const channelLabel = CHANNEL_LABEL[channelType] ?? "Canal";
   const senderLabel = isGroup
     ? "Groupe"
     : (interlocutorName ?? "Interlocuteur inconnu");
   const initials = isGroup ? null : initialsFor(interlocutorName);
+
+  // Avatar CLIQUABLE (invariant contact) : contact connu → sa fiche ; inconnu
+  // (« ? ») → création d'un contact pré-rempli avec l'email/numéro ; groupe →
+  // pas de destination (pas d'interlocuteur unique).
+  const rawId = interlocutorRaw?.trim();
+  const avatarHref = isGroup
+    ? null
+    : contactId
+      ? `/contacts/${contactId}`
+      : rawId
+        ? isEmail
+          ? `/contacts/nouveau?email=${encodeURIComponent(rawId)}`
+          : // WhatsApp : « 33600…@s.whatsapp.net » → on ne garde que le numéro.
+            `/contacts/nouveau?phone=${encodeURIComponent(rawId.split("@")[0]!)}`
+        : "/contacts/nouveau";
 
   function ignore() {
     startTransition(async () => {
@@ -128,13 +154,28 @@ export function ConversationDetail({
           <div className="space-y-3 px-[22px] pt-3.5">
             {/* Interlocuteur + canal + domaine (sur fond violet) */}
             <div className="flex items-center gap-2.5">
-              <span className="grid size-[38px] flex-none place-items-center rounded-full bg-white/20 text-[13px] font-extrabold text-white">
-                {isGroup ? (
+              {(() => {
+                const avatarClass =
+                  "grid size-[38px] flex-none place-items-center rounded-full bg-white/20 text-[13px] font-extrabold text-white";
+                const inner = isGroup ? (
                   <Users className="size-[18px]" strokeWidth={2.2} />
                 ) : (
                   (initials ?? "?")
-                )}
-              </span>
+                );
+                return avatarHref ? (
+                  <Link
+                    href={avatarHref}
+                    aria-label={
+                      contactId ? "Voir le contact" : "Enregistrer le contact"
+                    }
+                    className={cn(avatarClass, "active:opacity-80")}
+                  >
+                    {inner}
+                  </Link>
+                ) : (
+                  <span className={avatarClass}>{inner}</span>
+                );
+              })()}
               <div className="min-w-0 flex-1">
                 <div className="truncate text-[14.5px] font-bold text-white">
                   {senderLabel}
@@ -144,7 +185,7 @@ export function ConversationDetail({
                     className="size-[13px] flex-none"
                     strokeWidth={2}
                   />
-                  <span className="truncate">{channelName}</span>
+                  <span>{channelLabel}</span>
                 </div>
               </div>
               {/* Domaine détecté par Relvo (placeholder « Général ») */}
@@ -262,9 +303,9 @@ export function ConversationDetail({
               type="button"
               disabled={pending}
               onClick={openSubject}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-[14px] font-bold text-relvo active:opacity-90 disabled:opacity-50"
+              className="inline-flex flex-1 items-center justify-center gap-1 rounded-full bg-white py-2.5 text-[14px] font-bold text-relvo active:opacity-90 disabled:opacity-50"
             >
-              <Sparkles className="size-[17px]" strokeWidth={2.2} />
+              <Plus className="size-[19px]" strokeWidth={2.6} />
               Ouvrir un sujet
             </button>
           </div>

@@ -37,8 +37,9 @@ export default async function ConversationDetailPage({
         conversationId={id}
         title={thread.title}
         channelType={thread.channelType}
-        channelName={thread.channelName}
         interlocutorName={thread.interlocutorName}
+        contactId={thread.contactId}
+        interlocutorRaw={thread.interlocutorRaw}
         isGroup={isGroup}
         listenings={thread.listenings}
         messages={messages}

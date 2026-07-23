@@ -13,16 +13,22 @@ import { useEffect, useRef, useState } from "react";
 //     même origine n'ouvre aucune brèche ;
 //   • `allow-popups` → les liens `target="_blank"` s'ouvrent normalement.
 //
-// ── RESPONSIVE, sans scroll horizontal (2026-07-23) ──────────────────────────
+// ── RESPONSIVE, avec scroll horizontal en DERNIER RECOURS (2026-07-23) ────────
 // Le piège : `width=device-width` met en page l'e-mail à la largeur de l'ÉCRAN,
 // alors que l'iframe (dans sa bulle) est plus ÉTROIT — d'où ~40 px rognés à
 // droite. On fixe donc le viewport à la largeur RÉELLE de l'iframe (`vw`, mesurée
-// après montage) : l'e-mail se met en page exactement dans la zone visible. Les
-// largeurs fixes (newsletters à tableaux 600 px) restent bornées par le RESET
-// (`max-width:100%` partout + `table-layout:fixed`), donc tout tient et se lit.
+// après montage) : la quasi-totalité des e-mails se mettent en page dans la zone
+// visible. Le RESET borne encore les largeurs fixes (`max-width:100%` partout +
+// `table-layout:fixed`).
+//
+// Reste le cas résiduel (rare) d'un e-mail à `min-width` codée en dur, que rien
+// ne peut faire rétrécir. Plutôt que de le rogner (illisible), on RÉ-AUTORISE le
+// scroll horizontal — mais UNIQUEMENT sur cet e-mail-là : ceux qui tiennent
+// n'ont aucun débordement, donc aucune barre. `overscroll-x:contain` empêche le
+// geste de « fuir » vers la navigation.
 
 const RESET = `
-  html,body{margin:0;padding:0;background:transparent;overflow-x:hidden;width:100%}
+  html,body{margin:0;padding:0;background:transparent;overflow-x:auto;overscroll-behavior-x:contain;width:100%;-webkit-overflow-scrolling:touch}
   *{max-width:100%!important;box-sizing:border-box}
   body{font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1a1128;overflow-wrap:anywhere;word-break:break-word}
   img{height:auto}
