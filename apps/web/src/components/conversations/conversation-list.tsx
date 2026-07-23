@@ -8,20 +8,15 @@ import {
   Mail,
   MessageCircle,
   RotateCcw,
-  Sparkles,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  createSubjectFromConversationAction,
   ignoreConversationAction,
   loadConversationsAction,
   reactivateConversationAction,
 } from "@/server/actions/conversations";
 import { SwipeRow } from "@/components/shared/swipe-row";
-import { OpenOrAttachDialog } from "@/components/conversations/open-or-attach-dialog";
-import type { SubjectPickerOption } from "@/components/messages/subject-picker-dialog";
-import { attachConversationToSubjectAction } from "@/server/actions/subject-conversations";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -90,17 +85,14 @@ function ConversationRow({
   data,
   filter,
   onRemove,
-  subjects,
 }: {
   data: ConversationRowData;
   filter: ConversationFilterSlug;
   onRemove: (id: string) => void;
-  subjects: SubjectPickerOption[];
 }) {
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [openAttach, setOpenAttach] = useState(false);
   const unread = data.unreadCount > 0;
   // Dans « Ignorées », le geste rend la source au flux ; ailleurs il l'en sort.
   const reviving = filter === "ignorees";
@@ -121,37 +113,6 @@ function ConversationRow({
         // Retrait optimiste : la ligne quitte le filtre courant dans les deux
         // sens (elle n'est plus ignorée / elle l'est devenue).
         onRemove(data.id);
-      } else {
-        toast.error(res.message);
-      }
-    });
-  }
-
-  // Swipe droite EMAIL — ouvrir un sujet sur le fil (le sujet EST le fil, ancre
-  // nulle, tout est balayé). WhatsApp n'a pas ce geste ici : côté WhatsApp, on
-  // ouvre un sujet depuis un MESSAGE, dans le fil (invariant n°13bis).
-  function openSubject() {
-    startTransition(async () => {
-      const res = await createSubjectFromConversationAction(data.id);
-      if (res.ok) {
-        toast.success("Sujet créé");
-        router.push(`/sujets/${res.data.id}?from=/conversations`);
-      } else {
-        toast.error(res.message);
-      }
-    });
-  }
-
-  // 2e option du swipe droite email : rattacher le fil à un sujet EXISTANT.
-  function attachTo(subjectId: string) {
-    startTransition(async () => {
-      const res = await attachConversationToSubjectAction({
-        subjectId,
-        conversationId: data.id,
-      });
-      if (res.ok) {
-        toast.success("Fil rattaché au sujet");
-        router.push(`/sujets/${res.data.subjectId}?from=/conversations`);
       } else {
         toast.error(res.message);
       }
@@ -188,21 +149,12 @@ function ConversationRow({
         };
 
   return (
+    // Plus de swipe DROITE (2026-07-23) : la décision d'ouvrir/lier un sujet se
+    // prend DANS la conversation (dock d'action), en lisant les messages — jamais
+    // à l'aveugle depuis la liste. Seul le swipe gauche (Ignorer) subsiste.
     <SwipeRow
       onTap={() => router.push(`/conversations/${data.id}`)}
       left={leftAction}
-      right={
-        !reviving && isEmail
-          ? {
-              // Deux issues (nouveau / rattacher) → on ouvre le dialog, la ligne
-              // revient en place.
-              onAct: () => setOpenAttach(true),
-              label: "Sujet",
-              icon: Sparkles,
-              tone: "brand" as const,
-            }
-          : undefined
-      }
     >
       <div
         className={cn(
@@ -306,21 +258,6 @@ function ConversationRow({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      <OpenOrAttachDialog
-        open={openAttach}
-        onOpenChange={setOpenAttach}
-        subjects={subjects}
-        pending={pending}
-        onNew={() => {
-          setOpenAttach(false);
-          openSubject();
-        }}
-        onAttach={(subjectId) => {
-          setOpenAttach(false);
-          attachTo(subjectId);
-        }}
-      />
     </SwipeRow>
   );
 }
@@ -329,13 +266,10 @@ export function ConversationList({
   filter,
   initialItems,
   initialCursor,
-  subjects = [],
 }: {
   filter: ConversationFilterSlug;
   initialItems: ConversationRowData[];
   initialCursor: string | null;
-  /** Sujets ouverts candidats au « rattacher à un sujet existant ». */
-  subjects?: SubjectPickerOption[];
 }) {
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(initialCursor);
@@ -413,7 +347,6 @@ export function ConversationList({
             data={c}
             filter={filter}
             onRemove={remove}
-            subjects={subjects}
           />
         ))
       )}

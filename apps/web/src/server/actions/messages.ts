@@ -91,9 +91,16 @@ export async function createContactFromMessageSenderAction(
   return result;
 }
 
-export async function createSubjectFromMessageAction(messageId: string) {
+export async function createSubjectFromMessageAction(
+  messageId: string,
+  overrides?: {
+    title?: string;
+    description?: string | null;
+    folderId?: string | null;
+  },
+) {
   const result = await domainAction((db) =>
-    createSubjectFromMessage(db, messageId),
+    createSubjectFromMessage(db, messageId, overrides),
   );
   if (result.ok) revalidateMessages();
   return result;

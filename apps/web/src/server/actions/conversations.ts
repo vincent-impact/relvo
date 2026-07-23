@@ -47,9 +47,16 @@ export async function reactivateConversationAction(id: string) {
  * (invariant n°13bis). Le sujet EST le fil : ancre nulle, tout le fil est
  * balayé (amont compris). Renvoie l'id du sujet créé pour naviguer vers sa fiche.
  */
-export async function createSubjectFromConversationAction(id: string) {
+export async function createSubjectFromConversationAction(
+  id: string,
+  overrides?: {
+    title?: string;
+    description?: string | null;
+    folderId?: string | null;
+  },
+) {
   const result = await domainAction((db) =>
-    createSubjectFromConversation(db, id),
+    createSubjectFromConversation(db, id, overrides),
   );
   if (result.ok) {
     revalidateConversations();

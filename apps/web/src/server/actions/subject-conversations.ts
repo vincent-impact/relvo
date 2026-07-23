@@ -2,6 +2,7 @@
 
 import {
   type ChannelType,
+  attachConversationToSubjectFromMessage,
   attachEmailConversationToSubject,
   detachConversationFromSubject,
   ensureSubjectAnchors,
@@ -62,6 +63,32 @@ export async function attachConversationToSubjectAction(input: {
       db,
       input.subjectId,
       input.conversationId,
+    );
+    return { subjectId: input.subjectId };
+  });
+  if (result.ok) {
+    revalidatePath(`/sujets/${input.subjectId}`);
+    revalidatePath("/conversations");
+    revalidatePath("/fil");
+    revalidateTenantData();
+  }
+  return result;
+}
+
+/**
+ * « Lier à un sujet existant » depuis une conversation WhatsApp (2026-07-23) —
+ * l'écoute démarre au message choisi (anchre) et balaie l'aval. Le pendant
+ * email passe par `attachConversationToSubjectAction` (fil entier, sans ancre).
+ */
+export async function attachConversationToSubjectFromMessageAction(input: {
+  subjectId: string;
+  messageId: string;
+}) {
+  const result = await domainAction(async (db) => {
+    await attachConversationToSubjectFromMessage(
+      db,
+      input.subjectId,
+      input.messageId,
     );
     return { subjectId: input.subjectId };
   });

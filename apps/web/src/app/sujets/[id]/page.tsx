@@ -140,7 +140,6 @@ export default async function SujetPage({
     company: c.company,
   }));
 
-  const mainContact = contacts[0];
   const taskTotal = tasks.length;
   const taskDone = tasks.filter((t) => t.status === "done").length;
   const taskPct = taskTotal > 0 ? Math.round((taskDone / taskTotal) * 100) : 0;
@@ -323,22 +322,6 @@ export default async function SujetPage({
         : "active") as "active" | "paused" | "ended",
   }));
 
-  const extendCandidates =
-    subject.status === "open"
-      ? allContacts
-          .filter(
-            (c) =>
-              !subject.contactIds.includes(c.id) && Boolean(c.email || c.phone),
-          )
-          .map((c) => ({
-            id: c.id,
-            name: contactFullName(c),
-            company: c.company,
-            email: c.email,
-            phone: c.phone,
-          }))
-      : [];
-
   return (
     <MobileFrame>
       <AcknowledgeOnOpen subjectId={subject.id} />
@@ -370,7 +353,6 @@ export default async function SujetPage({
         whatsappReplyTargets={whatsappReplyTargets}
         isGroupSubject={isGroupSubject}
         groupWhatsappTarget={groupWhatsappTarget}
-        extendCandidates={extendCandidates}
         header={
           <RelvoHeader
             back={backHref}
@@ -384,13 +366,10 @@ export default async function SujetPage({
                 title={subject.title}
               />
             }
-            // Sous-titre = référence + interlocuteur. Plus de « canal » ici : un
-            // sujet n'est pas toujours lié à un canal ou une conversation.
-            subtitle={
-              mainContact
-                ? `${subject.reference} · ${mainContact.name}`
-                : subject.reference
-            }
+            // Sous-titre = la RÉFÉRENCE seule. Plus de destinataire ici (2026-07-23,
+            // inutile : les conversations sont nominatives) ni de canal (un sujet
+            // n'est pas toujours lié à un canal).
+            subtitle={subject.reference}
             className="pb-10"
           >
             <div className="px-[22px] pt-3.5">

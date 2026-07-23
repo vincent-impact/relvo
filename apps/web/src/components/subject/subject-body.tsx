@@ -18,10 +18,6 @@ import {
   ConversationSelector,
   type SubjectConversationOption,
 } from "@/components/subject/conversation-selector";
-import {
-  ExtendSubjectDialog,
-  type ExtendCandidate,
-} from "@/components/subject/extend-subject-dialog";
 import { sendEmailReplyAction } from "@/server/actions/email";
 import { sendWhatsAppReplyAction } from "@/server/actions/whatsapp";
 import { ensureSubjectAnchorsAction } from "@/server/actions/subject-conversations";
@@ -55,7 +51,6 @@ export function SubjectBody({
   whatsappReplyTargets,
   isGroupSubject = false,
   groupWhatsappTarget = null,
-  extendCandidates = [],
 }: {
   header: React.ReactNode;
   defaultTab?: Tab;
@@ -83,12 +78,9 @@ export function SubjectBody({
   isGroupSubject?: boolean;
   /** Fil du groupe (chat_id + canal) pour l'envoi « Tous » réel, ou null. */
   groupWhatsappTarget?: { channelId: string; chatId: string } | null;
-  /** Contacts joignables pas encore interlocuteurs du sujet (cas S, M6bis.12). */
-  extendCandidates?: ExtendCandidate[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>(defaultTab);
-  const [extending, setExtending] = useState(false);
   const multi = interlocuteurs.length > 1;
   // Sujet de groupe → « Tous » est l'interlocuteur par défaut (le groupe entier).
   const [selected, setSelected] = useState<string>(
@@ -271,21 +263,9 @@ export function SubjectBody({
         <RecipientComposer
           recipients={composerRecipients}
           value={selected}
-          onRecipientChange={setSelected}
           onSend={handleSend}
-          // Cas S : on n'offre l'extension que s'il reste quelqu'un à ajouter.
-          onAddRecipient={
-            extendCandidates.length > 0 ? () => setExtending(true) : undefined
-          }
         />
       ) : null}
-
-      <ExtendSubjectDialog
-        subjectId={subjectId}
-        candidates={extendCandidates}
-        open={extending}
-        onOpenChange={setExtending}
-      />
     </>
   );
 }

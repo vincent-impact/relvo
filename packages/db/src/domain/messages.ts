@@ -632,6 +632,7 @@ export const openSubjectOnConversationSchema = z.object({
    */
   anchorMessageId: z.uuid().optional().nullable(),
   title: z.string().trim().min(1).max(200).optional(),
+  description: z.string().trim().max(5000).optional().nullable(),
   folderId: z.uuid().optional().nullable(),
   createdByActor: z.enum(Actor).optional(),
 });
@@ -731,6 +732,7 @@ export async function openSubjectOnConversation(
 
   const subject = await createSubject(db, {
     title,
+    description: data.description ?? null,
     folderId: data.folderId ?? seed?.folderId ?? null,
     contactIds: contactId ? [contactId] : [],
     createdByActor: data.createdByActor ?? Actor.user,
@@ -780,7 +782,11 @@ export async function openSubjectOnConversation(
 export async function createSubjectFromConversation(
   db: TenantDb,
   conversationId: string,
-  overrides?: { title?: string; folderId?: string | null },
+  overrides?: {
+    title?: string;
+    description?: string | null;
+    folderId?: string | null;
+  },
 ) {
   return openSubjectOnConversation(db, {
     conversationId,
@@ -801,7 +807,11 @@ export async function createSubjectFromConversation(
 export async function createSubjectFromMessage(
   db: TenantDb,
   messageId: string,
-  overrides?: { title?: string; folderId?: string | null },
+  overrides?: {
+    title?: string;
+    description?: string | null;
+    folderId?: string | null;
+  },
 ) {
   const message = assertFound(
     await db.message.findFirst({

@@ -336,6 +336,37 @@ export async function attachEmailConversationToSubject(
   return link;
 }
 
+/**
+ * Rattache une conversation WhatsApp à un sujet EXISTANT À PARTIR d'un message
+ * (« Lier à un sujet », 2026-07-23) — l'écoute démarre à cette ANCRE et balaie
+ * tout l'aval. Symétrique de `attachEmailConversationToSubject`, mais avec une
+ * borne de départ (le WhatsApp n'a pas d'objet, il faut dire où l'écoute commence).
+ */
+export async function attachConversationToSubjectFromMessage(
+  db: TenantDb,
+  subjectId: string,
+  messageId: string,
+) {
+  const message = assertFound(
+    await db.message.findFirst({
+      where: { id: messageId },
+      select: { id: true, conversationId: true },
+    }),
+    "Message",
+  );
+  await attachConversationToSubject(db, {
+    subjectId,
+    conversationId: message.conversationId,
+    anchorMessageId: message.id,
+  });
+  await sweepConversationIntoSubject(db, {
+    conversationId: message.conversationId,
+    subjectId,
+    anchorMessageId: message.id,
+  });
+  return { subjectId };
+}
+
 export async function detachConversationFromSubject(
   db: TenantDb,
   subjectId: string,

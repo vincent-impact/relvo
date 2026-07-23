@@ -1,38 +1,54 @@
 "use client";
 
-import { Circle } from "lucide-react";
+import { Check } from "lucide-react";
 import { EmailMessage } from "@/components/conversations/email-message";
 import { MessageBubble } from "@/components/shared/message-bubble";
-import { WhatsAppMessageRow } from "@/components/conversations/whatsapp-message-row";
+import { cn } from "@/lib/utils";
 import type { ThreadMessageData } from "@/lib/conversation-row";
 
 // Fil d'une conversation (M6ter, invariant n°13bis) — timeline chronologique.
-// Le signal d'appartenance (« Suivi dans ») remonte désormais dans le HEADER
-// enrichi de la conversation (ConversationDetail) ; ce composant ne rend plus
-// que les messages.
 //
 // ── On diverge sur le RENDU, jamais sur le domaine ───────────────────────────
 //   • email    → PLEINE LARGEUR (EmailMessage), pas de bulle.
-//   • WhatsApp → BULLES conservées (MessageBubble).
+//   • WhatsApp → BULLES conservées.
 //
-// ── Mode SÉLECTION (WhatsApp uniquement) ─────────────────────────────────────
-// Quand l'utilisateur lance « Ouvrir un sujet » sur un fil WhatsApp, on n'ouvre
-// PAS un nouvel écran : chaque message reçoit une pastille à cocher, et le tap
-// démarre l'écoute à partir de ce message (invariant n°8, geste « swipe droite »
-// exprimé ici en sélection explicite). Le swipe est désactivé pendant ce mode.
+// ── Mode SÉLECTION (WhatsApp, 2026-07-23) ────────────────────────────────────
+// « Ouvrir/Lier un sujet » depuis le dock passe le fil en sélection : chaque
+// message reçoit une pastille. Dès qu'on en choisit un, un CORDON VIOLET relie ce
+// message jusqu'au DERNIER — l'utilisateur voit que toute la suite de la
+// conversation sera écoutée. Le dock demande alors de VALIDER. Le TAP hors
+// sélection reste réservé aux pièces jointes (aucune pop-up de message).
+
+function Bubble({ m }: { m: ThreadMessageData }) {
+  return (
+    <MessageBubble
+      data={{
+        id: m.id,
+        direction: m.direction,
+        actor: m.direction === "outgoing" ? "user" : "contact",
+        senderName: m.senderName,
+        time: m.time,
+        content: m.content,
+        attachment: m.attachment,
+      }}
+    />
+  );
+}
 
 export function ConversationThread({
   messages,
   channelType,
   selecting = false,
-  onPick,
+  selectedMessageId = null,
+  onSelect,
 }: {
   messages: ThreadMessageData[];
   channelType: string;
-  /** Mode sélection d'un message de départ (WhatsApp) — pose des pastilles. */
+  /** Mode sélection d'un message de départ (WhatsApp). */
   selecting?: boolean;
-  /** Message choisi comme point de départ de l'écoute. */
-  onPick?: (messageId: string) => void;
+  /** Message choisi comme départ de l'écoute (début du cordon). */
+  selectedMessageId?: string | null;
+  onSelect?: (messageId: string) => void;
 }) {
   const isEmail = channelType === "email";
 
@@ -54,41 +70,69 @@ export function ConversationThread({
     );
   }
 
+  if (!selecting) {
+    return (
+      <div className="flex flex-col pt-1.5 pb-3">
+        {empty}
+        {messages.map((m) => (
+          <div key={m.id} className="flex flex-col px-[18px] py-[7px]">
+            <Bubble m={m} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // Sélection WhatsApp : rail à pastilles + cordon violet du message choisi
+  // jusqu'au dernier (in-range = index ≥ index du message sélectionné).
+  const selectedIndex = selectedMessageId
+    ? messages.findIndex((m) => m.id === selectedMessageId)
+    : -1;
+  const lastIndex = messages.length - 1;
+
   return (
     <div className="flex flex-col pt-1.5 pb-3">
       {empty}
-      {messages.map((m) =>
-        selecting ? (
-          // Ligne SÉLECTIONNABLE : pastille + bulle (inerte au tap, l'action
-          // vit sur le bouton parent). Tap = démarrer l'écoute ici.
+      {messages.map((m, i) => {
+        const inRange = selectedIndex >= 0 && i >= selectedIndex;
+        const isSelected = i === selectedIndex;
+        const lineTop = inRange && i > selectedIndex;
+        const lineBottom = inRange && i < lastIndex;
+        return (
           <button
             key={m.id}
             type="button"
-            onClick={() => onPick?.(m.id)}
-            className="flex w-full items-start gap-2.5 px-[18px] py-[7px] text-left active:bg-(--surface-2)"
+            onClick={() => onSelect?.(m.id)}
+            className="flex w-full items-stretch gap-2 px-3.5 py-[7px] text-left active:bg-(--surface-2)"
           >
-            <Circle
-              className="mt-3 size-5 flex-none text-brand"
-              strokeWidth={2}
-            />
-            <div className="pointer-events-none min-w-0 flex-1">
-              <MessageBubble
-                data={{
-                  id: m.id,
-                  direction: m.direction,
-                  actor: m.direction === "outgoing" ? "user" : "contact",
-                  senderName: m.senderName,
-                  time: m.time,
-                  content: m.content,
-                  attachment: m.attachment,
-                }}
-              />
-            </div>
+            {/* Rail : cordon + pastille */}
+            <span className="relative flex w-6 flex-none items-center justify-center self-stretch">
+              {lineTop ? (
+                <span className="absolute top-0 left-1/2 h-1/2 w-[3px] -translate-x-1/2 bg-relvo" />
+              ) : null}
+              {lineBottom ? (
+                <span className="absolute bottom-0 left-1/2 h-1/2 w-[3px] -translate-x-1/2 bg-relvo" />
+              ) : null}
+              <span
+                className={cn(
+                  "relative z-10 grid size-[18px] place-items-center rounded-full",
+                  inRange
+                    ? "bg-relvo text-white ring-2 ring-white"
+                    : "border-2 border-(--text-tertiary) bg-white",
+                )}
+              >
+                {isSelected ? (
+                  <Check className="size-3" strokeWidth={3} />
+                ) : null}
+              </span>
+            </span>
+
+            <span className="pointer-events-none min-w-0 flex-1">
+              <Bubble m={m} />
+            </span>
           </button>
-        ) : (
-          <WhatsAppMessageRow key={m.id} data={m} />
-        ),
-      )}
+        );
+      })}
     </div>
   );
 }

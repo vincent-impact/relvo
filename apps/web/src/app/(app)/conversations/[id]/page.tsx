@@ -26,6 +26,26 @@ export default async function ConversationDetailPage({
   const thread = await getConversationThread(db, id).catch(() => null);
   if (!thread) notFound();
 
+  // Domaines (dialog de création) + sujets ouverts (« Lier à un sujet existant »).
+  const [folders, subjectRows] = await Promise.all([
+    db.folder.findMany({
+      where: { isDefault: false },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, slug: true, color: true, icon: true },
+    }),
+    db.subject.findMany({
+      where: { status: "open" },
+      orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
+      take: 200,
+      select: {
+        id: true,
+        reference: true,
+        title: true,
+        folder: { select: { slug: true } },
+      },
+    }),
+  ]);
+
   const messages = thread.messages.map(toThreadMessageData);
   const backTo = `/conversations?filtre=${filtre ?? "sans-sujet"}`;
   const isGroup = thread.type === "whatsapp_group";
@@ -44,6 +64,13 @@ export default async function ConversationDetailPage({
         listenings={thread.listenings}
         messages={messages}
         backTo={backTo}
+        folders={folders}
+        subjects={subjectRows.map((s) => ({
+          id: s.id,
+          reference: s.reference,
+          title: s.title,
+          folderSlug: s.folder?.slug ?? null,
+        }))}
       />
     </>
   );

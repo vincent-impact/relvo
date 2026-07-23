@@ -1,25 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import {
-  Check,
-  ChevronUp,
-  Mic,
-  Paperclip,
-  Send,
-  Sparkles,
-  UserPlus,
-  Users,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { initialsFor } from "@/lib/display";
+import { Mic, Paperclip, Send } from "lucide-react";
 
-// RecipientComposer — le composer signature de la Direction B qui lève
-// l'ambiguïté « à qui j'écris ? ». Sélecteur de destinataire (avatar) à gauche
-// (un sujet peut porter plusieurs contacts). La barre est VIOLETTE (cohérence
+// RecipientComposer — le composer signature de la Direction B, VIOLET (cohérence
 // avec le chrome de l'app ; Relvo n'est plus un destinataire ici, il vit dans le
 // bouton du header). Micro quand vide (voice-first), avion dès qu'on tape. 📎 dans
-// le champ. Coquille M9 : `onSend` est optionnel (aucun envoi réel sans IA).
+// le champ. `onSend` est optionnel (coquille sans envoi réel).
+//
+// ⚠️ 2026-07-23 — le SÉLECTEUR d'interlocuteur (avatar + menu) a été RETIRÉ : les
+// conversations sont NOMINATIVES, la conversation courante est déjà choisie par
+// le sélecteur de conversation en tête de l'onglet. Le composer répond donc
+// simplement à la conversation active (`value`), sans bouton ni menu propre.
 
 export type Recipient = {
   key: string;
@@ -29,71 +21,19 @@ export type Recipient = {
   sublabel?: string;
 };
 
-function Avatar({
-  r,
-  size = 41,
-  onLight = false,
-}: {
-  r: Recipient;
-  size?: number;
-  /** true : posé sur une surface claire (menu) → fond violet plein, pas translucide. */
-  onLight?: boolean;
-}) {
-  if (r.kind === "relvo" || r.kind === "all") {
-    return (
-      <span
-        className={cn(
-          "grid place-items-center rounded-full",
-          onLight && (r.kind === "all" ? "bg-(--amber-600)" : "bg-relvo"),
-        )}
-        style={{
-          width: size,
-          height: size,
-          background: onLight ? undefined : "rgb(255 255 255 / 0.2)",
-        }}
-      >
-        {r.kind === "all" ? (
-          <Users className="size-[19px] text-white" strokeWidth={2.2} />
-        ) : (
-          <Sparkles
-            className="size-[19px] text-white"
-            fill="currentColor"
-            strokeWidth={0}
-          />
-        )}
-      </span>
-    );
-  }
-  return (
-    <span
-      className="grid place-items-center rounded-full bg-(--amber-600) text-[13.5px] font-extrabold text-white"
-      style={{
-        width: size,
-        height: size,
-        boxShadow: "0 0 0 2px rgb(255 255 255 / 0.35)",
-      }}
-    >
-      {r.initials || initialsFor(r.name) || "?"}
-    </span>
-  );
-}
-
 export function RecipientComposer({
   recipients = [{ key: "relvo", name: "Relvo", kind: "relvo" }],
   defaultRecipient,
   value,
-  onRecipientChange,
   placeholder,
   defaultValue = "",
   attach = true,
   onSend,
-  onAddRecipient,
 }: {
   recipients?: Recipient[];
   defaultRecipient?: string;
-  /** Sélection CONTRÔLÉE (ex. orchestrateur du sujet qui filtre le fil). */
+  /** Conversation active (synchronisée avec le sélecteur de conversation). */
   value?: string;
-  onRecipientChange?: (key: string) => void;
   placeholder?: string;
   defaultValue?: string;
   attach?: boolean;
@@ -102,42 +42,22 @@ export function RecipientComposer({
     text: string,
     recipientKey: string,
   ) => void | boolean | Promise<void | boolean>;
-  /**
-   * Cas S — « écrire à quelqu'un qui n'est pas encore dans le sujet ». Le point
-   * d'entrée vit dans le sélecteur d'interlocuteur, et pas ailleurs : c'est là
-   * que l'utilisateur se pose la question « à qui j'écris ? ».
-   */
-  onAddRecipient?: () => void;
 }) {
-  const [internal, setInternal] = useState(
-    defaultRecipient || recipients[0]?.key || "relvo",
-  );
-  // Contrôlé si `value` fourni, sinon état interne (rétro-compatible).
-  const cur = value ?? internal;
-  const setCur = (key: string) => {
-    if (value === undefined) setInternal(key);
-    onRecipientChange?.(key);
-  };
-  const [open, setOpen] = useState(false);
+  const cur = value ?? defaultRecipient ?? recipients[0]?.key ?? "relvo";
   const [text, setText] = useState(defaultValue);
   const r = recipients.find((x) => x.key === cur) || recipients[0];
   const typing = text.trim().length > 0;
-  const multi = recipients.length > 1;
-  // Le menu s'ouvre dès qu'il a quelque chose à offrir — y compris sur un sujet
-  // mono-interlocuteur, où la seule entrée utile est « écrire à quelqu'un
-  // d'autre » (c'est justement ce cas qui fait passer un sujet à 2 conversations).
-  const openable = multi || Boolean(onAddRecipient);
-  // Nom du destinataire tronqué pour tenir le placeholder sur UNE ligne (un email
-  // long débordait sur deux lignes). L'ellipsis de coupe fait office de « … ».
+
+  // Nom du destinataire tronqué pour tenir le placeholder sur UNE ligne.
   const recipientLabel =
-    r.name.length > 16 ? `${r.name.slice(0, 15).trimEnd()}…` : r.name;
+    r && r.name.length > 16 ? `${r.name.slice(0, 15).trimEnd()}…` : r?.name;
   const ph =
     placeholder ||
-    (r.kind === "relvo"
+    (r?.kind === "relvo"
       ? "Demander à Relvo…"
-      : r.kind === "all"
+      : r?.kind === "all"
         ? "Répondre à tous…"
-        : `Répondre à ${recipientLabel}${recipientLabel.endsWith("…") ? "" : "…"}`);
+        : `Répondre à ${recipientLabel ?? ""}${recipientLabel?.endsWith("…") ? "" : "…"}`);
 
   // Textarea auto-croissante : un email fait plusieurs lignes, on agrandit le
   // champ jusqu'à un plafond (puis scroll interne) plutôt qu'une ligne unique.
@@ -167,152 +87,67 @@ export function RecipientComposer({
   };
 
   return (
-    <div className="relative">
-      {open && openable ? (
-        <>
-          <button
-            type="button"
-            aria-hidden
-            tabIndex={-1}
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-[8] cursor-default"
-          />
-          <div
-            className="absolute bottom-[76px] left-3 z-[9] w-[238px] rounded-[18px] bg-white p-[7px]"
-            style={{ boxShadow: "0 16px 38px rgb(20 18 40 / 0.26)" }}
-          >
-            <div className="px-2.5 pt-[7px] pb-1.5 text-[10.5px] font-bold tracking-[0.4px] text-[#a8a69d] uppercase">
-              Répondre à
-            </div>
-            {recipients.map((x) => (
-              <button
-                type="button"
-                key={x.key}
-                onClick={() => {
-                  setCur(x.key);
-                  setOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-[11px] rounded-xl px-2.5 py-[9px] text-left",
-                  x.key === cur && "bg-(--surface-2)",
-                )}
-              >
-                <span className="flex-none">
-                  <Avatar r={x} size={32} onLight />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[14px] font-bold">{x.name}</span>
-                  {x.sublabel ? (
-                    <span className="block text-[11.5px] text-[#9a988f]">
-                      {x.sublabel}
-                    </span>
-                  ) : null}
-                </span>
-                {x.key === cur ? (
-                  <Check className="size-[17px] text-relvo" strokeWidth={2.6} />
-                ) : null}
-              </button>
-            ))}
-            {onAddRecipient ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onAddRecipient();
-                }}
-                className="mt-0.5 flex w-full items-center gap-[11px] rounded-xl border-t border-(--border-light) px-2.5 py-[11px] text-left"
-              >
-                <span className="grid size-8 flex-none place-items-center rounded-full bg-(--surface-2) text-relvo">
-                  <UserPlus className="size-4" strokeWidth={2.2} />
-                </span>
-                <span className="text-[14px] font-bold text-relvo">
-                  Écrire à quelqu'un d'autre
-                </span>
-              </button>
-            ) : null}
-          </div>
-        </>
-      ) : null}
-
+    <div
+      className="relative flex items-end gap-2 px-3.5 pt-[11px]"
+      style={{
+        paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
+        background:
+          "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
+        backdropFilter: "blur(28px) saturate(170%)",
+        WebkitBackdropFilter: "blur(28px) saturate(170%)",
+        boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.34)",
+      }}
+    >
       <div
-        className="relative flex items-end gap-2 px-3.5 pt-[11px]"
+        className="flex min-w-0 flex-1 items-end gap-[7px] rounded-[22px] py-[5px] pr-1.5 pl-[15px]"
         style={{
-          paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
-          background:
-            "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
-          backdropFilter: "blur(28px) saturate(170%)",
-          WebkitBackdropFilter: "blur(28px) saturate(170%)",
-          boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.34)",
+          background: "rgb(255 255 255 / 0.06)",
+          border: "1px solid rgb(255 255 255 / 0.28)",
+          boxShadow:
+            "inset 0 1px 0 rgb(255 255 255 / 0.3), inset 0 -1px 0 rgb(0 0 0 / 0.04)",
         }}
       >
-        <button
-          type="button"
-          onClick={() => openable && setOpen((o) => !o)}
-          aria-label="Interlocuteur"
-          className={cn(
-            "relative size-10 flex-none",
-            openable ? "cursor-pointer" : "cursor-default",
-          )}
-        >
-          <Avatar r={r} size={40} />
-          {openable ? (
-            <span className="absolute -right-px -bottom-px grid size-[17px] place-items-center rounded-full bg-white shadow-[0_1px_3px_rgb(0_0_0/0.2)]">
-              <ChevronUp className="size-2.5 text-[#6b6b6b]" strokeWidth={3} />
-            </span>
-          ) : null}
-        </button>
-
-        <div
-          className="flex min-w-0 flex-1 items-end gap-[7px] rounded-[22px] py-[5px] pr-1.5 pl-[15px]"
-          style={{
-            background: "rgb(255 255 255 / 0.06)",
-            border: "1px solid rgb(255 255 255 / 0.28)",
-            boxShadow:
-              "inset 0 1px 0 rgb(255 255 255 / 0.3), inset 0 -1px 0 rgb(0 0 0 / 0.04)",
+        <textarea
+          ref={taRef}
+          value={text}
+          rows={1}
+          onChange={(e) => setText(e.target.value)}
+          onKeyDown={(e) => {
+            // Email multi-ligne : Entrée = saut de ligne ; ⌘/Ctrl+Entrée = envoi.
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              send();
+            }
           }}
-        >
-          <textarea
-            ref={taRef}
-            value={text}
-            rows={1}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              // Email multi-ligne : Entrée = saut de ligne ; ⌘/Ctrl+Entrée = envoi.
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                send();
-              }
-            }}
-            placeholder={ph}
-            className="max-h-[168px] min-w-0 flex-1 resize-none border-none bg-transparent py-1.5 text-[14.5px] leading-[1.4] text-white outline-none placeholder:text-white/70"
-          />
-          {/* Trombone à DROITE du champ (toujours visible). */}
-          {attach ? (
-            <button
-              type="button"
-              aria-label="Joindre un fichier"
-              className="grid flex-none place-items-center py-1.5 text-white/85"
-            >
-              <Paperclip className="size-5" strokeWidth={2} />
-            </button>
-          ) : null}
-        </div>
-
-        <button
-          type="button"
-          onClick={send}
-          disabled={sending}
-          aria-label={typing ? "Envoyer" : "Dicter"}
-          className="grid size-[42px] flex-none place-items-center rounded-full bg-white text-relvo active:scale-95 disabled:opacity-70"
-          style={{ boxShadow: "0 5px 16px rgb(0 0 0 / 0.22)" }}
-        >
-          {typing ? (
-            <Send className="size-[19px]" strokeWidth={2} />
-          ) : (
-            <Mic className="size-5" strokeWidth={2} />
-          )}
-        </button>
+          placeholder={ph}
+          className="max-h-[168px] min-w-0 flex-1 resize-none border-none bg-transparent py-1.5 text-[14.5px] leading-[1.4] text-white outline-none placeholder:text-white/70"
+        />
+        {/* Trombone à DROITE du champ (toujours visible). */}
+        {attach ? (
+          <button
+            type="button"
+            aria-label="Joindre un fichier"
+            className="grid flex-none place-items-center py-1.5 text-white/85"
+          >
+            <Paperclip className="size-5" strokeWidth={2} />
+          </button>
+        ) : null}
       </div>
+
+      <button
+        type="button"
+        onClick={send}
+        disabled={sending}
+        aria-label={typing ? "Envoyer" : "Dicter"}
+        className="grid size-[42px] flex-none place-items-center rounded-full bg-white text-relvo active:scale-95 disabled:opacity-70"
+        style={{ boxShadow: "0 5px 16px rgb(0 0 0 / 0.22)" }}
+      >
+        {typing ? (
+          <Send className="size-[19px]" strokeWidth={2} />
+        ) : (
+          <Mic className="size-5" strokeWidth={2} />
+        )}
+      </button>
     </div>
   );
 }
