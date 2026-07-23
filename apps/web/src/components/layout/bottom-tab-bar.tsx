@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Brain, Inbox, ListChecks, Settings } from "lucide-react";
+import { Brain, CalendarDays, Mail, Package, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Barre d'onglets basse (mobile-first). Remplace la sidebar desktop.
-// 4 entrées : Actions (tâches), Sujets, Mémoire, Réglages. « Accueil » est
-// devenu « Actions » (page des tâches) et « Mon fil » est devenu « Sujets »
-// (décision 2026-06-28). Contacts a quitté le dock → onglet des Réglages.
+// 5 entrées : Actions (tâches) · Sujets · Messages · Mémoire · Réglages. L'ajout
+// de « Messages » (2026-07-23) rend visible la chaîne de transformation Relvo —
+// Actions ← Sujets ← Messages : les conversations comptent tant qu'aucune IA ne
+// fait le tri. Icônes : agenda (Actions), carton = projet (Sujets), enveloppe
+// (Messages), cerveau (Mémoire), engrenage (Réglages).
 //
 // Place FIXE (plus d'auto-masquage au scroll, décision 2026-06-27) sur fond
 // VIOLET, exactement comme l'ancien composer : actif = blanc plein, inactif =
@@ -26,14 +28,20 @@ const TABS: Tab[] = [
   {
     href: "/",
     label: "Actions",
-    icon: ListChecks,
+    icon: CalendarDays,
     match: (p) => p === "/",
   },
   {
     href: "/fil",
     label: "Sujets",
-    icon: Inbox,
+    icon: Package,
     match: (p) => p.startsWith("/fil") || p.startsWith("/sujets"),
+  },
+  {
+    href: "/conversations",
+    label: "Messages",
+    icon: Mail,
+    match: (p) => p.startsWith("/conversations") || p.startsWith("/messages"),
   },
   {
     href: "/dossiers",

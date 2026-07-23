@@ -5,33 +5,26 @@ import { Plus, Search } from "lucide-react";
 import { FeedView } from "@/components/feed/feed-view";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
-import { MetricsCard, type Metric } from "@/components/shared/metrics-card";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
-import { cachedFilFeed, cachedFolderNames, cachedKpis } from "@/server/cached";
+import { cachedFilFeed, cachedFolders } from "@/server/cached";
 import { requireAccountId } from "@/server/auth-context";
 
-// Mon fil (Direction B) — page des SUJETS. Hero violet compact (loupe + « + »),
-// barre KPI Sujets à cheval (Urgents / Nouveaux / Ouverts / Sans sujet — seule la
-// dernière cellule est cliquable → pile « Messages sans sujet »), puis UNE barre
-// de filtres rapides (Statut / Domaine / Urgent / Nouveau) filtrée côté client.
+// Sujets (Direction B) — hero violet compact (loupe + « + »), puis une BARRE
+// KPI-ONGLETS chiffrée (Urgents · Nouveaux · Ouverts · Validés) qui agit comme
+// sélecteur, et une barre de filtres par DOMAINE (chips icône + couleur). Le KPI
+// « Sans sujet » a quitté cette page : les conversations ont désormais leur
+// propre onglet « Messages » dans la barre de navigation (2026-07-23).
 //
-// PERF (M9.19) : hero + KPI instantanés ; liste streamée (<Suspense>), servie
-// depuis le cache serveur en SubjectRowData[] plats.
+// PERF (M9.19) : hero instantané ; liste + onglets streamés (<Suspense>), servis
+// depuis le cache serveur en formes plates.
 
 async function FilFeed({ accountId }: { accountId: string }) {
-  const [{ ouverts, valides, fermes }, folderNames] = await Promise.all([
+  const [{ ouverts, valides }, folders] = await Promise.all([
     cachedFilFeed(accountId),
-    cachedFolderNames(accountId),
+    cachedFolders(accountId),
   ]);
 
-  return (
-    <FeedView
-      ouverts={ouverts}
-      valides={valides}
-      fermes={fermes}
-      folderNames={folderNames}
-    />
-  );
+  return <FeedView ouverts={ouverts} valides={valides} folders={folders} />;
 }
 
 const HEADER_BTN =
@@ -43,27 +36,6 @@ const HEADER_BTN_STYLE = {
 
 export default async function FilPage() {
   const accountId = await requireAccountId();
-  const kpis = await cachedKpis(accountId);
-
-  // Barre KPI Sujets : 3 chiffres d'état (non cliquables) + « Sans sujet »
-  // cliquable vers la pile des messages non rattachés (ex-callout du hero).
-  const metrics: Metric[] = [
-    {
-      value: kpis.urgentSubjects,
-      label: "Urgents",
-      ...(kpis.urgentSubjects > 0 ? { tone: "urgent" as const } : {}),
-    },
-    { value: kpis.newSubjects, label: "Nouveaux" },
-    { value: kpis.openSubjects, label: "Ouverts" },
-    {
-      value: kpis.unsortedConversations,
-      label: "Sans sujet",
-      // Le KPI compte des CONVERSATIONS (dernier message non couvert par un
-      // sujet) : il mène donc à la surface de tri par conversation, et non plus
-      // à la pile de messages orphelins de `/messages` (transitoire, M6bis).
-      href: "/conversations?filtre=sans-sujet",
-    },
-  ];
 
   return (
     <Screen>
@@ -92,8 +64,6 @@ export default async function FilPage() {
           </>
         }
       />
-
-      <MetricsCard metrics={metrics} />
 
       <Suspense fallback={<RowsSkeleton count={5} />}>
         <FilFeed accountId={accountId} />

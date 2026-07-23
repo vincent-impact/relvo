@@ -356,3 +356,24 @@ export const cachedFolderNames = unstable_cache(
   ["folder-names", CACHE_V],
   CACHE,
 );
+
+export type FolderChip = {
+  slug: string;
+  name: string;
+  color: string | null;
+  icon: string | null;
+};
+
+// Domaines pour la barre de filtres de Sujets (icône + couleur). Exclut le
+// « Général » (documentaire : il ne porte jamais de sujet, cf. invariant n°17).
+export const cachedFolders = unstable_cache(
+  async (accountId: string): Promise<FolderChip[]> => {
+    return tenantDb(accountId).folder.findMany({
+      where: { isDefault: false },
+      orderBy: { name: "asc" },
+      select: { slug: true, name: true, color: true, icon: true },
+    });
+  },
+  ["folders-chips", CACHE_V],
+  CACHE,
+);
