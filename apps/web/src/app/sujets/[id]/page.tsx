@@ -8,7 +8,12 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { Actor } from "@relvo/db";
-import { getSubjectDetail, listSubjectConversations } from "@relvo/db";
+import {
+  getSubjectDetail,
+  listChannels,
+  listConversationGroups,
+  listSubjectConversations,
+} from "@relvo/db";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { type MessageBubbleData } from "@/components/shared/message-bubble";
@@ -102,7 +107,7 @@ export default async function SujetPage({
   const db = await getTenantDb();
   // folders + allContacts ne dépendent pas du sujet → on les charge dans la même
   // vague que getSubjectDetail (une seule attente DB au lieu de deux successives).
-  const [detail, folders, allContacts, subjectConversations] =
+  const [detail, folders, allContacts, subjectConversations, channels, groups] =
     await Promise.all([
       getSubjectDetail(db, id),
       db.folder.findMany({
@@ -132,14 +137,36 @@ export default async function SujetPage({
       // D'ENVOI, y compris pour un interlocuteur qui n'a encore rien écrit (cas
       // S : on vient tout juste d'étendre le sujet à son adresse email).
       listSubjectConversations(db, id),
+      // Canaux connectés (email/WhatsApp) + groupes existants → dialog « Ajouter
+      // une conversation » (item 4).
+      listChannels(db),
+      listConversationGroups(db),
     ]);
   if (!detail) notFound();
+
+  // Canaux CONNECTÉS uniquement (on ne propose pas d'écrire par un canal en
+  // attente/erreur). Dédupliqués par type.
+  const availableChannels = [
+    ...new Set(
+      channels
+        .filter((c) => c.config?.status === "connected")
+        .map((c) => c.type),
+    ),
+  ].filter((t): t is "email" | "whatsapp" => t === "email" || t === "whatsapp");
 
   const { subject, messages, tasks, events, attachments, draft } = detail;
   const allContactOptions = allContacts.map((c) => ({
     id: c.id,
     name: contactFullName(c),
     company: c.company,
+  }));
+  // Contacts joignables pour le dialog « Ajouter une conversation » (avec leur
+  // email/numéro : le dialog filtre selon le canal choisi).
+  const addContacts = allContacts.map((c) => ({
+    id: c.id,
+    name: contactFullName(c),
+    email: c.email,
+    phone: c.phone,
   }));
 
   const taskTotal = tasks.length;
@@ -269,6 +296,9 @@ export default async function SujetPage({
         subjectId={subject.id}
         subjectTitle={subject.title}
         conversationPanes={conversationPanes}
+        availableChannels={availableChannels}
+        addContacts={addContacts}
+        groups={groups.map((g) => ({ id: g.id, title: g.title }))}
         header={
           <RelvoHeader
             back={backHref}

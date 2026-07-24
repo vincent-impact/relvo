@@ -24,6 +24,10 @@ export async function extendSubjectToConversationAction(input: {
   subjectId: string;
   contactId: string;
   channelType: ChannelType;
+  /** Objet de la conversation email (défaut = titre du sujet). */
+  subjectLine?: string;
+  /** WhatsApp : n'attacher qu'un fil déjà existant (pas de nouveau fil). */
+  openExistingOnly?: boolean;
 }) {
   const result = await domainAction((db) =>
     extendSubjectToConversation(db, input),

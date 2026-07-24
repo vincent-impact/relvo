@@ -269,6 +269,45 @@ describe("extendSubjectToConversation (cas S)", () => {
       }),
     ).rejects.toThrow(/ouvert/i);
   });
+
+  it("WhatsApp openExistingOnly : refuse quand aucun fil direct n'existe (item 4)", async () => {
+    // Sujet email tout neuf — aucune conversation WhatsApp dans le compte.
+    const { db, emailChannel } = await makeAccountWithChannels(
+      "cas-s-wa-open-only@test.fr",
+    );
+    const mail = await ingestInboundEmail(db, {
+      channelId: emailChannel.id,
+      externalId: "mail-open-only",
+      senderRaw: "compta@sogood.fr",
+      subjectLine: "Nouveau",
+      content: "…",
+    });
+    const subject = await createSubjectFromMessage(db, mail.message.id);
+    const contact = await db.contact.create({
+      data: {
+        firstName: "Karim",
+        lastName: "Benali",
+        phone: "+33 6 00 00 00 99",
+        sourceActor: "user",
+      },
+    });
+
+    // « Ouvrir l'existant seulement » sans fil existant → refus (démarrer un
+    // nouveau fil WhatsApp est reporté), et surtout AUCUN fil direct fabriqué.
+    await expect(
+      extendSubjectToConversation(db, {
+        subjectId: subject.id,
+        contactId: contact.id,
+        channelType: ChannelType.whatsapp,
+        openExistingOnly: true,
+      }),
+    ).rejects.toThrow(/WhatsApp en cours/i);
+    expect(
+      await db.conversation.count({
+        where: { type: ConversationType.whatsapp_direct },
+      }),
+    ).toBe(0);
+  });
 });
 
 // ─────────────────────────────────────────────────────────────

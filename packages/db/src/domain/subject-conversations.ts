@@ -444,6 +444,18 @@ export const extendSubjectSchema = z.object({
   contactId: z.uuid(),
   /** Canal par lequel on veut le joindre. */
   channelType: z.enum(ChannelType),
+  /**
+   * Objet de la conversation email (clé + « Re: »). Par défaut = titre du sujet ;
+   * un objet saisi par l'utilisateur le remplace (dialog « Ajouter une
+   * conversation » de la fiche sujet, 2026-07-24). Sans effet en WhatsApp.
+   */
+  subjectLine: z.string().trim().min(1).optional(),
+  /**
+   * WhatsApp uniquement : n'ATTACHE qu'un fil DÉJÀ existant avec le contact ;
+   * refuse de démarrer un nouveau fil (startNewChat reporté, plan M6). Sans
+   * effet en email, où l'on crée toujours une vraie nouvelle conversation.
+   */
+  openExistingOnly: z.boolean().optional(),
 });
 
 export type ExtendSubjectInput = z.infer<typeof extendSubjectSchema>;
@@ -521,6 +533,13 @@ export async function extendSubjectToConversation(
     "Canal",
   );
 
+  // Objet de la conversation email : celui saisi, sinon le titre du sujet (c'est
+  // lui qui garantit que « Re: <objet> » retombera dans cette conversation).
+  const emailSubjectLine =
+    data.channelType === ChannelType.email
+      ? (data.subjectLine ?? subject.title)
+      : null;
+
   // 1) WhatsApp direct : on cherche le fil du contact AVANT tout calcul de clé.
   let conversation =
     data.channelType === ChannelType.whatsapp
@@ -536,16 +555,28 @@ export async function extendSubjectToConversation(
       : null;
   let created = false;
 
-  // 2) Sinon : find-or-create par clé canonique. Pour l'email, l'objet est le
-  //    titre du sujet → clé neuve → vraie nouvelle conversation.
+  // WhatsApp « ouvrir l'existant seulement » : sans fil déjà établi, on refuse —
+  // démarrer un nouveau fil WhatsApp (startNewChat) est reporté (plan M6).
+  if (
+    !conversation &&
+    data.channelType === ChannelType.whatsapp &&
+    data.openExistingOnly
+  ) {
+    throw new DomainError(
+      "NOT_FOUND",
+      "Aucune conversation WhatsApp en cours avec ce contact. Démarrer un nouveau fil n'est pas encore disponible.",
+    );
+  }
+
+  // 2) Sinon : find-or-create par clé canonique. Pour l'email, l'objet donne la
+  //    clé → objet neuf = vraie nouvelle conversation.
   if (!conversation) {
     const identity = conversationIdentity({
       channelId: channel.id,
       channelType: channel.type,
       interlocutorRaw: identifier,
       contactId: contact.id,
-      subjectLine:
-        data.channelType === ChannelType.email ? subject.title : null,
+      subjectLine: emailSubjectLine,
     });
     const before = await db.conversation.findFirst({
       where: { key: identity.key },
@@ -557,8 +588,7 @@ export async function extendSubjectToConversation(
       channelType: channel.type,
       interlocutorRaw: identifier,
       contactId: contact.id,
-      subjectLine:
-        data.channelType === ChannelType.email ? subject.title : null,
+      subjectLine: emailSubjectLine,
     });
   }
 

@@ -11,6 +11,7 @@ import {
   MessagesSquare,
   Pause,
   Play,
+  Plus,
   Settings,
   Users,
 } from "lucide-react";
@@ -21,13 +22,23 @@ import {
 } from "@/components/shared/message-bubble";
 import { EmailMessage } from "@/components/conversations/email-message";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
+import {
+  AddConversationDialog,
+  type AddConvContact,
+  type AddConvGroup,
+  type AddConversationSubmit,
+} from "@/components/subject/add-conversation-dialog";
 import { sendEmailReplyAction } from "@/server/actions/email";
 import { sendWhatsAppReplyAction } from "@/server/actions/whatsapp";
 import {
   ignoreConversationAction,
   reactivateConversationAction,
 } from "@/server/actions/conversations";
-import { ensureSubjectAnchorsAction } from "@/server/actions/subject-conversations";
+import {
+  attachConversationToSubjectAction,
+  ensureSubjectAnchorsAction,
+  extendSubjectToConversationAction,
+} from "@/server/actions/subject-conversations";
 import { cn } from "@/lib/utils";
 
 // Orchestrateur de la fiche Sujet (corps interactif). L'onglet « Conversations »
@@ -84,6 +95,9 @@ export function SubjectBody({
   subjectId,
   subjectTitle,
   conversationPanes,
+  availableChannels,
+  addContacts,
+  groups,
 }: {
   header: React.ReactNode;
   defaultTab?: Tab;
@@ -95,10 +109,15 @@ export function SubjectBody({
   subjectId: string;
   subjectTitle: string;
   conversationPanes: SubjectConversationPane[];
+  /** Canaux connectés du compte — pilotent le dialog « Ajouter une conversation ». */
+  availableChannels: ("email" | "whatsapp")[];
+  addContacts: AddConvContact[];
+  groups: AddConvGroup[];
 }) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
+  const [pending, startTransition] = useTransition();
   const [tab, setTab] = useState<Tab>(defaultTab);
+  const [showAdd, setShowAdd] = useState(false);
 
   // Conversation active : la première encore en écoute, sinon la première.
   const [activeConvId, setActiveConvId] = useState<string>(
@@ -181,6 +200,41 @@ export function SubjectBody({
     });
   }
 
+  // « Ajouter une conversation » à ce sujet (item 4, 2026-07-24). E-mail → vraie
+  // nouvelle conversation ; WhatsApp direct → ouvre le fil existant du contact ;
+  // WhatsApp groupe → rattache le fil du groupe. La création part TOUJOURS d'un
+  // sujet (décision produit) : jamais de conversation flottante.
+  function handleAdd(input: AddConversationSubmit) {
+    startTransition(async () => {
+      const res =
+        input.kind === "email"
+          ? await extendSubjectToConversationAction({
+              subjectId,
+              contactId: input.contactId,
+              channelType: "email",
+              subjectLine: input.subjectLine,
+            })
+          : input.kind === "whatsapp-contact"
+            ? await extendSubjectToConversationAction({
+                subjectId,
+                contactId: input.contactId,
+                channelType: "whatsapp",
+                openExistingOnly: true,
+              })
+            : await attachConversationToSubjectAction({
+                subjectId,
+                conversationId: input.conversationId,
+              });
+      if (res.ok) {
+        toast.success("Conversation ajoutée au sujet");
+        setShowAdd(false);
+        router.refresh();
+      } else {
+        toast.error(res.message);
+      }
+    });
+  }
+
   const options: SegTabOption[] = [
     { value: "informations", label: "Informations", icon: Info },
     { value: "taches", label: "Tâches", icon: CalendarDays, count: tasksCount },
@@ -211,9 +265,21 @@ export function SubjectBody({
 
         {tab === "messages" ? (
           conversationPanes.length === 0 ? (
-            <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
-              Aucune conversation rattachée à ce sujet.
-            </p>
+            <div className="px-[22px] py-10 text-center">
+              <p className="text-[13.5px] text-(--text-tertiary)">
+                Aucune conversation rattachée à ce sujet.
+              </p>
+              {availableChannels.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAdd(true)}
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-relvo px-4 py-2 text-[13px] font-bold text-white active:opacity-90"
+                >
+                  <Plus className="size-4" strokeWidth={2.4} />
+                  Ajouter une conversation
+                </button>
+              ) : null}
+            </div>
           ) : (
             <>
               {/* Barre d'onglets par conversation + Pause/Play de l'active. */}
@@ -294,6 +360,18 @@ export function SubjectBody({
                     )}
                   </button>
                 ) : null}
+
+                {/* Ajouter une conversation à ce sujet (item 4). */}
+                {availableChannels.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAdd(true)}
+                    aria-label="Ajouter une conversation"
+                    className="grid size-8 flex-none place-items-center rounded-full bg-relvo text-white active:opacity-90"
+                  >
+                    <Plus className="size-4" strokeWidth={2.4} />
+                  </button>
+                ) : null}
               </div>
 
               {active && active.state === "paused" ? (
@@ -332,6 +410,17 @@ export function SubjectBody({
           onSend={handleSend}
         />
       ) : null}
+
+      <AddConversationDialog
+        open={showAdd}
+        onOpenChange={setShowAdd}
+        subjectTitle={subjectTitle}
+        availableChannels={availableChannels}
+        contacts={addContacts}
+        groups={groups}
+        pending={pending}
+        onSubmit={handleAdd}
+      />
     </>
   );
 }
