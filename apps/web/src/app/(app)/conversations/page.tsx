@@ -8,8 +8,11 @@ import { Screen } from "@/components/layout/screen";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
 import {
   CONVERSATIONS_PAGE_SIZE,
+  CONVERSATION_CHANNEL_SLUGS,
   CONVERSATION_FILTER_SLUGS,
+  type ConversationChannelSlug,
   type ConversationFilterSlug,
+  parseChannelSlug,
   parseFilterSlug,
   toConversationRowData,
 } from "@/lib/conversation-row";
@@ -28,18 +31,26 @@ import { getTenantDb } from "@/server/auth-context";
 // PERF (M9.19) : le hero (compteur) s'affiche instantanément ; la liste stream
 // dans un <Suspense>.
 
-async function List({ filter }: { filter: ConversationFilterSlug }) {
+async function List({
+  filter,
+  channel,
+}: {
+  filter: ConversationFilterSlug;
+  channel: ConversationChannelSlug;
+}) {
   const db = await getTenantDb();
   const page = await listConversationItems(db, {
     filter: CONVERSATION_FILTER_SLUGS[filter],
+    channelType: CONVERSATION_CHANNEL_SLUGS[channel],
     limit: CONVERSATIONS_PAGE_SIZE,
   });
   return (
     <ConversationList
-      // La clé force un remontage à chaque changement de filtre : l'état local
-      // (scroll infini, retraits optimistes) appartient au filtre affiché.
-      key={filter}
+      // La clé force un remontage à chaque changement de filtre/canal : l'état
+      // local (scroll infini, retraits optimistes) appartient à la vue affichée.
+      key={`${filter}:${channel}`}
       filter={filter}
+      channel={channel}
       initialItems={page.items.map(toConversationRowData)}
       initialCursor={page.nextCursor}
     />
@@ -49,10 +60,11 @@ async function List({ filter }: { filter: ConversationFilterSlug }) {
 export default async function ConversationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filtre?: string }>;
+  searchParams: Promise<{ filtre?: string; canal?: string }>;
 }) {
-  const { filtre } = await searchParams;
+  const { filtre, canal } = await searchParams;
   const filter = parseFilterSlug(filtre);
+  const channel = parseChannelSlug(canal);
 
   const db = await getTenantDb();
   const unsorted = await countUnsortedConversations(db);
@@ -71,10 +83,10 @@ export default async function ConversationsPage({
         className="pb-[46px]"
       />
 
-      <ConversationFilters filter={filter} />
+      <ConversationFilters filter={filter} channel={channel} />
 
       <Suspense fallback={<RowsSkeleton count={5} />}>
-        <List filter={filter} />
+        <List filter={filter} channel={channel} />
       </Suspense>
     </Screen>
   );

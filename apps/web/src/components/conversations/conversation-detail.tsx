@@ -6,17 +6,16 @@ import { useRouter } from "next/navigation";
 import {
   Check,
   EyeOff,
-  Folder,
   Link2,
   Mail,
   MessageCircle,
   Plus,
-  Sparkles,
+  Unlink,
   Users,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
-import type { ConversationListening } from "@relvo/db";
+import type { ConversationListening, ConversationParticipant } from "@relvo/db";
 import { ConversationThread } from "@/components/conversations/conversation-thread";
 import {
   SubjectCreateDialog,
@@ -36,6 +35,7 @@ import { createSubjectFromMessageAction } from "@/server/actions/messages";
 import {
   attachConversationToSubjectAction,
   attachConversationToSubjectFromMessageAction,
+  detachConversationFromSubjectAction,
 } from "@/server/actions/subject-conversations";
 import { folderVisual } from "@/lib/folders";
 import { initialsFor } from "@/lib/display";
@@ -68,10 +68,8 @@ export function ConversationDetail({
   conversationId,
   title,
   channelType,
-  interlocutorName,
-  contactId,
-  interlocutorRaw,
   isGroup,
+  participants,
   listenings,
   messages,
   backTo,
@@ -81,10 +79,9 @@ export function ConversationDetail({
   conversationId: string;
   title: string;
   channelType: string;
-  interlocutorName: string | null;
-  contactId: string | null;
-  interlocutorRaw: string | null;
   isGroup: boolean;
+  /** Tous les interlocuteurs du fil (≥1 pour un groupe actif). */
+  participants: ConversationParticipant[];
   listenings: ConversationListening[];
   messages: ThreadMessageData[];
   backTo: string;
@@ -106,21 +103,33 @@ export function ConversationDetail({
   const isEmail = channelType === "email";
   const ChannelIcon = CHANNEL_ICON[channelType] ?? Mail;
   const channelLabel = CHANNEL_LABEL[channelType] ?? "Canal";
-  const senderLabel = isGroup
-    ? "Groupe"
-    : (interlocutorName ?? "Interlocuteur inconnu");
-  const initials = isGroup ? null : initialsFor(interlocutorName);
 
-  const rawId = interlocutorRaw?.trim();
-  const avatarHref = isGroup
-    ? null
-    : contactId
-      ? `/contacts/${contactId}`
-      : rawId
-        ? isEmail
-          ? `/contacts/nouveau?email=${encodeURIComponent(rawId)}`
-          : `/contacts/nouveau?phone=${encodeURIComponent(rawId.split("@")[0]!)}`
-        : "/contacts/nouveau";
+  // Lien de l'avatar d'un interlocuteur : sa fiche s'il est connu, sinon la
+  // création pré-remplie (email ou numéro selon le canal).
+  function participantHref(p: ConversationParticipant): string {
+    if (p.contactId) return `/contacts/${p.contactId}`;
+    const raw = p.raw?.trim();
+    if (!raw) return "/contacts/nouveau";
+    return isEmail
+      ? `/contacts/nouveau?email=${encodeURIComponent(raw)}`
+      : `/contacts/nouveau?phone=${encodeURIComponent(raw.split("@")[0]!)}`;
+  }
+
+  // Détacher CETTE conversation d'un sujet (icône chaîne brisée, item 3e).
+  function detach(subjectId: string) {
+    startTransition(async () => {
+      const res = await detachConversationFromSubjectAction({
+        subjectId,
+        conversationId,
+      });
+      if (res.ok) {
+        toast.success("Conversation détachée du sujet");
+        router.refresh();
+      } else {
+        toast.error(res.message);
+      }
+    });
+  }
 
   function resetSelection() {
     setSelecting(null);
@@ -229,98 +238,108 @@ export function ConversationDetail({
           back={backTo}
           relvo={false}
           titleFull
-          title={title}
+          title={
+            <span className="flex items-start gap-2">
+              <ChannelIcon
+                className="mt-[3px] size-[18px] flex-none"
+                strokeWidth={2.2}
+                aria-label={channelLabel}
+              />
+              <span className="min-w-0">{title}</span>
+            </span>
+          }
           className="pb-6"
         >
-          <div className="space-y-3 px-[22px] pt-3.5">
-            {/* Interlocuteur + canal + domaine */}
-            <div className="flex items-center gap-2.5">
-              {(() => {
-                const avatarClass =
-                  "grid size-[38px] flex-none place-items-center rounded-full bg-white/20 text-[13px] font-extrabold text-white";
-                const inner = isGroup ? (
-                  <Users className="size-[18px]" strokeWidth={2.2} />
+          <div className="space-y-4 px-[22px] pt-4">
+            {/* Interlocuteurs — TOUS les contacts du fil (item 3b). Un groupe
+                affiche son identité + le nombre de membres vus. */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-[0.3px] text-(--on-violet) uppercase">
+                {isGroup ? (
+                  <>
+                    <Users className="size-3.5" strokeWidth={2.4} />
+                    Groupe · {participants.length} membre
+                    {participants.length > 1 ? "s" : ""}
+                  </>
                 ) : (
-                  (initials ?? "?")
-                );
-                return avatarHref ? (
-                  <Link
-                    href={avatarHref}
-                    aria-label={
-                      contactId ? "Voir le contact" : "Enregistrer le contact"
-                    }
-                    className={cn(avatarClass, "active:opacity-80")}
-                  >
-                    {inner}
-                  </Link>
-                ) : (
-                  <span className={avatarClass}>{inner}</span>
-                );
-              })()}
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-[14.5px] font-bold text-white">
-                  {senderLabel}
-                </div>
-                <div className="mt-0.5 flex items-center gap-1.5 text-[12px] text-(--on-violet)">
-                  <ChannelIcon
-                    className="size-[13px] flex-none"
-                    strokeWidth={2}
-                  />
-                  <span>{channelLabel}</span>
-                </div>
+                  `Interlocuteur${participants.length > 1 ? "s" : ""}`
+                )}
               </div>
-              <span className="inline-flex flex-none items-center gap-1 rounded-full border border-white/20 bg-white/15 px-2 py-1 text-[11px] font-bold text-white">
-                <Folder className="size-3.5" strokeWidth={2.2} />
-                Général
-              </span>
+              {participants.length === 0 ? (
+                <p className="text-[13px] text-white/70 italic">
+                  Aucun interlocuteur identifié.
+                </p>
+              ) : (
+                participants.map((p, i) => (
+                  <Link
+                    key={`${p.contactId ?? p.raw ?? p.name}-${i}`}
+                    href={participantHref(p)}
+                    className="flex items-center gap-2.5 active:opacity-80"
+                  >
+                    <span className="grid size-[38px] flex-none place-items-center rounded-full bg-white/20 text-[13px] font-extrabold text-white">
+                      {initialsFor(p.name) ?? "?"}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[14.5px] font-bold text-white">
+                        {p.name}
+                      </div>
+                      <div className="truncate text-[12px] text-(--on-violet)">
+                        {p.contactId
+                          ? "Voir la fiche"
+                          : "Enregistrer le contact"}
+                      </div>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
 
-            {/* Sujets suivis */}
+            {/* Sujets suivis — liste verticale ; chaîne brisée = détacher (3e). */}
             {listenings.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                <span className="text-[11.5px] font-semibold text-(--on-violet)">
+              <div className="space-y-1.5">
+                <div className="text-[11px] font-bold tracking-[0.3px] text-(--on-violet) uppercase">
                   Suivi dans
-                </span>
+                </div>
                 {listenings.map((l) => {
                   const color = folderVisual(l.folder ?? undefined).color;
                   return (
-                    <Link
+                    <div
                       key={l.subjectId}
-                      href={`/sujets/${l.subjectId}?from=${encodeURIComponent(backTo)}`}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-2 py-0.5 active:opacity-80"
+                      className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 py-1.5 pr-1.5 pl-2.5"
                     >
                       <span
-                        className="size-2 flex-none rounded-full"
+                        className="size-2.5 flex-none rounded-full"
                         style={{ background: color }}
                       />
-                      <span
-                        className={cn(
-                          "text-[12.5px] font-semibold text-white",
-                          !l.active && "line-through decoration-white/40",
-                        )}
+                      <Link
+                        href={`/sujets/${l.subjectId}?from=${encodeURIComponent(backTo)}`}
+                        className="min-w-0 flex-1 active:opacity-80"
                       >
-                        {l.title}
-                      </span>
-                    </Link>
+                        <span
+                          className={cn(
+                            "block truncate text-[13.5px] font-semibold text-white",
+                            !l.active && "line-through decoration-white/40",
+                          )}
+                        >
+                          {l.title}
+                        </span>
+                      </Link>
+                      {l.active ? (
+                        <button
+                          type="button"
+                          disabled={pending}
+                          onClick={() => detach(l.subjectId)}
+                          aria-label="Détacher de ce sujet"
+                          className="grid size-8 flex-none place-items-center rounded-full text-white active:bg-white/15 disabled:opacity-50"
+                        >
+                          <Unlink className="size-[16px]" strokeWidth={2.2} />
+                        </button>
+                      ) : null}
+                    </div>
                   );
                 })}
               </div>
             ) : null}
-
-            {/* Espace résumé (placeholder) */}
-            <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2.5">
-              <div className="mb-1 flex items-center gap-1.5 text-[10.5px] font-bold tracking-[0.3px] text-(--on-violet) uppercase">
-                <Sparkles
-                  className="size-3"
-                  fill="currentColor"
-                  strokeWidth={0}
-                />
-                Résumé
-              </div>
-              <p className="text-[13px] text-white/75 italic">
-                Pas de résumé disponible pour le moment
-              </p>
-            </div>
           </div>
         </RelvoHeader>
 

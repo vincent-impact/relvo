@@ -28,7 +28,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  CONVERSATION_CHANNEL_SLUGS,
   CONVERSATION_FILTER_SLUGS,
+  type ConversationChannelSlug,
   type ConversationFilterSlug,
   type ConversationRowData,
 } from "@/lib/conversation-row";
@@ -47,9 +49,9 @@ import { cn } from "@/lib/utils";
 // filtre « Ignorées », le même geste devient Réactiver (vert) : se dédire doit
 // coûter exactement le même effort que faire taire.
 
-const CHANNEL: Record<string, { label: string; icon: typeof Mail }> = {
-  email: { label: "Email", icon: Mail },
-  whatsapp: { label: "WhatsApp", icon: MessageCircle },
+const CHANNEL_ICON: Record<string, typeof Mail> = {
+  email: Mail,
+  whatsapp: MessageCircle,
 };
 
 // Vides HONNÊTES : « rien à trier » (le travail est fait) n'est pas « aucune
@@ -70,17 +72,6 @@ const EMPTY: Record<ConversationFilterSlug, { title: string; hint: string }> = {
   },
 };
 
-function ChannelTag({ type }: { type: string }) {
-  const c = CHANNEL[type] ?? { label: "Canal", icon: Mail };
-  const Icon = c.icon;
-  return (
-    <span className="inline-flex flex-none items-center gap-1 text-[11.5px] font-semibold text-(--text-tertiary)">
-      <Icon className="size-[14px]" strokeWidth={2} />
-      {c.label}
-    </span>
-  );
-}
-
 function ConversationRow({
   data,
   filter,
@@ -100,6 +91,9 @@ function ConversationRow({
   // Un fil ÉCOUTÉ par un ou des sujets ouverts : écarter n'est pas anodin, on
   // NOMME les sujets avant (invariant n°8). Jamais « un ou plusieurs sujets ».
   const listened = !reviving && data.listeningSubjects.length > 0;
+  // Icône du canal, placée juste avant le titre (à gauche de la 1ʳᵉ lettre) —
+  // le canal se lit d'un coup d'œil sans plus l'écrire dans le sous-titre.
+  const ChannelIcon = CHANNEL_ICON[data.channelType] ?? Mail;
 
   function swipeLeft() {
     startTransition(async () => {
@@ -175,6 +169,13 @@ function ConversationRow({
           {/* Titre sur 2 lignes max — lisible EN ENTIER (item 2, souvent =
               l'objet d'un email) ; l'heure se cale en haut à droite. */}
           <div className="flex items-start gap-2">
+            <ChannelIcon
+              className={cn(
+                "mt-[3px] size-[15px] flex-none",
+                unread ? "text-(--text-secondary)" : "text-(--text-tertiary)",
+              )}
+              strokeWidth={2}
+            />
             <span
               className={cn(
                 "line-clamp-2 min-w-0 flex-1 text-[15px] leading-[1.3]",
@@ -190,9 +191,8 @@ function ConversationRow({
             </span>
           </div>
 
-          {/* Ligne méta compacte : canal + aperçu (une ligne) + pastille. */}
+          {/* Ligne méta compacte : aperçu (une ligne) + pastille. */}
           <div className="mt-1 flex items-center gap-2">
-            <ChannelTag type={data.channelType} />
             <p
               className={cn(
                 "line-clamp-1 min-w-0 flex-1 text-[13px] leading-[1.4]",
@@ -264,10 +264,12 @@ function ConversationRow({
 
 export function ConversationList({
   filter,
+  channel,
   initialItems,
   initialCursor,
 }: {
   filter: ConversationFilterSlug;
+  channel: ConversationChannelSlug;
   initialItems: ConversationRowData[];
   initialCursor: string | null;
 }) {
@@ -301,6 +303,7 @@ export function ConversationList({
     setLoading(true);
     const res = await loadConversationsAction(
       CONVERSATION_FILTER_SLUGS[filter],
+      CONVERSATION_CHANNEL_SLUGS[channel],
       cursor,
     );
     if (res.ok) {
@@ -312,7 +315,7 @@ export function ConversationList({
     }
     setLoading(false);
     loadingRef.current = false;
-  }, [cursor, filter]);
+  }, [cursor, filter, channel]);
 
   useEffect(() => {
     const el = sentinelRef.current;

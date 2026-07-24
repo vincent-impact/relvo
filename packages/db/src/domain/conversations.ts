@@ -504,6 +504,33 @@ export function countUnsortedConversations(db: TenantDb): Promise<number> {
 }
 
 /**
+ * Un groupe (WhatsApp) — surface « Groupes » de l'annuaire (2026-07-24). Un
+ * groupe N'EST PAS un Contact dans le modèle : c'est une conversation de type
+ * `whatsapp_group` (il « EST » son propre interlocuteur). L'onglet Groupes de
+ * /contacts se sert donc ici, pas dans la table Contact.
+ */
+export type ConversationGroupItem = {
+  id: string;
+  title: string;
+  lastMessageAt: Date | null;
+};
+
+export async function listConversationGroups(
+  db: TenantDb,
+): Promise<ConversationGroupItem[]> {
+  const rows = await db.conversation.findMany({
+    where: { type: ConversationType.whatsapp_group },
+    orderBy: [{ lastMessageAt: "desc" }, { createdAt: "desc" }],
+    select: { id: true, title: true, lastMessageAt: true },
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    title: r.title,
+    lastMessageAt: r.lastMessageAt,
+  }));
+}
+
+/**
  * Ignorer une source. Relvo cesse d'analyser, de résumer et de trier ses
  * messages — mais ils continuent d'ARRIVER et d'être stockés : on ne perd rien,
  * ils sortent seulement du champ de travail de l'assistant. C'est le remède au
@@ -594,6 +621,20 @@ export type ConversationMessageItem = {
   }[];
 };
 
+/**
+ * Un interlocuteur de la conversation (M6ter, 2026-07-24). Le modèle ne stocke
+ * qu'UN `contactId` par conversation (ou zéro pour un groupe) : la liste des
+ * « tous les contacts » est donc dérivée HONNÊTEMENT des expéditeurs entrants
+ * réellement vus dans le fil — pour un groupe, ce sont ses membres qui ont parlé.
+ */
+export type ConversationParticipant = {
+  name: string;
+  /** Contact rattaché s'il est connu — sinon création possible depuis le brut. */
+  contactId: string | null;
+  /** Adresse/numéro brut (pour pré-remplir la création d'un contact). */
+  raw: string | null;
+};
+
 /** Un sujet qui écoute (ou a écouté) la conversation — matière du bandeau. */
 export type ConversationListening = {
   subjectId: string;
@@ -616,6 +657,8 @@ export type ConversationThread = {
   interlocutorRaw: string | null;
   /** Nom lisible de l'interlocuteur (contact > brut) — null pour un groupe. */
   interlocutorName: string | null;
+  /** Tous les interlocuteurs vus dans le fil (≥1 pour un groupe actif). */
+  participants: ConversationParticipant[];
   messages: ConversationMessageItem[];
   /**
    * Écoutes du fil (M6ter) — le signal d'appartenance côté conversation. L'UI en
@@ -709,6 +752,33 @@ export async function getConversationThread(
     }))
     .sort((a, b) => Number(b.active) - Number(a.active));
 
+  // Interlocuteurs : dédupliqués depuis les expéditeurs ENTRANTS du fil (par
+  // contact rattaché, sinon adresse/numéro brut). Repli sur le contact de la
+  // conversation si aucun message entrant n'a encore été vu (fil sortant seul).
+  const participantMap = new Map<string, ConversationParticipant>();
+  for (const m of rows) {
+    if (m.direction !== "incoming") continue;
+    const contactId = m.senderContactId ?? null;
+    const raw = m.senderRaw ?? null;
+    const key = contactId ?? raw ?? m.senderName ?? "?";
+    if (participantMap.has(key)) continue;
+    participantMap.set(key, {
+      name: m.senderContact
+        ? contactDisplayName(m.senderContact)
+        : (m.senderName ?? m.senderRaw ?? "Interlocuteur inconnu"),
+      contactId,
+      raw,
+    });
+  }
+  if (participantMap.size === 0 && interlocutorName) {
+    participantMap.set(conversation.contactId ?? interlocutorName, {
+      name: interlocutorName,
+      contactId: conversation.contactId,
+      raw: conversation.interlocutorRaw,
+    });
+  }
+  const participants = [...participantMap.values()];
+
   return {
     id: conversation.id,
     title: conversation.title,
@@ -719,6 +789,7 @@ export async function getConversationThread(
     contactId: conversation.contactId,
     interlocutorRaw: conversation.interlocutorRaw,
     interlocutorName,
+    participants,
     listenings,
     messages: rows.map((m) => ({
       id: m.id,

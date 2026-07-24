@@ -1,4 +1,5 @@
 import type {
+  ChannelType,
   ConversationFilter,
   ConversationListItem,
   ConversationMessageItem,
@@ -102,6 +103,19 @@ export function parseFilterSlug(raw?: string | null): ConversationFilterSlug {
     : "sans-sujet";
 }
 
-// `parseChannelSlug` (ex-`?canal=`) a été supprimé le 2026-07-20 avec le filtre
-// canal de l'écran : plus aucun appelant. Le canal reste porté par chaque ligne
-// (`channelType`) et affiché par le ChannelTag.
+// Filtre CANAL (`?canal=`) — rétabli le 2026-07-24 à la demande produit : sur une
+// surface de tri, pouvoir isoler « seulement mes e-mails » ou « seulement
+// WhatsApp » aide quand un canal domine le flux. « tous » = pas de contrainte.
+export const CONVERSATION_CHANNEL_SLUGS = {
+  tous: undefined,
+  email: "email",
+  whatsapp: "whatsapp",
+} as const satisfies Record<string, ChannelType | undefined>;
+
+export type ConversationChannelSlug = keyof typeof CONVERSATION_CHANNEL_SLUGS;
+
+export function parseChannelSlug(raw?: string | null): ConversationChannelSlug {
+  return raw && raw in CONVERSATION_CHANNEL_SLUGS
+    ? (raw as ConversationChannelSlug)
+    : "tous";
+}

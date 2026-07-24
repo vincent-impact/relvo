@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  type ChannelType,
   type ConversationFilter,
   createSubjectFromConversation,
   ignoreConversation,
@@ -81,16 +82,14 @@ export async function markConversationReadAction(id: string) {
 }
 
 /**
- * Page suivante de la liste (scroll infini, côté client).
- *
- * Ne prend plus de filtre canal (2026-07-20) : le segmented email/WhatsApp a
- * quitté l'UI. L'option `channelType` demeure côté domaine (`listConversations`
- * / `listConversationItems`) — elle y est légitime et sans coût — mais plus rien
- * ne la traverse depuis l'app, et une Server Action est une frontière publique :
- * on n'y expose pas un paramètre que personne ne renseigne.
+ * Page suivante de la liste (scroll infini, côté client). Le filtre canal
+ * (email/WhatsApp) a été RÉTABLI le 2026-07-24 : la vue courante le porte, et le
+ * scroll infini doit charger la même vue — d'où `channelType` ici aussi.
+ * `undefined` = pas de contrainte de canal (« Tous »).
  */
 export async function loadConversationsAction(
   filter: ConversationFilter,
+  channelType: ChannelType | undefined,
   cursor: string | null,
 ): Promise<
   | {
@@ -102,6 +101,7 @@ export async function loadConversationsAction(
   const res = await domainAction((db) =>
     listConversationItems(db, {
       filter,
+      channelType,
       cursor: cursor ?? undefined,
       limit: CONVERSATIONS_PAGE_SIZE,
     }),

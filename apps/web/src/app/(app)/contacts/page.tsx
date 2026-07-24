@@ -1,14 +1,16 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { listConversationGroups } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
-import { ContactsDirectory } from "@/components/contacts/contacts-directory";
+import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { ContactsSearchField } from "@/components/contacts/contacts-search-field";
 import { ContactsSearchProvider } from "@/components/contacts/contacts-search-context";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
 import { cachedContactCount, cachedContacts } from "@/server/cached";
-import { requireAccountId } from "@/server/auth-context";
+import { getTenantDb, requireAccountId } from "@/server/auth-context";
+import { formatRelative } from "@/lib/display";
 
 // Contacts (M9.22, Direction B) — annuaire de premier rang (3e onglet du dock).
 // Répertoire façon agenda : recherche dans le hero (filtre en direct) + sections
@@ -19,8 +21,21 @@ import { requireAccountId } from "@/server/auth-context";
 // 100 % client (cf. ContactsDirectory) — pas de refetch à la frappe.
 
 async function ContactsBody({ accountId }: { accountId: string }) {
-  const contacts = await cachedContacts(accountId);
-  return <ContactsDirectory contacts={contacts} />;
+  const db = await getTenantDb();
+  const [contacts, groups] = await Promise.all([
+    cachedContacts(accountId),
+    listConversationGroups(db),
+  ]);
+  return (
+    <ContactsTabs
+      contacts={contacts}
+      groups={groups.map((g) => ({
+        id: g.id,
+        title: g.title,
+        time: formatRelative(g.lastMessageAt) ?? "",
+      }))}
+    />
+  );
 }
 
 export default async function ContactsPage() {
