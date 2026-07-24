@@ -56,6 +56,7 @@ async function HomeTaskTabs({ accountId }: { accountId: string }) {
       rangeStartKey={rangeStart.toISOString().slice(0, 10)}
       rangeDays={rangeDays}
       todayKey={todayKey}
+      overdue={feed.overdue}
       untriaged={feed.untriaged}
     />
   );
@@ -67,10 +68,7 @@ function TabsSkeleton() {
   return (
     <>
       <MetricsCardSkeleton />
-      <div className="px-4 pt-3">
-        <div className="h-[52px] animate-pulse rounded-full bg-white" />
-      </div>
-      <div className="space-y-2 px-4 pt-4">
+      <div className="space-y-2 px-4 pt-6">
         {[0, 1, 2].map((i) => (
           <div
             key={i}

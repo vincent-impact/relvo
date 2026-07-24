@@ -3,21 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { AgendaWeek } from "@/components/home/agenda-week";
-import { MetricsCard, type Metric } from "@/components/shared/metrics-card";
-import { SegTabs } from "@/components/shared/seg-tabs";
+import { TaskKpiTabs, type TaskTab } from "@/components/home/task-kpi-tabs";
 import { TaskItem, type TaskItemData } from "@/components/subject/task-item";
 
-// Cœur de l'Accueil (Direction B) — page « plan d'action ». Barre KPI Tâches
-// (RDV / Aujourd'hui / En retard / À trier, non cliquable) puis 2 onglets, qui
-// lisent les tâches de la même façon (TaskItem) :
-//  - Agenda   : semainier SLIDABLE (passé / futur) + tâches du jour sélectionné,
-//               drag&drop d'une tâche d'un jour à l'autre. Les tâches en retard
-//               se retrouvent en slidant vers les jours passés (badges rouges) —
-//               plus d'onglet « En retard » dédié.
-//  - À trier  : tâches sans date, à plat.
+// Cœur de l'Accueil (Direction B) — page « plan d'action ». UNE SEULE barre
+// (2026-07-24) qui fusionne l'ancienne carte KPI et la barre de tri : trois
+// menus chiffrés qui agissent comme onglets, lus de la même façon (TaskItem) :
+//  - Agenda    : semainier SLIDABLE (passé / futur) + tâches du jour, drag&drop.
+//  - En retard : toutes les tâches en retard, de la plus récente à la plus
+//                ancienne (à plat, avec leur date d'échéance).
+//  - À trier   : tâches sans date, à plat.
 // Chaque ligne porte le TITRE du sujet en clair (impératif produit).
-
-type Tab = "aujourdhui" | "afaire";
 
 export type TaskKpis = {
   rdv: number;
@@ -32,6 +28,7 @@ export function HomeTabs({
   rangeStartKey,
   rangeDays,
   todayKey,
+  overdue,
   untriaged,
 }: {
   kpis: TaskKpis;
@@ -39,39 +36,25 @@ export function HomeTabs({
   rangeStartKey: string;
   rangeDays: number;
   todayKey: string;
+  overdue: TaskItemData[];
   untriaged: TaskItemData[];
 }) {
-  const [tab, setTab] = useState<Tab>("aujourdhui");
+  const [tab, setTab] = useState<TaskTab>("agenda");
 
-  const metrics: Metric[] = [
-    { value: kpis.rdv, label: "RDV" },
-    { value: kpis.today, label: "Aujourd’hui" },
-    {
-      value: kpis.overdue,
-      label: "En retard",
-      ...(kpis.overdue > 0 ? { tone: "urgent" as const } : {}),
-    },
-    { value: kpis.untriaged, label: "À trier" },
-  ];
+  const counts: Record<TaskTab, number> = {
+    agenda: kpis.today,
+    retard: kpis.overdue,
+    afaire: kpis.untriaged,
+  };
 
   return (
     <>
-      <MetricsCard metrics={metrics} />
+      <TaskKpiTabs active={tab} onChange={setTab} counts={counts} />
 
-      {/* Onglets SANS compteurs (les KPI au-dessus jouent ce rôle), + espace
-          sous la barre pour laisser respirer l'interface. */}
-      <div className="px-4 pt-3 pb-4">
-        <SegTabs
-          options={[
-            { value: "aujourdhui", label: "Agenda" },
-            { value: "afaire", label: "À trier" },
-          ]}
-          value={tab}
-          onValueChange={(v) => setTab(v as Tab)}
-        />
-      </div>
+      {/* Espace sous la barre pour laisser respirer l'interface. */}
+      <div className="pt-4" />
 
-      {tab === "aujourdhui" ? (
+      {tab === "agenda" ? (
         <>
           <AgendaWeek
             initialTasksByDay={tasksByDay}
@@ -88,6 +71,18 @@ export function HomeTabs({
             </Link>
           </div>
         </>
+      ) : null}
+
+      {tab === "retard" ? (
+        overdue.length === 0 ? (
+          <Empty>Aucune tâche en retard ✦</Empty>
+        ) : (
+          <div>
+            {overdue.map((t) => (
+              <TaskItem key={t.id} task={t} flat meta="date" />
+            ))}
+          </div>
+        )
       ) : null}
 
       {tab === "afaire" ? (

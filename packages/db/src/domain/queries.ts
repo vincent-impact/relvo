@@ -199,9 +199,12 @@ export async function getOverdueTasks(
   opts: { now?: Date; limit?: number } = {},
 ) {
   const { start } = dayBounds(opts.now ?? new Date());
+  // Échéance la PLUS RÉCENTE d'abord, jusqu'à la plus ancienne (onglet « En
+  // retard » de l'Accueil, 2026-07-24) : on traite d'abord ce qui vient de
+  // passer, on remonte vers les vieux retards.
   return db.task.findMany({
     where: { status: TaskStatus.open, startDate: { lt: start } },
-    orderBy: [{ startDate: "asc" }, { startTime: "asc" }],
+    orderBy: [{ startDate: "desc" }, { startTime: "desc" }],
     take: opts.limit ?? 50,
   });
 }
