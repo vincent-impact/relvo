@@ -14,21 +14,21 @@ import {
 } from "@/components/shared/subject-row";
 import type { FolderChip } from "@/server/cached";
 
-// Vue complète de Sujets (client) — la carte KPI est devenue une BARRE D'ONGLETS
-// chiffrée (Urgents · Nouveaux · Ouverts · Validés · Fermés), et la barre de
-// filtres ne propose plus que les DOMAINES (chips icône + couleur, défilables).
-// Tout est instantané côté client sur les lignes déjà chargées.
+// Vue complète de Sujets (client) — la carte KPI est une BARRE D'ONGLETS chiffrée
+// par STATUT (Ouverts · Validés · Fermés), et la barre de filtres ne propose que
+// les DOMAINES (chips icône + couleur, défilables). Tout est instantané côté
+// client sur les lignes déjà chargées.
 //
-// Onglets : Urgents/Nouveaux/Ouverts sont trois lentilles sur les sujets OUVERTS
-// (urgents ⊂ ouverts, nouveaux ⊂ ouverts) ; Validés et Fermés sont les deux
-// familles terminales récupérables (Fermés = soft delete, réouvrable).
+// Onglets = un seul axe, le statut (2026-07-24) : « Urgents » et « Nouveaux » ont
+// été retirés (marqueurs, pas des états — déjà distingués dans la liste des
+// Ouverts). Validés et Fermés sont les deux familles terminales récupérables
+// (Fermés = soft delete, réouvrable).
 
 type Tagged = { row: SubjectRowData; basket: "ouvert" | "done" };
 
-// Onglet initial déduit de l'URL (KPI de l'Accueil → Sujets filtré).
+// Onglet initial déduit de l'URL. `?urgent=1` / `?nouveau=1` (anciens liens)
+// retombent sur « Ouverts » : ces sujets y vivent, distingués visuellement.
 function initialTab(params: URLSearchParams): SubjectTab {
-  if (params.get("urgent") === "1") return "urgents";
-  if (params.get("nouveau") === "1") return "nouveaux";
   if (params.get("statut") === "valide") return "valides";
   if (params.get("statut") === "ferme") return "fermes";
   return "ouverts";
@@ -53,8 +53,6 @@ export function FeedView({
 
   const counts: Record<SubjectTab, number> = useMemo(
     () => ({
-      urgents: ouverts.filter((r) => r.urgent).length,
-      nouveaux: ouverts.filter((r) => r.isNew).length,
       ouverts: ouverts.length,
       valides: valides.length,
       fermes: fermes.length,
@@ -68,15 +66,7 @@ export function FeedView({
       return valides.map((row) => ({ row, basket: "done" as const }));
     if (tab === "fermes")
       return fermes.map((row) => ({ row, basket: "done" as const }));
-    const open = ouverts
-      .filter(
-        (r) =>
-          tab === "ouverts" ||
-          (tab === "urgents" && r.urgent) ||
-          (tab === "nouveaux" && r.isNew),
-      )
-      .map((row) => ({ row, basket: "ouvert" as const }));
-    return open;
+    return ouverts.map((row) => ({ row, basket: "ouvert" as const }));
   }, [tab, ouverts, valides, fermes]);
 
   const filtered = base.filter(

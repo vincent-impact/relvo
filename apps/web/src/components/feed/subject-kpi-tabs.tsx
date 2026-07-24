@@ -2,25 +2,20 @@
 
 import { cn } from "@/lib/utils";
 
-// Barre KPI-ONGLETS de Sujets (2026-07-23) — la carte à chiffres devient un
-// SÉLECTEUR : chaque cellule (Urgents · Nouveaux · Ouverts · Validés · Fermés)
-// porte son compteur ET agit comme un onglet. La cellule active se teinte de
-// violet Relvo. « Fermés » est de retour comme 5ᵉ onglet (2026-07-24) : les
-// sujets fermés (soft delete) y sont récupérables (Réouvrir).
+// Barre KPI-ONGLETS de Sujets — la carte à chiffres est un SÉLECTEUR : chaque
+// cellule porte son compteur ET agit comme un onglet, teinté de violet Relvo à
+// l'état actif.
 //
-// Le rouge reste réservé au SIGNAL d'urgence (rareté) : le chiffre « Urgents »
-// est rouge dès qu'il est > 0, actif ou non.
+// UN SEUL AXE : le STATUT (Ouverts · Validés · Fermés) — décision 2026-07-24.
+// Les anciens onglets « Urgents » et « Nouveaux » ont été retirés : ce sont des
+// MARQUEURS, pas des états (sous-ensembles des Ouverts), et la liste les
+// distingue déjà (fond rouge + drapeau, fond bleu + badge « Nouveau », urgents
+// remontés en tête). « La rareté est le signal » : une ligne rouge parle plus
+// qu'un onglet affichant « 1 ».
 
-export type SubjectTab =
-  | "urgents"
-  | "nouveaux"
-  | "ouverts"
-  | "valides"
-  | "fermes";
+export type SubjectTab = "ouverts" | "valides" | "fermes";
 
 const TABS: { key: SubjectTab; label: string }[] = [
-  { key: "urgents", label: "Urgents" },
-  { key: "nouveaux", label: "Nouveaux" },
   { key: "ouverts", label: "Ouverts" },
   { key: "valides", label: "Validés" },
   { key: "fermes", label: "Fermés" },
@@ -44,7 +39,6 @@ export function SubjectKpiTabs({
       {TABS.map((t) => {
         const isActive = t.key === active;
         const count = counts[t.key];
-        const urgentSignal = t.key === "urgents" && count > 0;
         return (
           <button
             key={t.key}
@@ -60,11 +54,7 @@ export function SubjectKpiTabs({
             <span
               className={cn(
                 "flex h-[30px] items-center font-numeric text-[23px] font-bold tracking-[-1px]",
-                urgentSignal
-                  ? "text-(--red-600)"
-                  : isActive
-                    ? "text-relvo"
-                    : "text-[#1c1a22]",
+                isActive ? "text-relvo" : "text-[#1c1a22]",
               )}
             >
               {count}
