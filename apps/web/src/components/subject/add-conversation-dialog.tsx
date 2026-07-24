@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Mail, MessageCircle, Search, Users } from "lucide-react";
 import {
   Dialog,
@@ -71,8 +71,15 @@ export function AddConversationDialog({
   const [subjectLine, setSubjectLine] = useState(subjectTitle);
   const [query, setQuery] = useState("");
 
+  // Réinitialiser UNIQUEMENT à l'ouverture (faux → vrai). ⚠️ Ne PAS dépendre de
+  // l'identité des props (`availableChannels`, `subjectTitle`) : le PollRefresh
+  // (récupération périodique des messages Unipile) re-render la page et passe de
+  // nouvelles instances de tableau à chaque tour ; un effet qui en dépend
+  // remettrait le canal sur « email » toutes les quelques secondes. Le garde
+  // `wasOpen` neutralise ces re-runs tout en gardant l'effet exhaustif.
+  const wasOpen = useRef(false);
   useEffect(() => {
-    if (open) {
+    if (open && !wasOpen.current) {
       setChannel(availableChannels[0] ?? "email");
       setWaMode("contact");
       setContactId(null);
@@ -80,6 +87,7 @@ export function AddConversationDialog({
       setSubjectLine(subjectTitle);
       setQuery("");
     }
+    wasOpen.current = open;
   }, [open, subjectTitle, availableChannels]);
 
   const isEmail = channel === "email";
