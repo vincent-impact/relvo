@@ -15,31 +15,34 @@ import {
 import type { FolderChip } from "@/server/cached";
 
 // Vue complète de Sujets (client) — la carte KPI est devenue une BARRE D'ONGLETS
-// chiffrée (Urgents · Nouveaux · Ouverts · Validés), et la barre de filtres ne
-// propose plus que les DOMAINES (chips icône + couleur, défilables). Tout est
-// instantané côté client sur les lignes déjà chargées.
+// chiffrée (Urgents · Nouveaux · Ouverts · Validés · Fermés), et la barre de
+// filtres ne propose plus que les DOMAINES (chips icône + couleur, défilables).
+// Tout est instantané côté client sur les lignes déjà chargées.
 //
 // Onglets : Urgents/Nouveaux/Ouverts sont trois lentilles sur les sujets OUVERTS
-// (urgents ⊂ ouverts, nouveaux ⊂ ouverts) ; Validés est la famille terminale
-// récupérable. « Fermés » n'a plus d'accès direct ici.
+// (urgents ⊂ ouverts, nouveaux ⊂ ouverts) ; Validés et Fermés sont les deux
+// familles terminales récupérables (Fermés = soft delete, réouvrable).
 
-type Tagged = { row: SubjectRowData; basket: "ouvert" | "valide" };
+type Tagged = { row: SubjectRowData; basket: "ouvert" | "done" };
 
 // Onglet initial déduit de l'URL (KPI de l'Accueil → Sujets filtré).
 function initialTab(params: URLSearchParams): SubjectTab {
   if (params.get("urgent") === "1") return "urgents";
   if (params.get("nouveau") === "1") return "nouveaux";
   if (params.get("statut") === "valide") return "valides";
+  if (params.get("statut") === "ferme") return "fermes";
   return "ouverts";
 }
 
 export function FeedView({
   ouverts,
   valides,
+  fermes,
   folders,
 }: {
   ouverts: SubjectRowData[];
   valides: SubjectRowData[];
+  fermes: SubjectRowData[];
   folders: FolderChip[];
 }) {
   const params = useSearchParams();
@@ -54,14 +57,17 @@ export function FeedView({
       nouveaux: ouverts.filter((r) => r.isNew).length,
       ouverts: ouverts.length,
       valides: valides.length,
+      fermes: fermes.length,
     }),
-    [ouverts, valides],
+    [ouverts, valides, fermes],
   );
 
   // Liste de base selon l'onglet, chaque ligne taguée par panier (rendu adapté).
   const base: Tagged[] = useMemo(() => {
     if (tab === "valides")
-      return valides.map((row) => ({ row, basket: "valide" as const }));
+      return valides.map((row) => ({ row, basket: "done" as const }));
+    if (tab === "fermes")
+      return fermes.map((row) => ({ row, basket: "done" as const }));
     const open = ouverts
       .filter(
         (r) =>
@@ -71,7 +77,7 @@ export function FeedView({
       )
       .map((row) => ({ row, basket: "ouvert" as const }));
     return open;
-  }, [tab, ouverts, valides]);
+  }, [tab, ouverts, valides, fermes]);
 
   const filtered = base.filter(
     ({ row }) => domain == null || row.folderSlug === domain,

@@ -21,12 +21,14 @@ import {
 } from "@/components/shared/message-bubble";
 import { EmailMessage } from "@/components/conversations/email-message";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
+import type { SubjectStatus } from "@relvo/db";
 import {
   AddConversationDialog,
   type AddConvContact,
   type AddConvGroup,
   type AddConversationSubmit,
 } from "@/components/subject/add-conversation-dialog";
+import { SubjectInfoDock } from "@/components/subject/subject-info-dock";
 import { sendEmailReplyAction } from "@/server/actions/email";
 import { sendWhatsAppReplyAction } from "@/server/actions/whatsapp";
 import {
@@ -93,6 +95,7 @@ export function SubjectBody({
   documentsCount,
   subjectId,
   subjectTitle,
+  subjectStatus,
   conversationPanes,
   availableChannels,
   addContacts,
@@ -108,6 +111,7 @@ export function SubjectBody({
   documentsCount: number;
   subjectId: string;
   subjectTitle: string;
+  subjectStatus: SubjectStatus;
   conversationPanes: SubjectConversationPane[];
   /** Canaux connectés du compte — pilotent le dialog « Ajouter une conversation ». */
   availableChannels: ("email" | "whatsapp")[];
@@ -397,6 +401,11 @@ export function SubjectBody({
           placeholder={composerPlaceholder}
           onSend={handleSend}
         />
+      ) : null}
+
+      {/* Dock d'actions selon le statut (onglet Informations). */}
+      {tab === "informations" ? (
+        <SubjectInfoDock subjectId={subjectId} status={subjectStatus} />
       ) : null}
 
       <AddConversationDialog

@@ -3,20 +3,27 @@
 import { cn } from "@/lib/utils";
 
 // Barre KPI-ONGLETS de Sujets (2026-07-23) — la carte à chiffres devient un
-// SÉLECTEUR : chaque cellule (Urgents · Nouveaux · Ouverts · Validés) porte son
-// compteur ET agit comme un onglet. La cellule active se teinte de violet Relvo.
-// « Fermés » n'a plus d'accès direct ici (récupérable ailleurs, plus tard).
+// SÉLECTEUR : chaque cellule (Urgents · Nouveaux · Ouverts · Validés · Fermés)
+// porte son compteur ET agit comme un onglet. La cellule active se teinte de
+// violet Relvo. « Fermés » est de retour comme 5ᵉ onglet (2026-07-24) : les
+// sujets fermés (soft delete) y sont récupérables (Réouvrir).
 //
 // Le rouge reste réservé au SIGNAL d'urgence (rareté) : le chiffre « Urgents »
 // est rouge dès qu'il est > 0, actif ou non.
 
-export type SubjectTab = "urgents" | "nouveaux" | "ouverts" | "valides";
+export type SubjectTab =
+  | "urgents"
+  | "nouveaux"
+  | "ouverts"
+  | "valides"
+  | "fermes";
 
 const TABS: { key: SubjectTab; label: string }[] = [
   { key: "urgents", label: "Urgents" },
   { key: "nouveaux", label: "Nouveaux" },
   { key: "ouverts", label: "Ouverts" },
   { key: "valides", label: "Validés" },
+  { key: "fermes", label: "Fermés" },
 ];
 
 export function SubjectKpiTabs({

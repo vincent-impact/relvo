@@ -12,7 +12,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { SubjectDangerZone } from "@/components/subject/subject-detail-form";
 import {
   setSubjectPriorityAction,
   updateSubjectAction,
@@ -248,8 +247,6 @@ export function InformationsPane({
           )}
         </div>
       </details>
-
-      <SubjectDangerZone subjectId={subjectId} />
 
       {/* Sélecteur de domaine */}
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>

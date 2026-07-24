@@ -19,12 +19,19 @@ import { requireAccountId } from "@/server/auth-context";
 // depuis le cache serveur en formes plates.
 
 async function FilFeed({ accountId }: { accountId: string }) {
-  const [{ ouverts, valides }, folders] = await Promise.all([
+  const [{ ouverts, valides, fermes }, folders] = await Promise.all([
     cachedFilFeed(accountId),
     cachedFolders(accountId),
   ]);
 
-  return <FeedView ouverts={ouverts} valides={valides} folders={folders} />;
+  return (
+    <FeedView
+      ouverts={ouverts}
+      valides={valides}
+      fermes={fermes}
+      folders={folders}
+    />
+  );
 }
 
 const HEADER_BTN =

@@ -225,6 +225,7 @@ export default async function SujetPage({
         }
         subjectId={subject.id}
         subjectTitle={subject.title}
+        subjectStatus={subject.status}
         conversationPanes={conversationPanes}
         documentsCount={attachments.length}
         availableChannels={availableChannels}
