@@ -341,7 +341,7 @@ export async function getConversation(db: TenantDb, id: string) {
 }
 
 /** Les trois filtres de la surface de tri (cf. 02-modele-donnees §5bis). */
-export type ConversationFilter = "unsorted" | "ignored" | "all";
+export type ConversationFilter = "unsorted" | "followed" | "ignored";
 
 /**
  * Liste des conversations, plus récente en tête.
@@ -356,7 +356,15 @@ export type ConversationFilter = "unsorted" | "ignored" | "all";
  */
 function conversationFilterWhere(filter: ConversationFilter) {
   if (filter === "ignored") return { status: ConversationStatus.ignored };
-  if (filter === "all") return {};
+  // « Suivies » : conversations actives dont le dernier message EST couvert par
+  // un sujet (le complément exact de « Sans sujet »).
+  if (filter === "followed") {
+    return {
+      status: ConversationStatus.active,
+      lastMessage: { is: { subjectId: { not: null } } },
+    };
+  }
+  // « Sans sujet » (défaut) : actives dont le dernier message n'a aucun sujet.
   return {
     status: ConversationStatus.active,
     lastMessage: { is: { subjectId: null } },
@@ -401,6 +409,12 @@ export type ConversationListItem = {
   status: ConversationStatus;
   /** `email` | `whatsapp` — pilote l'icône de canal de la ligne. */
   channelType: ChannelType;
+  /** Contact rattaché (null = interlocuteur non enregistré → avatar icône). */
+  contactId: string | null;
+  /** Nom de l'interlocuteur (contact > brut) — initiales de l'avatar. */
+  interlocutorName: string | null;
+  /** Adresse/numéro brut — pré-remplit la création de contact. */
+  interlocutorRaw: string | null;
   lastMessageAt: Date | null;
   /** Première ligne du dernier message (texte aplati), ou son objet à défaut. */
   preview: string;
@@ -419,6 +433,7 @@ export type ConversationListItem = {
 
 const CONVERSATION_ITEM_INCLUDE = {
   channel: { select: { type: true } },
+  contact: { select: { firstName: true, lastName: true } },
   lastMessage: {
     select: { content: true, subjectLine: true, subjectId: true },
   },
@@ -444,12 +459,22 @@ function toConversationListItem(c: ConversationItemRow): ConversationListItem {
     c.lastMessage?.content?.replace(/\s+/g, " ").trim() ||
     c.lastMessage?.subjectLine?.trim() ||
     "—";
+  // Un GROUPE n'a pas d'interlocuteur unique (il EST son interlocuteur).
+  const interlocutorName =
+    c.type === ConversationType.whatsapp_group
+      ? null
+      : c.contact
+        ? contactDisplayName(c.contact)
+        : (c.interlocutorRaw ?? null);
   return {
     id: c.id,
     title: c.title,
     type: c.type,
     status: c.status,
     channelType: c.channel.type,
+    contactId: c.contactId,
+    interlocutorName,
+    interlocutorRaw: c.interlocutorRaw,
     lastMessageAt: c.lastMessageAt,
     preview,
     unreadCount: c._count.messages,
@@ -752,32 +777,53 @@ export async function getConversationThread(
     }))
     .sort((a, b) => Number(b.active) - Number(a.active));
 
-  // Interlocuteurs : dédupliqués depuis les expéditeurs ENTRANTS du fil (par
-  // contact rattaché, sinon adresse/numéro brut). Repli sur le contact de la
-  // conversation si aucun message entrant n'a encore été vu (fil sortant seul).
-  const participantMap = new Map<string, ConversationParticipant>();
-  for (const m of rows) {
-    if (m.direction !== "incoming") continue;
-    const contactId = m.senderContactId ?? null;
-    const raw = m.senderRaw ?? null;
-    const key = contactId ?? raw ?? m.senderName ?? "?";
-    if (participantMap.has(key)) continue;
-    participantMap.set(key, {
-      name: m.senderContact
-        ? contactDisplayName(m.senderContact)
-        : (m.senderName ?? m.senderRaw ?? "Interlocuteur inconnu"),
-      contactId,
-      raw,
-    });
+  // Interlocuteurs.
+  //   • Direct / email → UN seul interlocuteur (le modèle en garantit un par
+  //     conversation) : le contact rattaché, sinon le brut. On ne dérive PAS des
+  //     messages, sinon un même contact apparaît deux fois (messages anciens sans
+  //     `senderContactId` + contact rattaché depuis).
+  //   • Groupe → les MEMBRES vus dans le fil, dédupliqués en préférant l'entrée
+  //     rattachée à un contact (un membre connu absorbe sa variante « brute »).
+  let participants: ConversationParticipant[];
+  if (conversation.type === ConversationType.whatsapp_group) {
+    const byContact = new Map<string, ConversationParticipant>();
+    const byRaw = new Map<string, ConversationParticipant>();
+    for (const m of rows) {
+      if (m.direction !== "incoming") continue;
+      if (m.senderContactId && m.senderContact) {
+        byContact.set(m.senderContactId, {
+          name: contactDisplayName(m.senderContact),
+          contactId: m.senderContactId,
+          raw: m.senderRaw ?? null,
+        });
+      } else {
+        const name = m.senderName ?? m.senderRaw ?? "Interlocuteur inconnu";
+        const key = (m.senderRaw ?? name).toLowerCase();
+        if (!byRaw.has(key))
+          byRaw.set(key, { name, contactId: null, raw: m.senderRaw ?? null });
+      }
+    }
+    // Un membre « brut » dont le nom correspond à un contact connu est fondu.
+    const knownNames = new Set(
+      [...byContact.values()].map((p) => p.name.toLowerCase()),
+    );
+    participants = [
+      ...byContact.values(),
+      ...[...byRaw.values()].filter(
+        (p) => !knownNames.has(p.name.toLowerCase()),
+      ),
+    ];
+  } else {
+    participants = interlocutorName
+      ? [
+          {
+            name: interlocutorName,
+            contactId: conversation.contactId,
+            raw: conversation.interlocutorRaw,
+          },
+        ]
+      : [];
   }
-  if (participantMap.size === 0 && interlocutorName) {
-    participantMap.set(conversation.contactId ?? interlocutorName, {
-      name: interlocutorName,
-      contactId: conversation.contactId,
-      raw: conversation.interlocutorRaw,
-    });
-  }
-  const participants = [...participantMap.values()];
 
   return {
     id: conversation.id,

@@ -21,6 +21,11 @@ export type ConversationRowData = {
   /** Horodatage relatif préformaté (« 35 min », « hier », « 12 juin »). */
   time: string;
   channelType: string;
+  type: string;
+  /** Contact rattaché (null = non enregistré → avatar icône + création). */
+  contactId: string | null;
+  interlocutorName: string | null;
+  interlocutorRaw: string | null;
   unreadCount: number;
   ignored: boolean;
   /** Sujets écoutant encore ce fil — nomment la confirmation du swipe gauche. */
@@ -36,6 +41,10 @@ export function toConversationRowData(
     preview: item.preview,
     time: formatRelative(item.lastMessageAt) ?? "",
     channelType: item.channelType,
+    type: item.type,
+    contactId: item.contactId,
+    interlocutorName: item.interlocutorName,
+    interlocutorRaw: item.interlocutorRaw,
     unreadCount: item.unreadCount,
     ignored: item.status === "ignored",
     listeningSubjects: item.listeningSubjects,
@@ -91,8 +100,8 @@ export function toThreadMessageData(
 
 export const CONVERSATION_FILTER_SLUGS = {
   "sans-sujet": "unsorted",
+  suivies: "followed",
   ignorees: "ignored",
-  toutes: "all",
 } as const satisfies Record<string, ConversationFilter>;
 
 export type ConversationFilterSlug = keyof typeof CONVERSATION_FILTER_SLUGS;

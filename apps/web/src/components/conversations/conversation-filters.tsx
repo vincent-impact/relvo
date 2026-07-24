@@ -22,8 +22,8 @@ import { cn } from "@/lib/utils";
 
 const FILTER_OPTIONS: { value: ConversationFilterSlug; label: string }[] = [
   { value: "sans-sujet", label: "Sans sujet" },
+  { value: "suivies", label: "Suivies" },
   { value: "ignorees", label: "Ignorées" },
-  { value: "toutes", label: "Toutes" },
 ];
 
 const CHANNEL_OPTIONS: {

@@ -35,6 +35,11 @@ import {
   type ConversationRowData,
 } from "@/lib/conversation-row";
 import { initialsFor } from "@/lib/display";
+import { avatarIconFor, guessContactKind } from "@/lib/contact-avatar";
+import {
+  ContactCreateDialog,
+  type ContactPrefill,
+} from "@/components/contacts/contact-create-dialog";
 import { cn } from "@/lib/utils";
 
 // Liste /conversations (M6bis.8) — la surface de TRI, hors navigation, atteinte
@@ -49,10 +54,22 @@ import { cn } from "@/lib/utils";
 // filtre « Ignorées », le même geste devient Réactiver (vert) : se dédire doit
 // coûter exactement le même effort que faire taire.
 
-const CHANNEL_ICON: Record<string, typeof Mail> = {
-  email: Mail,
-  whatsapp: MessageCircle,
+const CHANNEL: Record<string, { label: string; icon: typeof Mail }> = {
+  email: { label: "Email", icon: Mail },
+  whatsapp: { label: "WhatsApp", icon: MessageCircle },
 };
+
+// Canal en tête de la ligne méta (icône + nom), suivi de l'aperçu du message.
+function ChannelTag({ type }: { type: string }) {
+  const c = CHANNEL[type] ?? { label: "Canal", icon: Mail };
+  const Icon = c.icon;
+  return (
+    <span className="inline-flex flex-none items-center gap-1 text-[11.5px] font-semibold text-(--text-tertiary)">
+      <Icon className="size-[14px]" strokeWidth={2} />
+      {c.label}
+    </span>
+  );
+}
 
 // Vides HONNÊTES : « rien à trier » (le travail est fait) n'est pas « aucune
 // conversation » (il n'y a rien du tout). Confondre les deux ferait croire à une
@@ -62,13 +79,13 @@ const EMPTY: Record<ConversationFilterSlug, { title: string; hint: string }> = {
     title: "Rien à trier ✦",
     hint: "Toutes vos conversations actives sont couvertes par un sujet.",
   },
+  suivies: {
+    title: "Aucune conversation suivie",
+    hint: "Les conversations couvertes par un sujet ouvert apparaîtront ici.",
+  },
   ignorees: {
     title: "Aucune conversation ignorée",
     hint: "Les sources que vous faites taire s'accumulent ici, et se réactivent d'un geste.",
-  },
-  toutes: {
-    title: "Aucune conversation",
-    hint: "Vos e-mails et messages WhatsApp apparaîtront ici dès leur arrivée.",
   },
 };
 
@@ -76,10 +93,13 @@ function ConversationRow({
   data,
   filter,
   onRemove,
+  onCreateContact,
 }: {
   data: ConversationRowData;
   filter: ConversationFilterSlug;
   onRemove: (id: string) => void;
+  /** Avatar d'un interlocuteur NON enregistré → ouvre la pop-up de création. */
+  onCreateContact: (prefill: ContactPrefill) => void;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -91,9 +111,30 @@ function ConversationRow({
   // Un fil ÉCOUTÉ par un ou des sujets ouverts : écarter n'est pas anodin, on
   // NOMME les sujets avant (invariant n°8). Jamais « un ou plusieurs sujets ».
   const listened = !reviving && data.listeningSubjects.length > 0;
-  // Icône du canal, placée juste avant le titre (à gauche de la 1ʳᵉ lettre) —
-  // le canal se lit d'un coup d'œil sans plus l'écrire dans le sous-titre.
-  const ChannelIcon = CHANNEL_ICON[data.channelType] ?? Mail;
+
+  // Avatar de l'interlocuteur : initiales si contact enregistré ; sinon icône
+  // selon le type deviné (personne / société / groupe). Tap → fiche (enregistré)
+  // ou pop-up de création pré-remplie (non enregistré).
+  const isGroup = data.type === "whatsapp_group";
+  const registered = data.contactId != null;
+  const avatarKind = guessContactKind({
+    isGroup,
+    name: data.interlocutorName ?? data.title,
+    raw: data.interlocutorRaw,
+  });
+  const AvatarIcon = avatarIconFor(avatarKind);
+  const rawId = data.interlocutorRaw?.trim() ?? null;
+  function tapAvatar() {
+    if (registered) {
+      router.push(`/contacts/${data.contactId}`);
+    } else {
+      onCreateContact({
+        name: data.interlocutorName ?? null,
+        email: isEmail ? rawId : null,
+        phone: isEmail ? null : (rawId?.split("@")[0] ?? null),
+      });
+    }
+  }
 
   function swipeLeft() {
     startTransition(async () => {
@@ -156,26 +197,44 @@ function ConversationRow({
           unread ? "bg-white" : "bg-[#f7f6f3]",
         )}
       >
-        <span
-          className={cn(
+        {(() => {
+          const avatarClass = cn(
             "grid size-[42px] flex-none place-items-center self-start rounded-full text-[14px] font-extrabold text-white",
             unread ? "bg-(--amber-600)" : "bg-[#c7c5bd]",
-          )}
-        >
-          {initialsFor(data.title) ?? "?"}
-        </span>
+          );
+          const inner = registered ? (
+            (initialsFor(data.interlocutorName) ?? "?")
+          ) : (
+            <AvatarIcon className="size-[20px]" strokeWidth={2.1} />
+          );
+          // Un groupe n'est pas un contact : son avatar n'ouvre pas de fiche, le
+          // tap retombe sur la ligne (ouverture de la conversation).
+          return isGroup ? (
+            <span className={avatarClass}>{inner}</span>
+          ) : (
+            <button
+              type="button"
+              // Isole le geste de la SwipeRow (sinon le tap ouvrirait aussi la
+              // conversation) : on coupe le pointerdown avant qu'elle ne capture.
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                tapAvatar();
+              }}
+              aria-label={
+                registered ? "Voir le contact" : "Enregistrer le contact"
+              }
+              className={cn(avatarClass, "active:opacity-80")}
+            >
+              {inner}
+            </button>
+          );
+        })()}
 
         <div className="min-w-0 flex-1">
-          {/* Titre sur 2 lignes max — lisible EN ENTIER (item 2, souvent =
-              l'objet d'un email) ; l'heure se cale en haut à droite. */}
+          {/* Titre sur 2 lignes max — lisible EN ENTIER (souvent = l'objet d'un
+              email) ; l'heure se cale en haut à droite. */}
           <div className="flex items-start gap-2">
-            <ChannelIcon
-              className={cn(
-                "mt-[3px] size-[15px] flex-none",
-                unread ? "text-(--text-secondary)" : "text-(--text-tertiary)",
-              )}
-              strokeWidth={2}
-            />
             <span
               className={cn(
                 "line-clamp-2 min-w-0 flex-1 text-[15px] leading-[1.3]",
@@ -191,8 +250,9 @@ function ConversationRow({
             </span>
           </div>
 
-          {/* Ligne méta compacte : aperçu (une ligne) + pastille. */}
+          {/* Ligne méta : canal (icône + nom) + aperçu (une ligne) + pastille. */}
           <div className="mt-1 flex items-center gap-2">
+            <ChannelTag type={data.channelType} />
             <p
               className={cn(
                 "line-clamp-1 min-w-0 flex-1 text-[13px] leading-[1.4]",
@@ -276,6 +336,11 @@ export function ConversationList({
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(initialCursor);
   const [loading, setLoading] = useState(false);
+  // Pop-up de création de contact (avatar d'un interlocuteur non enregistré) —
+  // une seule pour toute la liste, pré-remplie par la ligne cliquée.
+  const [contactPrefill, setContactPrefill] = useState<ContactPrefill | null>(
+    null,
+  );
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   // Une page suivante a-t-elle été chargée ? (cf. resynchronisation ci-dessous)
@@ -350,6 +415,7 @@ export function ConversationList({
             data={c}
             filter={filter}
             onRemove={remove}
+            onCreateContact={setContactPrefill}
           />
         ))
       )}
@@ -364,6 +430,14 @@ export function ConversationList({
           ) : null}
         </div>
       ) : null}
+
+      <ContactCreateDialog
+        open={contactPrefill != null}
+        onOpenChange={(o) => {
+          if (!o) setContactPrefill(null);
+        }}
+        prefill={contactPrefill ?? {}}
+      />
     </div>
   );
 }

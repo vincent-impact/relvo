@@ -39,6 +39,11 @@ import {
 } from "@/server/actions/subject-conversations";
 import { folderVisual } from "@/lib/folders";
 import { initialsFor } from "@/lib/display";
+import { avatarIconFor, guessContactKind } from "@/lib/contact-avatar";
+import {
+  ContactCreateDialog,
+  type ContactPrefill,
+} from "@/components/contacts/contact-create-dialog";
 import type { ThreadMessageData } from "@/lib/conversation-row";
 import { cn } from "@/lib/utils";
 
@@ -99,20 +104,27 @@ export function ConversationDetail({
   );
   const [showCreate, setShowCreate] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  const [contactPrefill, setContactPrefill] = useState<ContactPrefill | null>(
+    null,
+  );
 
   const isEmail = channelType === "email";
   const ChannelIcon = CHANNEL_ICON[channelType] ?? Mail;
   const channelLabel = CHANNEL_LABEL[channelType] ?? "Canal";
 
-  // Lien de l'avatar d'un interlocuteur : sa fiche s'il est connu, sinon la
-  // création pré-remplie (email ou numéro selon le canal).
-  function participantHref(p: ConversationParticipant): string {
-    if (p.contactId) return `/contacts/${p.contactId}`;
-    const raw = p.raw?.trim();
-    if (!raw) return "/contacts/nouveau";
-    return isEmail
-      ? `/contacts/nouveau?email=${encodeURIComponent(raw)}`
-      : `/contacts/nouveau?phone=${encodeURIComponent(raw.split("@")[0]!)}`;
+  // Tap sur un interlocuteur : sa fiche s'il est connu, sinon la pop-up de
+  // création pré-remplie (même comportement que la liste /conversations).
+  function tapParticipant(p: ConversationParticipant) {
+    if (p.contactId) {
+      router.push(`/contacts/${p.contactId}`);
+      return;
+    }
+    const raw = p.raw?.trim() ?? null;
+    setContactPrefill({
+      name: p.name,
+      email: isEmail ? raw : null,
+      phone: isEmail ? null : (raw?.split("@")[0] ?? null),
+    });
   }
 
   // Détacher CETTE conversation d'un sujet (icône chaîne brisée, item 3e).
@@ -238,22 +250,20 @@ export function ConversationDetail({
           back={backTo}
           relvo={false}
           titleFull
-          title={
-            <span className="flex items-start gap-2">
-              <ChannelIcon
-                className="mt-[3px] size-[18px] flex-none"
-                strokeWidth={2.2}
-                aria-label={channelLabel}
-              />
-              <span className="min-w-0">{title}</span>
-            </span>
-          }
+          title={title}
           className="pb-6"
         >
-          <div className="space-y-4 px-[22px] pt-4">
-            {/* Interlocuteurs — TOUS les contacts du fil (item 3b). Un groupe
-                affiche son identité + le nombre de membres vus. */}
-            <div className="space-y-2">
+          <div className="space-y-4 px-[22px] pt-3">
+            {/* Canal, sous le titre (icône + nom). */}
+            <div className="flex items-center gap-1.5 text-[12.5px] font-semibold text-(--on-violet)">
+              <ChannelIcon className="size-[14px] flex-none" strokeWidth={2} />
+              {channelLabel}
+            </div>
+
+            {/* Interlocuteurs — TOUS les contacts du fil, en colonne compacte.
+                Tap = fiche (enregistré) ou pop-up de création (non enregistré) ;
+                pas de sous-libellé, avatar réduit. */}
+            <div className="space-y-1.5">
               <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-[0.3px] text-(--on-violet) uppercase">
                 {isGroup ? (
                   <>
@@ -270,27 +280,35 @@ export function ConversationDetail({
                   Aucun interlocuteur identifié.
                 </p>
               ) : (
-                participants.map((p, i) => (
-                  <Link
-                    key={`${p.contactId ?? p.raw ?? p.name}-${i}`}
-                    href={participantHref(p)}
-                    className="flex items-center gap-2.5 active:opacity-80"
-                  >
-                    <span className="grid size-[38px] flex-none place-items-center rounded-full bg-white/20 text-[13px] font-extrabold text-white">
-                      {initialsFor(p.name) ?? "?"}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14.5px] font-bold text-white">
+                participants.map((p, i) => {
+                  const PIcon = avatarIconFor(
+                    guessContactKind({ name: p.name, raw: p.raw }),
+                  );
+                  return (
+                    <button
+                      key={`${p.contactId ?? p.raw ?? p.name}-${i}`}
+                      type="button"
+                      onClick={() => tapParticipant(p)}
+                      aria-label={
+                        p.contactId
+                          ? "Voir le contact"
+                          : "Enregistrer le contact"
+                      }
+                      className="flex w-full items-center gap-2 active:opacity-80"
+                    >
+                      <span className="grid size-8 flex-none place-items-center rounded-full bg-white/20 text-[12px] font-extrabold text-white">
+                        {p.contactId ? (
+                          (initialsFor(p.name) ?? "?")
+                        ) : (
+                          <PIcon className="size-[17px]" strokeWidth={2.1} />
+                        )}
+                      </span>
+                      <span className="truncate text-[14px] font-semibold text-white">
                         {p.name}
-                      </div>
-                      <div className="truncate text-[12px] text-(--on-violet)">
-                        {p.contactId
-                          ? "Voir la fiche"
-                          : "Enregistrer le contact"}
-                      </div>
-                    </div>
-                  </Link>
-                ))
+                      </span>
+                    </button>
+                  );
+                })
               )}
             </div>
 
@@ -437,6 +455,14 @@ export function ConversationDetail({
         subjects={subjects}
         pending={pending}
         onSelect={link}
+      />
+
+      <ContactCreateDialog
+        open={contactPrefill != null}
+        onOpenChange={(o) => {
+          if (!o) setContactPrefill(null);
+        }}
+        prefill={contactPrefill ?? {}}
       />
     </>
   );
