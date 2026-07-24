@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 export type TaskTab = "agenda" | "retard" | "afaire";
 
 const TABS: { key: TaskTab; label: string }[] = [
-  { key: "agenda", label: "Agenda" },
+  { key: "agenda", label: "Aujourd'hui" },
   { key: "retard", label: "En retard" },
   { key: "afaire", label: "À trier" },
 ];
