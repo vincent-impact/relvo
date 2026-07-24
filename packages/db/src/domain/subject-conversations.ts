@@ -278,20 +278,10 @@ export async function attachConversationToSubject(
   });
   if (existing) return existing; // no-op idempotent : aucun événement en double
 
-  // Garde V1 (alignée M6ter) : une écoute active = un lien sans borne de fin.
-  // Couvre le 1:1 permanent de l'email (lien toujours actif) ET le « un seul
-  // sujet ouvert à la fois » du WhatsApp, sans tester le canal.
-  const competing = await db.subjectConversation.findFirst({
-    where: { conversationId: data.conversationId, closingMessageId: null },
-    select: { subjectId: true },
-  });
-  if (competing) {
-    throw new DomainError(
-      "CONFLICT",
-      "Cette conversation est déjà écoutée par un sujet ouvert.",
-    );
-  }
-
+  // ⚠️ La garde V1 « au plus un sujet ouvert par conversation » est LEVÉE
+  // (2026-07-24, demande produit) : une conversation peut être écoutée par 0, 1
+  // ou PLUSIEURS sujets. `@@unique([subjectId, conversationId])` empêche toujours
+  // le doublon exact ; l'idempotence ci-dessus couvre le re-rattachement.
   return db.$transaction(async (tx) => {
     const link = await tx.subjectConversation.create({
       data: {

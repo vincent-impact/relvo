@@ -666,17 +666,10 @@ export async function openSubjectOnConversation(
     "Conversation",
   );
 
-  const active = await db.subjectConversation.findFirst({
-    where: { conversationId: conversation.id, closingMessageId: null },
-    select: { subjectId: true },
-  });
-  if (active) {
-    throw new DomainError(
-      "CONFLICT",
-      "Cette conversation est déjà écoutée par un sujet ouvert.",
-    );
-  }
-
+  // ⚠️ La garde « au plus un sujet ouvert par conversation » est LEVÉE
+  // (2026-07-24, demande produit) : ouvrir un nouveau sujet sur une conversation
+  // déjà écoutée par un autre sujet est désormais permis (0/1/n sujets par fil).
+  //
   // Message « graine » : l'ancre si fournie, sinon le PLUS ANCIEN message du fil
   // (cas email — on lit l'objet et l'interlocuteur du fil au démarrage).
   const seed = await db.message.findFirst({

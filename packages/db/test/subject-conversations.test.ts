@@ -315,7 +315,7 @@ describe("extendSubjectToConversation (cas S)", () => {
 // ─────────────────────────────────────────────────────────────
 
 describe("attachConversationToSubject", () => {
-  it("est idempotent et refuse une conversation déjà couverte par un sujet ouvert", async () => {
+  it("est idempotent et AUTORISE plusieurs sujets à écouter le même fil (garde levée 2026-07-24)", async () => {
     const { db, subject, firstMessage } = await subjectFromWhatsApp(
       "attach-rule@test.fr",
     );
@@ -329,6 +329,8 @@ describe("attachConversationToSubject", () => {
       await db.subjectConversation.count({ where: { subjectId: subject.id } }),
     ).toBe(1);
 
+    // Un SECOND sujet ouvert peut désormais écouter la même conversation :
+    // 0, 1 ou plusieurs sujets par fil (plus de garde CONFLICT).
     const other = await db.subject.create({
       data: {
         reference: "SUB-90001",
@@ -336,20 +338,16 @@ describe("attachConversationToSubject", () => {
         createdByActor: "user",
       },
     });
-    await expect(
-      attachConversationToSubject(db, {
-        subjectId: other.id,
-        conversationId: firstMessage.conversationId,
-      }),
-    ).rejects.toThrow(/déjà écoutée/i);
-
-    // Une fois la première fenêtre refermée, la conversation redevient libre.
-    await closeSubject(db, subject.id);
     await attachConversationToSubject(db, {
       subjectId: other.id,
       conversationId: firstMessage.conversationId,
     });
     expect(await listSubjectConversations(db, other.id)).toHaveLength(1);
+    expect(
+      await db.subjectConversation.count({
+        where: { conversationId: firstMessage.conversationId },
+      }),
+    ).toBe(2);
   });
 
   it("detach retire la fenêtre du sujet sans toucher à la conversation", async () => {

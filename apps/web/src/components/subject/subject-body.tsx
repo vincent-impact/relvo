@@ -5,14 +5,13 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   CalendarDays,
+  FileText,
   Info,
   Mail,
   MessageCircle,
   MessagesSquare,
-  Pause,
-  Play,
   Plus,
-  Settings,
+  Trash2,
   Users,
 } from "lucide-react";
 import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
@@ -31,23 +30,22 @@ import {
 import { sendEmailReplyAction } from "@/server/actions/email";
 import { sendWhatsAppReplyAction } from "@/server/actions/whatsapp";
 import {
-  ignoreConversationAction,
-  reactivateConversationAction,
-} from "@/server/actions/conversations";
-import {
   attachConversationToSubjectAction,
+  detachConversationFromSubjectAction,
   ensureSubjectAnchorsAction,
   extendSubjectToConversationAction,
 } from "@/server/actions/subject-conversations";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 // Orchestrateur de la fiche Sujet (corps interactif). L'onglet « Conversations »
 // affiche UN ONGLET PAR CONVERSATION (2026-07-23) : les messages ne se mélangent
 // JAMAIS entre deux conversations d'un même sujet. Chaque onglet porte le canal,
-// le nom du contact et le nombre de non-lus, plus un bouton Pause/Play pour
-// suspendre l'écoute d'une conversation qui déborde du sujet.
+// le nom du contact et le nombre de non-lus. Un bouton « retirer » (corbeille)
+// DÉTACHE la conversation active du sujet. L'onglet « Détail » a été remplacé par
+// « Documents » (2026-07-24) ; le concept de pause a été retiré.
 
-type Tab = "informations" | "messages" | "taches" | "detail";
+type Tab = "informations" | "messages" | "taches" | "documents";
 
 /** Cible d'envoi d'une conversation (le canal par lequel on répond). */
 export type ReplyTarget =
@@ -91,7 +89,8 @@ export function SubjectBody({
   draft,
   informationsPane,
   tachesPane,
-  detailPane,
+  documentsPane,
+  documentsCount,
   subjectId,
   subjectTitle,
   conversationPanes,
@@ -105,7 +104,8 @@ export function SubjectBody({
   draft: React.ReactNode;
   informationsPane: React.ReactNode;
   tachesPane: React.ReactNode;
-  detailPane: React.ReactNode;
+  documentsPane: React.ReactNode;
+  documentsCount: number;
   subjectId: string;
   subjectTitle: string;
   conversationPanes: SubjectConversationPane[];
@@ -118,6 +118,9 @@ export function SubjectBody({
   const [pending, startTransition] = useTransition();
   const [tab, setTab] = useState<Tab>(defaultTab);
   const [showAdd, setShowAdd] = useState(false);
+  // Confirmation de détachement (retirer une conversation du sujet).
+  const [detachTarget, setDetachTarget] =
+    useState<SubjectConversationPane | null>(null);
 
   // Conversation active : la première encore en écoute, sinon la première.
   const [activeConvId, setActiveConvId] = useState<string>(
@@ -180,18 +183,21 @@ export function SubjectBody({
     return false;
   }
 
-  // Pause/Play d'une écoute = sourdine réversible de la conversation (invariant :
-  // on fait taire une SOURCE, pas un sujet — l'écoute cesse d'alimenter le sujet
-  // sans rien détruire).
-  function togglePause(pane: SubjectConversationPane) {
+  // Détacher (retirer) la conversation du sujet — la conversation continue de
+  // vivre, elle cesse simplement d'alimenter CE sujet.
+  function detachConv(pane: SubjectConversationPane) {
     startTransition(async () => {
-      const res =
-        pane.state === "paused"
-          ? await reactivateConversationAction(pane.conversationId)
-          : await ignoreConversationAction(pane.conversationId);
+      const res = await detachConversationFromSubjectAction({
+        subjectId,
+        conversationId: pane.conversationId,
+      });
       if (res.ok) {
-        toast.success(
-          pane.state === "paused" ? "Écoute reprise" : "Écoute en pause",
+        toast.success("Conversation retirée du sujet");
+        setDetachTarget(null);
+        setActiveConvId(
+          conversationPanes.find(
+            (c) => c.conversationId !== pane.conversationId,
+          )?.conversationId ?? "",
         );
         router.refresh();
       } else {
@@ -238,8 +244,18 @@ export function SubjectBody({
   const options: SegTabOption[] = [
     { value: "informations", label: "Informations", icon: Info },
     { value: "taches", label: "Tâches", icon: CalendarDays, count: tasksCount },
-    { value: "messages", label: "Conversations", icon: MessagesSquare },
-    { value: "detail", label: "Détails", icon: Settings },
+    {
+      value: "messages",
+      label: "Conversations",
+      icon: MessagesSquare,
+      count: conversationPanes.length,
+    },
+    {
+      value: "documents",
+      label: "Documents",
+      icon: FileText,
+      count: documentsCount,
+    },
   ];
 
   // Placeholder du composer, dérivé de la conversation active.
@@ -282,7 +298,8 @@ export function SubjectBody({
             </div>
           ) : (
             <>
-              {/* Barre d'onglets par conversation + Pause/Play de l'active. */}
+              {/* Barre d'onglets par conversation (titres plus gros, scrollables)
+                  + retirer (corbeille) l'active + ajouter. */}
               <div className="flex items-center gap-2 border-b border-(--border) bg-(--surface-2) px-3 py-2">
                 <div className="flex min-w-0 flex-1 [scrollbar-width:none] gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden">
                   {conversationPanes.map((c) => {
@@ -296,25 +313,23 @@ export function SubjectBody({
                         type="button"
                         onClick={() => setActiveConvId(c.conversationId)}
                         className={cn(
-                          "inline-flex flex-none items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold transition-colors",
+                          "inline-flex flex-none items-center gap-1.5 rounded-full border px-3.5 py-2 text-[13.5px] font-semibold transition-colors",
                           isActive
                             ? "border-transparent bg-relvo text-white"
-                            : c.state === "paused"
-                              ? "border-(--border) bg-white text-(--text-tertiary)"
-                              : "border-(--border) bg-white text-(--text-secondary)",
+                            : "border-(--border) bg-white text-(--text-secondary)",
                         )}
                       >
                         <Icon
-                          className="size-[14px] flex-none"
+                          className="size-[15px] flex-none"
                           strokeWidth={2.2}
                         />
-                        <span className="max-w-[120px] truncate">
+                        <span className="max-w-[140px] truncate">
                           {c.title}
                         </span>
                         {c.unreadCount > 0 ? (
                           <span
                             className={cn(
-                              "inline-flex h-[17px] min-w-[17px] items-center justify-center rounded-full px-1 text-[10px] font-extrabold",
+                              "inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10.5px] font-extrabold",
                               isActive
                                 ? "bg-white/30 text-white"
                                 : "bg-brand text-white",
@@ -328,36 +343,15 @@ export function SubjectBody({
                   })}
                 </div>
 
-                {/* Pause/Play de la conversation active (sauf écoute terminée). */}
-                {active && active.state !== "ended" ? (
+                {/* Retirer la conversation active du sujet (détacher). */}
+                {active ? (
                   <button
                     type="button"
-                    onClick={() => togglePause(active)}
-                    aria-label={
-                      active.state === "paused"
-                        ? "Reprendre l'écoute"
-                        : "Mettre l'écoute en pause"
-                    }
-                    className={cn(
-                      "grid size-8 flex-none place-items-center rounded-full border",
-                      active.state === "paused"
-                        ? "border-(--green-600) text-(--green-600)"
-                        : "border-(--border) text-(--text-secondary)",
-                    )}
+                    onClick={() => setDetachTarget(active)}
+                    aria-label="Retirer cette conversation du sujet"
+                    className="grid size-9 flex-none place-items-center rounded-full border border-(--red-200) text-(--red-600) active:bg-(--red-50)"
                   >
-                    {active.state === "paused" ? (
-                      <Play
-                        className="size-4"
-                        strokeWidth={2.2}
-                        fill="currentColor"
-                      />
-                    ) : (
-                      <Pause
-                        className="size-4"
-                        strokeWidth={2.2}
-                        fill="currentColor"
-                      />
-                    )}
+                    <Trash2 className="size-[17px]" strokeWidth={2} />
                   </button>
                 ) : null}
 
@@ -367,18 +361,12 @@ export function SubjectBody({
                     type="button"
                     onClick={() => setShowAdd(true)}
                     aria-label="Ajouter une conversation"
-                    className="grid size-8 flex-none place-items-center rounded-full bg-relvo text-white active:opacity-90"
+                    className="grid size-9 flex-none place-items-center rounded-full bg-relvo text-white active:opacity-90"
                   >
-                    <Plus className="size-4" strokeWidth={2.4} />
+                    <Plus className="size-[18px]" strokeWidth={2.4} />
                   </button>
                 ) : null}
               </div>
-
-              {active && active.state === "paused" ? (
-                <p className="bg-(--surface-2) px-4 py-1.5 text-center text-[12px] font-semibold text-(--amber-600)">
-                  Écoute en pause — cette conversation n'alimente plus le sujet.
-                </p>
-              ) : null}
 
               <div className="flex flex-col gap-[15px] px-2.5 pt-4 pb-3">
                 {!active || active.messages.length === 0 ? (
@@ -401,7 +389,7 @@ export function SubjectBody({
         ) : null}
 
         {tab === "taches" ? tachesPane : null}
-        {tab === "detail" ? detailPane : null}
+        {tab === "documents" ? documentsPane : null}
       </main>
 
       {tab === "messages" && active && active.reply.kind !== "none" ? (
@@ -420,6 +408,24 @@ export function SubjectBody({
         groups={groups}
         pending={pending}
         onSubmit={handleAdd}
+      />
+
+      <ConfirmDialog
+        open={detachTarget != null}
+        onOpenChange={(o) => {
+          if (!o) setDetachTarget(null);
+        }}
+        tone="destructive"
+        icon={Trash2}
+        title="Retirer cette conversation ?"
+        description={
+          detachTarget
+            ? `« ${detachTarget.title} » sera détachée du sujet et cessera de l'alimenter. La conversation elle-même n'est pas supprimée.`
+            : ""
+        }
+        confirmLabel="Retirer"
+        pending={pending}
+        onConfirm={() => detachTarget && detachConv(detachTarget)}
       />
     </>
   );

@@ -82,6 +82,21 @@ export function AddConversationDialog({
     }
   }, [open, subjectTitle, availableChannels]);
 
+  // Garde-fou : rester sur WhatsApp sans agir 7 s ramène le canal sur E-mail
+  // (demande produit 2026-07-24). Toute interaction réarme le délai — c'est
+  // une inactivité, pas un compte à rebours dur.
+  useEffect(() => {
+    if (!open || channel !== "whatsapp") return;
+    const t = setTimeout(() => {
+      setChannel("email");
+      setWaMode("contact");
+      setContactId(null);
+      setGroupId(null);
+      setQuery("");
+    }, 7000);
+    return () => clearTimeout(t);
+  }, [open, channel, waMode, contactId, groupId, query]);
+
   const isEmail = channel === "email";
   const wantGroup = channel === "whatsapp" && waMode === "group";
 

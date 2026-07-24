@@ -1,13 +1,5 @@
 import { notFound } from "next/navigation";
-import {
-  ChevronDown,
-  FileText,
-  History,
-  Paperclip,
-  SquareCheck,
-} from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import type { Actor } from "@relvo/db";
+import { FileText, SquareCheck } from "lucide-react";
 import {
   getSubjectDetail,
   listChannels,
@@ -29,67 +21,19 @@ import {
   type SubjectConversationPane,
 } from "@/components/subject/subject-body";
 import { SubjectTitleInline } from "@/components/subject/subject-title-inline";
-import {
-  SubjectDangerZone,
-  SubjectDetailForm,
-} from "@/components/subject/subject-detail-form";
 import { TaskItem } from "@/components/subject/task-item";
-import { cn } from "@/lib/utils";
 import { contactFullName, formatRelative } from "@/lib/display";
-import { folderVisual } from "@/lib/folders";
 import { getTenantDb } from "@/server/auth-context";
 
-// Fiche Sujet (M9.5, Direction B) — hero violet portant le status-strip + le
-// résumé Relvo, + Fermer/Valider en haut à droite (contexte de page). Onglets
-// Messages / Tâches / Détail (le Détail paramètre les propriétés du sujet et
-// porte PJ + Journal). Bas = RecipientComposer (contact ↔ Relvo). Pas de tab bar.
+// Fiche Sujet (2026-07-24) — hero violet (titre éditable + progression), onglets
+// Informations / Tâches / Conversations / Documents. L'onglet « Détail » a été
+// supprimé : domaine + urgence + journal + suppression vivent dans Informations,
+// les pièces jointes dans Documents. Bas = RecipientComposer (onglet Conversations).
 
 const CHANNEL_LABEL: Record<string, string> = {
   whatsapp: "WhatsApp",
   email: "Email",
 };
-
-const ACTOR_DOT: Record<Actor, string> = {
-  user: "bg-brand",
-  ai: "bg-relvo",
-  contact: "bg-(--amber-600)",
-  system: "bg-(--text-tertiary)",
-};
-
-/** Section repliable autonome (PJ, Journal) — titre lisible, contenu contenu. */
-function DetailSection({
-  title,
-  count,
-  icon: Icon,
-  children,
-}: {
-  title: string;
-  count: number;
-  icon: LucideIcon;
-  children: React.ReactNode;
-}) {
-  return (
-    <details className="group mx-4 mt-3 overflow-hidden rounded-2xl border border-(--border-light) bg-white">
-      <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3.5 [&::-webkit-details-marker]:hidden">
-        <span className="flex items-center gap-2.5">
-          <Icon
-            className="size-[18px] flex-none text-(--text-tertiary)"
-            strokeWidth={2}
-          />
-          <span className="text-[16px] font-bold">{title}</span>
-          <span className="text-[13px] font-semibold text-(--text-tertiary)">
-            {count}
-          </span>
-        </span>
-        <ChevronDown
-          className="size-5 flex-none text-(--text-tertiary) transition-transform group-open:rotate-180"
-          strokeWidth={2.2}
-        />
-      </summary>
-      <div className="px-4 pb-3">{children}</div>
-    </details>
-  );
-}
 
 export default async function SujetPage({
   params,
@@ -155,11 +99,6 @@ export default async function SujetPage({
   ].filter((t): t is "email" | "whatsapp" => t === "email" || t === "whatsapp");
 
   const { subject, messages, tasks, events, attachments, draft } = detail;
-  const allContactOptions = allContacts.map((c) => ({
-    id: c.id,
-    name: contactFullName(c),
-    company: c.company,
-  }));
   // Contacts joignables pour le dialog « Ajouter une conversation » (avec leur
   // email/numéro : le dialog filtre selon le canal choisi).
   const addContacts = allContacts.map((c) => ({
@@ -176,21 +115,6 @@ export default async function SujetPage({
     draft && typeof draft.payload === "object" && draft.payload
       ? ((draft.payload as { content?: string }).content ?? null)
       : null;
-
-  // Domaine du sujet (affiché dans le hero) — le Folder rattaché, ou « Non
-  // classé » tant qu'aucun domaine n'est assigné. Icône + couleur du domaine.
-  const subjectFolder = folders.find((f) => f.id === subject.folderId) ?? null;
-  const folderViz = folderVisual(
-    subjectFolder
-      ? {
-          slug: subjectFolder.slug,
-          color: subjectFolder.color,
-          icon: subjectFolder.icon,
-        }
-      : "general",
-  );
-  const FolderIcon = folderViz.icon;
-  const domainName = subjectFolder?.name ?? "Non classé";
 
   const contactNameById = new Map(
     allContacts.map((c) => [c.id, contactFullName(c)]),
@@ -279,10 +203,12 @@ export default async function SujetPage({
 
       <SubjectBody
         defaultTab={
-          (["informations", "messages", "taches", "detail"] as const).includes(
-            (tab ?? "") as "informations" | "messages" | "taches" | "detail",
+          (
+            ["informations", "messages", "taches", "documents"] as const
+          ).includes(
+            (tab ?? "") as "informations" | "messages" | "taches" | "documents",
           )
-            ? (tab as "informations" | "messages" | "taches" | "detail")
+            ? (tab as "informations" | "messages" | "taches" | "documents")
             : "informations"
         }
         tasksCount={tasks.length}
@@ -291,11 +217,16 @@ export default async function SujetPage({
           <InformationsPane
             subjectId={subject.id}
             description={subject.description}
+            folders={folders}
+            folderId={subject.folderId}
+            priority={subject.priority}
+            events={events}
           />
         }
         subjectId={subject.id}
         subjectTitle={subject.title}
         conversationPanes={conversationPanes}
+        documentsCount={attachments.length}
         availableChannels={availableChannels}
         addContacts={addContacts}
         groups={groups.map((g) => ({ id: g.id, title: g.title }))}
@@ -319,15 +250,10 @@ export default async function SujetPage({
             className="pb-10"
           >
             <div className="px-[22px] pt-3.5">
-              {/* Domaine du sujet, dans le hero (item 2026-07-23). */}
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/15 px-2.5 py-1 text-[12px] font-bold text-white">
-                <FolderIcon className="size-3.5" strokeWidth={2.2} />
-                {domainName}
-              </span>
-              {/* Progress bar récapitulative de l'avancement des tâches (rappel du
-                fil) — posée sous le domaine, dans le hero violet. */}
+              {/* Le domaine a quitté le header (2026-07-24) : il vit désormais
+                  dans l'onglet Informations. Reste la progression des tâches. */}
               {taskTotal > 0 ? (
-                <div className="mt-3.5 flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5">
                   <SquareCheck
                     className="size-[17px] flex-none text-white/85"
                     strokeWidth={2.2}
@@ -386,101 +312,46 @@ export default async function SujetPage({
             />
           </div>
         }
-        detailPane={
-          <div className="pb-2">
-            <SubjectDetailForm
-              mode="edit"
-              subjectId={subject.id}
-              folders={folders}
-              contacts={allContactOptions}
-              initial={{
-                title: subject.title,
-                status: subject.status,
-                priority: subject.priority,
-                folderId: subject.folderId,
-                contactIds: subject.contactIds,
-              }}
-            />
-
-            <div className="mx-4 mt-5 border-t border-(--border-light)" />
-
-            <DetailSection
-              title="Pièces jointes"
-              count={attachments.length}
-              icon={Paperclip}
-            >
-              {attachments.length === 0 ? (
-                <p className="pb-1 text-[13.5px] text-(--text-tertiary)">
-                  Aucune pièce jointe.
-                </p>
-              ) : (
-                <div className="space-y-2 pb-1">
-                  {attachments.map((a) => (
-                    <AttachmentViewer
-                      key={a.id}
-                      id={a.id}
-                      name={a.name}
-                      mimeType={a.mimeType}
-                      className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#ececea] bg-white px-3 py-2.5 text-left shadow-(--shadow-card) transition-colors hover:bg-(--surface-2)"
-                    >
-                      <span className="grid size-[34px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
-                        <FileText className="size-[18px]" strokeWidth={2} />
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <div className="truncate text-[14px] font-semibold">
-                          {a.name}
-                        </div>
-                        <div className="text-[11.5px] text-(--text-tertiary)">
-                          {formatRelative(a.createdAt)}
-                        </div>
+        documentsPane={
+          <div className="px-4 pt-4 pb-2">
+            <p className="mb-3 text-[12.5px] leading-[1.4] text-(--text-tertiary)">
+              Les pièces jointes reçues dans les conversations du sujet
+              s'accumulent ici.
+            </p>
+            {attachments.length === 0 ? (
+              <p className="py-8 text-center text-[13.5px] text-(--text-tertiary)">
+                Aucun document pour l'instant.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {attachments.map((a) => (
+                  <AttachmentViewer
+                    key={a.id}
+                    id={a.id}
+                    name={a.name}
+                    mimeType={a.mimeType}
+                    className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#ececea] bg-white px-3 py-2.5 text-left shadow-(--shadow-card) transition-colors hover:bg-(--surface-2)"
+                  >
+                    <span className="grid size-[34px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
+                      <FileText className="size-[18px]" strokeWidth={2} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[14px] font-semibold">
+                        {a.name}
                       </div>
-                      {a.aiLabel ? (
-                        <span className="flex-none rounded-full bg-(--surface-2) px-2 py-px text-[11px] font-semibold text-(--text-secondary)">
-                          {a.aiLabel}
-                        </span>
-                      ) : null}
-                    </AttachmentViewer>
-                  ))}
-                </div>
-              )}
-            </DetailSection>
-
-            <DetailSection title="Journal" count={events.length} icon={History}>
-              {events.length === 0 ? (
-                <p className="pb-1 text-[13.5px] text-(--text-tertiary)">
-                  Journal vide.
-                </p>
-              ) : (
-                <div className="pt-1 pb-1">
-                  {events.map((ev, i) => (
-                    <div
-                      key={ev.id}
-                      className="relative flex gap-[13px] pb-[17px]"
-                    >
-                      <span
-                        className={cn(
-                          "z-[1] mt-[3px] size-[11px] flex-none rounded-full border-2 border-white",
-                          ACTOR_DOT[ev.actor],
-                        )}
-                      />
-                      {i < events.length - 1 ? (
-                        <span className="absolute top-[13px] -bottom-1 left-[5px] w-0.5 bg-[#ece9e3]" />
-                      ) : null}
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[13.5px] leading-[1.4] text-[#3a3833]">
-                          {ev.title}
-                        </div>
-                        <div className="mt-[3px] text-[11.5px] text-[#a8a69d]">
-                          {formatRelative(ev.createdAt)}
-                        </div>
+                      <div className="text-[11.5px] text-(--text-tertiary)">
+                        {formatRelative(a.createdAt)}
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </DetailSection>
-
-            <SubjectDangerZone subjectId={subject.id} />
+                    {a.aiLabel ? (
+                      <span className="flex-none rounded-full bg-(--surface-2) px-2 py-px text-[11px] font-semibold text-(--text-secondary)">
+                        {a.aiLabel}
+                      </span>
+                    ) : null}
+                  </AttachmentViewer>
+                ))}
+              </div>
+            )}
           </div>
         }
       />
