@@ -314,7 +314,27 @@ Il faut **inventer une conversation** pour chaque message existant. Ce n'est pas
 
 ### M6ter — UX par canal (email ≠ WhatsApp)
 
+> ✅ **M6ter LIVRÉ en prod le 2026-07-22** (migration `20260722090000_m6ter_listening_closing`, `openSubjectOnConversation`, `ConversationSelector`, 70 tests).
+>
+> ⚠️ **SUPERSÉDÉ EN PARTIE par M6quater (2026-07-25, ci-dessous).** Les tâches **M6ter.5** (swipe droite email « sur la conversation ») et **M6ter.8bis** (fiche sujet « une seule conversation à la fois » = ligne-sélecteur + feuille) sont **abandonnées** : la fiche passe à **deux onglets par canal**, et la conversation e-mail devient **multi-destinataires**. Le reste de M6ter (rendu par canal, écoute messagerie, statuts, réouverture email, références) **tient**.
+
 **Objectif** : cesser de forcer une **UX unique** sur deux canaux qui n'ont ni la même forme de message ni le même système d'objet. La divergence porte sur le **rendu** et les **gestes** ; le **domaine reste commun**. Conception : [`01-principes.md §3/§9`](../conception/01-principes.md), [`02-modele-donnees.md §5bis/§6/§7`](../conception/02-modele-donnees.md), [`03-cas-usage.md` cas B, D, K, M, N, Q, R, S, T, U, V, W, X](../conception/03-cas-usage.md).
+
+---
+
+### M6quater — Sous-typage Conversation (e-mail multi-destinataires ≠ messagerie 1-contact)
+
+**Objectif** (décision Vincent, 2026-07-25) : l'UX unifiée e-mail/messagerie de M6ter produisait des patterns complexes qui **égaraient l'utilisateur**. On **sépare** en deux sous-types de `Conversation` — **E-MAIL** (objet + **set de destinataires**, rattachement permanent) et **MESSAGERIE** (un contact ou un groupe, que le sujet **écoute**) — et deux **onglets par canal** dans la fiche sujet. Conception réécrite : `01-principes.md §3/§9`, `02-modele-donnees.md §5bis/§6`, `03-cas-usage.md` (principe, Cas M/S/U/X), `CLAUDE.md` invariants 11/13/13bis. ⚠️ **Le domaine reste commun** (une primitive, teste l'ancre pas le canal).
+
+**Dépendances** : M6ter (livré). **Migration** (rompt la série « zéro migration ») — ⚠️ **décision Vincent 2026-07-25 : aucune conservation de données requise.** Seul le compte de test existe en prod ; on peut **réécrire les migrations existantes** ou **wiper la base (prod comprise)** et repartir d'un schéma propre. **Pas** de rétro-remplissage `kind` ni d'éclatement des multi-destinataires à écrire.
+
+- [ ] **M6quater.0** — Migration : discriminant de sous-type `Conversation.kind (email | messaging)` ; **`Conversation.contact_ids: UUID[]`** pour l'e-mail (set de destinataires) ; `ConversationType` généralisé (`email/direct`, `email/groupe`, `messaging/direct`, `messaging/groupe`). Clé e-mail = `email:<objet normalisé>:<set trié>`.
+- [ ] **M6quater.1** — Domaine : routage réception e-mail **par set** — split par destinataire (réponse « à nous seuls » = nouvelle conversation) + **rattachement automatique IN-SET** (objet normalisé identique **et** expéditeur ∈ set du sujet → range dans le sujet, déterministe, PAS d'inférence). Hors-set = orphelin + rattachement manuel (Cas X).
+- [ ] **M6quater.2** — Domaine : **détachement d'un fil e-mail** (`unlink`, rattrapage d'erreur) — supprime la ligne `SubjectConversation` + retire `subject_id` des messages, **sans** `closing_message_id`. Distinct de « arrêter l'écoute » (messagerie).
+- [ ] **M6quater.3** — UI : fiche sujet **deux onglets** — **E-mail** (enveloppe ; conversations par destinataire, « Groupe » si ≥ 2 ; « Ajouter » = écrire un e-mail, objet = titre du sujet ; `unlink` = détacher) et **Messagerie** (double bulle ; conversations écoutées ; « Ajouter » = choisir un fil existant, écran vierge ; `unlink` = arrêter l'écoute). Composer propre à chaque onglet. Remplace `ConversationSelector` (ligne + feuille).
+- [ ] **M6quater.4** — UI : onglet E-mail — rendu d'un fil = objet + liste de destinataires, puis échange **blanc (reçu) / bleu clair (envoyé)**. Organisation par destinataire (chips vs sous-onglets) **à valider à l'usage**.
+- [ ] **M6quater.5** — Tests : split par set (réponse à-nous-seuls → nouvelle conversation, même sujet) ; rattachement IN-SET automatique vs HORS-SET orphelin ; détachement e-mail ≠ arrêt d'écoute ; conversation messagerie garde un seul contact ; e-mail groupe (≥ 2) = fil rattaché en permanence (pas d'écoute).
+- [ ] **M6quater.6** *(prochaine session)* — Régénérer les **données du compte démo** (`demo@tastycrousty.fr`) au nouveau formalisme : conversations e-mail **multi-destinataires**, conversations messagerie 1-contact / groupe, les **deux onglets** peuplés de manière cohérente (cas Tasty Crousty).
 
 **Pourquoi maintenant** : constat du **test en production de M6bis** (2026-07-20). Deux causes — la **taille et la forme** des messages email (longs, structurés, HTML : la bulle les étrangle), et le **système d'objet**, inexistant en WhatsApp.
 

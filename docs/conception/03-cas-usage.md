@@ -6,10 +6,10 @@ Lorsqu'un message est reçu, le système suit cette logique — **entièrement d
 
 1. identifier le canal source (`Channel`)
 2. enregistrer le `Message` avec les informations brutes de l'expéditeur (`sender_raw`, `sender_name`)
-3. **calculer la clé de conversation** selon le canal (cf. `02-modele-donnees.md §5bis`) :
-   - email → `email:<interlocuteur>:<objet normalisé>`
-   - WhatsApp groupe → `wa-group:<chat_id>`
-   - WhatsApp direct → `wa-direct:<numéro>`
+3. **calculer la clé de conversation** selon le sous-type (cf. `02-modele-donnees.md §5bis`) :
+   - e-mail → `email:<objet normalisé>:<set de destinataires>`
+   - messagerie groupe → `wa-group:<chat_id>`
+   - messagerie directe → `wa-direct:<numéro>`
 4. **rattacher le message à la `Conversation`** correspondante — ou la créer si elle n'existe pas
 5. **classer le message dans un domaine (`Folder`)** — ce domaine donnera son domaine au sujet ouvert depuis ce message
 6. rattacher le message au sujet, **selon une règle qui dépend du canal** (cf. ci-dessous)
@@ -19,12 +19,14 @@ Lorsqu'un message est reçu, le système suit cette logique — **entièrement d
 
 Ce point a été « unifié » un temps, par déduction erronée, puis **rétabli le 2026-07-21**. Les deux canaux ne se comportent pas pareil parce qu'ils ne sont pas la même chose (cf. `01-principes.md §3`) :
 
-| | **email** | **WhatsApp** |
+| | **e-mail** | **messagerie** |
 |---|---|---|
 | Ce qu'est la conversation | **le sujet lui-même** | un **flux** qu'un sujet **écoute** |
 | Le message rejoint le sujet… | **TOUJOURS**, quel que soit le statut du sujet | **seulement si l'écoute est active** : sujet `ouvert`, conversation non ignorée, message dans la plage d'écoute |
 | Si le sujet était `validé` / `fermé` | il **repasse en `ouvert`** | rien ne se passe — le message reste sans sujet |
 | Faire taire le fil | **ignorer la conversation**, et rien d'autre | ignorer la conversation, ou arrêter l'écoute |
+
+⚠️ **E-mail — rattachement automatique d'une NOUVELLE conversation IN-SET (refonte 2026-07-25).** Quand un e-mail entrant crée une **nouvelle** conversation (set de destinataires différent) mais que son **objet normalisé** correspond à un fil déjà rattaché à un sujet **et** que son expéditeur est **déjà dans le set** de ce sujet, la nouvelle conversation est **rattachée automatiquement** à ce sujet (ex. un destinataire qui répond « à nous seuls »). C'est déterministe — objet normalisé (fonction pure) + appartenance au set (test exact) — donc **hors du champ de l'inférence** interdite. Si l'expéditeur est **hors du set** (adresse inconnue), la conversation reste **orpheline** et l'utilisateur la rattache à la main (Cas M/X).
 
 ⚠️ **« Un fil d'email EST un sujet » est DIRECTIONNEL** (précision du 2026-07-21) : une conversation email a **un** sujet, un seul, à vie (**1:1**) ; mais **un sujet porte 0, 1 ou n conversations** (**1:N**). Les tournures « le sujet **EST** le fil » employées ci-dessous se lisent donc **de la conversation vers le sujet** — jamais l'inverse, sans quoi les cas **M**, **S** et **X** deviendraient impossibles. Cf. `01-principes.md §3`.
 
@@ -36,7 +38,7 @@ Ce point a été « unifié » un temps, par déduction erronée, puis **rétabl
 
 **Règle fondamentale** : le rangement en conversation **ne peut pas échouer**. Tout message a une place dès la première seconde, sans qu'aucune IA n'ait à comprendre quoi que ce soit. **Il n'y a plus de message « Sans sujet »** — il y a des **conversations qu'aucun sujet ouvert n'écoute**, et ce sont elles qui sollicitent l'utilisateur (KPI « Sans sujet »).
 
-**Règle sur les contacts** : un contact n'est créé automatiquement qu'à l'**ouverture d'un sujet**, et uniquement depuis une conversation de type **objet** ou **direct**. Une conversation de **groupe** ne crée **jamais** de contact : son interlocuteur est le groupe lui-même. Cela garantit que l'annuaire ne se remplit pas de participants qu'on n'a jamais choisis.
+**Règle sur les contacts** : un contact n'est créé automatiquement qu'à l'**ouverture d'un sujet**, et uniquement depuis une conversation **e-mail** ou de **messagerie directe**. Une conversation de **groupe de messagerie** ne crée **jamais** de contact : son interlocuteur est le groupe lui-même. *(⚠️ un **groupe e-mail** — ≥ 2 destinataires — porte, lui, un **set de contacts** ; la politique exacte de création — tous les destinataires ou le principal — est à préciser à l'implémentation, M6quater.)* Cela garantit que l'annuaire ne se remplit pas de participants qu'on n'a jamais choisis.
 
 **Règle d'ignorance** : une conversation `ignoré` continue de recevoir ses messages, mais Relvo cesse de les analyser, résumer et trier. Seul l'utilisateur peut la réactiver.
 
@@ -52,9 +54,9 @@ Un fournisseur inconnu envoie un email « Retard livraison sauce blanche ». Ou 
 
 1. identifier le `Channel`, créer le `Message` avec `sender_raw` / `sender_name`
 2. calculer la clé de conversation et **trouver ou créer** la `Conversation`
-   - email → conversation de type **objet**, titrée par l'objet du mail
-   - groupe → conversation de type **groupe**, titrée par le **nom du groupe**
-   - WhatsApp 1:1 → conversation de type **direct**, titrée par le nom du contact
+   - e-mail → conversation **e-mail** (`kind = email`), titrée par l'objet du mail (« Groupe » si ≥ 2 destinataires)
+   - groupe de messagerie → conversation **messagerie/groupe**, titrée par le **nom du groupe**
+   - messagerie 1:1 → conversation **messagerie/direct**, titrée par le nom du contact
 3. **aucun contact n'est créé** à ce stade, quel que soit le canal
 4. la conversation ne porte pas de sujet ouvert → `subject_id = null`
 5. `EventLog` : message reçu, conversation créée le cas échéant
@@ -88,7 +90,7 @@ Le message est visible **dans sa conversation**. La conversation remonte en têt
    - création du `Subject` en `status = ouvert`, titre pré-rempli (nom du groupe ou du contact), domaine hérité de `Message.folder_id`
    - création de `SubjectConversation(subject_id, conversation_id, anchor_message_id = ce message, closing_message_id = null)`
    - **tous les messages ≥ ancre** reçoivent `subject_id`
-   - **création automatique du contact** si la conversation est de type **direct** ; **aucun contact** si elle est de type **groupe**
+   - **création automatique du contact** si la conversation est de **messagerie directe** ; **aucun contact** si c'est un **groupe de messagerie**
 2. `EventLog` : sujet ouvert, contact créé le cas échéant
 
 **Pourquoi un seul geste.** L'intention réelle de l'utilisateur est indivisible : « **ça, c'est important, et l'affaire commence là** ». La découper en deux étapes (choisir l'ancre, puis ouvrir) demanderait deux décisions là où il n'y en a qu'une. C'est aussi ce qui **supprime tout défaut d'ancre à calculer** : il n'y a plus de règle à anticiper, puisque l'utilisateur désigne toujours le message lui-même.
@@ -109,7 +111,7 @@ Les messages **antérieurs** à l'ancre restent dans la conversation sans appart
 2. création du `Subject` en `status = ouvert`, titre pré-rempli avec l'**objet de l'email**, domaine hérité de `Message.folder_id`
 3. création de `SubjectConversation(subject_id, conversation_id, anchor_message_id = **null**, closing_message_id = **null**)` — **aucune borne, ni basse ni haute**
 4. ⚠️ **balayage de la conversation ENTIÈRE** : **tous** les messages du fil reçoivent `subject_id`, **y compris ceux antérieurs** à l'ouverture du sujet
-5. **création automatique du contact** (conversation de type `objet`)
+5. **création automatique du contact** (conversation **e-mail**)
 6. `EventLog` : sujet ouvert, contact créé le cas échéant
 
 > **Ce que le swipe droite signifie ici** (2026-07-21). Il ne *crée* pas la correspondance fil ↔ sujet — l'objet de l'email l'a déjà posée. Il **déclare que ce fil mérite d'être suivi** : tous les fils email ne sont pas des affaires (newsletters, accusés de réception, démarchage). C'est M7 qui prendra cette décision à la place de l'utilisateur, plus tard.
@@ -367,7 +369,7 @@ Caractéristiques de la liste :
 
 Après test en production de M6bis : forcer la même UX sur l'email et sur WhatsApp dessert les deux, pour deux raisons — la **taille et la forme** des messages email, et le **système d'objet**, inexistant en WhatsApp (sauf partiellement via le groupe).
 
-| | email | WhatsApp |
+| | e-mail | messagerie |
 |---|---|---|
 | Rendu d'un message | **pleine largeur**, enchaînés au fil du scroll | **bulles** |
 | Fond | **blanc dans les deux sens**, jamais teinté | teinté |
@@ -389,14 +391,14 @@ Après test en production de M6bis : forcer la même UX sur l'email et sur Whats
 
 ### Contexte
 
-Un fil d'email arrive sur une affaire **déjà suivie**. On ne veut pas d'un second sujet, on veut **rejoindre** celui qui existe. **Deux déclencheurs, un seul geste** — dans les deux cas, la clé de conversation diffère de celle du fil déjà rattaché, donc Relvo a créé une conversation distincte :
+Un fil d'e-mail arrive sur une affaire **déjà suivie**. On ne veut pas d'un second sujet, on veut **rejoindre** celui qui existe. **Deux déclencheurs, un seul geste** — dans les deux cas, la clé de conversation `email:<objet>:<set>` diffère de celle du fil déjà rattaché, et Relvo a créé une conversation distincte **qu'aucune règle automatique ne sait relier** :
 
-| Déclencheur | Ce qui a changé dans la clé `email:<interlocuteur>:<objet>` | Détail |
+| Déclencheur | Ce qui a changé dans la clé `email:<objet>:<set>` | Détail |
 |---|---|---|
 | **Changement d'objet** | le fournisseur ouvre « RE: palette bloquée » pour une histoire qui relève de « Retard livraison sauce blanche » | *ici* |
-| **Changement d'adresse** | Karim répond sur le **même objet** depuis `karim@sogood.fr` au lieu de `karim@gmail.com` | **Cas X** |
+| **Changement d'adresse (hors-set)** | Karim répond sur le **même objet** depuis `karim@sogood.fr`, adresse **jamais vue** | **Cas X (hors-set)** |
 
-⚠️ **C'est ce geste, et lui seul, qui traite le changement d'adresse d'un interlocuteur** (décision du 2026-07-21). Aucun rapprochement automatique n'est tenté à la réception : cela demanderait de l'inférence, et ruinerait le déterminisme de la clé (cf. Cas X, `02-modele-donnees.md §5bis`).
+⚠️ **Ce geste manuel traite les rattachements que Relvo ne peut PAS déduire** : changement d'objet, ou adresse **hors du set** connu du sujet. En revanche, une réponse d'un destinataire **déjà dans le set** (« à nous seuls ») est rattachée **automatiquement**, sans ce geste (Cas X **in-set**) — c'est déterministe, pas de l'inférence. Ne reste manuel que ce qui demanderait de **deviner** (cf. Cas X, `02-modele-donnees.md §5bis`).
 
 ⚠️ **Ce cas est la preuve que « un fil d'email EST un sujet » est DIRECTIONNELLE.** Une conversation a un sujet unique ; **un sujet peut porter plusieurs conversations**. Lue comme bidirectionnelle, la phrase interdirait ce cas — cf. la table de cardinalité en `01-principes.md §3`.
 
@@ -413,7 +415,7 @@ Un fil d'email arrive sur une affaire **déjà suivie**. On ne veut pas d'un sec
 
 ### Résultat
 
-- le sujet porte désormais **deux conversations** ; sa fiche n'en affiche **qu'une à la fois** (ligne sélecteur en tête de l'onglet Conversations — cf. Cas U)
+- le sujet porte désormais **deux conversations e-mail** ; elles vivent dans l'**onglet E-mail** de la fiche, une par destinataire (cf. Cas U)
 - la conversation affiche le bandeau **« Suivi dans : … »** et sort du KPI « Sans sujet »
 
 ## Cas N — Écarter une conversation (« Ignorer » / « Supprimer »)
@@ -574,24 +576,22 @@ L'utilisateur a ignoré une conversation par erreur, ou la situation a changé :
 
 ### Contexte
 
-Le sujet « Retard livraison sauce blanche », parti du groupe WhatsApp, doit se poursuivre **par email** : l'utilisateur veut prévenir son fournisseur lui-même. Le sujet va porter **deux conversations**.
+Le sujet « Retard livraison sauce blanche », parti du groupe WhatsApp, doit se poursuivre **par e-mail** : l'utilisateur veut prévenir son fournisseur lui-même. Le sujet va porter **deux conversations**.
 
-### Traitement
+### Traitement — depuis l'un des deux onglets de la fiche (refonte 2026-07-25)
 
-1. depuis la fiche du sujet, l'utilisateur choisit d'écrire à un interlocuteur qui n'est pas encore dans le sujet
-2. le comportement dépend du canal — c'est l'**asymétrie** structurante (cf. `02-modele-donnees.md §5bis`) :
-   - **email** → une **nouvelle conversation** de type `objet` est créée, clé `email:<fournisseur>:<objet>`, l'objet étant **pré-rempli avec le titre du sujet**. Ses **deux bornes sont `null`** : la conversation naissant avec le sujet, elle lui appartient **entière** tant que le sujet reste ouvert. Les réponses du fournisseur rejoindront automatiquement cette conversation, donc ce sujet.
-   - **WhatsApp direct** → il ne peut exister **qu'une seule** conversation directe par contact : le sujet **commence à écouter** la conversation existante, à partir du premier message envoyé. L'ancre est ici indispensable — sans elle, tout l'historique du fil basculerait dans le sujet.
-3. création de la ligne `SubjectConversation(subject_id, conversation_id, anchor_message_id)` — `null` en email, le message de départ en WhatsApp
-4. **création du contact** si nécessaire (conversation `objet` ou `direct`)
-5. produire les `EventLog`
+Le geste **« Ajouter »** vit dans l'onglet du canal visé, et son comportement diffère — c'est l'**asymétrie** structurante (cf. `02-modele-donnees.md §5bis`) :
+
+- **Onglet E-mail → « écrire un nouvel e-mail »** : une **nouvelle conversation e-mail** est créée, clé `email:<objet>:<set>`, l'objet **pré-rempli avec le titre du sujet**, le ou les **destinataires** saisis. Ses **deux bornes sont `null`** : la conversation naît avec le sujet et lui appartient **entière** tant qu'il reste ouvert. Les réponses rejoindront automatiquement cette conversation, donc ce sujet.
+- **Onglet Messagerie → « choisir un fil existant »** : l'écran est **vierge** (on part de zéro, aucun message à sélectionner). Il ne peut exister **qu'une seule** conversation directe par interlocuteur : le sujet **commence à l'écouter à partir de maintenant** (`anchor_message_id` = le prochain message). Sans ancre, tout l'historique du fil basculerait dans le sujet.
+
+Puis : création de la ligne `SubjectConversation(subject_id, conversation_id, anchor_message_id)` — `null` en e-mail, l'ancre « maintenant » en messagerie ; **création du contact** si nécessaire ; `EventLog`.
 
 ### Résultat
 
-- le sujet porte **deux conversations**, chacune avec le régime de son canal
-- c'est **à ce niveau** que se fait la réunification entre canaux : le fil WhatsApp et le fil email coexistent dans un même espace de travail
-- ⚠️ la fiche du sujet n'en affiche **qu'une à la fois** : la **ligne sélecteur** en tête de l'onglet Conversations permet de basculer, et le **composer** suit (cf. Cas U)
-- ⚠️ Même bouton côté interface, **deux mécaniques distinctes** : *créer une conversation* (email) ou *commencer à en écouter une* (WhatsApp direct)
+- le sujet porte **deux conversations**, chacune dans son onglet et sous le régime de son canal
+- c'est **à ce niveau** que se fait la réunification entre canaux : le fil WhatsApp (onglet Messagerie) et le fil e-mail (onglet E-mail) coexistent dans un même espace de travail
+- ⚠️ **deux « Ajouter », deux mécaniques distinctes** : *créer une conversation e-mail* (onglet E-mail) ou *commencer à écouter une conversation de messagerie* (onglet Messagerie) — cf. Cas U
 
 ## Cas T — Remonter une écoute (WhatsApp) — le MÊME geste que l'ouverture
 
@@ -627,35 +627,36 @@ C'est aussi ce qui rend inutile toute mécanique de correction : il n'y a plus d
 - il ne **réduit** pas une écoute — swiper un message **postérieur** à l'ancre n'ampute pas le sujet. Pour arrêter, on **arrête l'écoute** (Cas U) ;
 - il ne déplace pas la **borne de fin** (`closing_message_id`), posée par la validation, la fermeture ou l'arrêt d'écoute. Si l'usage montre le besoin de la déplacer, ce sera **le même geste sur un message**, sans migration.
 
-## Cas U — Changer de conversation, et arrêter une écoute depuis le sujet
+## Cas U — Gérer les conversations d'un sujet depuis ses deux onglets
+
+> **Refonte du 2026-07-25.** Remplace « ligne-sélecteur unique + feuille de gestion des écoutes » (décision du 2026-07-21 **abandonnée**). La fiche du sujet a désormais **deux onglets par canal** (cf. `02-modele-donnees.md §6`, `01-principes.md §9`).
 
 ### Contexte
 
-Le sujet « Retard livraison sauce blanche » porte **deux conversations** : le groupe WhatsApp d'où il est parti, et le fil email ouvert avec le fournisseur (cf. Cas S). Le groupe s'est remis à parler d'autre chose : l'utilisateur veut que le sujet **cesse de l'écouter**, sans toucher au fil email.
+Le sujet « Retard livraison sauce blanche » porte **plusieurs conversations** : le groupe WhatsApp d'où il est parti, et un ou des fils e-mail avec le fournisseur (cf. Cas S). Le groupe s'est remis à parler d'autre chose : l'utilisateur veut que le sujet **cesse de l'écouter**, sans toucher aux fils e-mail.
 
 ### Traitement
 
-1. dans la fiche du sujet, onglet **Conversations**, une **ligne unique** en tête nomme la conversation affichée : **icône du canal + nom + état d'écoute** (« écoutée depuis le 14 juillet »)
-2. l'utilisateur **tape cette ligne** → une **feuille** s'ouvre, listant **toutes** les conversations du sujet, chacune avec son état
-3. il peut :
-   - **sélectionner** une autre conversation → elle devient la conversation affichée, et le **sélecteur du composer suit**
-   - déclencher « **arrêter l'écoute** » sur l'une d'elles → `closing_message_id` est posé sur son dernier message reçu
+1. dans la fiche du sujet, l'utilisateur ouvre l'onglet **Messagerie** (double bulle) — il y voit les conversations de messagerie écoutées, chacune en en-tête (icône + nom + état d'écoute)
+2. sur la conversation du groupe, il actionne **`unlink` (« arrêter l'écoute »)** → `closing_message_id` est posé sur son dernier message reçu
+3. les fils **e-mail** vivent dans l'onglet **E-mail** (enveloppe), un par destinataire — intacts, puisqu'on n'y a pas touché
 4. produire les `EventLog`
 
-### Pourquoi une ligne, et pas des onglets ni un carrousel
+### Ce que fait chaque onglet
 
-| Écartée | Raison |
-|---|---|
-| **Flux chronologique fusionné** | l'email s'affiche **pleine largeur**, WhatsApp en **bulles** : les entremêler produirait exactement le chaos visuel que la divergence par canal cherche à éviter |
-| **Carrousel horizontal** | le **swipe est déjà pris** par le geste sur les messages — les deux entreraient en collision |
-| **Onglets** | l'onglet Conversations vit déjà dans une barre à 3 onglets (Tâches / Conversations / Détails) : **on ne met pas des onglets dans des onglets** |
+| Onglet | « Ajouter » | `unlink` |
+|---|---|---|
+| **E-mail** (enveloppe) | *écrire un nouvel e-mail* (objet pré-rempli = titre du sujet, destinataire·s) | **détacher** la conversation — rattrapage d'erreur, **sans** borne de fin (supprime la liaison + retire `subject_id`) |
+| **Messagerie** (double bulle) | *choisir un fil existant*, écran vierge (l'écoute démarre maintenant) | **arrêter l'écoute** — pose `closing_message_id` |
 
-La ligne est à la fois le **sélecteur** et la **surface de gestion des écoutes** — cohérent, puisqu'on arrête une écoute là où l'on voit ce qu'elle alimente. Elle coûte **une ligne de hauteur** et **monte à N conversations sans rien changer**.
+Le **composer** est propre à chaque onglet : il rédige un e-mail dans E-mail, répond dans le fil écouté dans Messagerie.
+
+> **Pourquoi deux onglets, et pas la ligne-sélecteur + feuille.** À l'usage, forcer e-mail et messagerie derrière un même sélecteur produisait une UX complexe qui égarait l'utilisateur. Séparer par onglet de canal supprime le besoin d'entremêler deux rendus et lève l'ancienne objection « pas d'onglets dans des onglets » en connaissance de cause (l'onglet « Conversations » unique disparaît). Décision Vincent, 2026-07-25.
 
 ### Résultat
 
-- la conversation dont l'écoute est arrêtée **redevient orpheline** : elle réapparaîtra dans le KPI « Sans sujet » à son prochain message
-- les **autres écoutes du sujet continuent** — c'est toute la différence avec « Valider » ou « Fermer », qui les arrêtent **toutes**
+- la conversation de messagerie dont l'écoute est arrêtée **redevient orpheline** : elle réapparaîtra dans le KPI « Sans sujet » à son prochain message
+- les **autres conversations du sujet continuent** — c'est toute la différence avec « Valider » ou « Fermer », qui arrêtent **toutes** les écoutes de messagerie
 - côté conversation, l'écoute passée reste consultable via le « **N sujets passés** » du bandeau d'en-tête
 
 ## Cas V — Remettre un sujet fermé
@@ -728,20 +729,25 @@ Si l'utilisateur ne veut vraiment plus rien entendre de ce fil, il **ignore la c
 - **Ce n'est pas « Remettre ».** « Remettre » (Cas V) est un geste **utilisateur** sur un sujet **fermé**, qui ne redémarre aucune écoute. La réouverture décrite ici est **automatique**, déclenchée par une **arrivée de message**, et propre à l'email.
 - ⚠️ **Ce n'est pas non plus le cas du changement d'adresse.** Ici l'interlocuteur **et** l'objet sont inchangés : la clé est la même, le message tombe donc dans **la même conversation**, donc dans le même sujet. Si l'adresse change, la clé change et une **seconde conversation** naît — c'est le **Cas X**, qui se règle à la main.
 
-## Cas X — Un interlocuteur répond depuis une AUTRE adresse
+## Cas X — Une réponse depuis une autre adresse : IN-SET (auto) vs HORS-SET (manuel)
 
-> **Décision du 2026-07-21.** Rien de spécial n'est fait à la réception. La nouvelle conversation est **rattachée au même sujet**, par le geste du Cas M.
+> **Refonte du 2026-07-25.** La clé de conversation e-mail est désormais `email:<objet normalisé>:<set de destinataires>`. Une réponse dont le set change crée une **nouvelle conversation** — mais **qui la rattache** au sujet dépend d'un test exact : l'expéditeur est-il **déjà dans le set du sujet** ?
 
-### Contexte
+| | **IN-SET** — expéditeur déjà connu du sujet | **HORS-SET** — adresse jamais vue |
+|---|---|---|
+| Exemple | sur `[Karim, Sophie]`, **Sophie répond à nous seuls** | Karim répond depuis `karim@sogood.fr`, jamais vue |
+| Set résultant | `{Sophie}` ≠ `{Karim, Sophie}` → nouvelle clé | `{karim@sogood.fr}` → nouvelle clé |
+| Rattachement au sujet | **AUTOMATIQUE** (Relvo) | **MANUEL** (l'utilisateur, ci-dessous) |
+| Pourquoi | objet normalisé = fonction pure + appartenance au set = test exact ⇒ **déterministe, pas d'inférence** | rapprocher une adresse **inconnue** demanderait de l'inférence — refusée |
 
-Karim Benali (SoGood Distribution) écrit d'abord depuis `karim@gmail.com` sur l'objet « Retard livraison sauce blanche ». Trois jours plus tard, il répond **sur le même objet** depuis son adresse professionnelle `karim@sogood.fr` — alias, changement d'employeur, ou simple réponse envoyée depuis un mobile mal configuré.
+### Contexte (cas HORS-SET)
 
-La clé de conversation est `email:<interlocuteur>:<objet normalisé>`. **L'interlocuteur a changé, donc la clé change.**
+Karim Benali (SoGood Distribution) écrit d'abord depuis `karim@gmail.com` sur l'objet « Retard livraison sauce blanche ». Trois jours plus tard, il répond **sur le même objet** depuis `karim@sogood.fr` — adresse **jamais vue** sur ce sujet (alias, changement d'employeur, mobile mal configuré). L'adresse étant hors du set connu, **la clé change** et Relvo ne peut pas deviner qu'il s'agit de Karim.
 
 ### Traitement
 
 1. le message arrive ; la clé calculée est `email:karim@sogood.fr:retard livraison sauce blanche` — **aucune conversation ne la porte**
-2. Relvo **crée une seconde conversation**, de type `objet`, titrée par le même objet
+2. Relvo **crée une seconde conversation** **e-mail**, titrée par le même objet
 3. cette conversation n'est écoutée par aucun sujet ouvert → elle remonte dans le **KPI « Sans sujet »**, en non-lu
 4. l'utilisateur l'ouvre, reconnaît l'affaire, **swipe la conversation vers la droite** → **« Rattacher à un sujet existant »** → « Retard livraison sauce blanche » (Cas M)
 5. création de `SubjectConversation(subject_id, conversation_id, anchor_message_id = null, closing_message_id = null)` — le sujet couvre **le fil entier** de cette seconde conversation
@@ -751,12 +757,12 @@ La clé de conversation est `email:<interlocuteur>:<objet normalisé>`. **L'inte
 
 - le sujet porte désormais **deux conversations email** — l'affaire est de nouveau **une seule**
 - les réponses suivantes de Karim depuis `karim@sogood.fr` rejoignent **automatiquement** cette seconde conversation, donc le sujet, avec le régime email complet (elles le **rouvrent** s'il a été validé — Cas W)
-- la fiche du sujet n'en affiche **qu'une à la fois** : la **ligne sélecteur** permet de basculer (Cas U)
+- les deux conversations e-mail vivent dans l'**onglet E-mail** de la fiche, une par destinataire (Cas U)
 - ⚠️ **les deux clés ne fusionnent jamais.** Deux conversations restent deux entités ; ce qui les réunit est le **sujet**, pas la clé
 
-### Pourquoi on n'automatise pas
+### Pourquoi HORS-SET reste manuel
 
-Détecter « même objet, autre adresse » demanderait de l'**inférence à la réception** — exactement ce que le modèle refuse depuis le premier jour (cf. `01-principes.md §3`). Le coût de l'automatisation ne se paie pas en lignes de code, il se paie en **garanties perdues** :
+Détecter « même objet, **adresse inconnue** » demanderait de l'**inférence à la réception** — exactement ce que le modèle refuse depuis le premier jour (cf. `01-principes.md §3`). *(Le cas **in-set**, lui, est automatisé : il ne devine rien, il teste une appartenance exacte.)* Le coût de l'automatisation hors-set ne se paie pas en lignes de code, il se paie en **garanties perdues** :
 
 | Ce qu'on gagnerait | Ce qu'on perdrait |
 |---|---|
@@ -772,7 +778,8 @@ Ici, **c'est l'humain qui tranche**, et il tranche en un geste qu'il connaît d�
 
 | Situation | Ce qui change | Le cas |
 |---|---|---|
-| même interlocuteur, **même** objet | rien — même clé, même conversation | *(Cas A / Cas C ; Cas W si le sujet était terminé)* |
-| même interlocuteur, **autre** objet | nouvelle conversation, à rattacher | **Cas M** |
-| **autre** adresse, même objet | nouvelle conversation, à rattacher | **Cas X** *(ici)* |
+| même interlocuteur, **même** objet, même set | rien — même clé, même conversation | *(Cas A / Cas C ; Cas W si le sujet était terminé)* |
+| destinataire **déjà connu** répond « à nous seuls », même objet | nouvelle conversation (set réduit), rattachée **automatiquement** | **Cas X (in-set)** |
+| **autre** adresse (inconnue), même objet | nouvelle conversation, à rattacher **à la main** | **Cas X (hors-set)** *(ici)* |
+| même interlocuteur, **autre** objet | nouvelle conversation, à rattacher à la main | **Cas M** |
 | l'affaire se poursuit sur **un autre canal** | nouvelle conversation, créée depuis le sujet | **Cas S** |

@@ -206,64 +206,80 @@ Configuration technique du channel.
 
 Cette entité porte les informations techniques de connexion, sans alourdir `Channel`.
 
-## 5bis. Conversation
+## 5bis. Conversation — une base, deux sous-types
 
 Couche de **transport et d'identité** : le regroupement déterministe des messages, calculé **à la réception**, sans IA (cf. `01-principes.md §3`). Une conversation est **durable** — elle ne se supprime pas et ne se termine jamais.
+
+> **Refonte du 2026-07-25.** Une conversation n'est plus un objet unique qu'on « habille » différemment selon le canal. Il y a désormais **deux sous-types**, qui partagent la même base (identité, transport, statut, journal) mais divergent sur **deux attributs** et sur leur **rapport au sujet** :
+
+| | **Conversation E-MAIL** | **Conversation MESSAGERIE** (WhatsApp — demain Instagram / Messenger / LinkedIn) |
+|---|---|---|
+| A un **objet** | **oui** | **non** |
+| Nombre d'interlocuteurs | **un set** — 1 = direct, ≥ 2 = « **Groupe** » | **un seul** : un contact (direct) **ou** un groupe (via `chat_id`, **diffusion déléguée au provider**) |
+| Rapport au sujet | le sujet **EST** le fil — rattachement **permanent**, aucune écoute | le sujet **ÉCOUTE** le flux (ancre / borne de fin) |
+| Détachement | possible — **rattrapage d'erreur** (`unlink`) | « **arrêter l'écoute** » |
+
+**Pourquoi ce sous-typage plutôt qu'une UX unique** (décision Vincent, 2026-07-25). Forcer un même écran sur l'e-mail et la messagerie obligeait à des design patterns complexes — sélecteur de conversation unique, feuille de gestion des écoutes, cordon par message — qui **égaraient l'utilisateur**. Les deux natures sont assez différentes pour mériter **deux surfaces distinctes** dans la fiche du sujet (un onglet **E-mail**, un onglet **Messagerie**, cf. §6). Le gain est une UX plus lisible qui **sépare proprement les deux concepts** ; le prix est une migration (multi-contacts e-mail + discriminant de sous-type).
+
+⚠️ **Ce sous-typage NE duplique PAS le domaine.** La base reste une seule classe `Conversation`, le sous-type est porté par un discriminant. Ouvrir un sujet, ignorer, poser/lever un statut, arrêter une écoute : **une seule logique**, qui teste l'**ancre** (nulle en e-mail = tout le fil ; posée en messagerie), jamais le canal. La garde de fin de section tient (cf. `01-principes.md §3`).
 
 ### Propriétés
 
 - `id: UUID`
 - `account_id: UUID`
 - `channel_id: UUID` — le canal par lequel la conversation transite
-- `type: enum(objet, groupe, direct)`
+- `kind: enum(email, messaging)` — **le sous-type** (cf. tableau d'introduction). Discrimine tout le reste : présence d'un objet, cardinalité des interlocuteurs, rapport au sujet
+- `type: enum(direct, groupe)` — **la forme**, dans les deux sous-types. `email/direct` = un destinataire ; `email/groupe` = set de destinataires ; `messaging/direct` = un contact ; `messaging/groupe` = un fil de groupe (`chat_id`)
 - `key: string` — **clé canonique unique** qui matérialise le discriminant (cf. ci-dessous). Contrainte `unique(account_id, key)`
 - `title: string` — objet de l'email, nom du groupe, ou nom du contact
-- `contact_id: UUID nullable` — l'interlocuteur, quand il est un contact enregistré (types `objet` et `direct` uniquement ; toujours `null` pour un groupe)
-- `interlocutor_raw: string nullable` — email ou numéro brut, tant que l'interlocuteur n'est pas un contact
-- `external_thread_id: string nullable` — `chat_id` WhatsApp ; sert aussi de cible d'envoi
-- `normalized_subject: string nullable` — objet normalisé (type `objet` uniquement)
+- `contact_id: UUID nullable` — **messagerie directe uniquement** : l'interlocuteur, quand c'est un contact enregistré. `null` pour un groupe (messagerie **ou** e-mail) et tant que l'interlocuteur n'est pas encore un contact
+- `contact_ids: UUID[] default []` — **e-mail uniquement** : le **set de destinataires** connus (contacts enregistrés). 1 entrée = e-mail direct, ≥ 2 = « Groupe ». ⚠️ c'est le changement de schéma structurant de la refonte : une conversation e-mail porte **plusieurs** contacts, une conversation messagerie **un seul**
+- `interlocutor_raw: string nullable` — e-mail(s) ou numéro brut, tant que le ou les interlocuteurs ne sont pas des contacts
+- `external_thread_id: string nullable` — `chat_id` de messagerie ; sert aussi de cible d'envoi
+- `normalized_subject: string nullable` — objet normalisé (`kind = email` uniquement)
 - `status: enum(actif, ignoré) default actif`
 - `last_message_at: datetime nullable` — pilote le tri de la liste (plus récent en tête)
 - `created_at: datetime`
 - `updated_at: datetime`
 
-### Les trois types et leurs clés
+### Les sous-types et leurs clés
 
-| Type | Canal | Discriminant | `key` canonique |
+| `kind` / `type` | Canal | Discriminant | `key` canonique |
 |---|---|---|---|
-| **objet** | email | interlocuteur externe + objet normalisé | `email:<interlocuteur>:<objet_normalisé>` |
-| **groupe** | WhatsApp | fil de groupe | `wa-group:<chat_id>` |
-| **direct** | WhatsApp | interlocuteur | `wa-direct:<numéro>` |
+| **email / direct** | e-mail | objet normalisé + **le** destinataire | `email:<objet_normalisé>:<destinataire>` |
+| **email / groupe** | e-mail | objet normalisé + **set trié** de destinataires | `email:<objet_normalisé>:<set trié>` |
+| **messaging / direct** | WhatsApp… | interlocuteur | `wa-direct:<numéro>` *(demain `ig-direct:…`)* |
+| **messaging / groupe** | WhatsApp… | fil de groupe | `wa-group:<chat_id>` |
 
 La `key` est calculée à la réception ; on cherche la conversation correspondante, sinon on la crée. C'est **tout** l'algorithme de tri — il est déterministe et ne peut pas échouer.
 
+⚠️ **La clé e-mail inclut désormais le SET de destinataires** (trié, normalisé), pas un interlocuteur unique. Conséquence directe : si, sur une affaire envoyée à `[Karim, Sophie]`, **Sophie répond à nous seuls**, le set change (`{Sophie}` ≠ `{Karim, Sophie}`) → **la clé change** → une **nouvelle conversation** naît, du même objet mais d'un destinataire différent. C'est voulu : on **classe les conversations par destinataire** autant que par objet (cf. « Routage » ci-dessous).
+
 L'**objet normalisé** réutilise la règle existante (retrait des préfixes `Re:` / `Fwd:` / `Tr:` répétés et multilingues, espaces écrasés, minuscules), afin qu'une réponse rejoigne bien la conversation de départ.
 
-Les messages **sortants** rejoignent la conversation de leur interlocuteur (et de leur objet, pour l'email) : une conversation porte les deux sens de l'échange.
+Les messages **sortants** rejoignent la conversation de leur set de destinataires (et de leur objet, pour l'e-mail) : une conversation porte les deux sens de l'échange.
 
 ### Statut `ignoré`
 
 `ignoré` signifie : **Relvo cesse d'analyser, de résumer et de trier** les messages de cette conversation. Les messages continuent d'être reçus et stockés — on ne perd rien — mais ils sortent du champ de travail de l'assistant. C'est le remède au « groupe WhatsApp bavard ». Réversible **par le seul utilisateur**.
 
-### Asymétrie email / WhatsApp — conséquence à connaître
+### Asymétrie e-mail / messagerie — deux régimes de rattachement
 
-Parce que la clé d'une conversation `direct` ne contient **que** l'interlocuteur, il ne peut exister **qu'une seule** conversation directe par contact, pour toujours. Ouvrir « une nouvelle conversation » depuis un sujet (cf. §6) recouvre donc **deux comportements distincts** :
+La clé dit **ce qu'est** la conversation, et son rapport au sujet en découle :
 
-- **email** → une *vraie* nouvelle conversation est créée (nouvel objet = nouvelle clé) ;
-- **WhatsApp direct** → la conversation existante est **écoutée par le sujet à partir d'une nouvelle ancre**.
+| Clé | Contient | Nature | Rapport au sujet |
+|---|---|---|---|
+| `email:<objet>:<set>` | l'affaire **et** ses interlocuteurs | **un fil d'affaire** | le sujet **EST** le fil — rattachement **permanent** |
+| `wa-direct:<numéro>` / `wa-group:<chat_id>` | la personne / le groupe **seuls** | un flux d'affaires successives | le sujet **ÉCOUTE** (ancre / borne de fin) |
 
-Même bouton côté interface, deux mécaniques sous-jacentes.
+> **Énoncé central.** **Un fil d'e-mail appartient à un sujet, un seul, à vie. Une conversation de messagerie est un FLUX qu'un sujet ÉCOUTE, à partir d'un message, jusqu'à ce qu'il cesse d'écouter.**
 
-Plus profondément, la clé dit **ce qu'est** la conversation :
+De là, deux comportements quand une affaire **s'étend** à une nouvelle conversation (cf. §6, Cas S) :
 
-| Clé | Contient | Nature |
-|---|---|---|
-| `email:<interlocuteur>:<objet>` | la personne **et l'affaire** | **un sujet**, par construction — *un seul, et le même à vie* |
-| `wa-direct:<numéro>` / `wa-group:<chat_id>` | la personne / le groupe **seuls** | un flux d'affaires successives |
+- **e-mail** → une **vraie nouvelle conversation** est créée — nouvel objet, **ou** nouveau set de destinataires = nouvelle clé — et rattachée au sujet ;
+- **messagerie directe** → il ne peut exister qu'**une** conversation directe par interlocuteur : le sujet **commence à écouter** la conversation existante à partir d'une nouvelle ancre.
 
-> **Énoncé central (2026-07-21).** **Un fil d'email EST un sujet. Une conversation WhatsApp est un FLUX ; un sujet l'ÉCOUTE, à partir d'un message, jusqu'à ce qu'il cesse d'écouter.**
-
-C'est de là que découle le **régime d'écoute par canal** (§6) : l'écoute n'est que la prothèse d'un objet manquant (cf. `01-principes.md §3`). Côté email, **il n'y a rien à écouter** — le fil *est* le sujet.
+Côté e-mail, **il n'y a rien à écouter** — le fil *est* le sujet. L'écoute est un concept **exclusivement messagerie**, la prothèse d'un objet que le médium ne fournit pas (cf. `01-principes.md §3`).
 
 #### ⚠️ « Un fil d'email EST un sujet » est une phrase DIRECTIONNELLE — précision du 2026-07-21
 
@@ -278,23 +294,28 @@ Autrement dit : **ce qui est unique, c'est le sujet d'une conversation — pas l
 
 Lue comme bidirectionnelle, la phrase interdirait ces trois cas d'un coup, et retirerait au sujet sa raison d'être : **réunifier des canaux**.
 
-#### Changement d'adresse d'un interlocuteur en cours d'affaire — décision du 2026-07-21
+#### Réponse d'un destinataire, changement d'adresse : la frontière IN-SET / HORS-SET (décision du 2026-07-25)
 
-Cas concret : un fournisseur écrit d'abord depuis `karim@gmail.com`, puis répond sur le même objet depuis `karim@sogood.fr` — alias, changement d'employeur, ou réponse envoyée depuis un mobile. La clé étant `email:<interlocuteur>:<objet normalisé>`, **l'interlocuteur ayant changé, la clé change** : Relvo crée une **seconde conversation**, qui apparaît dans le KPI « Sans sujet ».
+Deux situations se ressemblent — même objet, une adresse qui « bouge » — mais se traitent à l'opposé. La ligne de partage est un test **exact**, donc déterministe : **l'expéditeur est-il déjà dans le set de destinataires du sujet ?**
 
-> **Décision : on ne touche à rien côté tri.** La nouvelle conversation est **rattachée au même sujet**, par le geste qui existe déjà — **swipe droite sur la conversation email → « Rattacher à un sujet existant »** (Cas M). L'affaire redevient une, sans aucun mécanisme nouveau.
+| Situation | L'expéditeur est… | Traitement | Cas |
+|---|---|---|---|
+| **Réponse « à nous seuls »** — sur `[Karim, Sophie]`, Sophie répond à nous seuls, même objet | **déjà dans le set** du sujet | **AUTOMATIQUE** : nouvelle conversation (set `{Sophie}` ≠ `{Karim, Sophie}` → clé différente), **rangée dans le même sujet** | *(ici)* |
+| **Changement d'adresse** — Karim répond depuis `karim@sogood.fr`, jamais vue, même objet | **hors du set** | **MANUEL** : la conversation tombe orpheline, l'utilisateur la **rattache** d'un swipe droite (Cas M) | **Cas X** |
 
-**Pourquoi ne pas détecter automatiquement « même objet, autre adresse ».** Parce que cela demanderait de l'**inférence à la réception** — exactement ce que le modèle refuse depuis le premier jour (cf. `01-principes.md §3`, « Ce qu'une conversation n'est pas »). Trois choses seraient perdues :
+⚠️ **Le rattachement automatique in-set NE réintroduit PAS l'inférence** que le modèle refuse. « Objet normalisé identique » est une **fonction pure** ; « expéditeur ∈ set du sujet » est un **test d'appartenance exact**. Rien n'est deviné. Ce que le modèle continue d'interdire, c'est de rapprocher « même objet, **adresse inconnue** » par heuristique (même domaine ? même nom ? distance d'édition ?) — et c'est exactement le cas **hors-set**, qui **reste manuel** (Cas X).
 
-1. **Le déterminisme du rangement.** Aujourd'hui la clé se calcule ; demain elle se devinerait. Une clé qui se devine peut se tromper, et le tri cesse d'être infaillible.
-2. **La stabilité de l'identité d'une conversation.** Une conversation dont l'appartenance dépend d'une heuristique peut être fusionnée à tort — et défusionner après coup, c'est déplacer des messages un à un, précisément ce que le modèle a supprimé.
-3. **La simplicité de la clé.** Toute règle « même objet, adresses proches » (même domaine ? même nom d'affichage ? distance d'édition ?) est une pente sans palier stable.
+**Pourquoi hors-set reste manuel.** Détecter « même objet, autre adresse jamais vue » demanderait de l'**inférence à la réception**, ce qui perdrait :
 
-**Le coût est un rattachement manuel occasionnel ; le bénéfice est que la clé reste calculable et infaillible.** Ici c'est l'humain qui tranche — et il tranche par un geste qu'il connaît déjà, sans rien à apprendre. Le jour où M7 saura lire un fil par le sens, il pourra **proposer** ce rattachement ; il ne l'imposera toujours pas à la réception.
+1. **Le déterminisme du rangement.** Une clé qui se devine peut se tromper ; le tri cesse d'être infaillible.
+2. **La stabilité de l'identité d'une conversation.** Une appartenance qui dépend d'une heuristique peut fusionner à tort, et défusionner après coup c'est déplacer des messages un à un — ce que le modèle a supprimé.
+3. **La simplicité de la clé.** « Adresses proches » n'a pas de définition stable.
 
-⚠️ **Conséquence sur les clés : elles ne fusionnent JAMAIS.** Les deux conversations restent deux entités distinctes, avec leurs deux clés. Ce qui les réunit est le **sujet**, via deux lignes `SubjectConversation` — c'est exactement le mécanisme du Cas S, et c'est ce que la lecture directionnelle du 1:1 autorise.
+Le coût — un rattachement manuel occasionnel — reste inférieur au bénéfice. Le jour où M7 lira un fil par le sens, il pourra **proposer** ce rattachement hors-set ; il ne l'imposera jamais à la réception.
 
-⚠️ **Le `groupe` suit le régime du `direct`, sans exception** (précision du 2026-07-20). Le **nom du groupe ne joue PAS le rôle d'un objet d'email** : il nomme un collectif, pas une affaire. Un groupe parle successivement de livraisons, de congés et de pannes — c'est un flux, il **s'écoute** comme un direct.
+⚠️ **Les clés ne fusionnent JAMAIS — in-set comme hors-set.** On obtient dans les deux cas deux conversations distinctes, avec deux clés. Ce qui les réunit est le **sujet** (deux lignes `SubjectConversation`), pas la clé. La seule différence est **qui** rattache : Relvo (in-set, automatique) ou l'utilisateur (hors-set, Cas X).
+
+⚠️ **Deux « groupes » à ne pas confondre depuis la refonte.** Un **groupe e-mail** (`email/groupe`, ≥ 2 destinataires) reste un **fil d'affaire** avec objet, rattaché en permanence — il **n'écoute rien**. Un **groupe de messagerie** (`messaging/groupe`, `wa-group`) est un **flux** : le nom du groupe **ne joue PAS le rôle d'un objet** — il nomme un collectif qui parle successivement de livraisons, de congés et de pannes. Le groupe de messagerie **s'écoute exactement comme un direct de messagerie** (précision du 2026-07-20, désormais réservée à la messagerie).
 
 ### Rendu et gestes par canal — décision du 2026-07-20
 
@@ -302,7 +323,7 @@ Après test en production de M6bis : forcer la même UX sur les deux canaux dess
 
 #### Rendu des messages
 
-| | email | WhatsApp |
+| | e-mail | messagerie |
 |---|---|---|
 | Forme | **pleine largeur**, emails enchaînés au fil du scroll (comme l'ancien `/messages/[id]`) | **bulles** conservées |
 | Fond | **blanc dans les deux sens** — aucun fond coloré | teinté, comme aujourd'hui |
@@ -464,9 +485,10 @@ Un sujet agrège **0, 1 ou n conversations**. Chaque ligne de cette table est un
 
 | Geste | Sens | `closing_message_id` |
 |---|---|---|
-| **Fermer le sujet** (`fermé`) | **toutes les ÉCOUTES** du sujet s'arrêtent ; la conversation ne référence plus ce sujet | **posée** sur le dernier message reçu, pour chaque conversation **WhatsApp** |
-| **Valider le sujet** (`validé`) | la conversation **WhatsApp** n'alimente plus le sujet | **posée** sur le dernier message reçu (**WhatsApp**) |
-| **Arrêter l'écoute** (feuille des conversations du sujet) | **cette conversation-là seulement** ; les autres continuent | **posée** sur le dernier message reçu — **seul geste qui détache un fil email** *(sur email, lire « **détacher ce fil** » : il n'y a pas d'écoute à arrêter)* |
+| **Fermer le sujet** (`fermé`) | **toutes les écoutes** du sujet s'arrêtent ; la conversation ne référence plus ce sujet | **posée** sur le dernier message reçu, pour chaque conversation **de messagerie** |
+| **Valider le sujet** (`validé`) | la conversation **de messagerie** n'alimente plus le sujet | **posée** sur le dernier message reçu (**messagerie**) |
+| **Arrêter l'écoute** (`unlink`, onglet **Messagerie** de la fiche) | **cette conversation-là seulement** ; les autres continuent | **posée** sur le dernier message reçu |
+| **Détacher un fil e-mail** (`unlink`, onglet **E-mail** de la fiche) | **rattrapage d'erreur** : la conversation e-mail ne référence plus ce sujet | ⚠️ **aucune** (un fil e-mail n'a pas d'écoute) : on **supprime la ligne `SubjectConversation`** et on retire le `subject_id` des messages du fil |
 | **Ignorer la conversation** (mute) | **PAUSE** — elle n'alimente plus **aucun** des sujets ouverts qui l'écoutent | ⚠️ **aucune** — réactiver la conversation fait **reprendre** l'alimentation |
 
 Sans la dernière ligne, la réactivation d'une conversation ignorée n'aurait **aucun effet observable** : l'écoute serait déjà close.
@@ -548,16 +570,19 @@ Un sujet démarre en `ouvert` avec `last_opened_at = null` — c'est ce champ (e
 
 Relvo propose alors « **Souhaitez-vous aussi ignorer la conversation ?** » — c'est le geste qui empêche un fil bavard de solliciter de nouveau l'utilisateur au message suivant, **et le seul qui fasse taire un fil email**.
 
-### La fiche du sujet — une seule conversation affichée à la fois
+### La fiche du sujet — DEUX onglets par canal (refonte du 2026-07-25)
 
-L'onglet **Conversations** de la fiche n'affiche **qu'une conversation à la fois** (décision du 2026-07-21 ; solutions écartées et raisons en `01-principes.md §9`).
+⚠️ **Remplace « une seule conversation affichée à la fois »** (ligne-sélecteur unique + feuille de gestion des écoutes), décision du 2026-07-21 **abandonnée**. À la place, l'ancien onglet unique « Conversations » se scinde en **deux onglets**, un par famille de canal :
 
-- En tête de l'onglet, **une seule LIGNE** nomme la conversation affichée : **icône du canal + nom + état d'écoute** (« écoutée depuis le 14 juillet », « écoute arrêtée »).
-- Cette ligne est **tapable** : elle ouvre une **feuille** listant **toutes** les conversations du sujet, chacune avec son état, et l'action « **arrêter l'écoute** ».
-- Elle est donc à la fois le **sélecteur** de conversation et la **surface de gestion des écoutes** — cohérent, puisqu'on arrête une écoute là où l'on voit ce qu'elle alimente.
-- Le **sélecteur du composer** est synchronisé avec elle : il désigne une **conversation**, plus un contact (cf. `CLAUDE.md` invariant n°11).
+| Onglet | Icône | Contenu | Bouton « Ajouter » | Détachement |
+|---|---|---|---|---|
+| **E-mail** | enveloppe | les conversations e-mail du sujet, **une par destinataire** (libellé d'en-tête = nom du destinataire, ou « **Groupe** » si ≥ 2) | **stylo sur feuille** → pop-up « écrire un nouvel e-mail » : **objet** pré-rempli avec le titre du sujet, **destinataire(s)** | **`unlink`** — rattrapage d'erreur |
+| **Messagerie** | double bulle | les conversations de messagerie **écoutées** par le sujet | **bonhomme + `+`** → pop-up « choisir un fil existant », **écran vierge** (on part de zéro, aucun message à sélectionner : l'écoute démarre **maintenant**) | **`unlink`** — « arrêter l'écoute » (pose la borne de fin) |
 
-Coût : **une ligne de hauteur**, aucune ressemblance avec un système d'onglets, et le dispositif **monte à N conversations sans rien changer**.
+- Dans l'onglet **E-mail**, chaque conversation affiche son **objet + la liste de ses destinataires**, puis l'échange : messages **reçus en blanc**, **envoyés en bleu clair**. L'organisation par destinataire (chips défilables **ou** sous-onglets) est **à valider à l'usage** — reste à vérifier qu'elle sépare bien les fils.
+- Le **composer** est **propre à chaque onglet** : dans E-mail il rédige un e-mail (objet + destinataires) ; dans Messagerie il répond dans le fil écouté.
+- ⚠️ **Ce qui justifie deux onglets, c'est la nature différente du rattachement.** Un e-mail **envoyé** appartient définitivement au sujet — on ne « défait » pas un envoi ; le `unlink` e-mail ne corrige qu'un **rangement erroné** (une conversation rattachée par erreur), pas l'envoi lui-même. Une conversation de messagerie, elle, s'**écoute** puis se **relâche**.
+- ⚠️ **La garde « pas d'onglets dans des onglets » (ex-Cas U) est levée en connaissance de cause.** Elle refusait des sous-onglets à l'intérieur d'un onglet « Conversations » vivant lui-même dans une barre à 3 onglets. La refonte **change la structure** : les deux familles de canal deviennent des onglets de plein droit, et l'ancien « Conversations » disparaît. Le sur-typage par canal vaut la profondeur d'onglets qu'il coûte (décision Vincent, 2026-07-25).
 
 Un sujet peut impliquer un ou plusieurs contacts. Le tableau `contact_ids` porte cette relation directement, sans table de liaison.
 
@@ -592,7 +617,7 @@ Transitions : `ouvert →(« Valider »)→ validé` ou `ouvert →(« Fermer »
 
 **Réouverture — deux mécanismes, selon le canal (rétabli le 2026-07-21).**
 
-| | **email** | **WhatsApp** |
+| | **e-mail** | **messagerie** |
 |---|---|---|
 | Sur message entrant | **automatique** : le message rejoint le sujet, qui repasse en `ouvert` et `closed_at` est effacé | **aucune** : le message reste sans sujet, la conversation redevient orpheline |
 | Manuelle | « **Remettre** » (onglet Fermés) — mais rarement nécessaire, le fil rouvre de lui-même | « **Remettre** », puis relance d'écoute au swipe (elle ne redémarre **pas** seule) |
