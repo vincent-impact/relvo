@@ -15,6 +15,7 @@ import {
   splitFullName,
 } from "./contacts";
 import {
+  findInSetEmailSubject,
   findListeningSubjectForConversation,
   resolveConversation,
   resolveWhatsAppChatIdentity,
@@ -28,7 +29,10 @@ import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { type TenantCreate, ensureAffected } from "./helpers";
 import { type Page, cursorArgs, paginationSchema, toPage } from "./pagination";
-import { sweepConversationIntoSubject } from "./subject-conversations";
+import {
+  attachConversationToSubject,
+  sweepConversationIntoSubject,
+} from "./subject-conversations";
 import { createSubject, getSubject, reopenSubject } from "./subjects";
 
 // Domaine Messages (M3.8). Un message reste « Sans sujet » tant que subject_id
@@ -172,6 +176,7 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
   // Un sortant, lui, porte toujours son sujet explicitement (c'est une réponse).
   let subjectId = data.subjectId ?? null;
   let reopenSubjectId: string | null = null;
+  let inSetSubjectId: string | null = null;
   if (!subjectId && incoming) {
     const routed = await findListeningSubjectForConversation(
       db,
@@ -181,6 +186,19 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
       subjectId = routed.subjectId;
       // Écoute permanente d'un sujet email non-ouvert → il ROUVRE (invariant n°7).
       if (routed.needsReopen) reopenSubjectId = routed.subjectId;
+    } else if (
+      channel.type === ChannelType.email &&
+      conversation.normalizedSubject
+    ) {
+      // Aucune écoute sur CETTE conversation, mais une réponse « à nous seuls »
+      // d'un destinataire déjà connu d'un sujet OUVERT (même objet) s'y range
+      // automatiquement (M6quater, in-set). Déterministe, pas d'inférence.
+      inSetSubjectId = await findInSetEmailSubject(db, {
+        conversationId: conversation.id,
+        normalizedSubject: conversation.normalizedSubject,
+        senderRaw: interlocutorRaw,
+      });
+      if (inSetSubjectId) subjectId = inSetSubjectId;
     }
   }
 
@@ -244,6 +262,16 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
   // transaction (statut + journal + reprise des écoutes). Le message est déjà
   // rattaché ; rouvrir ne fait que redonner de la vie au sujet côté fil.
   if (reopenSubjectId) await reopenSubject(db, reopenSubjectId);
+
+  // Rattachement in-set (M6quater) : le message porte déjà son subjectId ; on
+  // crée le LIEN d'écoute pour que les prochains messages de cette nouvelle
+  // conversation retombent d'eux-mêmes sur le sujet (via findListening…).
+  if (inSetSubjectId) {
+    await attachConversationToSubject(db, {
+      subjectId: inSetSubjectId,
+      conversationId: conversation.id,
+    });
+  }
 
   return message;
 }

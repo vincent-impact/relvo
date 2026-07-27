@@ -361,6 +361,47 @@ export async function findListeningSubjectForConversation(
   };
 }
 
+/**
+ * Rattachement AUTOMATIQUE IN-SET (M6quater) — une réponse « à nous seuls » d'un
+ * destinataire déjà connu du sujet crée une NOUVELLE conversation e-mail (set
+ * réduit → clé différente), qu'on range automatiquement dans le sujet existant.
+ *
+ * DÉTERMINISTE, PAS de l'inférence : objet normalisé identique (comparaison
+ * exacte d'une valeur calculée par fonction pure) + expéditeur ∈ set du sujet
+ * (test d'appartenance exact sur `participantsRaw`). Hors-set (adresse inconnue)
+ * → aucun résultat : la conversation reste orpheline et l'utilisateur la rattache
+ * à la main (Cas X, manuel).
+ *
+ * Ne cible QUE les sujets OUVERTS : un reply-to-us-only ne rouvre pas un sujet
+ * terminé — la réouverture e-mail automatique est réservée au MÊME fil (Cas W).
+ */
+export async function findInSetEmailSubject(
+  db: Tx,
+  input: {
+    conversationId: string;
+    normalizedSubject: string | null;
+    senderRaw: string | null;
+  },
+): Promise<string | null> {
+  const sender = input.senderRaw?.trim().toLowerCase() || "";
+  if (!sender || !input.normalizedSubject) return null;
+  const link = await db.subjectConversation.findFirst({
+    where: {
+      subject: { status: SubjectStatus.open },
+      // On ne se rattache jamais à soi-même (la conversation qu'on vient de créer).
+      conversationId: { not: input.conversationId },
+      conversation: {
+        type: ConversationType.email_subject,
+        normalizedSubject: input.normalizedSubject,
+        participantsRaw: { has: sender },
+      },
+    },
+    select: { subjectId: true },
+    orderBy: { createdAt: "desc" },
+  });
+  return link?.subjectId ?? null;
+}
+
 export async function getConversation(db: TenantDb, id: string) {
   return assertFound(
     await db.conversation.findFirst({ where: { id } }),

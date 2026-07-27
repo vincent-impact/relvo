@@ -371,6 +371,14 @@ export async function detachConversationFromSubject(
   );
   return db.$transaction(async (tx) => {
     await tx.subjectConversation.deleteMany({ where: { id: link.id } });
+    // M6quater : détacher un fil e-mail RETIRE aussi le subjectId de ses messages
+    // (rattrapage d'erreur — le fil ne fait plus partie du sujet, cf. n°13bis).
+    // L'« arrêter l'écoute » d'un fil de messagerie passe, lui, par une borne de
+    // fin (closing_message_id), pas par ce détachement.
+    await tx.message.updateMany({
+      where: { conversationId, subjectId },
+      data: { subjectId: null },
+    });
     await logEvent(tx as Tx, {
       entityType: "subject",
       entityId: subjectId,
