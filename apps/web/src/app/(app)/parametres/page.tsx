@@ -4,6 +4,7 @@ import { LogOut, MessageCircle, Mail } from "lucide-react";
 import { DEMO_EMAIL } from "@relvo/db";
 import { ConnectEmailButton } from "@/components/settings/connect-email-button";
 import { ChannelDeleteButton } from "@/components/settings/channel-delete-button";
+import { ChannelReconnectButton } from "@/components/settings/channel-reconnect-button";
 import { ContactsPane } from "@/components/contacts/contacts-pane";
 import { FeedTabs } from "@/components/feed/feed-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
@@ -56,7 +57,11 @@ async function ParametresTabs() {
   const [channels, contacts] = await Promise.all([
     db.channel.findMany({
       orderBy: { createdAt: "asc" },
-      include: { config: { select: { status: true, lastSyncAt: true } } },
+      include: {
+        config: {
+          select: { status: true, lastSyncAt: true, externalAccountId: true },
+        },
+      },
     }),
     cachedContacts(account.id),
   ]);
@@ -161,6 +166,14 @@ async function ParametresTabs() {
                       >
                         {st.label}
                       </span>
+                      {/* Reconnecter (ré-auth du même compte, sans perte) —
+                          proposé dès qu'un compte fournisseur existe. */}
+                      {ch.config?.externalAccountId ? (
+                        <ChannelReconnectButton
+                          channelId={ch.id}
+                          channelName={ch.name}
+                        />
+                      ) : null}
                       <ChannelDeleteButton
                         channelId={ch.id}
                         channelName={ch.name}

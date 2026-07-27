@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Prisma } from "../generated/prisma/client";
 import {
   Actor,
+  ChannelConfigStatus,
   ChannelType,
   ConversationType,
   MessageDirection,
@@ -25,7 +26,7 @@ import type {
   WhatsAppChatDirectoryPort,
   WhatsAppSenderPort,
 } from "./whatsapp-port";
-import { DomainError, assertFound } from "./errors";
+import { DomainError, assertFound, isDomainError } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { type TenantCreate, ensureAffected } from "./helpers";
 import { type Page, cursorArgs, paginationSchema, toPage } from "./pagination";
@@ -563,6 +564,35 @@ export const sendEmailReplySchema = z.object({
 
 export type SendEmailReplyInput = z.infer<typeof sendEmailReplySchema>;
 
+/**
+ * Un envoi qui échoue sur des identifiants invalides (port marqué
+ * `channelUnhealthy`) bascule le canal en « erreur » : la pastille des Réglages
+ * cesse d'afficher « Connecté » à tort et le bouton Reconnecter apparaît. On ne
+ * touche PAS au statut sur un échec transitoire (réseau) — seul le signal
+ * explicite du port compte. Best-effort : ne jamais masquer l'erreur d'origine.
+ */
+async function markChannelUnhealthyIfNeeded(
+  db: TenantDb,
+  channelId: string,
+  error: unknown,
+): Promise<void> {
+  if (
+    !isDomainError(error) ||
+    (error.details as { channelUnhealthy?: boolean } | undefined)
+      ?.channelUnhealthy !== true
+  ) {
+    return;
+  }
+  try {
+    await db.channelConfig.updateMany({
+      where: { channelId },
+      data: { status: ChannelConfigStatus.error },
+    });
+  } catch {
+    // On ne fait pas échouer davantage l'envoi pour une écriture de statut.
+  }
+}
+
 export async function sendEmailReply(
   db: TenantDb,
   sender: EmailSenderPort,
@@ -591,15 +621,21 @@ export async function sendEmailReply(
 
   const identifiers = data.to.map((t) => t.identifier);
 
-  const { emailId } = await sender.sendEmail({
-    externalAccountId,
-    to: data.to.map((t) => ({
-      identifier: t.identifier,
-      display_name: t.displayName,
-    })),
-    subject: data.subject,
-    body: data.body,
-  });
+  let emailId: string | null;
+  try {
+    ({ emailId } = await sender.sendEmail({
+      externalAccountId,
+      to: data.to.map((t) => ({
+        identifier: t.identifier,
+        display_name: t.displayName,
+      })),
+      subject: data.subject,
+      body: data.body,
+    }));
+  } catch (error) {
+    await markChannelUnhealthyIfNeeded(db, data.channelId, error);
+    throw error;
+  }
 
   // Destinataire principal : celui passé par l'appelant (interlocuteur
   // sélectionné) ; à défaut, on retombe sur le premier contact reconnu du set.
@@ -674,10 +710,16 @@ export async function sendWhatsAppReply(
     );
   }
 
-  const { messageId } = await sender.sendMessage({
-    chatId: data.chatId,
-    text: data.body,
-  });
+  let messageId: string | null;
+  try {
+    ({ messageId } = await sender.sendMessage({
+      chatId: data.chatId,
+      text: data.body,
+    }));
+  } catch (error) {
+    await markChannelUnhealthyIfNeeded(db, data.channelId, error);
+    throw error;
+  }
 
   return createMessage(db, {
     channelId: data.channelId,

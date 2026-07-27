@@ -21,6 +21,9 @@ function toSendError(
     ? new DomainError(
         "INVALID_STATE",
         `Le canal ${canal} n'est plus connecté à Relvo (identifiants invalides). Reconnecte-le dans Réglages › Canaux.`,
+        // Marqueur pour que le domaine bascule le canal en « erreur » (la
+        // pastille cesse d'afficher « Connecté » et le bouton Reconnecter sort).
+        { details: { channelUnhealthy: true } },
       )
     : new DomainError(
         "INVALID_STATE",
@@ -173,6 +176,56 @@ export async function createWhatsAppHostedAuthLink(
   input: HostedAuthCommon,
 ): Promise<string | null> {
   return createHostedAuthLink({ ...input, providers: ["WHATSAPP"] });
+}
+
+/**
+ * Lien de « hosted auth » en mode RECONNEXION (M6quater) : ré-authentifie le
+ * MÊME compte Unipile (`reconnect_account = externalAccountId`) au lieu d'en
+ * créer un nouveau — le compte, donc TOUTES les données rattachées (messages,
+ * conversations), sont conservés. Pas de `providers` (le schéma reconnect les
+ * infère du compte existant) ni de `sync_limit`. La finalisation repasse par le
+ * MÊME `notify_url` que la connexion initiale (`name` = channelId).
+ *
+ * C'est la seule sortie propre quand un canal tombe en « erreur » (identifiants
+ * expirés / révoqués) : sans lui, l'utilisateur devait supprimer le canal (et
+ * perdre ses messages) pour en reconnecter un neuf.
+ */
+export async function createReconnectHostedAuthLink(input: {
+  channelId: string;
+  /** Compte Unipile à ré-authentifier (ChannelConfig.externalAccountId). */
+  accountId: string;
+  notifyUrl: string;
+  successRedirectUrl: string;
+  failureRedirectUrl: string;
+  expiresInMinutes?: number;
+}): Promise<string | null> {
+  const ctx = getClient();
+  if (!ctx) {
+    console.warn(
+      "[unipile] UNIPILE_DSN/UNIPILE_API_KEY absents — reconnexion indisponible (dev).",
+    );
+    return null;
+  }
+  const expiresOn = new Date(
+    Date.now() + (input.expiresInMinutes ?? 60) * 60_000,
+  ).toISOString();
+  const hostedAuthInput = {
+    type: "reconnect",
+    reconnect_account: input.accountId,
+    api_url: ctx.dsn,
+    expiresOn,
+    name: input.channelId,
+    notify_url: input.notifyUrl,
+    success_redirect_url: input.successRedirectUrl,
+    failure_redirect_url: input.failureRedirectUrl,
+  };
+  type HostedAuthArg = Parameters<
+    typeof ctx.client.account.createHostedAuthLink
+  >[0];
+  const res = await ctx.client.account.createHostedAuthLink(
+    hostedAuthInput as unknown as HostedAuthArg,
+  );
+  return res.url;
 }
 
 /**
