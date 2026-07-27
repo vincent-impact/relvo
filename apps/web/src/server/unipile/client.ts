@@ -31,6 +31,27 @@ function toSendError(
       );
 }
 
+/**
+ * Traduit une erreur d'appel à l'API Unipile (hors envoi) en `DomainError`, pour
+ * qu'un lien de connexion/reconnexion impossible remonte en toast plutôt qu'en
+ * 500. Un 401 (`missing_credentials` / `invalid_credentials`) sur ces appels =
+ * NOS identifiants Unipile (UNIPILE_API_KEY / UNIPILE_DSN) sont refusés, pas ceux
+ * de la boîte de l'utilisateur.
+ */
+function toHostedAuthError(error: unknown): DomainError {
+  const body = (error as { body?: { status?: number } })?.body;
+  console.error("[unipile] échec de création du lien hosted auth :", error);
+  return body?.status === 401
+    ? new DomainError(
+        "INVALID_STATE",
+        "Connexion au fournisseur d'intégration refusée (identifiants Unipile). Vérifie UNIPILE_API_KEY / UNIPILE_DSN.",
+      )
+    : new DomainError(
+        "INVALID_STATE",
+        "Impossible d'ouvrir la connexion du canal. Réessaie dans un instant.",
+      );
+}
+
 // Client Unipile (M5) — s'appuie sur le SDK OFFICIEL `unipile-node-sdk` (v1).
 // Les signatures viennent des types du package (source de vérité), pas d'une
 // doc résumée. Namespaces utilisés : `account.*`, `email.*`, `webhook.*`.
@@ -136,10 +157,14 @@ async function createHostedAuthLink(
   type HostedAuthArg = Parameters<
     typeof ctx.client.account.createHostedAuthLink
   >[0];
-  const res = await ctx.client.account.createHostedAuthLink(
-    hostedAuthInput as unknown as HostedAuthArg,
-  );
-  return res.url;
+  try {
+    const res = await ctx.client.account.createHostedAuthLink(
+      hostedAuthInput as unknown as HostedAuthArg,
+    );
+    return res.url;
+  } catch (error) {
+    throw toHostedAuthError(error);
+  }
 }
 
 export async function createEmailHostedAuthLink(
@@ -222,10 +247,14 @@ export async function createReconnectHostedAuthLink(input: {
   type HostedAuthArg = Parameters<
     typeof ctx.client.account.createHostedAuthLink
   >[0];
-  const res = await ctx.client.account.createHostedAuthLink(
-    hostedAuthInput as unknown as HostedAuthArg,
-  );
-  return res.url;
+  try {
+    const res = await ctx.client.account.createHostedAuthLink(
+      hostedAuthInput as unknown as HostedAuthArg,
+    );
+    return res.url;
+  } catch (error) {
+    throw toHostedAuthError(error);
+  }
 }
 
 /**

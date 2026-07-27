@@ -5,6 +5,7 @@ import {
   type SendEmailReplyInput,
   createChannel,
   err,
+  isDomainError,
   ok,
   sendEmailReply,
   upsertChannelConfig,
@@ -57,22 +58,26 @@ export async function connectEmailChannelAction(
   // sécurise par un token en query-string (même secret que les webhooks managés).
   const secret = process.env.UNIPILE_WEBHOOK_SECRET ?? "";
   const notifyUrl = `${base}/api/webhooks/unipile?secret=${encodeURIComponent(secret)}`;
-  const url = await createEmailHostedAuthLink({
-    channelId: created.data.id,
-    notifyUrl,
-    successRedirectUrl: `${base}/parametres?tab=canaux&connected=1`,
-    failureRedirectUrl: `${base}/parametres?tab=canaux&error=1`,
-    provider,
-  });
-  if (!url) {
-    return err(
-      "INVALID_STATE",
-      "Intégration email non configurée (UNIPILE_DSN / UNIPILE_API_KEY).",
-    );
+  try {
+    const url = await createEmailHostedAuthLink({
+      channelId: created.data.id,
+      notifyUrl,
+      successRedirectUrl: `${base}/parametres?tab=canaux&connected=1`,
+      failureRedirectUrl: `${base}/parametres?tab=canaux&error=1`,
+      provider,
+    });
+    if (!url) {
+      return err(
+        "INVALID_STATE",
+        "Intégration email non configurée (UNIPILE_DSN / UNIPILE_API_KEY).",
+      );
+    }
+    revalidatePath("/parametres");
+    return ok({ url });
+  } catch (error) {
+    if (isDomainError(error)) return err(error.code, error.message);
+    return err("INVALID_STATE", "La connexion de la boîte email a échoué.");
   }
-
-  revalidatePath("/parametres");
-  return ok({ url });
 }
 
 /** Envoie une réponse email (brouillon du composer déclenché par l'utilisateur). */

@@ -5,6 +5,7 @@ import {
   type SendWhatsAppReplyInput,
   createChannel,
   err,
+  isDomainError,
   ok,
   sendWhatsAppReply,
   upsertChannelConfig,
@@ -48,21 +49,25 @@ export async function connectWhatsAppChannelAction(): Promise<
   // sécurise par un token en query-string (même secret que les webhooks managés).
   const secret = process.env.UNIPILE_WEBHOOK_SECRET ?? "";
   const notifyUrl = `${base}/api/webhooks/unipile?secret=${encodeURIComponent(secret)}`;
-  const url = await createWhatsAppHostedAuthLink({
-    channelId: created.data.id,
-    notifyUrl,
-    successRedirectUrl: `${base}/parametres?tab=canaux&connected=1`,
-    failureRedirectUrl: `${base}/parametres?tab=canaux&error=1`,
-  });
-  if (!url) {
-    return err(
-      "INVALID_STATE",
-      "Intégration WhatsApp non configurée (UNIPILE_DSN / UNIPILE_API_KEY).",
-    );
+  try {
+    const url = await createWhatsAppHostedAuthLink({
+      channelId: created.data.id,
+      notifyUrl,
+      successRedirectUrl: `${base}/parametres?tab=canaux&connected=1`,
+      failureRedirectUrl: `${base}/parametres?tab=canaux&error=1`,
+    });
+    if (!url) {
+      return err(
+        "INVALID_STATE",
+        "Intégration WhatsApp non configurée (UNIPILE_DSN / UNIPILE_API_KEY).",
+      );
+    }
+    revalidatePath("/parametres");
+    return ok({ url });
+  } catch (error) {
+    if (isDomainError(error)) return err(error.code, error.message);
+    return err("INVALID_STATE", "La connexion WhatsApp a échoué.");
   }
-
-  revalidatePath("/parametres");
-  return ok({ url });
 }
 
 /** Envoie une réponse WhatsApp dans un fil existant (déclenché par l'utilisateur). */

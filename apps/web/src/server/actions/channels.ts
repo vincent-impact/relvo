@@ -9,6 +9,7 @@ import {
   createChannel,
   deleteChannel,
   err,
+  isDomainError,
   ok,
   updateChannel,
   upsertChannelConfig,
@@ -90,22 +91,27 @@ export async function reconnectChannelAction(
   const base = appBaseUrl();
   const secret = process.env.UNIPILE_WEBHOOK_SECRET ?? "";
   const notifyUrl = `${base}/api/webhooks/unipile?secret=${encodeURIComponent(secret)}`;
-  const url = await createReconnectHostedAuthLink({
-    channelId,
-    accountId: found.data.externalAccountId,
-    notifyUrl,
-    successRedirectUrl: `${base}/parametres?tab=canaux&connected=1`,
-    failureRedirectUrl: `${base}/parametres?tab=canaux&error=1`,
-  });
-  if (!url) {
-    return err(
-      "INVALID_STATE",
-      "Intégration non configurée (UNIPILE_DSN / UNIPILE_API_KEY).",
-    );
+  try {
+    const url = await createReconnectHostedAuthLink({
+      channelId,
+      accountId: found.data.externalAccountId,
+      notifyUrl,
+      successRedirectUrl: `${base}/parametres?tab=canaux&connected=1`,
+      failureRedirectUrl: `${base}/parametres?tab=canaux&error=1`,
+    });
+    if (!url) {
+      return err(
+        "INVALID_STATE",
+        "Intégration non configurée (UNIPILE_DSN / UNIPILE_API_KEY).",
+      );
+    }
+    revalidateChannels();
+    return ok({ url });
+  } catch (error) {
+    // Erreur remontée du fournisseur (ex. 401 identifiants Unipile) → toast, pas 500.
+    if (isDomainError(error)) return err(error.code, error.message);
+    return err("INVALID_STATE", "La reconnexion du canal a échoué.");
   }
-
-  revalidateChannels();
-  return ok({ url });
 }
 
 export async function upsertChannelConfigAction(
