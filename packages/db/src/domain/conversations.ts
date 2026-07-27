@@ -54,6 +54,10 @@ export const resolveConversationSchema = z.object({
   interlocutorRaw: z.string().trim().max(320).optional().nullable(),
   /** Label lisible (nom de profil WhatsApp, display-name email). */
   interlocutorName: z.string().trim().max(200).optional().nullable(),
+  /** E-MAIL (M6quater) — set de destinataires EXTERNES (adresses brutes, notre
+   *  propre adresse déjà retirée par l'appelant). Trié + dédupliqué ici, il forme
+   *  la clé avec l'objet normalisé. Vide/absent pour la messagerie. */
+  participantsRaw: z.array(z.string().trim().max(320)).optional().nullable(),
   contactId: z.uuid().optional().nullable(),
   subjectLine: z.string().trim().max(500).optional().nullable(),
   /** `chat_id` WhatsApp. */
@@ -72,6 +76,9 @@ export type ConversationIdentity = {
   key: string;
   title: string;
   interlocutorRaw: string | null;
+  /** E-MAIL — le set de destinataires trié/dédupliqué qui a formé la clé. Vide
+   *  pour la messagerie. */
+  participantsRaw: string[];
   externalThreadId: string | null;
   normalizedSubject: string | null;
 };
@@ -108,6 +115,7 @@ export function conversationIdentity(
         // ferait passer pour une conversation directe avec cette personne.
         title: input.groupTitle?.trim() || WHATSAPP_GROUP_PLACEHOLDER,
         interlocutorRaw: null,
+        participantsRaw: [],
         externalThreadId: thread,
         normalizedSubject: null,
       };
@@ -123,6 +131,7 @@ export function conversationIdentity(
         interlocutor ||
         "Conversation WhatsApp",
       interlocutorRaw: interlocutor || null,
+      participantsRaw: [],
       externalThreadId: thread || null,
       normalizedSubject: null,
     };
@@ -131,11 +140,29 @@ export function conversationIdentity(
   const normalized = input.subjectLine
     ? normalizeSubjectLine(input.subjectLine)
     : "";
+  // Le SET de destinataires externes forme la clé avec l'objet (M6quater) :
+  // `email:<objet>:<set trié>`. Un reply-all de n'importe quel participant
+  // retombe ainsi sur la MÊME clé (le set trié est identique) ; une réponse « à
+  // nous seuls » (set réduit) crée une conversation distincte. Repli sur
+  // l'interlocuteur seul quand l'appelant ne fournit pas de set (tests, points
+  // d'entrée historiques).
+  const rawSet =
+    input.participantsRaw && input.participantsRaw.length > 0
+      ? input.participantsRaw
+      : interlocutor
+        ? [interlocutor]
+        : [];
+  const participantsRaw = Array.from(
+    new Set(rawSet.map((p) => p.trim().toLowerCase()).filter(Boolean)),
+  ).sort();
   return {
     type: ConversationType.email_subject,
-    key: `email:${interlocutor}:${normalized}`,
+    key: `email:${normalized}:${participantsRaw.join(",")}`,
     title: input.subjectLine?.trim() || "(sans objet)",
-    interlocutorRaw: interlocutor || null,
+    // Valeur d'affichage historique conservée : l'interlocuteur passé, sinon le
+    // premier du set. L'UI lira désormais le set (participantsRaw) — étape 4.
+    interlocutorRaw: interlocutor || participantsRaw[0] || null,
+    participantsRaw,
     externalThreadId: thread || null,
     normalizedSubject: normalized,
   };
@@ -175,6 +202,7 @@ export async function resolveConversation(
             ? null
             : (data.contactId ?? null),
         interlocutorRaw: identity.interlocutorRaw,
+        participantsRaw: identity.participantsRaw,
         externalThreadId: identity.externalThreadId,
         normalizedSubject: identity.normalizedSubject,
       } satisfies TenantCreate<Prisma.ConversationUncheckedCreateInput> as Prisma.ConversationUncheckedCreateInput,

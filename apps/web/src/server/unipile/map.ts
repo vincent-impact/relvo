@@ -93,6 +93,14 @@ export function toInboundEmail(
   channelId: string,
 ): IngestInboundEmailInput {
   const receivedAt = mail.date ? new Date(mail.date) : null;
+  // Destinataires To+Cc (M6quater) : forment le SET de la conversation avec
+  // l'expéditeur. Le Bcc est exclu (invisible côté entrant, hors identité).
+  const recipients = [
+    ...(mail.to_attendees ?? []),
+    ...(mail.cc_attendees ?? []),
+  ]
+    .map((a) => a?.identifier)
+    .filter((id): id is string => Boolean(id));
   return {
     channelId,
     externalId: mail.email_id,
@@ -105,6 +113,7 @@ export function toInboundEmail(
     senderRaw: mail.from_attendee?.identifier ?? null,
     // Nom d'affichage email (« Karim Benali <karim@…> ») quand le client le donne.
     senderName: mail.from_attendee?.display_name ?? null,
+    recipients,
     subjectLine: mail.subject ?? null,
     content: plainContent(mail),
     contentHtml: htmlContent(mail),

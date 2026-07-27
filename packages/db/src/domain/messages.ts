@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Prisma } from "../generated/prisma/client";
 import {
   Actor,
+  ChannelType,
   ConversationType,
   MessageDirection,
   MessageStatus,
@@ -47,6 +48,10 @@ export const createMessageSchema = z.object({
   senderRaw: z.string().trim().max(320).optional().nullable(),
   senderName: z.string().trim().max(200).optional().nullable(),
   recipientContactId: z.uuid().optional().nullable(),
+  /** E-MAIL entrant (M6quater) — destinataires To+Cc bruts du webhook. Servent à
+   *  calculer le SET de la conversation (notre propre adresse retirée). Ignoré
+   *  hors e-mail. */
+  recipients: z.array(z.string().trim().max(320)).optional().nullable(),
   externalId: z.string().trim().max(255).optional().nullable(),
   externalThreadId: z.string().trim().max(255).optional().nullable(),
   // Message reçu dans un GROUPE (WhatsApp) → 1 groupe = 1 sujet, réponse à Tous.
@@ -110,7 +115,7 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
   const channel = assertFound(
     await db.channel.findFirst({
       where: { id: data.channelId },
-      select: { id: true, type: true },
+      select: { id: true, type: true, identifier: true },
     }),
     "Canal",
   );
@@ -133,11 +138,27 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
       ? contactDisplayName(recipient)
       : null;
 
+  // E-MAIL (M6quater) : la clé se calcule sur le SET de destinataires externes
+  // = interlocuteur + To/Cc, NOTRE propre adresse retirée. Un reply-all retombe
+  // ainsi sur la même conversation ; une réponse « à nous seuls » (set réduit)
+  // en crée une nouvelle. Hors e-mail, pas de set (la messagerie garde un
+  // contact unique + interlocutorRaw).
+  let participantsRaw: string[] | undefined;
+  if (channel.type === ChannelType.email) {
+    const self = channel.identifier?.trim().toLowerCase() || "";
+    const raw = [interlocutorRaw, ...(data.recipients ?? [])]
+      .filter((a): a is string => Boolean(a))
+      .map((a) => a.trim().toLowerCase())
+      .filter((a) => a && a !== self);
+    participantsRaw = Array.from(new Set(raw)).sort();
+  }
+
   const conversation = await resolveConversation(db, {
     channelId: channel.id,
     channelType: channel.type,
     interlocutorRaw,
     interlocutorName,
+    participantsRaw,
     contactId:
       (incoming ? data.senderContactId : data.recipientContactId) ?? null,
     subjectLine: data.subjectLine ?? null,
@@ -241,6 +262,9 @@ export const ingestInboundEmailSchema = z.object({
   externalThreadId: z.string().trim().max(255).optional().nullable(),
   senderRaw: z.string().trim().max(320).optional().nullable(),
   senderName: z.string().trim().max(200).optional().nullable(),
+  /** Destinataires To+Cc bruts (M6quater) — forment le SET de la conversation
+   *  avec l'expéditeur, notre propre adresse retirée dans `createMessage`. */
+  recipients: z.array(z.string().trim().max(320)).optional().nullable(),
   subjectLine: z.string().trim().max(500).optional().nullable(),
   content: z.string().optional().nullable(),
   contentHtml: z.string().optional().nullable(),
@@ -303,6 +327,7 @@ export async function ingestInboundEmail(
       senderContactId,
       senderRaw: data.senderRaw ?? null,
       senderName: data.senderName ?? null,
+      recipients: data.recipients ?? null,
       externalId: data.externalId,
       externalThreadId: data.externalThreadId ?? null,
       subjectLine: data.subjectLine ?? null,

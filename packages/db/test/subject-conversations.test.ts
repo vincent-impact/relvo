@@ -91,7 +91,7 @@ describe("extendSubjectToConversation (cas S)", () => {
     // L'objet PRÉ-REMPLI par le titre du sujet est ce qui fera retomber la
     // réponse (« Re: <titre> ») sur la même clé, donc dans ce sujet.
     expect(res.conversation.key).toBe(
-      `email:karim@sogood.fr:${subject.title.toLowerCase()}`,
+      `email:${subject.title.toLowerCase()}:karim@sogood.fr`,
     );
 
     // Le sujet porte maintenant DEUX conversations : c'est à ce niveau que se

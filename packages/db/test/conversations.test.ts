@@ -77,7 +77,9 @@ describe("conversationIdentity (clé canonique)", () => {
     });
 
     expect(first.type).toBe(ConversationType.email_subject);
-    expect(first.key).toBe("email:karim@sogood.fr:livraison sauce blanche");
+    // M6quater : la clé e-mail est `email:<objet normalisé>:<set trié de
+    // destinataires>` (le set forme la clé avec l'objet). Ici un seul destinataire.
+    expect(first.key).toBe("email:livraison sauce blanche:karim@sogood.fr");
     // C'est TOUT l'enjeu : une réponse doit rejoindre le fil de son message de
     // départ, quelles que soient la casse et les décorations du client mail.
     expect(reply.key).toBe(first.key);
