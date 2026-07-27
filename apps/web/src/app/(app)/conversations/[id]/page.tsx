@@ -17,10 +17,10 @@ export default async function ConversationDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ filtre?: string }>;
+  searchParams: Promise<{ filtre?: string; from?: string }>;
 }) {
   const { id } = await params;
-  const { filtre } = await searchParams;
+  const { filtre, from } = await searchParams;
 
   const db = await getTenantDb();
   const thread = await getConversationThread(db, id).catch(() => null);
@@ -47,7 +47,12 @@ export default async function ConversationDetailPage({
   ]);
 
   const messages = thread.messages.map(toThreadMessageData);
-  const backTo = `/conversations?filtre=${filtre ?? "sans-sujet"}`;
+  // Retour : la page d'origine si fournie (ex. la fiche sujet `/sujets/[id]`),
+  // sinon la surface de tri au bon filtre. Sanitisé (chemin interne uniquement).
+  const backTo =
+    from && from.startsWith("/") && !from.startsWith("//")
+      ? from
+      : `/conversations?filtre=${filtre ?? "sans-sujet"}`;
   const isGroup = thread.type === "whatsapp_group";
 
   return (
@@ -57,8 +62,11 @@ export default async function ConversationDetailPage({
         conversationId={id}
         title={thread.title}
         channelType={thread.channelType}
+        channelId={thread.channelId}
         isGroup={isGroup}
         participants={thread.participants}
+        participantsRaw={thread.participantsRaw}
+        externalThreadId={thread.externalThreadId}
         listenings={thread.listenings}
         messages={messages}
         backTo={backTo}

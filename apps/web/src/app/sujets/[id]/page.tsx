@@ -4,36 +4,27 @@ import {
   getSubjectDetail,
   listChannels,
   listConversationGroups,
-  listSubjectConversations,
+  listSubjectConversationRows,
 } from "@relvo/db";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
-import { type MessageBubbleData } from "@/components/shared/message-bubble";
 import { AcknowledgeOnOpen } from "@/components/subject/acknowledge-on-open";
 import { PollRefresh } from "@/components/shared/poll-refresh";
 import { AttachmentViewer } from "@/components/shared/attachment-viewer";
 import { AddTask } from "@/components/subject/add-task";
-import { RelvoDraftBlock } from "@/components/subject/relvo-draft-block";
 import { InformationsPane } from "@/components/subject/informations-pane";
-import {
-  SubjectBody,
-  type ReplyTarget,
-  type SubjectConversationPane,
-} from "@/components/subject/subject-body";
+import { SubjectBody } from "@/components/subject/subject-body";
+import { SubjectConversationsList } from "@/components/subject/subject-conversations-list";
 import { SubjectTitleInline } from "@/components/subject/subject-title-inline";
 import { TaskItem } from "@/components/subject/task-item";
+import { toConversationRowData } from "@/lib/conversation-row";
 import { contactFullName, formatRelative } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
-// Fiche Sujet (2026-07-24) — hero violet (titre éditable + progression), onglets
-// Informations / Tâches / Conversations / Documents. L'onglet « Détail » a été
-// supprimé : domaine + urgence + journal + suppression vivent dans Informations,
-// les pièces jointes dans Documents. Bas = RecipientComposer (onglet Conversations).
-
-const CHANNEL_LABEL: Record<string, string> = {
-  whatsapp: "WhatsApp",
-  email: "Email",
-};
+// Fiche Sujet (2026-07-27) — hero violet (titre éditable + progression), 4
+// onglets Informations / Tâches / Conversations / Documents. Les conversations
+// sont une LISTE : on clique une ligne pour ouvrir la conversation dans son écran
+// dédié (`/conversations/[id]`), seule surface d'affichage — on répond là-bas.
 
 export default async function SujetPage({
   params,
@@ -51,20 +42,12 @@ export default async function SujetPage({
   const db = await getTenantDb();
   // folders + allContacts ne dépendent pas du sujet → on les charge dans la même
   // vague que getSubjectDetail (une seule attente DB au lieu de deux successives).
-  const [detail, folders, allContacts, subjectConversations, channels, groups] =
+  const [detail, folders, allContacts, conversationRows, channels, groups] =
     await Promise.all([
       getSubjectDetail(db, id),
       db.folder.findMany({
         orderBy: [{ isDefault: "desc" }, { name: "asc" }],
-        // color/icon : le logo du domaine alimente la pastille de la pop-up
-        // « tap sur un message » (folderVisual), pas seulement le slug du seed.
-        select: {
-          id: true,
-          name: true,
-          slug: true,
-          color: true,
-          icon: true,
-        },
+        select: { id: true, name: true, slug: true, color: true, icon: true },
       }),
       db.contact.findMany({
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
@@ -77,12 +60,11 @@ export default async function SujetPage({
           phone: true,
         },
       }),
-      // Conversations portées par le sujet (M6bis) — elles donnent les CIBLES
-      // D'ENVOI, y compris pour un interlocuteur qui n'a encore rien écrit (cas
-      // S : on vient tout juste d'étendre le sujet à son adresse email).
-      listSubjectConversations(db, id),
-      // Canaux connectés (email/WhatsApp) + groupes existants → dialog « Ajouter
-      // une conversation » (item 4).
+      // Conversations du sujet, projetées en lignes de liste (objet, aperçu,
+      // non-lus, canal). La fiche ne rend plus le fil : elle liste et renvoie vers
+      // l'écran conversation.
+      listSubjectConversationRows(db, id),
+      // Canaux connectés + groupes existants → dialog « Ajouter une conversation ».
       listChannels(db),
       listConversationGroups(db),
     ]);
@@ -98,9 +80,8 @@ export default async function SujetPage({
     ),
   ].filter((t): t is "email" | "whatsapp" => t === "email" || t === "whatsapp");
 
-  const { subject, messages, tasks, events, attachments, draft } = detail;
-  // Contacts joignables pour le dialog « Ajouter une conversation » (avec leur
-  // email/numéro : le dialog filtre selon le canal choisi).
+  const { subject, tasks, events, attachments } = detail;
+  // Contacts joignables pour le dialog « Ajouter une conversation ».
   const addContacts = allContacts.map((c) => ({
     id: c.id,
     name: contactFullName(c),
@@ -108,139 +89,11 @@ export default async function SujetPage({
     phone: c.phone,
   }));
 
+  const rows = conversationRows.map(toConversationRowData);
+
   const taskTotal = tasks.length;
   const taskDone = tasks.filter((t) => t.status === "done").length;
   const taskPct = taskTotal > 0 ? Math.round((taskDone / taskTotal) * 100) : 0;
-  const draftContent =
-    draft && typeof draft.payload === "object" && draft.payload
-      ? ((draft.payload as { content?: string }).content ?? null)
-      : null;
-
-  const contactNameById = new Map(
-    allContacts.map((c) => [c.id, contactFullName(c)]),
-  );
-  // Résolution d'un nom lisible à partir d'une adresse e-mail brute (le set d'une
-  // conversation e-mail est fait d'adresses ; on les nomme quand un contact colle).
-  const contactByEmail = new Map(
-    allContacts
-      .filter((c) => c.email)
-      .map((c) => [c.email!.trim().toLowerCase(), contactFullName(c)]),
-  );
-
-  function toBubble(m: (typeof messages)[number]): MessageBubbleData {
-    return {
-      id: m.id,
-      direction: m.direction,
-      actor: m.direction === "outgoing" ? "user" : "contact",
-      senderName: m.senderContact?.name ?? m.senderName ?? m.senderRaw,
-      channel: CHANNEL_LABEL[m.channel.type] ?? null,
-      channelType: m.channel.type,
-      time: formatRelative(m.receivedAt ?? m.sentAt ?? m.createdAt),
-      content: m.content ?? "",
-      contentHtml: m.contentHtml,
-      attachment: m.attachments[0]
-        ? {
-            id: m.attachments[0].id,
-            name: m.attachments[0].name,
-            label: m.attachments[0].aiLabel,
-            mimeType: m.attachments[0].mimeType,
-          }
-        : null,
-    };
-  }
-
-  // DEUX ONGLETS PAR CANAL (M6quater) — chaque conversation porte SES messages
-  // (filtrés par `conversationId`), son sous-type (`kind` = onglet), son état, et
-  // sa cible d'envoi. Les messages ne se MÉLANGENT jamais d'une conversation à
-  // l'autre. Une conversation e-mail groupe un SET de destinataires (« Groupe »
-  // si ≥ 2) ; répondre s'adresse au set complet (reply-all).
-  const conversationPanes: SubjectConversationPane[] = subjectConversations.map(
-    (c) => {
-      const convMessages = messages.filter(
-        (m) => m.conversationId === c.conversationId,
-      );
-      const state: "active" | "paused" | "ended" =
-        c.status === "ignored"
-          ? "paused"
-          : c.closingMessageId != null
-            ? "ended"
-            : "active";
-      const unreadCount = convMessages.filter(
-        (m) => m.direction === "incoming" && m.readAt == null,
-      ).length;
-
-      if (c.channelType === "email") {
-        // Set de destinataires = source de vérité du fil. Repli sur
-        // l'interlocuteur pour les conversations d'avant M6quater (set vide).
-        const set =
-          c.participantsRaw.length > 0
-            ? c.participantsRaw
-            : c.interlocutorRaw
-              ? [c.interlocutorRaw]
-              : [];
-        const participants = set.map(
-          (addr) => contactByEmail.get(addr) ?? addr,
-        );
-        const isGroup = set.length >= 2;
-        const title = isGroup
-          ? "Groupe"
-          : (participants[0] ?? c.interlocutorRaw ?? "Interlocuteur");
-        const reply: ReplyTarget =
-          set.length > 0
-            ? {
-                kind: "email",
-                channelId: c.channelId,
-                recipients: set.map((addr) => ({
-                  identifier: addr,
-                  displayName: contactByEmail.get(addr),
-                })),
-                contactId: c.contactId,
-              }
-            : { kind: "none" };
-        return {
-          conversationId: c.conversationId,
-          kind: "email",
-          channelType: c.channelType,
-          title,
-          isGroup,
-          participants,
-          unreadCount,
-          state,
-          messages: convMessages.map(toBubble),
-          reply,
-        };
-      }
-
-      // Messagerie (WhatsApp…) — un contact direct ou un groupe qu'on écoute.
-      const isGroup = c.type === "whatsapp_group";
-      const contactName = c.contactId
-        ? (contactNameById.get(c.contactId) ?? null)
-        : null;
-      const title = isGroup
-        ? c.title || "Groupe"
-        : (contactName ?? c.interlocutorRaw ?? "Interlocuteur");
-      const reply: ReplyTarget = c.externalThreadId
-        ? {
-            kind: "whatsapp",
-            channelId: c.channelId,
-            chatId: c.externalThreadId,
-            contactId: c.contactId,
-          }
-        : { kind: "none" };
-      return {
-        conversationId: c.conversationId,
-        kind: "messagerie",
-        channelType: c.channelType,
-        title,
-        isGroup,
-        participants: [],
-        unreadCount,
-        state,
-        messages: convMessages.map(toBubble),
-        reply,
-      };
-    },
-  );
 
   return (
     <MobileFrame>
@@ -250,31 +103,19 @@ export default async function SujetPage({
       <SubjectBody
         defaultTab={
           (
-            [
-              "informations",
-              "email",
-              "messagerie",
-              "taches",
-              "documents",
-            ] as const
+            ["informations", "conversations", "taches", "documents"] as const
           ).includes(
             (tab ?? "") as
               | "informations"
-              | "email"
-              | "messagerie"
+              | "conversations"
               | "taches"
               | "documents",
           )
-            ? (tab as
-                | "informations"
-                | "email"
-                | "messagerie"
-                | "taches"
-                | "documents")
+            ? (tab as "informations" | "conversations" | "taches" | "documents")
             : "informations"
         }
         tasksCount={tasks.length}
-        draft={draftContent ? <RelvoDraftBlock text={draftContent} /> : null}
+        conversationsCount={rows.length}
         informationsPane={
           <InformationsPane
             subjectId={subject.id}
@@ -286,13 +127,18 @@ export default async function SujetPage({
           />
         }
         subjectId={subject.id}
-        subjectTitle={subject.title}
         subjectStatus={subject.status}
-        conversationPanes={conversationPanes}
+        conversationsPane={
+          <SubjectConversationsList
+            subjectId={subject.id}
+            subjectTitle={subject.title}
+            rows={rows}
+            availableChannels={availableChannels}
+            addContacts={addContacts}
+            groups={groups.map((g) => ({ id: g.id, title: g.title }))}
+          />
+        }
         documentsCount={attachments.length}
-        availableChannels={availableChannels}
-        addContacts={addContacts}
-        groups={groups.map((g) => ({ id: g.id, title: g.title }))}
         header={
           <RelvoHeader
             back={backHref}
@@ -306,15 +152,12 @@ export default async function SujetPage({
                 title={subject.title}
               />
             }
-            // Sous-titre = la RÉFÉRENCE seule. Plus de destinataire ici (2026-07-23,
-            // inutile : les conversations sont nominatives) ni de canal (un sujet
-            // n'est pas toujours lié à un canal).
+            // Sous-titre = la RÉFÉRENCE seule.
             subtitle={subject.reference}
             className="pb-10"
           >
             <div className="px-[22px] pt-3.5">
-              {/* Le domaine a quitté le header (2026-07-24) : il vit désormais
-                  dans l'onglet Informations. Reste la progression des tâches. */}
+              {/* Le domaine vit dans l'onglet Informations. Reste la progression. */}
               {taskTotal > 0 ? (
                 <div className="flex items-center gap-2.5">
                   <SquareCheck

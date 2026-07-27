@@ -592,6 +592,25 @@ export async function listConversationItems(
   return { items, nextCursor: page.nextCursor };
 }
 
+/**
+ * Conversations rattachées à un sujet, projetées en lignes de liste (mêmes
+ * données que /conversations : aperçu, non-lus, canal). C'est ce que la fiche
+ * sujet affiche depuis 2026-07-27 — une LISTE, plus un fil embarqué : on clique
+ * une ligne pour ouvrir la conversation dans son écran dédié (`/conversations/[id]`).
+ * Ordre temporel (activité décroissante), comme la surface de tri.
+ */
+export async function listSubjectConversationRows(
+  db: TenantDb,
+  subjectId: string,
+): Promise<ConversationListItem[]> {
+  const rows = await db.conversation.findMany({
+    where: { subjects: { some: { subjectId } } },
+    orderBy: [{ lastMessageAt: "desc" }, { createdAt: "desc" }],
+    include: CONVERSATION_ITEM_INCLUDE,
+  });
+  return rows.map(toConversationListItem);
+}
+
 /** Le KPI « Sans sujet » de la page Sujets. */
 export function countUnsortedConversations(db: TenantDb): Promise<number> {
   return db.conversation.count({ where: conversationFilterWhere("unsorted") });
@@ -745,9 +764,15 @@ export type ConversationThread = {
   type: ConversationType;
   status: ConversationStatus;
   channelType: ChannelType;
+  /** Canal d'émission — cible d'envoi du composer (répondre depuis la conversation). */
+  channelId: string;
   /** Nom du canal connecté (boîte mail, compte WhatsApp) — affiché en en-tête. */
   channelName: string;
   contactId: string | null;
+  /** SET de destinataires externes (e-mail) — reply-all du composer. Vide hors e-mail. */
+  participantsRaw: string[];
+  /** Fil WhatsApp (chat_id) — cible d'envoi du composer en messagerie. */
+  externalThreadId: string | null;
   interlocutorRaw: string | null;
   /** Nom lisible de l'interlocuteur (contact > brut) — null pour un groupe. */
   interlocutorName: string | null;
@@ -900,8 +925,11 @@ export async function getConversationThread(
     type: conversation.type,
     status: conversation.status,
     channelType: conversation.channel.type,
+    channelId: conversation.channelId,
     channelName: conversation.channel.name,
     contactId: conversation.contactId,
+    participantsRaw: conversation.participantsRaw,
+    externalThreadId: conversation.externalThreadId,
     interlocutorRaw: conversation.interlocutorRaw,
     interlocutorName,
     participants,

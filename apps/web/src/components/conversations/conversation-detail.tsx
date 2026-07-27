@@ -27,15 +27,20 @@ import {
 } from "@/components/messages/subject-picker-dialog";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
+import { RecipientComposer } from "@/components/shared/recipient-composer";
 import {
   createSubjectFromConversationAction,
   ignoreConversationAction,
 } from "@/server/actions/conversations";
 import { createSubjectFromMessageAction } from "@/server/actions/messages";
+import { sendEmailReplyAction } from "@/server/actions/email";
+import { sendWhatsAppReplyAction } from "@/server/actions/whatsapp";
 import {
   attachConversationToSubjectAction,
   attachConversationToSubjectFromMessageAction,
   detachConversationFromSubjectAction,
+  ensureSubjectAnchorsAction,
+  stopListeningOnConversationAction,
 } from "@/server/actions/subject-conversations";
 import { folderVisual } from "@/lib/folders";
 import { initialsFor } from "@/lib/display";
@@ -73,8 +78,11 @@ export function ConversationDetail({
   conversationId,
   title,
   channelType,
+  channelId,
   isGroup,
   participants,
+  participantsRaw,
+  externalThreadId,
   listenings,
   messages,
   backTo,
@@ -84,9 +92,15 @@ export function ConversationDetail({
   conversationId: string;
   title: string;
   channelType: string;
+  /** Canal d'émission — cible d'envoi du composer. */
+  channelId: string;
   isGroup: boolean;
   /** Tous les interlocuteurs du fil (≥1 pour un groupe actif). */
   participants: ConversationParticipant[];
+  /** SET de destinataires externes (e-mail) — reply-all du composer. */
+  participantsRaw: string[];
+  /** Fil WhatsApp (chat_id) — cible d'envoi en messagerie. */
+  externalThreadId: string | null;
   listenings: ConversationListening[];
   messages: ThreadMessageData[];
   backTo: string;
@@ -112,6 +126,18 @@ export function ConversationDetail({
   const ChannelIcon = CHANNEL_ICON[channelType] ?? Mail;
   const channelLabel = CHANNEL_LABEL[channelType] ?? "Canal";
 
+  // Écoute ACTIVE = ce fil alimente en ce moment un sujet ouvert. On arrive alors
+  // le plus souvent depuis la fiche de ce sujet : le dock devient un COMPOSER de
+  // réponse (répondre est le geste par défaut), et le triage (Ignorer/Lier/
+  // Nouveau) s'efface. Détacher/arrêter l'écoute vit dans « Suivi dans ».
+  const activeListening = listenings.find((l) => l.active) ?? null;
+  const attached = activeListening != null;
+  const composerPlaceholder = isGroup
+    ? "Répondre au groupe…"
+    : participants[0]?.name
+      ? `Répondre à ${participants[0].name}…`
+      : "Répondre…";
+
   // Tap sur un interlocuteur : sa fiche s'il est connu, sinon la pop-up de
   // création pré-remplie (même comportement que la liste /conversations).
   function tapParticipant(p: ConversationParticipant) {
@@ -127,20 +153,74 @@ export function ConversationDetail({
     });
   }
 
-  // Détacher CETTE conversation d'un sujet (icône chaîne brisée, item 3e).
-  function detach(subjectId: string) {
+  // Retirer CETTE conversation d'un sujet (icône chaîne brisée, « Suivi dans ») —
+  // SELON LE CANAL : e-mail = détacher le fil (rattrapage d'erreur, le sujet EST le
+  // fil) ; messagerie = arrêter l'écoute (borne de fin, le passé reste rattaché).
+  function unlink(subjectId: string) {
     startTransition(async () => {
-      const res = await detachConversationFromSubjectAction({
-        subjectId,
-        conversationId,
-      });
+      const res = isEmail
+        ? await detachConversationFromSubjectAction({
+            subjectId,
+            conversationId,
+          })
+        : await stopListeningOnConversationAction({
+            subjectId,
+            conversationId,
+          });
       if (res.ok) {
-        toast.success("Conversation détachée du sujet");
+        toast.success(isEmail ? "Fil détaché du sujet" : "Écoute arrêtée");
         router.refresh();
       } else {
         toast.error(res.message);
       }
     });
+  }
+
+  // Réponse depuis la conversation (fil rattaché) — e-mail : reply-all sur le SET ;
+  // messagerie : dans le fil (chat_id). L'envoi s'inscrit dans le sujet écouté.
+  async function handleSend(text: string) {
+    if (!activeListening) return false;
+    if (isEmail) {
+      const set =
+        participantsRaw.length > 0
+          ? participantsRaw
+          : participants.map((p) => p.raw).filter((r): r is string => !!r);
+      if (set.length === 0) {
+        toast.error("Aucun destinataire pour répondre.");
+        return false;
+      }
+      const res = await sendEmailReplyAction({
+        subjectId: activeListening.subjectId,
+        channelId,
+        to: set.map((identifier) => ({ identifier })),
+        subject: `Re: ${activeListening.title}`,
+        body: text,
+      });
+      if (!res.ok) {
+        toast.error(res.message);
+        return false;
+      }
+      toast.success(isGroup ? "E-mail envoyé au groupe" : "E-mail envoyé");
+    } else {
+      if (!externalThreadId) {
+        toast.error("Fil de messagerie introuvable.");
+        return false;
+      }
+      const res = await sendWhatsAppReplyAction({
+        subjectId: activeListening.subjectId,
+        channelId,
+        chatId: externalThreadId,
+        body: text,
+      });
+      if (!res.ok) {
+        toast.error(res.message);
+        return false;
+      }
+      toast.success(isGroup ? "Message envoyé au groupe" : "Message envoyé");
+    }
+    await ensureSubjectAnchorsAction(activeListening.subjectId);
+    router.refresh();
+    return true;
   }
 
   function resetSelection() {
@@ -346,8 +426,12 @@ export function ConversationDetail({
                         <button
                           type="button"
                           disabled={pending}
-                          onClick={() => detach(l.subjectId)}
-                          aria-label="Détacher de ce sujet"
+                          onClick={() => unlink(l.subjectId)}
+                          aria-label={
+                            isEmail
+                              ? "Détacher ce fil du sujet"
+                              : "Arrêter l'écoute"
+                          }
                           className="grid size-8 flex-none place-items-center rounded-full text-white active:bg-white/15 disabled:opacity-50"
                         >
                           <Unlink className="size-[16px]" strokeWidth={2.2} />
@@ -370,75 +454,86 @@ export function ConversationDetail({
         />
       </Screen>
 
-      {/* Dock d'action ANCRÉ — chrome violet (verre Relvo). */}
-      <div
-        className="absolute inset-x-0 bottom-0 z-30 px-4 pt-3"
-        style={{
-          paddingBottom: "max(calc(env(safe-area-inset-bottom) - 12px), 8px)",
-          background:
-            "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
-          backdropFilter: "blur(28px) saturate(170%)",
-          WebkitBackdropFilter: "blur(28px) saturate(170%)",
-          boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.22)",
-        }}
-      >
-        {inSelection ? (
-          <div className="flex items-center gap-2">
-            <span className="flex-1 text-[13px] font-semibold text-white">
-              {selectedMessageId
-                ? "Toute la suite sera écoutée."
-                : "Choisissez le message de départ"}
-            </span>
-            <button
-              type="button"
-              onClick={resetSelection}
-              className="inline-flex items-center gap-1 rounded-full border border-white/35 px-3 py-2 text-[12.5px] font-bold text-white active:bg-white/10"
-            >
-              <X className="size-4" strokeWidth={2.4} />
-              Annuler
-            </button>
-            <button
-              type="button"
-              disabled={!selectedMessageId || pending}
-              onClick={validateSelection}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-bold text-relvo active:opacity-90 disabled:opacity-40"
-            >
-              <Check className="size-[17px]" strokeWidth={2.6} />
-              Valider
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={pending}
-              onClick={ignore}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-white/35 py-2.5 text-[13.5px] font-bold text-white active:bg-white/10 disabled:opacity-50"
-            >
-              <EyeOff className="size-[16px]" strokeWidth={2} />
-              Ignorer
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={startLink}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-white/35 py-2.5 text-[13.5px] font-bold text-white active:bg-white/10 disabled:opacity-50"
-            >
-              <Link2 className="size-[16px]" strokeWidth={2.2} />
-              Lier
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={startCreate}
-              className="inline-flex flex-1 items-center justify-center gap-1 rounded-full bg-white py-2.5 text-[13.5px] font-bold text-relvo active:opacity-90 disabled:opacity-50"
-            >
-              <Plus className="size-[18px]" strokeWidth={2.6} />
-              Nouveau
-            </button>
-          </div>
-        )}
-      </div>
+      {/* Rattachée → COMPOSER (répondre = geste par défaut) ; sinon → dock de
+          triage (Ignorer / Lier / Nouveau). Le détachement/arrêt d'écoute vit,
+          lui, dans « Suivi dans » (hero). */}
+      {attached ? (
+        <div className="absolute inset-x-0 bottom-0 z-30">
+          <RecipientComposer
+            placeholder={composerPlaceholder}
+            onSend={handleSend}
+          />
+        </div>
+      ) : (
+        <div
+          className="absolute inset-x-0 bottom-0 z-30 px-4 pt-3"
+          style={{
+            paddingBottom: "max(calc(env(safe-area-inset-bottom) - 12px), 8px)",
+            background:
+              "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
+            backdropFilter: "blur(28px) saturate(170%)",
+            WebkitBackdropFilter: "blur(28px) saturate(170%)",
+            boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.22)",
+          }}
+        >
+          {inSelection ? (
+            <div className="flex items-center gap-2">
+              <span className="flex-1 text-[13px] font-semibold text-white">
+                {selectedMessageId
+                  ? "Toute la suite sera écoutée."
+                  : "Choisissez le message de départ"}
+              </span>
+              <button
+                type="button"
+                onClick={resetSelection}
+                className="inline-flex items-center gap-1 rounded-full border border-white/35 px-3 py-2 text-[12.5px] font-bold text-white active:bg-white/10"
+              >
+                <X className="size-4" strokeWidth={2.4} />
+                Annuler
+              </button>
+              <button
+                type="button"
+                disabled={!selectedMessageId || pending}
+                onClick={validateSelection}
+                className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-bold text-relvo active:opacity-90 disabled:opacity-40"
+              >
+                <Check className="size-[17px]" strokeWidth={2.6} />
+                Valider
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={ignore}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-white/35 py-2.5 text-[13.5px] font-bold text-white active:bg-white/10 disabled:opacity-50"
+              >
+                <EyeOff className="size-[16px]" strokeWidth={2} />
+                Ignorer
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={startLink}
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-white/35 py-2.5 text-[13.5px] font-bold text-white active:bg-white/10 disabled:opacity-50"
+              >
+                <Link2 className="size-[16px]" strokeWidth={2.2} />
+                Lier
+              </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={startCreate}
+                className="inline-flex flex-1 items-center justify-center gap-1 rounded-full bg-white py-2.5 text-[13.5px] font-bold text-relvo active:opacity-90 disabled:opacity-50"
+              >
+                <Plus className="size-[18px]" strokeWidth={2.6} />
+                Nouveau
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <SubjectCreateDialog
         open={showCreate}
