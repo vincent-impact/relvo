@@ -46,6 +46,7 @@ export function AddConversationDialog({
   onOpenChange,
   subjectTitle,
   availableChannels,
+  forceChannel,
   contacts,
   groups,
   pending = false,
@@ -56,13 +57,16 @@ export function AddConversationDialog({
   subjectTitle: string;
   /** Canaux CONNECTÉS du compte (email et/ou whatsapp). */
   availableChannels: Channel[];
+  /** VERROUILLE le canal (onglet E-mail ou Messagerie de la fiche, M6quater) :
+   *  le sélecteur de canal disparaît, le dialog ne propose QUE ce canal. */
+  forceChannel?: Channel;
   contacts: AddConvContact[];
   groups: AddConvGroup[];
   pending?: boolean;
   onSubmit: (input: AddConversationSubmit) => void;
 }) {
   const [channel, setChannel] = useState<Channel>(
-    availableChannels[0] ?? "email",
+    forceChannel ?? availableChannels[0] ?? "email",
   );
   // Sous-mode WhatsApp : direct (contact) ou groupe.
   const [waMode, setWaMode] = useState<"contact" | "group">("contact");
@@ -80,7 +84,7 @@ export function AddConversationDialog({
   const wasOpen = useRef(false);
   useEffect(() => {
     if (open && !wasOpen.current) {
-      setChannel(availableChannels[0] ?? "email");
+      setChannel(forceChannel ?? availableChannels[0] ?? "email");
       setWaMode("contact");
       setContactId(null);
       setGroupId(null);
@@ -88,7 +92,7 @@ export function AddConversationDialog({
       setQuery("");
     }
     wasOpen.current = open;
-  }, [open, subjectTitle, availableChannels]);
+  }, [open, subjectTitle, availableChannels, forceChannel]);
 
   const isEmail = channel === "email";
   const wantGroup = channel === "whatsapp" && waMode === "group";
@@ -124,17 +128,24 @@ export function AddConversationDialog({
     }
   }
 
-  const bothChannels = availableChannels.length > 1;
+  // Sélecteur de canal masqué si un seul canal connecté OU si le canal est
+  // verrouillé par l'onglet appelant (E-mail / Messagerie de la fiche).
+  const showChannelSwitch = availableChannels.length > 1 && !forceChannel;
+  const title = forceChannel
+    ? forceChannel === "email"
+      ? "Écrire un e-mail"
+      : "Écouter une conversation"
+    : "Ajouter une conversation";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-4 p-5">
         <DialogHeader>
-          <DialogTitle>Ajouter une conversation</DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
 
-        {/* Canal — segmented (masqué si un seul canal connecté). */}
-        {bothChannels ? (
+        {/* Canal — segmented (masqué si un seul canal connecté ou verrouillé). */}
+        {showChannelSwitch ? (
           <div className="flex gap-1.5 rounded-full bg-(--surface-2) p-1">
             {(["email", "whatsapp"] as const)
               .filter((c) => availableChannels.includes(c))

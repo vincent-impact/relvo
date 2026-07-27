@@ -522,13 +522,23 @@ export async function ingestInboundWhatsApp(
 export const sendEmailReplySchema = z.object({
   subjectId: z.uuid(),
   channelId: z.uuid(),
-  to: z.object({
-    identifier: z.email(),
-    displayName: z.string().trim().max(200).optional(),
-  }),
-  // Interlocuteur destinataire. Fourni explicitement par l'appelant (le contact
-  // sélectionné dans le composer) : sans lui, le message sortant ne serait
-  // rattaché à personne et disparaîtrait du fil filtré par interlocuteur.
+  // SET de destinataires (M6quater) : une conversation e-mail groupe TOUT son set
+  // (« reply-all »). Répondre à un seul romprait le groupe ET, surtout, ferait
+  // retomber le message sortant sur une clé de conversation différente
+  // (`email:<objet>:<set réduit>`) → un fil fantôme hors du sujet. On renvoie donc
+  // au set complet, et on le passe à `createMessage` (`recipients`) pour que la
+  // clé recalculée coïncide avec celle de la conversation d'origine.
+  to: z
+    .array(
+      z.object({
+        identifier: z.email(),
+        displayName: z.string().trim().max(200).optional(),
+      }),
+    )
+    .min(1),
+  // Interlocuteur PRINCIPAL destinataire (contact du composer). Sert à rattacher
+  // le message sortant à un contact ; facultatif pour un groupe sans contact
+  // unique (le rattachement de la conversation, lui, tient par `conversationId`).
   recipientContactId: z.uuid().optional().nullable(),
   subject: z.string().trim().min(1).max(500),
   body: z.string().min(1),
@@ -562,20 +572,25 @@ export async function sendEmailReply(
     );
   }
 
+  const identifiers = data.to.map((t) => t.identifier);
+
   const { emailId } = await sender.sendEmail({
     externalAccountId,
-    to: [{ identifier: data.to.identifier, display_name: data.to.displayName }],
+    to: data.to.map((t) => ({
+      identifier: t.identifier,
+      display_name: t.displayName,
+    })),
     subject: data.subject,
     body: data.body,
   });
 
-  // Destinataire : celui passé par l'appelant (interlocuteur sélectionné) ;
-  // à défaut, on retombe sur une recherche par email (best-effort).
+  // Destinataire principal : celui passé par l'appelant (interlocuteur
+  // sélectionné) ; à défaut, on retombe sur le premier contact reconnu du set.
   const recipientContactId =
     data.recipientContactId ??
     (
       await db.contact.findFirst({
-        where: { email: data.to.identifier },
+        where: { email: { in: identifiers } },
         select: { id: true },
       })
     )?.id ??
@@ -586,6 +601,9 @@ export async function sendEmailReply(
     direction: MessageDirection.outgoing,
     subjectId: data.subjectId,
     recipientContactId,
+    // Le SET complet → `participantsRaw` recalculé = celui de la conversation
+    // d'origine → le sortant retombe dans LA MÊME conversation e-mail.
+    recipients: identifiers,
     externalId: emailId,
     subjectLine: data.subject,
     content: data.body,

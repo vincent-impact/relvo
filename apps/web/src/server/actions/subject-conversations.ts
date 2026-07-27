@@ -7,6 +7,7 @@ import {
   detachConversationFromSubject,
   ensureSubjectAnchors,
   extendSubjectToConversation,
+  stopListeningOnConversation,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
@@ -106,10 +107,11 @@ export async function attachConversationToSubjectFromMessageAction(input: {
 }
 
 /**
- * « Arrêter l'écoute » (feuille de la fiche sujet, M6ter) — détache CETTE
- * conversation du sujet. C'est le SEUL geste qui détache un fil email d'un sujet
- * (invariant n°13bis). La conversation continue de vivre ; elle cesse simplement
- * d'alimenter ce sujet, et redevient « Sans sujet » si aucun autre ne l'écoute.
+ * « Détacher » un fil E-MAIL (onglet E-mail de la fiche, M6quater) — retire la
+ * conversation du sujet ET purge le `subjectId` de ses messages. C'est un
+ * RATTRAPAGE D'ERREUR (« ce fil n'aurait pas dû être là »), le SEUL geste qui
+ * détache un fil e-mail (invariant n°13bis). La conversation continue de vivre ;
+ * elle redevient « Sans sujet » si aucun autre sujet ne la porte.
  */
 export async function detachConversationFromSubjectAction(input: {
   subjectId: string;
@@ -117,6 +119,28 @@ export async function detachConversationFromSubjectAction(input: {
 }) {
   const result = await domainAction((db) =>
     detachConversationFromSubject(db, input.subjectId, input.conversationId),
+  );
+  if (result.ok) {
+    revalidatePath(`/sujets/${input.subjectId}`);
+    revalidatePath("/conversations");
+    revalidatePath("/fil");
+    revalidateTenantData();
+  }
+  return result;
+}
+
+/**
+ * « Arrêter l'écoute » d'un fil de MESSAGERIE (onglet Messagerie de la fiche,
+ * M6quater) — pose la borne de fin (`closingMessageId`) : le passé reste
+ * rattaché, les messages à venir retombent orphelins. Contrairement au détachement
+ * e-mail, on NE purge PAS les messages déjà couverts (« on a assez entendu »).
+ */
+export async function stopListeningOnConversationAction(input: {
+  subjectId: string;
+  conversationId: string;
+}) {
+  const result = await domainAction((db) =>
+    stopListeningOnConversation(db, input.subjectId, input.conversationId),
   );
   if (result.ok) {
     revalidatePath(`/sujets/${input.subjectId}`);

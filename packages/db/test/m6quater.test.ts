@@ -3,9 +3,34 @@ import {
   createSubjectFromMessage,
   detachConversationFromSubject,
   ingestInboundEmail,
+  ingestInboundWhatsApp,
   prisma,
+  sendEmailReply,
+  stopListeningOnConversation,
   tenantDb,
 } from "../src/index";
+
+// Faux port d'envoi e-mail : aucun credential, aucun réseau (cf. email-port.ts).
+const FAKE_EMAIL_SENDER = {
+  sendEmail: async () => ({ emailId: "out-1" }),
+};
+
+/** Marque un canal comme CONNECTÉ (externalAccountId requis par l'envoi). */
+async function connectChannel(
+  accountId: string,
+  channelId: string,
+  externalAccountId: string,
+) {
+  await prisma.channelConfig.create({
+    data: {
+      accountId,
+      channelId,
+      provider: "unipile",
+      status: "connected",
+      externalAccountId,
+    },
+  });
+}
 
 // M6quater — la clé d'une conversation e-mail est `email:<objet>:<set trié de
 // destinataires>` (notre propre adresse retirée). Conséquences testées ici :
@@ -132,6 +157,82 @@ describe("clé e-mail par SET de destinataires (M6quater)", () => {
     expect(stranger.message.conversationId).not.toBe(
       group.message.conversationId,
     );
+  });
+});
+
+describe("envoi e-mail — reply-all reste dans la MÊME conversation (M6quater)", () => {
+  it("répondre au SET complet d'un groupe ne fragmente pas le fil", async () => {
+    const { account, channel, db } = await makeAccountWithChannel(ME);
+    await connectChannel(account.id, channel.id, "acc-mail-1");
+
+    // Fil de groupe [Karim, Sophie], dont on fait un sujet.
+    const group = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "grp",
+      senderRaw: KARIM,
+      recipients: [ME, SOPHIE],
+      subjectLine: "Commande palettes",
+      content: "Bonjour à tous",
+    });
+    const subject = await createSubjectFromMessage(db, group.message.id);
+
+    // Réponse au SET complet → clé recalculée identique → même conversation.
+    const out = await sendEmailReply(db, FAKE_EMAIL_SENDER, {
+      subjectId: subject.id,
+      channelId: channel.id,
+      to: [{ identifier: KARIM }, { identifier: SOPHIE }],
+      subject: "Re: Commande palettes",
+      body: "Bien noté",
+    });
+
+    expect(out.conversationId).toBe(group.message.conversationId);
+    expect(out.subjectId).toBe(subject.id);
+    // Aucun fil fantôme : toujours une seule conversation e-mail.
+    expect(await db.conversation.count()).toBe(1);
+  });
+});
+
+describe("arrêter l'écoute d'un fil de messagerie (M6quater)", () => {
+  it("pose la borne de fin sur le dernier message, sans détruire la liaison", async () => {
+    const account = await prisma.account.create({
+      data: { email: "wa-stop@test.fr", firstName: "Test", lastName: "User" },
+    });
+    const wa = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "WhatsApp",
+        type: "whatsapp",
+        identifier: "+33600000000",
+      },
+    });
+    const db = tenantDb(account.id);
+
+    const m1 = await ingestInboundWhatsApp(db, {
+      channelId: wa.id,
+      externalId: "w1",
+      externalThreadId: "chat-x",
+      senderRaw: "33600000010@s.whatsapp.net",
+      content: "Salut",
+    });
+    const subject = await createSubjectFromMessage(db, m1.message.id);
+    const conversationId = m1.message.conversationId;
+
+    await stopListeningOnConversation(db, subject.id, conversationId);
+
+    // La liaison SUBSISTE (le passé reste rattaché) ; seule la borne de fin est posée.
+    const link = await db.subjectConversation.findFirst({
+      where: { subjectId: subject.id, conversationId },
+    });
+    expect(link).not.toBeNull();
+    expect(link?.closingMessageId).toBe(m1.message.id);
+    // Un fil e-mail n'a PAS de borne de fin : arrêter l'écoute le refuse.
+    await expect(
+      stopListeningOnConversation(
+        db,
+        subject.id,
+        "00000000-0000-0000-0000-000000000000",
+      ),
+    ).rejects.toThrow();
   });
 });
 

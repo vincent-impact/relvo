@@ -119,6 +119,13 @@ export default async function SujetPage({
   const contactNameById = new Map(
     allContacts.map((c) => [c.id, contactFullName(c)]),
   );
+  // Résolution d'un nom lisible à partir d'une adresse e-mail brute (le set d'une
+  // conversation e-mail est fait d'adresses ; on les nomme quand un contact colle).
+  const contactByEmail = new Map(
+    allContacts
+      .filter((c) => c.email)
+      .map((c) => [c.email!.trim().toLowerCase(), contactFullName(c)]),
+  );
 
   function toBubble(m: (typeof messages)[number]): MessageBubbleData {
     return {
@@ -142,22 +149,16 @@ export default async function SujetPage({
     };
   }
 
-  // UN ONGLET PAR CONVERSATION (2026-07-23) — les messages ne se MÉLANGENT jamais
-  // entre deux conversations d'un même sujet. Chaque conversation porte SES
-  // messages (filtrés par `conversationId`), son état d'écoute (Pause/Play) et sa
-  // cible d'envoi (canal + interlocuteur + fil).
+  // DEUX ONGLETS PAR CANAL (M6quater) — chaque conversation porte SES messages
+  // (filtrés par `conversationId`), son sous-type (`kind` = onglet), son état, et
+  // sa cible d'envoi. Les messages ne se MÉLANGENT jamais d'une conversation à
+  // l'autre. Une conversation e-mail groupe un SET de destinataires (« Groupe »
+  // si ≥ 2) ; répondre s'adresse au set complet (reply-all).
   const conversationPanes: SubjectConversationPane[] = subjectConversations.map(
     (c) => {
       const convMessages = messages.filter(
         (m) => m.conversationId === c.conversationId,
       );
-      const isGroup = c.type === "whatsapp_group";
-      const contactName = c.contactId
-        ? (contactNameById.get(c.contactId) ?? null)
-        : null;
-      const title = isGroup
-        ? c.title || "Groupe"
-        : (contactName ?? c.interlocutorRaw ?? "Interlocuteur");
       const state: "active" | "paused" | "ended" =
         c.status === "ignored"
           ? "paused"
@@ -167,27 +168,72 @@ export default async function SujetPage({
       const unreadCount = convMessages.filter(
         (m) => m.direction === "incoming" && m.readAt == null,
       ).length;
-      const reply: ReplyTarget =
-        c.channelType === "email" && c.interlocutorRaw
-          ? {
-              kind: "email",
-              channelId: c.channelId,
-              email: c.interlocutorRaw,
-              contactId: c.contactId,
-            }
-          : c.channelType === "whatsapp" && c.externalThreadId
+
+      if (c.channelType === "email") {
+        // Set de destinataires = source de vérité du fil. Repli sur
+        // l'interlocuteur pour les conversations d'avant M6quater (set vide).
+        const set =
+          c.participantsRaw.length > 0
+            ? c.participantsRaw
+            : c.interlocutorRaw
+              ? [c.interlocutorRaw]
+              : [];
+        const participants = set.map(
+          (addr) => contactByEmail.get(addr) ?? addr,
+        );
+        const isGroup = set.length >= 2;
+        const title = isGroup
+          ? "Groupe"
+          : (participants[0] ?? c.interlocutorRaw ?? "Interlocuteur");
+        const reply: ReplyTarget =
+          set.length > 0
             ? {
-                kind: "whatsapp",
+                kind: "email",
                 channelId: c.channelId,
-                chatId: c.externalThreadId,
+                recipients: set.map((addr) => ({
+                  identifier: addr,
+                  displayName: contactByEmail.get(addr),
+                })),
                 contactId: c.contactId,
               }
             : { kind: "none" };
+        return {
+          conversationId: c.conversationId,
+          kind: "email",
+          channelType: c.channelType,
+          title,
+          isGroup,
+          participants,
+          unreadCount,
+          state,
+          messages: convMessages.map(toBubble),
+          reply,
+        };
+      }
+
+      // Messagerie (WhatsApp…) — un contact direct ou un groupe qu'on écoute.
+      const isGroup = c.type === "whatsapp_group";
+      const contactName = c.contactId
+        ? (contactNameById.get(c.contactId) ?? null)
+        : null;
+      const title = isGroup
+        ? c.title || "Groupe"
+        : (contactName ?? c.interlocutorRaw ?? "Interlocuteur");
+      const reply: ReplyTarget = c.externalThreadId
+        ? {
+            kind: "whatsapp",
+            channelId: c.channelId,
+            chatId: c.externalThreadId,
+            contactId: c.contactId,
+          }
+        : { kind: "none" };
       return {
         conversationId: c.conversationId,
+        kind: "messagerie",
         channelType: c.channelType,
         title,
         isGroup,
+        participants: [],
         unreadCount,
         state,
         messages: convMessages.map(toBubble),
@@ -204,11 +250,27 @@ export default async function SujetPage({
       <SubjectBody
         defaultTab={
           (
-            ["informations", "messages", "taches", "documents"] as const
+            [
+              "informations",
+              "email",
+              "messagerie",
+              "taches",
+              "documents",
+            ] as const
           ).includes(
-            (tab ?? "") as "informations" | "messages" | "taches" | "documents",
+            (tab ?? "") as
+              | "informations"
+              | "email"
+              | "messagerie"
+              | "taches"
+              | "documents",
           )
-            ? (tab as "informations" | "messages" | "taches" | "documents")
+            ? (tab as
+                | "informations"
+                | "email"
+                | "messagerie"
+                | "taches"
+                | "documents")
             : "informations"
         }
         tasksCount={tasks.length}
@@ -317,11 +379,11 @@ export default async function SujetPage({
           <div className="px-4 pt-4 pb-2">
             <p className="mb-3 text-[12.5px] leading-[1.4] text-(--text-tertiary)">
               Les pièces jointes reçues dans les conversations du sujet
-              s'accumulent ici.
+              s’accumulent ici.
             </p>
             {attachments.length === 0 ? (
               <p className="py-8 text-center text-[13.5px] text-(--text-tertiary)">
-                Aucun document pour l'instant.
+                Aucun document pour l’instant.
               </p>
             ) : (
               <div className="space-y-2">

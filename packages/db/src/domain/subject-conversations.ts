@@ -185,6 +185,11 @@ export type SubjectConversationLink = {
   contactId: string | null;
   interlocutorRaw: string | null;
   externalThreadId: string | null;
+  /** E-mail (M6quater) : SET de destinataires externes (clé de la conversation).
+   *  Vide en messagerie. ≥ 2 ⇒ « Groupe ». */
+  participantsRaw: string[];
+  /** E-mail (M6quater) : contacts résolus du set (pour l'affichage nominatif). */
+  contactIds: string[];
 };
 
 export async function listSubjectConversations(
@@ -213,6 +218,8 @@ export async function listSubjectConversations(
     contactId: row.conversation.contactId,
     interlocutorRaw: row.conversation.interlocutorRaw,
     externalThreadId: row.conversation.externalThreadId,
+    participantsRaw: row.conversation.participantsRaw,
+    contactIds: row.conversation.contactIds,
   }));
 }
 
@@ -385,6 +392,64 @@ export async function detachConversationFromSubject(
       subjectId,
       eventType: EVENT_TYPES.conversationDetached,
       title: `Conversation détachée — ${link.conversation.title}`,
+      actor: "user",
+      metadata: { conversationId },
+    });
+    return { id: link.id };
+  });
+}
+
+/**
+ * « Arrêter l'écoute » d'un fil de MESSAGERIE (onglet Messagerie de la fiche,
+ * M6quater) — pose la BORNE DE FIN (`closingMessageId`) sur le dernier message
+ * couvert : les messages postérieurs retomberont orphelins, mais le passé reste
+ * rattaché et la liaison SUBSISTE (le « N sujets passés » de la conversation en
+ * dépend). C'est le pendant MANUEL et par-conversation de
+ * `closeListeningsForSubject` (déclenché, lui, par un changement de statut).
+ *
+ * ⚠️ Réservé à la messagerie : un fil e-mail EST le sujet, il n'a pas de borne de
+ * fin — pour le retirer d'un sujet, c'est `detachConversationFromSubject`
+ * (rattrapage d'erreur). Si l'écoute ne couvre encore AUCUN message (rattachée
+ * mais rien reçu), il n'y a rien à borner : on retire simplement la liaison.
+ */
+export async function stopListeningOnConversation(
+  db: TenantDb,
+  subjectId: string,
+  conversationId: string,
+) {
+  const link = assertFound(
+    await db.subjectConversation.findFirst({
+      where: {
+        subjectId,
+        conversationId,
+        conversation: {
+          is: { type: { not: ConversationType.email_subject } },
+        },
+      },
+      include: { conversation: { select: { title: true } } },
+    }),
+    "Écoute",
+  );
+  const last = await db.message.findFirst({
+    where: { subjectId, conversationId },
+    orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+    select: { id: true },
+  });
+  return db.$transaction(async (tx) => {
+    if (last) {
+      await tx.subjectConversation.updateMany({
+        where: { id: link.id },
+        data: { closingMessageId: last.id },
+      });
+    } else {
+      await tx.subjectConversation.deleteMany({ where: { id: link.id } });
+    }
+    await logEvent(tx as Tx, {
+      entityType: "subject",
+      entityId: subjectId,
+      subjectId,
+      eventType: EVENT_TYPES.listeningClosed,
+      title: `Écoute arrêtée — ${link.conversation.title}`,
       actor: "user",
       metadata: { conversationId },
     });
