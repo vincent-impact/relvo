@@ -371,6 +371,14 @@ model Conversation {
   contactId         String?            @map("contact_id") @db.Uuid
   /// Email ou numéro brut, tant que l'interlocuteur n'est pas un contact.
   interlocutorRaw   String?            @map("interlocutor_raw")
+  /// E-MAIL uniquement (M6quater) — le SET de destinataires externes (adresses
+  /// brutes, triées, minuscules) qui, avec l'objet normalisé, forme la clé
+  /// `email:<objet>:<set>`. 1 entrée = e-mail direct, ≥ 2 = « Groupe ». VIDE pour
+  /// la messagerie (qui porte un contactId unique + interlocutorRaw).
+  participantsRaw   String[]           @default([]) @map("participants_raw")
+  /// E-MAIL uniquement (M6quater) — les contacts enregistrés du set, remplis à
+  /// mesure qu'ils sont créés (à l'ouverture d'un sujet). VIDE pour la messagerie.
+  contactIds        String[]           @default([]) @map("contact_ids") @db.Uuid
   /// `chat_id` WhatsApp — sert aussi de CIBLE D'ENVOI pour la réponse.
   externalThreadId  String?            @map("external_thread_id")
   /// Objet normalisé (type `email_subject` uniquement) — mémorisé pour l'audit
