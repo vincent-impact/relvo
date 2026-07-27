@@ -119,7 +119,18 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
   const channel = assertFound(
     await db.channel.findFirst({
       where: { id: data.channelId },
-      select: { id: true, type: true, identifier: true },
+      // `account.email` en plus de `identifier` : la définition de « nous »
+      // (adresses à retirer du set e-mail) ne peut pas reposer sur le SEUL
+      // identifiant du canal — s'il diffère de la forme exacte reçue en To
+      // (placeholder « En attente… », alias, casse), notre propre adresse fuite
+      // dans le set des ENTRANTS (jamais des sortants) et le fil se scinde en
+      // deux conversations « où l'on se parle tout seul ».
+      select: {
+        id: true,
+        type: true,
+        identifier: true,
+        account: { select: { email: true } },
+      },
     }),
     "Canal",
   );
@@ -149,11 +160,17 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
   // contact unique + interlocutorRaw).
   let participantsRaw: string[] | undefined;
   if (channel.type === ChannelType.email) {
-    const self = channel.identifier?.trim().toLowerCase() || "";
+    // « Nous » = l'identifiant du canal ET l'e-mail de connexion du compte.
+    // Symétrise entrant/sortant : mes adresses n'apparaissent JAMAIS dans le set.
+    const selfSet = new Set(
+      [channel.identifier, channel.account?.email]
+        .filter((a): a is string => Boolean(a))
+        .map((a) => a.trim().toLowerCase()),
+    );
     const raw = [interlocutorRaw, ...(data.recipients ?? [])]
       .filter((a): a is string => Boolean(a))
       .map((a) => a.trim().toLowerCase())
-      .filter((a) => a && a !== self);
+      .filter((a) => a && !selfSet.has(a));
     participantsRaw = Array.from(new Set(raw)).sort();
   }
 

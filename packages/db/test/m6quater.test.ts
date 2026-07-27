@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createMessage,
   createSubjectFromMessage,
   detachConversationFromSubject,
   ingestInboundEmail,
@@ -233,6 +234,60 @@ describe("arrêter l'écoute d'un fil de messagerie (M6quater)", () => {
         "00000000-0000-0000-0000-000000000000",
       ),
     ).rejects.toThrow();
+  });
+});
+
+describe("« je discute tout seul » — self retiré du set même si le canal n'a pas la bonne adresse (M6quater)", () => {
+  it("entrant (To = nous) + sortant tombent dans LA MÊME conversation", async () => {
+    // Canal dont l'identifiant N'EST PAS l'adresse réelle (placeholder de
+    // connexion) : « nous » doit quand même être reconnu via account.email,
+    // sinon notre adresse fuite dans le set des entrants et le fil se scinde.
+    const account = await prisma.account.create({
+      data: { email: ME, firstName: "Test", lastName: "User" },
+    });
+    const channel = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "Boîte",
+        type: "email",
+        identifier: "En attente de connexion…",
+      },
+    });
+    const contact = await prisma.contact.create({
+      data: {
+        accountId: account.id,
+        firstName: "Vinz",
+        lastName: "Chollet",
+        email: KARIM,
+        sourceActor: "user",
+      },
+    });
+    const db = tenantDb(account.id);
+
+    // Entrant de Karim, adressé à NOUS (ME dans le To).
+    const inc = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "solo-in",
+      senderRaw: KARIM,
+      recipients: [ME],
+      subjectLine: "Devis",
+      content: "Voici le devis",
+    });
+    // Sortant vers Karim.
+    const out = await createMessage(db, {
+      channelId: channel.id,
+      direction: "outgoing",
+      recipientContactId: contact.id,
+      recipients: [KARIM],
+      subjectLine: "Re: Devis",
+      content: "Merci",
+    });
+
+    expect(out.conversationId).toBe(inc.message.conversationId);
+    expect(await db.conversation.count()).toBe(1);
+    const conv = await db.conversation.findFirstOrThrow();
+    // Notre adresse ne figure JAMAIS dans le set.
+    expect(conv.participantsRaw).toEqual([KARIM]);
   });
 });
 
