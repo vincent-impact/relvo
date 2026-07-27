@@ -1,5 +1,32 @@
 import "server-only";
 import { UnipileClient } from "unipile-node-sdk";
+import { DomainError } from "@relvo/db";
+
+/**
+ * Traduit une erreur du SDK Unipile en `DomainError` (provider-agnostique) pour
+ * qu'elle remonte proprement en `ActionResult` → toast, JAMAIS en 500 silencieux
+ * (le composer avalait la promesse rejetée : « rien ne se passe » au clic Envoyer).
+ * Le SDK expose le corps HTTP sur `error.body` (`{ status, type, title }`). Un 401
+ * `errors/invalid_credentials` = la boîte/le canal n'est plus authentifié.
+ */
+function toSendError(
+  error: unknown,
+  canal: "e-mail" | "WhatsApp",
+): DomainError {
+  const body = (error as { body?: { status?: number; type?: string } })?.body;
+  const invalidCreds =
+    body?.status === 401 || body?.type === "errors/invalid_credentials";
+  console.error(`[unipile] échec d'envoi ${canal} :`, error);
+  return invalidCreds
+    ? new DomainError(
+        "INVALID_STATE",
+        `Le canal ${canal} n'est plus connecté à Relvo (identifiants invalides). Reconnecte-le dans Réglages › Canaux.`,
+      )
+    : new DomainError(
+        "INVALID_STATE",
+        `L'envoi ${canal} a échoué. Réessaie dans un instant.`,
+      );
+}
 
 // Client Unipile (M5) — s'appuie sur le SDK OFFICIEL `unipile-node-sdk` (v1).
 // Les signatures viennent des types du package (source de vérité), pas d'une
@@ -189,13 +216,17 @@ export async function sendEmail(input: {
     );
     return { emailId: null };
   }
-  const res = await ctx.client.email.send({
-    account_id: input.accountId,
-    to: input.to,
-    subject: input.subject,
-    body: textToHtmlBody(input.body),
-  });
-  return { emailId: res.tracking_id ?? null };
+  try {
+    const res = await ctx.client.email.send({
+      account_id: input.accountId,
+      to: input.to,
+      subject: input.subject,
+      body: textToHtmlBody(input.body),
+    });
+    return { emailId: res.tracking_id ?? null };
+  } catch (error) {
+    throw toSendError(error, "e-mail");
+  }
 }
 
 /**
@@ -236,11 +267,15 @@ export async function sendWhatsAppMessage(input: {
     );
     return { messageId: null };
   }
-  const res = await ctx.client.messaging.sendMessage({
-    chat_id: input.chatId,
-    text: input.text,
-  });
-  return { messageId: res.message_id ?? null };
+  try {
+    const res = await ctx.client.messaging.sendMessage({
+      chat_id: input.chatId,
+      text: input.text,
+    });
+    return { messageId: res.message_id ?? null };
+  } catch (error) {
+    throw toSendError(error, "WhatsApp");
+  }
 }
 
 /**
