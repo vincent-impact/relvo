@@ -3,65 +3,52 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  ContactIdentifierFields,
+  splitIdentifierList,
+} from "@/components/contacts/contact-identifier-fields";
 import { createContactAction } from "@/server/actions/contacts";
 
-// Formulaire de création d'un contact (M9.22). Création manuelle par
-// l'utilisateur → `sourceActor: user` côté domaine, donc statut `complete`
-// d'emblée (l'invariant « contact créé seulement avec un sujet » vise la
-// création AUTOMATIQUE par l'IA, pas la saisie manuelle). À l'enregistrement,
-// on redirige vers la fiche du nouveau contact.
+// Formulaire de création d'un contact (refonte 2026-07-28) — mêmes champs
+// « classiques » que la fiche : Prénom · Nom · Entreprise · Téléphone(s) ·
+// Email(s), avec ajout de plusieurs numéros/adresses. Création manuelle →
+// `sourceActor: user` (statut `complete` d'emblée). À l'enregistrement, on
+// redirige vers la fiche du nouveau contact.
 
-type FormState = {
-  firstName: string;
-  lastName: string;
-  jobTitle: string;
-  company: string;
-  email: string;
-  phone: string;
+type Initial = {
+  firstName?: string;
+  lastName?: string;
+  company?: string;
+  email?: string;
+  phone?: string;
 };
 
-const FIELDS: { key: keyof FormState; label: string; type?: string }[] = [
-  { key: "jobTitle", label: "Fonction" },
-  { key: "company", label: "Entreprise" },
-  { key: "email", label: "Email", type: "email" },
-  { key: "phone", label: "Téléphone", type: "tel" },
-];
-
-export function NewContactForm({
-  initial,
-}: {
-  /** Pré-remplissage (ex. depuis l'avatar « ? » d'une conversation inconnue). */
-  initial?: Partial<FormState>;
-}) {
+export function NewContactForm({ initial }: { initial?: Initial }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [form, setForm] = useState<FormState>({
-    firstName: initial?.firstName ?? "",
-    lastName: initial?.lastName ?? "",
-    jobTitle: initial?.jobTitle ?? "",
-    company: initial?.company ?? "",
-    email: initial?.email ?? "",
-    phone: initial?.phone ?? "",
-  });
-
-  function set(key: keyof FormState, value: string) {
-    setForm((f) => ({ ...f, [key]: value }));
-  }
+  const [firstName, setFirstName] = useState(initial?.firstName ?? "");
+  const [lastName, setLastName] = useState(initial?.lastName ?? "");
+  const [company, setCompany] = useState(initial?.company ?? "");
+  const [phones, setPhones] = useState<string[]>([initial?.phone ?? ""]);
+  const [emails, setEmails] = useState<string[]>([initial?.email ?? ""]);
 
   function save() {
-    const lastName = form.lastName.trim();
-    if (!lastName) {
+    const name = lastName.trim();
+    if (!name) {
       toast.error("Le nom est requis.");
       return;
     }
+    const phone = splitIdentifierList(phones);
+    const email = splitIdentifierList(emails);
     startTransition(async () => {
       const res = await createContactAction({
-        firstName: form.firstName.trim() || null,
-        lastName,
-        jobTitle: form.jobTitle.trim() || null,
-        company: form.company.trim() || null,
-        email: form.email.trim() || null,
-        phone: form.phone.trim() || null,
+        firstName: firstName.trim() || null,
+        lastName: name,
+        company: company.trim() || null,
+        phone: phone.primary,
+        additionalPhones: phone.additional,
+        email: email.primary,
+        additionalEmails: email.additional,
         sourceActor: "user",
       });
       if (res.ok) {
@@ -78,8 +65,8 @@ export function NewContactForm({
       <div className="grid grid-cols-2 gap-3">
         <Field label="Prénom">
           <input
-            value={form.firstName}
-            onChange={(e) => set("firstName", e.target.value)}
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
             autoFocus
             placeholder="Karim"
             className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
@@ -87,23 +74,37 @@ export function NewContactForm({
         </Field>
         <Field label="Nom">
           <input
-            value={form.lastName}
-            onChange={(e) => set("lastName", e.target.value)}
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
             placeholder="Benali"
             className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
           />
         </Field>
       </div>
-      {FIELDS.map((f) => (
-        <Field key={f.key} label={f.label}>
-          <input
-            type={f.type ?? "text"}
-            value={form[f.key]}
-            onChange={(e) => set(f.key, e.target.value)}
-            className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
-          />
-        </Field>
-      ))}
+      <Field label="Entreprise">
+        <input
+          value={company}
+          onChange={(e) => setCompany(e.target.value)}
+          placeholder="SoGood Distribution"
+          className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
+        />
+      </Field>
+      <ContactIdentifierFields
+        label="Téléphone"
+        type="tel"
+        values={phones}
+        onChange={setPhones}
+        placeholder="06 12 34 56 78"
+        addLabel="Ajouter un téléphone"
+      />
+      <ContactIdentifierFields
+        label="Email"
+        type="email"
+        values={emails}
+        onChange={setEmails}
+        placeholder="nom@exemple.fr"
+        addLabel="Ajouter un email"
+      />
       <div className="flex gap-2 pt-1">
         <button
           type="button"

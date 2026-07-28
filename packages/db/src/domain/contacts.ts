@@ -44,11 +44,22 @@ export function splitFullName(full: string): {
   };
 }
 
+// Coordonnées secondaires : email 2…, téléphone 2… (le primaire reste `email`/
+// `phone`). On borne à 10 pour éviter les abus ; les entrées vides sont filtrées
+// côté UI avant envoi.
+const additionalEmails = z.array(z.email()).max(10).optional();
+const additionalPhones = z
+  .array(z.string().trim().min(1).max(40))
+  .max(10)
+  .optional();
+
 export const createContactSchema = z.object({
   firstName: z.string().trim().max(80).optional().nullable(),
   lastName: z.string().trim().min(1, "Nom requis").max(80),
   email: z.email().optional().nullable(),
   phone: z.string().trim().max(40).optional().nullable(),
+  additionalEmails,
+  additionalPhones,
   company: z.string().trim().max(120).optional().nullable(),
   jobTitle: z.string().trim().max(120).optional().nullable(),
   defaultFolderId: z.uuid().optional().nullable(),
@@ -63,6 +74,8 @@ export const updateContactSchema = z.object({
   lastName: z.string().trim().min(1).max(80).optional(),
   email: z.email().optional().nullable(),
   phone: z.string().trim().max(40).optional().nullable(),
+  additionalEmails,
+  additionalPhones,
   company: z.string().trim().max(120).optional().nullable(),
   jobTitle: z.string().trim().max(120).optional().nullable(),
   defaultFolderId: z.uuid().optional().nullable(),
@@ -106,6 +119,8 @@ export async function createContact(db: TenantDb, input: CreateContactInput) {
         lastName: data.lastName,
         email: data.email ?? null,
         phone: data.phone ?? null,
+        additionalEmails: data.additionalEmails ?? [],
+        additionalPhones: data.additionalPhones ?? [],
         company: data.company ?? null,
         jobTitle: data.jobTitle ?? null,
         defaultFolderId: data.defaultFolderId ?? null,
@@ -140,6 +155,12 @@ export async function updateContact(
         ...(data.lastName !== undefined ? { lastName: data.lastName } : {}),
         ...(data.email !== undefined ? { email: data.email } : {}),
         ...(data.phone !== undefined ? { phone: data.phone } : {}),
+        ...(data.additionalEmails !== undefined
+          ? { additionalEmails: data.additionalEmails }
+          : {}),
+        ...(data.additionalPhones !== undefined
+          ? { additionalPhones: data.additionalPhones }
+          : {}),
         ...(data.company !== undefined ? { company: data.company } : {}),
         ...(data.jobTitle !== undefined ? { jobTitle: data.jobTitle } : {}),
         ...(data.defaultFolderId !== undefined
@@ -184,6 +205,12 @@ export async function completeContact(
         ...(data.lastName !== undefined ? { lastName: data.lastName } : {}),
         ...(data.email !== undefined ? { email: data.email } : {}),
         ...(data.phone !== undefined ? { phone: data.phone } : {}),
+        ...(data.additionalEmails !== undefined
+          ? { additionalEmails: data.additionalEmails }
+          : {}),
+        ...(data.additionalPhones !== undefined
+          ? { additionalPhones: data.additionalPhones }
+          : {}),
         ...(data.company !== undefined ? { company: data.company } : {}),
         ...(data.jobTitle !== undefined ? { jobTitle: data.jobTitle } : {}),
         ...(data.defaultFolderId !== undefined

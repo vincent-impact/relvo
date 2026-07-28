@@ -2,17 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookUser, CalendarDays, Mail, Package, Settings } from "lucide-react";
+import {
+  CalendarDays,
+  MessagesSquare,
+  Package,
+  Settings,
+  Users,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Barre d'onglets basse (mobile-first). Remplace la sidebar desktop.
-// 5 entrées : Actions (tâches) · Sujets · Messages · Contacts · Réglages. L'ajout
-// de « Messages » (2026-07-23) rend visible la chaîne de transformation Relvo —
-// Actions ← Sujets ← Messages : les conversations comptent tant qu'aucune IA ne
-// fait le tri. « Contacts » a remplacé « Mémoire » dans la nav (2026-07-28) : la
-// Mémoire est devenue l'onglet « Domaines » des Réglages. Icônes : agenda
-// (Actions), carton = projet (Sujets), enveloppe (Messages), annuaire (Contacts),
-// engrenage (Réglages).
+// 5 entrées : Actions (tâches) · Sujets · Conversations · Contacts · Réglages.
+// « Conversations » (ex-« Messages », 2026-07-28) rend visible la chaîne de
+// transformation Relvo — Actions ← Sujets ← Conversations : les conversations
+// comptent tant qu'aucune IA ne fait le tri. « Contacts » a remplacé « Mémoire »
+// dans la nav (2026-07-28) : la Mémoire est devenue l'onglet « Domaines » des
+// Réglages. Icônes : agenda (Actions), carton = projet (Sujets), bulles =
+// conversations (mêmes que l'onglet Conversations d'un sujet), deux personnes
+// (Contacts), engrenage (Réglages).
 //
 // Place FIXE (plus d'auto-masquage au scroll, décision 2026-06-27) sur fond
 // VIOLET, exactement comme l'ancien composer : actif = blanc plein, inactif =
@@ -21,7 +28,7 @@ import { cn } from "@/lib/utils";
 type Tab = {
   href: string;
   label: string;
-  icon: typeof BookUser;
+  icon: typeof Users;
   /** Préfixes de routes qui activent cet onglet (sous-pages incluses). */
   match: (path: string) => boolean;
 };
@@ -41,14 +48,14 @@ const TABS: Tab[] = [
   },
   {
     href: "/conversations",
-    label: "Messages",
-    icon: Mail,
+    label: "Conversations",
+    icon: MessagesSquare,
     match: (p) => p.startsWith("/conversations") || p.startsWith("/messages"),
   },
   {
     href: "/contacts",
     label: "Contacts",
-    icon: BookUser,
+    icon: Users,
     match: (p) => p.startsWith("/contacts"),
   },
   {
@@ -86,7 +93,7 @@ export function BottomTabBar() {
             href={tab.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "flex flex-1 flex-col items-center justify-center gap-[3px] pt-2.5 pb-1.5 text-[11px] font-semibold transition-colors",
+              "flex min-w-0 flex-1 flex-col items-center justify-center gap-[3px] px-0.5 pt-2.5 pb-1.5 font-semibold transition-colors",
               active ? "text-white" : "text-white/55",
             )}
           >
@@ -96,7 +103,11 @@ export function BottomTabBar() {
               fill={active ? "currentColor" : "none"}
               fillOpacity={active ? 0.16 : 0}
             />
-            {tab.label}
+            {/* Libellé sur UNE ligne, taille réduite : « Conversations » (13 car.)
+                ne tient pas en 11px sur les téléphones étroits (5 onglets). */}
+            <span className="max-w-full text-[10px] leading-none whitespace-nowrap">
+              {tab.label}
+            </span>
           </Link>
         );
       })}

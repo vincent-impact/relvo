@@ -5,71 +5,69 @@ import { useRouter } from "next/navigation";
 import { Check, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import {
+  ContactIdentifierFields,
+  splitIdentifierList,
+  toIdentifierList,
+} from "@/components/contacts/contact-identifier-fields";
+import {
   completeContactAction,
   updateContactAction,
 } from "@/server/actions/contacts";
 
-// Fiche contact éditable (M9.11) — affichage des coordonnées + édition en place.
-// Si le contact est « auto » (créé par Relvo), l'enregistrement le fait passer en
-// « complete » (invariant : passage auto → complete validé par l'utilisateur).
+// Fiche contact éditable (refonte 2026-07-28) — représentation « classique »
+// (téléphone/WhatsApp) : Prénom · Nom · Entreprise · Téléphone(s) · Email(s),
+// avec ajout de plusieurs numéros et adresses. La « Fonction » (jobTitle) a été
+// retirée de la fiche pour rester proche d'un carnet de contacts. Si le contact
+// est « auto » (créé par Relvo), l'enregistrement le fait passer en « complete ».
 
 type Contact = {
   id: string;
   firstName: string | null;
   lastName: string;
   company: string | null;
-  jobTitle: string | null;
   email: string | null;
   phone: string | null;
+  additionalEmails: string[];
+  additionalPhones: string[];
   status: string;
 };
-
-const FIELDS: { key: keyof EditState; label: string; type?: string }[] = [
-  { key: "jobTitle", label: "Fonction" },
-  { key: "company", label: "Entreprise" },
-  { key: "email", label: "Email", type: "email" },
-  { key: "phone", label: "Téléphone", type: "tel" },
-];
 
 type EditState = {
   firstName: string;
   lastName: string;
   company: string;
-  jobTitle: string;
-  email: string;
-  phone: string;
+  phones: string[];
+  emails: string[];
 };
 
 export function ContactCard({ contact }: { contact: Contact }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [form, setForm] = useState<EditState>({
+  const [form, setForm] = useState<EditState>(() => ({
     firstName: contact.firstName ?? "",
     lastName: contact.lastName,
     company: contact.company ?? "",
-    jobTitle: contact.jobTitle ?? "",
-    email: contact.email ?? "",
-    phone: contact.phone ?? "",
-  });
+    phones: toIdentifierList(contact.phone, contact.additionalPhones),
+    emails: toIdentifierList(contact.email, contact.additionalEmails),
+  }));
   const auto = contact.status === "auto";
-
-  function set(key: keyof EditState, value: string) {
-    setForm((f) => ({ ...f, [key]: value }));
-  }
 
   function save() {
     if (!form.lastName.trim()) {
       toast.error("Le nom est requis.");
       return;
     }
+    const phone = splitIdentifierList(form.phones);
+    const email = splitIdentifierList(form.emails);
     const input = {
       firstName: form.firstName.trim() || null,
       lastName: form.lastName.trim(),
       company: form.company.trim() || null,
-      jobTitle: form.jobTitle.trim() || null,
-      email: form.email.trim() || null,
-      phone: form.phone.trim() || null,
+      phone: phone.primary,
+      additionalPhones: phone.additional,
+      email: email.primary,
+      additionalEmails: email.additional,
     };
     startTransition(async () => {
       const res = auto
@@ -92,28 +90,47 @@ export function ContactCard({ contact }: { contact: Contact }) {
           <Field label="Prénom">
             <input
               value={form.firstName}
-              onChange={(e) => set("firstName", e.target.value)}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, firstName: e.target.value }))
+              }
               className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
             />
           </Field>
           <Field label="Nom">
             <input
               value={form.lastName}
-              onChange={(e) => set("lastName", e.target.value)}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, lastName: e.target.value }))
+              }
               className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
             />
           </Field>
         </div>
-        {FIELDS.map((f) => (
-          <Field key={f.key} label={f.label}>
-            <input
-              type={f.type ?? "text"}
-              value={form[f.key]}
-              onChange={(e) => set(f.key, e.target.value)}
-              className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
-            />
-          </Field>
-        ))}
+        <Field label="Entreprise">
+          <input
+            value={form.company}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, company: e.target.value }))
+            }
+            className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
+          />
+        </Field>
+        <ContactIdentifierFields
+          label="Téléphone"
+          type="tel"
+          values={form.phones}
+          onChange={(phones) => setForm((f) => ({ ...f, phones }))}
+          placeholder="06 12 34 56 78"
+          addLabel="Ajouter un téléphone"
+        />
+        <ContactIdentifierFields
+          label="Email"
+          type="email"
+          values={form.emails}
+          onChange={(emails) => setForm((f) => ({ ...f, emails }))}
+          placeholder="nom@exemple.fr"
+          addLabel="Ajouter un email"
+        />
         <div className="flex gap-2 pt-1">
           <button
             type="button"
@@ -135,12 +152,23 @@ export function ContactCard({ contact }: { contact: Contact }) {
     );
   }
 
+  const phones = [contact.phone, ...contact.additionalPhones].filter(
+    (v): v is string => Boolean(v),
+  );
+  const emails = [contact.email, ...contact.additionalEmails].filter(
+    (v): v is string => Boolean(v),
+  );
   const rows = [
-    { label: "Fonction", value: contact.jobTitle },
-    { label: "Entreprise", value: contact.company },
-    { label: "Email", value: contact.email },
-    { label: "Téléphone", value: contact.phone },
-  ].filter((r) => r.value);
+    contact.company ? { label: "Entreprise", value: contact.company } : null,
+    ...phones.map((p, i) => ({
+      label: phones.length > 1 ? `Téléphone ${i + 1}` : "Téléphone",
+      value: p,
+    })),
+    ...emails.map((e, i) => ({
+      label: emails.length > 1 ? `Email ${i + 1}` : "Email",
+      value: e,
+    })),
+  ].filter((r): r is { label: string; value: string } => r !== null);
 
   return (
     <div className="mx-4 mt-4 rounded-2xl border border-(--border-light) bg-white p-4 shadow-(--shadow-card)">

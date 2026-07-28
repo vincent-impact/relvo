@@ -267,6 +267,11 @@ model Contact {
   lastName        String        @map("last_name")
   email           String?
   phone           String?
+  // Coordonnées SECONDAIRES (« Email 2… », « Téléphone 2… ») — le primaire reste
+  // `email`/`phone` (Email 1 / Téléphone 1). Un contact peut porter plusieurs
+  // adresses et numéros (2026-07-28).
+  additionalEmails String[]     @default([]) @map("additional_emails")
+  additionalPhones String[]     @default([]) @map("additional_phones")
   company         String?
   jobTitle        String?       @map("job_title")
   defaultFolderId String?       @map("default_folder_id") @db.Uuid

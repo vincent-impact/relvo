@@ -6,10 +6,10 @@ import { ContactDeleteButton } from "@/components/contacts/contact-delete-button
 import { contactFullName } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
-// Fiche Contact (M9.11, Direction B) — page PUREMENT INFORMATIVE : coordonnées
-// (prénom, nom, téléphone, email) + suppression. Pas de fil des échanges ici
-// (la conversation vit dans la fiche Sujet, invariant n°11) — la fiche contact
-// reste volontairement minimale.
+// Fiche Contact (refonte 2026-07-28) — représentation « classique » (carnet
+// téléphone/WhatsApp) : Prénom · Nom · Entreprise · Téléphone(s) · Email(s), avec
+// plusieurs numéros/adresses possibles. Page PUREMENT INFORMATIVE (pas de fil des
+// échanges ici : la conversation vit dans la fiche Sujet, invariant n°11).
 
 export default async function ContactPage({
   params,
@@ -27,10 +27,7 @@ export default async function ContactPage({
       <RelvoHeader
         back="/contacts"
         title={contactFullName(contact)}
-        subtitle={
-          [contact.jobTitle, contact.company].filter(Boolean).join(" · ") ||
-          "Contact"
-        }
+        subtitle={contact.company || "Contact"}
         className="pb-9"
       />
 
