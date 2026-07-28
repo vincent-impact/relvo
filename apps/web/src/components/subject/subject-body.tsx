@@ -20,7 +20,8 @@ export function SubjectBody({
   header,
   defaultTab = "informations",
   tasksCount,
-  conversationsUnread,
+  conversationsCount,
+  conversationsHasNew,
   informationsPane,
   tachesPane,
   conversationsPane,
@@ -32,8 +33,10 @@ export function SubjectBody({
   header: React.ReactNode;
   defaultTab?: Tab;
   tasksCount: number;
-  /** Nombre de conversations avec au moins un message NON LU (pastille rouge). */
-  conversationsUnread: number;
+  /** Nombre total de conversations (compteur neutre, homogène aux autres onglets). */
+  conversationsCount: number;
+  /** Au moins un fil a du non-lu → point rouge sur l'icône. */
+  conversationsHasNew: boolean;
   informationsPane: React.ReactNode;
   tachesPane: React.ReactNode;
   conversationsPane: React.ReactNode;
@@ -51,10 +54,9 @@ export function SubjectBody({
       value: "conversations",
       label: "Conversations",
       icon: MessagesSquare,
-      // Pastille ROUGE = nombre de fils avec du nouveau (pousse à ouvrir) ;
-      // masquée s'il n'y a rien de neuf (on n'affiche pas le total, sans intérêt).
-      count: conversationsUnread > 0 ? conversationsUnread : undefined,
-      alert: true,
+      count: conversationsCount,
+      // Point rouge = du non-lu quelque part ; le compteur reste neutre.
+      dot: conversationsHasNew,
     },
     {
       value: "documents",

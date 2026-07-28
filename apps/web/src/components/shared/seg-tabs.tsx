@@ -18,11 +18,11 @@ export type SegTabOption = {
   label: string;
   count?: number;
   /**
-   * Rend la pastille de compteur en ROUGE (« il y a du nouveau »), même quand
-   * l'onglet est inactif — pour pousser à l'ouvrir. Sinon la pastille reste
-   * neutre (grise), simple indication de volume.
+   * Point ROUGE « il y a du nouveau », posé sur l'icône (mode `iconOnly`). Signal
+   * indépendant du compteur : le compteur dit COMBIEN d'éléments (homogène avec
+   * les autres onglets), le point dit QU'il y a du non-lu.
    */
-  alert?: boolean;
+  dot?: boolean;
   /** Icône de l'onglet — requise en mode `iconOnly`. */
   icon?: LucideIcon;
 };
@@ -72,7 +72,17 @@ export function SegTabs({
             )}
           >
             {iconOnly && Icon ? (
-              <Icon className="size-[19px]" strokeWidth={2.2} />
+              <span className="relative">
+                <Icon className="size-[19px]" strokeWidth={2.2} />
+                {opt.dot ? (
+                  <span
+                    className={cn(
+                      "absolute -top-[3px] -right-[3px] size-[9px] rounded-full bg-(--red-600) ring-2",
+                      active ? "ring-relvo" : "ring-white",
+                    )}
+                  />
+                ) : null}
+              </span>
             ) : (
               opt.label
             )}
@@ -82,9 +92,7 @@ export function SegTabs({
                   "inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10.5px] font-extrabold",
                   active
                     ? "bg-white/30 text-white"
-                    : opt.alert
-                      ? "bg-(--red-600) text-white"
-                      : "bg-[#eceae6] text-[#8a8980]",
+                    : "bg-[#eceae6] text-[#8a8980]",
                 )}
               >
                 {opt.count}

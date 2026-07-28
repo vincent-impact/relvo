@@ -21,11 +21,12 @@ import { formatRelative } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
 // Onglet « Informations » de la fiche Sujet (refonte 2026-07-28 : moins
-// « technique », plus « page d'accueil »). Ordre FIXE :
-//   1. Domaine (tap → sélecteur) + Urgence (interrupteur), sur la même ligne
-//   2. Descriptif — affiché comme un VRAI texte (pas un textarea nu), édité au
-//      bouton « stylo ». Un formulaire toujours ouvert donne l'impression d'un
-//      brouillon jamais fini ; un texte-label lu se sent comme une fiche.
+// « technique », plus « fiche »). Ordre FIXE :
+//   1. Descriptif — CARTE en tête : le texte est LU (pas un textarea nu, qui
+//      donnait un air de brouillon jamais fini), une phrase en italique rappelle
+//      son rôle, le stylo ouvre une POP-UP d'édition (jamais dans le flux, trop
+//      perturbant). C'est le cœur de la fiche.
+//   2. Domaine (tap → sélecteur) + Urgence (interrupteur), sur la même ligne
 //   3. Journal (tiroir)
 // Le « Rapport d'activité de Relvo » (placeholder) est retiré tant qu'il n'a
 // rien à montrer. La suppression du sujet vit dans le dock (SubjectInfoDock).
@@ -68,7 +69,7 @@ export function InformationsPane({
 }) {
   const router = useRouter();
   const [value, setValue] = useState(description ?? "");
-  const [editing, setEditing] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
   const [pending, startTransition] = useTransition();
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -81,10 +82,16 @@ export function InformationsPane({
   );
   const FolderIcon = folderViz.icon;
 
+  // Ouvre la pop-up d'édition en repartant du texte enregistré.
+  function openEditor() {
+    setValue(base);
+    setEditOpen(true);
+  }
+
   function saveDescription() {
     const next = value.trim();
     if (next === base) {
-      setEditing(false);
+      setEditOpen(false);
       return;
     }
     startTransition(async () => {
@@ -93,17 +100,12 @@ export function InformationsPane({
       });
       if (res.ok) {
         toast.success("Descriptif enregistré");
-        setEditing(false);
+        setEditOpen(false);
         router.refresh();
       } else {
         toast.error(res.message);
       }
     });
-  }
-
-  function cancelEdit() {
-    setValue(base);
-    setEditing(false);
   }
 
   function setFolder(nextId: string | null) {
@@ -132,7 +134,44 @@ export function InformationsPane({
 
   return (
     <div className="space-y-6 px-4 pt-4 pb-2">
-      {/* 1. Domaine (tap → sélecteur) + Urgence (interrupteur), inline */}
+      {/* 1. Descriptif — cœur de la fiche (carte), édité en pop-up */}
+      <section className="rounded-2xl border border-(--border-light) bg-white p-4 shadow-(--shadow-card)">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[15px] font-bold text-(--text-primary)">
+            Descriptif
+          </h2>
+          <button
+            type="button"
+            onClick={openEditor}
+            aria-label="Modifier le descriptif"
+            className="grid size-8 place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
+          >
+            <Pencil className="size-[15px]" strokeWidth={2.1} />
+          </button>
+        </div>
+
+        {base ? (
+          <p className="mt-1.5 text-[15px] leading-[1.6] whitespace-pre-wrap text-(--text-primary)">
+            {base}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={openEditor}
+            className="mt-1.5 block text-[14px] text-(--text-tertiary) italic active:opacity-70"
+          >
+            Ajouter un descriptif…
+          </button>
+        )}
+
+        <p className="mt-3 border-t border-(--border-light) pt-3 text-[12.5px] leading-[1.45] text-(--text-tertiary) italic">
+          Le descriptif permet à Relvo de comprendre le sujet afin d’y rattacher
+          les messages et conversations les plus pertinentes et d’y créer des
+          actions plus précises.
+        </p>
+      </section>
+
+      {/* 2. Domaine (tap → sélecteur) + Urgence (interrupteur), inline */}
       <section className="flex items-center gap-3">
         <button
           type="button"
@@ -177,72 +216,6 @@ export function InformationsPane({
             className="data-checked:bg-(--red-600)"
           />
         </label>
-      </section>
-
-      {/* 2. Descriptif — texte-label lu, édité au stylo */}
-      <section>
-        <div className="flex items-center justify-between">
-          <h2 className="text-[15px] font-bold text-(--text-primary)">
-            Descriptif
-          </h2>
-          {!editing ? (
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              aria-label="Modifier le descriptif"
-              className="grid size-8 place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
-            >
-              <Pencil className="size-[15px]" strokeWidth={2.1} />
-            </button>
-          ) : null}
-        </div>
-
-        {editing ? (
-          <>
-            <p className="mt-0.5 text-[12.5px] leading-[1.4] text-(--text-tertiary)">
-              Aidez Relvo à rattacher le bon domaine et à chercher dans les
-              bonnes conversations.
-            </p>
-            <textarea
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              rows={4}
-              autoFocus
-              placeholder="Décrivez ce sujet en quelques mots…"
-              className="mt-2.5 w-full resize-y rounded-xl border border-(--border) bg-white px-3 py-2.5 text-[14px] leading-[1.5] text-(--text-primary) outline-none placeholder:text-(--text-tertiary) focus:border-brand"
-            />
-            <div className="mt-2 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={cancelEdit}
-                disabled={pending}
-                className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-(--text-secondary) active:bg-(--surface-2)"
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                onClick={saveDescription}
-                disabled={pending}
-                className="rounded-full bg-relvo px-4 py-1.5 text-[13px] font-bold text-white active:opacity-90 disabled:opacity-60"
-              >
-                Enregistrer
-              </button>
-            </div>
-          </>
-        ) : base ? (
-          <p className="mt-1.5 text-[15px] leading-[1.6] whitespace-pre-wrap text-(--text-primary)">
-            {base}
-          </p>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="mt-1.5 text-[14px] text-(--text-tertiary) italic active:opacity-70"
-          >
-            Ajouter un descriptif…
-          </button>
-        )}
       </section>
 
       {/* 3. Journal (tiroir) */}
@@ -349,6 +322,41 @@ export function InformationsPane({
                 </button>
               );
             })}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Édition du descriptif — pop-up dédiée (jamais dans le flux de la fiche) */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="gap-4 p-5">
+          <DialogHeader>
+            <DialogTitle>Descriptif du sujet</DialogTitle>
+          </DialogHeader>
+          <textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            rows={5}
+            autoFocus
+            placeholder="Décrivez ce sujet en quelques mots…"
+            className="w-full resize-y rounded-xl border border-(--border) bg-white px-3 py-2.5 text-[14px] leading-[1.5] text-(--text-primary) outline-none placeholder:text-(--text-tertiary) focus:border-brand"
+          />
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setEditOpen(false)}
+              disabled={pending}
+              className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-(--text-secondary) active:bg-(--surface-2)"
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              onClick={saveDescription}
+              disabled={pending}
+              className="rounded-full bg-relvo px-4 py-1.5 text-[13px] font-bold text-white active:opacity-90 disabled:opacity-60"
+            >
+              Enregistrer
+            </button>
           </div>
         </DialogContent>
       </Dialog>
