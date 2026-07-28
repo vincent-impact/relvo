@@ -74,6 +74,12 @@ async function ParametresTabs({ initialTab }: { initialTab: ParamTab }) {
     cachedDossiers(account.id),
   ]);
 
+  // Un seul canal par type (email / WhatsApp) : on masque la tuile de connexion
+  // correspondante quand un canal du type existe déjà (2026-07-28). Évite de
+  // complexifier l'usage et de multiplier les comptes Unipile.
+  const hasEmail = channels.some((c) => c.type === "email");
+  const hasWhatsApp = channels.some((c) => c.type === "whatsapp");
+
   return (
     <FeedTabs
       defaultValue={initialTab}
@@ -163,7 +169,7 @@ async function ParametresTabs({ initialTab }: { initialTab: ParamTab }) {
                         <Icon className="size-[18px]" strokeWidth={2} />
                       </span>
                       <div className="min-w-0 flex-1">
-                        <div className="text-[14.5px] font-semibold">
+                        <div className="truncate text-[14.5px] font-semibold">
                           {ch.name}
                         </div>
                         <div className="truncate text-[12.5px] text-(--text-tertiary)">
@@ -192,7 +198,7 @@ async function ParametresTabs({ initialTab }: { initialTab: ParamTab }) {
                 })
               )}
             </div>
-            <ConnectEmailButton />
+            <ConnectEmailButton hasEmail={hasEmail} hasWhatsApp={hasWhatsApp} />
           </div>
         ),
         domaines: (

@@ -3,6 +3,7 @@
 import {
   type ActionResult,
   type SendWhatsAppReplyInput,
+  DomainError,
   createChannel,
   err,
   isDomainError,
@@ -31,6 +32,14 @@ export async function connectWhatsAppChannelAction(): Promise<
   ActionResult<{ url: string }>
 > {
   const created = await domainAction(async (db) => {
+    // V1 : un seul canal WhatsApp par utilisateur (garde serveur en renfort de
+    // l'UI qui masque déjà la tuile).
+    if ((await db.channel.count({ where: { type: "whatsapp" } })) > 0) {
+      throw new DomainError(
+        "CONFLICT",
+        "Un canal WhatsApp est déjà connecté. Supprimez-le pour en connecter un autre.",
+      );
+    }
     const channel = await createChannel(db, {
       name: "WhatsApp",
       type: "whatsapp",

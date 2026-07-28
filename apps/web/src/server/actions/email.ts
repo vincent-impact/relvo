@@ -3,6 +3,7 @@
 import {
   type ActionResult,
   type SendEmailReplyInput,
+  DomainError,
   createChannel,
   err,
   isDomainError,
@@ -40,6 +41,14 @@ export async function connectEmailChannelAction(
   provider?: MailProvider,
 ): Promise<ActionResult<{ url: string }>> {
   const created = await domainAction(async (db) => {
+    // V1 : une seule boîte e-mail par utilisateur (garde serveur en renfort de
+    // l'UI qui masque déjà la tuile).
+    if ((await db.channel.count({ where: { type: "email" } })) > 0) {
+      throw new DomainError(
+        "CONFLICT",
+        "Une boîte e-mail est déjà connectée. Supprimez-la pour en connecter une autre.",
+      );
+    }
     const channel = await createChannel(db, {
       name: provider ? PROVIDER_LABEL[provider] : "Boîte email",
       type: "email",
