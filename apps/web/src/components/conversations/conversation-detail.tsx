@@ -153,7 +153,9 @@ export function ConversationDetail({
   // création pré-remplie (même comportement que la liste /conversations).
   function tapParticipant(p: ConversationParticipant) {
     if (p.contactId) {
-      router.push(`/contacts/${p.contactId}`);
+      // Retour depuis la fiche → cette conversation.
+      const from = encodeURIComponent(`/conversations/${conversationId}`);
+      router.push(`/contacts/${p.contactId}?from=${from}`);
       return;
     }
     openCreateForParticipant(p);

@@ -58,7 +58,15 @@ function initForm(contact: Contact): EditState {
   };
 }
 
-export function ContactDetail({ contact }: { contact: Contact }) {
+export function ContactDetail({
+  contact,
+  backHref = "/contacts",
+}: {
+  contact: Contact;
+  /** Où revenir au « Retour » — l'origine (conversation/liste) si on vient de là,
+   *  sinon l'annuaire. */
+  backHref?: string;
+}) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -120,7 +128,7 @@ export function ContactDetail({ contact }: { contact: Contact }) {
     <>
       <Screen className="flex min-h-full flex-col">
         <RelvoHeader
-          back="/contacts"
+          back={backHref}
           title={fullName}
           subtitle={contact.company || "Contact"}
           className="pb-9"

@@ -126,7 +126,9 @@ function ConversationRow({
   const rawId = data.interlocutorRaw?.trim() ?? null;
   function tapAvatar() {
     if (registered) {
-      router.push(`/contacts/${data.contactId}`);
+      // Retour depuis la fiche → cette liste (au bon filtre).
+      const from = encodeURIComponent(`/conversations?filtre=${filter}`);
+      router.push(`/contacts/${data.contactId}?from=${from}`);
     } else {
       onCreateContact({
         name: data.interlocutorName ?? null,

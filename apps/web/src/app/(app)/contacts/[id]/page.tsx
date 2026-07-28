@@ -12,10 +12,17 @@ import { getTenantDb } from "@/server/auth-context";
 
 export default async function ContactPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  const { from } = await searchParams;
+  // Retour → l'origine (conversation, liste) si fournie ; sinon l'annuaire.
+  // Sanitisé : chemin interne uniquement.
+  const backHref =
+    from && from.startsWith("/") && !from.startsWith("//") ? from : "/contacts";
   const db = await getTenantDb();
 
   const contact = await db.contact.findFirst({
@@ -34,5 +41,5 @@ export default async function ContactPage({
   });
   if (!contact) notFound();
 
-  return <ContactDetail contact={contact} />;
+  return <ContactDetail contact={contact} backHref={backHref} />;
 }
