@@ -523,6 +523,89 @@ type ConversationItemRow = Prisma.ConversationGetPayload<{
   include: typeof CONVERSATION_ITEM_INCLUDE;
 }>;
 
+// ── Résolution d'interlocuteur au READ TIME ─────────────────────────────────
+// `conversation.contactId` (et `senderContactId` des messages) sont figés à la
+// CRÉATION du fil. Un contact enregistré APRÈS (saisie manuelle, 2e numéro ajouté)
+// n'était donc pas reconnu : l'avatar proposait de le « créer » avec des infos
+// périmées. On résout donc l'appartenance à un contact à la lecture, en
+// comparant l'adresse/numéro brut aux contacts existants (primaire ET
+// secondaires). Pas de backfill : la reconnaissance suit l'état courant des
+// contacts et corrige les fils déjà en base.
+
+type ContactMini = { id: string; firstName: string | null; lastName: string };
+
+type ContactResolver = {
+  match: (raw: string, channelType: ChannelType) => ContactMini | null;
+};
+
+async function buildContactResolver(db: TenantDb): Promise<ContactResolver> {
+  const contacts = await db.contact.findMany({
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+      additionalEmails: true,
+      additionalPhones: true,
+    },
+  });
+  const byEmail = new Map<string, ContactMini>();
+  const byPhone = new Map<string, ContactMini>();
+  for (const c of contacts) {
+    const mini: ContactMini = {
+      id: c.id,
+      firstName: c.firstName,
+      lastName: c.lastName,
+    };
+    if (c.email) byEmail.set(c.email.trim().toLowerCase(), mini);
+    for (const e of c.additionalEmails)
+      byEmail.set(e.trim().toLowerCase(), mini);
+    if (c.phone) byPhone.set(c.phone.trim(), mini);
+    for (const p of c.additionalPhones) byPhone.set(p.trim(), mini);
+  }
+  return {
+    match(raw, channelType) {
+      const v = raw.trim();
+      if (!v) return null;
+      // E-mail (canal email OU présence d'un « @ ») → map e-mail, insensible à la
+      // casse ; sinon numéro → comparaison exacte.
+      if (channelType === ChannelType.email || v.includes("@")) {
+        return byEmail.get(v.toLowerCase()) ?? null;
+      }
+      return byPhone.get(v) ?? null;
+    },
+  };
+}
+
+/**
+ * Patche les lignes de liste dont l'interlocuteur n'est pas (encore) rattaché à
+ * un contact mais dont l'adresse/numéro correspond à un contact enregistré :
+ * `contactId` + nom d'affichage repris du contact. In-place, une seule requête
+ * (tous les contacts) et uniquement s'il y a des lignes à résoudre.
+ */
+async function attachRegisteredContacts(
+  db: TenantDb,
+  items: ConversationListItem[],
+): Promise<ConversationListItem[]> {
+  const unresolved = items.filter(
+    (it) =>
+      it.contactId == null &&
+      it.type !== ConversationType.whatsapp_group &&
+      Boolean(it.interlocutorRaw),
+  );
+  if (unresolved.length === 0) return items;
+  const resolver = await buildContactResolver(db);
+  for (const it of unresolved) {
+    const match = resolver.match(it.interlocutorRaw!, it.channelType);
+    if (match) {
+      it.contactId = match.id;
+      it.interlocutorName = contactDisplayName(match);
+    }
+  }
+  return items;
+}
+
 function toConversationListItem(c: ConversationItemRow): ConversationListItem {
   const preview =
     c.lastMessage?.content?.replace(/\s+/g, " ").trim() ||
@@ -588,7 +671,10 @@ export async function listConversationItems(
     include: CONVERSATION_ITEM_INCLUDE,
   });
   const page = toPage(rows, limit);
-  const items = page.items.map(toConversationListItem);
+  const items = await attachRegisteredContacts(
+    db,
+    page.items.map(toConversationListItem),
+  );
   return { items, nextCursor: page.nextCursor };
 }
 
@@ -608,7 +694,7 @@ export async function listSubjectConversationRows(
     orderBy: [{ lastMessageAt: "desc" }, { createdAt: "desc" }],
     include: CONVERSATION_ITEM_INCLUDE,
   });
-  return rows.map(toConversationListItem);
+  return attachRegisteredContacts(db, rows.map(toConversationListItem));
 }
 
 /** Le KPI « Sans sujet » de la page Sujets. */
@@ -829,14 +915,34 @@ export async function getConversationThread(
     "Conversation",
   );
 
-  // Nom de l'interlocuteur : le contact rattaché s'il existe, sinon l'adresse/
-  // numéro brut. Un GROUPE n'a pas d'interlocuteur unique → null (le titre du
-  // fil EST le nom du groupe).
-  const interlocutorName =
+  // Résolution d'appartenance au READ TIME (contact enregistré après la création
+  // du fil, cf. buildContactResolver) — sert l'interlocuteur direct ET les
+  // membres d'un groupe.
+  const contactResolver = await buildContactResolver(db);
+
+  // Interlocuteur direct : le contact rattaché s'il existe, SINON une résolution
+  // au read-time sur le brut, SINON le brut. Un GROUPE n'a pas d'interlocuteur
+  // unique → null (le titre du fil EST le nom du groupe).
+  const directContact: ContactMini | null =
     conversation.type === ConversationType.whatsapp_group
       ? null
       : conversation.contact
-        ? contactDisplayName(conversation.contact)
+        ? {
+            id: conversation.contactId!,
+            firstName: conversation.contact.firstName,
+            lastName: conversation.contact.lastName,
+          }
+        : conversation.interlocutorRaw
+          ? contactResolver.match(
+              conversation.interlocutorRaw,
+              conversation.channel.type,
+            )
+          : null;
+  const interlocutorName =
+    conversation.type === ConversationType.whatsapp_group
+      ? null
+      : directContact
+        ? contactDisplayName(directContact)
         : (conversation.interlocutorRaw ?? null);
 
   const rows = await db.message.findMany({
@@ -884,10 +990,22 @@ export async function getConversationThread(
     const byRaw = new Map<string, ConversationParticipant>();
     for (const m of rows) {
       if (m.direction !== "incoming") continue;
-      if (m.senderContactId && m.senderContact) {
-        byContact.set(m.senderContactId, {
-          name: contactDisplayName(m.senderContact),
-          contactId: m.senderContactId,
+      // Contact rattaché au message, sinon résolution read-time sur le brut (un
+      // membre enregistré après coup est reconnu).
+      const linked =
+        m.senderContactId && m.senderContact
+          ? {
+              id: m.senderContactId,
+              firstName: m.senderContact.firstName,
+              lastName: m.senderContact.lastName,
+            }
+          : m.senderRaw
+            ? contactResolver.match(m.senderRaw, ChannelType.whatsapp)
+            : null;
+      if (linked) {
+        byContact.set(linked.id, {
+          name: contactDisplayName(linked),
+          contactId: linked.id,
           raw: m.senderRaw ?? null,
         });
       } else {
@@ -912,7 +1030,7 @@ export async function getConversationThread(
       ? [
           {
             name: interlocutorName,
-            contactId: conversation.contactId,
+            contactId: directContact?.id ?? null,
             raw: conversation.interlocutorRaw,
           },
         ]
@@ -927,7 +1045,7 @@ export async function getConversationThread(
     channelType: conversation.channel.type,
     channelId: conversation.channelId,
     channelName: conversation.channel.name,
-    contactId: conversation.contactId,
+    contactId: directContact?.id ?? conversation.contactId,
     participantsRaw: conversation.participantsRaw,
     externalThreadId: conversation.externalThreadId,
     interlocutorRaw: conversation.interlocutorRaw,

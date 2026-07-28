@@ -5,6 +5,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   Check,
+  ChevronRight,
   EyeOff,
   Link2,
   Mail,
@@ -138,6 +139,16 @@ export function ConversationDetail({
       ? `Répondre à ${participants[0].name}…`
       : "Répondre…";
 
+  // Ouvre la pop-up de création de contact, pré-remplie depuis l'interlocuteur.
+  function openCreateForParticipant(p: ConversationParticipant) {
+    const raw = p.raw?.trim() ?? null;
+    setContactPrefill({
+      name: p.name,
+      email: isEmail ? raw : null,
+      phone: isEmail ? null : (raw?.split("@")[0] ?? null),
+    });
+  }
+
   // Tap sur un interlocuteur : sa fiche s'il est connu, sinon la pop-up de
   // création pré-remplie (même comportement que la liste /conversations).
   function tapParticipant(p: ConversationParticipant) {
@@ -145,12 +156,7 @@ export function ConversationDetail({
       router.push(`/contacts/${p.contactId}`);
       return;
     }
-    const raw = p.raw?.trim() ?? null;
-    setContactPrefill({
-      name: p.name,
-      email: isEmail ? raw : null,
-      phone: isEmail ? null : (raw?.split("@")[0] ?? null),
-    });
+    openCreateForParticipant(p);
   }
 
   // Retirer CETTE conversation d'un sujet (icône chaîne brisée, « Suivi dans ») —
@@ -365,28 +371,49 @@ export function ConversationDetail({
                     guessContactKind({ name: p.name, raw: p.raw }),
                   );
                   return (
-                    <button
+                    <div
                       key={`${p.contactId ?? p.raw ?? p.name}-${i}`}
-                      type="button"
-                      onClick={() => tapParticipant(p)}
-                      aria-label={
-                        p.contactId
-                          ? "Voir le contact"
-                          : "Enregistrer le contact"
-                      }
-                      className="flex w-full items-center gap-2 active:opacity-80"
+                      className="flex w-full items-center gap-2"
                     >
-                      <span className="grid size-8 flex-none place-items-center rounded-full bg-white/20 text-[12px] font-extrabold text-white">
-                        {p.contactId ? (
-                          (initialsFor(p.name) ?? "?")
-                        ) : (
-                          <PIcon className="size-[17px]" strokeWidth={2.1} />
-                        )}
-                      </span>
-                      <span className="truncate text-[14px] font-semibold text-white">
-                        {p.name}
-                      </span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => tapParticipant(p)}
+                        aria-label={
+                          p.contactId
+                            ? "Voir le contact"
+                            : "Voir l’interlocuteur"
+                        }
+                        className="flex min-w-0 flex-1 items-center gap-2 active:opacity-80"
+                      >
+                        <span className="grid size-8 flex-none place-items-center rounded-full bg-white/20 text-[12px] font-extrabold text-white">
+                          {p.contactId ? (
+                            (initialsFor(p.name) ?? "?")
+                          ) : (
+                            <PIcon className="size-[17px]" strokeWidth={2.1} />
+                          )}
+                        </span>
+                        <span className="truncate text-[14px] font-semibold text-white">
+                          {p.name}
+                        </span>
+                      </button>
+                      {/* Action explicite : « Enregistrer » (interlocuteur non
+                          rattaché) ou chevron « voir la fiche » (déjà enregistré). */}
+                      {p.contactId ? (
+                        <ChevronRight
+                          className="size-4 flex-none text-white/45"
+                          strokeWidth={2.2}
+                          aria-hidden
+                        />
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => openCreateForParticipant(p)}
+                          className="flex-none rounded-full border border-white/35 px-2.5 py-1 text-[11.5px] font-bold whitespace-nowrap text-white active:bg-white/10"
+                        >
+                          Enregistrer
+                        </button>
+                      )}
+                    </div>
                   );
                 })
               )}
