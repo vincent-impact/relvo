@@ -119,7 +119,9 @@ export function SubjectConversationsList({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [showAdd, setShowAdd] = useState(false);
-  const fromHref = `/sujets/${subjectId}`;
+  // Retour depuis la conversation → on ramène sur l'ONGLET conversations du
+  // sujet (pas l'onglet par défaut), sinon désorientation.
+  const fromHref = `/sujets/${subjectId}?tab=conversations`;
 
   // « Ajouter » à ce sujet — e-mail : vraie nouvelle conversation (objet = titre) ;
   // WhatsApp direct : ouvre le fil existant ; WhatsApp groupe : rattache le fil.
@@ -155,7 +157,7 @@ export function SubjectConversationsList({
   }
 
   return (
-    <div className="pb-3">
+    <div className="pt-3 pb-3">
       {rows.length === 0 ? (
         <div className="px-[22px] py-10 text-center">
           <p className="text-[13.5px] text-(--text-tertiary)">

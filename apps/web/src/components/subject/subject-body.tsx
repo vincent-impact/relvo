@@ -20,7 +20,7 @@ export function SubjectBody({
   header,
   defaultTab = "informations",
   tasksCount,
-  conversationsCount,
+  conversationsUnread,
   informationsPane,
   tachesPane,
   conversationsPane,
@@ -32,7 +32,8 @@ export function SubjectBody({
   header: React.ReactNode;
   defaultTab?: Tab;
   tasksCount: number;
-  conversationsCount: number;
+  /** Nombre de conversations avec au moins un message NON LU (pastille rouge). */
+  conversationsUnread: number;
   informationsPane: React.ReactNode;
   tachesPane: React.ReactNode;
   conversationsPane: React.ReactNode;
@@ -50,7 +51,10 @@ export function SubjectBody({
       value: "conversations",
       label: "Conversations",
       icon: MessagesSquare,
-      count: conversationsCount,
+      // Pastille ROUGE = nombre de fils avec du nouveau (pousse à ouvrir) ;
+      // masquée s'il n'y a rien de neuf (on n'affiche pas le total, sans intérêt).
+      count: conversationsUnread > 0 ? conversationsUnread : undefined,
+      alert: true,
     },
     {
       value: "documents",

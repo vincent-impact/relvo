@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, History, Sparkles } from "lucide-react";
+import { ChevronDown, History, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import type { Actor, Priority } from "@relvo/db";
 import {
@@ -20,13 +20,15 @@ import { folderVisual } from "@/lib/folders";
 import { formatRelative } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
-// Onglet « Informations » de la fiche Sujet (2026-07-24). L'onglet « Détail » a
-// été supprimé : son contenu utile a migré ici. Ordre FIXE :
-//   1. Descriptif (éditable, aide Relvo)
-//   2. Domaine (tap → sélecteur) + Urgence (interrupteur), sur la même ligne
-//   3. Rapport d'activité Relvo (placeholder honnête)
-//   4. Journal (tiroir)
-// La suppression du sujet reste accessible en bas.
+// Onglet « Informations » de la fiche Sujet (refonte 2026-07-28 : moins
+// « technique », plus « page d'accueil »). Ordre FIXE :
+//   1. Domaine (tap → sélecteur) + Urgence (interrupteur), sur la même ligne
+//   2. Descriptif — affiché comme un VRAI texte (pas un textarea nu), édité au
+//      bouton « stylo ». Un formulaire toujours ouvert donne l'impression d'un
+//      brouillon jamais fini ; un texte-label lu se sent comme une fiche.
+//   3. Journal (tiroir)
+// Le « Rapport d'activité de Relvo » (placeholder) est retiré tant qu'il n'a
+// rien à montrer. La suppression du sujet vit dans le dock (SubjectInfoDock).
 
 export type PaneFolder = {
   id: string;
@@ -66,6 +68,7 @@ export function InformationsPane({
 }) {
   const router = useRouter();
   const [value, setValue] = useState(description ?? "");
+  const [editing, setEditing] = useState(false);
   const [pending, startTransition] = useTransition();
   const [pickerOpen, setPickerOpen] = useState(false);
 
@@ -80,18 +83,27 @@ export function InformationsPane({
 
   function saveDescription() {
     const next = value.trim();
-    if (next === base) return;
+    if (next === base) {
+      setEditing(false);
+      return;
+    }
     startTransition(async () => {
       const res = await updateSubjectAction(subjectId, {
         description: next || null,
       });
       if (res.ok) {
         toast.success("Descriptif enregistré");
+        setEditing(false);
         router.refresh();
       } else {
         toast.error(res.message);
       }
     });
+  }
+
+  function cancelEdit() {
+    setValue(base);
+    setEditing(false);
   }
 
   function setFolder(nextId: string | null) {
@@ -120,26 +132,7 @@ export function InformationsPane({
 
   return (
     <div className="space-y-6 px-4 pt-4 pb-2">
-      {/* 1. Descriptif éditable */}
-      <section>
-        <h2 className="text-[15px] font-bold text-(--text-primary)">
-          Descriptif
-        </h2>
-        <p className="mt-0.5 text-[12.5px] leading-[1.4] text-(--text-tertiary)">
-          Aidez Relvo à rattacher le bon domaine et à chercher dans les bonnes
-          conversations.
-        </p>
-        <textarea
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onBlur={saveDescription}
-          rows={4}
-          placeholder="Décrivez ce sujet en quelques mots…"
-          className="mt-2.5 w-full resize-y rounded-xl border border-(--border) bg-white px-3 py-2.5 text-[14px] leading-[1.5] text-(--text-primary) outline-none placeholder:text-(--text-tertiary) focus:border-brand"
-        />
-      </section>
-
-      {/* 2. Domaine (tap → sélecteur) + Urgence (interrupteur), inline */}
+      {/* 1. Domaine (tap → sélecteur) + Urgence (interrupteur), inline */}
       <section className="flex items-center gap-3">
         <button
           type="button"
@@ -186,18 +179,73 @@ export function InformationsPane({
         </label>
       </section>
 
-      {/* 3. Rapport d'activité de Relvo — placeholder */}
+      {/* 2. Descriptif — texte-label lu, édité au stylo */}
       <section>
-        <div className="mb-2 flex items-center gap-1.5 text-[13px] font-bold text-relvo">
-          <Sparkles className="size-4" fill="currentColor" strokeWidth={0} />
-          Rapport d'activité de Relvo
+        <div className="flex items-center justify-between">
+          <h2 className="text-[15px] font-bold text-(--text-primary)">
+            Descriptif
+          </h2>
+          {!editing ? (
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              aria-label="Modifier le descriptif"
+              className="grid size-8 place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
+            >
+              <Pencil className="size-[15px]" strokeWidth={2.1} />
+            </button>
+          ) : null}
         </div>
-        <div className="rounded-xl border border-(--border) bg-(--surface-2) px-3.5 py-4 text-center text-[13.5px] font-semibold text-(--text-tertiary)">
-          Indisponible
-        </div>
+
+        {editing ? (
+          <>
+            <p className="mt-0.5 text-[12.5px] leading-[1.4] text-(--text-tertiary)">
+              Aidez Relvo à rattacher le bon domaine et à chercher dans les
+              bonnes conversations.
+            </p>
+            <textarea
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              rows={4}
+              autoFocus
+              placeholder="Décrivez ce sujet en quelques mots…"
+              className="mt-2.5 w-full resize-y rounded-xl border border-(--border) bg-white px-3 py-2.5 text-[14px] leading-[1.5] text-(--text-primary) outline-none placeholder:text-(--text-tertiary) focus:border-brand"
+            />
+            <div className="mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={cancelEdit}
+                disabled={pending}
+                className="rounded-full px-3.5 py-1.5 text-[13px] font-semibold text-(--text-secondary) active:bg-(--surface-2)"
+              >
+                Annuler
+              </button>
+              <button
+                type="button"
+                onClick={saveDescription}
+                disabled={pending}
+                className="rounded-full bg-relvo px-4 py-1.5 text-[13px] font-bold text-white active:opacity-90 disabled:opacity-60"
+              >
+                Enregistrer
+              </button>
+            </div>
+          </>
+        ) : base ? (
+          <p className="mt-1.5 text-[15px] leading-[1.6] whitespace-pre-wrap text-(--text-primary)">
+            {base}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="mt-1.5 text-[14px] text-(--text-tertiary) italic active:opacity-70"
+          >
+            Ajouter un descriptif…
+          </button>
+        )}
       </section>
 
-      {/* 4. Journal (tiroir) */}
+      {/* 3. Journal (tiroir) */}
       <details className="group overflow-hidden rounded-2xl border border-(--border-light) bg-white">
         <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3.5 [&::-webkit-details-marker]:hidden">
           <span className="flex items-center gap-2.5">

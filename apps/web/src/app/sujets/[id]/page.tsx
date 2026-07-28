@@ -115,7 +115,7 @@ export default async function SujetPage({
             : "informations"
         }
         tasksCount={tasks.length}
-        conversationsCount={rows.length}
+        conversationsUnread={rows.filter((r) => r.unreadCount > 0).length}
         informationsPane={
           <InformationsPane
             subjectId={subject.id}
