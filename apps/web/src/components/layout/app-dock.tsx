@@ -12,10 +12,15 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 // le dock cède la place aux boutons d'action « Ignorer » / « Ouvrir un sujet »
 // (rendus par ConversationDetail, mêmes ancrage et hauteur). La LISTE
 // (`/conversations`) garde le dock.
+//
+// EXCEPTION (2026-07-28) : idem sur le DÉTAIL d'un contact (`/contacts/<id>`,
+// hors `/contacts/nouveau`) — « Modifier » / « Supprimer » remplacent la barre
+// d'onglets (rendus par ContactDetail). La LISTE (`/contacts`) garde le dock.
 
 export function AppDock() {
   const pathname = usePathname();
   if (/^\/conversations\/[^/]+$/.test(pathname)) return null;
+  if (/^\/contacts\/(?!nouveau$)[^/]+$/.test(pathname)) return null;
 
   return (
     <div
