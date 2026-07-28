@@ -11,7 +11,7 @@ export default function NouveauDomainePage() {
   return (
     <Screen>
       <RelvoHeader
-        back="/dossiers"
+        back="/parametres?tab=domaines"
         title="Nouveau domaine"
         subtitle="Nom et logo du domaine"
         className="pb-9"

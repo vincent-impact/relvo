@@ -147,7 +147,7 @@ export default async function DossierPage({
   return (
     <Screen>
       <RelvoHeader
-        back="/dossiers"
+        back="/parametres?tab=domaines"
         title={folder.name}
         subtitle="Un domaine de la mémoire de Relvo"
         className="pb-9"

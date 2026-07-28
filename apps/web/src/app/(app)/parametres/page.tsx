@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { LogOut, MessageCircle, Mail } from "lucide-react";
+import Link from "next/link";
+import { LogOut, MessageCircle, Mail, Plus } from "lucide-react";
 import { DEMO_EMAIL } from "@relvo/db";
 import { ConnectEmailButton } from "@/components/settings/connect-email-button";
 import { ChannelDeleteButton } from "@/components/settings/channel-delete-button";
 import { ChannelReconnectButton } from "@/components/settings/channel-reconnect-button";
-import { ContactsPane } from "@/components/contacts/contacts-pane";
 import { FeedTabs } from "@/components/feed/feed-tabs";
+import { FolderRow } from "@/components/shared/folder-row";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { TabsSkeleton } from "@/components/shared/screen-skeletons";
@@ -23,8 +24,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { logoutAction } from "@/server/actions/auth";
-import { cachedContacts } from "@/server/cached";
+import { cachedDossiers } from "@/server/cached";
 import { getTenantDb, requireAccount } from "@/server/auth-context";
+
+// Onglets valides (deep-link via ?tab=). « domaines » a remplacé « contacts »
+// (2026-07-28) : l'annuaire est passé nav de premier rang, la Mémoire est
+// devenue cet onglet « Domaines » (liste des domaines seule, sans KPI).
+const TABS = ["profil", "canaux", "domaines", "preferences"] as const;
+type ParamTab = (typeof TABS)[number];
 
 export const metadata: Metadata = { title: "Paramètres — Relvo" };
 
@@ -51,10 +58,10 @@ const CHANNEL_STATUS: Record<string, { label: string; cls: string }> = {
 // PERF (M9.19, point 2) : le hero s'affiche instantanément ; les onglets
 // (compte + canaux) streament dans un <Suspense>.
 
-async function ParametresTabs() {
+async function ParametresTabs({ initialTab }: { initialTab: ParamTab }) {
   const account = await requireAccount();
   const db = await getTenantDb();
-  const [channels, contacts] = await Promise.all([
+  const [channels, { folders }] = await Promise.all([
     db.channel.findMany({
       orderBy: { createdAt: "asc" },
       include: {
@@ -63,15 +70,17 @@ async function ParametresTabs() {
         },
       },
     }),
-    cachedContacts(account.id),
+    // Domaines de la Mémoire (liste seule) — mêmes lignes que l'ex-page Mémoire.
+    cachedDossiers(account.id),
   ]);
 
   return (
     <FeedTabs
+      defaultValue={initialTab}
       options={[
         { value: "profil", label: "Profil" },
         { value: "canaux", label: "Canaux" },
-        { value: "contacts", label: "Contacts" },
+        { value: "domaines", label: "Domaines" },
         { value: "preferences", label: "Préférences" },
       ]}
       panes={{
@@ -186,7 +195,32 @@ async function ParametresTabs() {
             <ConnectEmailButton />
           </div>
         ),
-        contacts: <ContactsPane contacts={contacts} />,
+        domaines: (
+          // Mémoire → « Domaines » (2026-07-28) : la liste des domaines seule,
+          // SANS la carte de KPI ni la note d'agent de l'ex-page Mémoire.
+          <div className="pt-2">
+            {folders.map((f) => (
+              <FolderRow
+                key={f.id}
+                name={f.name}
+                slug={f.slug}
+                color={f.color}
+                icon={f.icon}
+                sub={f.sub}
+                href={`/dossiers/${f.id}`}
+              />
+            ))}
+            <Link
+              href="/dossiers/nouveau"
+              className="mx-[14px] flex items-center gap-[13px] px-[18px] py-3.5 text-[15px] font-semibold text-relvo active:opacity-80"
+            >
+              <span className="grid size-[42px] flex-none place-items-center rounded-[13px] border border-dashed border-(--purple-100) text-relvo">
+                <Plus className="size-5" strokeWidth={2.2} />
+              </span>
+              Nouveau domaine
+            </Link>
+          </div>
+        ),
         preferences: (
           <div className="px-4 pt-5">
             <PreferencesToggles />
@@ -197,16 +231,25 @@ async function ParametresTabs() {
   );
 }
 
-export default function ParametresPage() {
+export default async function ParametresPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
+  const { tab } = await searchParams;
+  const initialTab: ParamTab = TABS.includes(tab as ParamTab)
+    ? (tab as ParamTab)
+    : "profil";
+
   return (
     <Screen>
       <RelvoHeader
         title="Réglages"
-        subtitle="Compte, canaux, contacts, préférences"
+        subtitle="Compte, canaux, domaines, préférences"
         className="pb-[34px]"
       />
       <Suspense fallback={<TabsSkeleton rows={3} />}>
-        <ParametresTabs />
+        <ParametresTabs initialTab={initialTab} />
       </Suspense>
     </Screen>
   );

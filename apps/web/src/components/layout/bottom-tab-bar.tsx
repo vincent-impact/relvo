@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Brain, CalendarDays, Mail, Package, Settings } from "lucide-react";
+import { BookUser, CalendarDays, Mail, Package, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 // Barre d'onglets basse (mobile-first). Remplace la sidebar desktop.
-// 5 entrées : Actions (tâches) · Sujets · Messages · Mémoire · Réglages. L'ajout
+// 5 entrées : Actions (tâches) · Sujets · Messages · Contacts · Réglages. L'ajout
 // de « Messages » (2026-07-23) rend visible la chaîne de transformation Relvo —
 // Actions ← Sujets ← Messages : les conversations comptent tant qu'aucune IA ne
-// fait le tri. Icônes : agenda (Actions), carton = projet (Sujets), enveloppe
-// (Messages), cerveau (Mémoire), engrenage (Réglages).
+// fait le tri. « Contacts » a remplacé « Mémoire » dans la nav (2026-07-28) : la
+// Mémoire est devenue l'onglet « Domaines » des Réglages. Icônes : agenda
+// (Actions), carton = projet (Sujets), enveloppe (Messages), annuaire (Contacts),
+// engrenage (Réglages).
 //
 // Place FIXE (plus d'auto-masquage au scroll, décision 2026-06-27) sur fond
 // VIOLET, exactement comme l'ancien composer : actif = blanc plein, inactif =
@@ -19,7 +21,7 @@ import { cn } from "@/lib/utils";
 type Tab = {
   href: string;
   label: string;
-  icon: typeof Brain;
+  icon: typeof BookUser;
   /** Préfixes de routes qui activent cet onglet (sous-pages incluses). */
   match: (path: string) => boolean;
 };
@@ -44,10 +46,10 @@ const TABS: Tab[] = [
     match: (p) => p.startsWith("/conversations") || p.startsWith("/messages"),
   },
   {
-    href: "/dossiers",
-    label: "Mémoire",
-    icon: Brain,
-    match: (p) => p.startsWith("/dossiers"),
+    href: "/contacts",
+    label: "Contacts",
+    icon: BookUser,
+    match: (p) => p.startsWith("/contacts"),
   },
   {
     href: "/parametres",
