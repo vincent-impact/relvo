@@ -915,42 +915,54 @@ export async function getConversationThread(
     "Conversation",
   );
 
-  // Résolution d'appartenance au READ TIME (contact enregistré après la création
-  // du fil, cf. buildContactResolver) — sert l'interlocuteur direct ET les
-  // membres d'un groupe.
-  const contactResolver = await buildContactResolver(db);
-
-  // Interlocuteur direct : le contact rattaché s'il existe, SINON une résolution
-  // au read-time sur le brut, SINON le brut. Un GROUPE n'a pas d'interlocuteur
-  // unique → null (le titre du fil EST le nom du groupe).
-  const directContact: ContactMini | null =
-    conversation.type === ConversationType.whatsapp_group
-      ? null
-      : conversation.contact
-        ? {
-            id: conversation.contactId!,
-            firstName: conversation.contact.firstName,
-            lastName: conversation.contact.lastName,
-          }
-        : conversation.interlocutorRaw
-          ? contactResolver.match(
-              conversation.interlocutorRaw,
-              conversation.channel.type,
-            )
-          : null;
-  const interlocutorName =
-    conversation.type === ConversationType.whatsapp_group
-      ? null
-      : directContact
-        ? contactDisplayName(directContact)
-        : (conversation.interlocutorRaw ?? null);
-
   const rows = await db.message.findMany({
     where: { conversationId: id },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     take: CONVERSATION_THREAD_MAX,
     include: CONVERSATION_MESSAGE_INCLUDE,
   });
+
+  // Résolution d'appartenance au READ TIME (contact enregistré APRÈS la création
+  // du fil, cf. buildContactResolver) — construite UNIQUEMENT s'il reste quelque
+  // chose à résoudre : un fil direct déjà rattaché (le cas courant) ne charge
+  // jamais l'annuaire. Un groupe ne le charge que s'il a des membres non rattachés.
+  const isGroup = conversation.type === ConversationType.whatsapp_group;
+  const directNeedsResolve =
+    !isGroup &&
+    conversation.contactId == null &&
+    Boolean(conversation.interlocutorRaw);
+  const groupNeedsResolve =
+    isGroup &&
+    rows.some(
+      (m) => m.direction === "incoming" && !m.senderContactId && m.senderRaw,
+    );
+  const contactResolver =
+    directNeedsResolve || groupNeedsResolve
+      ? await buildContactResolver(db)
+      : null;
+
+  // Interlocuteur direct : le contact rattaché s'il existe, SINON la résolution
+  // read-time sur le brut, SINON le brut. Un GROUPE n'a pas d'interlocuteur
+  // unique → null (le titre du fil EST le nom du groupe).
+  const directContact: ContactMini | null = isGroup
+    ? null
+    : conversation.contact
+      ? {
+          id: conversation.contactId!,
+          firstName: conversation.contact.firstName,
+          lastName: conversation.contact.lastName,
+        }
+      : conversation.interlocutorRaw && contactResolver
+        ? contactResolver.match(
+            conversation.interlocutorRaw,
+            conversation.channel.type,
+          )
+        : null;
+  const interlocutorName = isGroup
+    ? null
+    : directContact
+      ? contactDisplayName(directContact)
+      : (conversation.interlocutorRaw ?? null);
 
   // Écoutes du fil — actives d'abord, puis passées (les plus récentes en tête).
   const links = await db.subjectConversation.findMany({
@@ -1000,7 +1012,8 @@ export async function getConversationThread(
               lastName: m.senderContact.lastName,
             }
           : m.senderRaw
-            ? contactResolver.match(m.senderRaw, ChannelType.whatsapp)
+            ? (contactResolver?.match(m.senderRaw, ChannelType.whatsapp) ??
+              null)
             : null;
       if (linked) {
         byContact.set(linked.id, {
