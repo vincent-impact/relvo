@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Save, Trash2, X } from "lucide-react";
+import { Pencil, Save, Trash2, User, X } from "lucide-react";
 import { toast } from "sonner";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
@@ -17,16 +17,16 @@ import {
   deleteContactAction,
   updateContactAction,
 } from "@/server/actions/contacts";
-import { contactFullName } from "@/lib/display";
+import { contactFullName, initialsFor } from "@/lib/display";
 
-// Fiche Contact (refonte 2026-07-28 v2) — représentation « classique » (carnet
-// téléphone/WhatsApp). ⚠️ TOUS les champs sont VISIBLES sur la page, même vides
-// (un champ vide affiche « Non renseigné ») : Entreprise · Téléphone(s) ·
-// Email(s). Le Prénom/Nom vit dans le hero (titre). On édite via le bouton
-// « Modifier » du DOCK violet (ou en tapant un champ) : la fiche bascule en mode
-// édition (tous les champs éditables, ajout de plusieurs numéros/adresses).
-// « Modifier » et « Supprimer » ont remplacé la barre d'onglets sur cette page
-// (comme le détail d'une conversation) — cf. AppDock qui masque le dock ici.
+// Fiche Contact (refonte 2026-07-28 v3) — « carte de visite » qui occupe une
+// grande partie de l'écran : grand avatar (placeholder générique en attendant
+// une photo) + nom, puis TOUS les champs listés (Prénom · Nom · Entreprise ·
+// Téléphone(s) · Email(s)), même vides (« Non renseigné »). ⚠️ Aucune action
+// d'édition par ligne : on modifie UNIQUEMENT via le bouton « Modifier » du DOCK
+// violet, qui bascule la fiche en mode édition. « Modifier » et « Supprimer »
+// remplacent la barre d'onglets sur cette page (comme le détail d'une
+// conversation) — cf. AppDock qui masque le dock ici.
 
 type Contact = {
   id: string;
@@ -118,7 +118,7 @@ export function ContactDetail({ contact }: { contact: Contact }) {
 
   return (
     <>
-      <Screen>
+      <Screen className="flex min-h-full flex-col">
         <RelvoHeader
           back="/contacts"
           title={fullName}
@@ -175,7 +175,7 @@ export function ContactDetail({ contact }: { contact: Contact }) {
             />
           </div>
         ) : (
-          <ReadCard contact={contact} auto={auto} onEdit={startEdit} />
+          <ReadCard contact={contact} auto={auto} />
         )}
       </Screen>
 
@@ -251,17 +251,12 @@ export function ContactDetail({ contact }: { contact: Contact }) {
   );
 }
 
-// ── Vue lecture : TOUS les champs, même vides (« Non renseigné ») ────────────
+// ── Vue lecture : « carte de visite » plein écran, TOUS les champs visibles ───
 
-function ReadCard({
-  contact,
-  auto,
-  onEdit,
-}: {
-  contact: Contact;
-  auto: boolean;
-  onEdit: () => void;
-}) {
+function ReadCard({ contact, auto }: { contact: Contact; auto: boolean }) {
+  const fullName = contactFullName(contact);
+  const initials = initialsFor(fullName);
+
   const phones = [contact.phone, ...contact.additionalPhones].filter(
     (v): v is string => Boolean(v),
   );
@@ -270,6 +265,8 @@ function ReadCard({
   );
 
   const rows: { label: string; value: string | null }[] = [
+    { label: "Prénom", value: contact.firstName },
+    { label: "Nom", value: contact.lastName },
     { label: "Entreprise", value: contact.company },
     ...(phones.length > 0
       ? phones.map((v, i) => ({
@@ -286,39 +283,58 @@ function ReadCard({
   ];
 
   return (
-    <div className="mx-4 mt-4 overflow-hidden rounded-2xl border border-(--border-light) bg-white shadow-(--shadow-card)">
+    <div className="mx-4 mt-4 mb-4 flex flex-1 flex-col overflow-hidden rounded-3xl border border-(--border-light) bg-white shadow-(--shadow-card)">
       {auto ? (
-        <p className="border-b border-(--border-light) bg-(--amber-50) px-4 py-2 text-[12px] font-semibold text-(--amber-800)">
+        <p className="bg-(--amber-50) px-5 py-2 text-center text-[12px] font-semibold text-(--amber-800)">
           Fiche créée par Relvo — vérifiez et complétez les coordonnées.
         </p>
       ) : null}
-      {rows.map((r, i) => (
-        <button
-          key={`${r.label}-${i}`}
-          type="button"
-          onClick={onEdit}
-          className={`flex w-full items-center gap-3 px-4 py-3 text-left active:bg-(--surface-2) ${
-            i > 0 ? "border-t border-(--border-light)" : ""
-          }`}
-        >
-          <span className="w-[92px] flex-none text-[13px] text-(--text-tertiary)">
-            {r.label}
-          </span>
-          {r.value ? (
-            <span className="min-w-0 flex-1 text-[14.5px] font-medium break-words text-(--text-primary)">
-              {r.value}
-            </span>
+
+      {/* En-tête « carte de visite » : grand avatar (placeholder) + nom */}
+      <div className="flex flex-col items-center gap-3.5 px-6 pt-9 pb-7">
+        <span className="grid size-28 flex-none place-items-center rounded-full bg-relvo text-white ring-4 ring-(--purple-100)">
+          {initials ? (
+            <span className="text-[34px] font-bold">{initials}</span>
           ) : (
-            <span className="min-w-0 flex-1 text-[14px] text-(--text-tertiary) italic">
-              Non renseigné
-            </span>
+            <User className="size-14" strokeWidth={1.8} />
           )}
-          <Pencil
-            className="size-4 flex-none text-(--text-tertiary)"
-            strokeWidth={2}
-          />
-        </button>
-      ))}
+        </span>
+        <div className="text-center">
+          <div className="text-[22px] leading-tight font-bold text-(--text-primary)">
+            {fullName}
+          </div>
+          {contact.company ? (
+            <div className="mt-1 text-[14px] text-(--text-tertiary)">
+              {contact.company}
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Coordonnées — liste lisible, non éditable (édition via « Modifier ») */}
+      <dl className="border-t border-(--border-light)">
+        {rows.map((r, i) => (
+          <div
+            key={`${r.label}-${i}`}
+            className={`flex items-baseline gap-3 px-5 py-3.5 ${
+              i > 0 ? "border-t border-(--border-light)" : ""
+            }`}
+          >
+            <dt className="w-[92px] flex-none text-[13px] text-(--text-tertiary)">
+              {r.label}
+            </dt>
+            {r.value ? (
+              <dd className="min-w-0 flex-1 text-[15px] font-medium break-words text-(--text-primary)">
+                {r.value}
+              </dd>
+            ) : (
+              <dd className="min-w-0 flex-1 text-[14.5px] text-(--text-tertiary) italic">
+                Non renseigné
+              </dd>
+            )}
+          </div>
+        ))}
+      </dl>
     </div>
   );
 }
