@@ -91,6 +91,12 @@ function plainContent(mail: UnipileMailWebhook): string | null {
       .replace(/<div[^>]*gmail_quote[\s\S]*?<\/div>/gi, " ")
       .replace(/<[^>]+>/g, " ")
       .replace(/&nbsp;/gi, " ")
+      // Décodage minimal APRÈS retrait des balises : les chevrons cités arrivent
+      // souvent en `&gt;` — sans décodage l'ancre « > » du nettoyage ne les voit
+      // pas. (Sûr ici : plus aucune balise à ré-introduire.)
+      .replace(/&gt;/gi, ">")
+      .replace(/&lt;/gi, "<")
+      .replace(/&amp;/gi, "&")
       .replace(/\s+/g, " ")
       .trim();
     // Après aplatissement, l'attribution/les chevrons deviennent inline : la
@@ -103,13 +109,29 @@ function plainContent(mail: UnipileMailWebhook): string | null {
 
 /**
  * Corps HTML d'origine, conservé pour un rendu FIDÈLE (l'iframe isolé s'occupe de
- * l'isolation CSS et bloque le JS). On retire tout de même les `<script>` par
- * ceinture-bretelles. Null si l'e-mail n'a pas de partie HTML.
+ * l'isolation CSS et bloque le JS). Null si l'e-mail n'a pas de partie HTML.
+ *
+ * ⚠️ On ne garde le HTML QUE pour les e-mails RICHES (une image embarquée :
+ * newsletters, signatures visuelles, marketing). Pour une simple RÉPONSE, le
+ * HTML n'apporte rien de plus que le texte — mais il embarque le FIL CITÉ
+ * (attribution + chevrons littéraux d'Apple Mail) qu'on ne sait pas retirer
+ * proprement d'un HTML « texte déguisé ». Dans ce cas on renvoie null : le rendu
+ * retombe sur `plainContent`, déjà nettoyé du fil cité. C'est ce qui élimine la
+ * pollution « > Le 27 juil. … a écrit : > > … » vue dans le fil.
  */
 function htmlContent(mail: UnipileMailWebhook): string | null {
   if (!mail.body?.trim()) return null;
   const html = mail.body.replace(/<script[\s\S]*?<\/script>/gi, "").trim();
-  return html || null;
+  if (!html) return null;
+  // Pas d'image → réponse « texte déguisé » : on préfère le texte brut nettoyé.
+  if (!/<img\b/i.test(html)) return null;
+  // E-mail riche : on garde le HTML, en retirant au passage les blocs de
+  // citation faciles (blockquote / conteneur gmail_quote), best-effort.
+  const cleaned = html
+    .replace(/<blockquote[\s\S]*?<\/blockquote>/gi, "")
+    .replace(/<div[^>]*gmail_quote[\s\S]*?<\/div>/gi, "")
+    .trim();
+  return cleaned || html;
 }
 
 /**
