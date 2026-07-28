@@ -27,25 +27,52 @@ function threadHint(v: unknown): string | null {
 }
 
 /**
- * Retire le fil cité d'une réponse email (texte brut). Les clients (Gmail,
+ * Retire le fil cité d'une réponse email. Les clients (Apple Mail, Gmail,
  * Outlook…) recopient l'historique sous une ligne d'attribution — « Le … a
  * écrit : », « On … wrote: », « -----Message d'origine----- » — suivie de lignes
- * préfixées « > ». On ne veut afficher QUE la nouvelle réponse dans Relvo, donc
- * on coupe à la première marque de citation. Best-effort, multilingue.
+ * préfixées « > ». On ne veut afficher QUE la nouvelle réponse dans Relvo.
+ *
+ * ⚠️ On ne peut PAS se fier au seul début de ligne : selon le client (et surtout
+ * après aplatissement du HTML → texte), l'attribution et les chevrons se
+ * retrouvent AU MILIEU d'une ligne (« … tu veux bien. > Le 27 juil. 2026 à
+ * 23:15, x@y a écrit : > > Merci… »). On coupe donc INLINE à la première
+ * attribution rencontrée (ancrage fiable : un mot déclencheur + une date/heure +
+ * « a écrit : »/« wrote: »/« escribió: »), puis on retombe sur le découpage par
+ * ligne pour les cas normaux. Best-effort, multilingue.
  */
 function stripQuotedReply(text: string): string {
-  const attribution =
-    /^\s*(le\s.+\sa\s+écrit\s*:|on\s.+\bwrote:\s*$|el\s.+\sescribió:|-{2,}\s*(message d'origine|original message|forwarded message)|_{5,}|de\s*:\s.+\benvoyé\s*:)/i;
+  let t = text;
+
+  // 1) Coupe INLINE à la ligne d'attribution (tolère les newlines aplaties).
+  //    « Le <…date…> a écrit : » / « On <…date…> wrote: » / « El <…> escribió: ».
+  //    ⚠️ Le déclencheur (le/on/el) DOIT être précédé d'un saut de ligne ou d'un
+  //    chevron « > » : en français « On » et « Le » sont trop courants pour
+  //    ancrer sur une simple espace (« On va faire LE test… » n'est pas une
+  //    citation). Le \d exigé entre le déclencheur et le verbe écarte en plus la
+  //    prose (« Le rapport que Marie a écrit : » n'a ni chevron ni date).
+  const inlineAttribution =
+    /(?:\n|>)\s*(?:le|on|el)\s[^\n]*?\d[^\n]*?(?:a\s+écrit|wrote|escribió)\s*:/i;
+  const mAttr = inlineAttribution.exec(t);
+  if (mAttr) t = t.slice(0, mAttr.index);
+
+  // 2) Séparateurs explicites (transferts, Outlook).
+  const separator =
+    /(?:^|\n)\s*(?:-{2,}\s*(?:message d'origine|original message|forwarded message)|_{5,})/i;
+  const mSep = separator.exec(t);
+  if (mSep) t = t.slice(0, mSep.index);
+
+  // 3) Cas normal : lignes citées « > » présentes en début de ligne.
   const kept: string[] = [];
-  for (const line of text.split(/\r?\n/)) {
-    if (attribution.test(line)) break; // début du bloc cité → on coupe
-    if (/^\s*>/.test(line)) break; // lignes citées → on coupe
+  for (const line of t.split(/\r?\n/)) {
+    if (/^\s*>/.test(line)) break;
     kept.push(line);
   }
+
   return kept
     .join("\n")
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
+    .replace(/\s*>+\s*$/, "") // chevrons résiduels devant l'attribution coupée
     .trim();
 }
 
@@ -66,7 +93,10 @@ function plainContent(mail: UnipileMailWebhook): string | null {
       .replace(/&nbsp;/gi, " ")
       .replace(/\s+/g, " ")
       .trim();
-    return text || null;
+    // Après aplatissement, l'attribution/les chevrons deviennent inline : la
+    // même passe que le texte brut les retire (les blockquotes n'attrapent pas
+    // les citations Apple Mail, qui n'en utilisent pas toujours).
+    return stripQuotedReply(text) || null;
   }
   return null;
 }
