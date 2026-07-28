@@ -55,7 +55,10 @@ export function ContactsGroups({ groups }: { groups: DirectoryGroup[] }) {
       {filtered.map((g) => (
         <Link
           key={g.id}
-          href={`/conversations/${g.id}`}
+          // Retour → l'annuaire, onglet Groupes (l'utilisateur ne modifie pas un
+          // groupe, le clic mène droit à sa conversation ; le retour doit le
+          // ramener là d'où il vient).
+          href={`/conversations/${g.id}?from=${encodeURIComponent("/contacts?tab=groupes")}`}
           className="flex items-center gap-3 border-b border-[#f1efeb] px-[18px] py-3.5 active:bg-(--surface-2)"
         >
           <span className="grid size-[42px] flex-none place-items-center rounded-full bg-(--green-600) text-white">

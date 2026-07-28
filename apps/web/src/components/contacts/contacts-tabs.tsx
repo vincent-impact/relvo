@@ -22,11 +22,14 @@ type Tab = "contacts" | "groupes";
 export function ContactsTabs({
   contacts,
   groups,
+  defaultTab = "contacts",
 }: {
   contacts: DirectoryContact[];
   groups: DirectoryGroup[];
+  /** Onglet actif initial — deep-link (?tab=groupes) au retour d'un groupe. */
+  defaultTab?: Tab;
 }) {
-  const [tab, setTab] = useState<Tab>("contacts");
+  const [tab, setTab] = useState<Tab>(defaultTab);
 
   return (
     <>

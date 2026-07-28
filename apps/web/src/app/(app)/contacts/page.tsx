@@ -20,7 +20,13 @@ import { formatRelative } from "@/lib/display";
 // dans un <Suspense>, servi depuis le cache serveur. Le filtrage/groupement est
 // 100 % client (cf. ContactsDirectory) — pas de refetch à la frappe.
 
-async function ContactsBody({ accountId }: { accountId: string }) {
+async function ContactsBody({
+  accountId,
+  defaultTab,
+}: {
+  accountId: string;
+  defaultTab: "contacts" | "groupes";
+}) {
   const db = await getTenantDb();
   const [contacts, groups] = await Promise.all([
     cachedContacts(accountId),
@@ -28,6 +34,7 @@ async function ContactsBody({ accountId }: { accountId: string }) {
   ]);
   return (
     <ContactsTabs
+      defaultTab={defaultTab}
       contacts={contacts}
       groups={groups.map((g) => ({
         id: g.id,
@@ -38,8 +45,14 @@ async function ContactsBody({ accountId }: { accountId: string }) {
   );
 }
 
-export default async function ContactsPage() {
+export default async function ContactsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const accountId = await requireAccountId();
+  const { tab } = await searchParams;
+  const defaultTab = tab === "groupes" ? "groupes" : "contacts";
   const total = await cachedContactCount(accountId);
 
   return (
@@ -67,7 +80,7 @@ export default async function ContactsPage() {
         </RelvoHeader>
 
         <Suspense fallback={<RowsSkeleton count={6} />}>
-          <ContactsBody accountId={accountId} />
+          <ContactsBody accountId={accountId} defaultTab={defaultTab} />
         </Suspense>
       </Screen>
     </ContactsSearchProvider>
