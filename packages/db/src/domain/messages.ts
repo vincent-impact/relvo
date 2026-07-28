@@ -12,6 +12,9 @@ import type { TenantDb, Tx } from "../tenant";
 import {
   type CreateContactInput,
   contactDisplayName,
+  contactMatchesAnyEmail,
+  contactMatchesEmail,
+  contactMatchesPhone,
   createContact,
   splitFullName,
 } from "./contacts";
@@ -359,7 +362,8 @@ export async function ingestInboundEmail(
       )?.senderContactId ??
       (
         await db.contact.findFirst({
-          where: { email: { equals: senderEmail, mode: "insensitive" } },
+          // Rattache aussi sur une adresse SECONDAIRE du contact (2026-07-28).
+          where: contactMatchesEmail(senderEmail),
           select: { id: true },
         })
       )?.id ??
@@ -478,7 +482,8 @@ export async function ingestInboundWhatsApp(
       )?.senderContactId ??
       (
         await db.contact.findFirst({
-          where: { phone: { equals: senderNumber, mode: "insensitive" } },
+          // Rattache aussi sur un numéro SECONDAIRE du contact (2026-07-28).
+          where: contactMatchesPhone(senderNumber),
           select: { id: true },
         })
       )?.id ??
@@ -643,7 +648,8 @@ export async function sendEmailReply(
     data.recipientContactId ??
     (
       await db.contact.findFirst({
-        where: { email: { in: identifiers } },
+        // Reconnaît un contact du set même sur une adresse secondaire.
+        where: contactMatchesAnyEmail(identifiers),
         select: { id: true },
       })
     )?.id ??

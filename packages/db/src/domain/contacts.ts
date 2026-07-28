@@ -46,12 +46,59 @@ export function splitFullName(full: string): {
 
 // Coordonnées secondaires : email 2…, téléphone 2… (le primaire reste `email`/
 // `phone`). On borne à 10 pour éviter les abus ; les entrées vides sont filtrées
-// côté UI avant envoi.
-const additionalEmails = z.array(z.email()).max(10).optional();
+// côté UI avant envoi. ⚠️ Les e-mails secondaires sont NORMALISÉS en minuscules
+// au stockage : le rattachement des entrants les compare via `array has` (exact,
+// sans `mode: insensitive` — indisponible sur les tableaux Postgres), cf.
+// `contactMatchesEmail`.
+const additionalEmails = z
+  .array(z.email().transform((e) => e.trim().toLowerCase()))
+  .max(10)
+  .optional();
 const additionalPhones = z
   .array(z.string().trim().min(1).max(40))
   .max(10)
   .optional();
+
+/**
+ * Where-clause « ce contact porte cette adresse » (primaire OU secondaire),
+ * insensible à la casse. Le primaire utilise `mode: insensitive` ; les
+ * secondaires étant stockés en minuscules, on compare la valeur minusculée.
+ */
+export function contactMatchesEmail(email: string): Prisma.ContactWhereInput {
+  const value = email.trim();
+  return {
+    OR: [
+      { email: { equals: value, mode: "insensitive" } },
+      { additionalEmails: { has: value.toLowerCase() } },
+    ],
+  };
+}
+
+/** Idem pour un numéro (primaire OU secondaire). Comparaison exacte (les numéros
+ *  ne varient pas par la casse) — la normalisation de format reste hors périmètre. */
+export function contactMatchesPhone(phone: string): Prisma.ContactWhereInput {
+  const value = phone.trim();
+  return {
+    OR: [
+      { phone: { equals: value, mode: "insensitive" } },
+      { additionalPhones: { has: value } },
+    ],
+  };
+}
+
+/** Where-clause « ce contact porte AU MOINS une de ces adresses » (primaire OU
+ *  secondaire) — pour retomber sur un contact reconnu d'un set de destinataires. */
+export function contactMatchesAnyEmail(
+  emails: string[],
+): Prisma.ContactWhereInput {
+  const values = emails.map((e) => e.trim()).filter(Boolean);
+  return {
+    OR: [
+      { email: { in: values } },
+      { additionalEmails: { hasSome: values.map((e) => e.toLowerCase()) } },
+    ],
+  };
+}
 
 export const createContactSchema = z.object({
   firstName: z.string().trim().max(80).optional().nullable(),
