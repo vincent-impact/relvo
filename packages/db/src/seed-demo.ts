@@ -22,12 +22,15 @@ import {
   Actor,
   ChannelType,
   ContactStatus,
+  ConversationType,
   Priority,
   SubjectStatus,
   TaskKind,
   TaskStatus,
 } from "./index";
 import {
+  attachConversationToSubject,
+  attachConversationToSubjectFromMessage,
   createAttachment,
   createChannel,
   createContact,
@@ -37,7 +40,8 @@ import {
   createSubject,
   createTask,
   completeTask,
-  closeSubject,
+  ensureSubjectAnchors,
+  ignoreConversation,
   validateSubject,
   setAiLabel,
   suggestResolution,
@@ -166,6 +170,12 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     firstName: "Karim",
     lastName: "Benali",
     email: "karim@sogood-distribution.fr",
+    // Numéro mobile = son WhatsApp (sert de clé au fil direct, cf. cross-canal
+    // SUB-0142). Secondaires : ligne fixe SoGood + adresse commandes → fiche
+    // contact multi-valeurs (Tél 1/2, Email 1/2), auto-rattachement inclus.
+    phone: "+33 6 12 03 45 67",
+    additionalPhones: ["+33 1 48 20 15 15"],
+    additionalEmails: ["commandes@sogood-distribution.fr"],
     company: "SoGood Distribution",
     jobTitle: "Responsable commercial",
     defaultFolderId: fournisseurs.id,
@@ -210,6 +220,8 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     firstName: "Sophie",
     lastName: "Blanchard",
     email: "sophie.blanchard@tastycrousty.fr",
+    phone: "+33 6 88 12 34 56",
+    additionalEmails: ["sophie.blanchard@gmail.com"],
     jobTitle: "Assistante RH",
     defaultFolderId: rh.id,
     sourceActor: Actor.user,
@@ -218,6 +230,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     firstName: "Yacine",
     lastName: "Traoré",
     email: "yacine.traore@tastycrousty.fr",
+    phone: "+33 6 73 45 12 89",
     jobTitle: "Équipier polyvalent",
     defaultFolderId: rh.id,
     sourceActor: Actor.user,
@@ -376,6 +389,9 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     direction: "incoming",
     subjectId: sub142.id,
     senderContactId: karim.id,
+    // Même objet que le 1er message → même conversation e-mail (le fil ne se
+    // scinde pas : la clé de conversation dérive de l'objet normalisé + du set).
+    subjectLine: "Rupture sauce blanche",
     content:
       "Je vous joins le bon de livraison prévisionnel pour la SB-210 pour validation.",
   });
@@ -429,6 +445,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     direction: "incoming",
     subjectId: sub103.id,
     senderContactId: packplus.id,
+    senderRaw: packplus.email!,
     subjectLine: "Réassort emballages",
     content:
       "Stock bientôt épuisé côté papier kraft et boîtes menu. On vous remet une commande standard ?",
@@ -438,6 +455,8 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     direction: "outgoing",
     subjectId: sub103.id,
     recipientContactId: packplus.id,
+    // Objet repris → la réponse reste dans le MÊME fil (sinon conversation à part).
+    subjectLine: "Réassort emballages",
     content:
       "Oui, lancez la commande standard de papier kraft et boîtes menu. Merci de me confirmer la date de livraison.",
   });
@@ -683,6 +702,8 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     direction: "incoming",
     subjectId: sub224.id,
     senderContactId: yacine.id,
+    senderRaw: yacine.phone!,
+    senderName: "Yacine Traoré",
     content:
       "Bonjour chef, je suis en arrêt 5 jours (certificat envoyé). Désolé pour le service de ce soir.",
   });
@@ -718,6 +739,8 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     direction: "incoming",
     subjectId: sub226.id,
     senderContactId: yacine.id,
+    senderRaw: yacine.phone!,
+    senderName: "Yacine Traoré",
     content:
       "Chef, est-ce qu'on pourrait se voir cette semaine pour parler de mon salaire ? Ça fait 2 ans maintenant.",
   });
@@ -1329,28 +1352,211 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     }
   }
 
-  // ===== SUJET FERMÉ (groupe WhatsApp bavard) =====
-  const sub156 = await createSubject(db, {
-    reference: "SUB-0156",
-    title: "Groupe « Commerçants quartier »",
+  // ===== GROUPE WhatsApp BAVARD, mis en SOURDINE (mute) — SANS sujet =====
+  // Le cas d'usage fondateur du « mute » (invariant conversation `ignored`) : un
+  // groupe de quartier qui déborde, qu'on fait taire sans rien perdre. Aucun sujet
+  // : c'est une SOURCE qu'on ignore, pas une affaire. Alimente le filtre
+  // « Ignorées » de /conversations.
+  const noisyTitle = "Commerçants Épinay";
+  const noisyThread = "wa-group-commercants-epinay";
+  await createMessage(db, {
+    channelId: wa.id,
+    direction: "incoming",
+    isGroup: true,
+    groupTitle: noisyTitle,
+    externalThreadId: noisyThread,
+    senderRaw: "+33 6 22 33 44 55",
+    senderName: "Nadia (Fleuriste)",
+    content:
+      "Bonjour à tous ! La réunion de quartier est décalée à jeudi 18h 📅",
+  });
+  const noisyLast = await createMessage(db, {
+    channelId: wa.id,
+    direction: "incoming",
+    isGroup: true,
+    groupTitle: noisyTitle,
+    externalThreadId: noisyThread,
+    senderRaw: "+33 6 77 88 99 00",
+    senderName: "Marché du Centre",
+    content: "Et pensez à sortir les poubelles ce soir, c'est notre tour 🗑️",
+  });
+  await ignoreConversation(db, noisyLast.conversationId);
+
+  // ===== N1 — CONVERSATION E-MAIL « GROUPE » (set de destinataires ≥ 2) =========
+  // Achat groupé entre trois gérants du réseau : le fil e-mail porte un SET de
+  // destinataires (Sofiane + Rachid), donc une conversation « Groupe » (M6quater).
+  const sofiane = await createContact(db, {
+    firstName: "Sofiane",
+    lastName: "Merabet",
+    email: "sofiane.merabet@tastycrousty.fr",
+    company: "Tasty Crousty — Sarcelles",
+    jobTitle: "Gérant",
+    defaultFolderId: business.id,
+    sourceActor: Actor.user,
+  });
+  const rachid = await createContact(db, {
+    firstName: "Rachid",
+    lastName: "Haddad",
+    email: "rachid.haddad@tastycrousty.fr",
+    company: "Tasty Crousty — Garges",
+    jobTitle: "Gérant",
+    defaultFolderId: business.id,
+    sourceActor: Actor.user,
+  });
+  const sub233 = await createSubject(db, {
+    reference: "SUB-0233",
+    title: "Achat groupé huile de friture",
     summary:
-      "Fil du groupe WhatsApp des commerçants du quartier — animations, voirie, tour de rôle des poubelles. Volume élevé, peu prioritaire.",
-    folderId: undefined,
-    contactIds: [],
+      "Sofiane (Sarcelles) et Rachid (Garges) proposent de grouper la commande d'huile de friture pour obtenir un meilleur tarif au volume. À arbitrer : quantité à engager pour Épinay.",
+    folderId: fournisseurs.id,
+    contactIds: [sofiane.id, rachid.id],
     status: SubjectStatus.open,
     priority: Priority.normal,
+    sourceChannelId: emailSupport.id,
+    createdByActor: Actor.ai,
+  });
+  const msg233 = await createMessage(db, {
+    channelId: emailSupport.id,
+    direction: "incoming",
+    subjectId: sub233.id,
+    senderContactId: sofiane.id,
+    senderRaw: sofiane.email!,
+    recipients: [rachid.email!],
+    subjectLine: "Achat groupé huile de friture — on se cale ?",
+    content:
+      "Salut les gars ! On tourne tous sur la même huile. Si on groupe la commande à trois, le fournisseur passe à -12 % au-delà de 600 L. Vous engagez combien de votre côté ? Rachid, tu confirmes pour Garges ?",
+  });
+  await createMessage(db, {
+    channelId: emailSupport.id,
+    direction: "outgoing",
+    subjectId: sub233.id,
+    recipientContactId: sofiane.id,
+    recipients: [rachid.email!],
+    subjectLine: "Achat groupé huile de friture — on se cale ?",
+    content:
+      "Bonne idée. Je pars sur 250 L pour Épinay. Rachid, tu complètes pour atteindre les 600 L ? Je confirme demain.",
+  });
+  // Set = { Sofiane, Rachid } → conversation « Groupe » : on renseigne aussi les
+  // contacts enregistrés du set (ce que fait l'ouverture d'un sujet en vrai).
+  await db.conversation.updateMany({
+    where: { id: msg233.conversationId },
+    data: { contactIds: [sofiane.id, rachid.id] },
+  });
+  await addTasks(sub233.id, [
+    {
+      title: "Confirmer le volume d'huile à engager pour Épinay",
+      kind: TaskKind.decision,
+      actor: Actor.ai,
+      off: 1,
+    },
+    {
+      title: "Calculer l'économie réelle sur l'achat groupé",
+      kind: TaskKind.check,
+      off: 2,
+    },
+  ]);
+
+  // ===== N2 — GROUPE WhatsApp « Équipe » + ÉCOUTE ANCRÉE ========================
+  // Le sujet ÉCOUTE le groupe à partir d'un message précis (l'ancre). Le bavardage
+  // ANTÉRIEUR reste orphelin (hors sujet) — démonstration de l'écoute WhatsApp.
+  const sub234 = await createSubject(db, {
+    reference: "SUB-0234",
+    title: "Renfort samedi soir",
+    summary:
+      "Gros match au bar voisin samedi : l'équipe alerte sur une soirée qui va charger et demande du renfort en salle.",
+    folderId: rh.id,
+    contactIds: [],
+    status: SubjectStatus.open,
+    priority: Priority.urgent,
     sourceChannelId: wa.id,
     createdByActor: Actor.ai,
+  });
+  const teamTitle = "Équipe Tasty Épinay";
+  const teamThread = "wa-group-epinay-equipe";
+  // Message AVANT l'ancre → reste orphelin (le sujet n'écoute pas encore).
+  await createMessage(db, {
+    channelId: wa.id,
+    direction: "incoming",
+    isGroup: true,
+    groupTitle: teamTitle,
+    externalThreadId: teamThread,
+    senderContactId: yacine.id,
+    senderName: "Yacine Traoré",
+    content:
+      "Salut la team 👋 le planning de la semaine est affiché en cuisine",
+  });
+  // ANCRE : c'est ici que commence l'écoute du sujet.
+  const teamAnchor = await createMessage(db, {
+    channelId: wa.id,
+    direction: "incoming",
+    isGroup: true,
+    groupTitle: teamTitle,
+    externalThreadId: teamThread,
+    senderRaw: "+33 6 51 02 88 47",
+    senderName: "Sofia Mendes",
+    content:
+      "Chef, on est short samedi soir 😰 gros match au bar d'à côté, ça va charger. On peut avoir un renfort en salle ?",
+  });
+  await createMessage(db, {
+    channelId: wa.id,
+    direction: "outgoing",
+    isGroup: true,
+    groupTitle: teamTitle,
+    externalThreadId: teamThread,
+    content:
+      "Je passe en renfort de 19h à 22h et j'appelle Nadia pour un extra. Tenez bon 💪",
   });
   await createMessage(db, {
     channelId: wa.id,
     direction: "incoming",
-    subjectId: sub156.id,
-    senderRaw: "Groupe Commerçants Épinay",
-    content:
-      "Rappel : la réunion de quartier est décalée à jeudi 18h. Pensez à sortir les poubelles ce soir 🗑️",
+    isGroup: true,
+    groupTitle: teamTitle,
+    externalThreadId: teamThread,
+    senderContactId: yacine.id,
+    senderName: "Yacine Traoré",
+    content: "Merci chef 🙏 on gère",
   });
-  await closeSubject(db, sub156.id);
+  // Ouvre l'écoute à l'ancre : balaie l'ancre → fin, laisse l'amont orphelin.
+  await attachConversationToSubjectFromMessage(db, sub234.id, teamAnchor.id);
+  await addTasks(sub234.id, [
+    {
+      title: "Confirmer le renfort de samedi soir",
+      kind: TaskKind.decision,
+      actor: Actor.ai,
+      off: 2,
+      hour: 18,
+    },
+    { title: "Appeler Nadia pour un extra", kind: TaskKind.call, off: 1 },
+  ]);
+
+  // ===== N3 — CROSS-CANAL : SUB-0142 gagne une 2e conversation (WhatsApp) =======
+  // Parti par e-mail (le fil sauce blanche ci-dessus), l'échange se poursuit sur
+  // WhatsApp direct avec Karim. Le sujet porte alors DEUX conversations (e-mail
+  // permanent + écoute WhatsApp). Un message ANTÉRIEUR à l'ancre reste orphelin.
+  await createMessage(db, {
+    channelId: wa.id,
+    direction: "incoming",
+    senderContactId: karim.id,
+    senderName: "Karim Benali",
+    senderRaw: karim.phone!,
+    content: "Bonne année chef 🎉 on se refait un point commandes très vite !",
+  });
+  const karimWaAnchor = await createMessage(db, {
+    channelId: wa.id,
+    direction: "incoming",
+    senderContactId: karim.id,
+    senderName: "Karim Benali",
+    senderRaw: karim.phone!,
+    content:
+      "Au fait pour la sauce SB-210, je peux vous livrer demain 8h finalement. Ça vous va ?",
+  });
+  await createMessage(db, {
+    channelId: wa.id,
+    direction: "outgoing",
+    recipientContactId: karim.id,
+    content: "Parfait Karim, 8h c'est noté. Merci !",
+  });
+  await attachConversationToSubjectFromMessage(db, sub142.id, karimWaAnchor.id);
 
   // ===== 7. Messages « Sans sujet » =====
   await createMessage(db, {
@@ -1384,6 +1590,62 @@ export async function seedDemoAccount(storage?: SeedStorage) {
 
   // ===== 8. Suggestion de résolution (sujet stabilisé) =====
   await suggestResolution(db, sub131.id);
+
+  // ===== 8bis. Liaison sujet ↔ conversation (M6quater) =========================
+  // `createMessage` pose `message.subjectId` mais NE crée PAS le lien
+  // `SubjectConversation` : rattacher/écouter est un geste utilisateur, pas un
+  // effet de bord de la réception. Le seed le fait ici EN BLOC pour tous les
+  // sujets — sans quoi l'onglet « Conversations » d'une fiche sujet serait vide.
+  //   • e-mail    → lien permanent, ancre NULLE (le sujet EST le fil) ;
+  //   • messagerie → ancre = 1er message couvert (posée par ensureSubjectAnchors).
+  // Idempotent : les écoutes déjà ouvertes à l'ancre (N2, N3) ne sont pas dupliquées.
+  {
+    const allSubjects = await db.subject.findMany({
+      select: { id: true, status: true },
+    });
+    for (const s of allSubjects) {
+      const convRows = await db.message.findMany({
+        where: { subjectId: s.id },
+        select: { conversationId: true },
+        distinct: ["conversationId"],
+      });
+      for (const { conversationId } of convRows) {
+        await attachConversationToSubject(db, {
+          subjectId: s.id,
+          conversationId,
+        });
+      }
+      await ensureSubjectAnchors(db, s.id);
+      // Sujet terminal (validé/fermé) : borne les écoutes MESSAGERIE encore
+      // ouvertes (messages postérieurs → orphelins). Les liens E-MAIL, eux, ne
+      // sont jamais bornés (le sujet EST le fil) — distinction par TYPE, pas canal.
+      if (s.status !== SubjectStatus.open) {
+        const openLinks = await db.subjectConversation.findMany({
+          where: {
+            subjectId: s.id,
+            closingMessageId: null,
+            conversation: {
+              is: { type: { not: ConversationType.email_subject } },
+            },
+          },
+          select: { id: true, conversationId: true },
+        });
+        for (const link of openLinks) {
+          const last = await db.message.findFirst({
+            where: { subjectId: s.id, conversationId: link.conversationId },
+            orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+            select: { id: true },
+          });
+          if (last) {
+            await db.subjectConversation.updateMany({
+              where: { id: link.id },
+              data: { closingMessageId: last.id },
+            });
+          }
+        }
+      }
+    }
+  }
 
   // ===== 9. Connaissances =====
   const generalFolder = await db.folder.findFirstOrThrow({
@@ -1577,6 +1839,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
     "SUB-0226",
     "SUB-0225",
     "SUB-0231",
+    "SUB-0234", // renfort samedi soir — groupe WhatsApp fraîchement arrivé
   ];
   await db.subject.updateMany({
     where: { reference: { notIn: NEW_SUBJECT_REFS } },
