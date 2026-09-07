@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Génère CHANGELOG.md depuis les commits (M15.7).
+// Génère CHANGELOG.md — le journal des versions de la page de suivi (M15.7).
 //
 // ⚠️ CE SCRIPT NE TOURNE PAS AU BUILD. Le fichier qu'il produit est COMMITÉ, et
 // c'est un compromis assumé : la plateforme de déploiement clone en profondeur
@@ -7,30 +7,57 @@
 // versionné se paie en diffs, mais c'est la seule source stable en production.
 // On le régénère à la main : `pnpm changelog`.
 //
-// LE FILTRE EST LA CONVENTION DE COMMITS ELLE-MÊME. Seuls `feat` et `fix`
-// franchissent la frontière ; `docs`, `chore`, `refactor`, `perf`, `style`,
-// `test`, `ci` n'ont rien à dire à un dirigeant et ne sont même pas regardés.
+// ══════════════════════════════════════════════════════════════════════════
+// LE PIED `Client:` EST OBLIGATOIRE — REFUS PAR DÉFAUT.
+// ══════════════════════════════════════════════════════════════════════════
+//   `Client: <phrase>`  → publiée
+//   `Client: -`         → écartée explicitement
+//   ABSENT              → ÉCARTÉE AUSSI, et c'est le point.
 //
-// LE PIED DE MESSAGE `Client:` — un sujet de commit est écrit pour l'équipe, et
-// seul un tiers environ se lit tel quel par un client.
-//   `Client: <phrase>`  → c'est cette phrase qui est publiée
-//   absent              → le sujet du commit est publié tel quel
-//   `Client: -`         → l'entrée n'est PAS publiée
+// La règle précédente publiait le sujet du commit à défaut de pied. Elle
+// paraissait généreuse ; elle a produit un journal de 143 lignes écrites pour
+// l'équipe — « pièges #5b ET #5c », « migration name → first_name/last_name ».
+// Un journal illisible est PIRE qu'un journal absent : il est lu, il n'apprend
+// rien, et il occupe la place de celui qui aurait servi.
+//
+// Un repli silencieux qui publie du jargon chez le client est un défaut qui
+// s'ouvre tout seul. Le refus par défaut, lui, se voit : l'entrée manque.
+//
+// LE FILTRE DE TYPE RESTE : seuls `feat` et `fix` sont même regardés. `docs`,
+// `chore`, `refactor`, `perf`, `style`, `test`, `ci` n'ont rien à dire.
+//
+// LA REPRISE — les commits antérieurs à REPRISE ne sont pas lus du tout : leur
+// période est couverte, une fois pour toutes, par backlog/journal-client.md.
 //
 // Spécification : backlog/suivi-client.md
 
 import { execFileSync } from "node:child_process";
-import { writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const RACINE = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SORTIE = join(RACINE, "CHANGELOG.md");
+const REPRISE_FICHIER = join(RACINE, "backlog/journal-client.md");
+
+/**
+ * La frontière entre les deux régimes du journal.
+ * AVANT  → le fichier de reprise, écrit à la main et figé.
+ * DEPUIS → les commits, et eux seuls.
+ * Aucune date ne peut appartenir aux deux : c'est vérifié plus bas.
+ */
+const REPRISE = "2026-09-08";
 
 const SEP_CHAMP = "\x1f";
 const SEP_COMMIT = "\x1e";
+const ETIQUETTE = { feat: "Nouveau", fix: "Corrigé" };
 
-/** `feat(scope)!: sujet` → { type, sujet }. Tout le reste renvoie null. */
+function echouer(message) {
+  console.error(`\n✖ [changelog] ${message}\n`);
+  process.exit(1);
+}
+
+/** `feat(scope)!: sujet` → { type }. Tout le reste renvoie null. */
 function analyserSujet(sujet) {
   const m = /^(feat|fix)(?:\([^)]*\))?!?:\s*(.+)$/.exec(sujet);
   return m ? { type: m[1], sujet: m[2].trim() } : null;
@@ -62,6 +89,7 @@ function lireCommits() {
     [
       "log",
       "--no-merges",
+      `--since=${REPRISE}`,
       `--pretty=format:%ad${SEP_CHAMP}%s${SEP_CHAMP}%b${SEP_COMMIT}`,
       "--date=short",
     ],
@@ -77,12 +105,48 @@ function lireCommits() {
     });
 }
 
-const ETIQUETTE = { feat: "Nouveau", fix: "Corrigé" };
+/**
+ * Lit le journal de reprise : les entrées antérieures à la convention, écrites
+ * à la main en langage client.
+ *
+ * ⚠️ CE FICHIER EST FIGÉ, et la garantie est mécanique. Une date qui atteint
+ * REPRISE fait échouer la génération. Sans cette borne, le fichier redeviendrait
+ * mois après mois la vraie façon d'écrire le journal — et la discipline du pied
+ * `Client:`, qu'aucune machine ne peut rattraper ensuite, serait contournée
+ * sans que personne n'ait décidé de la contourner.
+ */
+function lireReprise() {
+  if (!existsSync(REPRISE_FICHIER)) return new Map();
+
+  const jours = new Map();
+  let date = null;
+  for (const ligne of readFileSync(REPRISE_FICHIER, "utf8").split(/\r?\n/)) {
+    const titre = /^##\s+(\d{4}-\d{2}-\d{2})\s*$/.exec(ligne);
+    if (titre) {
+      date = titre[1];
+      if (date >= REPRISE) {
+        echouer(
+          `backlog/journal-client.md contient la date ${date}, qui atteint la reprise (${REPRISE}).\n` +
+            `  Ce fichier ne couvre QUE la période antérieure. Depuis la reprise, une entrée\n` +
+            `  du journal s'écrit dans le pied « Client: » du commit concerné.`,
+        );
+      }
+      continue;
+    }
+    const entree = /^-\s+\*\*(Nouveau|Corrigé)\*\*\s+—\s+(.+?)\s*$/.exec(ligne);
+    if (!entree || !date) continue;
+    if (!jours.has(date)) jours.set(date, []);
+    jours.get(date).push({ etiquette: entree[1], texte: entree[2] });
+  }
+  return jours;
+}
 
 function main() {
-  const jours = new Map();
+  const jours = lireReprise();
+  const reprises = [...jours.values()].reduce((n, l) => n + l.length, 0);
   let ecartes = 0;
-  let reformules = 0;
+  let muets = 0;
+  let publies = 0;
 
   for (const commit of lireCommits()) {
     const entete = analyserSujet(commit.sujet);
@@ -93,13 +157,22 @@ function main() {
       ecartes++;
       continue;
     }
-    if (client) reformules++;
+    if (client === null) {
+      // REFUS PAR DÉFAUT. On le signale : un commit `feat`/`fix` sans pied est
+      // presque toujours un oubli, pas une intention.
+      muets++;
+      console.warn(
+        `  ⚠ sans pied « Client: » — ${commit.date} ${commit.sujet}`,
+      );
+      continue;
+    }
 
     if (!jours.has(commit.date)) jours.set(commit.date, []);
     jours.get(commit.date).push({
       etiquette: ETIQUETTE[entete.type],
-      texte: client ?? entete.sujet,
+      texte: client,
     });
+    publies++;
   }
 
   const dates = [...jours.keys()].sort().reverse();
@@ -107,8 +180,8 @@ function main() {
     "# Journal des versions",
     "",
     "<!-- Généré par scripts/generate-changelog.mjs (`pnpm changelog`).",
-    "     Ne pas éditer à la main : toute correction se fait dans le pied",
-    "     de message `Client:` du commit concerné, puis on régénère. -->",
+    "     Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le",
+    "     pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->",
     "",
   ];
   for (const date of dates) {
@@ -121,9 +194,10 @@ function main() {
 
   writeFileSync(SORTIE, `${lignes.join("\n").trimEnd()}\n`, "utf8");
 
-  const total = [...jours.values()].reduce((n, l) => n + l.length, 0);
   console.log(
-    `[changelog] ${total} entrée(s) sur ${dates.length} jour(s) · ${reformules} reformulée(s) par un pied « Client: » · ${ecartes} écartée(s) par « Client: - » → CHANGELOG.md`,
+    `[changelog] ${reprises + publies} entrée(s) sur ${dates.length} jour(s) → CHANGELOG.md\n` +
+      `            ${reprises} de reprise · ${publies} depuis un pied « Client: » · ` +
+      `${ecartes} écartée(s) par « Client: - » · ${muets} sans pied (NON publiée(s))`,
   );
 }
 

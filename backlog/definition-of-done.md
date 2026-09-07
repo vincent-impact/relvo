@@ -20,8 +20,9 @@
       primitive que le registre fournit est une erreur de process, pas un choix esthétique.
 - [ ] **Tout piège rencontré remonte à `PITFALLS.md` ET au registre du kit, dans la même
       session.**
-- [ ] **Un commit `feat` ou `fix` porte un pied de message `Client:`** quand son sujet n'est pas
-      lisible tel quel par le client — ou `Client: -` quand il ne le concerne pas.
+- [ ] **Tout commit `feat` ou `fix` porte un pied de message `Client:`** — une phrase d'effet
+      observable, ou `Client: -` quand il ne concerne pas le client. **Sans pied, l'entrée
+      n'existe pas dans le journal** : le sujet du commit n'est plus publié en repli.
       Cf. [`suivi-client.md`](suivi-client.md).
 - [ ] **Quand une épique change d'état, son frontmatter est mis à jour DANS LE MÊME COMMIT**
       (`statut`, `debut`, `fin`). C'est ce qui alimente la page de suivi du client.

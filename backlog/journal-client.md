@@ -1,8 +1,31 @@
-# Journal des versions
+# Journal client — reprise de l'historique
 
-<!-- Généré par scripts/generate-changelog.mjs (`pnpm changelog`).
-     Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
-     pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
+> **Écrit à la main, une seule fois, et FIGÉ.** Ce fichier couvre la période antérieure à la
+> convention du pied de message `Client:`. À partir de la date de reprise, le journal se
+> construit **uniquement** depuis les commits — plus une ligne n'est ajoutée ici.
+
+## Pourquoi ce fichier existe
+
+Les commits antérieurs au 2026-09-08 sont écrits pour l'équipe : « pièges #5b ET #5c »,
+« migration name → first_name/last_name », « M6quater ». Publiés tels quels, ils donnaient un
+journal de 143 lignes que le client ne pouvait pas lire — et un journal illisible est pire
+qu'un journal absent, parce qu'il occupe la place de celui qui aurait servi.
+
+Trois options existaient. **Réécrire l'historique git** pour y greffer des pieds de message :
+exclu, on ne récrit pas un historique livré. **Publier quand même** : exclu, c'est le problème.
+**Reprendre l'historique une fois à la main** : retenu, parce que le coût est borné — il ne se
+représentera jamais, la convention prenant le relais.
+
+## Les règles de ce fichier
+
+- **Une entrée décrit un effet observable par le client**, jamais une implémentation.
+- **Rien après la date de reprise.** `scripts/generate-changelog.mjs` refuse de tourner si une
+  date de ce fichier atteint la reprise — c'est ce qui empêche ce fichier de redevenir, mois
+  après mois, la vraie façon d'écrire le journal.
+- **Le regroupement est par date de livraison réelle**, pas par commit. Quinze commits d'un même
+  après-midi produisent une entrée si l'utilisateur n'en voit qu'une chose.
+
+---
 
 ## 2026-09-07
 

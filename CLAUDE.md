@@ -141,10 +141,12 @@ remplacées par `/conversations`. À retirer.
 - **Validation aux frontières**, identifiants opaques.
 - **Doc et code dans le même commit** — nécessaire, **pas suffisant** : voir `PITFALLS.md` #20 et
   la [Definition of Done](backlog/definition-of-done.md).
-- **📣 Pied de message `Client:` sur les commits `feat` et `fix`.** Une phrase en langage client,
-  à la deuxième personne, décrivant un **effet observable** — elle est publiée telle quelle sur la
-  page de suivi. `Client: -` pour exclure un commit qui ne concerne pas le client. Absent, c'est
-  le sujet du commit qui part au client : ne l'omettre que quand il se lit tel quel.
+- **📣 Pied de message `Client:` sur les commits `feat` et `fix` — OBLIGATOIRE.** Une phrase en
+  langage client, à la deuxième personne, décrivant un **effet observable** — elle est publiée
+  telle quelle sur la page de suivi. `Client: -` pour exclure un commit qui ne concerne pas le
+  client. ⚠️ **Absent, l'entrée n'est PAS publiée** : le journal du client refuse par défaut. Un
+  commit `feat`/`fix` sans pied est donc un trou dans le journal, jamais du jargon envoyé au
+  client — `pnpm changelog` le signale ligne à ligne.
 
   ```
   fix(pwa): le clavier Android n'écrase plus le composer

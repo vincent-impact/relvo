@@ -33,7 +33,7 @@ chantier qui fabrique sa page de suivi.
 | M15.4 ✅ | **Route `/suivi/[token]`**, entièrement statique via `generateStaticParams` à partir d'une variable d'environnement. Deux onglets, `<details>` par chantier. |
 | M15.5 ✅ | **`robots.ts`** avec `noindex` sur `/suivi`, et ajout de la route aux routes publiques de l'authentification. |
 | M15.6 ✅ | **Test du refus par défaut** — une route protégée sans session est refusée, une route publique passe. ⚠️ **Dans le même commit que M15.5.** |
-| M15.7 ✅ | **Génération du `CHANGELOG.md`** depuis les commits `feat`/`fix`, avec prise en compte du pied de message `Client:`. |
+| M15.7 ✅ | **Génération du `CHANGELOG.md`** depuis les commits `feat`/`fix`. Le pied `Client:` est **obligatoire** — sans lui, pas d'entrée. La période antérieure à la convention est reprise une fois à la main dans `journal-client.md`, fichier **figé par une borne bloquante**. |
 | M15.8 | **Definition of Done** — la ligne `Client:` et la mise à jour du frontmatter à chaque changement d'état. ✅ *posé* |
 
 ---
@@ -47,7 +47,10 @@ chantier qui fabrique sa page de suivi.
 - [x] Le corps d'un fichier d'épique **n'apparaît nulle part** dans le JSON généré.
       *(Le vérifier en écrivant une phrase absurde dans un corps et en relisant le JSON.)*
 - [x] Un commit `chore:` **n'apparaît pas** dans le journal ; un commit `feat:` avec
-      `Client: -` non plus.
+      `Client: -` non plus ; un commit `feat:` **sans aucun pied `Client:`** non plus.
+      *(Vérifié sur les 148 commits réels : 143 sans pied → 0 publié.)*
+- [x] Le journal ne contient **aucune phrase écrite pour l'équipe**. La reprise manuelle couvre
+      l'avant-convention, et une date qui atteint la reprise **fait échouer** la génération.
 - [x] Le test du refus par défaut passe, et **il échoue** si l'on retire temporairement une route
       de la liste publique. *(C'est la seule façon de savoir qu'il teste quelque chose.)*
 - [x] Aucun `fs` au **runtime** — cf. le piège ci-dessous.

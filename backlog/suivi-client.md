@@ -28,7 +28,12 @@ ne sait lire.
 |---|---|---|
 | `epics/*.md` | la frise : titre client, objectif, statut, dates | **le frontmatter seul** |
 | `CHANGELOG.md` (racine, généré) | le journal des versions | tout le fichier |
+| `journal-client.md` | le journal **avant la reprise** — écrit à la main, figé | les entrées datées |
 | `../package.json` | rien de publiable — sert à dater la génération | — |
+
+`journal-client.md` est la seule source rédigée à la main, et elle est **bornée dans le temps**
+(cf. « La reprise » plus bas). C'est un fichier écrit **pour** le client : il ne peut rien faire
+fuir, puisqu'il ne contient rien d'autre.
 
 ### ⚠️ La garantie est mécanique, pas disciplinaire
 
@@ -107,7 +112,8 @@ longtemps.
 
 ## Les règles du journal
 
-Il est **généré depuis les commits**, jamais écrit à la main.
+Depuis la reprise, il est **généré depuis les commits**, jamais écrit à la main. La période
+antérieure est couverte une fois pour toutes par [`journal-client.md`](journal-client.md).
 
 | Type de commit | Devient une entrée ? |
 |---|---|
@@ -118,10 +124,10 @@ Il est **généré depuis les commits**, jamais écrit à la main.
 Le filtre est la convention de commits elle-même : `docs`, `chore`, `refactor`, `perf`, `style`,
 `test`, `ci` ne franchissent jamais la frontière.
 
-### Le pied de message `Client:`
+### Le pied de message `Client:` — refus par défaut
 
 Un sujet de commit est écrit pour l'équipe. Environ un tiers seulement se lit tel quel par un
-client. D'où un pied de message **optionnel** :
+client. D'où un pied de message, et il est **obligatoire** :
 
 ```
 feat(contacts): fiche contact en « carte de visite » plein écran
@@ -133,15 +139,41 @@ numéros et adresses visibles d'un coup.
 | Pied de message | Effet |
 |---|---|
 | `Client: <phrase>` | c'est cette phrase qui est publiée |
-| absent | le sujet du commit est publié tel quel |
-| `Client: -` | l'entrée n'est **pas** publiée |
+| `Client: -` | l'entrée n'est **pas** publiée — exclusion explicite |
+| **absent** | l'entrée n'est **pas** publiée non plus, et la génération le signale |
 
-**La phrase est écrite à la première personne du client** — « vous pouvez », « vos messages » —
+**La phrase est écrite à la deuxième personne du client** — « vous pouvez », « vos messages » —
 et décrit un **effet observable**, pas une implémentation.
+
+⚠️ **Le repli « à défaut, on publie le sujet du commit » a existé, et il a échoué.** Il paraissait
+généreux ; il a produit un journal de 143 lignes écrites pour l'équipe — « pièges #5b ET #5c »,
+« migration name → first_name/last_name ». Un journal illisible est **pire** qu'un journal
+absent : il est lu, il n'apprend rien, et il occupe la place de celui qui aurait servi.
+
+Un repli silencieux qui publie du jargon chez le client est un défaut **qui s'ouvre tout seul**,
+un commit à la fois. Le refus par défaut, lui, **se voit** : l'entrée manque, et `pnpm changelog`
+nomme chaque commit muet.
 
 ⚠️ **C'est la seule ligne de tout ce dispositif qui demande une discipline, et elle est
 déléguée** : c'est Claude Code qui rédige les commits. Elle est inscrite dans la
 [Definition of Done](definition-of-done.md).
+
+### La reprise — l'historique antérieur à la convention
+
+Les commits antérieurs au **2026-09-08** n'ont pas de pied `Client:`, et la machine ne peut pas
+le leur inventer. Trois issues existaient : réécrire l'historique git (exclu — on ne récrit pas
+un historique livré), publier le jargon quand même (exclu — c'est le problème), ou **reprendre
+la période une fois à la main**.
+
+C'est la troisième : [`journal-client.md`](journal-client.md) porte les entrées antérieures,
+écrites en langage client, groupées par date de livraison réelle. Le coût est **borné** — il ne
+se représentera pas, la convention prenant le relais.
+
+⚠️ **Ce fichier est figé, et la garantie est mécanique.** `generate-changelog.mjs` **échoue** si
+une date y atteint la reprise, et ne lit **aucun commit** antérieur à elle. Sans cette borne, le
+fichier redeviendrait mois après mois la vraie façon d'écrire le journal, et la discipline du
+pied `Client:` — qu'aucune machine ne peut rattraper après coup — serait contournée sans que
+personne n'ait décidé de la contourner.
 
 ---
 
