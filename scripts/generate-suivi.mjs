@@ -123,6 +123,100 @@ function lireEpiques() {
   return epiques;
 }
 
+// ---------------------------------------------------------------- validation
+
+const STATUTS = ["a-faire", "en-cours", "termine", "partiel"];
+const DATES = ["debut", "fin"];
+
+/**
+ * Les CINQ règles de cohérence de la spécification (M15.3).
+ *
+ * ⚠️ Elles font ÉCHOUER LE BUILD, elles n'avertissent pas. Une page de suivi
+ * fausse est pire qu'une page absente : elle est lue, et elle est crue. Un
+ * avertissement dans un log de build n'est lu par personne — c'est exactement
+ * ainsi qu'une frise se met à mentir sans que quiconque s'en aperçoive.
+ *
+ * Même principe que le test qui tient les contraintes du modèle de données :
+ * tenu par une mécanique, jamais par la vigilance.
+ */
+function valider(epiques) {
+  const erreurs = [];
+  const publiques = epiques.filter((e) => e.public === true);
+
+  // 1. Au plus UNE épique publique en cours — sinon le client ne sait plus sur
+  //    quoi on travaille, et la cellule « En cours » de l'en-tête devient un
+  //    choix arbitraire entre deux vérités.
+  const enCours = publiques.filter((e) => e.statut === "en-cours");
+  if (enCours.length > 1) {
+    erreurs.push(
+      `${enCours.length} épiques publiques sont « en-cours » (${enCours.map((e) => e.id).join(", ")}) — il n'en faut qu'une.`,
+    );
+  }
+
+  for (const e of epiques) {
+    const ou = `${e.fichier} (${e.id ?? "sans id"})`;
+
+    // 2. Une épique publiée dit ce qu'elle apporte, en langage client.
+    if (e.public === true) {
+      if (!e.titre_client)
+        erreurs.push(`${ou} est publique mais n'a pas de titre_client.`);
+      if (!e.resume_client)
+        erreurs.push(`${ou} est publique mais n'a pas de resume_client.`);
+    }
+
+    // Garde de rendu (hors des cinq règles) : un statut inconnu ne produirait ni
+    // pastille ni barre — la ligne existerait, vide, sans que rien ne le signale.
+    if (e.statut && !STATUTS.includes(e.statut)) {
+      erreurs.push(
+        `${ou} porte le statut inconnu « ${e.statut} » (attendu : ${STATUTS.join(" | ")}).`,
+      );
+    }
+    for (const cle of DATES) {
+      if (e[cle] && !/^\d{4}-\d{2}-\d{2}$/.test(String(e[cle]))) {
+        erreurs.push(
+          `${ou} : ${cle} = « ${e[cle]} » n'est pas une date AAAA-MM-JJ.`,
+        );
+      }
+    }
+
+    // 3. Un chantier commencé a une date de début — sans elle, aucune barre ne
+    //    peut être placée sur la frise.
+    if (["en-cours", "partiel", "termine"].includes(e.statut) && !e.debut) {
+      erreurs.push(`${ou} est « ${e.statut} » mais n'a pas de date de début.`);
+    }
+
+    // 4. Une fin antérieure au début produirait une barre de largeur négative.
+    if (e.fin && e.debut && e.fin < e.debut) {
+      erreurs.push(
+        `${ou} : fin (${e.fin}) est antérieure au début (${e.debut}).`,
+      );
+    }
+  }
+
+  // 5. Deux ordres identiques rendent la frise non déterministe : l'ordre des
+  //    lignes dépendrait alors du tri de lecture du dossier.
+  const vus = new Map();
+  for (const e of epiques) {
+    if (e.ordre_public === undefined) continue;
+    if (vus.has(e.ordre_public)) {
+      erreurs.push(
+        `ordre_public ${e.ordre_public} est porté deux fois : ${vus.get(e.ordre_public)} et ${e.fichier}.`,
+      );
+    } else {
+      vus.set(e.ordre_public, e.fichier);
+    }
+  }
+
+  if (erreurs.length > 0) {
+    console.error(
+      `\n[suivi] ${erreurs.length} incohérence(s) dans le frontmatter des épiques :\n` +
+        erreurs.map((m) => `  · ${m}`).join("\n") +
+        `\n\nLa page de suivi n'est pas générée. Corrigez le frontmatter — une frise fausse est pire qu'une frise absente.\n`,
+    );
+    process.exit(1);
+  }
+}
+
 // ---------------------------------------------------------------- journal
 
 const ETIQUETTES = { Nouveau: "new", Corrigé: "fix" };
@@ -209,6 +303,8 @@ function construireAxe(epiques) {
 
 function main() {
   const toutes = lireEpiques();
+  valider(toutes);
+
   const publiques = toutes
     .filter((e) => e.public === true)
     .sort((a, b) => (a.ordre_public ?? 0) - (b.ordre_public ?? 0));
