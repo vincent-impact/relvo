@@ -3,7 +3,7 @@
 > **Destinataire : Claude Design.** Ce document est un brief autoportant pour concevoir
 > la **direction artistique** de Relvo. Il dit *ce qu'est le produit*, *à qui il
 > s'adresse*, *quel registre viser*, et *quelles contraintes sémantiques sont
-> déjà verrouillées*. À lire avec la maquette mobile (`mockup/mobile/`, voir §8),
+> déjà verrouillées*. À lire avec la maquette mobile (`../mockup/mobile/`, voir §8),
 > qui porte l'UX et l'inventaire des composants à habiller.
 >
 > **Ce qu'on attend de la DA** : une identité visuelle distinctive (couleurs,
@@ -77,12 +77,9 @@ la DA) :
    header « Bonjour … · Actions du jour ». Le bouton Relvo y est comme partout
    ailleurs, en haut à droite.
 
-> ⚠️ **Deux dispositifs décrits dans les versions antérieures de ce brief sont
-> ABANDONNÉS** (décisions des 2026-06-27 et 2026-06-28) : le **composer persistant**
-> en bas d'écran (« Demander à Relvo… ») — encombrant, hidden-menu, confondu avec le
-> composer destinataire d'un sujet — et le **« Brief du jour »** de l'Accueil, retiré
-> faute de valeur. L'Accueil n'est plus un brief conversationnel : c'est une page de
-> tâches.
+> ⚠️ **L'accueil n'est pas un brief conversationnel : c'est la page des tâches.** Et
+> il n'y a **pas** de zone de saisie permanente en bas d'écran — l'accès à Relvo vit
+> en haut à droite du header, à la même place sur toutes les pages.
 
 **Trois acteurs, un code couleur identitaire** (le triptyque structure toute la
 lecture de l'app — c'est un pilier de la DA) :
@@ -102,7 +99,7 @@ porte. C'est le fil rouge identitaire à soigner en priorité.
 Ces choix portent du **sens métier** : la DA peut les sublimer (nuances, profondeur,
 matière) mais **pas en changer la signification**.
 
-### Palette de base déjà posée (tokens actuels — `mockup/mobile/css/app.css`)
+### Palette de base déjà posée (tokens actuels — `../mockup/mobile/css/app.css`)
 
 ```
 Marque        --brand        #2B6FE0  (bleu)        — accent primaire, liens, "Moi"
@@ -244,7 +241,7 @@ visibles dans la maquette, cf. §8) :
 
 ## 8. La maquette à digérer (UX de référence)
 
-Donne à Claude Design le dossier **`mockup/mobile/`** — HTML/CSS statique, mobile-first,
+Donne à Claude Design le dossier **`../mockup/mobile/`** — HTML/CSS statique, mobile-first,
 qu'il manipule parfaitement. C'est la **référence UX figée** : layout, inventaire de
 composants, hiérarchie. La DA habille ce squelette, elle ne le refait pas.
 

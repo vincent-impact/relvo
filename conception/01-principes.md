@@ -1,640 +1,348 @@
 # 1. Principes structurants
 
+> **Fait foi sur les INVARIANTS** (§14). Le reste de ce document porte le *pourquoi* : le
+> problème résolu, le public visé, la posture produit. C'est la partie qui n'a **aucun homologue
+> dans le code**, donc celle qui ne peut pas mentir.
+>
+> Le *persisté* fait foi dans [`02-modele-donnees.md`](02-modele-donnees.md), le *comportement*
+> dans [`04-design-domaine.md`](04-design-domaine.md). Cf. [`00-sources.md`](00-sources.md).
+
+---
+
 ## 1. Le produit ne pilote pas des messages, il pilote des sujets
 
-Le cœur de Relvo n'est pas la boîte mail ni WhatsApp.
+Le cœur de Relvo n'est ni la boîte mail ni la messagerie. C'est le **Subject**.
 
-Le cœur du produit est le **Subject**.
+Un sujet rassemble en un seul endroit les messages, les pièces jointes, les tâches et les
+événements liés à une **situation métier en cours de traitement**. C'est l'intention fondatrice
+du projet : transformer un flux désordonné de sollicitations en dossiers clairs et suivis.
 
-Un sujet est un espace de travail qui rassemble en un seul endroit :
+Le message, lui, n'est ni l'unité de pilotage ni l'unité de regroupement : il **alimente** une
+conversation, et c'est depuis une conversation que s'ouvre un sujet. La mécanique complète — le
+rangement déterministe, l'écoute, les bornes — fait foi dans `04-design-domaine.md`.
 
-- les **messages**
-- les **pièces jointes**
-- les **tâches**
-- les **événements du journal de bord**
+## 2. À qui s'adresse Relvo
 
-Autrement dit, un sujet représente une **situation métier en cours de traitement**.
+**Des dirigeants des secteurs food et bâtiment.** Ils ne sont pas familiers des SaaS bureautiques
+— Notion, Hubspot, Pipedrive leur sont étrangers — mais ils sont **à l'aise avec ChatGPT et
+Claude**. Leur modèle mental natif est la **conversation**, pas la navigation par menus.
 
-Cette logique prolonge bien l'intention initiale du projet : transformer un flux désordonné de messages en dossiers clairs et suivis.
+Ils vivent sur téléphone, entre deux services, souvent en pleine lumière et à une main. La
+promesse doit être lisible immédiatement, et l'interface tenir dans un pouce.
 
-## 2. Le message est le point d'entrée, la conversation son point de chute
+Deux conséquences qui gouvernent tous les arbitrages :
 
-Un message entrant ou sortant est souvent l'élément déclencheur.
+- **Une interface bariolée est illisible** pour eux. La couleur est un signal, pas une
+  décoration, et la rareté fait le signal.
+- **Une fonctionnalité qui demande un apprentissage est une fonctionnalité qui ne sera pas
+  utilisée.** Un geste, un effet, toujours le même.
 
-Quand un message arrive, il est **immédiatement rangé dans une conversation**, par une règle **déterministe** propre à son canal (cf. §3). Ce rangement a lieu **à la réception**, et il ne peut pas échouer : un message a donc toujours une place, dès la première seconde, sans qu'aucune IA n'ait à comprendre quoi que ce soit.
+## 3. La posture produit
 
-> **Il n'y a plus de message « Sans sujet ».** Ce qui peut rester en attente de tri, ce n'est pas un message isolé mais une **conversation orpheline** — une conversation sur laquelle aucun sujet n'est ouvert.
+> **L'UI sert à accéder à l'info ; Relvo sert à agir.**
 
-Le message n'est donc ni l'unité de pilotage, ni l'unité de regroupement : il **alimente** une conversation, et c'est depuis une conversation que s'ouvre un sujet.
+L'essentiel des actions passera par l'échange avec l'agent, pas par les écrans. Cette phrase
+n'est pas un slogan : c'est le **réflexe d'arbitrage** de tout le produit. Devant une
+fonctionnalité, la question n'est pas « est-ce utile ? » mais « est-ce que ça renforce Relvo
+comme surface d'action, ou est-ce que ça ajoute un écran de plus à apprendre ? »
 
-> **Note historique.** Le modèle antérieur faisait tenter à l'IA, dès la réception, un rattachement à un sujet ; en cas d'échec (contact inconnu, intention ambiguë), le message restait « Sans sujet » dans une page Messages, avec un indice de tri (`triage_hint`). Ce statut n'a plus d'objet, et la page Messages disparaît au profit de la page **Conversations** (décision du 2026-07-20).
+C'est aussi ce qui explique une décision qui surprend : **la liste des conversations n'est pas la
+surface principale du produit.** Exposer en permanence tous les fils reviendrait à réafficher une
+boîte de réception que le dirigeant a déjà dans sa messagerie — on lui *ajouterait* du travail au
+lieu de lui en retirer. La charge mentale doit rester sur les **sujets**, pas sur les messages.
 
-## 3. La conversation regroupe les messages selon le discriminant de son canal
+## 4. Le triptyque d'acteurs
 
-Une **conversation** est un ensemble de messages réunis par un **discriminant stable, propre au canal**. Elle est calculée à la réception, sans IA, et elle est **durable** : une conversation ne se supprime pas et ne se termine jamais.
+Chaque chose affichée vient de quelqu'un, et ce quelqu'un est l'une de trois voix :
 
-| Sous-type | Canal | Discriminant (clé) | Titre |
+| UI | Modèle | Couleur | Ce que c'est |
 |---|---|---|---|
-| **e-mail direct** | e-mail | objet normalisé + **le** destinataire | l'objet de l'e-mail |
-| **e-mail groupe** | e-mail | objet normalisé + **set** de destinataires | l'objet de l'e-mail |
-| **messagerie directe** | WhatsApp… | l'interlocuteur | le nom du contact |
-| **messagerie groupe** | WhatsApp… | fil de groupe (`chat_id`) | le nom du groupe |
+| **Moi** | `user` | bleu | l'utilisateur |
+| **Relvo** | `ai` | violet | l'assistant |
+| **Externe** | `contact` | ambre | le monde extérieur |
 
-Nos propres messages **sortants** rejoignent la conversation de leur set de destinataires — et, pour l'e-mail, de leur objet. Une conversation contient donc les deux sens de l'échange.
+C'est **le seul code couleur que l'utilisateur doit apprendre**, et il est tenu partout : bulles,
+pastilles du journal, badge de source d'une tâche, avatars.
 
-> **Refonte du 2026-07-25.** La conversation a désormais **deux sous-types** : **e-mail** (avec objet, un *set* de destinataires, rattachement **permanent** au sujet) et **messagerie** (WhatsApp — demain Instagram / Messenger / LinkedIn : un seul interlocuteur ou un groupe, que le sujet **écoute**). Base commune, deux attributs qui divergent. Détail : `02-modele-donnees.md §5bis`.
+> **Note de nommage.** Dans l'interface, on dit **Relvo** — « Relvo a préparé un brouillon… » —
+> jamais « l'IA ». Dans la documentation technique et le modèle, on conserve « IA » et la valeur
+> `ai`, pour rester neutre.
 
-### Pourquoi le discriminant dépend du canal
+## 5. Relvo aide à décider et à exécuter
 
-L'email porte nativement une notion de fil : l'**objet**. Deux affaires distinctes menées avec la même personne se séparent d'elles-mêmes. WhatsApp n'a pas d'objet : le seul discriminant disponible est **l'interlocuteur** (ou le groupe). Un fil WhatsApp direct est donc un flux continu où les sujets **s'entrelacent** — c'est précisément le problème que Relvo existe pour résoudre.
+**Aide à la décision** — Relvo lit le message et propose des tâches pertinentes, dans la limite
+de ce que le contenu permet de déduire.
 
-De cette asymétrie découle la contrainte la plus structurante du modèle :
+**Aide à l'exécution** — Relvo prépare des actions concrètes, au premier rang desquelles une
+**réponse préremplie** : destinataire, canal et contenu déjà posés. Le brouillon est présenté
+dans la zone de rédaction, clairement identifié comme une suggestion, et l'utilisateur l'édite,
+le régénère ou l'efface.
 
-> **La granularité sémantique (le sujet) est forcément plus fine que la granularité de transport (la conversation).**
+**Ce que Relvo ne peut pas faire, et pourquoi c'est structurant.** Relvo ne propose que ce qui
+est **déductible du contenu disponible**. « Confirmer ou refuser le remplacement » se déduit d'un
+message ; « Appeler le shop de Montpellier » ou « Vérifier les stocks de Béziers » relève du
+savoir de terrain. Relvo ne sait pas, à la lecture d'un message seul, quels magasins sont
+impactés ni comment l'organisation est structurée.
 
-C'est pourquoi le rattachement à un sujet se décide, **dans le modèle**, message par message (`Message.subject_id`) et non conversation par conversation. ⚠️ **L'interface, elle, ne l'expose plus** depuis le 2026-07-21 : elle ne connaît que des **plages d'écoute** (cf. §9, « Deux renoncements assumés »). Le modèle garde la finesse ; c'est M7 qui s'en servira.
+C'est précisément ce que la mémoire du compte (§8) sert à combler.
 
-### Un fil d'email EST un sujet ; une conversation WhatsApp est un flux — décision du 2026-07-21
+### L'acquittement implicite
 
-L'asymétrie ne s'arrête pas au discriminant : elle se lit **dans la clé elle-même**.
+Le produit fait un choix de **légèreté maximale** : aucune validation explicite à donner aux
+suggestions. **Ouvrir la fiche d'un sujet vaut acquittement** de tout ce qui s'y trouve — tâches
+proposées, brouillon, suggestion de validation. L'utilisateur agit ensuite naturellement, à son
+rythme.
 
-| Clé canonique | Ce qu'elle contient | Ce qu'est la conversation |
-|---|---|---|
-| `email:<objet>:<set de destinataires>` | l'affaire **et** ses interlocuteurs | **un fil d'affaire** — appartient à un sujet, un seul, à vie |
-| `wa-direct:<numéro>` | la personne **seule** | un flux, qui charrie des affaires successives |
-| `wa-group:<chat_id>` | le groupe **seul** | un flux, qui charrie des affaires successives |
+**Pourquoi.** Un bouton « valider les suggestions » ajoute un geste à chaque sujet pour un
+bénéfice nul : l'utilisateur qui lit la suggestion l'a déjà acquittée dans sa tête. Le produit ne
+lui demande pas de le prouver.
 
-> ## 🔑 L'énoncé central
->
-> **Un fil d'e-mail appartient à un sujet, un seul, à vie.**
-> **Une conversation de messagerie est un FLUX ; un sujet l'ÉCOUTE, à partir d'un message, jusqu'à ce qu'il cesse d'écouter.**
->
-> Tout ce qui suit — l'écoute, ses deux bornes, son extension, son arrêt — découle de cette seule phrase. Quand une règle paraît arbitraire, c'est ici qu'il faut revenir.
+## 6. Tâche et action ne sont pas la même chose
 
-Un objet d'e-mail **est déjà** une délimitation d'affaire, posée par l'expéditeur lui-même. Il n'y a **rien à découper**, et donc **rien à borner** : un sujet e-mail **n'écoute rien**, il **EST** le fil (au sens directionnel ci-dessous). Une conversation de messagerie directe n'a que la personne : elle coule, indéfiniment, et mélange. C'est là — et **seulement** là — qu'un sujet doit se **brancher** sur le flux pour en extraire une affaire.
+**La tâche** dit ce qu'il faut faire. **L'action** est l'opération concrète exécutée dans l'outil
+— en V1, essentiellement : envoyer un message.
 
-#### ⚠️ Cette phrase est DIRECTIONNELLE — précision du 2026-07-21
-
-« Un fil d'email EST un sujet » se lit **de la conversation vers le sujet**, jamais dans l'autre sens. C'est la lecture la plus facile à rater du modèle, et la rater **bloque l'implémentation** — elle interdirait d'un coup les cas M, S et X.
-
-| Sens de lecture | Cardinalité | Énoncé |
-|---|---|---|
-| **conversation → sujet** | **1:1** | une conversation email a **UN** sujet, un seul, pour toute sa vie |
-| **sujet → conversations** | **1:N** | un sujet porte **0, 1 ou n** conversations, email et/ou WhatsApp |
-
-**Ce qui est unique, c'est le sujet d'une conversation — pas la conversation d'un sujet.** Un sujet reste un espace de travail qui **agrège** ; c'est même sa raison d'être, puisque c'est à son niveau que se fait la réunification entre canaux (cf. §9).
-
-#### Réponse d'un destinataire, changement d'adresse : IN-SET vs HORS-SET — décision du 2026-07-25
-
-Deux situations voisines, traitées à l'opposé, selon un test **exact** : l'expéditeur est-il **déjà dans le set de destinataires** du sujet ?
-
-- **In-set** — sur une affaire envoyée à `[Karim, Sophie]`, **Sophie répond à nous seuls**, même objet. Elle est déjà connue du sujet. Le set change (`{Sophie}` ≠ `{Karim, Sophie}`) → **nouvelle conversation**, que Relvo **range automatiquement dans le même sujet**. C'est déterministe — objet normalisé = fonction pure, appartenance au set = test exact — **pas** de l'inférence.
-- **Hors-set** — Karim répond depuis `karim@sogood.fr`, **adresse jamais vue**, même objet. La clé change, la conversation tombe **orpheline**, et **l'utilisateur la rattache à la main** (swipe droite, geste du Cas M).
-
-**Pourquoi hors-set reste manuel.** Rapprocher « même objet, adresse **inconnue** » exigerait d'inférer à la réception — ce que refuse la section « Ce qu'une conversation n'est pas » ci-dessous. On y perdrait le **déterminisme** (une clé qui se devine peut se tromper) et la **stabilité de l'identité** (une fusion à tort ne se défait qu'en déplaçant des messages un à un). Détail et modèle : `02-modele-donnees.md §5bis` ; scénario complet : `03-cas-usage.md` **Cas X**.
-
-### « Écoute » remplace « fenêtre » — décision du 2026-07-21
-
-Le mot **« fenêtre »** décrivait une **plage subie** : une tranche découpée dans un flux, observée de l'extérieur. Le mot **« écoute »** décrit une **action du sujet** : il se **branche** sur une conversation, puis il s'en **débranche**. Le changement de mot n'est pas cosmétique — il déplace trois choses :
-
-1. **L'initiative revient au sujet.** Ce n'est pas la conversation qui *appartient* à une plage : c'est le sujet qui **décide** d'écouter, à partir d'où, et jusqu'à quand.
-2. **La commande se déplace dans la fiche du sujet.** On arrête une écoute là où l'on voit ce qu'elle alimente — pas depuis la conversation.
-3. **Le vocabulaire dit l'état** : une conversation est **écoutée** par un sujet ouvert, ou elle ne l'est pas. C'est **binaire**, et c'est ce qui rend l'interface lisible (cf. §9).
-
-⚠️ **Le modèle ne change pas d'un octet.** `anchor_message_id` et `closing_message_id` **SONT** le début et la fin d'une écoute. Renommer le concept ne renomme aucune colonne, ne demande aucune migration.
-
-**L'écoute est un concept exclusivement « thread sans objet », donc exclusivement de la messagerie** (WhatsApp, Instagram, Messenger, LinkedIn…). Côté e-mail il n'y a rien à écouter, puisqu'il n'y a rien à découper.
-
-> **Un groupe WhatsApp se comporte exactement comme un direct** (précision du 2026-07-20). La tentation est de voir dans le **nom du groupe** l'équivalent d'un objet d'email — « Chantier Narbonne », « Équipe Marne-la-Vallée ». C'est faux : un nom de groupe désigne un **collectif**, pas une **affaire**. Le groupe « Tasty Crousty Marne-la-Vallée » parlera successivement d'une livraison en retard, d'un planning de congés et d'un congélateur en panne — exactement le mélange que l'objet d'email évite. Un groupe **s'écoute comme un direct**, sans exception ni règle particulière.
-
-D'où le renversement de lecture :
-
-> **L'écoute n'a jamais été un concept du modèle. C'est la PROTHÈSE d'un objet manquant.**
->
-> Là où l'objet existe (email), **il n'y a rien à écouter** : le fil est le sujet. Là où il manque (WhatsApp), l'écoute est **indispensable** : sans elle, ouvrir un sujet embarquerait des mois de bavardage.
-
-Et comme toute prothèse, elle est **temporaire**. Quand le pipeline IA (M7) saura découper un flux WhatsApp **par le sens**, il produira ce que l'objet d'email donne gratuitement — et l'écoute tombera, exactement comme l'**écoute active** (cf. l'encadré ⚠️ de §9, qui la décrit déjà comme un échafaudage du mode manuel). Les deux sont le même échafaudage vu sous deux angles.
-
-### Appartenance et statut sont deux choses distinctes — décision du 2026-07-21
-
-C'est l'erreur qu'il ne faut pas refaire, et elle a été commise une fois : `closed_at` était décrit comme « la borne haute de la fenêtre », ce qui faisait **gouverner l'appartenance par le statut**.
-
-| | Question posée | Ce qui y répond |
-|---|---|---|
-| **Appartenance** | *quels messages sont dans ce sujet ?* | les **ancres** (`anchor_message_id`, `closing_message_id`) — jamais le statut |
-| **Statut** | *où en est cette affaire ?* | `Subject.status` (`ouvert` / `validé` / `fermé`) |
-
-Les confondre produisait des effets absurdes : valider un sujet amputait silencieusement son périmètre, et un sujet ne pouvait plus être rouvert sans réécrire son appartenance. Les deux axes sont désormais **indépendants** (détail en §9 et `02-modele-donnees.md §6`).
-
-### Ce qu'une conversation n'est pas
-
-Elle **n'est jamais découpée par thème**. Découper un fil WhatsApp par sujet supposerait d'**inférer** le sujet — donc de faire intervenir l'IA à la réception. On y perdrait deux choses : le déterminisme (un message n'aurait plus de place garantie) et la stabilité de l'identité (une erreur d'inférence rangerait durablement un message au mauvais endroit, et le corriger reviendrait à déplacer des messages un à un — c'est-à-dire à faire, en plus compliqué, ce que le modèle fait déjà).
-
-La conversation est la couche **transport et identité** ; le sujet est la couche **sémantique**.
-
-### Où l'on diverge par canal — et où l'on NE diverge PAS
-
-Forcer une UX unique sur l'e-mail et sur la messagerie est contre-productif : la **taille et la forme** des messages n'ont rien de commun, et le **système d'objet** n'existe pas en messagerie. Depuis la refonte du 2026-07-25, la divergence va jusqu'à **deux sous-types de conversation** et **deux onglets** dans la fiche du sujet (cf. `02-modele-donnees.md §6`) — mais elle reste **bornée**, et la borne est un principe, pas une préférence :
-
-| | Commun aux deux canaux | Divergent par canal |
-|---|---|---|
-| Quoi | le **domaine** : ouverture de sujet, écoute, arrêt d'écoute, détachement, ignorance, statuts — **et le signal d'appartenance** | le **rendu** (bulles vs pleine largeur), les **gestes** (sur quoi porte le swipe, libellés, couleurs), la **surface** (onglet E-mail vs Messagerie) et **deux attributs de modèle** (objet, cardinalité des contacts) |
-
-### Où se pose le signal « ce fil est suivi par un sujet » — décision du 2026-07-21
-
-**Un bandeau en en-tête de conversation, sur les DEUX canaux.** Il annonce le rattachement au sujet en cours :
-
-> ● **Suivi dans : Retard livraison sauce blanche** · *3 sujets passés*
-
-— une **pastille de couleur du domaine** (`Folder` du sujet) + le **titre du sujet**, l'ensemble **cliquable vers la fiche**. Il porte en plus un discret « **N sujets passés** » qui **déplie la liste des écoutes terminées** sur cette conversation.
-
-**Pourquoi un seul et même signal partout.** Une conversation est désormais **soit écoutée par un sujet ouvert, soit pas** — il n'y a plus d'état intermédiaire à représenter message par message. La granularité juste est donc la **conversation**, sur les deux canaux : un état, un signal.
-
-**Pourquoi « N sujets passés » n'est pas un ornement.** Sans ce dépliant, les écoutes terminées **n'existeraient plus nulle part côté conversation** : rien, en lisant un fil WhatsApp, ne dirait qu'une affaire y a été suivie et close. C'est la contrepartie explicite du renoncement décrit en §9.
-
-> ⚠️ **Garde explicite.** Le jour où l'on duplique la **logique métier** « parce que l'email est différent », on aura **deux produits** à maintenir, et Relvo perdra ce qui fait sa valeur : réunifier des canaux dans un même espace de travail. Un swipe peut changer de libellé et de couleur ; il ne doit **jamais** changer de fonction appelée. Le détail est en `02-modele-donnees.md §5bis` (décision du 2026-07-20).
-
-### Le statut « ignoré »
-
-Une conversation peut être **ignorée** : Relvo cesse alors d'analyser, de résumer et de trier ses messages. C'est le remède au « groupe WhatsApp bavard ». L'ignorance est **réversible, mais par le seul utilisateur** : c'est à lui de rouvrir la conversation s'il veut que Relvo la traite à nouveau.
-
-> **Note historique.** Le modèle antérieur regroupait les messages **par contact, tous canaux confondus** : un même contact écrivant par email le lundi et par WhatsApp le mardi alimentait un fil unique. Ce regroupement était trop grossier — il ne séparait pas deux affaires distinctes menées avec la même personne. Un contact qui écrit par email puis par WhatsApp génère désormais **deux conversations**. La réunification entre canaux ne disparaît pas : elle **remonte d'un cran**, au niveau du sujet, qui peut agréger plusieurs conversations (décision du 2026-07-20).
-
-## 4. La tâche est l'unité de travail du sujet
-
-La logique du produit repose sur une idée simple :
-
-> Un sujet avance parce que des tâches sont identifiées puis réalisées.
-
-**La tâche est rattachée au sujet, pas à un utilisateur.** Elle matérialise une action nécessaire pour faire avancer le dossier, indépendamment de la personne qui finira par l'exécuter. En V1, un compte = un humain : c'est implicitement le titulaire du compte qui agit, ce qui rend la notion d'affectation inutile à ce stade. La coordination multi-utilisateurs (assigner une tâche à un membre de l'équipe spécifique) est repoussée en V2.
-
-Une tâche peut être :
-
-- proposée par Relvo, à partir du contenu disponible (message, et plus tard documents de connaissance)
-- créée manuellement par l'utilisateur, à partir de son savoir métier
-
-Cette distinction est importante : Relvo ne peut proposer que des actions déductibles du contenu disponible (par exemple "Confirmer ou refuser le remplacement", déductible du message reçu). Les tâches qui relèvent de la connaissance du terrain (par exemple "Appeler le shop de Montpellier" ou "Vérifier les stocks de Béziers") sont créées par l'utilisateur — Relvo ne sait pas, à la lecture d'un message seul, quels magasins sont impactés ni comment l'organisation interne est structurée.
-
-Une tâche sert à matérialiser :
-
-- ce qu'il reste à faire pour faire avancer le sujet
-- ce qui a déjà été fait
-- l'avancement réel du sujet
-
-Dans l'interface, l'utilisateur manipule des **tâches**, qu'il peut conserver, supprimer, modifier ou cocher. La source de chaque tâche (Relvo ou utilisateur), portée par le champ `source_actor`, est toujours visible via une pastille `✦ Relvo` ou `Moi`. Cette information reste lisible jusqu'à l'archivage du sujet — c'est un attribut historique permanent.
-
-## 5. Relvo aide à la décision et à l'exécution
-
-> **Note de nommage.** « Relvo » est le nom donné à l'assistant IA intégré au produit. Dans l'interface, on l'appelle **Relvo** (« Relvo a préparé un brouillon… »), pas « l'IA ». Dans la documentation technique (notamment `04-ia.md`) et le modèle de données, on conserve « IA » et la valeur d'enum `Actor = ai` pour rester neutre. Le triptyque d'acteurs s'écrit donc **Moi / Relvo / Externe** côté UI, et `user / ai / contact` côté modèle.
-
-### Aide à la décision
-
-Relvo lit le message et propose des tâches pertinentes, dans la limite de ce que le contenu du message permet de déduire.
-
-### Aide à l'exécution
-
-Relvo peut préparer certaines actions concrètes, en particulier :
-
-- une réponse préremplie (brouillon)
-- avec destinataire, canal et contenu déjà préparés
-
-Le brouillon est présenté directement dans la zone de rédaction du message, clairement identifié comme **« Suggestion de Relvo — modifiez librement avant d'envoyer »**. L'utilisateur peut l'éditer librement avant envoi, le régénérer, ou l'effacer pour écrire de zéro.
-
-Relvo ne remplace pas l'utilisateur, il :
-
-- structure le travail
-- prépare des exécutions
-- réduit la charge mentale
-
-### Acquittement implicite des suggestions
-
-Le produit fait un choix de **légèreté maximale** : aucune validation explicite à donner aux suggestions de Relvo. Le simple fait d'ouvrir la fiche d'un sujet vaut acquittement de toutes les suggestions présentes — tâches proposées, brouillon de réponse, suggestion de résolution. L'utilisateur agit ensuite naturellement (cocher, modifier, supprimer) à son rythme. Sur les listes (Dashboard, Sujets), le badge « ✦ N tâches suggérées » disparaît dès que l'utilisateur a ouvert le sujet. Cf. `04-ia.md §8` pour le détail.
-
-## 6. L'action est une exécution concrète dans l'interface
-
-Il faut bien distinguer :
-
-### Task
-
-Ce qu'il faut faire.
-
-### Action
-
-L'opération concrète exécutée dans l'outil.
-
-En V1, l'action principale est surtout : **envoyer un message**.
-
-Une tâche comme "Répondre au fournisseur" peut donner lieu à une action :
-
-- ouverture du composer
-- envoi effectif du message
-
-L'action n'est pas la tâche. Elle est le **mécanisme d'exécution** de certaines tâches.
+« Répondre au fournisseur » est une tâche ; l'ouverture du composer et l'envoi effectif sont une
+action. L'action est le **mécanisme d'exécution** de certaines tâches, pas la tâche elle-même.
 
 ## 7. Tout ce qui se passe alimente un journal de bord
 
-Le produit est vivant :
+Des messages arrivent, des tâches se créent et se cochent, des actions s'exécutent, un sujet
+change d'état. Chaque événement est identifié par **son type** et **son acteur**, et le triptyque
+Moi / Relvo / Externe structure la lecture de l'activité dans toute la plateforme.
 
-- des messages arrivent
-- des tâches sont créées
-- des tâches sont cochées
-- des actions sont exécutées
-- le sujet change d'état
+Le journal n'est pas un mécanisme technique de traçabilité : c'est ce qui permet à l'utilisateur
+de **comprendre d'un coup d'œil qui agit dans son système**, et de garder une trace des décisions
+prises sur une affaire.
 
-Tout cela produit des **LogEvents**.
+## 8. Les Dossiers sont la mémoire de Relvo
 
-Chaque événement est identifié selon deux dimensions :
+Relvo ne lit pas que les messages entrants. Il s'appuie sur une **base de connaissances propre au
+compte**, alimentée par l'utilisateur — c'est ce qui transforme un assistant générique en un
+assistant **qui connaît le métier**.
 
-- **Le type d'événement** : message, tâche, action, changement de statut
-- **L'acteur** : **Moi** (l'utilisateur), **Relvo** (l'assistant IA), ou **Externe** (le monde extérieur — contacts, fournisseurs, etc.)
+Cette base **n'a pas sa propre page**. Elle vit à l'intérieur des Dossiers, aux côtés des sujets
+du même périmètre. Le modèle mental est celui d'un **classeur physique** : on ouvre son dossier
+« Fournisseurs » et on y trouve à la fois les affaires en cours et les documents de référence qui
+servent à les traiter. C'est l'unité de classement la plus intuitive pour un public non rompu aux
+SaaS — un dossier, c'est concret.
 
-Ce triptyque **Moi / Relvo / Externe** structure la lecture de l'activité dans toute la plateforme. Il permet de comprendre d'un coup d'œil qui agit dans le système et de filtrer l'activité par voix.
+**Nommage : « Domaines », pas « Dossiers ».** « Dossiers » évoque la bureautique ; chaque domaine
+est présenté comme **un domaine de la mémoire de Relvo**. L'utilisateur comprend qu'il
+**enrichit la mémoire de son assistant**.
 
-> Côté modèle de données, ces trois acteurs correspondent aux valeurs du type partagé `Actor = user | ai | contact | system` (cf. `02-modele-donnees.md §0`). « Relvo » est le nom de produit pour `ai`.
+### Deux natures de documents, et pourquoi la distinction compte
 
-Le journal de bord permet :
+- **Documents** — fichiers de référence figés : organigrammes, contrats, chartes tarifaires. Non
+  modifiables dans l'app. Ce sont des **références auxquelles on se fie**.
+- **Instructions** — texte rédigé dans l'app, que l'utilisateur fait évoluer : règles internes,
+  ton de réponse, particularités d'un fournisseur, leçons apprises. C'est une **mémoire qu'on
+  façonne**.
 
-- d'alimenter la timeline du sujet
-- d'alimenter la page Activité dédiée
-- de garder une trace claire de l'historique
+**La sensation de contrôle vient des instructions.** Ce sont elles qui donnent à l'utilisateur la
+maîtrise de ce que Relvo « sait ». Sans elles, la base de connaissances est une boîte noire.
 
-## 8. La chaîne centrale du produit
+### Les citations rendent Relvo auditable
 
-L'épine dorsale du projet est la suivante :
+Quand Relvo propose une tâche ou un brouillon en s'appuyant sur un document, il indique la
+**source**. Cette traçabilité n'est pas un ornement : sans elle, l'utilisateur ne peut ni
+vérifier ni corriger ce sur quoi Relvo s'appuie — et un assistant qu'on ne peut pas vérifier
+n'est pas un assistant qu'on garde.
 
-> **Message → Conversation → Subject → Task → Action → LogEvent**
+## 9. Le calendrier matérialise la dimension temporelle du travail
 
-### Message
+Une tâche n'est pas seulement « ce qu'il reste à faire » : c'est aussi quelque chose qui se
+positionne dans le temps. Relvo l'expose sur **deux surfaces complémentaires** — une **semaine**
+sur la page des actions, un **mois** sur une page dédiée — avec un code couleur par domaine et la
+replanification par glissement.
 
-Révèle une situation ou un besoin.
+**Pourquoi deux surfaces et pas une.** La semaine répond à « qu'est-ce qui m'attend ? » ; le mois
+répond à « quand est-ce que je peux caser ça ? ». Ce sont deux questions différentes, posées à
+des moments différents. Une seule surface obligerait l'une des deux à être mal servie.
 
-### Conversation
-
-Range le message dès sa réception, selon un discriminant déterministe propre au canal. Durable : elle ne se termine pas.
-
-### Subject
-
-Donne un sens métier à un ensemble de messages : **tout** un fil d'email, ou une **plage écoutée** dans un flux WhatsApp (cf. §3).
-
-### Task
-
-Formalise ce qu'il faut faire.
-
-### Action
-
-Permet d'exécuter concrètement une partie du travail.
-
-### LogEvent
-
-Trace ce qui s'est passé.
-
-> **Note historique.** La chaîne s'écrivait `Message → Task → Action → LogEvent` : le message se rattachait directement au sujet, et le regroupement était refait à chaque création de sujet. L'insertion de **Conversation** (rangement déterministe à la réception) et de **Subject** (espace de travail) rend explicite ce qui se jouait implicitement entre les deux (décision du 2026-07-20).
-
-## 9. Cycle de vie d'un sujet — un espace de travail qui écoute
-
-Un Sujet est un **espace de travail ouvert sur des conversations**. On l'**ouvre**, on l'utilise, on le **ferme**. La conversation, elle, existe avant, pendant et après.
-
-**Ce qui relie les deux est une ÉCOUTE** : le sujet se branche sur une conversation WhatsApp à partir d'un message, et s'en débranche. **Côté email il n'y a pas d'écoute** — le fil *est* le sujet (cf. §3). On dira donc « le sujet écoute cette conversation » pour WhatsApp, et simplement « ce fil est ce sujet » pour l'email.
-
-Le vocabulaire est délibéré : on ne « crée » ni ne « supprime » un sujet, on l'**ouvre** et on le **ferme**.
-
-### Ouvrir un sujet : UNE seule primitive, à ancre optionnelle
-
-> **Décision du 2026-07-21 — une primitive, pas deux.** Le domaine expose **une seule** fonction : *ouvrir un sujet **sur une conversation**, avec une ancre **OPTIONNELLE***.
->
-> - **ancre nulle** → le sujet couvre **tout le fil** (email) ;
-> - **ancre posée** → l'écoute **commence à ce message** (WhatsApp).
->
-> ⚠️ **La logique métier teste l'ANCRE, jamais le canal.** C'est exactement la garde déjà écrite plus haut : *le canal décide du geste, jamais de la fonction appelée*. Un `if (channel === 'email')` dans le domaine est le premier pas vers deux produits.
-
-Ce que le canal détermine, c'est **sur quoi porte le geste** — et donc quelle valeur d'ancre il transmet :
-
-| | **email** (conversation `objet`) | **WhatsApp** (`direct` / `groupe`) |
-|---|---|---|
-| Le geste porte sur… | la **CONVERSATION** (swipe droite dans la liste) | le **MESSAGE** (swipe droite dans le fil) |
-| Ce qu'il propose | ouvrir un **nouveau sujet**, ou **rattacher à un sujet existant** | « ce message est important » → **commencer l'écoute ici** et ouvrir le sujet |
-| Ancre transmise | **aucune** (`null`) | le **message swipé** |
-| Ce qui appartient au sujet | **tout le fil**, amont compris | les messages **à partir de l'ancre**, jusqu'à l'éventuelle borne de fin |
-
-⚠️ **Ouvrir un sujet sur une conversation email balaie le fil ENTIER, en amont comme en aval.** Un échange de six emails déjà reçus doit produire un sujet portant les **six** messages, pas le dernier. L'objet a déjà délimité l'affaire ; il n'y a aucune raison d'en amputer le début.
-
-**Côté email, le swipe droite ne *crée* pas le lien : il DÉCLARE que ce fil mérite d'être suivi.** Tous les fils email ne sont pas des affaires — une newsletter, un accusé de réception, un démarchage n'ont pas à devenir des sujets. Le geste ne fabrique pas une correspondance qui n'existerait pas, il **reconnaît** celle que l'objet a déjà posée. C'est M7 qui prendra cette décision à sa place, plus tard.
-
-**Côté WhatsApp, un seul geste choisit l'ancre ET crée le sujet.** Le swipe droite sur un message dit « **ça, c'est important — je commence à écouter ici** ». Il n'y a **aucun défaut d'ancre à calculer**, puisque l'utilisateur désigne toujours le message lui-même : les règles antérieures de « défaut d'ancre » n'ont plus d'objet.
-
-⚠️ **Corollaire : une ligne de conversation WhatsApp ne porte AUCUN swipe droite.** Le geste y porte sur le **message**, jamais sur le fil. L'offrir sur la ligne reviendrait à proposer « faire de ce groupe une affaire » — or un groupe n'est jamais une affaire, c'est un collectif qui en charrie plusieurs. Le swipe droite sur une ligne de conversation est **email uniquement** ; le swipe **gauche** (écarter la source), lui, existe bien sur les deux canaux.
-
-### Étendre une écoute : le MÊME geste, sur un message plus ancien
-
-Si un sujet écoute déjà la conversation et que l'utilisateur swipe un message **antérieur à l'ancre**, l'écoute **remonte jusqu'à ce message** — les messages traversés entrent dans le sujet.
-
-**Pourquoi le même geste.** L'utilisateur n'a qu'une intention à exprimer, « **l'affaire commence ici** », et elle ne change pas selon qu'un sujet existe déjà ou non. Un seul geste qui **crée** ou qui **étend** selon le contexte, c'est une règle à retenir au lieu de deux ; c'est aussi ce qui rend inutile tout dispositif de correction dédié.
-
-### ⚠️ Le tap est RÉSERVÉ à l'ouverture des pièces jointes
-
-Sur les deux canaux, **taper un message n'ouvre plus aucun menu**. Le tap sert exclusivement à ouvrir une pièce jointe. Il n'y a plus de pop-up de rattachement, de détachement ou de choix d'ancre.
-
-**Pourquoi.** Un geste qui fait deux choses selon l'endroit exact où le doigt tombe est un geste qu'on n'ose plus faire. Le tap étant le geste le plus naturel sur un message, il doit avoir l'effet le plus prévisible et le plus inoffensif — regarder une pièce jointe. Tout ce qui **modifie** l'appartenance passe par le **swipe**, geste délibéré.
-
-### Les deux bornes d'une écoute
-
-Une écoute WhatsApp a **un début** (`anchor_message_id`) et peut recevoir **une fin** (`closing_message_id`, cf. `02-modele-donnees.md §6`). L'un et l'autre désignent **un message**, jamais une date — une borne calculée sur un horodatage devient fausse dès que deux messages arrivent dans la même seconde.
-
-Tant que le sujet reste ouvert et qu'aucune borne de fin n'est posée, les **nouveaux messages de la conversation lui sont rattachés automatiquement**.
-
-### ⚠️ La règle de réception est CANAL-DÉPENDANTE — rétablie le 2026-07-21
-
-Ce qui suit décrit **l'arrêt des écoutes**. Or **un sujet email n'écoute rien** (cf. §3) : ces règles ne le concernent donc pas, et les lui appliquer est l'erreur commise — puis corrigée — le 2026-07-21.
-
-| | **e-mail** | **messagerie** |
-|---|---|---|
-| Un message entrant rejoint le sujet… | **TOUJOURS**, quel que soit son statut | **seulement** si l'écoute est active (sujet `ouvert`, conversation non ignorée, message dans la plage) |
-| Sujet `validé` ou `fermé` | le message le **ROUVRE** (`→ ouvert`) | rien : le message reste sans sujet, la conversation redevient orpheline |
-| Comment faire taire le fil | **ignorer la conversation**, et rien d'autre | ignorer la conversation, ou arrêter l'écoute |
-
-**Pourquoi l'email rouvre.** De l'activité sur une affaire signifie qu'elle est **vivante**. Un fournisseur relance sur une affaire validée il y a trois jours : soit son message rouvre le sujet et **remonte dans le fil**, soit il s'y range **en silence** — et l'utilisateur rate exactement le message qu'il ne fallait pas rater. Le statut dit ce que l'utilisateur *croyait* en le posant ; le message entrant dit ce qui *est*. Quand les deux se contredisent, c'est le message qui a raison.
-
-**Pourquoi WhatsApp ne rouvre pas.** Là, la conversation n'est pas l'affaire mais un flux qui charrie des affaires successives : un message arrivé après l'arrêt d'une écoute ne parle pas forcément de la même chose. Le rattacher serait un pari ; rouvrir un sujet dessus serait un pari sur un pari.
-
-### L'arrêt des écoutes — donc, structurellement, WhatsApp
-
-| Geste | Ce qui s'arrête | Ancre de fin |
-|---|---|---|
-| **Fermer le sujet** (`fermé`) | **toutes** ses écoutes ; la conversation ne référence plus ce sujet | posée |
-| **Valider le sujet** (`validé`) | la conversation n'alimente plus le sujet | posée |
-| **Ignorer la conversation** (mute) | elle n'alimente plus **aucun** des sujets ouverts qui l'écoutent | aucune — l'ignorance est réversible |
-| **Arrêter l'écoute** (depuis la fiche du sujet) | cette conversation-là seulement ; les autres continuent | posée |
-
-⚠️ **Les deux premières lignes ne s'appliquent qu'aux conversations de messagerie du sujet.** Ses conversations e-mail restent rattachées : elles continuent de l'alimenter, et le rouvrent. Un fil e-mail ne se détache d'un sujet que par un geste **délibéré et ciblé** — le bouton **`unlink` de l'onglet E-mail** de la fiche.
-
-> ⚠️ **Deux gestes distincts depuis la refonte du 2026-07-25.** Sur un fil e-mail il n'y a **pas d'écoute à arrêter** : le `unlink` de l'onglet E-mail **détache** la conversation (rattrapage d'erreur), **sans** poser d'ancre de fin — on supprime la liaison et on retire le `subject_id` des messages du fil. Sur une conversation de messagerie, le `unlink` de l'onglet Messagerie **arrête l'écoute** (pose l'ancre de fin). Le détachement e-mail est la **seule** façon de défaire un rattachement e-mail, et la marche arrière des cas M, S et X — sans lui, un rattachement erroné serait irréversible.
-
-**Ignorer une conversation est une PAUSE, pas une FIN.** L'ignorance est réversible (cf. §3) : la réactiver doit faire **reprendre** l'alimentation. Si elle posait une ancre de fin, « Réactiver » serait un bouton sans effet observable.
-
-⚠️ **Le swipe gauche sur une conversation écoutée ouvre d'abord une CONFIRMATION, qui NOMME les sujets concernés.** Pas « un ou plusieurs sujets » : le nom. **On ne demande pas à quelqu'un de confirmer un risque sans lui dire lequel** — c'est la différence entre une confirmation utile et un dialogue qu'on clique sans lire.
-
-### Deux renoncements assumés
-
-Ces deux points ne sont pas des oublis. Ils sont **écrits pour être relus**, parce qu'ils reviendront sur la table.
-
-**1. L'entrelacement dans une plage d'écoute n'est plus exprimable dans l'UI.** C'était l'argument fondateur du modèle : un fournisseur qui alterne deux affaires dans le même fil. **Le modèle le permet toujours** — `Message.subject_id` demeure, décidé message par message — mais **l'interface ne l'expose plus** : plus de rattachement ni de détachement message par message. Dans une plage d'écoute, **tous** les messages appartiennent au sujet ; hors plage, **aucun**.
-
-> **Arbitrage assumé.** Séparer des affaires entrelacées est **exactement le travail de M7** (le pipeline IA). En attendant, **un peu de bruit dans un sujet vaut mieux qu'une UI que personne ne comprend**. On ne construit pas une mécanique manuelle sophistiquée pour six mois, en sachant qu'une machine la remplacera.
-
-**2. Les écoutes passées deviennent invisibles côté conversation.** Rien, dans le fil lui-même, ne dit plus qu'une affaire y a été suivie puis close. C'est ce que **rattrape le « N sujets passés »** du bandeau d'en-tête (cf. §3) : sans lui, cette mémoire n'existerait plus nulle part côté conversation.
-
-### Deux onglets par canal dans un sujet — refonte du 2026-07-25
-
-⚠️ **Remplace « une seule conversation affichée à la fois »** (ligne-sélecteur + feuille de gestion des écoutes). Cette solution du 2026-07-21 est **abandonnée** : à l'usage, forcer e-mail et messagerie derrière un même sélecteur produisait une UX complexe qui égarait l'utilisateur. L'onglet unique « Conversations » se scinde en **deux onglets** :
-
-| Onglet | Icône | Ce qu'il liste | « Ajouter » |
-|---|---|---|---|
-| **E-mail** | enveloppe | les fils e-mail du sujet, **un par destinataire** (« Groupe » si ≥ 2) | *écrire un nouvel e-mail* (objet = titre du sujet) |
-| **Messagerie** | double bulle | les conversations de messagerie **écoutées** | *choisir un fil existant*, écran vierge (l'écoute démarre maintenant) |
-
-**Ce qui change dans le raisonnement.** Les trois solutions écartées en 2026-07-21 (flux fusionné, carrousel, onglets) l'étaient pour éviter d'entremêler deux rendus et de mettre « des onglets dans des onglets ». La refonte **tranche autrement** : on n'entremêle plus rien, justement parce qu'on **sépare par onglet de canal**, et l'objection « onglets dans onglets » est **levée en connaissance de cause** — les deux familles de canal deviennent la structure d'onglets de la fiche, l'ancien « Conversations » disparaît.
-
-**Ce qui ne change pas.** Le **composer** reste synchronisé avec la conversation affichée (propre à chaque onglet). Et le **domaine** reste commun : une seule primitive d'ouverture testant l'ancre, jamais le canal (cf. la garde du §3).
-
-Règles associées :
-
-- **Au plus un sujet ouvert par conversation** — règle métier V1. Une conversation est **écoutée ou pas**, sans ambiguïté sur la destination d'un nouveau message. **Le modèle, lui, en supporte plusieurs** (cf. encadré ci-dessous).
-- Des **écoutes successives** sur un même flux, sans chevauchement, sont le cas normal : ce sont des plages disjointes exprimées par la paire `anchor_message_id` / `closing_message_id`.
-
-> **Plusieurs sujets SIMULTANÉS sur une même conversation — écarté de la V1 (2026-07-21).**
->
-> L'hypothèse est **mise de côté**, et cela ne coûte rien : `SubjectConversation` est **déjà** une table de liaison plusieurs-à-plusieurs, donc le schéma l'autorise depuis le premier jour. Ce qui l'interdit n'est qu'une **règle métier**, levable **sans migration**.
->
-> C'est aussi ce qui rend l'UI binaire tenable : tant qu'une conversation n'est écoutée que par un sujet ouvert à la fois, « écoutée / pas écoutée » suffit à tout dire.
-
-> ⚠️ **L'« écoute active » est un échafaudage du mode manuel, pas une règle métier durable.**
->
-> Elle n'existe que pour une raison : tant qu'aucune IA ne sait à quel sujet appartient un message, il faut bien une règle mécanique pour que les messages successifs d'une conversation atterrissent au même endroit. Quand le pipeline IA (M7) arrivera, **c'est lui qui décidera**, message par message — et cette règle sera **remplacée**, pas complétée.
->
-> C'est écrit ici parce que ce genre de règle se fossilise : sans cette note, quelqu'un lira « au plus un sujet actif par conversation » comme une contrainte du domaine et cherchera à la préserver, alors que tout le modèle a été conçu pour qu'elle puisse **disparaître sans migration**. L'appartenance vit sur le message (`subject_id`), jamais sur la conversation — c'est précisément ce qui rend l'échafaudage démontable.
->
-> **L'écoute est le même échafaudage.** Elle n'est pas un concept du domaine : c'est la **prothèse d'un objet manquant** (cf. §3). Le jour où M7 saura découper un flux par le sens, il fera ce que l'objet d'email fait gratuitement, et l'écoute **tombera** — sans migration, `anchor_message_id` étant déjà nullable.
-
-### Un sujet agrège 0, 1 ou n conversations
-
-- **0** — un sujet sans échange, purement personnel : une liste de tâches (« Préparer l'inventaire »).
-- **1** — le cas courant : une écoute sur un fil de groupe, ou un fil d'email.
-- **n** — le sujet s'étend : parti d'un fil WhatsApp (« Retard livraison sauce blanche »), l'utilisateur écrit **par email** à son fournisseur pour la même affaire. Le sujet porte alors deux conversations — une **écoute** côté WhatsApp, un **fil entier** côté email — et n'en affiche **qu'une à la fois** (cf. ci-dessus).
-
-C'est à ce niveau — et non plus au niveau de la conversation — que se fait la **réunification entre canaux**.
-
-### Les statuts : 3 états exclusifs
-
-| Statut | Sens | Alimenté ? | Récupérable ? |
-|---|---|---|---|
-| `ouvert` | l'affaire est **en cours** | oui | — |
-| `validé` | le travail est **fait** | non | oui |
-| `fermé` | l'affaire est **écartée** — jamais traitée, abandonnée | non | oui |
-
-- **`ouvert`** — état par défaut, posé à l'ouverture. **Invisible** (aucun badge) : un état porté par la quasi-totalité des sujets n'informe pas. On lit « ouvert » par l'**absence** de badge.
-- **`validé`** — le travail est fait. Clos via **« Valider »** (swipe droite, vert).
-- **`fermé`** — le sujet n'avait pas lieu d'être, ou n'intéresse pas l'utilisateur. Clos via **« Fermer »** (swipe gauche, rouge).
-
-**La distinction entre les deux terminaux compte**, et c'est pour la relecture dans six mois qu'elle est écrite : `validé` dit « **c'est fait** », `fermé` dit « **on ne l'a pas fait, et on ne le fera pas** ». Les confondre reviendrait à ne plus pouvoir répondre à « qu'est-ce que j'ai réellement traité ce mois-ci ? ».
-
-### « Fermer » est une SUPPRESSION DOUCE — décision du 2026-07-21
-
-L'utilisateur voit spontanément « fermer » et « supprimer » comme la même action. **Décision : c'est un statut, jamais une destruction.** Fermer pose `status = fermé`, le sujet sort de la vue, ses écoutes cessent — et il reste **récupérable** via l'onglet **« Fermés »** et son bouton **« Remettre »**.
-
-**Vocabulaire retenu : « Fermer » / « Fermés » / « Remettre ».** Pas « Supprimer » / « Corbeille ». Deux raisons :
-
-1. **C'est honnête.** Rien n'est détruit — autant que le mot le dise. Un vocabulaire de destruction pour une opération réversible entraîne soit l'hésitation (on n'ose plus fermer), soit la fausse confiance (on croit avoir fait le ménage).
-2. **Un sujet est le SEUL endroit où vivent les tâches et le journal des décisions.** Un message supprimé par erreur existe encore dans Gmail ; une **tâche** supprimée par erreur n'existe **nulle part ailleurs**. Le coût d'une fausse manœuvre n'est pas symétrique — le vocabulaire doit refléter cette asymétrie.
-
-**Ce que « valider » ou « fermer » fait aux écoutes** : les deux transitions les **arrêtent** — une ancre de fin est posée sur chaque conversation **écoutée**, donc sur les conversations **WhatsApp**. ⚠️ **Les conversations email ne sont pas concernées** : elles ne sont pas écoutées, elles *sont* le sujet. Elles continuent de l'alimenter et le **rouvrent** au message suivant (cf. l'encadré canal-dépendant plus haut, et `03-cas-usage.md` Cas W).
-
-À la fermeture, Relvo propose : « **Souhaitez-vous aussi ignorer la conversation ?** » — c'est le geste qui empêche un fil bavard de reproposer indéfiniment de nouveaux sujets, **et le seul qui fasse taire un fil email**. L'ignorance vit sur la **conversation** (cf. §3), pas sur le sujet : ce n'est pas un sujet qu'on veut faire taire, c'est une **source**.
-
-**⚠️ « Remettre » ne redémarre pas les écoutes.** Les bornes de fin restent posées ; l'utilisateur relance l'écoute qu'il veut, d'un swipe droite sur le message où il veut repartir. Sans cela, un sujet WhatsApp remis après trois semaines **avalerait d'un bloc** tout ce que le fil a charrié entre-temps. Remettre dit « je reprends cette affaire », pas « rattrape tout ce que j'ai manqué ». Côté email il n'y a **rien à redémarrer** : le fil n'a jamais été détaché.
-
-**⚠️ Un sujet fermé n'est JAMAIS purgé.** Aucune rétention, aucune expiration. Pour la raison exacte qui impose le vocabulaire « Remettre » : **c'est le seul endroit où vivent les tâches et le journal des décisions**, et rien de tout cela n'est récupérable d'une source externe. Une purge automatique ferait d'une opération annoncée comme réversible une destruction différée — le pire des deux mondes. (La purge à 15 jours qui a existé était attachée à l'ancien `Subject.status = ignored`, retiré le 2026-07-20 ; elle ne doit pas être réintroduite sur `fermé`.)
-
-> **Note historique.** Le cycle comptait 4 états : `acknowledged`, `resolved`, `archived`, `ignored`. **`archived`** (automatique après inactivité) est retiré : il n'exprimait rien qu'une fermeture n'exprime déjà. **`ignored`** est retiré du sujet et **migre sur la conversation**. Le vocabulaire « créer / supprimer / terminer / ignorer » devient « **ouvrir / fermer / valider** » (décision du 2026-07-20).
-
-### Les marqueurs d'état : cumulables, indépendants du statut
-
-Ce que l'ancien modèle appelait `to_do`, `waiting`, `unread` n'étaient pas des étapes de vie mais des **états instantanés** qui peuvent coexister. Ils deviennent des **marqueurs**, plusieurs à la fois sur une même carte :
-
-- **Nouveau** — sujet **jamais ouvert** (dérivé : `last_opened_at == null` sur un sujet ouvert). Ouvrir la fiche pose `last_opened_at` → le marqueur s'éteint (le statut, lui, reste `ouvert`).
-- **Urgent** — drapeau rouge, levé uniquement si `priority = urgent` (la rareté est le signal : 1-2 sujets sur 24).
-- **À faire** — il reste au moins une tâche ouverte (dérivé des `Task`).
-- **En attente** — on attend un retour d'un tiers ; flag `waiting_for_reply` posé par Relvo.
-
-Exemple qui prouve la séparation : un sujet **ouvert** (statut) peut afficher en même temps 🔴 Urgent + « À faire » — impossible à représenter dans un enum exclusif.
-
-**Le non-lu a quitté le sujet pour la conversation.** La pastille compteur (façon WhatsApp) se lit sur la **conversation**, pas sur le sujet : c'est là que les messages arrivent, et c'est l'ouverture de la **conversation** — non celle du sujet — qui marque un message comme lu. Un sujet peut être ouvert depuis longtemps pendant que sa conversation accumule des non-lus.
-
-> **Note historique**. Les statuts `blocked` (« impossible à avancer »), puis `to_do` / `waiting` / `unread`, et enfin **`new`** (décision du 2026-06-27), ont été retirés du cycle de vie : le premier se réduisait à une attente externe, les autres sont en réalité des marqueurs cumulables, pas des étapes exclusives. « Nouveau » est désormais un marqueur dérivé (`last_opened_at == null`). Le marqueur **Non-lus** a migré du sujet vers la conversation le 2026-07-20. Cf. CLAUDE.md §7.
+Le retard se gère **dans le semainier** — on remonte les jours passés pour traiter ou replanifier
+— plutôt que dans une liste dédiée : une pile de tâches en retard qu'on ne peut que regarder
+décourage, un jour qu'on peut faire glisser se traite.
 
 ## 10. Relvo aide aussi à prendre du recul
 
-> **Note de scope V1**. Ce principe décrit la vision complète. En V1 la **page Activité standalone est reportée en V2**. Seule une partie de la vue d'ensemble (KPIs essentiels) est portée sur le bandeau de l'**Accueil**. La courbe d'évolution sur 8 semaines, la « charge actuelle vs capacité », et le fil chronologique des `EventLog` arrivent en V2. Les questions analytiques transversales (« comment se passe ma semaine ? ») restent accessibles dans le chatbot via les tools `get_kpis` et équivalents (cf. `04-ia.md §11`).
+Relvo n'est pas qu'un outil de gestion de l'urgence. Il sert aussi à **rendre visible la valeur
+qu'il apporte** — pour l'utilisateur, qui doit pouvoir constater que sa charge mentale baisse ;
+pour le produit, parce que **sans cette visibilité, on perd vite confiance en un assistant**.
 
-Relvo n'est pas qu'un outil de gestion de l'urgence. Il sert aussi à **mesurer l'efficacité dans la durée** et à rendre visible la valeur que l'assistant apporte. C'est important pour deux raisons :
+Le KPI structurant est le **pourcentage de tâches issues d'une suggestion de Relvo**. C'est le
+plus parlant, parce qu'il ne mesure pas l'activité de l'outil mais le travail qu'il a réellement
+retiré à l'utilisateur — sans pour autant invalider les tâches métier que seul l'utilisateur peut
+créer (§5).
 
-- pour l'utilisateur, c'est l'occasion de constater concrètement si la charge mentale baisse et si l'organisation s'améliore avec le temps ;
-- pour le produit, c'est la preuve continue que Relvo apporte de la valeur — sans cette visibilité, on perd vite confiance en un assistant.
+La vue d'ensemble complète — courbe d'évolution, charge face à la capacité estimée, fil
+chronologique — est reportée. En V1, seuls les indicateurs essentiels sont portés sur la page des
+actions, et les questions transversales passent par l'échange avec Relvo.
 
-### Page Activité — vue d'ensemble (V2)
+## 11. Mobile-first, agent au centre
 
-La page Activité contient deux registres distincts, empilés :
+Deux invariants gouvernent l'interface :
 
-1. **Vue d'ensemble** (en haut) — le recul long terme :
-   - **KPIs avec variations** vs période précédente : sujets résolus, délai moyen de résolution, charge actuelle (vs capacité estimée), **% des tâches issues d'une suggestion de Relvo**.
-   - **Courbe d'évolution** sur 8 semaines (paramétrable jusqu'à 12 mois) : sujets ouverts vs sujets résolus. Permet de repérer les pics, et de constater si le pipeline se résorbe ou s'accumule.
-   - **Bénéfices Relvo · 7 derniers jours** : tâches suggérées (avec taux d'adoption), brouillons préparés, pièces jointes étiquetées, temps estimé économisé.
+1. **Mobile-first.** Chaque écran est conçu d'abord pour un téléphone tenu à une main. Le desktop
+   est un **enrichissement progressif**, jamais le point de départ. Une vue n'est finie que si
+   elle marche en colonne unique, au pouce.
+2. **L'agent est central.** L'échange avec Relvo est **le lieu par défaut**, pas un ajout.
 
-2. **Activité récente** (en bas) — le fil chronologique des `EventLog` avec triptyque, déjà décrit au principe 7. C'est la lecture temps réel.
+**Pourquoi cette inversion.** Le public cible vit sur téléphone et ne connaît pas les codes des
+SaaS de bureau — une barre latérale leur est étrangère. En revanche, ils dialoguent
+quotidiennement avec un assistant. On n'a donc rien à leur apprendre : l'app **est** une
+conversation, augmentée de vues structurées quand on veut creuser.
 
-### Le KPI structurant : le « % d'aide Relvo »
+### L'accueil est un brief, pas un chat
 
-Le pourcentage de tâches issues d'une suggestion de Relvo (vs créées manuellement) est le KPI le plus parlant pour matérialiser la valeur ajoutée. Il est mis en évidence visuellement (card violette) sur la Vue d'ensemble. Plus ce ratio est élevé, plus Relvo a réellement allégé le travail de l'utilisateur — sans pour autant invalider les tâches métier que seul l'utilisateur peut créer (cf. principe 4).
+La page d'atterrissage répond à « qu'est-ce qui m'attend ? » en trente secondes : des
+indicateurs, l'agenda de la semaine, les tâches du jour. C'est le **premier tour de parole de
+Relvo**, rendu en cartes — pas une page muette, et pas non plus un chat vide qui attendrait une
+question.
 
-### Capacité estimée et charge actuelle
+L'échange proprement dit est une **surface plein écran**, atteinte depuis un bouton présent au
+même endroit sur toutes les pages, et qui transmet le contexte de la page d'origine.
 
-Pour aider l'utilisateur à se situer, Relvo affiche sa **charge actuelle** (nombre de sujets ouverts) face à sa **capacité estimée** (par défaut une cible définie ensemble, ex. ~30 sujets simultanés). Une mini-barre de progression dans la KPI card matérialise le ratio : en-dessous de 70 % c'est confortable, entre 70 et 90 % c'est tendu, au-dessus c'est de la surcharge. La capacité est ajustable dans les paramètres et apprend des données dans le temps (V2).
+### Relvo rend les mêmes composants que l'interface
 
-## 11. Le calendrier matérialise la dimension temporelle des tâches
+Les réponses de Relvo ne sont pas que du texte : il **rend les composants structurés du produit
+directement dans le fil**. Demander « montre-moi mes sujets urgents » fait apparaître de vraies
+cartes cliquables, pas une liste à puces.
 
-Une tâche n'est pas seulement « ce qu'il faut faire pour faire avancer un sujet » (principe 4), c'est aussi quelque chose qui se positionne dans le temps. Relvo expose cette dimension à travers un modèle de date riche et deux surfaces calendaires complémentaires.
+Une seule bibliothèque, deux surfaces — c'est ce qui rend l'agent crédible comme surface
+d'action, et ce qui garantit qu'un correctif suffit.
 
-### Modèle de date d'une tâche
+### Les limites de l'action-capable, assumées
 
-Une tâche peut avoir une **deadline** (date à laquelle elle doit être faite, optionnellement horodatée) et, indépendamment, une **durée** (plage de plusieurs jours ou créneau horaire). La deadline vit dans `start_date` / `start_time` ; la durée s'exprime via `end_date` / `end_time`. La sémantique précise est documentée dans `02-modele-donnees.md §9`.
+Toute action de Relvo est **visible** dans le fil sous forme de bloc structuré et **annulable**.
+Et le brouillon ne s'envoie **jamais** tout seul : il atterrit dans le composer pour validation.
 
-Quatre cas couvrent l'essentiel des situations :
+**Pourquoi cette limite ne bougera pas.** Un assistant qui envoie un message à la place de son
+utilisateur commet, un jour, une erreur qu'aucune annulation ne rattrape. Le coût d'un envoi à
+tort est asymétrique — il engage la parole de l'utilisateur auprès d'un tiers.
 
-- **Aucune date** — pile « Aucune date », tâche en attente de planification
-- **Deadline jour** — tâche à faire ce jour-là
-- **Deadline horodatée** — rendez-vous, créneau ponctuel
-- **Plage** — salon, déplacement, créneau de réunion
+---
 
-### Deux surfaces calendaires
+## 12. Ce que Relvo ne fait pas
 
-1. **Vue semaine sur l'Accueil** — widget compact intégré au brief de l'Accueil, lun → dim de la semaine en cours. Affiche les tâches groupées par jour avec un code couleur par **Dossier**. Permet de comprendre en un coup d'œil ce qui se joue dans la semaine. Une pile « Aucune date » est accessible en marge.
+Trois refus délibérés, écrits ici parce qu'ils reviendront sur la table :
 
-2. **Page Planning dédiée — vue mois** — page **hors-nav**, accessible via le lien « Vue mois complète → » du widget calendrier semaine de l'Accueil. Grille mensuelle classique avec navigation mois précédent / suivant / « Aujourd'hui ». Les tâches multi-jours sont rendues comme des barres qui s'étalent. Click sur une tâche → ouvre la fiche du sujet correspondant.
+- **Relvo ne pilote pas le cycle de vie d'un sujet.** Il peut *suggérer* qu'une affaire semble
+  terminée ; c'est l'utilisateur qui valide et qui ferme.
+- **Relvo ne crée pas de contact dans le vide.** Un expéditeur inconnu reste une chaîne brute
+  jusqu'à ce qu'un sujet existe.
+- **Relvo n'envoie jamais de message automatiquement.**
 
-### Drag-and-drop pour replanifier
+## 13. Le vocabulaire
 
-Sur les deux surfaces, l'utilisateur peut faire glisser une tâche pour la replanifier sur un autre jour. C'est l'interaction principale pour ajuster son planning au fil de l'eau. Le drag-and-drop modifie `start_date` (et `end_date` proportionnellement si la tâche s'étalait).
+Le produit tient un vocabulaire, et il le tient partout. Ce n'est pas de la cosmétique : chaque
+mot dit ce que le geste fait vraiment.
 
-### Rôle de Relvo
+| On dit | On ne dit pas | Parce que |
+|---|---|---|
+| **ouvrir** / **fermer** un sujet | créer / supprimer | Un sujet est un espace de travail, pas un enregistrement |
+| **Fermer** / **Fermés** / **Remettre** | Supprimer / Corbeille / Restaurer | Rien n'est détruit — autant que le mot le dise |
+| **écouter** une conversation | « fenêtre », « plage » | L'initiative appartient au sujet, qui se branche et se débranche |
+| **Interlocuteur** | Destinataire | Un fil a deux sens |
+| **échange** avec Relvo | conversation | « Conversation » désigne une entité du modèle : le fil avec un tiers |
+| **Domaines** | Dossiers | On enrichit la mémoire d'un agent, pas une arborescence de fichiers |
 
-À la création d'une tâche, Relvo tente d'extraire ou de proposer une date à partir du contenu disponible (cf. `04-ia.md §2.5`). Si rien n'est extractible, la tâche est créée sans date — l'utilisateur la planifiera lui-même depuis la pile « Aucune date » ou directement depuis la fiche du sujet.
+---
 
-## 12. Les Dossiers regroupent affaires en cours et connaissances métier
+## 14. Invariants produit
 
-Relvo ne lit pas que les messages entrants. Il s'appuie aussi sur une **base de connaissances** propre au compte, alimentée par l'utilisateur, qui lui permet de proposer des tâches plus contextualisées, des brouillons plus justes, et des réponses plus précises dans le chatbot. C'est ce qui transforme Relvo d'un assistant générique en un **assistant qui connaît votre métier**.
-
-Côté UI, cette base de connaissances **n'a pas sa propre page**. Elle vit à l'intérieur des **Dossiers** (entité technique `Folder`, cf. `02-modele-donnees.md §2`), aux côtés des Sujets du même périmètre. Un Dossier (Fournisseurs, RH, Juridique…) contient ainsi à la fois les affaires en cours et la connaissance qui sert à les traiter.
-
-**Nommage UI — « Mémoire » (icône cerveau).** L'entrée de navigation ne s'appelle plus « Mes dossiers » mais **« Mémoire »** : « Dossiers » évoque la bureautique Microsoft/Google, alors que « Mémoire » dit *agent*. L'utilisateur comprend qu'il **enrichit la mémoire de son assistant** — comme si Relvo absorbait la connaissance. Chaque Dossier est présenté comme **« un domaine de la mémoire de Relvo »**, structuré en **3 onglets** : **Instructions** (les notes — consignes que Relvo applique), **Documents** (les fichiers — PDF/images que Relvo lit), **Sujets** (l'historique d'activité). La page reste courte quel que soit le volume : on **interroge** la mémoire via le composer Relvo plutôt que de scroller une liste infinie (scroll infini pour parcourir).
-
-### Pourquoi un Dossier unifié
-
-Le mental modèle est celui d'un **classeur physique** : tu ouvres ton dossier « Fournisseurs », tu y trouves les affaires en cours (ces Sujets ouverts avec Karim, avec PackPlus…) et les documents de référence (le contrat-type, la procédure de validation des devis, ta note sur les marottes de chacun). C'est l'unité de classement métier la plus intuitive pour des utilisateurs non rompus aux SaaS — un Dossier, c'est concret.
-
-Côté modèle, c'est l'entité `Folder` qui porte ce regroupement. `Subject.folder_id` et `KnowledgeDocument.folder_id` pointent tous deux vers un Folder.
-
-### Le Folder « Général » — uniquement documentaire
-
-Un Folder spécial nommé **« Général »** est auto-créé à la création du compte. À la différence des Dossiers métier, il est **purement documentaire** — il ne contient jamais de Sujets, uniquement des `KnowledgeDocument`. Sa raison d'être : accueillir les **Connaissances transversales** (organigramme, charte rédactionnelle, ton de réponse) — les documents qui doivent être chargés dans le contexte de tous les Sujets, peu importe leur Folder. C'est la « mémoire générale » de Relvo.
-
-Côté UI, sa fiche affiche un en-tête explicite (« Connaissances transversales — ce que Relvo sait de toi en général ») et masque la section Sujets pour ne pas créer de confusion. Si Relvo ne sait pas dans quel Dossier métier classer un nouveau Sujet, le Sujet reste en mode « sans dossier » dans Mon fil (avec un badge discret et une suggestion Relvo « Range-moi dans X ? »), il n'atterrit **pas** dans Général.
-
-### Deux natures de documents
-
-Les `KnowledgeDocument` se déclinent en deux formes complémentaires, identifiées par le champ `kind` :
-
-- **Documents (`kind = file`)** — PDFs, images, documents uploadés (libellé UI : **« Documents »**). Sources de référence figées : organigrammes, factures-types, devis-types, contrats fournisseurs, charte tarifaire. **Non modifiables** dans l'application (suppression seule). En V1, l'utilisateur peut **glisser-déposer** un PDF directement dans la fiche d'un Dossier. Relvo décide de chaque fichier s'il l'**absorbe** (badge « ✦ lu ») ou l'**écarte** (« ignoré » — un transactionnel sans valeur de référence).
-- **Instructions (`kind = note`)** — texte Markdown rédigé directement dans l'app (libellé UI : **« Instructions »** — on n'écrit pas un mémo, on *instruit son agent*). **Mémoire vivante** que l'utilisateur écrit et fait évoluer dans le temps : règles internes, ton de réponse, liste des magasins, particularités d'un fournisseur, lessons learned. Exactement le pattern d'un fichier `.md` qu'on ajoute à Claude Code pour enrichir le contexte.
-
-La distinction des deux formes est importante : les fichiers sont des **références** auxquelles on se fie, les notes sont une **mémoire** qu'on façonne. La sensation de contrôle vient des notes — elles donnent à l'utilisateur la maîtrise de ce que Relvo « sait ».
-
-### Édition des notes — V1 et V2
-
-- **V1** — seul l'utilisateur édite les notes. Relvo les **consulte** mais ne les modifie pas.
-- **V2** — Relvo peut **proposer** des modifications à une note (« J'ai remarqué que tu ajoutes souvent des tâches sur Montpellier — veux-tu que j'ajoute ce magasin à ton organigramme ? »), à valider par l'utilisateur, selon le même mécanisme d'acquittement que les suggestions de tâches (cf. principe 5).
-
-### Citations — pour rendre Relvo auditable
-
-Quand Relvo propose une tâche ou un brouillon en s'appuyant sur un document de la base, il peut indiquer la **source** : « Suggéré à partir de *Procédure fournisseurs v3* ». Cette traçabilité est essentielle pour la confiance — sans elle, la base de connaissances devient une boîte noire.
-
-En V1 le mécanisme est activé techniquement (l'API d'Anthropic supporte les citations nativement) et l'affichage UI reste minimal (un petit lien « Source » discret). L'enrichissement de l'expérience citations (panneau latéral, surlignage dans le document source) est V2.
-
-### Points d'entrée pour ajouter un document
-
-1. **Depuis la fiche d'un Dossier** — bouton « + Ajouter un fichier » / « + Créer une note », ou glisser-déposer un PDF directement dans la fiche.
-2. **Depuis le chatbot (drawer)** — l'utilisateur peut demander à Relvo de créer une note avec un contenu dicté (`create_knowledge_note` côté tools, cf. `04-ia.md §11.6`).
-
-## 13. Relvo est central : la conversation est le lieu par défaut (mobile-first)
-
-> **Réécriture — virage produit du 2026-06-16.** La version antérieure de ce principe décrivait une app **desktop-first** où Relvo vivait dans un **drawer latéral secondaire** (~40 % de largeur, bouton flottant) posé par-dessus des écrans de consultation, avec une navigation par **sidebar 4 entrées**. Ce modèle est **abandonné**. Deux constats l'ont fait tomber : (1) le profil cible (dirigeants food/bâtiment) vit sur **téléphone** et ne connaît pas les codes des SaaS bureautiques — une sidebar de bureau leur est étrangère ; (2) ces mêmes utilisateurs sont **à l'aise avec ChatGPT/Claude** — leur mental model natif est la **conversation**. On inverse donc la hiérarchie : **Relvo (la conversation) devient la surface par défaut**, et les écrans structurés deviennent ce que l'agent *fait apparaître* ou ce vers quoi on *navigue*. Conséquences techniques (drawer → surface plein écran, sidebar → barre d'onglets, responsive mobile-first) détaillées dans `../spec/ux-mobile-first.md`.
-
-### Posture : mobile-first, agent au centre
-
-Deux invariants gouvernent désormais toute l'UI :
-
-1. **Mobile-first.** Chaque écran est conçu d'abord pour un **téléphone tenu à une main** : colonne unique, cibles tactiles, navigation au pouce. Le desktop est un **enrichissement progressif** (la colonne unique s'élargit, des panneaux latéraux optionnels apparaissent) — jamais le point de départ.
-2. **L'agent est central.** « L'UI sert à accéder à l'info, **Relvo sert à agir** » : la conversation n'est plus un add-on, c'est **le lieu par défaut**. L'utilisateur ouvre l'app et il est, de fait, déjà en train de parler à Relvo.
-
-### Le modèle hybride : un Accueil qui est à la fois brief et conversation
-
-L'**Accueil** fusionne deux rôles autrefois séparés (le *brief* matinal et la *conversation*). C'est la page d'atterrissage à la connexion, et elle contient :
-
-- En haut, le **brief** que Relvo prépare — un guide de 30 secondes qui répond à « qu'est-ce qui m'attend ? ». Rendu sous forme de **cartes** empilées en colonne unique : un **bandeau KPIs** (Sujets ouverts, Messages à trier, Tâches du jour, % d'aide Relvo), un **aperçu d'agenda** (les tâches des prochains jours, lien vers Planning), et les **2-3 sujets prioritaires** (`SubjectCard`, lien « Voir tout » vers Mon fil).
-- L'accès à Relvo se fait par un **bouton Relvo en haut à droite du header** (cf. note 2026-06-27 ci-dessous). On lit le brief **et** on ouvre la conversation depuis la même page, sans changer d'écran.
-
-> **⚠️ MISE À JOUR 2026-06-27 — accès Relvo : du bas vers le header.** Le **composer chat persistant** du bas (« Demander à Relvo… ») est **abandonné** (encombrement, hidden-menu d'auto-masquage, confusion avec le composer destinataire d'un Sujet). Désormais l'entrée vers la conversation est un **bouton Relvo en haut à droite du header violet** (même forme que l'ancien ✦), présent sur toutes les vues, page-aware. La **barre d'onglets basse devient fixe, sur fond violet**. Les mentions « composer en pied de page » de ce §13 sont caduques sur ce point.
-
-Le brief n'est donc plus une page muette : c'est **le premier tour de parole de Relvo**, et l'utilisateur peut enchaîner par une question ou une demande d'action immédiatement.
-
-### La conversation : surface plein écran, accessible partout
-
-Quand l'utilisateur engage le dialogue, la conversation occupe **tout l'écran** (sur mobile) — plus un drawer 40 %. C'est là qu'il **dialogue**, **demande des actions**, **creuse** un sujet. Toutes les opérations action-capable y passent.
-
-La conversation est **accessible depuis n'importe quelle vue** : chaque écran porte une entrée vers Relvo — le **bouton Relvo en haut à droite du header** (cf. note 2026-06-27) — qui transmet le **contexte de la page courante** (`?from=`). Plus de bouton flottant 🤖 ni de composer persistant en pied de page : l'accès à Relvo est intégré au header de chaque page, pas posé par-dessus.
-
-### Generative UI : Relvo rend les mêmes composants que l'UI
-
-Puisque l'agent est central, ses réponses ne sont pas que du texte : Relvo **rend les composants structurés du produit directement dans le fil** — `SubjectCard`, `TaskCard`, mini-calendrier, badge de statut. Demander « montre-moi mes sujets urgents » fait apparaître de vraies cartes cliquables, pas une liste à puces. C'est le « bloc visuel » de l'action-capable (cf. plus bas) élevé au rang de **langage de rendu principal**. Les mêmes composants servent dans les vues plein écran et dans la conversation — une seule bibliothèque, deux surfaces.
-
-### Les vues structurées : des destinations en colonne unique
-
-Les écrans de consultation/traitement (**Mon fil**, **Sujet**, **Mémoire**, **Planning**, **Messages**, **Contacts**) existent toujours — pour la lecture profonde et le travail soutenu — mais deviennent des **destinations**, atteintes via une carte du chat ou via la **navigation par onglets**. Tous sont repensés **mobile-first**, en colonne unique (fini les split-views 2 colonnes, tables 7 colonnes et panneaux droits 340px fixes).
-
-- **Sujets** reste l'espace de **traitement** : feed de cartes-sujets enrichies, organisé en **2 onglets de statut** — **Ouverts** (urgents en tête) et **Validés**. Sur chaque carte, deux gestes de **swipe** : **Fermer** (gauche, rouge → `status = fermé`) et **Valider** (droite, vert → `status = validé`). C'est l'« inbox structurée par sujets ».
-- **Conversations** est l'espace de **tri**, et il reste **hors navigation** : on y accède par le **KPI « Sans sujet »** de la page Sujets. Non-lus en tête, swipe gauche = **Ignorer la conversation**. ⚠️ **Le geste d'ouverture dépend du canal** (cf. §9) : **email** → swipe droite sur la **conversation** (« ouvrir un sujet » **ou** « rattacher à un sujet existant ») ; **WhatsApp** → swipe droite sur le **message** qui lance l'affaire. Il n'y a **pas** de swipe droite sur une ligne de conversation WhatsApp.
-- La **navigation** se fait par une **barre d'onglets basse**, pas une sidebar : **4 entrées** — **Actions** ✅ (les tâches du jour), **Sujets** 📥, **Mémoire 🧠** (cf. principe 12), **Réglages** ⚙️. Planning, Contacts et **Conversations** sont **hors-nav**, atteints depuis ces écrans.
-
-> **⚠️ MISE À JOUR 2026-07-20 — la page Messages devient Conversations.** La pile de messages orphelins **disparaît** au profit de la liste des **conversations**, atteinte par le même point d'entrée qu'avant : le **KPI « Sans sujet »**. Ce KPI ne compte plus des messages mais des **conversations dont le dernier message n'est rattaché à aucun sujet** — c'est-à-dire celles qui **peuvent solliciter l'utilisateur**. L'onglet **Ignorés** de Sujets disparaît (l'ignorance vit désormais sur la conversation, filtrable depuis Conversations). Le dock, lui, **ne change pas**.
+> **C'est la section qu'on relit à chaque session, et le domicile UNIQUE de ces règles.** Elles
+> ne sont recopiées nulle part ailleurs — ni dans `CLAUDE.md`, ni dans le backlog. **Les lire
+> avant tout arbitrage de périmètre ou de modèle. Aucun code ne doit les contredire.**
 >
-> **Pourquoi Conversations n'est pas un onglet.** Tant que Relvo ne trie pas lui-même, exposer en permanence la liste des fils **réafficherait une boîte de réception** que le dirigeant a déjà dans WhatsApp et Gmail : on lui *ajouterait* du travail au lieu de lui en retirer. En la plaçant derrière le KPI « Sans sujet », on n'expose par défaut que **ce qui n'est pas encore traité**, et la charge mentale reste sur les **sujets**, pas sur les messages. C'est la traduction directe de la posture produit : *l'UI sert à accéder à l'info, Relvo sert à agir*.
-- **Distribution en PWA.** En V1, Relvo est une **application web progressive** (Next.js + manifest `display: standalone`, installable sur l'écran d'accueil du téléphone) — pas une app native de store. C'est ce qui permet de livrer l'expérience mobile-first sans cycle de soumission App Store. Le détail (manifest, safe-areas iOS, installabilité) est dans `../spec/ux-mobile-first.md`.
+> ⚠️ **Un numéro n'est JAMAIS réattribué**, même si un invariant devient faux — on le marque
+> périmé, on ne recycle pas son numéro. Ces numéros sont cités dans le code source en une
+> vingtaine d'endroits : les renuméroter rendrait ces citations fausses.
 
-### Caractéristiques structurantes de la conversation
+**Modèle et acteurs**
 
-- **Page-aware** — Relvo sait toujours d'où on lui parle (URL + données contextuelles). Un **chip de contexte** (« Contexte : SUB-0142 — Sauce blanche ») permet de basculer en discussion générale d'un clic sur ×.
-- **Sessions implicites** — à l'ouverture, nouvelle conversation par défaut, ou reprise de la conversation en cours si la dernière activité date de moins de 5 minutes. Bouton « + Nouvelle conversation » toujours accessible.
-- **Éphémère** — les conversations sont stockées **côté client dans IndexedDB**, pas sur le serveur. Aucune entité `ChatConversation` côté base de données en V1. Ce qui persiste, ce sont les actions effectuées et leurs résultats (`Task`, `Action`, `EventLog`…), pas le dialogue qui les a déclenchées.
-- **Action-capable day-one** — tout ce que l'utilisateur peut faire dans l'UI, il peut le demander au chat : créer une tâche, modifier un sujet, préparer un brouillon, éditer une note de Connaissances, consulter ses KPIs, retrouver un message. L'architecture est symétrique — chaque clic UI a un tool API correspondant qui appelle la même fonction métier. Détail technique dans `04-ia.md §11`.
+1. `Account` est le tenant. Toutes les ressources portent `account_id`, **toujours dérivé de la
+   session**, jamais d'un paramètre client. Pas de clé étrangère utilisateur sur les ressources.
+2. Type partagé `Actor`. UI : **Moi / Relvo / Externe**, badges `M` (bleu) / `R` (violet) /
+   `E` (ambre).
+3. « **Relvo** » dans l'UI, « IA » dans la documentation technique. L'enum reste `ai`.
 
-### Boundaries de l'action-capable en V1
+**Sujets, conversations, tâches, contacts**
 
-Toutes les actions de Relvo sont **visibles** dans le fil sous forme de blocs structurés (« ✦ J'ai créé la tâche *Appeler le shop de Montpellier* dans SUB-0142 ») et **annulables** d'un clic dans une fenêtre de quelques minutes après leur exécution.
+4. Le **Subject** est l'entité centrale, pas le message. Chaîne :
+   **Message → Conversation → Subject → Task → Action → LogEvent**.
+5. Le rangement en conversation est **déterministe et infaillible à la réception** : il n'existe
+   pas de message orphelin. Ce qui reste à trier est une **conversation** qu'aucun sujet ouvert
+   n'écoute. *(`triage_hint` n'est plus alimenté ; le champ est conservé pour l'historique.)*
+6. Une **tâche est rattachée au sujet, pas à un utilisateur**. Sa source (Relvo / Moi) est
+   visible et permanente. L'affectation à une personne est reportée.
+7. **Statut = cycle de vie à 3 valeurs exclusives** (`ouvert` / `validé` / `fermé`). « Fermer »
+   est une **suppression douce**, jamais une destruction, et un sujet fermé n'est **jamais
+   purgé**. → détail : `04 §9`.
+8. **Priorité à 2 valeurs**, drapeau urgent **rare** — la rareté est le signal. Le geste de swipe
+   dépend de la **surface**, jamais du canal. → détail : `04 §4` et `04 §7`.
+9. Le **brouillon de Relvo vit dans le composer**, jamais affiché comme un message du fil, et
+   **jamais envoyé automatiquement**.
+10. **Acquittement implicite** : ouvrir un sujet vaut acquittement de ses suggestions. Pas de
+    bouton « valider ».
+11. La `Conversation` est une entité à **deux sous-types** (e-mail / messagerie). La fiche d'un
+    sujet en affiche une **liste** ; l'écran de conversation est la **seule** surface d'affichage
+    **et** de réponse. → détail : `04 §3`.
+12. **Relvo ne crée un contact qu'à la création d'un sujet**, jamais dans le vide. La création
+    manuelle par l'utilisateur reste permise. L'auto-rattachement des entrants consulte les
+    coordonnées **primaires et secondaires**.
+13. Les sujets sont **multi-contacts**. Une conversation e-mail porte un **set** de contacts ;
+    une conversation de messagerie en porte **un seul** (ou un groupe).
 
-Le brouillon de message ne s'envoie **jamais** automatiquement — il atterrit dans le composer du Sujet pour validation utilisateur, conformément au principe « Relvo n'envoie jamais de message automatiquement » (cf. `04-ia.md §7.4`).
+    **13bis.** On diverge par canal sur le **rendu** et les **gestes**, **jamais sur le
+    domaine**. → détail et garde : `04 §14`.
 
-La traçabilité des actions chat-driven est assurée via `EventLog` : la métadonnée `metadata.source = "chat"` permet de distinguer une tâche créée depuis le chat d'une tâche créée par suggestion automatique ou clic UI.
+**Dates et planning**
 
-### Pourquoi ce modèle
+14. Une tâche porte **quatre champs de date optionnels**. La deadline vit dans les champs de
+    début ; les champs de fin expriment une durée.
+15. **Deux surfaces calendaires** : la semaine sur la page des actions, le mois sur une page
+    dédiée. Couleur par domaine, replanification par glissement.
 
-Le brief sert l'**immédiateté** — l'utilisateur ouvre l'app, il voit l'essentiel sans poser de question. La conversation, désormais à portée immédiate dans le même écran, sert l'**approfondissement** et l'**action**. En les réunissant sur l'Accueil plutôt qu'en les séparant derrière un bouton flottant, on supprime la friction « où est le chat ? » et on rend tangible la promesse « Relvo sert à agir ».
+**Domaines et connaissances**
 
-Ce modèle épouse le profil cible (food, bâtiment — peu rompu aux SaaS, mais habitué à dialoguer avec ChatGPT/Claude) : pas d'apprentissage d'une navigation bureautique, pas de question sur *comment parler à Relvo* — l'app **est** une conversation, augmentée de vues structurées quand on veut creuser.
+16. Un `Folder` est un **domaine de la mémoire de Relvo**, présenté en trois onglets :
+    Instructions / Documents / Sujets.
+17. Le domaine **« Général »** est auto-créé, **purement documentaire**, **non supprimable**, et
+    ne contient **jamais** de sujet.
+18. Un `KnowledgeDocument` est soit un **Document** (référence figée, non modifiable, avec un
+    état d'absorption décidé par Relvo), soit une **Instruction** (texte éditable).
+19. **Deux stockages, jamais un seul.** Le stockage objet est la **source de vérité et la seule
+    voie d'affichage** ; la copie d'inférence est en **écriture seule**. L'envoi se fait du
+    navigateur vers le stockage, en direct.
+20. En V1, **seul l'utilisateur édite les Instructions**. Relvo les consulte sans les modifier.
+
+**Échange avec Relvo**
+
+21. **Deux modes** : l'accueil est un **brief structuré**, pas un chat ; l'**échange** est une
+    surface plein écran accessible partout.
+22. L'échange est **plein écran**, ouvert depuis un bouton présent au même endroit sur toutes les
+    pages, et **conscient de la page d'origine**.
+23. Les échanges sont **éphémères, côté client**. Ce qui persiste, ce sont les **actions et leurs
+    résultats**, pas le dialogue.
+24. **Sessions implicites** : reprise de l'échange en cours en deçà d'un court délai, sinon
+    nouvel échange.
+25. **Action-capable dès le premier jour** : chaque opération de l'interface a un outil
+    correspondant qui appelle **la même fonction métier**. Les actions sont rendues en blocs
+    visuels **annulables**.
+26. **Conscient de la page** : l'URL et le contexte sont transmis à chaque tour.
+27. Outillage : SDK IA + passerelle, appels d'outils natifs (**pas de MCP en V1**), mise en cache
+    de prompt, API de fichiers, citations.
+28. **État vide** : quelques exemples de questions contextuels à la page, jamais de fausses
+    bulles.
+29. **Pas de recherche vectorielle** : contexte long et mise en cache pour les connaissances,
+    appels d'outils pour les données dynamiques.
+
+**Actions et tâches**
+
+30. La page d'accueil (« **Actions** ») est la page des **tâches**, pas des sujets. La barre
+    d'indicateurs est **contextuelle par page** — jamais deux lentilles sur un écran.
+31. **Présentation unique des tâches partout** : même rendu dans la liste d'un sujet et dans une
+    liste à plat, seul le contexte affiché varie. Cocher termine, décocher remet à faire ; le tap
+    ouvre la fiche ; le rail de couleur porte le domaine.
+32. **Une tâche peut n'avoir aucun sujet** — créée à la volée, ou détachée.
