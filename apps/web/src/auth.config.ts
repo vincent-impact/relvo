@@ -9,6 +9,12 @@ const PUBLIC_ROUTES = [
   "/mot-de-passe-oublie",
   "/reinitialiser-mot-de-passe",
   "/verifier-email",
+  // Page de suivi client (M15) — hors application, sans session. Elle n'existe
+  // qu'au chemin du jeton : tout le reste de `/suivi/*` tombe en 404 côté route
+  // (`dynamicParams = false`), pas ici. ⚠️ Ouvrir une entrée de cette liste est
+  // le geste que surveille `test/auth-deny-by-default.test.ts` — l'y ajouter
+  // sans mettre le test à jour le fait échouer, dans les deux sens.
+  "/suivi",
 ];
 
 const matches = (routes: string[], pathname: string) =>
