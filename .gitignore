@@ -18,10 +18,6 @@ packages/db/src/generated/
 .env.*.local
 !.env.example
 
-# Worker (Baileys auth state)
-apps/worker/.wa-auth/
-apps/worker/auth_info_baileys/
-
 # Logs
 *.log
 npm-debug.log*

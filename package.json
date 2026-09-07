@@ -9,11 +9,15 @@
     "pnpm": ">=9"
   },
   "scripts": {
-    "dev:web": "pnpm --filter web dev",
-    "dev:worker": "pnpm --filter worker dev",
-    "build": "pnpm -r --if-present build",
-    "lint": "pnpm -r --if-present lint",
-    "typecheck": "pnpm -r --if-present typecheck",
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm --filter web lint",
+    "typecheck": "pnpm --filter web typecheck && pnpm --filter @relvo/db typecheck",
+    "test": "pnpm --filter @relvo/db test && pnpm --filter @relvo/storage test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:start": "docker compose up -d",
+    "db:stop": "docker compose down",
     "db:generate": "pnpm --filter @relvo/db generate",
     "db:migrate": "pnpm --filter @relvo/db migrate",
     "db:status": "pnpm --filter @relvo/db status",
@@ -21,10 +25,6 @@
     "db:seed:ensure": "pnpm --filter @relvo/db seed:ensure",
     "db:reset": "pnpm --filter @relvo/db migrate:reset",
     "db:studio": "pnpm --filter @relvo/db studio",
-    "db:start": "docker compose up -d",
-    "db:stop": "docker compose down",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
     "prepare": "husky"
   },
   "lint-staged": {
