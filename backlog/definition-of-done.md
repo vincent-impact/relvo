@@ -20,6 +20,11 @@
       primitive que le registre fournit est une erreur de process, pas un choix esthétique.
 - [ ] **Tout piège rencontré remonte à `PITFALLS.md` ET au registre du kit, dans la même
       session.**
+- [ ] **Un commit `feat` ou `fix` porte un pied de message `Client:`** quand son sujet n'est pas
+      lisible tel quel par le client — ou `Client: -` quand il ne le concerne pas.
+      Cf. [`suivi-client.md`](suivi-client.md).
+- [ ] **Quand une épique change d'état, son frontmatter est mis à jour DANS LE MÊME COMMIT**
+      (`statut`, `debut`, `fin`). C'est ce qui alimente la page de suivi du client.
 
 ## Pourquoi ces deux dernières lignes existent
 
@@ -31,6 +36,12 @@ fatigue, et elle diverge du reste du produit pour toujours.
 **La remontée des pièges.** Sans la ligne, la remontée dépend d'un réflexe — et un réflexe ne
 tient pas deux jours de débogage. Ce projet a payé plusieurs pièges qui ne sont remontés au kit
 que des jours plus tard, par une relecture.
+
+> ⚠️ **Ces deux dernières lignes ne reposent pas que sur la discipline.** Le script qui génère
+> la page de suivi **valide la cohérence du frontmatter et fait échouer le build** si elle casse
+> — deux épiques publiques ouvertes en même temps, un résumé client manquant, une date de fin
+> avant la date de début. Une page de suivi fausse est pire qu'une page absente : elle est lue,
+> et elle est crue.
 
 ## Ce que la Definition of Done ne dit pas
 

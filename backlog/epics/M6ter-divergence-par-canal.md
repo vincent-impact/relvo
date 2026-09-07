@@ -1,3 +1,11 @@
+---
+id: M6ter
+public: false
+statut: termine
+debut: 2026-07-20
+fin: 2026-07-22
+---
+
 # M6ter — Divergence par canal
 
 **Objectif** — cesser de forcer une **interface unique** sur deux canaux qui n'ont ni la même

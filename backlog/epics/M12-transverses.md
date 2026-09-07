@@ -1,3 +1,10 @@
+---
+id: M12
+public: false
+statut: partiel
+debut: 2026-06-10
+---
+
 # M12 — Mécanismes transverses
 
 **Objectif** — ce qui s'applique à plusieurs épiques à la fois. **Dépendances** : M3, M7, M9.

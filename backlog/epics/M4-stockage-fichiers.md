@@ -1,3 +1,16 @@
+---
+id: M4
+public: true
+ordre_public: 5
+titre_client: Fichiers et pièces jointes
+resume_client: >
+  Conserver durablement les documents reçus — factures, bons de livraison, devis — et les rendre
+  consultables depuis le sujet, y compris après sa clôture. Ils sont stockés en Europe.
+statut: termine
+debut: 2026-07-01
+fin: 2026-07-15
+---
+
 # M4 — Stockage fichiers
 
 **Objectif** — stocker et diffuser les fichiers de façon sûre. **Dépendances** : M2.

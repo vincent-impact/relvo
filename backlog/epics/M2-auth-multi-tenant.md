@@ -1,3 +1,16 @@
+---
+id: M2
+public: true
+ordre_public: 2
+titre_client: Comptes et connexion
+resume_client: >
+  Vous donner un compte protégé, et garantir que vos données ne sont accessibles qu'à vous.
+  Chaque information dans Relvo appartient à un compte et un seul.
+statut: termine
+debut: 2026-06-09
+fin: 2026-06-11
+---
+
 # M2 — Authentification et multi-tenant
 
 **Objectif** — sécuriser l'accès et garantir l'isolation par compte. **Dépendances** : M1.

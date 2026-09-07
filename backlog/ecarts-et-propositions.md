@@ -125,6 +125,49 @@ migrations plutôt que d'écrire des reprises de données complexes.
 ⚠️ **Cette liberté disparaît au premier utilisateur réel.** Toute migration ultérieure devra être
 rejouable et vérifiée sur une copie de la production.
 
+### Une page de suivi client alimentée par le dépôt
+**`tranché`** · Le client veut savoir où en est le projet et ce qui a changé dans son
+application. Trois contraintes : aucune base de données, les fichiers du dépôt comme source, et
+**aucun effort de rédaction récurrent**.
+
+**Le piège identifié d'emblée** : brancher la page sur le backlog tel quel exposerait des risques
+assumés, des décisions renversées, des périodes d'arrêt et des coûts de fournisseurs. La valeur
+interne de ces documents et leur toxicité externe sont **la même propriété**. Pire : une fois le
+backlog lu par le client, on commencerait à l'écrire pour lui — et le registre honnête mourrait.
+
+**Solution retenue : une liste blanche par champ structuré.** Le générateur lit le frontmatter et
+le journal des versions, jamais le corps d'un fichier. La garantie est **mécanique** : une phrase
+écrite dans un corps ne peut pas fuir. Une liste noire à base de marqueurs aurait échoué au
+premier oubli de balise.
+
+**Le journal vient des commits**, filtrés sur `feat` et `fix`, avec un pied de message `Client:`
+facultatif. **Rédigé par Claude Code**, donc à coût marginal nul — c'est ce qui rend le dispositif
+réellement automatique.
+
+> ⚠️ **Point de vigilance retenu contre le précédent le plus proche.** PostHog, dont tout le
+> manuel interne est du markdown versionné et public, a **quand même** construit une application
+> séparée pour son roadmap public. La séparation entre registre interne et vue client n'est pas
+> une précaution excessive : c'est la pratique de ceux qui sont allés le plus loin en
+> transparence.
+
+### Aucune date au jour sur un chantier non commencé
+**`tranché`** · La frise client positionne le futur **au mois**, jamais au jour, et le dit
+explicitement au lecteur.
+
+**Ce qui a tranché** : le calendrier de planification tenu dans un outil tiers plaçait le pipeline
+IA en juin-juillet ; début septembre, il n'avait pas commencé. Une frise datée branchée dessus
+aurait affiché un retard de deux mois en permanence. **Une roadmap datée devient un engagement
+dans la tête du client**, et elle se paie au premier décalage.
+
+Corollaire : la frise est alimentée par le **réel** — dates de clôture effectives — et non par la
+planification.
+
+### Deux systèmes d'identifiants pour les mêmes épiques
+**`tranché`** · Le dépôt disait `M1…M14`, l'outil de suivi personnel disait `RVO-1…RVO-14`.
+Le dépôt l'emporte : c'est la source la plus crédible, celle que le code cite. **Le client, lui,
+ne voit aucun identifiant** — un chantier est identifié par son titre métier. Le `M-n` reste dans
+le frontmatter comme clé de jointure.
+
 ---
 
 ## Écarts constatés

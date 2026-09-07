@@ -1,3 +1,17 @@
+---
+id: M5
+public: true
+ordre_public: 6
+titre_client: Réception des e-mails
+resume_client: >
+  Faire entrer votre boîte mail dans Relvo, et vous permettre d'y répondre depuis votre vraie
+  adresse. Vos interlocuteurs ne voient aucune différence, et vos réponses se retrouvent dans vos
+  messages envoyés.
+statut: termine
+debut: 2026-07-15
+fin: 2026-07-18
+---
+
 # M5 — Ingestion e-mail
 
 **Objectif** — recevoir les e-mails entrants et envoyer **depuis la vraie adresse de

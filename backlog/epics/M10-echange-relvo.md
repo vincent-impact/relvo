@@ -1,3 +1,17 @@
+---
+id: M10
+public: true
+ordre_public: 12
+titre_client: Échange avec Relvo
+resume_client: >
+  Demander à Relvo d'agir plutôt que de naviguer dans les écrans : « où en est la commande de
+  sauce ? », « crée-moi une tâche pour lundi », « prépare une réponse à Karim ». Chaque action
+  reste visible et annulable.
+statut: a-faire
+debut: 2026-10-17
+fin: 2026-10-28
+---
+
 # M10 — L'échange avec Relvo
 
 **Objectif** — la **surface d'action principale du produit** : un échange conscient de la page,

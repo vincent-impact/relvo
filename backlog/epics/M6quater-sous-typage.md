@@ -1,3 +1,11 @@
+---
+id: M6quater
+public: false
+statut: termine
+debut: 2026-07-25
+fin: 2026-07-29
+---
+
 # M6quater — Sous-typage de la conversation
 
 **Objectif** — l'interface unifiée de M6ter produisait des dispositifs complexes qui égaraient

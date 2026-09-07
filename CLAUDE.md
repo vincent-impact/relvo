@@ -40,6 +40,7 @@ compte personnel, **même « en attendant »** — c'est exactement ce qui ne se
 | [`backlog/product-backlog.md`](backlog/product-backlog.md) | L'**ordre**. La définition de chaque item vit dans `backlog/epics/` |
 | [`backlog/definition-of-done.md`](backlog/definition-of-done.md) | Les conditions de clôture d'un item. Non négociables |
 | [`backlog/ecarts-et-propositions.md`](backlog/ecarts-et-propositions.md) | **L'historique des décisions** — le seul endroit du dépôt où il est à sa place |
+| [`backlog/suivi-client.md`](backlog/suivi-client.md) | La **page de suivi du client** : ses sources, sa liste blanche, ce qui n'est **jamais** publié |
 
 ### La règle d'écriture de `conception/` — non négociable
 
@@ -140,6 +141,18 @@ remplacées par `/conversations`. À retirer.
 - **Validation aux frontières**, identifiants opaques.
 - **Doc et code dans le même commit** — nécessaire, **pas suffisant** : voir `PITFALLS.md` #20 et
   la [Definition of Done](backlog/definition-of-done.md).
+- **📣 Pied de message `Client:` sur les commits `feat` et `fix`.** Une phrase en langage client,
+  à la deuxième personne, décrivant un **effet observable** — elle est publiée telle quelle sur la
+  page de suivi. `Client: -` pour exclure un commit qui ne concerne pas le client. Absent, c'est
+  le sujet du commit qui part au client : ne l'omettre que quand il se lit tel quel.
+
+  ```
+  fix(pwa): le clavier Android n'écrase plus le composer
+
+  Client: Sur Android, le clavier n'écrase plus la zone de saisie.
+  ```
+- **Le frontmatter d'une épique se met à jour dans le commit qui change son état** — c'est lui
+  qui alimente la page de suivi. Cf. [`backlog/suivi-client.md`](backlog/suivi-client.md).
 - **🔒 Réflexe registre de composants — le seul piège recopié ici, parce qu'il se déclenche à
   chaque session et AVANT toute écriture de composant.** Dès qu'un composant graphique doit être
   envisagé, la première action est **toujours** d'interroger le registre :

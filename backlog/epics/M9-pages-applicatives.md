@@ -1,3 +1,16 @@
+---
+id: M9
+public: true
+ordre_public: 4
+titre_client: Écrans de l'application
+resume_client: >
+  Construire les écrans du quotidien, pensés d'abord pour le téléphone et l'usage à une main :
+  vos actions du jour, vos sujets, vos conversations, vos contacts, votre planning.
+statut: termine
+debut: 2026-06-17
+fin: 2026-06-30
+---
+
 # M9 — Pages applicatives
 
 **Objectif** — implémenter les écrans du produit à partir de la maquette.

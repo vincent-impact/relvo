@@ -1,3 +1,17 @@
+---
+id: M6bis
+public: true
+ordre_public: 8
+titre_client: Regroupement en conversations
+resume_client: >
+  Ranger chaque message dans le bon fil dès sa réception, sans jamais se tromper — par objet pour
+  un e-mail, par interlocuteur pour WhatsApp. C'est ce rangement qui permet ensuite d'ouvrir un
+  sujet d'un seul geste.
+statut: termine
+debut: 2026-07-20
+fin: 2026-07-29
+---
+
 # M6bis — L'entité Conversation
 
 **Objectif** — introduire la `Conversation` entre le message et le sujet, et déplacer le tri du

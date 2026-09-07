@@ -1,3 +1,16 @@
+---
+id: M1
+public: true
+ordre_public: 1
+titre_client: Fondations techniques
+resume_client: >
+  Mettre en place le socle sur lequel tout le reste repose : l'hébergement, la base de données,
+  les outils de qualité et le déploiement automatique. Rien de visible à l'écran, mais tout en dépend.
+statut: termine
+debut: 2026-06-07
+fin: 2026-06-10
+---
+
 # M1 — Fondations techniques
 
 **Objectif** — poser le socle qui conditionne tout le reste. **Dépendances** : aucune.

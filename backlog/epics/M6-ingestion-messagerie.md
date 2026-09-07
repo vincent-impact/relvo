@@ -1,3 +1,16 @@
+---
+id: M6
+public: true
+ordre_public: 7
+titre_client: Réception WhatsApp
+resume_client: >
+  Faire entrer WhatsApp par le même chemin que l'e-mail : vos messages, vos photos et vos
+  documents arrivent dans Relvo, et vous répondez sans changer d'application.
+statut: partiel
+debut: 2026-07-18
+fin: 2026-07-20
+---
+
 # M6 — Ingestion messagerie
 
 **Objectif** — recevoir et envoyer des messages de messagerie, par le **même** chemin que

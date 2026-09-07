@@ -346,3 +346,10 @@ mot dit ce que le geste fait vraiment.
     liste à plat, seul le contexte affiché varie. Cocher termine, décocher remet à faire ; le tap
     ouvre la fiche ; le rail de couleur porte le domaine.
 32. **Une tâche peut n'avoir aucun sujet** — créée à la volée, ou détachée.
+
+**Suivi de projet**
+
+33. **La page de suivi du client est alimentée par une LISTE BLANCHE de champs structurés, jamais
+    par de la prose extraite.** Le générateur lit le **frontmatter** des épiques et le journal des
+    versions, et **n'ouvre jamais le corps d'un fichier**. Rien de `conception/`, du registre des
+    écarts, des pièges ou des sprints n'est publiable. → détail : `../backlog/suivi-client.md`.

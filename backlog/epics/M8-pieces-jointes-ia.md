@@ -1,3 +1,16 @@
+---
+id: M8
+public: true
+ordre_public: 13
+titre_client: Lecture des pièces jointes
+resume_client: >
+  Relvo reconnaît chaque document reçu — facture, devis, bon de livraison — et l'étiquette
+  automatiquement, pour que vous le retrouviez sans avoir à l'ouvrir.
+statut: a-faire
+debut: 2026-10-22
+fin: 2026-10-28
+---
+
 # M8 — Pièces jointes analysées
 
 **Objectif** — étiqueter et exploiter les pièces jointes. **Dépendances** : M3, M5, M6.

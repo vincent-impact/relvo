@@ -1,0 +1,584 @@
+<title>Suivi Relvo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..800&family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Tokens repris de conception/design-system/01-tokens.md (Relvo).
+   Le violet est la voix de l'agent : zone Relvo et chantier en cours, rien d'autre. */
+:root{
+  --relvo:#6b5bd6; --relvo-deep:#5a4bc4; --relvo-bg:#f1effc;
+  --green:#1f7a45; --green-bg:#e7f4ec; --green-soft:#bfe3cd;
+  --amber:#854f0b; --amber-bg:#faeeda;
+  --surface:#ffffff; --surface-2:#f7f7f5; --surface-sunken:#eeecea;
+  --hairline:#e4e2de; --grid:#eae8e5;
+  --text-1:#1a1a1a; --text-2:#6b6b6b; --text-3:#9a9a9a;
+  --on-violet:rgb(255 255 255 / .78);
+  --hero-round:34px; --radius:10px; --radius-lg:14px; --radius-pill:999px;
+  --shadow-metrics:0 10px 30px rgb(28 22 60 / .13);
+  --font-display:"Bricolage Grotesque","Geist",-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-sans:"Geist",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:"Geist Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --relvo:#8b7cf0; --relvo-deep:#6b5bd6; --relvo-bg:#241f3d;
+    --green:#4cbf82; --green-bg:#102a1d; --green-soft:#2c5c42;
+    --amber:#d99a3c; --amber-bg:#2c2113;
+    --surface:#1c1b20; --surface-2:#141317; --surface-sunken:#24232a;
+    --hairline:#302e38; --grid:#282630;
+    --text-1:#eceaf0; --text-2:#a5a2ae; --text-3:#77747f;
+    --shadow-metrics:0 10px 30px rgb(0 0 0 / .45);
+  }
+}
+:root[data-theme="dark"]{
+  --relvo:#8b7cf0; --relvo-deep:#6b5bd6; --relvo-bg:#241f3d;
+  --green:#4cbf82; --green-bg:#102a1d; --green-soft:#2c5c42;
+  --amber:#d99a3c; --amber-bg:#2c2113;
+  --surface:#1c1b20; --surface-2:#141317; --surface-sunken:#24232a;
+  --hairline:#302e38; --grid:#282630;
+  --text-1:#eceaf0; --text-2:#a5a2ae; --text-3:#77747f;
+  --shadow-metrics:0 10px 30px rgb(0 0 0 / .45);
+}
+
+*{box-sizing:border-box}
+body{background:var(--surface-2);color:var(--text-1);font-family:var(--font-sans);
+  font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.page{max-width:720px;margin:0 auto}
+
+.hero{background:linear-gradient(178deg,var(--relvo) 0%,var(--relvo-deep) 100%);
+  border-radius:0 0 var(--hero-round) var(--hero-round);padding:32px 20px 60px;color:#fff}
+.eyebrow{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--on-violet)}
+.hero h1{font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1.1;
+  letter-spacing:-.02em;margin:10px 0 0;text-wrap:balance}
+.hero p{margin:8px 0 0;font-size:14.5px;color:var(--on-violet);max-width:44ch}
+
+.straddle{margin:-42px 16px 0;background:var(--surface);border-radius:var(--radius-lg);
+  box-shadow:var(--shadow-metrics);display:grid;grid-template-columns:repeat(3,1fr);overflow:hidden}
+.straddle .cell{padding:14px 8px 15px;text-align:center}
+.straddle .cell + .cell{border-left:1px solid var(--hairline)}
+.straddle .k{display:block;font-family:var(--font-mono);font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--text-3);margin-bottom:6px}
+.straddle .v{display:block;font-family:var(--font-display);font-weight:600;font-size:14.5px;
+  line-height:1.2;letter-spacing:-.01em}
+.straddle .v.now{color:var(--relvo)}
+
+.tabs{display:flex;gap:4px;margin:26px 20px 0;background:var(--surface-sunken);
+  padding:4px;border-radius:var(--radius-pill)}
+.tabs button{flex:1;appearance:none;border:0;cursor:pointer;background:transparent;
+  font-family:var(--font-sans);font-size:13.5px;font-weight:500;color:var(--text-2);
+  padding:9px 8px;border-radius:var(--radius-pill);transition:background .15s,color .15s}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--text-1);
+  box-shadow:0 1px 2px rgb(16 24 40 / .08)}
+.tabs button:focus-visible{outline:2px solid var(--relvo);outline-offset:1px}
+
+main{padding:22px 20px 0}
+.hint{font-size:12.5px;color:var(--text-3);margin:0 0 14px;line-height:1.5}
+
+/* ---------- frise ---------- */
+.axis{position:sticky;top:0;z-index:3;background:var(--surface-2);padding:7px 0 6px;
+  border-bottom:1px solid var(--hairline);display:grid;grid-template-columns:repeat(6,1fr)}
+.axis span{font-family:var(--font-mono);font-size:10px;color:var(--text-3);
+  text-align:center;text-transform:uppercase;letter-spacing:.05em}
+.axis span.cur{color:var(--relvo);font-weight:500}
+
+.row{border-bottom:1px solid var(--grid)}
+.row:last-of-type{border-bottom:0}
+.row > summary{list-style:none;cursor:pointer;padding:11px 0 12px;
+  border-radius:var(--radius);outline-offset:-2px}
+.row > summary::-webkit-details-marker{display:none}
+.row > summary:focus-visible{outline:2px solid var(--relvo)}
+
+.label{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:7px}
+.lead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}
+.name{font-family:var(--font-display);font-weight:600;font-size:15px;
+  letter-spacing:-.008em;line-height:1.25}
+.pill{font-family:var(--font-mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;
+  padding:2px 7px;border-radius:var(--radius-pill);font-weight:500;white-space:nowrap}
+.pill.done{background:var(--green-bg);color:var(--green)}
+.pill.now{background:var(--relvo-bg);color:var(--relvo)}
+.pill.next{background:var(--surface-sunken);color:var(--text-3)}
+.pill.part{background:var(--amber-bg);color:var(--amber)}
+.chev{width:15px;height:15px;color:var(--text-3);flex:0 0 auto;
+  transition:transform .18s ease,color .18s ease}
+.row[open] .chev{transform:rotate(180deg);color:var(--relvo)}
+.row > summary:hover .chev{color:var(--relvo)}
+
+.track{position:relative;height:16px;border-radius:3px;
+  background-image:repeating-linear-gradient(to right,var(--grid) 0 1px,transparent 1px calc(100%/6))}
+.track::after{content:"";position:absolute;left:53.9%;top:-4px;bottom:-4px;width:2px;
+  background:var(--relvo);opacity:.45;border-radius:2px}
+.bar{position:absolute;top:3px;height:10px;border-radius:var(--radius-pill);min-width:11px}
+.bar.done{background:var(--green)}
+.bar.part{background:linear-gradient(90deg,var(--green) 0 60%,var(--green-soft) 60% 100%)}
+.bar.now{background:var(--relvo)}
+.bar.next{background:transparent;border:1.5px dashed var(--text-3);opacity:.65;height:11px;top:2.5px}
+.bar.maint{background:var(--text-3);opacity:.5}
+.milestone{position:absolute;top:3px;width:11px;height:11px;background:var(--text-1);
+  transform:rotate(45deg);border-radius:2px;margin-left:-5px}
+
+.why{margin:0 0 15px;padding:11px 14px;background:var(--surface);
+  border-left:2px solid var(--relvo);border-radius:0 var(--radius) var(--radius) 0;
+  font-size:13.5px;line-height:1.55;color:var(--text-2);max-width:56ch}
+
+.row.ship{background:var(--surface);margin:0 -12px;padding:0 12px;
+  border-radius:var(--radius);border-bottom:0}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;padding-top:14px;
+  border-top:1px solid var(--hairline)}
+.legend span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--text-2)}
+.legend i{width:16px;height:8px;border-radius:var(--radius-pill);display:inline-block;flex:0 0 auto}
+.legend i.done{background:var(--green)}
+.legend i.now{background:var(--relvo)}
+.legend i.next{border:1.5px dashed var(--text-3);opacity:.65}
+.legend i.ship{width:9px;height:9px;background:var(--text-1);transform:rotate(45deg);border-radius:2px}
+
+.aside{margin-top:18px;padding:13px 15px;background:var(--relvo-bg);
+  border-radius:var(--radius);font-size:13px;color:var(--text-2);line-height:1.5}
+.aside b{color:var(--text-1);font-weight:600}
+
+/* ---------- journal ---------- */
+.day{padding:15px 0;border-top:1px solid var(--hairline)}
+.day:first-of-type{border-top:0;padding-top:0}
+.date{font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--text-3);
+  text-transform:uppercase;font-variant-numeric:tabular-nums;margin-bottom:10px}
+.entries{list-style:none;margin:0;padding:0;display:grid;gap:9px}
+.entry{display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:start}
+.tag{font-family:var(--font-mono);font-size:9px;letter-spacing:.07em;text-transform:uppercase;
+  padding:3px 7px;border-radius:4px;font-weight:500;white-space:nowrap;margin-top:2px}
+.tag.new{background:var(--relvo-bg);color:var(--relvo)}
+.tag.fix{background:var(--surface-sunken);color:var(--text-2)}
+.entry p{margin:0;font-size:14px;line-height:1.45;color:var(--text-1)}
+
+footer{margin-top:34px;padding:20px;border-top:1px solid var(--hairline);background:var(--surface)}
+footer p{margin:0;font-size:12.5px;color:var(--text-3);line-height:1.6}
+footer a{color:var(--relvo);text-decoration:none}
+footer a:hover{text-decoration:underline}
+
+@media (min-width:600px){
+  .hero{padding:42px 32px 64px}
+  .hero h1{font-size:37px}
+  main{padding:24px 32px 0}
+  .straddle,.tabs{margin-left:28px;margin-right:28px}
+  .straddle .v{font-size:15.5px}
+  .name{font-size:16px}
+  footer{padding:24px 32px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="chev" viewBox="0 0 16 16"><path d="M4 6.5 8 10.5l4-4" fill="none"
+    stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div class="page">
+
+  <header class="hero">
+    <div class="eyebrow">Tasty Crousty · Suivi de projet</div>
+    <h1>Relvo</h1>
+    <p>Où en est votre application, et ce qui change à chaque mise à jour.</p>
+  </header>
+
+  <div class="straddle">
+    <div class="cell"><span class="k">État</span><span class="v">Bêta privée</span></div>
+    <div class="cell"><span class="k">En cours</span><span class="v now">Tri automatique</span></div>
+    <div class="cell"><span class="k">Livraison</span><span class="v">Début nov.</span></div>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-avancement" aria-controls="p-avancement" aria-selected="true">Avancement</button>
+    <button role="tab" id="t-journal" aria-controls="p-journal" aria-selected="false">Journal des versions</button>
+  </div>
+
+  <main>
+
+    <section id="p-avancement" role="tabpanel" aria-labelledby="t-avancement">
+      <p class="hint">Chaque ligne est un chantier — touchez-la pour savoir à quoi il sert.
+        La barre montre sa durée réelle, le trait violet marque aujourd'hui.</p>
+
+      <div class="axis" aria-hidden="true">
+        <span>jun</span><span>jul</span><span>aoû</span><span class="cur">sep</span>
+        <span>oct</span><span>nov</span>
+      </div>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Fondations techniques</span><span class="pill done">Terminé</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar done" style="left:3.9%;width:1.7%"></div></div>
+        </summary>
+        <p class="why">Mettre en place le socle sur lequel tout le reste repose : l'hébergement,
+          la base de données, les outils de qualité et le déploiement automatique. Rien de
+          visible à l'écran, mais tout en dépend.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Comptes et connexion</span><span class="pill done">Terminé</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar done" style="left:5.0%;width:1.1%"></div></div>
+        </summary>
+        <p class="why">Vous donner un compte protégé, et garantir que vos données ne sont
+          accessibles qu'à vous. Chaque information dans Relvo appartient à un compte et un seul.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Sujets, tâches et domaines</span><span class="pill done">Terminé</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar done" style="left:5.6%;width:3.8%"></div></div>
+        </summary>
+        <p class="why">Poser la structure de votre espace de travail : un sujet regroupe une
+          affaire en cours, ses échanges, ses tâches et l'historique des décisions prises. C'est
+          l'unité autour de laquelle tourne tout le produit.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Écrans de l'application</span><span class="pill done">Terminé</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar done" style="left:9.4%;width:7.3%"></div></div>
+        </summary>
+        <p class="why">Construire les écrans du quotidien, pensés d'abord pour le téléphone et
+          l'usage à une main : vos actions du jour, vos sujets, vos conversations, vos contacts,
+          votre planning.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Fichiers et pièces jointes</span><span class="pill done">Terminé</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar done" style="left:16.7%;width:8.3%"></div></div>
+        </summary>
+        <p class="why">Conserver durablement les documents reçus — factures, bons de livraison,
+          devis — et les rendre consultables depuis le sujet, y compris après sa clôture. Ils sont
+          stockés en Europe.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Réception des e-mails</span><span class="pill done">Terminé</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar done" style="left:25.0%;width:1.7%"></div></div>
+        </summary>
+        <p class="why">Faire entrer votre boîte mail dans Relvo, et vous permettre d'y répondre
+          depuis votre vraie adresse. Vos interlocuteurs ne voient aucune différence, et vos
+          réponses se retrouvent dans vos messages envoyés.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Réception WhatsApp</span><span class="pill part">Validation en cours</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar part" style="left:26.7%;width:1.1%"></div></div>
+        </summary>
+        <p class="why">Faire entrer WhatsApp par le même chemin que l'e-mail : vos messages, vos
+          photos et vos documents arrivent dans Relvo, et vous répondez sans changer
+          d'application. Reste à valider sur un téléphone réel.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Regroupement en conversations</span><span class="pill done">Terminé</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar done" style="left:27.8%;width:5.0%"></div></div>
+        </summary>
+        <p class="why">Ranger chaque message dans le bon fil dès sa réception, sans jamais se
+          tromper — par objet pour un e-mail, par interlocuteur pour WhatsApp. C'est ce rangement
+          qui permet ensuite d'ouvrir un sujet d'un seul geste.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Consolidation</span><span class="pill done">Terminé</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar maint" style="left:50.0%;width:6.7%"></div></div>
+        </summary>
+        <p class="why">Reprendre l'application après vos premiers retours d'usage : simplification
+          des gestes, corrections d'affichage, et mise en place de contrôles automatiques qui
+          vérifient la qualité à chaque mise en ligne.</p>
+      </details>
+
+      <details class="row" open>
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Tri automatique des messages</span><span class="pill now">En cours</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar now" style="left:58.3%;width:11.1%"></div></div>
+        </summary>
+        <p class="why">Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils
+          parlent, ouvre le sujet correspondant, propose les tâches à faire et prépare un
+          brouillon de réponse. C'est la fin du tri à la main.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Connaissances métier</span><span class="pill next">Prévu</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar next" style="left:70.0%;width:6.1%"></div></div>
+        </summary>
+        <p class="why">Vous déposez vos documents de référence et vos consignes — organigramme,
+          procédures, ton de réponse, particularités d'un fournisseur. Relvo s'en sert pour
+          proposer des réponses justes plutôt que génériques.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Échange avec Relvo</span><span class="pill next">Prévu</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar next" style="left:76.1%;width:6.1%"></div></div>
+        </summary>
+        <p class="why">Demander à Relvo d'agir plutôt que de naviguer dans les écrans :
+          « où en est la commande de sauce ? », « crée-moi une tâche pour lundi »,
+          « prépare une réponse à Karim ». Chaque action reste visible et annulable.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Lecture des pièces jointes</span><span class="pill next">Prévu</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar next" style="left:78.9%;width:3.3%"></div></div>
+        </summary>
+        <p class="why">Relvo reconnaît chaque document reçu — facture, devis, bon de livraison —
+          et l'étiquette automatiquement, pour que vous le retrouviez sans avoir à l'ouvrir.</p>
+      </details>
+
+      <details class="row">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">Ouverture de la bêta</span><span class="pill next">Prévu</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="bar next" style="left:82.2%;width:3.9%"></div></div>
+        </summary>
+        <p class="why">Préparer l'arrivée des autres utilisateurs : parcours de première
+          connexion, guide d'usage court, et mise en service élargie au sein de Tasty Crousty.</p>
+      </details>
+
+      <details class="row ship">
+        <summary>
+          <div class="label">
+            <span class="lead"><span class="name">◆ Livraison</span><span class="pill next">Début novembre</span></span>
+            <svg class="chev"><use href="#chev"/></svg>
+          </div>
+          <div class="track"><div class="milestone" style="left:86.1%"></div></div>
+        </summary>
+        <p class="why">La version complète de Relvo, prête pour un usage quotidien : réception
+          des deux canaux, tri automatique, connaissances métier et échange avec l'assistant.</p>
+      </details>
+
+      <div class="legend">
+        <span><i class="done"></i> Terminé</span>
+        <span><i class="now"></i> En cours</span>
+        <span><i class="next"></i> Prévu</span>
+        <span><i class="ship"></i> Livraison</span>
+      </div>
+
+      <p class="aside">
+        <b>Les chantiers à venir sont positionnés au mois, pas au jour.</b>
+        Vous recevez une fenêtre précise au moment où un chantier s'ouvre —
+        c'est le seul moment où elle est fiable.
+      </p>
+    </section>
+
+    <section id="p-journal" role="tabpanel" aria-labelledby="t-journal" hidden>
+      <p class="hint">Tout ce qui a changé dans l'application, à chaque mise en ligne.</p>
+
+      <div class="day">
+        <div class="date">7 septembre</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Les gestes de l'application ont été simplifiés : un geste, une surface — suite aux retours des premiers testeurs.</p></li>
+          <li class="entry"><span class="tag fix">Corrigé</span>
+            <p>Sur Android, le clavier n'écrase plus la zone de saisie.</p></li>
+          <li class="entry"><span class="tag fix">Corrigé</span>
+            <p>En faisant glisser une conversation, le libellé et la couleur correspondent maintenant à l'action réellement effectuée.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">28 juillet</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>La fiche d'un contact s'ouvre en plein écran, avec tous ses numéros et adresses visibles d'un coup.</p></li>
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Un message reçu depuis une adresse ou un numéro secondaire retrouve le bon contact.</p></li>
+          <li class="entry"><span class="tag fix">Corrigé</span>
+            <p>Les e-mails n'affichent plus le message cité en double.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">27 juillet</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vous pouvez reconnecter une boîte mail ou un compte WhatsApp sans perdre vos données.</p></li>
+          <li class="entry"><span class="tag fix">Corrigé</span>
+            <p>Un échec d'envoi s'affiche clairement, au lieu d'échouer en silence.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">24 juillet</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Les sujets fermés restent consultables et récupérables.</p></li>
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vous pouvez filtrer vos sujets par domaine.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">22 juillet</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vos messages se regroupent automatiquement en conversations, et vous ouvrez un sujet d'un simple glissement.</p></li>
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Un bandeau vous indique, en tête de chaque conversation, dans quel sujet elle est suivie.</p></li>
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Les e-mails s'affichent en pleine largeur, avec leur mise en forme d'origine.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">18 juillet</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vous connectez votre compte WhatsApp par QR code : vos messages et vos photos arrivent dans Relvo.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">17 juillet</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vous connectez votre boîte mail en un clic, et vos réponses partent de votre vraie adresse.</p></li>
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vous ouvrez une pièce jointe directement dans l'application, sans la télécharger.</p></li>
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Un e-mail reçu rejoint tout seul le sujet auquel il se rapporte.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">15 juillet</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vos pièces jointes sont conservées et consultables depuis le sujet, même après sa clôture.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">28 juin</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>L'accueil devient votre page d'actions : les tâches du jour, et un semainier où vous replanifiez par glissement.</p></li>
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Une tâche peut exister sans sujet, créée à la volée.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">27 juin</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>L'accès à Relvo passe en haut à droite, à la même place sur toutes les pages.</p></li>
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vous filtrez vos sujets par urgence, par nouveauté ou par domaine.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">26 juin</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vous disposez d'un annuaire de contacts, avec recherche et classement alphabétique.</p></li>
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vous choisissez l'icône et la couleur de chacun de vos domaines.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">24 juin</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>L'application prend son identité visuelle définitive, pensée pour une utilisation à une main.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">18 juin</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vous installez Relvo sur l'écran d'accueil de votre téléphone, comme une application.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">10 juin</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Les sujets, les tâches, les contacts et les domaines existent : la structure de votre espace de travail est en place.</p></li>
+        </ul>
+      </div>
+
+      <div class="day">
+        <div class="date">9 juin</div>
+        <ul class="entries">
+          <li class="entry"><span class="tag new">Nouveau</span>
+            <p>Vous pouvez créer votre compte et vous identifier à Relvo.</p></li>
+        </ul>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>
+      Cette page se met à jour automatiquement à chaque livraison.<br>
+      Dernière mise à jour : 7 septembre 2026 · Une question ?
+      <a href="mailto:vincent@vccimpact.fr">vincent@vccimpact.fr</a>
+    </p>
+  </footer>
+
+</div>
+
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('[role="tab"]'));
+  tabs.forEach(function (t) {
+    t.addEventListener("click", function () {
+      tabs.forEach(function (o) {
+        document.getElementById(o.getAttribute("aria-controls")).hidden = o !== t;
+        o.setAttribute("aria-selected", o === t ? "true" : "false");
+      });
+    });
+  });
+})();
+</script>

@@ -1,3 +1,17 @@
+---
+id: M3
+public: true
+ordre_public: 3
+titre_client: Sujets, tâches et domaines
+resume_client: >
+  Poser la structure de votre espace de travail : un sujet regroupe une affaire en cours, ses
+  échanges, ses tâches et l'historique des décisions prises. C'est l'unité autour de laquelle
+  tourne tout le produit.
+statut: termine
+debut: 2026-06-10
+fin: 2026-06-17
+---
+
 # M3 — Modèle de données et couche d'accès
 
 **Objectif** — implémenter le modèle décrit dans `../../conception/02-modele-donnees.md` et
