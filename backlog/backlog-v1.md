@@ -1,6 +1,6 @@
 # Backlog fonctionnel — Relvo V1
 
-> Ensemble des tâches à réaliser pour livrer la V1 de Relvo. S'appuie sur les documents de conception ([`../conception/`](../conception)) et sur la spécification technique ([`../spec/architecture.md`](../spec/architecture.md)). Les choix de stack ne sont **pas** répétés ici : ils vivent dans la spec.
+> Ensemble des tâches à réaliser pour livrer la V1 de Relvo. S'appuie sur les documents de conception ([`../conception/`](../conception)) et sur la spécification technique ([`../docs/spec/architecture.md`](../docs/spec/architecture.md)). Les choix de stack ne sont **pas** répétés ici : ils vivent dans la spec.
 
 ---
 
@@ -26,7 +26,7 @@
 > - `Priority` : `enum(low, medium, high, critical)` → **`enum(low, high, critical)`** (`medium` retiré).
 > - `Subject` : + **`waiting_for_reply Boolean @default(false)`** (marqueur « En attente » posé par Relvo).
 > - `KnowledgeDocument` : + **`absorption_status enum(read, ignored) @default(read)`** (Relvo absorbe ✦ ou écarte un `file`).
-> - Renommages **UI seulement** (aucune migration) : nav **« Mémoire »** (ex-Dossiers, icône cerveau), onglets **« Instructions »** (`kind=note`) / **« Documents »** (`kind=file`), action **« Terminer »** (ex-Résoudre). Cible mobile = **PWA** (cf. [`architecture.md §4`](../spec/architecture.md)).
+> - Renommages **UI seulement** (aucune migration) : nav **« Mémoire »** (ex-Dossiers, icône cerveau), onglets **« Instructions »** (`kind=note`) / **« Documents »** (`kind=file`), action **« Terminer »** (ex-Résoudre). Cible mobile = **PWA** (cf. [`architecture.md §4`](../docs/spec/architecture.md)).
 
 ---
 
@@ -92,7 +92,7 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 ### M1 — Fondations techniques
 
-**Objectif** : poser le socle technique qui conditionne tout le reste du projet. Détail de la stack : [`../spec/architecture.md`](../spec/architecture.md).
+**Objectif** : poser le socle technique qui conditionne tout le reste du projet. Détail de la stack : [`../docs/spec/architecture.md`](../docs/spec/architecture.md).
 
 **Dépendances** : aucune (point de départ).
 
@@ -161,7 +161,7 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 > **⚠️ Action requise avant la mise en prod de M11** : poser `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_JURISDICTION` et `CRON_SECRET` sur Vercel. Sans elles : le cron de drainage échoue en 500 chaque nuit, et toute route fichier lèverait — sans impact aujourd'hui puisque aucune UI ne les appelle. _(Les PJ email/WhatsApp récupérées via Unipile s'écrivent aussi dans R2, côté `apps/web` — plus de worker à configurer.)_
 
-> **Fournisseur retenu : Cloudflare R2** (décision 2026-07-15, benchmark vs Vercel Blob / S3+CloudFront / Supabase / UploadThing). Justification complète dans [`../spec/architecture.md §5`](../spec/architecture.md). En bref : API S3-compatible (un client générique dans `packages/storage`, outillage connu, sortie possible), free tier permanent couvrant toute la bêta sans imposer Vercel Pro, setup en 1 bucket + 1 token. **Le coût n'a pas départagé** — les trois options sont sous 2 $/mois à l'échelle V1.
+> **Fournisseur retenu : Cloudflare R2** (décision 2026-07-15, benchmark vs Vercel Blob / S3+CloudFront / Supabase / UploadThing). Justification complète dans [`../docs/spec/architecture.md §5`](../docs/spec/architecture.md). En bref : API S3-compatible (un client générique dans `packages/storage`, outillage connu, sortie possible), free tier permanent couvrant toute la bêta sans imposer Vercel Pro, setup en 1 bucket + 1 token. **Le coût n'a pas départagé** — les trois options sont sous 2 $/mois à l'échelle V1.
 >
 > **Pas de CDN** : les fichiers sont privés et cloisonnés par tenant, consultés par 3-10 utilisateurs. Un cache edge n'apporte rien et, chez R2, les URLs pré-signées ne fonctionnent que sur le domaine S3 API — cache et pré-signature sont **mutuellement exclusifs**. À rouvrir seulement si un usage public de fichiers apparaît.
 
@@ -215,7 +215,7 @@ Le produit est destiné à des dirigeants des secteurs **food** et **bâtiment**
 
 **Dépendances** : M3 (Message, Contact, Channel), M4 (attachments).
 
-> **🔀 Bascule technique majeure (2026-07-16).** L'ingestion ne passe **plus** par un forwarding Gmail → Postmark, mais par l'agrégateur managé **[Unipile](https://www.unipile.com)** (email + WhatsApp unifiés). Arbitrages : envoi « au nom de » l'utilisateur **obligatoire** (exclut le Reply-To), lecture = **nouveau courrier seulement** (pas d'historique → pas d'audit Google CASA), agrégateur **retenu** (UE/SOC2/DPA). Conséquence : **le worker always-on Baileys est abandonné** — WhatsApp (M6) passera aussi par Unipile, en webhooks serverless. Cf. `../spec/architecture.md §2`.
+> **🔀 Bascule technique majeure (2026-07-16).** L'ingestion ne passe **plus** par un forwarding Gmail → Postmark, mais par l'agrégateur managé **[Unipile](https://www.unipile.com)** (email + WhatsApp unifiés). Arbitrages : envoi « au nom de » l'utilisateur **obligatoire** (exclut le Reply-To), lecture = **nouveau courrier seulement** (pas d'historique → pas d'audit Google CASA), agrégateur **retenu** (UE/SOC2/DPA). Conséquence : **le worker always-on Baileys est abandonné** — WhatsApp (M6) passera aussi par Unipile, en webhooks serverless. Cf. `../docs/spec/architecture.md §2`.
 
 - **M5.1** ✅ — Client Unipile (`apps/web/src/server/unipile/`) bâti sur le **SDK officiel `unipile-node-sdk`** (`UnipileClient` : `account.createHostedAuthLink` avec `sync_limit: NO_HISTORY_SYNC` + `providers ["GOOGLE","OUTLOOK","MAIL"]`, `email.send`, `email.getEmailAttachment` → `Blob`, `account.getOne`, `webhook.create`). Config lazy + dégradation propre sans credentials. Résolution du tenant via `ChannelConfig.external_account_id` (colonne unique, migration `20260716120000`).
 - **M5.2** ✅ — Route Handler `/api/webhooks/unipile` : vérif du header secret `Unipile-Auth`, idempotence via `@@unique([channelId, externalId])` + check applicatif, routage `notify` / `mail_received` / `account_status`.

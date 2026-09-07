@@ -1,6 +1,6 @@
 # Spécification UX — Mobile-first, agent central
 
-> **Statut : proposition (2026-06-16), en attente de validation.** Source de vérité du **layout, de la navigation et du responsive** de Relvo V1. Le *pourquoi* produit vit dans [`../conception/01-principes.md §13`](../conception/01-principes.md) ; les *choix de stack* dans [`architecture.md`](architecture.md) ; l'*ordre de réalisation* dans [`../backlog/backlog-v1.md`](../backlog/backlog-v1.md) (module M9). Ce document remplace, pour tout ce qui touche à la disposition à l'écran, la maquette desktop figée de [`../../mockup/`](../../mockup) — laquelle sera régénérée mobile-first à partir d'ici.
+> **Statut : proposition (2026-06-16), en attente de validation.** Source de vérité du **layout, de la navigation et du responsive** de Relvo V1. Le *pourquoi* produit vit dans [`../conception/01-principes.md §13`](../conception/01-principes.md) ; les *choix de stack* dans [`architecture.md`](architecture.md) ; l'*ordre de réalisation* dans [`../backlog/backlog-v1.md`](../backlog/backlog-v1.md) (module M9). Ce document remplace, pour tout ce qui touche à la disposition à l'écran, la maquette desktop figée de [`../../conception/mockup/`](../../conception/mockup) — laquelle sera régénérée mobile-first à partir d'ici.
 
 ---
 
@@ -173,7 +173,7 @@ Ce virage rend caduques plusieurs passages encore rédigés « desktop/drawer »
 1. **`../conception/04-ia.md §11`** — « Disposition UI — drawer latéral », « bouton flottant 🤖 », « ~40 % de largeur » → ré-aligner sur conversation plein écran / page-aware / generative UI.
 2. **`CLAUDE.md`** — invariants **22** (drawer 40 %, bouton flottant), **26** (page-aware), section « Conventions » (sidebar 4 entrées, drawer dans `layout.tsx`), mapping routes (la sidebar devient barre d'onglets). Ajouter la posture mobile-first.
 3. **`../backlog/backlog-v1.md`** — **M9.1** (« sidebar 4 entrées + drawer » → barre d'onglets + surface conversation), **M10.1** (« Sheet ~40 % » → plein écran/panneau), note generative UI.
-4. **`../../mockup/`** — régénérer mobile-first (étape suivante du process : maquette → serveur local → validation).
+4. **`../../conception/mockup/`** — régénérer mobile-first (étape suivante du process : maquette → serveur local → validation).
 
 ---
 

@@ -2,7 +2,7 @@
 
 Assistant IA de pilotage des sollicitations professionnelles. Relvo transforme le flux désordonné de messages d'un dirigeant (e-mails, WhatsApp) en **sujets métier structurés**, avec tâches, journal de bord et aide à la décision.
 
-> 📖 Documentation : vision et modèle produit dans [`docs/conception/`](./docs/conception) · architecture technique dans [`docs/spec/architecture.md`](./docs/spec/architecture.md) · roadmap dans [`docs/backlog/backlog-v1.md`](./docs/backlog/backlog-v1.md). Conventions et invariants pour le développement : [`CLAUDE.md`](./CLAUDE.md).
+> 📖 Documentation : vision et modèle produit dans [`docs/conception/`](./conception) · architecture technique dans [`docs/spec/architecture.md`](./docs/spec/architecture.md) · roadmap dans [`docs/backlog/backlog-v1.md`](./backlog/backlog-v1.md). Conventions et invariants pour le développement : [`CLAUDE.md`](./CLAUDE.md).
 
 ## Architecture
 

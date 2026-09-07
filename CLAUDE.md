@@ -16,16 +16,16 @@ Trois corpus, séparés par nature. **À lire avant de créer ou modifier quoi q
 
 | Dossier | Contenu | Rôle |
 |---|---|---|
-| [`docs/conception/`](docs/conception) | `01-principes.md`, `02-modele-donnees.md`, `03-cas-usage.md`, `04-ia.md` | Le **quoi / pourquoi** produit — source de vérité fonctionnelle |
+| [`conception/`](conception) | `01-principes.md`, `02-modele-donnees.md`, `03-cas-usage.md`, `04-ia.md` | Le **quoi / pourquoi** produit — source de vérité fonctionnelle |
 | [`docs/spec/`](docs/spec) | `architecture.md` | Le **comment** technique — source de vérité de l'architecture |
-| [`docs/backlog/`](docs/backlog) | `backlog-v1.md` | Le **quand / ordre** — roadmap par modules M1→M14 |
-| [`mockup/`](mockup) | HTML/CSS statique | **Référence visuelle figée** — à reproduire en React/Next, non déployée |
+| [`backlog/`](backlog) | `backlog-v1.md` | Le **quand / ordre** — roadmap par modules M1→M14 |
+| [`conception/mockup/`](conception/mockup) | HTML/CSS statique | **Référence visuelle figée** — à reproduire en React/Next, non déployée |
 
 Lecture obligatoire avant de toucher un écran :
-- **`docs/conception/01-principes.md`** — le Subject est l'entité centrale (pas le message). Chaîne `Message → Task → Action → LogEvent`.
-- **`docs/conception/02-modele-donnees.md`** — entités, champs, relations → guide le schéma Prisma.
-- **`docs/conception/03-cas-usage.md`** — flux utilisateur (cas A à V).
-- **`docs/conception/04-ia.md`** — ce que l'IA fait et **ne fait pas**.
+- **`conception/01-principes.md`** — le Subject est l'entité centrale (pas le message). Chaîne `Message → Task → Action → LogEvent`.
+- **`conception/02-modele-donnees.md`** — entités, champs, relations → guide le schéma Prisma.
+- **`conception/03-cas-usage.md`** — flux utilisateur (cas A à V).
+- **`conception/04-ia.md`** — ce que l'IA fait et **ne fait pas**.
 
 ## Architecture (résumé)
 
@@ -68,15 +68,15 @@ relvo/
 > `apps/worker` (daemon Baileys) **n'existe plus** : bascule Unipile (webhooks serverless).
 
 **Règles de navigation pour Claude** :
-- Avant de créer/modifier un écran, **lire les docs `docs/conception/` concernées** — elles priment sur toute supposition.
-- Pour reproduire fidèlement un écran, s'appuyer sur le HTML/CSS correspondant dans `mockup/`.
+- Avant de créer/modifier un écran, **lire les docs `conception/` concernées** — elles priment sur toute supposition.
+- Pour reproduire fidèlement un écran, s'appuyer sur le HTML/CSS correspondant dans `conception/mockup/`.
 - Le schéma Prisma (`packages/db`) doit rester **cohérent avec `02-modele-donnees.md`**.
 - Toute logique métier réutilisable passe par un package : `packages/db` (types, accès DB, domaine), `packages/storage` (fichiers R2) — jamais de duplication. L'intégration Unipile (email + WhatsApp) vit dans `apps/web/src/server/unipile/` (unique consommateur : l'app).
 - **Aucun accès direct au stockage** : tout passe par `@relvo/storage` (`getStorage()`), jamais par un client S3 instancié à la main. C'est ce qui garde le fournisseur remplaçable — et ce qui évite de recréer un `S3Client` sans les deux réglages R2 obligatoires (`signableHeaders` sur `content-type`, checksums en `WHEN_REQUIRED` : cf. `r2.ts`, sans eux la signature ne contraint pas le type de fichier et le SDK signe le CRC32 du vide).
 - **Afficher un fichier = une URL stable, jamais une URL signée.** `<img src={`/api/attachments/${id}/download?inline=1`} />` — le navigateur suit la redirection 307 vers R2 tout seul. L'URL signée (5 min) est un détail interne, jamais manipulée par un composant. C'est l'architecture par défaut d'ActiveStorage, en version **authentifiée** (le défaut Rails ne l'est pas). Sans `?inline=1` → téléchargement sous le vrai nom du fichier. **Ne jamais mettre une URL pré-signée dans `next/image`** : la clé de cache Vercel inclut la query string ⇒ signature qui tourne = MISS + transformation **facturée** à chaque rendu. **Ne jamais streamer un fichier à travers une Function** (« lightweight API layer, not a media server » — Vercel ; body de réponse plafonné à 4,5 Mo).
 - **Toute route servant de la donnée d'un tenant envoie `Cache-Control: private` + `Vercel-CDN-Cache-Control: no-store`.** La clé de cache d'un CDN est méthode + URL, sans aucun header de requête : une route authentifiée par cookie a donc la **même clé pour tous les utilisateurs**. Ne pas s'en remettre au défaut plateforme — incident Railway du 2026-03-30 : cache activé par accident, « requests for one user [served] to a different user », seules les apps qui envoyaient `private` explicitement ont été épargnées.
 - **🚫 Ne JAMAIS supprimer un fichier R2 depuis une fonction de suppression.** Le domaine ignore le stockage : un **trigger PostgreSQL** met `storage_key` dans l'outbox `pending_file_deletions` (dans la transaction), un cron draine hors transaction (M4.6). C'est le seul mécanisme qui capte les **cascades**, dont Prisma est aveugle par conception. Supprimer en synchrone rouvrirait les pertes de données qui ont fait retirer ce comportement de Django en 1.3. **Toute nouvelle table portant un `storage_key` doit recevoir son trigger dans la migration.**
-- `docs/` et `mockup/` ne sont buildés par personne (Next ne build que `apps/web/src/app`).
+- `docs/` et `conception/mockup/` ne sont buildés par personne (Next ne build que `apps/web/src/app`).
 
 ### Mapping routes ↔ écrans
 
@@ -97,7 +97,7 @@ Routes francophones, alignées sur la nav V1.
 
 ## Invariants produit à respecter
 
-> Liste condensée. Le détail et la justification sont dans `docs/conception/`. Ne pas les enfreindre sans validation explicite.
+> Liste condensée. Le détail et la justification sont dans `conception/`. Ne pas les enfreindre sans validation explicite.
 
 **Modèle & acteurs**
 1. `Account` est le tenant. Toutes les ressources portent `account_id`. Pas de FK utilisateur sur les ressources.

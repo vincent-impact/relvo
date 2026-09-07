@@ -14,6 +14,6 @@ pnpm-lock.yaml
 public
 
 # Contenu à ne pas reformater
-docs
-mockup
+conception
+backlog
 *.md
