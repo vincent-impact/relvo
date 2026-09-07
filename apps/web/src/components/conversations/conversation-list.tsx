@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   EyeOff,
+  FolderInput,
   Loader2,
   Mail,
   MessageCircle,
@@ -17,6 +18,7 @@ import {
   reactivateConversationAction,
 } from "@/server/actions/conversations";
 import { SwipeRow } from "@/components/shared/swipe-row";
+import { ConversationTriageDialog } from "@/components/conversations/conversation-triage-dialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -104,6 +106,7 @@ function ConversationRow({
   const router = useRouter();
   const [, startTransition] = useTransition();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [triageOpen, setTriageOpen] = useState(false);
   const unread = data.unreadCount > 0;
   // Dans « Ignorées », le geste rend la source au flux ; ailleurs il l'en sort.
   const reviving = filter === "ignorees";
@@ -161,6 +164,18 @@ function ConversationRow({
   // donnée supprimée. Réactivation (filtre Ignorées) : vert dans les deux cas.
   // Fil écouté → le geste ouvre d'abord la confirmation (la ligne revient en
   // place, `keepOnAct`) ; sinon il écarte directement.
+  // Swipe DROITE = classer (2026-09-07, retour bêta) — rétablit un geste retiré
+  // le 2026-07-23 au motif qu'on ne décide pas « à l'aveugle depuis la liste ».
+  // L'usage a tranché l'inverse : le tri se fait au pouce, en rafale. La pop-up
+  // ne tranche pourtant rien elle-même — elle NAVIGUE vers la conversation avec
+  // l'intention en paramètre. Deux bénéfices : on voit le fil avant de confirmer
+  // (l'objection de juillet est préservée), et surtout la MESSAGERIE peut y faire
+  // désigner le message d'ancrage, impossible depuis une ligne de liste
+  // (invariant n°13bis : pas de défaut d'ancre, l'utilisateur désigne toujours).
+  function triage(intent: "create" | "link") {
+    router.push(`/conversations/${data.id}?classer=${intent}`);
+  }
+
   const onLeft = listened ? () => setConfirmOpen(true) : swipeLeft;
   const leftAction = reviving
     ? {
@@ -186,12 +201,21 @@ function ConversationRow({
         };
 
   return (
-    // Plus de swipe DROITE (2026-07-23) : la décision d'ouvrir/lier un sujet se
-    // prend DANS la conversation (dock d'action), en lisant les messages — jamais
-    // à l'aveugle depuis la liste. Seul le swipe gauche (Ignorer) subsiste.
     <SwipeRow
       onTap={() => router.push(`/conversations/${data.id}`)}
       left={leftAction}
+      // Dans « Ignorées », classer n'a pas de sens tant que la source est muette :
+      // le seul geste offert reste « Réactiver » (swipe gauche).
+      right={
+        reviving
+          ? undefined
+          : {
+              onAct: () => setTriageOpen(true),
+              label: "Classer",
+              icon: FolderInput,
+              tone: "brand" as const,
+            }
+      }
     >
       <div
         className={cn(
@@ -274,6 +298,14 @@ function ConversationRow({
           </div>
         </div>
       </div>
+
+      <ConversationTriageDialog
+        open={triageOpen}
+        onOpenChange={setTriageOpen}
+        isEmail={isEmail}
+        onCreate={() => triage("create")}
+        onLink={() => triage("link")}
+      />
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>

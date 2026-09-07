@@ -127,8 +127,6 @@ export default async function SujetPage({
             events={events}
           />
         }
-        subjectId={subject.id}
-        subjectStatus={subject.status}
         conversationsPane={
           <SubjectConversationsList
             subjectId={subject.id}

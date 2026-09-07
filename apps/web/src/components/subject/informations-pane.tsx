@@ -29,7 +29,9 @@ import { cn } from "@/lib/utils";
 //   2. Domaine (tap → sélecteur) + Urgence (interrupteur), sur la même ligne
 //   3. Journal (tiroir)
 // Le « Rapport d'activité de Relvo » (placeholder) est retiré tant qu'il n'a
-// rien à montrer. La suppression du sujet vit dans le dock (SubjectInfoDock).
+// rien à montrer. ⚠️ La fiche ne porte AUCUNE action de statut (2026-09-07) :
+// valider / fermer / remettre / supprimer vivent tous dans les SWIPES de la page
+// Sujets. Le dock de la fiche doublonnait ces gestes et déroutait les testeurs.
 
 export type PaneFolder = {
   id: string;

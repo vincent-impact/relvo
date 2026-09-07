@@ -3,8 +3,6 @@
 import { useState } from "react";
 import { CalendarDays, FileText, Info, MessagesSquare } from "lucide-react";
 import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
-import type { SubjectStatus } from "@relvo/db";
-import { SubjectInfoDock } from "@/components/subject/subject-info-dock";
 
 // Orchestrateur de la fiche Sujet (corps interactif). QUATRE onglets
 // (2026-07-27) : Informations · Tâches · Conversations · Documents. Les
@@ -13,6 +11,11 @@ import { SubjectInfoDock } from "@/components/subject/subject-info-dock";
 // dédié (`/conversations/[id]`), seule surface d'affichage. On répond LÀ-BAS.
 // Cela supersède les deux onglets par canal (M6quater) : le split e-mail/
 // messagerie vit dans l'écran conversation, pas dans la fiche.
+//
+// ⚠️ AUCUN dock d'action ici (2026-09-07, retour bêta). Valider / Fermer /
+// Remettre / Supprimer se font TOUS au swipe sur la page Sujets : les boutons de
+// la fiche doublonnaient ces gestes et, affichés en grand sous le contenu,
+// déroutaient plus qu'ils ne servaient.
 
 type Tab = "informations" | "conversations" | "taches" | "documents";
 
@@ -27,8 +30,6 @@ export function SubjectBody({
   conversationsPane,
   documentsPane,
   documentsCount,
-  subjectId,
-  subjectStatus,
 }: {
   header: React.ReactNode;
   defaultTab?: Tab;
@@ -42,8 +43,6 @@ export function SubjectBody({
   conversationsPane: React.ReactNode;
   documentsPane: React.ReactNode;
   documentsCount: number;
-  subjectId: string;
-  subjectStatus: SubjectStatus;
 }) {
   const [tab, setTab] = useState<Tab>(defaultTab);
 
@@ -83,11 +82,6 @@ export function SubjectBody({
         {tab === "taches" ? tachesPane : null}
         {tab === "documents" ? documentsPane : null}
       </main>
-
-      {/* Dock d'actions selon le statut (onglet Informations). */}
-      {tab === "informations" ? (
-        <SubjectInfoDock subjectId={subjectId} status={subjectStatus} />
-      ) : null}
     </>
   );
 }

@@ -2,13 +2,14 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, EyeOff } from "lucide-react";
+import { Check, EyeOff, ListTodo } from "lucide-react";
 import { toast } from "sonner";
 import {
   closeSubjectAction,
   validateSubjectAction,
 } from "@/server/actions/subjects";
 import { ignoreConversationAction } from "@/server/actions/conversations";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { cn } from "@/lib/utils";
 
 // Carte-sujet swipable (approche retenue, cf. mockup/mobile/fil.html) :
@@ -19,17 +20,30 @@ import { cn } from "@/lib/utils";
 // (inset-0) pour qu'un glissé ample ne révèle jamais le bord d'une colonne.
 // Au lâcher validé : retrait optimiste (collapse) → pas de ligne rémanente, puis
 // la Server Action revalide /fil (+ router.refresh) pour la vérité serveur.
+//
+// ⚠️ GARDE-FOU « tâches non terminées » (2026-09-07, retour bêta) : terminer un
+// sujet dont des tâches restent ouvertes fait DISPARAÎTRE du travail encore à
+// faire — et un sujet est le seul endroit où vivent ces tâches (invariant n°7).
+// Le geste ouvre donc d'abord une confirmation, qui NOMME le reste à faire.
+// Deux garde-fous, hérités de la règle « une confirmation sans information se
+// clique sans être lue » (invariant n°8) :
+//   • elle n'apparaît QUE s'il reste effectivement des tâches ouvertes ;
+//   • elle annonce leur NOMBRE, jamais « des tâches ».
+// Le reste du temps le swipe garde son coût de zéro clic.
 
 const THRESHOLD = 80;
 
 export function SwipeableSubject({
   subjectId,
   canClose,
+  openTasks = 0,
   rounded = true,
   children,
 }: {
   subjectId: string;
   canClose: boolean;
+  /** Tâches encore à faire — > 0 déclenche la confirmation avant de terminer. */
+  openTasks?: number;
   /** false : ligne pleine largeur (SubjectRow) sans coins arrondis. */
   rounded?: boolean;
   children: React.ReactNode;
@@ -39,6 +53,8 @@ export function SwipeableSubject({
   const [, startTransition] = useTransition();
   const [dir, setDir] = useState(0); // -1 fermer · 0 repos · 1 valider
   const [leaving, setLeaving] = useState(false);
+  // Intention en attente de confirmation (tâches non terminées).
+  const [confirm, setConfirm] = useState<"validate" | "close" | null>(null);
   const g = useRef({
     sx: 0,
     sy: 0,
@@ -162,16 +178,41 @@ export function SwipeableSubject({
     }
   }
 
+  /**
+   * Des tâches restent ouvertes → la carte revient en place et la confirmation
+   * prend le relais (on ne fait pas disparaître une ligne dont le sort n'est pas
+   * tranché). Sinon on termine tout de suite : le geste garde son coût de zéro clic.
+   */
+  function askOrRun(intent: "validate" | "close") {
+    if (openTasks > 0) {
+      setDir(0);
+      setX(0, true);
+      setConfirm(intent);
+      return;
+    }
+    setX(intent === "validate" ? window.innerWidth : -window.innerWidth, true);
+    if (intent === "validate") commitValidate();
+    else commitClose();
+  }
+
+  /** Confirmation acceptée : on rejoue le geste, animation comprise. */
+  function confirmed() {
+    const intent = confirm;
+    setConfirm(null);
+    if (!intent) return;
+    setX(intent === "validate" ? window.innerWidth : -window.innerWidth, true);
+    if (intent === "validate") commitValidate();
+    else commitClose();
+  }
+
   function onPointerEnd() {
     const s = g.current;
     if (!s.active) return;
     s.active = false;
     if (s.horiz && s.dx > THRESHOLD) {
-      setX(window.innerWidth, true);
-      commitValidate();
+      askOrRun("validate");
     } else if (canClose && s.horiz && s.dx < -THRESHOLD) {
-      setX(-window.innerWidth, true);
-      commitClose();
+      askOrRun("close");
     } else {
       setDir(0);
       setX(0, true);
@@ -234,6 +275,33 @@ export function SwipeableSubject({
           {children}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirm != null}
+        onOpenChange={(o) => {
+          if (!o) setConfirm(null);
+        }}
+        icon={ListTodo}
+        title={
+          confirm === "close"
+            ? "Fermer malgré les tâches en cours ?"
+            : "Valider malgré les tâches en cours ?"
+        }
+        description={
+          <>
+            <span className="font-semibold text-(--text-primary)">
+              {openTasks} tâche{openTasks > 1 ? "s" : ""}
+            </span>{" "}
+            {openTasks > 1 ? "ne sont pas terminées" : "n'est pas terminée"} sur
+            ce sujet.{" "}
+            {confirm === "close"
+              ? "Le fermer les retirera de vos actions."
+              : "Le valider les retirera de vos actions."}
+          </>
+        }
+        confirmLabel={confirm === "close" ? "Fermer quand même" : "Valider"}
+        onConfirm={confirmed}
+      />
     </div>
   );
 }

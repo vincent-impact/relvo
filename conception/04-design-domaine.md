@@ -155,9 +155,22 @@ les fils ne sont pas des affaires — une newsletter, un accusé de réception, 
 pas à devenir des sujets. Le geste ne fabrique pas une correspondance, il **reconnaît** celle
 que l'objet a déjà posée.
 
-⚠️ **Corollaire : une ligne de conversation de messagerie ne porte aucun geste d'ouverture.**
-L'offrir reviendrait à proposer « faire de ce groupe une affaire » — or un groupe n'est jamais
-une affaire. Le geste d'écartement, lui, existe sur les deux canaux.
+⚠️ **Corollaire : une ligne de conversation de messagerie n'ouvre jamais un sujet directement.**
+Le faire reviendrait à proposer « faire de ce groupe une affaire » — or un groupe n'est jamais
+une affaire, et il n'existe pas d'ancre par défaut à lui donner. Le geste d'écartement, lui,
+existe sur les deux canaux.
+
+**Ce que la ligne porte, en revanche, c'est un geste de CLASSEMENT** — sur les deux canaux. Il
+n'ouvre rien lui-même : il propose les deux issues à parité (nouveau sujet, ou rattachement à un
+sujet existant) puis **transmet l'intention à l'écran de conversation**, seul endroit où le fil
+est lisible. En e-mail, l'écran enchaîne aussitôt. En messagerie, il ouvre le **choix du message
+d'ancrage** — la règle « l'utilisateur désigne toujours le message » est donc tenue, non
+contournée.
+
+**Pourquoi ce relais plutôt qu'un geste qui tranche depuis la liste.** Le tri se fait au pouce,
+en rafale : refuser tout geste d'entrée sur la liste obligeait à ouvrir chaque conversation, à
+agir, puis à revenir. Mais décider **sans avoir lu** reste exclu. Le relais réconcilie les deux :
+le geste est disponible là où le pouce est, la décision se prend là où le fil est visible.
 
 ### Étendre une écoute : le même geste, sur un message plus ancien
 
@@ -327,6 +340,22 @@ annoncée comme réversible une **destruction différée** : le pire des deux mo
 fil bavard de reproposer indéfiniment de nouveaux sujets, et le seul qui fasse taire un fil
 e-mail. L'ignorance vit sur la **conversation** : ce n'est pas un sujet qu'on veut faire taire,
 c'est une **source**.
+
+### Où vivent ces transitions
+
+**Toutes dans les swipes de la liste des sujets, aucune dans la fiche.** Un sujet ouvert se
+valide ou se ferme au swipe ; un sujet terminal se **remet** au swipe droite, et se **supprime**
+au swipe gauche — cette dernière étant la seule destruction définitive, et la seule à demander
+une confirmation.
+
+**Pourquoi la fiche n'en porte aucune.** Des boutons de statut y doublaient les swipes : deux
+chemins pour un même geste, dont un affiché en grand sous le contenu. Le résultat n'était pas
+« deux fois plus accessible » mais **ambigu** — l'utilisateur y lisait deux mécanismes distincts
+et n'osait plus ni l'un ni l'autre.
+
+⚠️ **Un geste retiré d'une surface doit exister sur l'autre AVANT de disparaître.** Les boutons
+de la fiche étaient l'unique chemin de réouverture d'un sujet terminal, dont la liste ne portait
+alors aucun swipe : les retirer d'abord aurait enfermé pour de bon tout sujet validé.
 
 ### Les marqueurs : cumulables, indépendants du statut
 

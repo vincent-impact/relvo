@@ -8,6 +8,7 @@ import {
   type SubjectTab,
 } from "@/components/feed/subject-kpi-tabs";
 import { SwipeableSubject } from "@/components/feed/swipeable-subject";
+import { SwipeableDoneSubject } from "@/components/feed/swipeable-done-subject";
 import {
   SubjectRow,
   type SubjectRowData,
@@ -80,13 +81,20 @@ export function FeedView({
           key={row.id}
           subjectId={row.id}
           canClose
+          openTasks={Math.max(row.taskTotal - row.taskDone, 0)}
           rounded={false}
         >
           <SubjectRow data={row} linkable={false} />
         </SwipeableSubject>
       );
     }
-    return <SubjectRow key={row.id} data={row} tone="done" />;
+    // Terminal (validé / fermé) : ← Supprimer · → Remettre. C'est désormais le
+    // SEUL chemin de réouverture — les boutons de la fiche Sujet ont été retirés.
+    return (
+      <SwipeableDoneSubject key={row.id} subjectId={row.id}>
+        <SubjectRow data={row} tone="done" linkable={false} />
+      </SwipeableDoneSubject>
+    );
   }
 
   return (

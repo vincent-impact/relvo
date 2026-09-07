@@ -170,6 +170,43 @@ qu'elle avait été livrée **puis remplacée**.
 
 ---
 
+### Un geste, une surface — les actions de statut quittent la fiche du sujet
+**`tranché`** · Premiers retours de bêta-testeurs, produit en mode **manuel** (sans le pipeline
+d'arrivée). Trois constats convergents, tous sur des actions offertes **deux fois**.
+
+La fiche d'un sujet portait un dock de boutons — Fermer / Valider, ou Supprimer / Réouvrir selon
+le statut — qui doublait exactement les swipes de la liste. Le bas de chaque conversation portait
+de même **trois** actions de poids égal. Dans les deux cas, l'abondance ne rendait pas le produit
+plus accessible : elle rendait le geste **incertain**.
+
+Décisions : les transitions de statut vivent désormais **dans les seuls swipes** de la liste des
+sujets ; le triage d'une conversation passe par **un bouton unique** qui ouvre une pop-up ; et la
+liste des conversations retrouve un **geste d'entrée** (swipe droite) qui relaie l'intention à
+l'écran de conversation.
+
+⚠️ **Un piège a été évité de justesse, et il mérite d'être écrit.** Retirer les boutons de la
+fiche revenait à supprimer le **seul** chemin de réouverture d'un sujet terminal : la liste ne
+portait alors aucun swipe sur ses onglets terminaux. Appliquer le retour tel quel aurait enfermé
+définitivement tout sujet validé. Le geste de remplacement a donc été posé **avant** le retrait.
+Règle générale : *un geste retiré d'une surface doit exister sur l'autre avant de disparaître.*
+
+**Ce qui n'a PAS été cédé.** Le geste de la liste ne tranche rien lui-même — il transmet une
+intention à l'écran de conversation. Cela préserve l'objection qui avait fait retirer ce swipe
+auparavant (« ne pas décider sans avoir lu ») et, surtout, cela laisse la messagerie faire
+**désigner le message d'ancrage**, qu'aucune ligne de liste ne peut deviner. Le relais est ce qui
+rend le retour applicable **sans** inventer une ancre par défaut.
+
+### Avertir avant de terminer un sujet dont des tâches restent ouvertes
+**`tranché`** · Même série de retours. Valider ou fermer un sujet retire ses tâches de la vue
+sans rien dire, alors qu'un sujet est le seul endroit où ces tâches existent.
+
+Une confirmation apparaît désormais — mais **seulement s'il reste des tâches ouvertes**, et elle
+**annonce leur nombre**. Les deux conditions viennent de la même règle que la confirmation
+d'ignorance : une confirmation systématique, ou sans information, se clique sans être lue. Le
+reste du temps, le swipe garde son coût de zéro clic.
+
+---
+
 ## Propositions
 
 ### Exposer la base locale sur un port dédié
