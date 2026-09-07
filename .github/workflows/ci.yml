@@ -10,9 +10,18 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Aucune valeur réelle : le build ne se connecte à rien (toutes les pages sont
-  # dynamiques, `prisma generate` ne se connecte pas). Ces variables existent
-  # seulement pour qu'Auth.js et la config de stockage s'initialisent.
+  # Aucune valeur réelle : le build ne se CONNECTE à rien. Ces variables existent
+  # seulement pour que les modules s'initialisent sans lever.
+  #
+  # ⚠️ DATABASE_URL en fait partie, contrairement à ce qu'on pourrait croire.
+  # « Toutes les pages sont dynamiques » ne suffit pas : `next build` collecte
+  # les métadonnées des ROUTE HANDLERS, ce qui exécute leur module — et
+  # /api/attachments/[id]/download instancie le client Prisma à la racine du
+  # module. La garde de packages/db ne teste que la PRÉSENCE de la variable (le
+  # pool est paresseux, aucune connexion n'est ouverte), donc une URL factice
+  # suffit. Sans elle, le build échoue sur « DATABASE_URL est absente ».
+  # ⚠️ Le job de tests redéfinit DATABASE_URL au niveau du job : il gagne.
+  DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public
   AUTH_SECRET: ci-placeholder-secret-not-used-anywhere
   AUTH_URL: http://localhost:3000
   R2_ACCOUNT_ID: ci
@@ -57,7 +66,12 @@ jobs:
       # `src/`, jamais de retirer le contrôle. Voir PITFALLS.md #5b et #5c.
       - name: Le proxy est-il compilé ? (piège #5b)
         run: |
-          set -o pipefail
+          # ⚠️ `-e` autant que `pipefail` : sans lui, un build EN ÉCHEC laissait
+          # le script continuer jusqu'au grep, qui échouait à son tour et
+          # accusait le proxy — masquant la vraie erreur de build derrière un
+          # diagnostic faux. Un contrôle qui ment sur la cause coûte plus cher
+          # que pas de contrôle du tout.
+          set -eo pipefail
           pnpm build 2>&1 | tee build.log
           grep -qF "Proxy (Middleware)" build.log || {
             echo "::error file=apps/web/proxy.ts::Le proxy n'est PAS compilé. Toutes les routes seraient publiques si le domaine ne rattrapait pas. Voir PITFALLS.md #5b."
