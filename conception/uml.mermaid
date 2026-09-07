@@ -1,0 +1,127 @@
+%% Relvo — diagramme de classes du domaine.
+%%
+%% Fait foi AVEC 04-design-domaine.md sur le COMPORTEMENT. Tout écart assumé s'y
+%% répercute DANS LE MÊME COMMIT — c'est ce qui rend une divergence de modèle
+%% visible d'un coup d'œil.
+%%
+%% Ne portent ici que les champs qui PORTENT UN COMPORTEMENT : appartenance,
+%% bornes, statuts, marqueurs dérivables. La liste complète des champs fait foi
+%% dans 02-modele-donnees.md — la recopier ici garantirait la divergence.
+
+classDiagram
+    direction LR
+
+    class Account {
+        <<tenant>>
+        Toutes les ressources portent account_id
+    }
+
+    class Folder {
+        +bool is_default
+        « Général » : documentaire, non supprimable, jamais de sujet
+    }
+
+    class Contact {
+        +ContactStatus status
+        +string email / phone      « primaires »
+        +string[] additional_*     « secondaires, consultés au rattachement »
+    }
+
+    class Channel {
+        +ChannelType type
+        Un seul canal connecté par type
+    }
+
+    class Conversation {
+        <<durable — ne se termine jamais>>
+        +ConversationType type
+        +string key                « discriminant déterministe »
+        +string[] contact_ids      « e-mail : le set »
+        +string contact_id         « messagerie : 1 ou groupe »
+        +ConversationStatus status « active | ignored = PAUSE »
+    }
+
+    class SubjectConversation {
+        <<liaison — porte les BORNES de l'écoute>>
+        +uuid anchor_message_id    « début — null = tout le fil »
+        +uuid closing_message_id   « fin — null = écoute active »
+    }
+
+    class Subject {
+        <<agrégat central>>
+        +SubjectStatus status      « open | validated | closed »
+        +Priority priority
+        +datetime closed_at        « DATE de clôture, PAS une borne »
+        +datetime last_opened_at   « null ⇒ marqueur Nouveau »
+        +bool waiting_for_reply
+        +string[] contact_ids
+    }
+
+    class Message {
+        <<immuable une fois reçu>>
+        +uuid subject_id           « L'APPARTENANCE VIT ICI »
+        +MessageDirection direction
+        +datetime read_at
+    }
+
+    class Task {
+        +TaskStatus status
+        +Actor source_actor        « attribut historique permanent »
+        +date start_date / time    « deadline — la taxonomie en dérive »
+        +date end_date / time      « durée »
+    }
+
+    class Action {
+        +ActionType type
+        +ActionStatus status
+    }
+
+    class EventLog {
+        <<immuable>>
+        +Actor actor               « Moi / Relvo / Externe »
+    }
+
+    class Attachment {
+        +string storage_key        « clé d'objet — trigger de suppression obligatoire »
+    }
+
+    class KnowledgeDocument {
+        +KnowledgeKind kind        « file = référence | note = mémoire »
+        +AbsorptionStatus absorption_status
+        +string storage_key        « source de VÉRITÉ »
+        +string anthropic_file_id  « copie d'inférence, écriture seule »
+    }
+
+    class PendingFileDeletion {
+        <<outbox — alimentée par TRIGGER, drainée hors transaction>>
+        +string storage_key
+    }
+
+    Account "1" --> "*" Folder
+    Account "1" --> "*" Contact
+    Account "1" --> "*" Channel
+    Account "1" --> "*" Conversation
+    Account "1" --> "*" Subject
+
+    Channel "1" --> "*" Conversation
+    Conversation "1" --> "*" Message : range à la réception
+
+    Subject "1" --> "*" SubjectConversation
+    Conversation "1" --> "*" SubjectConversation
+    SubjectConversation "0..1" --> "1" Message : anchor
+    SubjectConversation "0..1" --> "1" Message : closing
+
+    Subject "0..1" --> "*" Message : appartenance
+    Subject "1" --> "*" Task
+    Subject "1" --> "*" Action
+    Subject "1" --> "*" EventLog
+    Subject "1" --> "*" Attachment
+    Folder "0..1" --> "*" Subject
+    Folder "1" --> "*" KnowledgeDocument
+    Contact "0..1" --> "*" Conversation
+
+    note for SubjectConversation "Aucune contrainte d'unicité sur subject_id.\nLa poser interdirait le changement d'objet,\nl'extension à un second canal et le\nchangement d'adresse d'un interlocuteur.\n\nPlusieurs sujets simultanés : interdits par une\nRÈGLE MÉTIER V1, pas par le schéma — la lever\nne demande aucune migration."
+
+    note for Message "subject_id sur le MESSAGE, jamais sur la\nconversation : c'est ce qui rend l'écoute\ndémontable le jour où le pipeline IA décidera\nmessage par message."
+
+    note for Subject "closed_at ne borne RIEN.\nAppartenance (bornes) et statut sont deux axes\nindépendants — les confondre ampute le périmètre\nd'un sujet quand on le valide."
