@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Aucune valeur réelle : le build ne se connecte à rien (toutes les pages sont
+  # dynamiques, `prisma generate` ne se connecte pas). Ces variables existent
+  # seulement pour qu'Auth.js et la config de stockage s'initialisent.
+  AUTH_SECRET: ci-placeholder-secret-not-used-anywhere
+  AUTH_URL: http://localhost:3000
+  R2_ACCOUNT_ID: ci
+  R2_ACCESS_KEY_ID: ci
+  R2_SECRET_ACCESS_KEY: ci
+  R2_BUCKET: ci
+
+jobs:
+  qualite:
+    name: Types, lint, format, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # --frozen-lockfile : échoue si le lockfile est désynchronisé du
+      # package.json. C'est le seul endroit où ça se voit.
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm typecheck
+      - run: pnpm lint
+
+      # Le hook husky se contourne d'un `--no-verify` : le format se vérifie ici.
+      - run: pnpm format:check
+
+      # ⚠️ Le build n'est PAS là pour vérifier que ça compile — `typecheck` le
+      # fait déjà. Il est là pour UNE ligne de sa sortie.
+      #
+      # Piège #5b : avec un dossier `src/`, `proxy.ts` doit vivre dans `src/`.
+      # Posé un cran trop haut, il n'est JAMAIS compilé — aucune erreur, aucun
+      # avertissement, et le gating d'Auth.js ne s'applique plus. Le seul
+      # indicateur fiable est cette ligne de la sortie de build ; le fichier
+      # `.next/server/middleware-manifest.json` n'en est PAS un (il reste
+      # `{"middleware":{}}` même quand le proxy fonctionne).
+      #
+      # Si cette étape rougit, la correction est de DÉPLACER `proxy.ts` dans
+      # `src/`, jamais de retirer le contrôle. Voir PITFALLS.md #5b et #5c.
+      - name: Le proxy est-il compilé ? (piège #5b)
+        run: |
+          set -o pipefail
+          pnpm build 2>&1 | tee build.log
+          grep -qF "Proxy (Middleware)" build.log || {
+            echo "::error file=apps/web/proxy.ts::Le proxy n'est PAS compilé. Toutes les routes seraient publiques si le domaine ne rattrapait pas. Voir PITFALLS.md #5b."
+            exit 1
+          }
+
+  tests:
+    name: Tests d'intégration
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: relvo
+          POSTGRES_PASSWORD: relvo
+          POSTGRES_DB: relvo_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U relvo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # ⚠️ DATABASE_URL et TEST_DATABASE_URL doivent DIFFÉRER : les tests
+      # tronquent les tables de la base sur laquelle ils tournent. Ici la base
+      # `relvo_ci` sert de base « de dev » et n'est jamais celle des tests.
+      DATABASE_URL: postgresql://relvo:relvo@localhost:5432/relvo_ci?schema=public
+      TEST_DATABASE_URL: postgresql://relvo:relvo@localhost:5432/relvo_test?schema=public
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # ⚠️ `exec` OBLIGATOIRE devant un binaire (piège #29) : sans lui, pnpm
+      # cherche un SCRIPT npm nommé `prisma`, n'en trouve pas, NE FAIT RIEN et
+      # SORT EN 0. L'étape passe au vert sans avoir rien migré.
+      - name: Migrations sur la base de test
+        run: pnpm --filter @relvo/db exec prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ env.TEST_DATABASE_URL }}
+
+      - run: pnpm test
+
+      # Piège #37 : une contrainte ajoutée à la main dans une migration (clé
+      # composite, index) apparaît à Prisma comme une DÉRIVE, et le prochain
+      # `migrate dev` proposera de la SUPPRIMER — dans une migration qui semble
+      # sans rapport, sans que personne ne le remarque. Une règle qui croise
+      # deux tables se pose donc en CONSTRAINT TRIGGER, jamais en clé composite.
+      #
+      # `--exit-code` : diff vide = 0, erreur = 1, diff non vide = 2. On ne
+      # grep AUCUNE chaîne — un contrôle qui dépend d'un libellé casse à la
+      # première montée de version ou au premier changement de langue.
+      #
+      # Prisma 7 a retiré --from-url / --from-schema-datasource : l'URL vient
+      # de prisma.config.ts via --from-config-datasource.
+      - name: Dérive entre le schéma et la base (piège #37)
+        run: |
+          pnpm --filter @relvo/db exec prisma migrate diff \
+            --from-config-datasource --to-schema prisma/schema.prisma \
+            --exit-code --script
+        env:
+          DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
+          DATABASE_URL_UNPOOLED: ${{ env.TEST_DATABASE_URL }}
