@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
   ChevronRight,
-  FolderInput,
   Mail,
   MessageCircle,
   Unlink,
@@ -16,7 +15,6 @@ import {
 import { toast } from "sonner";
 import type { ConversationListening, ConversationParticipant } from "@relvo/db";
 import { ConversationThread } from "@/components/conversations/conversation-thread";
-import { ConversationTriageDialog } from "@/components/conversations/conversation-triage-dialog";
 import {
   SubjectCreateDialog,
   type FolderOption,
@@ -28,10 +26,7 @@ import {
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
-import {
-  createSubjectFromConversationAction,
-  ignoreConversationAction,
-} from "@/server/actions/conversations";
+import { createSubjectFromConversationAction } from "@/server/actions/conversations";
 import { createSubjectFromMessageAction } from "@/server/actions/messages";
 import { sendEmailReplyAction } from "@/server/actions/email";
 import { sendWhatsAppReplyAction } from "@/server/actions/whatsapp";
@@ -56,17 +51,22 @@ import { cn } from "@/lib/utils";
 // Détail d'une conversation (header enrichi 2026-07-23, v3). TOUT le contexte vit
 // dans le hero violet.
 //
-// DOCK DE TRIAGE — un bouton unique « Classer » (2026-09-07, retour bêta) qui
-// ouvre `ConversationTriageDialog`. Il remplace les TROIS boutons pleine largeur
-// (Ignorer / Lier / Nouveau) : à l'usage, trois actions de poids égal au bas de
-// chaque conversation encombraient sans guider. Les trois capacités restent
-// entières, derrière un geste au lieu d'être étalées.
+// AUCUN DOCK DE TRIAGE ICI (2026-09-07, retour bêta). Le bas de l'écran a porté
+// successivement trois boutons (Ignorer / Lier / Nouveau), puis un bouton unique
+// « Classer » — retiré à son tour, faute de fonctionner à l'essai. Le triage vit
+// désormais dans les SWIPES de la liste `/conversations` : ← écarter, → classer.
+// ⚠️ Conséquence assumée : une conversation orpheline ouverte par TAP n'offre
+// aucune action ; on revient à la liste pour la trier.
+//
+// Le dock ne réapparaît que pour CHOISIR LE MESSAGE D'ANCRAGE (messagerie),
+// étape que le swipe de la liste ne peut pas porter — il n'a pas de message à
+// désigner. C'est tout l'objet du relais `?classer=` ci-dessous.
 //
 //   • email    → Nouveau sujet / Lier agissent sur TOUT le fil (le sujet EST le
-//     fil) → dialog immédiat.
-//   • WhatsApp → on demande d'abord de CHOISIR le message de départ (le dock passe
-//     en sélection) ; un cordon violet montre la portée ; on VALIDE, puis le
-//     dialog (création) ou le sélecteur de sujet (lien) s'ouvre.
+//     fil) → le dialog s'ouvre d'emblée.
+//   • messagerie → on fait d'abord CHOISIR le message de départ (le dock passe en
+//     sélection) ; on VALIDE, puis le dialog (création) ou le sélecteur de sujet
+//     (lien) s'ouvre.
 //
 // `?classer=create|link` — intention transmise par le swipe droite de la LISTE.
 // C'est ce relais qui permet à la liste d'offrir le geste sans jamais avoir à
@@ -145,7 +145,6 @@ export function ConversationDetail({
   const [showPicker, setShowPicker] = useState(
     startsEmail && initialIntent === "link" && subjects.length > 0,
   );
-  const [showTriage, setShowTriage] = useState(false);
   const [contactPrefill, setContactPrefill] = useState<ContactPrefill | null>(
     null,
   );
@@ -263,41 +262,11 @@ export function ConversationDetail({
     setSelectedMessageId(null);
   }
 
-  function ignore() {
-    startTransition(async () => {
-      const res = await ignoreConversationAction(conversationId);
-      if (res.ok) {
-        toast.success("Conversation ignorée");
-        router.push(backTo);
-      } else {
-        toast.error(res.message);
-      }
-    });
-  }
-
-  // « Nouveau sujet » : email → dialog direct ; WhatsApp → sélection du message.
-  function startCreate() {
-    if (isEmail) {
-      setShowCreate(true);
-      return;
-    }
-    setSelectedMessageId(null);
-    setSelecting("create");
-  }
-
-  // « Lier » : email → sélecteur de sujet direct ; WhatsApp → sélection du message.
-  function startLink() {
-    if (subjects.length === 0) {
-      toast.info("Aucun sujet ouvert où rattacher cette conversation.");
-      return;
-    }
-    if (isEmail) {
-      setShowPicker(true);
-      return;
-    }
-    setSelectedMessageId(null);
-    setSelecting("link");
-  }
+  // ⚠️ Plus de `startCreate` / `startLink` / `ignore` ici : le triage a quitté cet
+  // écran. L'intention arrive déjà résolue de la liste (`?classer=`), lue à
+  // l'INITIALISATION des états ci-dessus — e-mail : le dialog s'ouvre d'emblée ;
+  // messagerie : on entre directement en choix du message d'ancrage. « Ignorer »
+  // est le swipe gauche de la liste.
 
   // Nettoyage de l'URL une fois l'intention consommée (elle l'a été à l'INIT des
   // états ci-dessus, pas ici : rejouer le flux depuis un effet déclencherait une
@@ -527,9 +496,10 @@ export function ConversationDetail({
         />
       </Screen>
 
-      {/* Rattachée → COMPOSER (répondre = geste par défaut) ; sinon → dock de
-          triage (Ignorer / Lier / Nouveau). Le détachement/arrêt d'écoute vit,
-          lui, dans « Suivi dans » (hero). */}
+      {/* Rattachée → COMPOSER (répondre = geste par défaut). Sinon → RIEN, sauf
+          pendant le choix du message d'ancrage (messagerie), où le dock devient
+          la barre de sélection. Le détachement / l'arrêt d'écoute vivent, eux,
+          dans « Suivi dans » (hero). */}
       {attached ? (
         <div className="absolute inset-x-0 bottom-0 z-30">
           <RecipientComposer
@@ -537,7 +507,7 @@ export function ConversationDetail({
             onSend={handleSend}
           />
         </div>
-      ) : (
+      ) : inSelection ? (
         <div
           className="absolute inset-x-0 bottom-0 z-30 px-4 pt-3"
           style={{
@@ -549,56 +519,32 @@ export function ConversationDetail({
             boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.22)",
           }}
         >
-          {inSelection ? (
-            <div className="flex items-center gap-2">
-              <span className="flex-1 text-[13px] font-semibold text-white">
-                {selectedMessageId
-                  ? "Toute la suite sera écoutée."
-                  : "Choisissez le message de départ"}
-              </span>
-              <button
-                type="button"
-                onClick={resetSelection}
-                className="inline-flex items-center gap-1 rounded-full border border-white/35 px-3 py-2 text-[12.5px] font-bold text-white active:bg-white/10"
-              >
-                <X className="size-4" strokeWidth={2.4} />
-                Annuler
-              </button>
-              <button
-                type="button"
-                disabled={!selectedMessageId || pending}
-                onClick={validateSelection}
-                className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-bold text-relvo active:opacity-90 disabled:opacity-40"
-              >
-                <Check className="size-[17px]" strokeWidth={2.6} />
-                Valider
-              </button>
-            </div>
-          ) : (
-            // Un SEUL bouton : les trois gestes vivent dans la pop-up. Le fil se
-            // lit sans qu'un triptyque d'actions ne dispute le bas de l'écran.
+          <div className="flex items-center gap-2">
+            <span className="flex-1 text-[13px] font-semibold text-white">
+              {selectedMessageId
+                ? "Toute la suite sera écoutée."
+                : "Choisissez le message de départ"}
+            </span>
             <button
               type="button"
-              disabled={pending}
-              onClick={() => setShowTriage(true)}
-              className="inline-flex w-full items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-[13.5px] font-bold text-relvo active:opacity-90 disabled:opacity-50"
+              onClick={resetSelection}
+              className="inline-flex items-center gap-1 rounded-full border border-white/35 px-3 py-2 text-[12.5px] font-bold text-white active:bg-white/10"
             >
-              <FolderInput className="size-[17px]" strokeWidth={2.4} />
-              Classer
+              <X className="size-4" strokeWidth={2.4} />
+              Annuler
             </button>
-          )}
+            <button
+              type="button"
+              disabled={!selectedMessageId || pending}
+              onClick={validateSelection}
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-bold text-relvo active:opacity-90 disabled:opacity-40"
+            >
+              <Check className="size-[17px]" strokeWidth={2.6} />
+              Valider
+            </button>
+          </div>
         </div>
-      )}
-
-      <ConversationTriageDialog
-        open={showTriage}
-        onOpenChange={setShowTriage}
-        isEmail={isEmail}
-        hasSubjects={subjects.length > 0}
-        onCreate={startCreate}
-        onLink={startLink}
-        onIgnore={ignore}
-      />
+      ) : null}
 
       <SubjectCreateDialog
         open={showCreate}

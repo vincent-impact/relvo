@@ -44,6 +44,9 @@ export function SwipeRow({
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [leaving, setLeaving] = useState(false);
+  // Sens du glissé en cours : -1 gauche · 0 repos · 1 droite. Sert UNIQUEMENT à
+  // n'afficher que le fond concerné (cf. le masquage dans le rendu).
+  const [dir, setDir] = useState(0);
   const g = useRef({
     sx: 0,
     sy: 0,
@@ -89,6 +92,8 @@ export function SwipeRow({
       if (dx < 0 && !left) dx = 0;
       if (dx > 0 && !right) dx = 0;
       s.dx = dx;
+      const nextDir = dx > 0 ? 1 : dx < 0 ? -1 : 0;
+      if (nextDir !== dir) setDir(nextDir);
       setX(dx);
     }
   }
@@ -101,6 +106,7 @@ export function SwipeRow({
       if (left.keepOnAct) {
         // La ligne revient en place ; l'action (confirmation) prend le relais.
         setX(0, true);
+        setDir(0);
         left.onAct();
       } else {
         setX(-window.innerWidth, true);
@@ -111,9 +117,11 @@ export function SwipeRow({
       // Le swipe droite ne « retire » pas la ligne : on la remet en place, c'est
       // l'action (navigation, création de sujet) qui prend le relais.
       setX(0, true);
+      setDir(0);
       right.onAct();
     } else {
       if (!cancelled && !s.moved) onTap?.();
+      setDir(0);
       setX(0, true);
     }
   }
@@ -126,12 +134,18 @@ export function SwipeRow({
       )}
     >
       <div className="relative overflow-hidden">
+        {/* ⚠️ Les deux fonds occupent le MÊME `inset-0` : sans masquage, celui
+            rendu en dernier (le droit) recouvre l'autre en entier. On verrait
+            alors sa couleur en glissant à GAUCHE, et son libellé — calé du côté
+            opposé — resterait sous la carte : un fond de la mauvaise couleur,
+            sans un mot. On n'affiche donc que le fond du sens en cours. */}
         {/* Fond GAUCHE (révélé en glissant à gauche) : libellé à droite. */}
         {left ? (
           <div
             className={cn(
               "absolute inset-0 flex items-center justify-end gap-2 pr-6 text-white",
               TONE_BG[left.tone],
+              dir >= 0 && "hidden",
             )}
           >
             <span className="text-[11px] font-bold tracking-[0.3px]">
@@ -146,6 +160,7 @@ export function SwipeRow({
             className={cn(
               "absolute inset-0 flex items-center justify-start gap-2 pl-6 text-white",
               TONE_BG[right.tone],
+              dir < 0 && "hidden",
             )}
           >
             <right.icon className="size-[22px]" strokeWidth={2} />
