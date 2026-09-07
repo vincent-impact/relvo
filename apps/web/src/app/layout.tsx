@@ -62,6 +62,15 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
+  // ANDROID — clavier virtuel. Par défaut (`resizes-visual`), Chrome rétrécit le
+  // viewport VISUEL mais laisse `innerHeight` à pleine hauteur : le cadre reste
+  // donc plein, et nos docks en `absolute bottom-0` (composer de réponse, dock
+  // de triage) se retrouvent DERRIÈRE le clavier — Chrome les remonte à moitié
+  // en faisant défiler le champ focalisé, d'où le composer rogné de quelques px.
+  // `resizes-content` fait suivre le viewport de MISE EN PAGE : `bottom-0` se
+  // pose alors naturellement au-dessus du clavier. iOS ignore la propriété — son
+  // comportement (géré par ViewportHeight) est inchangé.
+  interactiveWidget: "resizes-content",
 };
 
 export default function RootLayout({

@@ -33,6 +33,17 @@ export function ViewportHeight() {
       window.matchMedia?.("(display-mode: standalone)").matches === true ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
 
+    // ⚠️ Le terme `screen.height` corrige un bug PROPRE À iOS (cadre trop court
+    // au lancement à froid). Sur ANDROID il est nuisible : le viewport y suit
+    // désormais le clavier (`interactive-widget=resizes-content`, cf. layout.tsx)
+    // et `screen.height` — insensible au clavier — reprendrait le dessus dans le
+    // `max`, remettant le cadre à pleine hauteur et le composer derrière le
+    // clavier. On cantonne donc ce terme à iOS, où il n'y a rien à suivre.
+    // iPadOS 13+ se déclare « MacIntel » : le test tactile le rattrape.
+    const isIOS =
+      /iP(hone|ad|od)/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
     const apply = () => {
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
@@ -42,7 +53,7 @@ export function ViewportHeight() {
             window.innerHeight,
             document.documentElement.clientHeight,
             window.visualViewport?.height ?? 0,
-            standalone && portrait ? window.screen.height : 0,
+            isIOS && standalone && portrait ? window.screen.height : 0,
           ),
         );
         if (h > 0) root.style.setProperty("--app-height", `${h}px`);
