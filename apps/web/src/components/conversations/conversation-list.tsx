@@ -37,7 +37,8 @@ import {
   type ConversationRowData,
 } from "@/lib/conversation-row";
 import { initialsFor } from "@/lib/display";
-import { avatarIconFor, guessContactKind } from "@/lib/contact-avatar";
+import { guessContactKind } from "@/lib/contact-avatar";
+import { ContactAvatarIcon } from "@/components/contacts/contact-avatar-icon";
 import {
   ContactCreateDialog,
   type ContactPrefill,
@@ -125,7 +126,6 @@ function ConversationRow({
     name: data.interlocutorName ?? data.title,
     raw: data.interlocutorRaw,
   });
-  const AvatarIcon = avatarIconFor(avatarKind);
   const rawId = data.interlocutorRaw?.trim() ?? null;
   function tapAvatar() {
     if (registered) {
@@ -231,7 +231,11 @@ function ConversationRow({
           const inner = registered ? (
             (initialsFor(data.interlocutorName) ?? "?")
           ) : (
-            <AvatarIcon className="size-[20px]" strokeWidth={2.1} />
+            <ContactAvatarIcon
+              kind={avatarKind}
+              className="size-[20px]"
+              strokeWidth={2.1}
+            />
           );
           // Un groupe n'est pas un contact : son avatar n'ouvre pas de fiche, le
           // tap retombe sur la ligne (ouverture de la conversation).
@@ -321,7 +325,7 @@ function ConversationRow({
                     « {data.listeningSubjects[0]!.title} »
                   </span>{" "}
                   écoute encore ce fil. Il ne sera plus alimenté par ces
-                  messages. Aucune donnée n'est supprimée.
+                  messages. Aucune donnée n’est supprimée.
                 </>
               ) : (
                 <>
@@ -333,7 +337,7 @@ function ConversationRow({
                       .join(", ")}
                   </span>
                   <span className="mt-1.5 block">
-                    Aucune donnée n'est supprimée.
+                    Aucune donnée n’est supprimée.
                   </span>
                 </>
               )}

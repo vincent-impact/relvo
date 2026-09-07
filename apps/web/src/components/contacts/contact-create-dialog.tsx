@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -49,15 +49,23 @@ export function ContactCreateDialog({
   const [phone, setPhone] = useState("");
   const [company, setCompany] = useState("");
 
-  useEffect(() => {
-    if (!open) return;
-    const { firstName: f, lastName: l } = splitName(prefill.name ?? "");
-    setFirstName(f);
-    setLastName(l);
-    setEmail(prefill.email ?? "");
-    setPhone(prefill.phone ?? "");
-    setCompany("");
-  }, [open, prefill]);
+  // Pré-remplissage À L'OUVERTURE, en phase de rendu plutôt que dans un effet
+  // (cf. subject-create-dialog) : un effet ferait clignoter les valeurs de
+  // l'ouverture précédente le temps d'un rendu. `prefill` est toujours posé
+  // AVANT l'ouverture (la pop-up n'est ouverte que par `prefill != null`), donc
+  // la transition d'ouverture est le seul moment où il faut le lire.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) {
+      const { firstName: f, lastName: l } = splitName(prefill.name ?? "");
+      setFirstName(f);
+      setLastName(l);
+      setEmail(prefill.email ?? "");
+      setPhone(prefill.phone ?? "");
+      setCompany("");
+    }
+  }
 
   const canSave = lastName.trim().length > 0 && !pending;
 

@@ -1,5 +1,3 @@
-import { Building2, User, Users, type LucideIcon } from "lucide-react";
-
 // Avatar d'un interlocuteur (2026-07-24). Un contact ENREGISTRÉ → ses initiales
 // (lettres). Un interlocuteur NON enregistré → une icône selon son type deviné :
 // personne (défaut), entreprise (messages automatisés / raisons sociales) ou
@@ -30,8 +28,4 @@ export function guessContactKind({
   if (isGroup) return "group";
   if (looksLikeCompany(raw, name)) return "company";
   return "person";
-}
-
-export function avatarIconFor(kind: AvatarKind): LucideIcon {
-  return kind === "group" ? Users : kind === "company" ? Building2 : User;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -48,13 +48,19 @@ export function SubjectCreateDialog({
   const [folderId, setFolderId] = useState<string | null>(null);
 
   // À chaque ouverture, on repart du titre proposé (et on vide le reste).
-  useEffect(() => {
+  // Remise à zéro EN PHASE DE RENDU, pas dans un effet : un effet qui pose
+  // l'état provoque un rendu en cascade, et le rendu intermédiaire affiche
+  // brièvement les valeurs de l'ouverture PRÉCÉDENTE. React réexécute ce rendu
+  // avant de peindre — c'est le motif documenté pour un état dérivé d'une prop.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
     if (open) {
       setTitle(defaultTitle);
       setDescription("");
       setFolderId(null);
     }
-  }, [open, defaultTitle]);
+  }
 
   const canCreate = title.trim().length > 0 && !pending;
 

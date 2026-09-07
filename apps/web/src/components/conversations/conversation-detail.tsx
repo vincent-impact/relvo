@@ -44,7 +44,8 @@ import {
 } from "@/server/actions/subject-conversations";
 import { folderVisual } from "@/lib/folders";
 import { initialsFor } from "@/lib/display";
-import { avatarIconFor, guessContactKind } from "@/lib/contact-avatar";
+import { guessContactKind } from "@/lib/contact-avatar";
+import { ContactAvatarIcon } from "@/components/contacts/contact-avatar-icon";
 import {
   ContactCreateDialog,
   type ContactPrefill,
@@ -410,9 +411,7 @@ export function ConversationDetail({
                 </p>
               ) : (
                 participants.map((p, i) => {
-                  const PIcon = avatarIconFor(
-                    guessContactKind({ name: p.name, raw: p.raw }),
-                  );
+                  const pKind = guessContactKind({ name: p.name, raw: p.raw });
                   return (
                     <div
                       key={`${p.contactId ?? p.raw ?? p.name}-${i}`}
@@ -432,7 +431,11 @@ export function ConversationDetail({
                           {p.contactId ? (
                             (initialsFor(p.name) ?? "?")
                           ) : (
-                            <PIcon className="size-[17px]" strokeWidth={2.1} />
+                            <ContactAvatarIcon
+                              kind={pKind}
+                              className="size-[17px]"
+                              strokeWidth={2.1}
+                            />
                           )}
                         </span>
                         <span className="truncate text-[14px] font-semibold text-white">
