@@ -225,13 +225,24 @@ sources internes sont cohérentes entre elles, donc rien n'est cassé — c'est 
 **À faire avec un `pnpm install` complet**, pas isolément.
 
 ### Reprendre le port du proxy d'authentification
-**`bloqué` — relève du code** · Le fichier vit à la racine de l'application alors que le projet
-utilise un dossier source. Le contrôle correspondant est désormais en CI ; s'il rougit, c'est le
-constat, et la correction est de déplacer le fichier.
+**`tranché` — corrigé** · Le contrôle de CI a rougi dès son premier passage, et c'était bien le
+constat : le fichier vivait à la racine de l'application alors que le projet utilise un dossier
+source, donc il n'était **jamais compilé**. Déplacé dans `src/`.
 
-⚠️ **L'application n'est pas ouverte pour autant** : toute lecture passe par le client conscient
-du tenant, qui redirige un visiteur anonyme. Le symptôme d'un proxy non compilé serait la
-**perte de la destination après connexion**, pas un accès non autorisé.
+⚠️ **Un second piège se cachait derrière le premier** : une fois le fichier au bon endroit, le
+build a échoué sur la **forme de l'export**. Une déstructuration (`export const { auth: proxy }`)
+n'est pas reconnue par l'analyse statique de Next, qui exige une fonction exportée par défaut ou
+sous le nom attendu. Le doute que le sprint de reprise laissait ouvert est donc **levé : le piège
+s'applique bien à cette version**. Les deux défauts se réparent forcément ensemble — un fichier
+au mauvais endroit n'est pas compilé, donc son export n'est jamais analysé, et le second reste
+invisible tant que le premier n'est pas corrigé.
+
+Vérifié après correction : la redirection vers la connexion porte de nouveau le paramètre de
+retour, les routes publiques et les routes d'API restent accessibles, et une session valide
+traverse toutes les routes protégées.
+
+⚠️ **La protection par ricochet reste la ligne qui compte** hors navigation de page : le proxy
+raisonne sur des chemins, or une Server Action n'en a pas et le filtre exclut les routes d'API.
 
 ### Mesurer le compte réel du premier utilisateur
 **`proposé`** · La source la plus fiable sur les données réelles — volumes, proportion de

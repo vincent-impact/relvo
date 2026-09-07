@@ -35,11 +35,11 @@ commit qui l'avait abandonnée n'avait mis à jour que six lignes de `CLAUDE.md`
 
 ### ⚠️ Ce qu'il faut faire avant de reprendre le code
 
-- [ ] **`pnpm install`** — `node_modules` a été vidé pendant la remise à niveau du lockfile.
-- [ ] **Vérifier localement** : `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm test`.
-      Ils n'ont **pas** pu être exécutés pendant ce sprint.
-- [ ] **Pousser la branche et regarder la CI.** ⚠️ **Le contrôle du proxy peut rougir au premier
-      run** — c'est le constat, pas un faux positif. Voir ci-dessous.
+- [x] **`pnpm install`** — `node_modules` a été vidé pendant la remise à niveau du lockfile.
+- [x] **Vérifier localement** : `pnpm typecheck`, `pnpm lint`, `pnpm build`, `pnpm test`.
+      ⚠️ Le lint portait **5 erreurs** que personne n'avait vues — corrigées.
+- [x] **Pousser la branche et regarder la CI.** Le contrôle du proxy a bien rougi, et c'était le
+      constat : **#5b et #5c corrigés** (voir les trois points ci-dessous).
 - [ ] **Protéger la branche principale** — après, il y a toujours une bonne raison de ne pas le
       faire.
 
@@ -47,15 +47,19 @@ commit qui l'avait abandonnée n'avait mis à jour que six lignes de `CLAUDE.md`
 
 Ils relèvent d'une lecture du code, hors du périmètre de ce sprint.
 
-1. **Piège #5b — emplacement du `proxy.ts`.** Il vit à la racine de l'application alors que le
+> ✅ **Les trois points sont traités (2026-09-07).** Le détail reste ci-dessous, tel qu'il a été
+> écrit, parce qu'il dit ce qu'il fallait regarder — et que le constat a été le bon.
+
+1. ✅ **Piège #5b — emplacement du `proxy.ts`.** CORRIGÉ (déplacé dans `src/`). Il vit à la racine de l'application alors que le
    projet utilise un dossier `src/`. Contrôle : la ligne `ƒ Proxy (Middleware)` doit apparaître
    en fin de build, et la redirection vers la connexion doit porter le paramètre de retour.
    ⚠️ **L'application n'est pas ouverte pour autant** : toute lecture passe par le client
    conscient du tenant. Le symptôme serait la **perte de la destination après connexion**.
-2. **Piège #5c — forme de l'export.** L'export est issu d'une déstructuration, exactement la
-   forme que le registre signale. Si le build passe, noter que le piège ne s'applique plus à
-   cette version — **et le corriger dans le kit**.
-3. **Le test qui manque le plus.** Aucun test ne verrouille le refus par défaut des routes
+2. ✅ **Piège #5c — forme de l'export.** CORRIGÉ, et le doute est **levé : le piège S'APPLIQUE**
+   à cette version. Une fois #5b réparé, le build a échoué sur l'export déstructuré. ⚠️ Les deux
+   ne se voient jamais séparément : un fichier au mauvais endroit n'est pas compilé, donc son
+   export n'est pas analysé. **Reste à répercuter dans le kit** (hors de ce dépôt).
+3. ⬜ **Le test qui manque le plus.** TOUJOURS OUVERT. Aucun test ne verrouille le refus par défaut des routes
    protégées. C'est le plus rentable des trois tests d'amorçage.
 
 Un quatrième point, plus simple : **`/messages` et `/messages/[id]` existent encore dans le

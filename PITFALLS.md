@@ -53,15 +53,21 @@ Les autres viennent du kit et sont conservés ici parce qu'ils s'appliquent à c
 |---|---|---|
 | 5 | **Le fichier de middleware a changé de nom** | En Next 16 il s'appelle **`proxy.ts`**. |
 | **5b** | **Emplacement du `proxy.ts`** | Avec un dossier `src/`, il va **dans `src/`**, au même niveau que `app/`. Posé à la racine de l'application, il n'est **jamais compilé** : aucune erreur, aucun avertissement, et le gating ne s'applique plus. Deux contrôles fiables : la ligne `ƒ Proxy (Middleware)` en fin de build, et la redirection vers la connexion qui porte le **paramètre de retour**. ⚠️ **Le manifeste de middleware n'est PAS un indicateur** — il reste vide même quand le proxy fonctionne. ✅ **Contrôlé en CI.** |
-| **5c** | **Forme de l'export du `proxy.ts`** | Un export issu d'une **déstructuration** marche en développement mais fait échouer le build : l'analyse statique ne le reconnaît pas. Écrire une constante intermédiaire, puis un export par défaut. |
+| **5c** | **Forme de l'export du `proxy.ts`** | Un export issu d'une **déstructuration** marche en développement mais fait échouer le build : l'analyse statique ne le reconnaît pas. Écrire une constante intermédiaire, puis un export par défaut. ✅ **CONFIRMÉ sur Next 16.2.7** (le doute est levé) : `export const { auth: proxy } = NextAuth(config)` fait échouer le build avec « *must export a function, either as a default export or as a named "proxy" export* ». ⚠️ **Le piège ne se voit QUE si #5b est déjà corrigé** — un fichier au mauvais endroit n'est pas compilé, donc son export n'est jamais analysé : les deux se réparent dans le même geste, jamais l'un sans l'autre. |
 | 6 | **La config d'authentification du proxy doit être edge-safe** | Aucun import Node — ni ORM, ni bibliothèque de hachage. Un seul suffit à casser le proxy à l'exécution. |
 | 7 | **Provider conditionnel** | Le fournisseur externe n'est branché que si **les deux** clés sont présentes, sinon le premier démarrage d'un poste non configuré explose. |
 | 21 | **Un fournisseur externe est une inscription publique déguisée** | Hors mode public, le callback de connexion doit **refuser** une adresse inconnue. Le montage par défaut fait entrer n'importe qui. |
 | 30 | **Une Server Action n'est pas protégée par le proxy** | Le proxy raisonne sur des **chemins** ; une action n'en a pas. Toute action sensible revérifie la session **elle-même**, en première ligne. |
 
-> ⚠️ **Sur ce projet, la protection tient par ricochet** : toute lecture passe par le client
-> conscient du tenant, qui redirige un visiteur anonyme. C'est de la défense en profondeur, pas
-> une garde explicite — et c'est ce qui rend le doute sur #5b gênant plutôt que grave.
+> ✅ **#5b et #5c corrigés le 2026-09-07** : `proxy.ts` déplacé dans `src/` et son export passé
+> en `export default`. Le build affiche `ƒ Proxy (Middleware)`, et la redirection vers la
+> connexion porte de nouveau `callbackUrl` — la destination n'est plus perdue.
+>
+> ⚠️ **Ce que la garde explicite ne couvre toujours pas** : le proxy raisonne sur des CHEMINS.
+> Les Server Actions n'en ont pas (#30), et le `matcher` exclut `/api`. La protection par
+> ricochet — toute lecture passe par le client conscient du tenant — reste donc la ligne qui
+> compte pour tout ce qui n'est pas une navigation de page. Ne pas la relâcher sous prétexte
+> que le proxy tourne enfin.
 
 ## Fichiers et stockage
 
