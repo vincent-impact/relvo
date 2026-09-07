@@ -1,0 +1,525 @@
+/* Page de suivi client (M15.4) — reprise de conception/mockup/suivi/index.html.
+ *
+ * Jeu de tokens PROPRE à cette page, scopé sur `.page` plutôt que sur `:root` :
+ * la page est vue par un client, hors de l'application, et ne doit pas bouger
+ * le jour où le thème produit évolue. Les polices, elles, sont celles du layout
+ * racine — inutile d'en recharger.
+ *
+ * Deux valeurs viennent des données et sont posées en variables inline par le
+ * composant : `--mois` (nombre de colonnes de l'axe) et `--aujourdhui` (position
+ * du repère). Le gabarit de la maquette les avait figées à 6 et 53.9 %.
+ */
+
+.page {
+  --relvo: #6b5bd6;
+  --relvo-deep: #5a4bc4;
+  --relvo-bg: #f1effc;
+  --green: #1f7a45;
+  --green-bg: #e7f4ec;
+  --amber: #854f0b;
+  --amber-bg: #faeeda;
+  --surface: #ffffff;
+  --surface-2: #f7f7f5;
+  --surface-sunken: #eeecea;
+  --hairline: #e4e2de;
+  --grid: #eae8e5;
+  --text-1: #1a1a1a;
+  --text-2: #6b6b6b;
+  --text-3: #9a9a9a;
+  --on-violet: rgb(255 255 255 / 0.78);
+  --hero-round: 34px;
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-pill: 999px;
+  --shadow-metrics: 0 10px 30px rgb(28 22 60 / 0.13);
+  --font-display: var(--font-display), "Geist", -apple-system, sans-serif;
+  --font-sans:
+    var(--font-geist-sans), -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono:
+    var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  max-width: 720px;
+  margin: 0 auto;
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+@media (prefers-color-scheme: dark) {
+  .page {
+    --relvo: #8b7cf0;
+    --relvo-deep: #6b5bd6;
+    --relvo-bg: #241f3d;
+    --green: #4cbf82;
+    --green-bg: #102a1d;
+    --amber: #d99a3c;
+    --amber-bg: #2c2113;
+    --surface: #1c1b20;
+    --surface-2: #141317;
+    --surface-sunken: #24232a;
+    --hairline: #302e38;
+    --grid: #282630;
+    --text-1: #eceaf0;
+    --text-2: #a5a2ae;
+    --text-3: #77747f;
+    --shadow-metrics: 0 10px 30px rgb(0 0 0 / 0.45);
+  }
+}
+
+.hero {
+  background: linear-gradient(178deg, var(--relvo) 0%, var(--relvo-deep) 100%);
+  border-radius: 0 0 var(--hero-round) var(--hero-round);
+  padding: 32px 20px 60px;
+  color: #fff;
+}
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--on-violet);
+}
+.hero h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 30px;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 10px 0 0;
+  text-wrap: balance;
+}
+.hero p {
+  margin: 8px 0 0;
+  font-size: 14.5px;
+  color: var(--on-violet);
+  max-width: 44ch;
+}
+
+.straddle {
+  margin: -42px 16px 0;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-metrics);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  overflow: hidden;
+}
+.cell {
+  padding: 14px 8px 15px;
+  text-align: center;
+}
+.cell + .cell {
+  border-left: 1px solid var(--hairline);
+}
+.k {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  margin-bottom: 6px;
+}
+.v {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14.5px;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+.now {
+  color: var(--relvo);
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin: 26px 20px 0;
+  background: var(--surface-sunken);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+}
+.tabs button {
+  flex: 1;
+  appearance: none;
+  border: 0;
+  cursor: pointer;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-2);
+  padding: 9px 8px;
+  border-radius: var(--radius-pill);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.tabs button[aria-selected="true"] {
+  background: var(--surface);
+  color: var(--text-1);
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.08);
+}
+.tabs button:focus-visible {
+  outline: 2px solid var(--relvo);
+  outline-offset: 1px;
+}
+
+.main {
+  padding: 22px 20px 0;
+}
+.hint {
+  font-size: 12.5px;
+  color: var(--text-3);
+  margin: 0 0 14px;
+  line-height: 1.5;
+}
+
+/* ---------- frise ---------- */
+.axis {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: var(--surface-2);
+  padding: 7px 0 6px;
+  border-bottom: 1px solid var(--hairline);
+  display: grid;
+  grid-template-columns: repeat(var(--mois), 1fr);
+}
+.axis span {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-3);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.axis span.cur {
+  color: var(--relvo);
+  font-weight: 500;
+}
+
+.row {
+  border-bottom: 1px solid var(--grid);
+}
+.row:last-of-type {
+  border-bottom: 0;
+}
+.row > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 11px 0 12px;
+  border-radius: var(--radius);
+  outline-offset: -2px;
+}
+.row > summary::-webkit-details-marker {
+  display: none;
+}
+.row > summary:focus-visible {
+  outline: 2px solid var(--relvo);
+}
+
+.label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 7px;
+}
+.lead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: -0.008em;
+  line-height: 1.25;
+}
+.pill {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  font-weight: 500;
+  white-space: nowrap;
+}
+.pillDone {
+  background: var(--green-bg);
+  color: var(--green);
+}
+.pillNow {
+  background: var(--relvo-bg);
+  color: var(--relvo);
+}
+.pillNext {
+  background: var(--surface-sunken);
+  color: var(--text-3);
+}
+.pillPart {
+  background: var(--amber-bg);
+  color: var(--amber);
+}
+.chev {
+  width: 15px;
+  height: 15px;
+  color: var(--text-3);
+  flex: 0 0 auto;
+  transition:
+    transform 0.18s ease,
+    color 0.18s ease;
+}
+.row[open] .chev {
+  transform: rotate(180deg);
+  color: var(--relvo);
+}
+.row > summary:hover .chev {
+  color: var(--relvo);
+}
+
+.track {
+  position: relative;
+  height: 16px;
+  border-radius: 3px;
+  background-image: repeating-linear-gradient(
+    to right,
+    var(--grid) 0 1px,
+    transparent 1px calc(100% / var(--mois))
+  );
+}
+.track::after {
+  content: "";
+  position: absolute;
+  left: var(--aujourdhui);
+  top: -4px;
+  bottom: -4px;
+  width: 2px;
+  background: var(--relvo);
+  opacity: 0.45;
+  border-radius: 2px;
+}
+.bar {
+  position: absolute;
+  top: 3px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  min-width: 11px;
+}
+.barDone {
+  background: var(--green);
+}
+.barPart {
+  background: linear-gradient(
+    90deg,
+    var(--green) 0 60%,
+    var(--green-bg) 60% 100%
+  );
+  border: 1px solid var(--green);
+}
+.barNow {
+  background: var(--relvo);
+}
+.barNext {
+  background: transparent;
+  border: 1.5px dashed var(--text-3);
+  opacity: 0.65;
+  height: 11px;
+  top: 2.5px;
+}
+.milestone {
+  position: absolute;
+  top: 3px;
+  width: 11px;
+  height: 11px;
+  background: var(--text-1);
+  transform: rotate(45deg);
+  border-radius: 2px;
+  margin-left: -5px;
+}
+
+.why {
+  margin: 0 0 15px;
+  padding: 11px 14px;
+  background: var(--surface);
+  border-left: 2px solid var(--relvo);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text-2);
+  max-width: 56ch;
+}
+
+.ship {
+  background: var(--surface);
+  margin: 0 -12px;
+  padding: 0 12px;
+  border-radius: var(--radius);
+  border-bottom: 0;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+}
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+.legend i {
+  width: 16px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  display: inline-block;
+  flex: 0 0 auto;
+}
+.legend i.barNext {
+  height: 8px;
+  top: auto;
+  position: static;
+}
+.legend i.shipMark {
+  width: 9px;
+  height: 9px;
+  background: var(--text-1);
+  transform: rotate(45deg);
+  border-radius: 2px;
+}
+
+.aside {
+  margin-top: 18px;
+  padding: 13px 15px;
+  background: var(--relvo-bg);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+.aside b {
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+/* ---------- journal ---------- */
+.day {
+  padding: 15px 0;
+  border-top: 1px solid var(--hairline);
+}
+.day:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.date {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--text-3);
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 10px;
+}
+.entries {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 9px;
+}
+.entry {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  align-items: start;
+}
+.tag {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 7px;
+  border-radius: 4px;
+  font-weight: 500;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+.tagNew {
+  background: var(--relvo-bg);
+  color: var(--relvo);
+}
+.tagFix {
+  background: var(--surface-sunken);
+  color: var(--text-2);
+}
+.entry p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--text-1);
+}
+
+.footer {
+  margin-top: 34px;
+  padding: 20px;
+  border-top: 1px solid var(--hairline);
+  background: var(--surface);
+}
+.footer p {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--text-3);
+  line-height: 1.6;
+}
+.footer a {
+  color: var(--relvo);
+  text-decoration: none;
+}
+.footer a:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 600px) {
+  .hero {
+    padding: 42px 32px 64px;
+  }
+  .hero h1 {
+    font-size: 37px;
+  }
+  .main {
+    padding: 24px 32px 0;
+  }
+  .straddle,
+  .tabs {
+    margin-left: 28px;
+    margin-right: 28px;
+  }
+  .v {
+    font-size: 15.5px;
+  }
+  .name {
+    font-size: 16px;
+  }
+  .footer {
+    padding: 24px 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page * {
+    transition: none !important;
+  }
+}
