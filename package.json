@@ -16,6 +16,7 @@
     "test": "pnpm --filter @relvo/db test && pnpm --filter @relvo/storage test",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "changelog": "node scripts/generate-changelog.mjs",
     "db:start": "docker compose up -d",
     "db:stop": "docker compose down",
     "db:generate": "pnpm --filter @relvo/db generate",

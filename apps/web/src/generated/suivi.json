@@ -135,5 +135,683 @@
     "gauche": 85.79
   },
   "en_cours": "Tri automatique des messages",
-  "journal": []
+  "journal": [
+    {
+      "date": "2026-09-07",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "le fond droit recouvrait le gauche — mauvaise couleur, aucun libellé"
+        },
+        {
+          "type": "fix",
+          "texte": "le proxy n'était jamais compilé — pièges #5b ET #5c"
+        },
+        {
+          "type": "fix",
+          "texte": "ramener eslint à zéro erreur — la CI l'exigeait sans jamais l'avoir exécuté"
+        },
+        {
+          "type": "fix",
+          "texte": "le clavier Android n'écrase plus le composer"
+        },
+        {
+          "type": "new",
+          "texte": "un geste, une surface — retours des premiers bêta-testeurs"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-29",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "régénérer le jeu Tasty Crousty pour le modèle M6quater"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-28",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "retour de la fiche contact → l'origine (conversation / liste)"
+        },
+        {
+          "type": "fix",
+          "texte": "reconnaître un contact enregistré APRÈS la création d'une conversation"
+        },
+        {
+          "type": "fix",
+          "texte": "pastille de statut ne chevauche plus le titre + un seul canal/type"
+        },
+        {
+          "type": "new",
+          "texte": "retour d'une conversation de groupe → onglet Groupes de l'annuaire"
+        },
+        {
+          "type": "new",
+          "texte": "fiche contact en « carte de visite » plein écran"
+        },
+        {
+          "type": "new",
+          "texte": "fiche contact — tous les champs visibles + actions dans le dock"
+        },
+        {
+          "type": "new",
+          "texte": "rattacher les entrants aussi sur les coordonnées secondaires"
+        },
+        {
+          "type": "new",
+          "texte": "menu (Conversations + Contacts icônes) & fiche contact multi-valeurs"
+        },
+        {
+          "type": "new",
+          "texte": "Contacts remplace Mémoire dans la nav ; Mémoire → onglet Domaines des Réglages"
+        },
+        {
+          "type": "fix",
+          "texte": "e-mail — le fil cité était dans le HTML, jamais nettoyé"
+        },
+        {
+          "type": "fix",
+          "texte": "e-mail entrant — retrait du fil cité même newlines aplaties"
+        },
+        {
+          "type": "new",
+          "texte": "fiche sujet — compteur conversations + point rouge, onglet Infos « fiche »"
+        },
+        {
+          "type": "new",
+          "texte": "fiche sujet — 4 ajustements UX (onglet Conversations + onglet Infos)"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-27",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "connexion/reconnexion en échec → toast, plus 500 silencieux"
+        },
+        {
+          "type": "new",
+          "texte": "reconnecter un canal sans perdre ses données + pastille honnête"
+        },
+        {
+          "type": "fix",
+          "texte": "un échec d'envoi remonte en toast, plus en 500 silencieux"
+        },
+        {
+          "type": "fix",
+          "texte": "ne plus scinder un fil e-mail en « conversation où l'on se parle seul »"
+        },
+        {
+          "type": "new",
+          "texte": "UI — deux onglets par canal (E-mail / Messagerie)"
+        },
+        {
+          "type": "new",
+          "texte": "rattachement auto in-set + détachement e-mail"
+        },
+        {
+          "type": "new",
+          "texte": "clé e-mail par SET de destinataires"
+        },
+        {
+          "type": "new",
+          "texte": "schéma — set de destinataires e-mail sur Conversation"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-24",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "barre KPI à 3 onglets par statut (Ouverts/Validés/Fermés)"
+        },
+        {
+          "type": "new",
+          "texte": "barre unique KPI-onglets (Agenda / En retard / À trier)"
+        },
+        {
+          "type": "fix",
+          "texte": "l'ajout de conversation ne se réinitialise plus au PollRefresh"
+        },
+        {
+          "type": "fix",
+          "texte": "retirer le retour auto E-mail après 7s dans l'ajout de conversation"
+        },
+        {
+          "type": "new",
+          "texte": "onglet Fermés + dock d'actions par statut (Fermer/Valider/Réouvrir/Supprimer)"
+        },
+        {
+          "type": "new",
+          "texte": "onglets Documents + Conversations comptés, Informations enrichi, détacher, multi-sujets"
+        },
+        {
+          "type": "fix",
+          "texte": "canal en sous-ligne, avatars par type de contact, dédup interlocuteurs, filtres"
+        },
+        {
+          "type": "new",
+          "texte": "ajouter une conversation depuis un sujet (item 4)"
+        },
+        {
+          "type": "new",
+          "texte": "conversations — icône canal, filtre par canal, header enrichi (interlocuteurs + détacher), onglet Groupes"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-23",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "onglets par conversation (jamais de mélange), icône domaine fidèle, placeholder juste"
+        },
+        {
+          "type": "new",
+          "texte": "décision DANS le fil — cordon WhatsApp, Ouvrir/Lier, dialog création"
+        },
+        {
+          "type": "new",
+          "texte": "onglet Messages + KPI-onglets Sujets + filtre par domaine"
+        },
+        {
+          "type": "fix",
+          "texte": "conversation — scroll H de secours, icône +, canal en clair, avatar cliquable"
+        },
+        {
+          "type": "fix",
+          "texte": "dock d'action violet sur la conversation (chrome Relvo, pas CTA e-mail)"
+        },
+        {
+          "type": "fix",
+          "texte": "e-mail responsive — viewport interne = largeur réelle de l'iframe"
+        },
+        {
+          "type": "fix",
+          "texte": "conversation — contexte dans le hero, boutons d'action, e-mails sans scroll H"
+        },
+        {
+          "type": "new",
+          "texte": "correctifs conversations + sujets (mobile-first, préservation horizontale)"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-22",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "fiche sujet homogène — e-mails pleine largeur + HTML, comme le fil"
+        },
+        {
+          "type": "new",
+          "texte": "rendu HTML fidèle des e-mails dans un iframe isolé"
+        },
+        {
+          "type": "new",
+          "texte": "swipe droite email — « nouveau sujet » OU « rattacher à un existant »"
+        },
+        {
+          "type": "new",
+          "texte": "confirmation nommant les sujets au swipe gauche d'un fil écouté"
+        },
+        {
+          "type": "new",
+          "texte": "fiche sujet — ligne de sélection de conversation + feuille des écoutes"
+        },
+        {
+          "type": "new",
+          "texte": "gestes par canal — swipe droite conversation (email) / message (WhatsApp)"
+        },
+        {
+          "type": "new",
+          "texte": "rendu par canal + bandeau « Suivi dans » — le cordon disparaît"
+        },
+        {
+          "type": "new",
+          "texte": "écoute à deux bornes — primitive à ancre optionnelle, balayage email complet"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-20",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "filtre canal retiré, pop-up message uniformisée, titre éditable"
+        },
+        {
+          "type": "fix",
+          "texte": "référence dérivée du maximum, plus du nombre de sujets"
+        },
+        {
+          "type": "new",
+          "texte": "entité Conversation — le sujet devient une fenêtre ancrée"
+        },
+        {
+          "type": "fix",
+          "texte": "détection de groupe robuste + destinataire « Groupe » dans le composer"
+        },
+        {
+          "type": "fix",
+          "texte": "balayage des frères orphelins hors transaction (évite P2028)"
+        },
+        {
+          "type": "new",
+          "texte": "navigation — balayage orphelins, groupes WhatsApp, liens, fiche contact"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-18",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "composer — trombone conservé + placeholder sur une seule ligne"
+        },
+        {
+          "type": "new",
+          "texte": "composer mobile — plus de largeur pour le texte"
+        },
+        {
+          "type": "new",
+          "texte": "nom de profil comme label + avatars cohérents (initiales partout)"
+        },
+        {
+          "type": "new",
+          "texte": "PJ inline dans le fil (miniature image) + masque la bulle vide"
+        },
+        {
+          "type": "fix",
+          "texte": "PJ WhatsApp (attachment_id réel), label = numéro, anti-loop is_sender"
+        },
+        {
+          "type": "fix",
+          "texte": "canal WhatsApp affiche le numéro (identifier générique) + log diag PJ/sender"
+        },
+        {
+          "type": "new",
+          "texte": "ingestion WhatsApp via Unipile (réception, rattachement par fil, envoi)"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-17",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "le webhook invalide le Data Cache → le polling voit enfin les messages"
+        },
+        {
+          "type": "new",
+          "texte": "visualiseur de PJ adapté mobile — lightbox image / navigateur PDF"
+        },
+        {
+          "type": "fix",
+          "texte": "PJ cliquables + rattachées au sujet ; polling anti-cache (M12.3)"
+        },
+        {
+          "type": "fix",
+          "texte": "bouton Supprimer invisible au survol + tuile WhatsApp « Bientôt »"
+        },
+        {
+          "type": "new",
+          "texte": "suppression d'un canal (hard-delete) + déconnexion Unipile"
+        },
+        {
+          "type": "fix",
+          "texte": "email sortant en HTML — préserve sauts de ligne, espaces, tabs"
+        },
+        {
+          "type": "new",
+          "texte": "rattachement auto des emails (interlocuteur+objet) + corps sans fil cité"
+        },
+        {
+          "type": "fix",
+          "texte": "réponse entrante crashait en 500 + composer email multi-ligne"
+        },
+        {
+          "type": "new",
+          "texte": "envoi sortant câblé + pré-sélection provider + webhook account_status"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-16",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "ingestion email via Unipile (backbone unifié email + WhatsApp)"
+        }
+      ]
+    },
+    {
+      "date": "2026-07-15",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "embarquer les fixtures de démo dans le bundle Vercel"
+        },
+        {
+          "type": "fix",
+          "texte": "content-type non signé + checksum du vide ; -170 lignes"
+        },
+        {
+          "type": "new",
+          "texte": "affichage inline des fichiers + durcissement du cache"
+        },
+        {
+          "type": "new",
+          "texte": "storage_key, routes upload/download, outbox de suppression"
+        },
+        {
+          "type": "new",
+          "texte": "package @relvo/storage — Cloudflare R2 derrière une interface"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-28",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "conversations par interlocuteur (composer ciblé, onglet Conversations)"
+        },
+        {
+          "type": "fix",
+          "texte": "agenda reflète l'édition d'une tâche + Enregistrer conditionnel"
+        },
+        {
+          "type": "new",
+          "texte": "verrou portrait — voile en paysage sur téléphone"
+        },
+        {
+          "type": "fix",
+          "texte": "hauteur de cadre = max des métriques viewport (footer surélevé au boot)"
+        },
+        {
+          "type": "fix",
+          "texte": "hauteur de cadre fiable en standalone iOS + zoom bloqué"
+        },
+        {
+          "type": "fix",
+          "texte": "modale clippée, overdue après déplacement, jours plus grands, KPI plus bas, slide PWA"
+        },
+        {
+          "type": "new",
+          "texte": "miniature de drag centrée, sujet cliquable, modale (pastille + croix)"
+        },
+        {
+          "type": "new",
+          "texte": "rail entre case/texte, sync coche+badges, miniature drag fixe"
+        },
+        {
+          "type": "new",
+          "texte": "rail de jours à scroll continu + drop au curseur + rail de couleur"
+        },
+        {
+          "type": "new",
+          "texte": "semainier slidable + drag&drop, fin de l'onglet En retard"
+        },
+        {
+          "type": "new",
+          "texte": "colonne heure/date, En retard par plages, modale d'ajout unifiée"
+        },
+        {
+          "type": "new",
+          "texte": "cases à cocher, sujet nullable, présentation unifiée groupée par jour"
+        },
+        {
+          "type": "new",
+          "texte": "TaskItem unifié swipable, nav Actions/Sujets, Contacts → Réglages"
+        },
+        {
+          "type": "new",
+          "texte": "Accueil = page des tâches (KPI + 3 onglets), KPI sujets sur Mon fil"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-27",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "KPI Urgents/Nouveaux/Ouverts → Mon fil filtré"
+        },
+        {
+          "type": "new",
+          "texte": "filtres unifiés + « Nouveau » devient un marqueur dérivé"
+        },
+        {
+          "type": "new",
+          "texte": "garde anti-rebond iOS minimale (touchmove non-passif)"
+        },
+        {
+          "type": "fix",
+          "texte": "body en violet pour fondre la bande de safe-area sous le dock"
+        },
+        {
+          "type": "fix",
+          "texte": "hauteur du cadre via --app-height (JS) au lieu de 100dvh"
+        },
+        {
+          "type": "new",
+          "texte": "Mon fil — loupe + filtres rapides (Urgent/Nouveaux/Domaines)"
+        },
+        {
+          "type": "fix",
+          "texte": "rubber-band iOS neutralisé en JS (fin de la bande blanche)"
+        },
+        {
+          "type": "fix",
+          "texte": "MobileFrame en h-full (colle au body épinglé) — fin de la bande blanche"
+        },
+        {
+          "type": "fix",
+          "texte": "body épinglé en position fixed (bande blanche + rubber-band)"
+        },
+        {
+          "type": "fix",
+          "texte": "retire height:100% du verrou document (bande blanche sous le dock)"
+        },
+        {
+          "type": "fix",
+          "texte": "dock fixe — verrouille le document contre le rubber-band iOS"
+        },
+        {
+          "type": "fix",
+          "texte": "violet réservé à Relvo (hors palette domaines) + scroll prioritaire au tap"
+        },
+        {
+          "type": "fix",
+          "texte": "SubjectRow — icône domaine à gauche (réduite), retrait du rail"
+        },
+        {
+          "type": "fix",
+          "texte": "polish Accueil (brief, lignes de sujet, header, tab bar)"
+        },
+        {
+          "type": "fix",
+          "texte": "ajustements fiche sujet (header, badges, urgence, composer)"
+        },
+        {
+          "type": "fix",
+          "texte": "fiche sujet plus compacte + ajustements"
+        },
+        {
+          "type": "new",
+          "texte": "accès Relvo via bouton header + tab bar fixe violette"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-26",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "progress bar d'avancement dans le hero du sujet"
+        },
+        {
+          "type": "new",
+          "texte": "création de tâche en modale (cohérence UX avec l'édition)"
+        },
+        {
+          "type": "fix",
+          "texte": "tap sur une tâche ouvre la modale d'édition"
+        },
+        {
+          "type": "new",
+          "texte": "tâches au premier plan + lignes de sujets simplifiées (façon e-mail)"
+        },
+        {
+          "type": "new",
+          "texte": "badge « Nouveau » + instructions en page dédiée + seed étoffé ; retrait chip « suggérée »"
+        },
+        {
+          "type": "fix",
+          "texte": "bump des clés de cache (v2) — KPI « Nouveaux » vide après changement de forme"
+        },
+        {
+          "type": "new",
+          "texte": "édition du logo d'un domaine existant (M9.20)"
+        },
+        {
+          "type": "new",
+          "texte": "Mémoire — domaines personnalisables (logo) + instructions éditables/activables (M9.20)"
+        },
+        {
+          "type": "new",
+          "texte": "KPIs Accueil cohérents temps réel + réordonnés (Urgents/Nouveaux/Ouverts/Tâches)"
+        },
+        {
+          "type": "new",
+          "texte": "Contact prénom + nom (migration name → first_name/last_name)"
+        },
+        {
+          "type": "new",
+          "texte": "annuaire Contacts (recherche + sections alpha + ajout) ; recherche = sujets uniquement"
+        },
+        {
+          "type": "new",
+          "texte": "Contacts en onglet de premier rang + tunnel auth Direction B (M9.20→M9.23)"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-25",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "maxDuration 300s sur Réglages — évite le timeout du reset démo (115 tâches)"
+        },
+        {
+          "type": "new",
+          "texte": "jeu de démo étoffé Tasty Crousty / Mam's Diallo (M9.24)"
+        },
+        {
+          "type": "fix",
+          "texte": "zéro erreur ESLint (apostrophes JSX, refs au render, import mort)"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-24",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "icônes in-app nettes depuis la source 2048px (alpha préservé)"
+        },
+        {
+          "type": "fix",
+          "texte": "icônes PWA nettes — régénérées depuis la source 2048px"
+        },
+        {
+          "type": "fix",
+          "texte": "icône PWA sur fond blanc opaque + logo réduit (~82%, marge)"
+        },
+        {
+          "type": "new",
+          "texte": "status bar immersive (black-translucent + bandeau) + loading instantané"
+        },
+        {
+          "type": "new",
+          "texte": "ajoute meta mobile-web-app-capable (parité maquette PWA)"
+        },
+        {
+          "type": "new",
+          "texte": "config PWA — manifest standalone + meta iOS (apple-web-app)"
+        },
+        {
+          "type": "new",
+          "texte": "écrans mobile-first + flux messages/agenda/tâches"
+        },
+        {
+          "type": "new",
+          "texte": "design system « Direction B » — chrome mobile-first + primitives"
+        },
+        {
+          "type": "new",
+          "texte": "messages orphelins, statut ignoré, priorité 2 niveaux, hard-delete tâche"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-21",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "M9 Phase A — pages applicatives mobile-first"
+        },
+        {
+          "type": "new",
+          "texte": "refonte modèle statut/marqueurs + provisioning compte démo"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-18",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "descendre la tabbar près du bord (placement façon Tinder)"
+        },
+        {
+          "type": "fix",
+          "texte": "safe-areas iOS en standalone (plus de bandes grises)"
+        },
+        {
+          "type": "new",
+          "texte": "aide d'installation iOS plus explicite"
+        },
+        {
+          "type": "new",
+          "texte": "PWA installable (manifest, SW, icônes, meta standalone)"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-10",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "M3 — modèle de données & accès CRUD (couche domaine partagée)"
+        }
+      ]
+    },
+    {
+      "date": "2026-06-09",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "M2 — authentification & multi-tenant (Auth.js v5)"
+        }
+      ]
+    }
+  ]
 }
