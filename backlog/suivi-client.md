@@ -190,6 +190,11 @@ secret serait se tromper de garde-fou.
 La page porte un `noindex`, et la route est publique — donc **ajoutée à la liste des routes
 publiques de l'authentification**.
 
+Elle vit dans le **groupe de routes public** (`app/(public)/`), sous son propre layout racine :
+elle n'hérite **d'aucune contrainte de la coquille de l'application** — ni verrou de viewport,
+ni blocage du zoom, ni garde anti-rebond, ni métadonnées PWA. Un lecteur externe défile, zoome
+et tourne son téléphone comme sur n'importe quelle page web (`PITFALLS.md` #48).
+
 ---
 
 ## Ce qui empêche la page de mentir

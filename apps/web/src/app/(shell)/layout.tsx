@@ -1,29 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
 import { LandscapeGuard } from "@/components/layout/landscape-guard";
 import { NavVisibilityProvider } from "@/components/layout/nav-visibility";
 import { OverscrollGuard } from "@/components/layout/overscroll-guard";
 import { ViewportHeight } from "@/components/layout/viewport-height";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
-import "./globals.css";
+import { fontClassNames } from "../fonts";
+import "../globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-// Police display « Direction B » — gros titres (hero, KPI labels, dates jours).
-const bricolage = Bricolage_Grotesque({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-});
+// Layout RACINE de l'APPLICATION — le groupe `(shell)`.
+//
+// Le dépôt a DEUX layouts racine (groupes de routes) : celui-ci porte la
+// « coquille » de l'application — métadonnées PWA, zoom bloqué, verrou portrait,
+// hauteur de cadre, garde anti-rebond, session — et `(public)` porte les pages
+// vues HORS de l'application (le suivi client), qui ne doivent subir AUCUNE de
+// ces contraintes. ⚠️ Le garde anti-rebond annule tout défilement vertical hors
+// d'un conteneur scrollable : une page qui défile par le document ne peut PAS
+// vivre sous ce layout (PITFALLS #48).
 
 export const metadata: Metadata = {
   title: "Relvo",
@@ -73,16 +66,13 @@ export const viewport: Viewport = {
   interactiveWidget: "resizes-content",
 };
 
-export default function RootLayout({
+export default function ShellLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} ${bricolage.variable} h-full antialiased`}
-    >
+    <html lang="fr" className={`${fontClassNames} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         {/* Bandeau violet fixe derrière la status bar (standalone iOS, statut
             black-translucent) : garde l'heure/batterie lisibles partout, y

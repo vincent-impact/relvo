@@ -75,6 +75,11 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
 - **Aucun accès direct au stockage** : tout passe par le paquet dédié, jamais par un client
   instancié à la main — c'est ce qui garde le fournisseur remplaçable et ce qui évite de recréer
   un client sans les deux réglages obligatoires (`PITFALLS.md` #8).
+- **Deux layouts racine, par groupes de routes** : `app/(shell)/` porte la coquille de
+  l'application (PWA, verrous de viewport, garde anti-rebond, session) ; `app/(public)/` porte ce
+  qui se lit **hors** de l'application (le suivi client) et n'hérite d'aucune de ces contraintes.
+  Il n'y a **pas** de layout à la racine de `app/` — une page publique se crée dans `(public)`,
+  jamais ailleurs (`PITFALLS.md` #48).
 - **Un test qui touche la base vit dans les tests d'intégration**, jamais ailleurs. Les tests
   unitaires sont colocalisés. La ligne de partage n'est pas la taille du test mais **sa
   dépendance**.
@@ -99,6 +104,7 @@ relvo/
 │   └── ecarts-et-propositions.md · sprints/
 ├── apps/web/                 # SEUL déployable
 │   └── src/{app,components,hooks,lib,server,types}
+│       └── app/{(shell),(public)}  # deux layouts racine — voir Architecture
 └── packages/{db,storage}
 ```
 

@@ -22,7 +22,7 @@
 Auth.js v5 · Zod 4 · AWS SDK v3 · pnpm 9 · Node 22**. Voir le tableau d'adhérence en fin de
 fichier avant de s'y fier après une montée de version.
 
-**Origine.** Les pièges **#8 à #13, #19, #22, #23 et #45 à #47** ont été payés **sur ce projet**.
+**Origine.** Les pièges **#8 à #13, #19, #22, #23 et #45 à #48** ont été payés **sur ce projet**.
 Les autres viennent du kit et sont conservés ici parce qu'ils s'appliquent à cette stack.
 
 ---
@@ -158,11 +158,31 @@ d'une option lisant la configuration.
 
 ---
 
+### #48 — Une page qui défile par le document ne peut PAS vivre sous le layout racine de l'application
+
+**Symptôme** : une page « hors de l'application » (le suivi client) **ne défile plus sur
+mobile** — le doigt glisse, rien ne bouge. Sur ordinateur, tout va bien.
+
+**Cause** : le layout racine de l'application porte un **garde anti-rebond iOS** : un écouteur
+`touchmove` non passif qui **annule tout geste vertical** dès qu'aucun ancêtre `overflow: auto`
+ne peut l'absorber. Dans l'application, chaque écran défile dans un cadre interne, donc le garde
+ne voit jamais un geste orphelin. Une page qui défile **par le document** n'a pas de tel ancêtre :
+chacun de ses gestes est annulé. Le même layout impose aussi le verrou portrait, le blocage du
+zoom et les métadonnées PWA — autant de contraintes qu'un lecteur externe n'a pas à subir.
+
+**Règle** : le dépôt a **deux layouts racine**, par groupes de routes — `(shell)` pour
+l'application et sa coquille, `(public)` pour ce qui se lit hors d'elle. Une page publique se
+crée dans `(public)`, **jamais** à la racine de `app/` : il n'y a plus de layout à cet endroit,
+elle serait orpheline. ⚠️ Ne pas « corriger » en assouplissant le garde : sa condition a été
+payée par la saga du viewport (#5 bis dans le kit) et se casse à la première exception.
+
+---
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
 |---|---|
-| **Next** | #5, #5b, #5c, #14, #45 |
+| **Next** | #5, #5b, #5c, #14, #45, #48 |
 | **Prisma** | #1, #2, #4, #19, #33, #35, #36, #37, #47 |
 | **Auth.js** | #5c, #6, #7, #21 |
 | **Tailwind** | #15 |
