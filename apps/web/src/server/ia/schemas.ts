@@ -14,6 +14,21 @@ import { z } from "zod";
 export const VERDICTS = ["bruit", "affaire", "incertain"] as const;
 export const CONFIANCES = ["haute", "moyenne", "basse"] as const;
 export const PRIORITES = ["normal", "urgent"] as const;
+/**
+ * Catégorie d'un verdict « bruit » — alignée sur les RAISONS D'IGNORANCE de
+ * `02` (Conversation) : ce que le tri conclut est exactement ce que
+ * l'utilisateur confirme d'un geste, et la liste à trier se regroupe dessus.
+ * `personnel` = hors du champ professionnel ; `publicite` = envois de masse ;
+ * `automatique` = notifications, accusés de réception, alertes de plateformes ;
+ * `prospection` = démarchage non sollicité ; `autre` = informatif sans suite.
+ */
+export const CATEGORIES_BRUIT = [
+  "personnel",
+  "publicite",
+  "automatique",
+  "prospection",
+  "autre",
+] as const;
 /** Miroir de `TaskKind` (Prisma) — le schéma de sortie n'importe pas le client. */
 export const TYPES_TACHE = [
   "decision",
@@ -49,6 +64,8 @@ const heure = z
  */
 export const SortieTri = z.object({
   verdict: z.enum(VERDICTS),
+  /** Renseignée si et seulement si le verdict est « bruit ». */
+  categorie_bruit: z.enum(CATEGORIES_BRUIT).nullable(),
   confiance: z.enum(CONFIANCES),
   /** Une phrase, visible dans la liste à trier. */
   raison: z.string(),

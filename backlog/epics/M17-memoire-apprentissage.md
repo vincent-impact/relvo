@@ -25,22 +25,22 @@ distillé dans le contexte du prochain appel. **M7 produit ; M17 apprend.**
 > fois apprend à l'utilisateur à ignorer ses suggestions. Le comportement fait foi dans
 > `../../conception/05-ia.md` §9 ; le persisté dans `../../conception/02-modele-donnees.md`.
 
-| # | Item |
-|---|---|
-| M17.1 | Raison d'ignorance en un appui sur le geste « Ignorer », note libre optionnelle |
-| M17.2 | Verdict de tri visible dans « à trier » : pastille de raison, confirmation ou ouverture d'un sujet d'un geste, accord ou désaccord journalisé |
-| M17.3 | Journal brut : toute mutation d'un objet proposé par Relvo conserve la proposition d'origine — tâche, domaine, brouillon |
-| M17.4 | Registre des étiquettes par compte, amorcé par les socles de secteur ; attribution à la structuration et à la relecture ; promotion candidate → active ; filtre dans Sujets et Recherche |
-| M17.5 | Précédents par étiquettes, en plus du domaine — étend M7.18 hors du domaine |
-| M17.6 | Questions de Relvo : entité, encart sur les fiches contact, domaine et sujet, réponse sur place, compteur sur l'Accueil |
-| M17.7 | « Dire pourquoi à Relvo » sur un reclassement ou la suppression d'une tâche : instruction du domaine, avec le sujet d'origine |
-| M17.8 | Préférences observées : agrégation déterministe du journal, injectée dans la couche Compte |
-| M17.9 | Ignorance automatique d'un expéditeur après plusieurs accords sur le même motif, réversible depuis la fiche |
-| M17.10 | Domaines proposés : suggestion de création dès que plusieurs sujets partagent la proposition, reclassement en un geste ; domaines typiques des secteurs à la prise en main |
-| M17.11 | Fiche contact enrichie : rôle et note de Relvo, corrigeables, la correction l'emporte |
-| M17.12 | Mesure : jeu d'évaluation alimenté par les verdicts et accords journalisés ; **part d'aide de Relvo** — propositions conservées sur propositions faites — affichée sur l'Accueil |
-| M17.13 | Relance dérivée de la situation structurée quand une attente est dépassée, sans appel au modèle |
-| M17.14 | Titres des sujets ouverts récents du compte dans le contexte du tri, pour rattacher une même affaire arrivée par un second contact |
+| #      | Item                                                                                                                                                                                     |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M17.1  | Raison d'ignorance en un appui sur le geste « Ignorer », note libre optionnelle                                                                                                          |
+| M17.2  | Verdict de tri visible dans « à trier » : pastille de raison, confirmation ou ouverture d'un sujet d'un geste, accord ou désaccord journalisé                                            |
+| M17.3  | Journal brut : toute mutation d'un objet proposé par Relvo conserve la proposition d'origine — tâche, domaine, brouillon                                                                 |
+| M17.4  | Registre des étiquettes par compte, amorcé par les socles de secteur ; attribution à la structuration et à la relecture ; promotion candidate → active ; filtre dans Sujets et Recherche |
+| M17.5  | Précédents par étiquettes, en plus du domaine — étend M7.18 hors du domaine                                                                                                              |
+| M17.6  | Questions de Relvo : entité, encart sur les fiches contact, domaine et sujet, réponse sur place, compteur sur l'Accueil                                                                  |
+| M17.7  | « Dire pourquoi à Relvo » sur un reclassement ou la suppression d'une tâche : instruction du domaine, avec le sujet d'origine                                                            |
+| M17.8  | Préférences observées : agrégation déterministe du journal, injectée dans la couche Compte                                                                                               |
+| M17.9  | Ignorance automatique d'un expéditeur après plusieurs accords sur le même motif, réversible depuis la fiche                                                                              |
+| M17.10 | Domaines proposés : suggestion de création dès que plusieurs sujets partagent la proposition, reclassement en un geste ; domaines typiques des secteurs à la prise en main               |
+| M17.11 | Fiche contact enrichie : rôle et note de Relvo, corrigeables, la correction l'emporte                                                                                                    |
+| M17.12 | Mesure : jeu d'évaluation alimenté par les verdicts et accords journalisés ; **part d'aide de Relvo** — propositions conservées sur propositions faites — affichée sur l'Accueil         |
+| M17.13 | Relance dérivée de la situation structurée quand une attente est dépassée, sans appel au modèle                                                                                          |
+| M17.14 | Titres des sujets ouverts récents du compte dans le contexte du tri, pour rattacher une même affaire arrivée par un second contact                                                       |
 
 ## Découpage proposé, en tranches verticales
 

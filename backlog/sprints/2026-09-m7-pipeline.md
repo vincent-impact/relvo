@@ -96,6 +96,14 @@ téléphones et IBAN pseudonymisés ; **les noms de personnes se relisent à la 
       `ecarts-et-propositions.md` (provisoire : Luna `none` sur le tri), ajuster
       `scripts/cout-iag.py` (profil A1 mesuré).
 - [ ] Refaire le passage sur le jeu réel, puis figer le tier et régler la frontière de confiance.
+      **Reporté (2026-09-14)** : pas de compte de test. La vérité terrain viendra des usages
+      réels — le dirigeant et deux bêta-testeurs sur leurs propres boîtes e-mail et WhatsApp —
+      et les correctifs dans un second temps. Le pipeline part donc sur le jeu de démonstration
+      et les socles ; le jeu réel se constitue depuis le journal (verdicts, gestes) une fois en
+      usage (`05 §9.7`).
+- [x] Catégorie de bruit dans le verdict — personnel, publicité, automatique, prospection,
+      autre — alignée sur les raisons d'ignorance : c'est le tri par défaut sans configuration
+      demandé pour la bêta (`ecarts-et-propositions.md`).
 
 ## Tranche 2 — La migration du modèle
 
@@ -221,7 +229,7 @@ réclament.
 ## Où on en est
 
 - [x] Tranche 0 — livrée le 2026-09-14, premier appel réel passé
-- [ ] Tranche 1 — mécanique livrée le 2026-09-14 ; **attend les e-mails réels anonymisés**
+- [x] Tranche 1 — livrée le 2026-09-14 sur le jeu de démonstration ; le jeu réel viendra des usages bêta
 - [ ] Tranche 2
 - [ ] Tranche 3
 - [ ] Tranche 4

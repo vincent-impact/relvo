@@ -15,15 +15,15 @@ sur le rattachement.
 **Dépendances** : M6ter. Le modèle fait foi dans `../../conception/02-modele-donnees.md`, le
 comportement dans `../../conception/04-design-domaine.md`.
 
-| # | Item | État |
-|---|---|---|
-| M6quater.0 | Schéma : discriminant de sous-type, **set de destinataires** pour l'e-mail, clé par set trié | ✅ |
-| M6quater.1 | Domaine : routage à la réception **par set**, et **rattachement automatique in-set** | ✅ |
-| M6quater.2 | Domaine : **détachement d'un fil e-mail** — rattrapage d'erreur, sans borne de fin, distinct de l'arrêt d'écoute | ✅ |
-| M6quater.3 | Fiche sujet à deux onglets par canal | ✅ livré, puis **remplacé** — voir ci-dessous |
-| M6quater.4 | Rendu de l'onglet e-mail | ✅ — absorbé par le remplacement |
-| M6quater.5 | Tests du sous-typage | ✅ |
-| M6quater.6 | Régénération du jeu de démonstration au nouveau formalisme | ✅ |
+| #          | Item                                                                                                             | État                                          |
+| ---------- | ---------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| M6quater.0 | Schéma : discriminant de sous-type, **set de destinataires** pour l'e-mail, clé par set trié                     | ✅                                            |
+| M6quater.1 | Domaine : routage à la réception **par set**, et **rattachement automatique in-set**                             | ✅                                            |
+| M6quater.2 | Domaine : **détachement d'un fil e-mail** — rattrapage d'erreur, sans borne de fin, distinct de l'arrêt d'écoute | ✅                                            |
+| M6quater.3 | Fiche sujet à deux onglets par canal                                                                             | ✅ livré, puis **remplacé** — voir ci-dessous |
+| M6quater.4 | Rendu de l'onglet e-mail                                                                                         | ✅ — absorbé par le remplacement              |
+| M6quater.5 | Tests du sous-typage                                                                                             | ✅                                            |
+| M6quater.6 | Régénération du jeu de démonstration au nouveau formalisme                                                       | ✅                                            |
 
 ## ⚠️ M6quater.3 et .4 ont été livrés puis remplacés
 

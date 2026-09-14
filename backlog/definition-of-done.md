@@ -8,7 +8,7 @@
 
 - [ ] **Typage et lint à zéro erreur.**
 - [ ] **Les tests passent.**
-- [ ] **Le comportement livré est couvert par un test.** Pas « du code est testé » : *ce*
+- [ ] **Le comportement livré est couvert par un test.** Pas « du code est testé » : _ce_
       comportement-là.
 - [ ] **Une migration s'accompagne de la mise à jour de `conception/02-modele-donnees.md` DANS LE
       MÊME COMMIT.**

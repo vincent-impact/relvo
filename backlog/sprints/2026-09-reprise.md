@@ -22,16 +22,16 @@ Une **remise à niveau documentaire**, motivée par un audit. Le constat qui l'a
 quatre documents de conception décrivaient encore une conception abandonnée fin juillet, et le
 commit qui l'avait abandonnée n'avait mis à jour que six lignes de `CLAUDE.md`.
 
-| # | Ce qui a été fait |
-|---|---|
-| 1 | Arborescence alignée sur le kit : `conception/` et `backlog/` à la racine, une seule maquette de référence |
-| 2 | `conception/00-sources.md` créé — la hiérarchie des sources et **le bord mou tranché** |
-| 3 | `apps/worker` supprimé, `README.md` récrit **en place** |
-| 4 | CI posée, avec les contrôles des pièges **#5b** et **#37** |
-| 5 | `conception/04-design-domaine.md` et `uml.mermaid` créés — le comportement avait **six domiciles, aucun légitime** |
-| 6 | `01`, `02`, `03` récrits au présent — **zéro date** dans `conception/` |
-| 7 | Backlog éclaté, **Definition of Done** écrite, registre des écarts ouvert |
-| 8 | `PITFALLS.md` créé, `CLAUDE.md` réduit de 43 Ko à 10 Ko |
+| #   | Ce qui a été fait                                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------ |
+| 1   | Arborescence alignée sur le kit : `conception/` et `backlog/` à la racine, une seule maquette de référence         |
+| 2   | `conception/00-sources.md` créé — la hiérarchie des sources et **le bord mou tranché**                             |
+| 3   | `apps/worker` supprimé, `README.md` récrit **en place**                                                            |
+| 4   | CI posée, avec les contrôles des pièges **#5b** et **#37**                                                         |
+| 5   | `conception/04-design-domaine.md` et `uml.mermaid` créés — le comportement avait **six domiciles, aucun légitime** |
+| 6   | `01`, `02`, `03` récrits au présent — **zéro date** dans `conception/`                                             |
+| 7   | Backlog éclaté, **Definition of Done** écrite, registre des écarts ouvert                                          |
+| 8   | `PITFALLS.md` créé, `CLAUDE.md` réduit de 43 Ko à 10 Ko                                                            |
 
 ### ⚠️ Ce qu'il faut faire avant de reprendre le code
 

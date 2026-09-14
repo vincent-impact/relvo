@@ -21,16 +21,16 @@ et c'est la divergence qui est intéressante à retenir.
 
 ## Ce qui a changé en cours de route
 
-| Plan d'origine | Réalisé |
-|---|---|
-| Navigation par barre latérale de bureau | **Barre d'onglets basse**, mobile d'abord |
+| Plan d'origine                           | Réalisé                                            |
+| ---------------------------------------- | -------------------------------------------------- |
+| Navigation par barre latérale de bureau  | **Barre d'onglets basse**, mobile d'abord          |
 | Zone de saisie permanente en bas d'écran | **Bouton dans le header**, à la même place partout |
-| Accueil = brief | **Accueil = page des tâches** |
-| Écran de messages orphelins | **Écran des conversations** |
-| Cartes flottantes | **Lignes** pleine largeur |
-| Statut à six valeurs, priorité à quatre | **Trois statuts, deux priorités** |
-| Paire de boutons sur chaque carte | **Gestes de glissement** |
-| — | **Application installable** |
+| Accueil = brief                          | **Accueil = page des tâches**                      |
+| Écran de messages orphelins              | **Écran des conversations**                        |
+| Cartes flottantes                        | **Lignes** pleine largeur                          |
+| Statut à six valeurs, priorité à quatre  | **Trois statuts, deux priorités**                  |
+| Paire de boutons sur chaque carte        | **Gestes de glissement**                           |
+| —                                        | **Application installable**                        |
 
 ## La leçon
 

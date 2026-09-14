@@ -12,6 +12,7 @@
 ## Décisions tranchées
 
 ### Pas de backend découplé
+
 **`tranché`** · Le plan initial prévoyait un second déployable avec sa propre couche
 d'authentification entre services. Écarté : pour un produit où un compte correspond à un humain,
 sans besoin d'API publique ni de montée en charge indépendante, le découplage n'ajoute qu'un
@@ -21,6 +22,7 @@ Toute mention d'un backend séparé ou d'une authentification entre services dan
 ancien est caduque.
 
 ### Un agrégateur managé pour l'e-mail et la messagerie
+
 **`tranché`** · Remplace à la fois un montage de redirection e-mail et un **processus permanent**
 maison pour la messagerie.
 
@@ -43,6 +45,7 @@ dans l'interface.
 protection des données).
 
 ### Stockage objet compatible S3, en juridiction UE
+
 **`tranché`** · Comparé à trois alternatives.
 
 Ce qui a départagé : **l'API compatible S3** — un client générique, un outillage connu, et une
@@ -57,6 +60,7 @@ une poignée d'utilisateurs. Un cache n'apporte rien et, chez ce fournisseur, il
 exclusif** avec les URL pré-signées. À rouvrir seulement si un usage public apparaît.
 
 ### Une application installable, pas une application native
+
 **`tranché`** · Le produit vise des utilisateurs qui vivent sur téléphone.
 
 « Mobile d'abord » est une affaire de mise en page, pas de framework : une application web
@@ -72,6 +76,7 @@ bloquantes, on emballe le frontend dans une coque native. **Le serveur ne bouge 
 purement une question de coque.
 
 ### La refonte du modèle de conversation, en trois temps
+
 **`tranché`** · La séquence mérite d'être relue, parce que chaque étape a corrigé la précédente.
 
 1. **L'entité `Conversation`** — le tri quitte le moment « création de sujet » pour le moment
@@ -79,7 +84,7 @@ purement une question de coque.
 2. **La divergence par canal** — on cesse de forcer une interface unique sur deux canaux qui
    n'ont ni la même forme de message ni le même système d'objet. Le vocabulaire « fenêtre »
    devient « **écoute** » : une action du sujet, pas une plage subie. **Aucune colonne renommée.**
-3. **Le sous-typage** — l'e-mail porte un *set* de destinataires, la messagerie un interlocuteur.
+3. **Le sous-typage** — l'e-mail porte un _set_ de destinataires, la messagerie un interlocuteur.
 
 **Ce qui a été supprimé en route, et pourquoi** : un dispositif visuel d'appartenance message par
 message, une poignée de borne glissante, un défaut de borne calculé, et le menu contextuel sur
@@ -92,6 +97,7 @@ puis rétablie le même jour**, sur une lecture trop rapide d'une phrase écrite
 endroits ; c'est exactement ce que la règle « un fait, un domicile » existe pour empêcher.
 
 ### La fiche du sujet n'affiche plus les messages
+
 **`tranché`** · Remplace les deux onglets par canal, livrés puis jugés flottants à l'usage.
 
 La fiche liste les fils ; l'écran de conversation devient la **seule** surface d'affichage et de
@@ -99,6 +105,7 @@ réponse. On gagne un onglet, et on **cesse de dupliquer le rendu d'un fil** —
 lire un même échange, c'est deux rendus à maintenir et deux occasions de diverger.
 
 ### Une seule maquette de référence
+
 **`tranché`** · Le dépôt portait **deux** références visuelles concurrentes : la maquette
 statique, citée par la carte du projet et reproduite écran par écran par le code, et un bundle
 de haute fidélité qui n'était **cité par aucun document**.
@@ -109,8 +116,9 @@ interactif sont **archivés hors dépôt** : ils précèdent plusieurs refontes 
 navigation qui n'existe plus.
 
 ### La liste des conversations n'est pas une entrée de navigation permanente
+
 **`tranché`** · Exposer en permanence tous les fils reviendrait à réafficher une boîte de
-réception que le dirigeant a déjà ailleurs — on lui *ajouterait* du travail au lieu de lui en
+réception que le dirigeant a déjà ailleurs — on lui _ajouterait_ du travail au lieu de lui en
 retirer.
 
 ⚠️ **Cette décision a été partiellement renversée** : les conversations ont rejoint la barre
@@ -119,6 +127,7 @@ visible la chaîne Actions ← Sujets ← Conversations. **C'est une décision �
 livrera** : le motif qui l'a justifiée disparaîtra avec le tri manuel.
 
 ### Aucune conservation de données requise sur les migrations de la refonte
+
 **`tranché`** · Seul le compte de test existait en production. Cela a permis de réécrire des
 migrations plutôt que d'écrire des reprises de données complexes.
 
@@ -126,6 +135,7 @@ migrations plutôt que d'écrire des reprises de données complexes.
 rejouable et vérifiée sur une copie de la production.
 
 ### Une page de suivi client alimentée par le dépôt
+
 **`tranché`** · Le client veut savoir où en est le projet et ce qui a changé dans son
 application. Trois contraintes : aucune base de données, les fichiers du dépôt comme source, et
 **aucun effort de rédaction récurrent**.
@@ -151,6 +161,7 @@ réellement automatique.
 > transparence.
 
 ### Aucune date au jour sur un chantier non commencé
+
 **`tranché`** · La frise client positionne le futur **au mois**, jamais au jour, et le dit
 explicitement au lecteur.
 
@@ -163,6 +174,7 @@ Corollaire : la frise est alimentée par le **réel** — dates de clôture effe
 planification.
 
 ### Deux systèmes d'identifiants pour les mêmes épiques
+
 **`tranché`** · Le dépôt disait `M1…M14`, l'outil de suivi personnel disait `RVO-1…RVO-14`.
 Le dépôt l'emporte : c'est la source la plus crédible, celle que le code cite. **Le client, lui,
 ne voit aucun identifiant** — un chantier est identifié par son titre métier. Le `M-n` reste dans
@@ -171,6 +183,7 @@ le frontmatter comme clé de jointure.
 ---
 
 ### Le choix des modèles est un choix de gamme, pas de fournisseur
+
 **`tranché`** · Le benchmark des fournisseurs IAG ([`benchmark-iag.md`](benchmark-iag.md))
 concluait d'abord à un écart de 6 entre une pile Anthropic et une pile DeepSeek. C'était une
 erreur de lecture : l'affectation par tiers de `conception/05-ia.md` §10.5 est une hiérarchie
@@ -187,6 +200,7 @@ sur les caractéristiques techniques**, pas sur le prix.
 l'analyse de document, où le PDF natif texte+image justifie un modèle supérieur.
 
 ### La sortie structurée ne tourne jamais sur un modèle sans schéma strict
+
 **`tranché`** · A2–A6 et A7 écrivent en base sans revue humaine. Un fournisseur qui ne garantit
 pas la conformité au schéma impose une boucle de validation et de reprise.
 
@@ -198,6 +212,7 @@ dépasse environ 4 %.
 Ce n'est donc pas un arbitrage entre qualité et prix : les deux vont dans le même sens.
 
 ### La conformité RGPD n'est pas un critère de sélection du fournisseur
+
 **`tranché`** · Le prix et la qualité de service priment. Les fournisseurs ne sont plus écartés
 sur ce motif ; l'analyse reste consignée dans [`benchmark-iag.md`](benchmark-iag.md) §1 et §9 à
 titre d'information.
@@ -213,6 +228,7 @@ Le point d'entrée de l'API est en configuration : si l'éligibilité est accord
 projet se recrée avec la région (elle ne s'ajoute pas après coup) et une variable change.
 
 ### Un disjoncteur de consommation par compte, avant la mise en production
+
 **`tranché`** · Aucun compte ne doit pouvoir faire exploser la facture, ni par usage atypique, ni
 par bug, ni par boucle d'outils dans l'échange avec Relvo.
 
@@ -231,6 +247,7 @@ déjà traitable à la main. **Le mode dégradé du disjoncteur est le mode nomi
 **Conséquence commerciale** : suppose un forfait de messages inclus par siège, annoncé au client.
 
 ### Pile IAG : un seul fournisseur, son entrée de gamme
+
 **`tranché`** · GPT-5.6 Luna sur la classification, l'extraction structurée et la rédaction ;
 GPT-5.6 Terra sur l'échange avec Relvo complexe et l'analyse de document. **Un seul fournisseur.**
 
@@ -247,6 +264,7 @@ est peu coûteux : basculer le seul tier d'extraction structurée vers le modèl
 quelques euros par mois et par compte, pas dix fois le prix.
 
 ### Pas de passerelle d'inférence : l'API du fournisseur est appelée en direct
+
 **`tranché`** · La conception prévoyait une passerelle d'inférence hébergée par la plateforme de
 déploiement, pour l'observabilité par appel et la bascule de fournisseur sans toucher au code.
 Écartée : avec un seul fournisseur, elle n'apporte que ce que son tableau de bord offre déjà
@@ -262,6 +280,7 @@ endroit. Et l'observabilité par sollicitation, qui vient du journal de Relvo, p
 intermédiaire.
 
 ### Le niveau de raisonnement se pose explicitement à chaque site d'appel
+
 **`tranché`** · Les jetons de raisonnement sont facturés au tarif de **sortie**, et le défaut de
 l'API est un niveau intermédiaire. Laisser ce défaut **multiplie la facture par 2,2** et dégrade
 la latence dans des proportions incompatibles avec une conversation.
@@ -276,6 +295,7 @@ jetons de sortie. Un site d'appel dont le niveau a dérivé se voit dans ce comp
 voir sur la facture.
 
 ### Le tri tourne sur l'entrée de gamme sans raisonnement — provisoire
+
 **`proposé`** · Premier passage du jeu d'évaluation (`benchmark-iag.md` §6.6), sur le jeu de
 démonstration : sur le tri, le modèle d'entrée de gamme sans raisonnement rend les mêmes verdicts
 que le même modèle avec raisonnement faible, et que le modèle supérieur, pour dix fois moins cher
@@ -287,7 +307,29 @@ la conception (`05 §10.5`, extraction à effort minimal) reste la valeur de con
 le jeu réel n'a pas confirmé ; la bascule se fait par la configuration du tier, sans code. Ce qui
 tranchera : le même passage sur trente à cinquante e-mails réels anonymisés.
 
+### Le personnel, la publicité et l'automatique sont des raisons, pas des domaines
+
+**`tranché`** · Le besoin exprimé à l'ouverture du pipeline : trier par défaut, sans rien
+configurer, ce qui est personnel, ce qui est publicitaire, ce qui vient d'une machine — et laisser
+le reste aux domaines de l'utilisateur. Le réflexe serait d'en faire trois domaines pré-créés.
+
+**Écarté** : un domaine est un périmètre de mémoire — des sujets et des connaissances — et ces
+fils n'en produisent jamais. Ils vivent déjà dans la conception comme **raisons d'ignorance**
+d'une conversation. Le tri les pose donc comme **catégorie de son verdict « bruit »**, dans le
+même vocabulaire, pour que la liste à trier se regroupe dessus et qu'une confirmation d'un geste
+devienne la raison d'ignorance. Aucune configuration, aucun domaine parasite dans les sujets.
+
+### Suggérer les domaines à la prise en main
+
+**`proposé`** · Pour une prise en main rapide, proposer à l'utilisateur des domaines typiques de
+ses secteurs, à cocher. C'est déjà l'esprit de M13.2 et M17.10 ; la matière peut vivre dans les
+socles de la couche Produit (une liste de domaines typiques par secteur, avec une description
+d'une ligne chacun), et le rattrapage du courrier récent (M7.19) reste le moyen le plus juste :
+les domaines qu'il propose viennent du courrier réel, pas d'une liste générique. À dessiner avec
+les premiers retours des bêta-testeurs.
+
 ### Le contexte du modèle est assemblé en cinq couches
+
 **`tranché`** · Un appel n'a pas de mémoire et chaque mot envoyé se paie. Le contexte est donc
 assemblé par empilement, de la couche la plus stable (le produit, partagée entre tous les comptes
 qui ont les mêmes secteurs — un compte peut en avoir plusieurs) à la plus volatile (l'instant), et chaque sollicitation a son **profil** — le tri ne
@@ -300,6 +342,7 @@ porte tout l'effort de compacité, par des fiches que Relvo rédige lui-même �
 structurée d'un sujet est la mémoire que le prochain appel relit, jamais l'historique.
 
 ### Le tri et la structuration d'un sujet nouveau sont deux appels
+
 **`tranché`** · Le tri découvre le domaine ; la structuration a besoin des instructions et des
 précédents de ce domaine. Ils ne peuvent pas tenir dans un seul appel. Un message sur un sujet
 existant reste un seul appel, la relecture. En contrepartie, la classification de domaine n'est
@@ -307,6 +350,7 @@ plus un appel séparé mais un champ de la sortie du tri, et la mise à jour d'u
 à l'envoi devient déterministe. Les deux effets se compensent sur le budget.
 
 ### Les étiquettes sont attribuées par Relvo seul
+
 **`tranché`** · Un marqueur thématique qui traverse les domaines, choisi dans un registre par
 compte amorcé par les secteurs du compte ; une étiquette nouvelle reste candidate tant qu'un second sujet ne
 la reprend pas.
@@ -316,6 +360,7 @@ la reprend pas.
 l'écriture à Relvo évite le vocabulaire à deux mains. L'utilisateur filtre, il ne saisit pas.
 
 ### L'apprentissage n'attend pas la V2 : c'est une boucle sur le journal
+
 **`tranché`** · Le journal conserve, pour tout geste sur une proposition de Relvo, la proposition
 d'origine et le geste ; le geste d'ignorer porte une raison choisie en un appui ; le tri dépose son
 verdict, sa confiance et sa raison. Ce brut est distillé — préférences observées calculées par
@@ -328,16 +373,19 @@ capturé sans qu'il l'écrive. Une raison en un appui et des accords ou désacco
 font ; un écran de paramétrage ne le ferait pas.
 
 ### Les questions de Relvo ne sont jamais des tâches
+
 **`tranché`** · Ce que Relvo ne sait pas devient une question posée sur la fiche du contact, du
 domaine ou du sujet, avec la réponse saisie sur place. Une question dans l'agenda serait la tâche
 artificielle que le produit refuse, et diluerait le signal du calendrier.
 
 ### Le brouillon se prépare à la première ouverture de la zone de rédaction
+
 **`tranché`** · L'épique disait « quand une tâche de réponse est créée ». Beaucoup de brouillons
 ne seraient jamais lus ; les préparer à l'ouverture de la zone de rédaction économise ces appels
 sans que rien de visible ne change. L'épique est alignée.
 
 ### Les domaines émergent du courrier
+
 **`tranché`** · Au premier jour, aucun domaine. Relvo n'en crée jamais ; il pose un domaine
 proposé sur les sujets qu'aucun domaine n'accueille, et l'interface suggère la création dès que
 plusieurs sujets partagent la proposition. Les socles des secteurs proposent des domaines typiques à la
@@ -345,6 +393,7 @@ prise en main. Le rattrapage du courrier récent, en lot, produit ces propositio
 de la connexion — c'est aussi la démonstration attendue par les clients.
 
 ### Sept extensions de l'IA, retenues sans écran de paramétrage
+
 **`tranché`** · Transcription des messages vocaux, étiquette par vision sur les images, relance
 dérivée de la situation structurée, raison affichée d'un appui sur chaque proposition, titres des
 sujets ouverts récents dans le contexte du tri, part d'aide de Relvo comme unique indicateur, et
@@ -359,6 +408,7 @@ titres des sujets.
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté
+
 **`tranché` — traité** · Un document de spécification listait explicitement les passages rendus
 caducs par un virage produit, à mettre à jour « après validation ». La liste n'a jamais été
 traitée, et les passages en question sont restés faux pendant des mois.
@@ -368,6 +418,7 @@ documentaires reportée est une liste qui ne sera pas faite. La correction se fa
 commit qui crée l'écart**, ou elle ne se fait pas.
 
 ### La documentation a décroché du code sur quatre fichiers
+
 **`tranché` — traité** · Le remplacement de la fiche sujet a modifié six lignes de la carte du
 projet et rien d'autre côté documentation, pour près de huit cents lignes de code supprimées.
 Quatre documents ont continué à décrire la conception abandonnée.
@@ -376,11 +427,13 @@ Cause mécanique : **aucune Definition of Done** n'existait, et les règles viva
 intentions dans la carte du projet plutôt que comme des conditions de clôture.
 
 ### Le worker était supprimé dans la documentation, présent sur le disque
+
 **`tranché` — traité** · La carte du projet annonçait qu'il n'existait plus ; il était toujours
 là, avec son manifeste, son entrée de workspace, son script de lancement, et un README qui
 demandait de le configurer puis annonçait trente lignes plus bas qu'il n'existait pas.
 
 ### Les décomptes écrits dans la documentation étaient faux
+
 **`tranché` — traité** · Le backlog annonçait un nombre d'entités inférieur à la réalité, et
 plusieurs entités n'étaient pas documentées.
 
@@ -389,6 +442,7 @@ n'échoue quand il est faux**. Les décomptes sont retirés ; la liste des contr
 un test qui échoue **dans les deux sens**.
 
 ### Le backlog portait l'ordre et la définition dans le même fichier
+
 **`tranché` — traité** · Six cent trente-sept lignes mêlant le résumé produit, le périmètre, la
 définition de chaque tâche, l'ordre, l'état d'avancement et la justification technique d'un choix
 d'infrastructure.
@@ -400,6 +454,7 @@ qu'elle avait été livrée **puis remplacée**.
 ---
 
 ### Un geste, une surface — les actions de statut quittent la fiche du sujet
+
 **`tranché`** · Premiers retours de bêta-testeurs, produit en mode **manuel** (sans le pipeline
 d'arrivée). Trois constats convergents, tous sur des actions offertes **deux fois**.
 
@@ -417,7 +472,7 @@ l'écran de conversation.
 fiche revenait à supprimer le **seul** chemin de réouverture d'un sujet terminal : la liste ne
 portait alors aucun swipe sur ses onglets terminaux. Appliquer le retour tel quel aurait enfermé
 définitivement tout sujet validé. Le geste de remplacement a donc été posé **avant** le retrait.
-Règle générale : *un geste retiré d'une surface doit exister sur l'autre avant de disparaître.*
+Règle générale : _un geste retiré d'une surface doit exister sur l'autre avant de disparaître._
 
 **Ce qui n'a PAS été cédé.** Le geste de la liste ne tranche rien lui-même — il transmet une
 intention à l'écran de conversation. Cela préserve l'objection qui avait fait retirer ce swipe
@@ -426,6 +481,7 @@ auparavant (« ne pas décider sans avoir lu ») et, surtout, cela laisse la mes
 rend le retour applicable **sans** inventer une ancre par défaut.
 
 ### Avertir avant de terminer un sujet dont des tâches restent ouvertes
+
 **`tranché`** · Même série de retours. Valider ou fermer un sujet retire ses tâches de la vue
 sans rien dire, alors qu'un sujet est le seul endroit où ces tâches existent.
 
@@ -439,12 +495,14 @@ reste du temps, le swipe garde son coût de zéro clic.
 ## Propositions
 
 ### Benchmarker la transcription vocale et la vision avant de figer leurs tiers
+
 **`proposé`** · Les deux extensions dont le coût est proportionnel à la durée ou à l'image, pas au
 nombre de messages. Le modèle de coût ne les chiffre pas encore ; les tarifs de reconnaissance
 vocale et de vision des fournisseurs retenus sont à relever, et les deux postes à ajouter au
 script de coût et au disjoncteur, avec une garde par minute d'audio et par image.
 
 ### Exposer la base locale sur un port dédié
+
 **`proposé`** · Le port par défaut de PostgreSQL est presque toujours déjà pris par un autre
 projet local, et le symptôme — une connexion qui aboutit sur la **mauvaise base** — est bien plus
 long à diagnostiquer qu'un port refusé.
@@ -454,12 +512,14 @@ d'environnement locaux. **Non appliqué** parce que cela casse l'installation lo
 faire au prochain redémarrage propre.
 
 ### Monter la version de Node
+
 **`proposé`** · Le dépôt cible une version antérieure à celle du kit de référence. Les deux
 sources internes sont cohérentes entre elles, donc rien n'est cassé — c'est un simple retard.
 
 **À faire avec un `pnpm install` complet**, pas isolément.
 
 ### Reprendre le port du proxy d'authentification
+
 **`tranché` — corrigé** · Le contrôle de CI a rougi dès son premier passage, et c'était bien le
 constat : le fichier vivait à la racine de l'application alors que le projet utilise un dossier
 source, donc il n'était **jamais compilé**. Déplacé dans `src/`.
@@ -480,6 +540,7 @@ traverse toutes les routes protégées.
 raisonne sur des chemins, or une Server Action n'en a pas et le filtre exclut les routes d'API.
 
 ### Mesurer le compte réel du premier utilisateur
+
 **`proposé`** · La source la plus fiable sur les données réelles — volumes, proportion de
 messages qui méritent un sujet, longueur des fils — n'a jamais été mesurée. Tout dimensionnement
 repose aujourd'hui sur un jeu de démonstration calibré pour la lisibilité d'un écran.
@@ -487,5 +548,6 @@ repose aujourd'hui sur un jeu de démonstration calibré pour la lisibilité d'u
 C'est le **rang 2** de la hiérarchie des sources, et il est vide.
 
 ### Rouvrir la place des conversations dans la navigation, à la livraison de M7
+
 **`proposé`** · Voir la décision correspondante plus haut. Le motif qui a justifié leur entrée
 dans la barre d'onglets disparaît avec le tri manuel.

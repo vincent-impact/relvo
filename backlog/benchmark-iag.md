@@ -46,28 +46,28 @@ Le §3 est conservé comme information, plus comme filtre.
 
 Prix catalogue, hors remises d'engagement. « Cache » = lecture d'un bloc déjà en cache.
 
-| Fournisseur | Modèle | Input | Cache | Output | Notes |
-|---|---|---|---|---|---|
-| **Anthropic** | Haiku 4.5 | 1,00 | 0,10 | 5,00 | écriture cache ×1,25 ; **cache min. 4 096 tok** |
-| | Sonnet 5 | 2,00 | 0,20 | 10,00 | cache min. 1 024 |
-| | Opus 5 | 5,00 | 0,50 | 25,00 | cache min. 512 |
-| **OpenAI** | GPT-5.6 Luna | **0,20** | 0,02 | **1,20** | cache implicite, écriture gratuite |
-| | GPT-5.6 Terra | 2,00 | 0,20 | 12,00 | ⚠️ ×2 in / ×1,5 out au-delà de 272 K |
-| | GPT-5.6 Sol | 4,00 | 0,40 | 20,00 | |
-| | GPT-6 Astra | 10,00 | 1,00 | 50,00 | |
-| **Google** | 3.5 Flash-Lite | 0,30 | 0,03 | 2,50 | + stockage cache 1,00 /M/h |
-| | 3.7 / 3.8 Flash | 0,75 * | 0,075 * | 3,75 * | + stockage 0,50 /M/h |
-| | 3.1 Pro (preview) | 2,00 | 0,20 | 12,00 | + stockage 4,50 /M/h |
-| **Mistral** | Ministral 3 8B | 0,15 | 0,015 | 0,15 | cache explicite, blocs 64 tok |
-| | Small 4 | 0,15 | 0,015 | 0,60 | |
-| | Large 3 | 0,50 | 0,05 | 1,50 | |
-| | Medium 3.5 | 1,50 | 0,15 | 7,50 | |
-| **DeepSeek** | deepseek-flash | 0,30 † | **0,006** † | 1,20 † | vision ✓, **pas de PDF**, **pas de JSON strict** |
-| | deepseek-v4-pro | 1,32 † | 0,044 † | 3,96 † | **aucune vision** |
-| **Qwen** | 3.7 Flash | 0,028 | 0,003 | 0,165 | pas de PDF |
-| | 3.5 Plus | 0,115 | 0,012 | 0,688 | |
-| | 3.8-Max | 2,00 | 0,20 | 6,00 | Singapour ; τ³-Banking n°1 |
-| **Meta** | — | — | — | — | **API retirée le 06/07/2026** |
+| Fournisseur   | Modèle            | Input    | Cache       | Output   | Notes                                            |
+| ------------- | ----------------- | -------- | ----------- | -------- | ------------------------------------------------ |
+| **Anthropic** | Haiku 4.5         | 1,00     | 0,10        | 5,00     | écriture cache ×1,25 ; **cache min. 4 096 tok**  |
+|               | Sonnet 5          | 2,00     | 0,20        | 10,00    | cache min. 1 024                                 |
+|               | Opus 5            | 5,00     | 0,50        | 25,00    | cache min. 512                                   |
+| **OpenAI**    | GPT-5.6 Luna      | **0,20** | 0,02        | **1,20** | cache implicite, écriture gratuite               |
+|               | GPT-5.6 Terra     | 2,00     | 0,20        | 12,00    | ⚠️ ×2 in / ×1,5 out au-delà de 272 K             |
+|               | GPT-5.6 Sol       | 4,00     | 0,40        | 20,00    |                                                  |
+|               | GPT-6 Astra       | 10,00    | 1,00        | 50,00    |                                                  |
+| **Google**    | 3.5 Flash-Lite    | 0,30     | 0,03        | 2,50     | + stockage cache 1,00 /M/h                       |
+|               | 3.7 / 3.8 Flash   | 0,75 \*  | 0,075 \*    | 3,75 \*  | + stockage 0,50 /M/h                             |
+|               | 3.1 Pro (preview) | 2,00     | 0,20        | 12,00    | + stockage 4,50 /M/h                             |
+| **Mistral**   | Ministral 3 8B    | 0,15     | 0,015       | 0,15     | cache explicite, blocs 64 tok                    |
+|               | Small 4           | 0,15     | 0,015       | 0,60     |                                                  |
+|               | Large 3           | 0,50     | 0,05        | 1,50     |                                                  |
+|               | Medium 3.5        | 1,50     | 0,15        | 7,50     |                                                  |
+| **DeepSeek**  | deepseek-flash    | 0,30 †   | **0,006** † | 1,20 †   | vision ✓, **pas de PDF**, **pas de JSON strict** |
+|               | deepseek-v4-pro   | 1,32 †   | 0,044 †     | 3,96 †   | **aucune vision**                                |
+| **Qwen**      | 3.7 Flash         | 0,028    | 0,003       | 0,165    | pas de PDF                                       |
+|               | 3.5 Plus          | 0,115    | 0,012       | 0,688    |                                                  |
+|               | 3.8-Max           | 2,00     | 0,20        | 6,00     | Singapour ; τ³-Banking n°1                       |
+| **Meta**      | —                 | —        | —           | —        | **API retirée le 06/07/2026**                    |
 
 \* **Tarif promotionnel jusqu'au 31/12/2026. Au 01/01/2027 : 1,50 / 0,15 / 7,50.** Daté et écrit dans la documentation tarifaire.
 † heures pleines. Heures creuses = moitié. Heures pleines = 01:00–04:00 et 06:00–10:00 UTC en semaine, soit **08:00–12:00 heure de Paris** — vos heures de bureau.
@@ -86,27 +86,27 @@ L'index d'Artificial Analysis (v4.3) agrège 10 évaluations pondérées en quat
 
 ### 3.2 Tableau comparatif
 
-| Modèle | AA Index | JSON strict | AutomationBench-AA | PDF natif | Cache min. |
-|---|---|---|---|---|---|
-| Claude Haiku 4.5 | 15 | ✓ « most cases » | non publié | **✓ texte+image** | 4 096 |
-| Claude Sonnet 5 | 38 | ✓ « most cases » | 37 % | **✓ texte+image** | 1 024 |
-| Claude Opus 5 | **51** | ✓ « most cases » | 57 % (Terminal-Bench 49 %) | **✓ texte+image** | 512 |
-| **GPT-5.6 Luna** | **38** | **✓✓ garanti** | **50 %** | ✓ | 1 024 |
-| GPT-5.6 Terra | 42 | **✓✓ garanti** | non trouvé | ✓ | 1 024 |
-| GPT-5.6 Sol | 47 | **✓✓ garanti** | **60 %** | ✓ | 1 024 |
-| GPT-6 Astra | **53** | **✓✓ garanti** | non trouvé | ✓ | 1 024 |
-| Gemini 3.5 Flash-Lite | 23 | ⚠ sous-ensemble | 25 % (**Omniscience +5**) | **✓** | 4 096 |
-| Gemini 3.8 Flash | 41 | ⚠ sous-ensemble | **60 %** | **✓** | 4 096 |
-| Gemini 3.1 Pro (preview) | 30 | ⚠ sous-ensemble | 35 % (Briefcase **459**) | **✓** | 4 096 |
-| Mistral Small 4 | 11 | ⚠ par prompt | **1 %** (Omniscience **−30**) | image seule | 64 |
-| Mistral Medium 3.5 | 15 | ⚠ par prompt | non trouvé | ✓ | 64 |
-| **deepseek-flash** | **40** | ✗ `json_object` seul | **69 %** (meilleur du panel) | image, **pas de PDF** | — |
-| deepseek-v4-pro | 36 | ✗ `json_object` seul | non trouvé | ✗ **aucune vision** | — |
-| Qwen3.8-Max | 40 | ✓ annoncé | τ³-Banking n°1 : 51,3 % | **pas de PDF** | — |
+| Modèle                   | AA Index | JSON strict          | AutomationBench-AA            | PDF natif             | Cache min. |
+| ------------------------ | -------- | -------------------- | ----------------------------- | --------------------- | ---------- |
+| Claude Haiku 4.5         | 15       | ✓ « most cases »     | non publié                    | **✓ texte+image**     | 4 096      |
+| Claude Sonnet 5          | 38       | ✓ « most cases »     | 37 %                          | **✓ texte+image**     | 1 024      |
+| Claude Opus 5            | **51**   | ✓ « most cases »     | 57 % (Terminal-Bench 49 %)    | **✓ texte+image**     | 512        |
+| **GPT-5.6 Luna**         | **38**   | **✓✓ garanti**       | **50 %**                      | ✓                     | 1 024      |
+| GPT-5.6 Terra            | 42       | **✓✓ garanti**       | non trouvé                    | ✓                     | 1 024      |
+| GPT-5.6 Sol              | 47       | **✓✓ garanti**       | **60 %**                      | ✓                     | 1 024      |
+| GPT-6 Astra              | **53**   | **✓✓ garanti**       | non trouvé                    | ✓                     | 1 024      |
+| Gemini 3.5 Flash-Lite    | 23       | ⚠ sous-ensemble      | 25 % (**Omniscience +5**)     | **✓**                 | 4 096      |
+| Gemini 3.8 Flash         | 41       | ⚠ sous-ensemble      | **60 %**                      | **✓**                 | 4 096      |
+| Gemini 3.1 Pro (preview) | 30       | ⚠ sous-ensemble      | 35 % (Briefcase **459**)      | **✓**                 | 4 096      |
+| Mistral Small 4          | 11       | ⚠ par prompt         | **1 %** (Omniscience **−30**) | image seule           | 64         |
+| Mistral Medium 3.5       | 15       | ⚠ par prompt         | non trouvé                    | ✓                     | 64         |
+| **deepseek-flash**       | **40**   | ✗ `json_object` seul | **69 %** (meilleur du panel)  | image, **pas de PDF** | —          |
+| deepseek-v4-pro          | 36       | ✗ `json_object` seul | non trouvé                    | ✗ **aucune vision**   | —          |
+| Qwen3.8-Max              | 40       | ✓ annoncé            | τ³-Banking n°1 : 51,3 %       | **pas de PDF**        | —          |
 
 ### 3.3 Les constats qui décident
 
-**a) La fiabilité du JSON est le cœur de A2–A6 et de A7.** Trois niveaux nets. OpenAI : « will *always* generate responses that adhere to your supplied JSON Schema », sans hallucination de clé ni d'enum. Anthropic : garantit avec **trois exceptions nommées** — refus, `max_tokens` atteint, casse des enums. Google : « Not all JSON Schema features are supported », validez vous-même. Mistral : pilotage par prompt. **DeepSeek : `json_object` seulement, avec un avertissement officiel — « the API may occasionally return empty content ».**
+**a) La fiabilité du JSON est le cœur de A2–A6 et de A7.** Trois niveaux nets. OpenAI : « will _always_ generate responses that adhere to your supplied JSON Schema », sans hallucination de clé ni d'enum. Anthropic : garantit avec **trois exceptions nommées** — refus, `max_tokens` atteint, casse des enums. Google : « Not all JSON Schema features are supported », validez vous-même. Mistral : pilotage par prompt. **DeepSeek : `json_object` seulement, avec un avertissement officiel — « the API may occasionally return empty content ».**
 
 C'est la seule caractéristique de ce benchmark qui a un coût chiffrable, et elle est chiffrée au §4.4.
 
@@ -138,39 +138,39 @@ C'est la seule caractéristique de ce benchmark qui a un coût chiffrable, et el
 
 ### 4.2 Le chiffre
 
-| Variante | €/mois |
-|---|---|
-| Naïf — chiffré comme les autres piles | 7,38 |
-| + contrainte vision (B3 → flash) | 7,38 |
-| + rastérisation des PJ (×1,6) | 7,71 |
+| Variante                                            | €/mois   |
+| --------------------------------------------------- | -------- |
+| Naïf — chiffré comme les autres piles               | 7,38     |
+| + contrainte vision (B3 → flash)                    | 7,38     |
+| + rastérisation des PJ (×1,6)                       | 7,71     |
 | **+ reprise JSON 12 % = coût réel, heures pleines** | **8,22** |
-| Même chose, heures creuses uniquement | 4,11 |
-| Mélange réaliste 55 % pleines / 45 % creuses | 6,37 |
+| Même chose, heures creuses uniquement               | 4,11     |
+| Mélange réaliste 55 % pleines / 45 % creuses        | 6,37     |
 
 **Réponse à la question posée : ≈ 8,22 €/mois pour 5 000 messages**, soit **1,64 € par tranche de 1 000 messages**. Contre 48,25 € pour la pile OpenAI de référence et 60,65 € pour la pile Anthropic.
 
 Décomposition (heures pleines, coût réel) :
 
-| Poste | Modèle | €/mois | Part |
-|---|---|---|---|
-| A7 relecture sujet suivi | deepseek-flash | 2,66 | 32,3 % |
-| C1 chat (tier haut) | deepseek-v4-pro | 1,28 | 15,6 % |
-| A10 message sortant | deepseek-flash | 0,88 | 10,7 % |
-| A2–A6 ouverture/rattachement | deepseek-flash | 0,85 | 10,3 % |
-| C1 chat (tier moyen) | deepseek-flash | 0,66 | 8,0 % |
-| B2 résumé PJ | deepseek-flash | 0,54 | 6,5 % |
-| A1 classification domaine | deepseek-flash | 0,44 | 5,4 % |
-| B1 régénération brouillon | deepseek-flash | 0,41 | 5,0 % |
-| B3 analyse PJ approfondie | deepseek-flash | 0,30 | 3,6 % |
-| A9 étiquetage PJ | deepseek-flash | 0,15 | 1,9 % |
-| B4 · C2 | deepseek-flash | 0,05 | 0,7 % |
-| **Total** | | **8,22** | |
+| Poste                        | Modèle          | €/mois   | Part   |
+| ---------------------------- | --------------- | -------- | ------ |
+| A7 relecture sujet suivi     | deepseek-flash  | 2,66     | 32,3 % |
+| C1 chat (tier haut)          | deepseek-v4-pro | 1,28     | 15,6 % |
+| A10 message sortant          | deepseek-flash  | 0,88     | 10,7 % |
+| A2–A6 ouverture/rattachement | deepseek-flash  | 0,85     | 10,3 % |
+| C1 chat (tier moyen)         | deepseek-flash  | 0,66     | 8,0 %  |
+| B2 résumé PJ                 | deepseek-flash  | 0,54     | 6,5 %  |
+| A1 classification domaine    | deepseek-flash  | 0,44     | 5,4 %  |
+| B1 régénération brouillon    | deepseek-flash  | 0,41     | 5,0 %  |
+| B3 analyse PJ approfondie    | deepseek-flash  | 0,30     | 3,6 %  |
+| A9 étiquetage PJ             | deepseek-flash  | 0,15     | 1,9 %  |
+| B4 · C2                      | deepseek-flash  | 0,05     | 0,7 %  |
+| **Total**                    |                 | **8,22** |        |
 
 Sensibilité au volume, strictement linéaire :
 
 | Messages/mois | 1 000 | **5 000** | 10 000 | 25 000 | 50 000 | 100 000 |
-|---|---|---|---|---|---|---|
-| €/mois | 1,64 | **8,22** | 16,45 | 41,12 | 82,24 | 164,49 |
+| ------------- | ----- | --------- | ------ | ------ | ------ | ------- |
+| €/mois        | 1,64  | **8,22**  | 16,45  | 41,12  | 82,24  | 164,49  |
 
 ### 4.3 Ce qui plaide contre, sans invoquer le RGPD
 
@@ -183,10 +183,10 @@ Sensibilité au volume, strictement linéaire :
 
 Une pile **« DeepSeek partout sauf la sortie structurée »** — `deepseek-flash` sur A1, A9, B2, B3, C1 et les brouillons, **GPT-5.6 Luna sur A2–A6, A7, A10, B1, B4** :
 
-| Pile | €/mois |
-|---|---|
+| Pile                                     | €/mois   |
+| ---------------------------------------- | -------- |
 | **Hybride — DeepSeek sauf la structure** | **7,30** |
-| DeepSeek intégral | 8,22 |
+| DeepSeek intégral                        | 8,22     |
 
 **L'hybride est moins cher que DeepSeek seul.** La reprise à 12 % sur les appels structurés coûte davantage que l'écart de prix avec un modèle qui garantit le schéma. Autrement dit : **le fournisseur à JSON strict ne coûte rien, il se rembourse.** Même en écartant toute considération de qualité, il n'y a pas d'argument économique pour faire tourner l'extraction structurée sur DeepSeek.
 
@@ -201,14 +201,14 @@ Le chiffrage initial comparait une pile **premium** (Haiku/Sonnet 5/Opus 5, 60,6
 Comparaison **à jetons de raisonnement inclus** (réglage du §6.1 bis), donc directement comparable
 à la facture réelle :
 
-| Pile | €/mois | €/1 000 msg | 1 siège | 3 sièges |
-|---|---|---|---|---|
-| Hybride — DeepSeek sauf la structure | 9,62 | 1,92 | 13,9 % | 4,6 % |
-| DeepSeek intégral | 10,65 | 2,13 | 15,4 % | 5,1 % |
-| **RETENU — 100 % OpenAI, Luna / Luna / Terra** | **14,63** | **2,93** | **21,2 %** | **7,1 %** |
-| Google — Flash-Lite + 3.8 Flash | 23,15 | 4,63 | 33,5 % | 11,2 % |
-| OpenAI premium — Luna/Terra/Sol (1re recommandation) | 66,05 | 13,21 | 95,7 % | 31,9 % |
-| Anthropic premium — Haiku/Sonnet 5/Opus 5 (1re recommandation) | 78,42 | 15,68 | 113,7 % | 37,9 % |
+| Pile                                                           | €/mois    | €/1 000 msg | 1 siège    | 3 sièges  |
+| -------------------------------------------------------------- | --------- | ----------- | ---------- | --------- |
+| Hybride — DeepSeek sauf la structure                           | 9,62      | 1,92        | 13,9 %     | 4,6 %     |
+| DeepSeek intégral                                              | 10,65     | 2,13        | 15,4 %     | 5,1 %     |
+| **RETENU — 100 % OpenAI, Luna / Luna / Terra**                 | **14,63** | **2,93**    | **21,2 %** | **7,1 %** |
+| Google — Flash-Lite + 3.8 Flash                                | 23,15     | 4,63        | 33,5 %     | 11,2 %    |
+| OpenAI premium — Luna/Terra/Sol (1re recommandation)           | 66,05     | 13,21       | 95,7 %     | 31,9 %    |
+| Anthropic premium — Haiku/Sonnet 5/Opus 5 (1re recommandation) | 78,42     | 15,68       | 113,7 %    | 37,9 %    |
 
 Reproductible : `python3 scripts/cout-iag.py --piles`. Hors raisonnement, les mêmes piles
 donnaient respectivement 7,30 · 8,22 · 9,32 · 18,15 · 48,25 · 60,65 €.
@@ -223,12 +223,12 @@ donnaient respectivement 7,30 · 8,22 · 9,32 · 18,15 · 48,25 · 60,65 €.
 
 ### 6.1 Affectation modèle ↔ tâche
 
-| Tier | Sollicitations | Modèle | Pourquoi |
-|---|---|---|---|
-| **S** — classification courte | A1, A9, A10 *, C2 | **GPT-5.6 Luna** | 0,20 $/1,20 $, index 38, AutomationBench 50 %. Rien de moins cher n'est meilleur. |
-| **M** — extraction structurée et rédaction | A2–A6, A7, B1, B2, B4, C1 simple | **GPT-5.6 Luna** | Le JSON strict garanti est la caractéristique qui compte ici, et elle est au même prix. |
-| **L** — raisonnement, chat complexe | C1 complexe | **GPT-5.6 Terra** | Effort réglable ; à faire tourner à effort `low`/`medium`, jamais `max` (§3.3 d). |
-| **Lv** — analyse de document | B3 | **GPT-5.6 Terra** | Luna et Terra acceptent les fichiers en entrée et en extraient texte **et** images de page. L'exception Sonnet 5 envisagée un temps n'est pas nécessaire : elle ne l'était que face à un fournisseur sans PDF natif. |
+| Tier                                       | Sollicitations                   | Modèle            | Pourquoi                                                                                                                                                                                                             |
+| ------------------------------------------ | -------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **S** — classification courte              | A1, A9, A10 \*, C2               | **GPT-5.6 Luna**  | 0,20 $/1,20 $, index 38, AutomationBench 50 %. Rien de moins cher n'est meilleur.                                                                                                                                    |
+| **M** — extraction structurée et rédaction | A2–A6, A7, B1, B2, B4, C1 simple | **GPT-5.6 Luna**  | Le JSON strict garanti est la caractéristique qui compte ici, et elle est au même prix.                                                                                                                              |
+| **L** — raisonnement, chat complexe        | C1 complexe                      | **GPT-5.6 Terra** | Effort réglable ; à faire tourner à effort `low`/`medium`, jamais `max` (§3.3 d).                                                                                                                                    |
+| **Lv** — analyse de document               | B3                               | **GPT-5.6 Terra** | Luna et Terra acceptent les fichiers en entrée et en extraient texte **et** images de page. L'exception Sonnet 5 envisagée un temps n'est pas nécessaire : elle ne l'était que face à un fournisseur sans PDF natif. |
 
 \* A10 passe en tier S après l'optimisation du §6.2, ou disparaît s'il devient déterministe.
 
@@ -259,12 +259,12 @@ plus, pas 50.
 niveau se règle par appel via `reasoning.effort` : `none`, `low`, `medium` (**défaut**), `high`,
 `xhigh`, `max`. Le chiffrage du §5 supposait implicitement `none`. Ce n'est pas le défaut.
 
-| Réglage appliqué à toute la chaîne | Jetons de raisonnement par appel | €/mois | Facteur |
-|---|---|---|---|
-| `none` | aucun | **9,32** | ×1,0 |
-| `low` | ~300 sur M, ~600 sur L | 13,63 | ×1,5 |
-| **`medium` — défaut de l'API** | ~800 / ~1 600 | **20,81** | **×2,2** |
-| `high` | ~2 000 / ~4 000 | 38,05 | ×4,1 |
+| Réglage appliqué à toute la chaîne | Jetons de raisonnement par appel | €/mois    | Facteur  |
+| ---------------------------------- | -------------------------------- | --------- | -------- |
+| `none`                             | aucun                            | **9,32**  | ×1,0     |
+| `low`                              | ~300 sur M, ~600 sur L           | 13,63     | ×1,5     |
+| **`medium` — défaut de l'API**     | ~800 / ~1 600                    | **20,81** | **×2,2** |
+| `high`                             | ~2 000 / ~4 000                  | 38,05     | ×4,1     |
 
 Reproductible : `python3 scripts/cout-iag.py --effort`.
 
@@ -275,12 +275,12 @@ défaut.
 
 **Réglage retenu par poste :**
 
-| Tier | Sollicitations | `reasoning.effort` | Pourquoi |
-|---|---|---|---|
-| S | A1, A9, A10, C2 | **`none`** | Une classification de domaine ne se raisonne pas, elle se reconnaît. |
-| Ms | A2–A6, A7, B1, B4 | **`low`** | Assez pour arbitrer « bruit / affaire nouvelle / affaire suivie », pas plus. |
-| Ml | B2, C1 simple | **`low`** | Résumé et rédaction : le raisonnement long n'améliore pas le français. |
-| L | C1 complexe, B3 | **`medium`** | Le seul endroit où un raisonnement explicite paie. |
+| Tier | Sollicitations    | `reasoning.effort` | Pourquoi                                                                     |
+| ---- | ----------------- | ------------------ | ---------------------------------------------------------------------------- |
+| S    | A1, A9, A10, C2   | **`none`**         | Une classification de domaine ne se raisonne pas, elle se reconnaît.         |
+| Ms   | A2–A6, A7, B1, B4 | **`low`**          | Assez pour arbitrer « bruit / affaire nouvelle / affaire suivie », pas plus. |
+| Ml   | B2, C1 simple     | **`low`**          | Résumé et rédaction : le raisonnement long n'améliore pas le français.       |
+| L    | C1 complexe, B3   | **`medium`**       | Le seul endroit où un raisonnement explicite paie.                           |
 
 **Budget retenu : 14,63 €/mois pour 5 000 messages**, soit 2,93 € par tranche de 1 000 — 21,2 %
 du revenu à 1 siège, **7,1 % à 3 sièges**.
@@ -325,11 +325,11 @@ Pas un framework, pas un routeur dynamique. Une interface interne à quatre mét
 
 Sollicitation mesurée : le **tri** (`05 §1.1`), un appel, sortie structurée, couche Produit food + couche Compte + le fil.
 
-| Configuration | Verdicts justes | Domaines justes | €/1 000 messages | Latence moy. | Entrée moy. (dont cache) | Sortie moy. (dont raisonnement) |
-|---|---|---|---|---|---|---|
-| Luna, effort `none` | 21/22 | 14/18 | **0,24** | 2,5 s | 2 377 (1 699) | 89 (0) |
-| Luna, effort `low` | 20/22 | 15/17 | 0,26 | 2,1 s | 2 377 (1 699) | 110 (22) |
-| Terra, effort `low` | 21/22 | 17/18 | 2,32 | 2,1 s | 2 377 (1 699) | 83 (0) |
+| Configuration       | Verdicts justes | Domaines justes | €/1 000 messages | Latence moy. | Entrée moy. (dont cache) | Sortie moy. (dont raisonnement) |
+| ------------------- | --------------- | --------------- | ---------------- | ------------ | ------------------------ | ------------------------------- |
+| Luna, effort `none` | 21/22           | 14/18           | **0,24**         | 2,5 s        | 2 377 (1 699)            | 89 (0)                          |
+| Luna, effort `low`  | 20/22           | 15/17           | 0,26             | 2,1 s        | 2 377 (1 699)            | 110 (22)                        |
+| Terra, effort `low` | 21/22           | 17/18           | 2,32             | 2,1 s        | 2 377 (1 699)            | 83 (0)                          |
 
 **Ce que le passage a appris, dans l'ordre d'importance.**
 
@@ -355,11 +355,11 @@ Sollicitation mesurée : le **tri** (`05 §1.1`), un appel, sortie structurée, 
 
 Exprimés en pourcentage du **budget IA du compte** = sièges × forfait mensuel de messages inclus.
 
-| Seuil | Déclenchement | Effet |
-|---|---|---|
-| **Alerte — 70 %** | notification interne | rien de visible pour l'utilisateur |
-| **Dégradation — 100 %** | bascule de gamme | tier L → tier M ; tier M → tier S sur les postes non structurants ; chat en modèle économique. A2–A6 et A7 **ne sont jamais dégradés** : ce sont eux qui écrivent en base. Bandeau discret. |
-| **Coupure — 150 %** | arrêt des sollicitations | A2–A9 et C1 s'arrêtent. |
+| Seuil                   | Déclenchement            | Effet                                                                                                                                                                                       |
+| ----------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Alerte — 70 %**       | notification interne     | rien de visible pour l'utilisateur                                                                                                                                                          |
+| **Dégradation — 100 %** | bascule de gamme         | tier L → tier M ; tier M → tier S sur les postes non structurants ; chat en modèle économique. A2–A6 et A7 **ne sont jamais dégradés** : ce sont eux qui écrivent en base. Bandeau discret. |
+| **Coupure — 150 %**     | arrêt des sollicitations | A2–A9 et C1 s'arrêtent.                                                                                                                                                                     |
 
 ### 7.3 Ce que la coupure ne casse pas — et c'est déjà dans l'architecture
 

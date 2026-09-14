@@ -17,12 +17,12 @@ fin: 2026-10-17
 **Objectif** — permettre à l'utilisateur d'alimenter la mémoire de Relvo.
 **Dépendances** : M3, M4. **Débloque** M7 et M10.
 
-| # | Item |
-|---|---|
-| M11.1 | Dépôt d'un fichier par glisser-déposer dans la fiche d'un domaine |
-| M11.2 | Copie d'inférence + stockage de son identifiant |
-| M11.3 | Étiquetage automatique du fichier |
-| M11.4 | Rédaction et modification des instructions |
+| #     | Item                                                                                    |
+| ----- | --------------------------------------------------------------------------------------- |
+| M11.1 | Dépôt d'un fichier par glisser-déposer dans la fiche d'un domaine                       |
+| M11.2 | Copie d'inférence + stockage de son identifiant                                         |
+| M11.3 | Étiquetage automatique du fichier                                                       |
+| M11.4 | Rédaction et modification des instructions                                              |
 | M11.5 | Affichage discret de la source quand une tâche ou un brouillon s'appuie sur un document |
 
 > **Cette épique est plus importante que sa taille ne le suggère.** C'est elle qui fait la

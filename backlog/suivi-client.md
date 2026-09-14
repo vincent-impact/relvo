@@ -12,10 +12,10 @@
 
 Le client pose deux questions, et elles n'ont pas le même rythme :
 
-| Question | Onglet | Rythme |
-|---|---|---|
-| *Où en est mon projet ?* | **Avancement** — une frise des chantiers, à l'échelle du temps | change quand un chantier s'ouvre ou se ferme |
-| *Qu'est-ce qui a changé dans mon application ?* | **Journal des versions** | change à chaque mise en ligne |
+| Question                                        | Onglet                                                         | Rythme                                       |
+| ----------------------------------------------- | -------------------------------------------------------------- | -------------------------------------------- |
+| _Où en est mon projet ?_                        | **Avancement** — une frise des chantiers, à l'échelle du temps | change quand un chantier s'ouvre ou se ferme |
+| _Qu'est-ce qui a changé dans mon application ?_ | **Journal des versions**                                       | change à chaque mise en ligne                |
 
 Les deux vivent sur la même page, dans deux onglets. Les mélanger produit une page que personne
 ne sait lire.
@@ -24,12 +24,12 @@ ne sait lire.
 
 ## Les sources — une liste blanche de trois
 
-| Source | Ce qu'elle donne | Ce qui est lu |
-|---|---|---|
-| `epics/*.md` | la frise : titre client, objectif, statut, dates | **le frontmatter seul** |
-| `CHANGELOG.md` (racine, généré) | le journal des versions | tout le fichier |
-| `journal-client.md` | le journal **avant la reprise** — écrit à la main, figé | les entrées datées |
-| `../package.json` | rien de publiable — sert à dater la génération | — |
+| Source                          | Ce qu'elle donne                                        | Ce qui est lu           |
+| ------------------------------- | ------------------------------------------------------- | ----------------------- |
+| `epics/*.md`                    | la frise : titre client, objectif, statut, dates        | **le frontmatter seul** |
+| `CHANGELOG.md` (racine, généré) | le journal des versions                                 | tout le fichier         |
+| `journal-client.md`             | le journal **avant la reprise** — écrit à la main, figé | les entrées datées      |
+| `../package.json`               | rien de publiable — sert à dater la génération          | —                       |
 
 `journal-client.md` est la seule source rédigée à la main, et elle est **bornée dans le temps**
 (cf. « La reprise » plus bas). C'est un fichier écrit **pour** le client : il ne peut rien faire
@@ -60,15 +60,15 @@ qui n'a rien à faire devant un client.
 
 ```yaml
 ---
-id: M7                      # clé de jointure avec le dépôt — jamais affichée
-public: true                # false = la ligne n'existe pas sur la page
-ordre_public: 10            # ordre d'affichage dans la frise
+id: M7 # clé de jointure avec le dépôt — jamais affichée
+public: true # false = la ligne n'existe pas sur la page
+ordre_public: 10 # ordre d'affichage dans la frise
 titre_client: Tri automatique des messages
 resume_client: >
   Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent,
   ouvre le sujet correspondant, propose les tâches à faire et prépare un brouillon
   de réponse. C'est la fin du tri à la main.
-statut: en-cours            # a-faire | en-cours | termine | partiel
+statut: en-cours # a-faire | en-cours | termine | partiel
 debut: 2026-09-15
 fin: 2026-10-05
 ---
@@ -115,11 +115,11 @@ longtemps.
 Depuis la reprise, il est **généré depuis les commits**, jamais écrit à la main. La période
 antérieure est couverte une fois pour toutes par [`journal-client.md`](journal-client.md).
 
-| Type de commit | Devient une entrée ? |
-|---|---|
-| `feat` | **oui** — étiquette « Nouveau » |
-| `fix` | **oui** — étiquette « Corrigé » |
-| tout le reste | **non** |
+| Type de commit | Devient une entrée ?            |
+| -------------- | ------------------------------- |
+| `feat`         | **oui** — étiquette « Nouveau » |
+| `fix`          | **oui** — étiquette « Corrigé » |
+| tout le reste  | **non**                         |
 
 Le filtre est la convention de commits elle-même : `docs`, `chore`, `refactor`, `perf`, `style`,
 `test`, `ci` ne franchissent jamais la frontière.
@@ -136,11 +136,11 @@ Client: La fiche d'un contact s'ouvre en plein écran, avec tous ses
 numéros et adresses visibles d'un coup.
 ```
 
-| Pied de message | Effet |
-|---|---|
-| `Client: <phrase>` | c'est cette phrase qui est publiée |
-| `Client: -` | l'entrée n'est **pas** publiée — exclusion explicite |
-| **absent** | l'entrée n'est **pas** publiée non plus, et la génération le signale |
+| Pied de message    | Effet                                                                |
+| ------------------ | -------------------------------------------------------------------- |
+| `Client: <phrase>` | c'est cette phrase qui est publiée                                   |
+| `Client: -`        | l'entrée n'est **pas** publiée — exclusion explicite                 |
+| **absent**         | l'entrée n'est **pas** publiée non plus, et la génération le signale |
 
 **La phrase est écrite à la deuxième personne du client** — « vous pouvez », « vos messages » —
 et décrit un **effet observable**, pas une implémentation.
@@ -209,5 +209,5 @@ La cohérence n'est pas tenue par la vigilance : **le script de génération val
 - deux épiques n'ont pas le même `ordre_public`.
 
 C'est le même principe que le test qui tient la liste des contraintes du modèle de données :
-*tenu par un test, jamais par la vigilance*. Une page de suivi fausse est pire qu'une page de
+_tenu par un test, jamais par la vigilance_. Une page de suivi fausse est pire qu'une page de
 suivi absente — elle est lue, et elle est crue.

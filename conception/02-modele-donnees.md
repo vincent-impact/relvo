@@ -4,7 +4,7 @@
 > document divergent, **c'est le document qui a raison et le schéma qui rattrape**.
 >
 > Ce document décrit **ce qui est stocké et pourquoi**. Il ne décrit **pas** ce que le produit
-> *fait* de ces données : les cycles de vie, les règles de rattachement et les transitions font
+> _fait_ de ces données : les cycles de vie, les règles de rattachement et les transitions font
 > foi dans [`04-design-domaine.md`](04-design-domaine.md). Il ne décrit pas non plus le rendu :
 > cela vit dans [`design-system/`](design-system/).
 >
@@ -34,12 +34,12 @@ Actor = enum(user, ai, contact, system)
 
 Il désigne **qui porte la donnée** — création, exécution, complétion, action dans le journal.
 
-| Valeur | UI | Est-ce une entité ? |
-|---|---|---|
-| `user` | **Moi** | non — l'humain est implicite via `account_id` |
-| `ai` | **Relvo** | non — c'est un mécanisme du compte |
-| `contact` | **Externe** | **oui** — l'entité `Contact` |
-| `system` | — | non — événements techniques, généralement non affichés |
+| Valeur    | UI          | Est-ce une entité ?                                    |
+| --------- | ----------- | ------------------------------------------------------ |
+| `user`    | **Moi**     | non — l'humain est implicite via `account_id`          |
+| `ai`      | **Relvo**   | non — c'est un mécanisme du compte                     |
+| `contact` | **Externe** | **oui** — l'entité `Contact`                           |
+| `system`  | —           | non — événements techniques, généralement non affichés |
 
 **Convention de nommage** : tout attribut typé `Actor` porte le suffixe `_actor`
 (`source_actor`, `created_by_actor`, `completed_by_actor`, `executed_by_actor`), pour rendre le
@@ -110,10 +110,10 @@ aucun appelant ne compare deux adresses à la main.
 
 **Deux statuts, et ils suivent la source :**
 
-| Statut | Ce que ça veut dire | `source_actor` |
-|---|---|---|
-| `auto` | fiche déduite d'un message (signature, nom d'expéditeur) — partielle, non vérifiée | `ai` |
-| `complete` | l'utilisateur a vérifié et complété | `user` |
+| Statut     | Ce que ça veut dire                                                                | `source_actor` |
+| ---------- | ---------------------------------------------------------------------------------- | -------------- |
+| `auto`     | fiche déduite d'un message (signature, nom d'expéditeur) — partielle, non vérifiée | `ai`           |
+| `complete` | l'utilisateur a vérifié et complété                                                | `user`         |
 
 **Ce que Relvo écrit sur la fiche.** Un **rôle** — fournisseur, client, salarié, administration,
 partenaire, autre — et une **note de Relvo** d'une ligne : le ton employé, les habitudes de
@@ -148,9 +148,9 @@ jamais.
 
 Elle a **deux sous-types**, qui partagent la même base et divergent sur deux attributs :
 
-| | **E-mail** | **Messagerie** |
-|---|---|---|
-| A un objet | **oui** | non |
+|                | **E-mail**                            | **Messagerie**                         |
+| -------------- | ------------------------------------- | -------------------------------------- |
+| A un objet     | **oui**                               | non                                    |
 | Interlocuteurs | un **set** (1 = direct, ≥ 2 = groupe) | **un seul** : un contact, ou un groupe |
 
 Le comportement qui en découle — rattachement permanent d'un côté, écoute de l'autre — fait foi
@@ -173,12 +173,12 @@ dans `04`.
 
 ### Les clés
 
-| Sous-type / forme | Discriminant | Clé |
-|---|---|---|
-| e-mail / direct | objet normalisé + **le** destinataire | `email:<objet>:<destinataire>` |
-| e-mail / groupe | objet normalisé + **set trié** de destinataires | `email:<objet>:<set trié>` |
-| messagerie / direct | l'interlocuteur | `wa-direct:<numéro>` |
-| messagerie / groupe | le fil de groupe | `wa-group:<identifiant de fil>` |
+| Sous-type / forme   | Discriminant                                    | Clé                             |
+| ------------------- | ----------------------------------------------- | ------------------------------- |
+| e-mail / direct     | objet normalisé + **le** destinataire           | `email:<objet>:<destinataire>`  |
+| e-mail / groupe     | objet normalisé + **set trié** de destinataires | `email:<objet>:<set trié>`      |
+| messagerie / direct | l'interlocuteur                                 | `wa-direct:<numéro>`            |
+| messagerie / groupe | le fil de groupe                                | `wa-group:<identifiant de fil>` |
 
 La clé est calculée à la réception : on cherche la conversation correspondante, sinon on la crée.
 **C'est tout l'algorithme de rangement** — déterministe, et il ne peut pas échouer.
@@ -209,8 +209,9 @@ une conversation ignorée dit qu'on n'en veut pas, jamais pourquoi.
 ### Le verdict de tri
 
 Sur une conversation orpheline, Relvo dépose son **verdict de tri** — bruit, affaire, incertain —,
-une **confiance** à trois niveaux — haute, moyenne, basse —, une **raison** en une phrase, et
-l'horodatage. Ces champs portent le **dernier** verdict et sont visibles dans la liste à trier :
+la **catégorie** du bruit le cas échéant — dans le vocabulaire des raisons d'ignorance ci-dessus,
+pour qu'une confirmation d'un geste devienne la raison —, une **confiance** à trois niveaux —
+haute, moyenne, basse —, une **raison** en une phrase, et l'horodatage. Ces champs portent le **dernier** verdict et sont visibles dans la liste à trier :
 l'utilisateur confirme ou contredit d'un geste, et l'accord comme le désaccord sont journalisés.
 
 ⚠️ **Le verdict ne conditionne rien.** La conversation est rangée et lisible quel qu'il soit ; il
@@ -222,10 +223,10 @@ Table de liaison entre un sujet et une conversation. **Chaque ligne est une éco
 
 Elle porte les deux **bornes**, toutes deux **nullables** et pointant vers des **messages** :
 
-| Borne | Nulle veut dire |
-|---|---|
+| Borne                          | Nulle veut dire                                        |
+| ------------------------------ | ------------------------------------------------------ |
 | `anchor_message_id` — le début | pas de borne basse → **tout le fil** (cas de l'e-mail) |
-| `closing_message_id` — la fin | **l'écoute est en cours** |
+| `closing_message_id` — la fin  | **l'écoute est en cours**                              |
 
 Contrainte d'unicité sur le couple (sujet, conversation).
 
@@ -257,14 +258,14 @@ convient : c'est de l'accumulation de ces propositions que naît un domaine nouv
 
 Il porte enfin une série d'horodatages, chacun répondant à une question distincte :
 
-| Champ | Question à laquelle il répond |
-|---|---|
-| `opened_at` | quand l'affaire a-t-elle commencé ? |
-| `last_activity_at` | quand s'est-il passé quelque chose ? — pilote le tri |
-| `last_opened_at` | l'utilisateur a-t-il déjà regardé ? — **nul ⇒ marqueur « Nouveau »** |
-| `resolution_suggested_at` | Relvo a-t-il suggéré que c'était fini ? |
-| `resolved_at` | quand a-t-il été validé ? |
-| `closed_at` | quand a-t-il été clos ? |
+| Champ                     | Question à laquelle il répond                                        |
+| ------------------------- | -------------------------------------------------------------------- |
+| `opened_at`               | quand l'affaire a-t-elle commencé ?                                  |
+| `last_activity_at`        | quand s'est-il passé quelque chose ? — pilote le tri                 |
+| `last_opened_at`          | l'utilisateur a-t-il déjà regardé ? — **nul ⇒ marqueur « Nouveau »** |
+| `resolution_suggested_at` | Relvo a-t-il suggéré que c'était fini ?                              |
+| `resolved_at`             | quand a-t-il été validé ?                                            |
+| `closed_at`               | quand a-t-il été clos ?                                              |
 
 ⚠️ **`closed_at` est une simple date de clôture. Il ne borne rien.** L'appartenance est portée
 **exclusivement** par les bornes d'écoute. Les confondre ampute silencieusement le périmètre d'un
@@ -317,11 +318,11 @@ faux.
 cache : s'il est renseigné, l'analyse a déjà été faite, et le modèle n'est jamais sollicité deux
 fois pour le même document au même niveau.
 
-| Niveau | Quand | Ce que c'est |
-|---|---|---|
-| Étiquette | à la réception, automatique | une catégorie courte, utile quand le nom du fichier n'est pas explicite |
-| Résumé | au premier accès de l'utilisateur | quelques lignes |
-| Analyse | à la demande explicite | extraction détaillée |
+| Niveau    | Quand                             | Ce que c'est                                                            |
+| --------- | --------------------------------- | ----------------------------------------------------------------------- |
+| Étiquette | à la réception, automatique       | une catégorie courte, utile quand le nom du fichier n'est pas explicite |
+| Résumé    | au premier accès de l'utilisateur | quelques lignes                                                         |
+| Analyse   | à la demande explicite            | extraction détaillée                                                    |
 
 ## Task
 
@@ -338,7 +339,7 @@ Unité de travail **du sujet**, pas de l'utilisateur.
 - **`completed_by_actor`** — qui l'a cochée.
 - **`metadata`** — porte la **provenance d'une déduction** — la référence du sujet précédent ou
   du document de connaissance sur lequel Relvo s'est appuyé — et la **raison** en une phrase.
-  C'est ce qui rend la tâche auditable : « d'après *Ouverture magasin Béziers* », « le
+  C'est ce qui rend la tâche auditable : « d'après _Ouverture magasin Béziers_ », « le
   fournisseur demande un retour avant jeudi ».
 
 ⚠️ **La valeur `deleted` du statut subsiste dans l'énuméré mais n'est plus posée** : la
@@ -354,14 +355,14 @@ Elle est **simple et asymétrique**, et c'est cette asymétrie qu'il faut reteni
 - **Les champs de fin n'ajoutent jamais de deadline.** Ils expriment une **durée** : un
   déplacement de plusieurs jours, un créneau horaire.
 
-| Configuration | Sens |
-|---|---|
-| tous nuls | tâche sans deadline |
-| date de début seule | deadline au jour près |
-| début + heure | deadline horodatée |
-| début + date de fin | deadline au jour près, étalée sur plusieurs jours |
-| début + heures de début et de fin, même jour | créneau dans la journée |
-| les quatre | plage multi-jours avec horaires |
+| Configuration                                | Sens                                              |
+| -------------------------------------------- | ------------------------------------------------- |
+| tous nuls                                    | tâche sans deadline                               |
+| date de début seule                          | deadline au jour près                             |
+| début + heure                                | deadline horodatée                                |
+| début + date de fin                          | deadline au jour près, étalée sur plusieurs jours |
+| début + heures de début et de fin, même jour | créneau dans la journée                           |
+| les quatre                                   | plage multi-jours avec horaires                   |
 
 ⚠️ **« Date de fin seule » n'est pas une configuration valide.** La deadline vit dans le début.
 
@@ -415,12 +416,12 @@ d'un domaine métier seulement pour les sujets de ce domaine.
 
 Deux natures, portées par un énuméré :
 
-| | Document | Instruction |
-|---|---|---|
-| Source | fichier déposé | texte rédigé dans l'app |
-| Modifiable | non (suppression seule) | oui |
-| Stockage | **stockage objet** (source de vérité) + copie d'inférence | contenu en ligne |
-| Nature | une **référence** à laquelle on se fie | une **mémoire** qu'on façonne |
+|            | Document                                                  | Instruction                   |
+| ---------- | --------------------------------------------------------- | ----------------------------- |
+| Source     | fichier déposé                                            | texte rédigé dans l'app       |
+| Modifiable | non (suppression seule)                                   | oui                           |
+| Stockage   | **stockage objet** (source de vérité) + copie d'inférence | contenu en ligne              |
+| Nature     | une **référence** à laquelle on se fie                    | une **mémoire** qu'on façonne |
 
 ⚠️ **La copie d'inférence n'est pas un stockage.** Un fichier déposé chez le fournisseur
 d'inférence est en **écriture seule** et n'est jamais relisible. L'affichage à l'utilisateur

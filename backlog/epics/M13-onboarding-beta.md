@@ -19,13 +19,13 @@ fin: 2026-11-05
 **Cible** : bêta privée gratuite, quelques comptes provisionnés à la main. Pas de facturation à
 ce stade.
 
-| # | Item |
-|---|---|
-| M13.1 | Provisionnement d'un compte, en ligne de commande ou page protégée |
+| #     | Item                                                                                                                                                                                                                                |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M13.1 | Provisionnement d'un compte, en ligne de commande ou page protégée                                                                                                                                                                  |
 | M13.2 | Prise en main en trois écrans : connecter ses canaux, choisir ses secteurs, déposer sa première instruction — les domaines sont proposés par le rattrapage du courrier récent (M7.19, M17.10), jamais demandés à un formulaire vide |
-| M13.3 | Pages d'erreur et de maintenance |
-| M13.4 | Documentation utilisateur courte |
-| M13.5 | Retour d'expérience depuis l'application |
+| M13.3 | Pages d'erreur et de maintenance                                                                                                                                                                                                    |
+| M13.4 | Documentation utilisateur courte                                                                                                                                                                                                    |
+| M13.5 | Retour d'expérience depuis l'application                                                                                                                                                                                            |
 
 ⚠️ **M13.2 conditionne la valeur de tout le reste.** Un dirigeant qui n'a connecté aucun canal
 et déposé aucune instruction verra un produit vide et le jugera sur ce vide.

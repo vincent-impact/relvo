@@ -28,7 +28,7 @@ export function estimerJetons(texte: string): number {
 
 /** Budgets en jetons, par bloc. Dépassement = test rouge, pas dérive silencieuse. */
 export const BUDGET_PRODUIT = {
-  socle: 1_000,
+  socle: 1_200,
   parSecteur: 1_100,
 } as const;
 

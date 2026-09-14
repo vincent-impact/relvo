@@ -23,28 +23,28 @@ frontmatter l'est.
 
 ## L'ordre
 
-| Épique | État | Ce qu'elle débloque |
-|---|---|---|
-| [M1 — Fondations](epics/M1-fondations.md) | ✅ | tout |
-| [M2 — Authentification et multi-tenant](epics/M2-auth-multi-tenant.md) | ✅ | M3 |
-| [M3 — Modèle de données et accès](epics/M3-modele-et-acces.md) | ✅ | M4, M5, M6, M9 |
-| [M4 — Stockage fichiers](epics/M4-stockage-fichiers.md) | ✅ | M11 |
-| [M5 — Ingestion e-mail](epics/M5-ingestion-email.md) | ✅ | M6 |
-| [M6 — Ingestion messagerie](epics/M6-ingestion-messagerie.md) | 🟡 code livré, **validation production à faire** | M7 |
-| [M6bis — Entité Conversation](epics/M6bis-conversation.md) | ✅ | M6ter |
-| [M6ter — Divergence par canal](epics/M6ter-divergence-par-canal.md) | ✅ | M6quater |
-| [M6quater — Sous-typage de la conversation](epics/M6quater-sous-typage.md) | ✅ | M7 |
-| [M9 — Pages applicatives](epics/M9-pages-applicatives.md) | ✅ | démo client |
-| [M16 — Consolidation](epics/M16-consolidation.md) | ✅ | — |
-| **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)** | 🟡 **en cours** | M8, M10 |
-| [M11 — Connaissances](epics/M11-connaissances.md) | ⬜ | M7, M10 |
-| [M10 — Échange avec Relvo](epics/M10-echange-relvo.md) | ⬜ | — |
-| [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md) | ⬜ | — |
-| [M17 — Mémoire et apprentissage](epics/M17-memoire-apprentissage.md) | ⬜ | la qualité du tri dans la durée |
-| [M12 — Mécanismes transverses](epics/M12-transverses.md) | 🟡 partiellement livré au fil de l'eau | — |
-| [M13 — Onboarding et bêta](epics/M13-onboarding-beta.md) | ⬜ | mise en service |
-| [M14 — Qualité et exploitation](epics/M14-qualite-exploitation.md) | ⬜ | — |
-| [M15 — Suivi de projet](epics/M15-suivi-client.md) | ⬜ | la relation client |
+| Épique                                                                     | État                                             | Ce qu'elle débloque             |
+| -------------------------------------------------------------------------- | ------------------------------------------------ | ------------------------------- |
+| [M1 — Fondations](epics/M1-fondations.md)                                  | ✅                                               | tout                            |
+| [M2 — Authentification et multi-tenant](epics/M2-auth-multi-tenant.md)     | ✅                                               | M3                              |
+| [M3 — Modèle de données et accès](epics/M3-modele-et-acces.md)             | ✅                                               | M4, M5, M6, M9                  |
+| [M4 — Stockage fichiers](epics/M4-stockage-fichiers.md)                    | ✅                                               | M11                             |
+| [M5 — Ingestion e-mail](epics/M5-ingestion-email.md)                       | ✅                                               | M6                              |
+| [M6 — Ingestion messagerie](epics/M6-ingestion-messagerie.md)              | 🟡 code livré, **validation production à faire** | M7                              |
+| [M6bis — Entité Conversation](epics/M6bis-conversation.md)                 | ✅                                               | M6ter                           |
+| [M6ter — Divergence par canal](epics/M6ter-divergence-par-canal.md)        | ✅                                               | M6quater                        |
+| [M6quater — Sous-typage de la conversation](epics/M6quater-sous-typage.md) | ✅                                               | M7                              |
+| [M9 — Pages applicatives](epics/M9-pages-applicatives.md)                  | ✅                                               | démo client                     |
+| [M16 — Consolidation](epics/M16-consolidation.md)                          | ✅                                               | —                               |
+| **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en cours**                                  | M8, M10                         |
+| [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
+| [M10 — Échange avec Relvo](epics/M10-echange-relvo.md)                     | ⬜                                               | —                               |
+| [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md)                    | ⬜                                               | —                               |
+| [M17 — Mémoire et apprentissage](epics/M17-memoire-apprentissage.md)       | ⬜                                               | la qualité du tri dans la durée |
+| [M12 — Mécanismes transverses](epics/M12-transverses.md)                   | 🟡 partiellement livré au fil de l'eau           | —                               |
+| [M13 — Onboarding et bêta](epics/M13-onboarding-beta.md)                   | ⬜                                               | mise en service                 |
+| [M14 — Qualité et exploitation](epics/M14-qualite-exploitation.md)         | ⬜                                               | —                               |
+| [M15 — Suivi de projet](epics/M15-suivi-client.md)                         | ⬜                                               | la relation client              |
 
 ## Le chemin critique
 

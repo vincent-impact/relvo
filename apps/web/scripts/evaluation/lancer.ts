@@ -204,7 +204,7 @@ async function main() {
             : "";
       const dom = r.accordDomaine === false ? " ❌" : "";
       console.log(
-        `| ${r.cas} | ${c.verite.verdict} | ${r.sortie.verdict}${marque} | ${r.sortie.confiance} | ${r.sortie.domaine ?? "∅"}${dom} (${c.verite.domaine ?? "∅"}) | ${r.sortie.titre ?? ""} | ${r.sortie.raison} |`,
+        `| ${r.cas} | ${c.verite.verdict} | ${r.sortie.verdict}${r.sortie.categorie_bruit ? ` (${r.sortie.categorie_bruit})` : ""}${marque} | ${r.sortie.confiance} | ${r.sortie.domaine ?? "∅"}${dom} (${c.verite.domaine ?? "∅"}) | ${r.sortie.titre ?? ""} | ${r.sortie.raison} |`,
       );
     }
     console.log("");

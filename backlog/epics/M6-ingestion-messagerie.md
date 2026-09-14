@@ -18,16 +18,16 @@ l'e-mail. **Dépendances** : M3, M4, **M5** (client, route de webhook, résoluti
 
 **Aucune migration** : le modèle était déjà agnostique du canal.
 
-| # | Item | État |
-|---|---|---|
-| M6.1 | ~~Runtime maison~~ | **abandonné** — réutilise le client et la route de M5 |
-| M6.2 | ~~Session persistante~~ | **sans objet** — gérée côté fournisseur |
-| M6.3 | Connexion par code visuel depuis les réglages | ✅ |
-| M6.4 | Réception, idempotente, avec rattachement par fil | ✅ |
-| M6.5 | Envoi dans un fil existant | ✅ |
-| M6.6 | Médias vers le stockage, au premier passage | ✅ |
-| M6.7 | Santé de la connexion | ✅ — déjà couverte génériquement par M5.8 |
-| M6.8 | Avertissement sur le risque lié aux conditions d'utilisation | ✅ |
+| #    | Item                                                         | État                                                  |
+| ---- | ------------------------------------------------------------ | ----------------------------------------------------- |
+| M6.1 | ~~Runtime maison~~                                           | **abandonné** — réutilise le client et la route de M5 |
+| M6.2 | ~~Session persistante~~                                      | **sans objet** — gérée côté fournisseur               |
+| M6.3 | Connexion par code visuel depuis les réglages                | ✅                                                    |
+| M6.4 | Réception, idempotente, avec rattachement par fil            | ✅                                                    |
+| M6.5 | Envoi dans un fil existant                                   | ✅                                                    |
+| M6.6 | Médias vers le stockage, au premier passage                  | ✅                                                    |
+| M6.7 | Santé de la connexion                                        | ✅ — déjà couverte génériquement par M5.8             |
+| M6.8 | Avertissement sur le risque lié aux conditions d'utilisation | ✅                                                    |
 
 **Écrire à un numéro sans échange préalable** est reporté après la V1.
 
