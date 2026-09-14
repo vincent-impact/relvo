@@ -1,10 +1,11 @@
 import { Suspense } from "react";
+import { after } from "next/server";
 import {
-  countUnsortedConversations,
-  getRelvoActivitySummary,
+  getConversationBadges,
   listConversationItems,
+  markConversationFilterSeen,
+  type SeenConversationFilter,
 } from "@relvo/db";
-import { RelvoActivityCard } from "@/components/conversations/relvo-activity-card";
 import { PollRefresh } from "@/components/shared/poll-refresh";
 import { ConversationFilters } from "@/components/conversations/conversation-filters";
 import { ConversationList } from "@/components/conversations/conversation-list";
@@ -21,10 +22,12 @@ import {
   parseFilterSlug,
   toConversationRowData,
 } from "@/lib/conversation-row";
-import { getTenantDb, requireAccount } from "@/server/auth-context";
+import { getTenantDb, requireAccountId } from "@/server/auth-context";
 
-/** Fenêtre du bilan de Relvo en tête de page : les sept derniers jours. */
-const ACTIVITY_WINDOW_DAYS = 7;
+/** Les onglets qui se « voient » : leur pastille tombe une fois l'onglet ouvert. */
+const SEEN_FILTERS: Partial<
+  Record<ConversationFilterSlug, SeenConversationFilter>
+> = { suivies: "followed", ignorees: "ignored" };
 
 // Conversations (M6bis.8) — la surface de TRI, hors navigation : on y arrive par
 // le KPI « Sans sujet » de la page Sujets. Elle remplace à terme `/messages`,
@@ -38,6 +41,12 @@ const ACTIVITY_WINDOW_DAYS = 7;
 //
 // PERF (M9.19) : le hero (compteur) s'affiche instantanément ; la liste stream
 // dans un <Suspense>.
+//
+// LES PASTILLES du sélecteur (M7, tranche 4) : « Sans sujet » est un stock,
+// « Suivies » et « Ignorées » un flux de ce que Relvo y a rangé depuis le
+// dernier passage. Ouvrir l'un de ces deux onglets MARQUE le passage — après la
+// réponse, pour ne pas la retarder — et seulement s'il y avait quelque chose à
+// voir : le rafraîchissement périodique ne réécrit pas le compte pour rien.
 
 async function List({
   filter,
@@ -74,11 +83,17 @@ export default async function ConversationsPage({
   const filter = parseFilterSlug(filtre);
   const channel = parseChannelSlug(canal);
 
-  const [account, db] = await Promise.all([requireAccount(), getTenantDb()]);
-  const [unsorted, summary] = await Promise.all([
-    countUnsortedConversations(db),
-    getRelvoActivitySummary(db, { days: ACTIVITY_WINDOW_DAYS }),
+  const [accountId, db] = await Promise.all([
+    requireAccountId(),
+    getTenantDb(),
   ]);
+  const badges = await getConversationBadges(db, accountId);
+  const unsorted = badges.unsorted;
+
+  const seen = SEEN_FILTERS[filter];
+  if (seen && badges[seen] > 0) {
+    after(() => markConversationFilterSeen(db, accountId, seen));
+  }
 
   return (
     <Screen>
@@ -94,14 +109,7 @@ export default async function ConversationsPage({
         className="pb-[46px]"
       />
 
-      <ConversationFilters filter={filter} channel={channel} />
-
-      {/* Ce que Relvo a fait en l'absence de l'utilisateur (M7, tranche 4). */}
-      <RelvoActivityCard
-        summary={summary}
-        assistantEnabled={account.assistantEnabled}
-        windowLabel={`ces ${ACTIVITY_WINDOW_DAYS} derniers jours`}
-      />
+      <ConversationFilters filter={filter} channel={channel} badges={badges} />
 
       <Suspense fallback={<RowsSkeleton count={5} />}>
         <List filter={filter} channel={channel} />

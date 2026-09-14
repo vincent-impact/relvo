@@ -349,6 +349,33 @@ surveiller : des sujets ouverts en confiance moyenne que l'utilisateur ferme aus
 (les traiter comme une affaire en confiance moyenne). La frontière est une constante du code,
 en un seul endroit, testée.
 
+### Trois pastilles, deux natures — ce que Relvo a fait en mon absence
+
+**`tranché`** · Au premier e-mail réel trié, le dirigeant a demandé à voir « ce que Relvo a fait
+en mon absence » : combien de fils lus, rangés en ignorés, en suivis, laissés à trier. Une
+première réponse posait une carte de bilan en tête de Conversations, sur une fenêtre de sept
+jours — faute d'horodatage de visite, la fenêtre était arbitraire.
+
+**Retenu, à la proposition du dirigeant** : pas de carte, des **pastilles sur le sélecteur**
+Sans sujet / Suivies / Ignorées. Elles ne sont pas de même nature, et c'est voulu :
+
+- « Sans sujet » compte un **stock** — toutes les conversations à trier, lues par Relvo ou
+  non. C'est le résidu de l'assistant, le seul endroit où l'interface réclame un geste. Le
+  chiffre ne tombe qu'en triant à la main.
+- « Suivies » et « Ignorées » comptent un **flux** — ce que Relvo y a rangé depuis le dernier
+  passage. Un appui sur l'onglet marque le passage, le chiffre tombe. Un geste de l'utilisateur
+  n'y compte jamais : ces pastilles ne disent que ce que Relvo a fait.
+
+Une seule règle de lecture réconcilie les trois : **le chiffre dit ce qui attend l'utilisateur
+ici** — un travail sur le premier onglet, un regard sur les deux autres. Une seule couleur, la
+violette de Relvo : le libellé de l'onglet porte le sens, et le rouge reste au retard des
+tâches. Les deux horodatages vivent sur le compte, pas dans le navigateur — téléphone et
+ordinateur voient la même chose.
+
+**Ce qui tranchera** : l'usage. Si la nuance stock/flux se lit mal, la couleur est le levier ;
+si le sous-titre du header (« N conversations à trier ») fait doublon avec la pastille, c'est le
+sous-titre qui part.
+
 ### Le personnel, la publicité et l'automatique sont des raisons, pas des domaines
 
 **`tranché`** · Le besoin exprimé à l'ouverture du pipeline : trier par défaut, sans rien

@@ -11,7 +11,10 @@ import {
   TriageVerdict,
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
-import { findListeningSubjectForConversation } from "./conversations";
+import {
+  countUnsortedConversations,
+  findListeningSubjectForConversation,
+} from "./conversations";
 import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { openSubjectOnConversation } from "./messages";
@@ -610,71 +613,79 @@ export async function logTriageFailure(
 }
 
 // ─────────────────────────────────────────────────────────────
-// Le bilan — ce que Relvo a fait en l'absence de l'utilisateur
+// Les pastilles — ce que Relvo a fait en l'absence de l'utilisateur
 // ─────────────────────────────────────────────────────────────
 
-export type RelvoActivitySummary = {
-  /** Début de la fenêtre observée. */
-  since: Date;
-  /** Conversations sur lesquelles Relvo a rendu un verdict dans la fenêtre. */
-  read: number;
-  /** … qu'il a fait taire (bruit en confiance haute). */
+/** Les deux onglets de Conversations qui se « voient » : un flux, pas un stock. */
+export type SeenConversationFilter = "followed" | "ignored";
+
+export type ConversationBadges = {
+  /** STOCK : toutes les conversations sans sujet — se vide en triant. */
+  unsorted: number;
+  /** FLUX : sujets ouverts ou rattachements par Relvo depuis le dernier passage. */
+  followed: number;
+  /** FLUX : conversations que Relvo a fait taire depuis le dernier passage. */
   ignored: number;
-  /** … sur lesquelles il a ouvert un sujet. */
-  opened: number;
-  /** … qu'il a rattachées à un sujet existant. */
-  attached: number;
-  /** … qu'il a laissées à trier (verdict seul). */
-  leftUnsorted: number;
-  /** Dernier verdict rendu, ou null. */
-  lastAt: Date | null;
 };
 
 /**
- * Compte, sur une fenêtre, ce que Relvo a fait des conversations : lues,
- * ignorées, ouvertes en sujet, rattachées, laissées à trier. Quatre comptages
- * et un maximum — rien de lourd, la page Conversations l'affiche à chaque
- * ouverture. « Laissées à trier » est le reste : lues moins rangées.
+ * Les trois pastilles du sélecteur de Conversations. Une seule règle de
+ * lecture : le chiffre dit CE QUI ATTEND l'utilisateur ici. Sur « Sans sujet »
+ * c'est un travail, le résidu de Relvo — le chiffre ne tombe que quand le tri
+ * est fait. Sur « Suivies » et « Ignorées » c'est un coup d'œil sur ce que
+ * Relvo a rangé — le chiffre tombe quand l'onglet a été vu. Un geste de
+ * l'utilisateur ne bouge jamais les deux flux : ils ne comptent que Relvo.
  */
-export async function getRelvoActivitySummary(
+export async function getConversationBadges(
   db: TenantDb,
-  opts: { since: Date } | { days: number },
-): Promise<RelvoActivitySummary> {
-  const since =
-    "since" in opts
-      ? opts.since
-      : new Date(Date.now() - opts.days * 86_400_000);
-  const [read, ignored, opened, attached, last] = await Promise.all([
-    db.conversation.count({ where: { triagedAt: { gte: since } } }),
-    db.conversation.count({
-      where: {
-        triagedAt: { gte: since },
-        status: ConversationStatus.ignored,
-        ignoredByActor: Actor.ai,
-      },
-    }),
+  accountId: string,
+): Promise<ConversationBadges> {
+  const seen = await db.account.findUnique({
+    where: { id: accountId },
+    select: { followedSeenAt: true, ignoredSeenAt: true },
+  });
+  const followedSince = seen?.followedSeenAt ?? undefined;
+  const ignoredSince = seen?.ignoredSeenAt ?? undefined;
+  const [unsorted, opened, attached, ignored] = await Promise.all([
+    countUnsortedConversations(db),
     db.subject.count({
-      where: { createdByActor: Actor.ai, createdAt: { gte: since } },
+      where: {
+        createdByActor: Actor.ai,
+        ...(followedSince ? { createdAt: { gt: followedSince } } : {}),
+      },
     }),
     db.eventLog.count({
       where: {
         eventType: EVENT_TYPES.conversationAttached,
         actor: Actor.ai,
-        createdAt: { gte: since },
+        ...(followedSince ? { createdAt: { gt: followedSince } } : {}),
       },
     }),
-    db.conversation.aggregate({
-      _max: { triagedAt: true },
-      where: { triagedAt: { gte: since } },
+    db.conversation.count({
+      where: {
+        status: ConversationStatus.ignored,
+        ignoredByActor: Actor.ai,
+        ...(ignoredSince ? { triagedAt: { gt: ignoredSince } } : {}),
+      },
     }),
   ]);
-  return {
-    since,
-    read,
-    ignored,
-    opened,
-    attached,
-    leftUnsorted: Math.max(0, read - ignored - opened - attached),
-    lastAt: last._max.triagedAt,
-  };
+  return { unsorted, followed: opened + attached, ignored };
+}
+
+/**
+ * L'utilisateur a vu l'onglet : la pastille tombe. Une visite n'est pas une
+ * décision — rien n'est journalisé. `Account` n'est pas scopé par le client
+ * tenant, d'où l'identifiant explicite.
+ */
+export async function markConversationFilterSeen(
+  db: TenantDb,
+  accountId: string,
+  filter: SeenConversationFilter,
+  at: Date = new Date(),
+): Promise<void> {
+  await db.account.update({
+    where: { id: accountId },
+    data:
+      filter === "followed" ? { followedSeenAt: at } : { ignoredSeenAt: at },
+  });
 }

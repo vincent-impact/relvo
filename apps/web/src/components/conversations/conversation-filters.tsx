@@ -2,7 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { Mail, MessageCircle } from "lucide-react";
-import { SegTabs } from "@/components/shared/seg-tabs";
+import type { ConversationBadges } from "@relvo/db";
+import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 import type {
   ConversationChannelSlug,
   ConversationFilterSlug,
@@ -19,6 +20,17 @@ import { cn } from "@/lib/utils";
 // pointe droit sur `?filtre=sans-sujet`) et c'est la base qui filtre. Les deux
 // contrôles se PRÉSERVENT l'un l'autre dans le lien construit. Rendu HORS du
 // <Suspense> de la liste → ils s'affichent immédiatement.
+//
+// LES PASTILLES (M7, tranche 4) — « ce qui t'attend ici », une seule règle de
+// lecture pour trois chiffres de nature différente :
+//   · Sans sujet : un STOCK, le résidu de Relvo — toutes les conversations à
+//     trier, lues ou non. Le chiffre ne tombe qu'en triant à la main.
+//   · Suivies, Ignorées : un FLUX — ce que Relvo y a rangé depuis le dernier
+//     passage. Le chiffre tombe quand l'onglet est vu ; sur l'onglet actif il
+//     n'est donc jamais affiché (la page marque le passage en rendant).
+// Volontairement hétérogène : c'est ce qui dit à l'utilisateur que le premier
+// chiffre réclame un geste et que les deux autres ne réclament qu'un regard.
+// Une seule couleur, la violette de Relvo : l'onglet porte déjà le sens.
 
 const FILTER_OPTIONS: { value: ConversationFilterSlug; label: string }[] = [
   { value: "sans-sujet", label: "Sans sujet" },
@@ -36,12 +48,34 @@ const CHANNEL_OPTIONS: {
   { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
 ];
 
+function withBadges(
+  badges: ConversationBadges,
+  active: ConversationFilterSlug,
+): SegTabOption[] {
+  const count = (slug: ConversationFilterSlug, n: number) =>
+    n > 0 && (slug === "sans-sujet" || slug !== active) ? n : undefined;
+  return FILTER_OPTIONS.map((opt) => ({
+    ...opt,
+    count: count(
+      opt.value,
+      opt.value === "sans-sujet"
+        ? badges.unsorted
+        : opt.value === "suivies"
+          ? badges.followed
+          : badges.ignored,
+    ),
+    countTone: "relvo",
+  }));
+}
+
 export function ConversationFilters({
   filter,
   channel,
+  badges,
 }: {
   filter: ConversationFilterSlug;
   channel: ConversationChannelSlug;
+  badges: ConversationBadges;
 }) {
   const router = useRouter();
 
@@ -59,7 +93,7 @@ export function ConversationFilters({
   return (
     <>
       <SegTabs
-        options={FILTER_OPTIONS}
+        options={withBadges(badges, filter)}
         value={filter}
         onValueChange={(v) => go({ filter: v as ConversationFilterSlug })}
         overlap

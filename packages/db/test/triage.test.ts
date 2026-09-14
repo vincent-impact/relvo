@@ -6,7 +6,7 @@ import {
   EVENT_TYPES,
   applyTriageMatter,
   createSubject,
-  getRelvoActivitySummary,
+  getConversationBadges,
   getTriageProjection,
   hasAiSolicitationForMessage,
   ignoreConversation,
@@ -16,6 +16,7 @@ import {
   listConversationItems,
   logAiSolicitation,
   logTriageFailure,
+  markConversationFilterSeen,
   prisma,
   reactivateConversation,
   recordTriageVerdict,
@@ -528,7 +529,7 @@ describe("compteur et échec", () => {
   });
 });
 
-describe("faire taire une source, et le bilan", () => {
+describe("faire taire une source, et les pastilles", () => {
   it("Relvo ignore un fil avec sa catégorie pour raison ; réactiver efface la raison, pas le verdict", async () => {
     const { db, channel } = await makeAccount("m@test.fr");
     const { message } = await mail(db, channel.id, "e1", {
@@ -593,10 +594,9 @@ describe("faire taire une source, et le bilan", () => {
     expect(c.ignoreReason).toBeNull();
   });
 
-  it("compte ce que Relvo a fait sur une fenêtre : lues, ignorées, ouvertes, rattachées, laissées", async () => {
-    const { db, channel } = await makeAccount("o@test.fr");
+  it("les pastilles : « Sans sujet » est un stock, « Suivies » et « Ignorées » un flux depuis le dernier passage", async () => {
+    const { db, account, channel } = await makeAccount("o@test.fr");
     const existant = await createSubject(db, { title: "Retard livraison" });
-    const since = new Date(Date.now() - 60_000);
 
     // 1. ignorée par Relvo
     const a = await mail(db, channel.id, "a", { subjectLine: "Promo" });
@@ -659,21 +659,50 @@ describe("faire taire une source, et le bilan", () => {
     const f = await mail(db, channel.id, "f", { subjectLine: "Perso" });
     await ignoreConversation(db, f.message.conversationId);
 
-    const s = await getRelvoActivitySummary(db, { since });
-    expect(s).toMatchObject({
-      read: 4,
+    // Jamais passé : tout ce que Relvo a rangé est nouveau. Le stock compte
+    // TOUTES les conversations sans sujet, lues ou non (d, e) ; le geste de
+    // l'utilisateur (f) ne compte pas dans « Ignorées ».
+    expect(await getConversationBadges(db, account.id)).toEqual({
+      unsorted: 2,
+      followed: 2,
       ignored: 1,
-      opened: 1,
-      attached: 1,
-      leftUnsorted: 1,
     });
-    expect(s.lastAt).not.toBeNull();
 
-    // Une fenêtre future : rien.
-    const vide = await getRelvoActivitySummary(db, {
-      since: new Date(Date.now() + 60_000),
+    // L'onglet « Suivies » vu : son flux tombe, le reste ne bouge pas.
+    await markConversationFilterSeen(db, account.id, "followed");
+    expect(await getConversationBadges(db, account.id)).toEqual({
+      unsorted: 2,
+      followed: 0,
+      ignored: 1,
     });
-    expect(vide).toMatchObject({ read: 0, ignored: 0, opened: 0, attached: 0 });
-    expect(vide.lastAt).toBeNull();
+    await markConversationFilterSeen(db, account.id, "ignored");
+    expect(await getConversationBadges(db, account.id)).toMatchObject({
+      followed: 0,
+      ignored: 0,
+    });
+
+    // Relvo range un nouveau fil après le passage : le flux repart de 1. Trier
+    // à la main le stock ne touche pas les flux.
+    const g = await mail(db, channel.id, "g", { subjectLine: "Pub" });
+    await recordTriageVerdict(db, {
+      conversationId: g.message.conversationId,
+      messageId: g.message.id,
+      verdict: "noise",
+      noiseReason: "advertising",
+      confidence: "high",
+      reason: "Promotion.",
+      source: "model",
+    });
+    await ignoreConversation(db, g.message.conversationId, {
+      reason: "advertising",
+      note: "Promotion.",
+      actor: "ai",
+    });
+    await ignoreConversation(db, d.message.conversationId);
+    expect(await getConversationBadges(db, account.id)).toEqual({
+      unsorted: 1,
+      followed: 0,
+      ignored: 1,
+    });
   });
 });

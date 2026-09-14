@@ -307,6 +307,12 @@ model Account {
   /// Réglage de l'utilisateur (Réglages › Préférences) ; un administrateur
   /// pourra le couper à tout moment depuis le backoffice à venir.
   assistantEnabled      Boolean     @default(false) @map("assistant_enabled")
+  /// Dernier passage de l'utilisateur sur les onglets « Suivies » et « Ignorées »
+  /// de Conversations. Sert aux PASTILLES : ce que Relvo y a rangé depuis. Le
+  /// stock « Sans sujet » n'a pas d'horodatage — il se vide en triant, pas en
+  /// regardant. Null = jamais passé : tout ce que Relvo a rangé est nouveau.
+  followedSeenAt        DateTime?   @map("followed_seen_at")
+  ignoredSeenAt         DateTime?   @map("ignored_seen_at")
   createdAt             DateTime    @default(now()) @map("created_at")
   updatedAt             DateTime    @updatedAt @map("updated_at")
 

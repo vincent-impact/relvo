@@ -81,6 +81,12 @@ la relecture et l'échange. Un compte nouveau ne sollicite rien tant que personn
 L'utilisateur le règle dans ses préférences ; un administrateur peut le couper à tout moment,
 et l'état ne change jamais que par la méthode du domaine qui le journalise.
 
+Il porte enfin le **dernier passage** de l'utilisateur sur les onglets « Suivies » et
+« Ignorées » de Conversations. Ces deux horodatages servent aux **pastilles** du sélecteur :
+elles comptent ce que Relvo a rangé dans l'onglet depuis, et tombent quand l'onglet est vu.
+« Sans sujet » n'a pas d'horodatage : sa pastille est un stock, le résidu de Relvo, qui ne se
+vide qu'en triant. Une visite n'est pas une décision, elle n'est pas journalisée.
+
 ## Folder
 
 Un **domaine** : conteneur métier qui regroupe les sujets d'un périmètre, les documents de

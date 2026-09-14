@@ -20,6 +20,13 @@ export type SegTabOption = {
   label: string;
   count?: number;
   /**
+   * Teinte du compteur. Par défaut, gris neutre : un simple dénombrement.
+   * `relvo` : violet — « ce qui t'attend ici » (pastilles de Conversations),
+   * qu'il s'agisse d'un stock à trier ou de ce que Relvo a rangé depuis le
+   * dernier passage. Sur l'onglet actif, la teinte s'efface dans le violet.
+   */
+  countTone?: "neutral" | "relvo";
+  /**
    * Point ROUGE « il y a du nouveau », posé sur l'icône (mode `iconOnly`). Signal
    * indépendant du compteur : le compteur dit COMBIEN d'éléments (homogène avec
    * les autres onglets), le point dit QU'il y a du non-lu.
@@ -95,7 +102,9 @@ export function SegTabs({
                   "inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 font-numeric text-[10.5px] font-bold",
                   active
                     ? "bg-white/30 text-white"
-                    : "bg-(--surface-2) text-(--text-tertiary)",
+                    : opt.countTone === "relvo"
+                      ? "bg-relvo text-white"
+                      : "bg-(--surface-2) text-(--text-tertiary)",
                 )}
               >
                 {opt.count}

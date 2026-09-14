@@ -235,11 +235,12 @@ que rien ne le montre :
 - [x] **Ce que Relvo en pense, visible** (première forme de M7.20) : sous chaque conversation
       lue, la ligne « Relvo · bruit · publicité — raison » ou « Ignorée par Relvo · … » ; en tête
       du fil, la même ligne, ou « Relvo n'a pas encore lu ce fil ».
-- [x] **Le bilan en tête de l'onglet Conversations** : ce que Relvo a fait ces sept derniers
-      jours — lues, ignorées, sujets ouverts, rattachées, laissées à trier — chaque compteur
-      menant au filtre concerné (`getRelvoActivitySummary`, quatre comptages). Coupé, la carte
-      renvoie vers le réglage. La fenêtre de sept jours est une constante de la page ; « depuis
-      ma dernière visite » demanderait un horodatage de visite qui n'existe pas.
+- [x] **Ce que Relvo a fait en mon absence, dans les pastilles du sélecteur** : « Sans sujet »
+      porte un stock (toutes les conversations à trier), « Suivies » et « Ignorées » un flux (ce
+      que Relvo y a rangé depuis le dernier passage, qui tombe une fois l'onglet vu — deux
+      horodatages sur le compte, migration `20260914180000`, `getConversationBadges` /
+      `markConversationFilterSeen`). Volontairement hétérogène, décision dans `ecarts`
+      (« Trois pastilles, deux natures »). A remplacé une carte de bilan sur sept jours, retirée.
 
 **Ce que la tranche laisse volontairement de côté** : la pastille d'un appui avec provenance
 (le reste de M7.20) ; WhatsApp (A8) ; les préférences observées et les antécédents de tri
