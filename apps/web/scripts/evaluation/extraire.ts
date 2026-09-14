@@ -126,6 +126,9 @@ async function main() {
       nom: d.name,
       description: d.description,
     })),
+    instructionsGenerales: [],
+    etiquettes: [],
+    preferencesObservees: null,
     sujetsOuverts: sujetsOuverts.map((s) => ({
       reference: s.reference,
       titre: anonymiser(s.title),

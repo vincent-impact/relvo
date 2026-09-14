@@ -135,17 +135,28 @@ IA (`schemas.ts`, `produit/`) en est le miroir.
 
 ## Tranche 3 — L'assemblage du contexte (M7.3)
 
-Le module que M7 et M10 consomment tous les deux. Aucune duplication.
+**Livrée le 2026-09-14** — `apps/web/src/server/ia/contexte/`, module PUR (aucune base) que le
+pipeline et l'échange consomment tous les deux. Les types d'entrée sont des projections
+explicites, champ par champ, jamais des entités Prisma ; les chargeurs qui les remplissent depuis
+la base arrivent avec l'orchestration, tranche 4.
 
-- [ ] Constructeurs par couche : Produit (fichiers par secteur, ordre fixe), Compte, Domaine,
-      Situation, Instant (date, jour, semaine, fériés proches).
-- [ ] Les trois fiches : sujet, contact, brief du compte — et la **fiche de clôture** d'un sujet
-      validé, déterministe.
-- [ ] **Hygiène du message** : citations de réponse et signatures retirées, plafond de longueur.
-      C'est la première optimisation, en coût comme en qualité.
-- [ ] Profils par sollicitation — tri, structuration, relecture, brouillon, étiquette de pièce
-      jointe — avec un **budget par couche tenu par un test**.
-- [ ] Ordre déterministe partout ; le contenu des messages délimité comme données.
+- [x] Constructeurs par couche : Produit (socles par secteur, ordre fixe — tranche 1), Compte
+      (profil tri sans instructions ; profil complet avec instructions générales, registre
+      d'étiquettes, préférences observées), Domaine (instructions et documents), Situation (fil
+      borné, fiches), Instant (date lisible, semaine ISO, fériés français à trois semaines).
+- [x] Les trois fiches — sujet, contact, brief du compte — et la **fiche de clôture** d'un sujet
+      validé, déterministe : durée, tâches réalisées dans l'ordre, tâches écartées.
+- [x] **Hygiène du message** : citations de réponse (en-têtes français et anglais, lignes « > »)
+      et signatures retirées, plafond de longueur avec marqueur ; idempotente.
+- [x] Profils par sollicitation — tri, structuration, relecture, brouillon, étiquette de pièce
+      jointe — avec un **budget par couche tenu par un test** sur une fixture pire que la réalité
+      (vingt messages longs, quarante tâches, dix précédents). Le fil poussé au tri est borné au
+      premier message et aux trois derniers ; une fiche sujet aux derniers messages.
+- [x] Ordre déterministe partout (domaines par nom, sujets par référence, messages par date,
+      vérifié par un test qui mélange les entrées) ; le contenu des messages délimité comme
+      données, délimiteurs injectés neutralisés ; message système = couche Produit seule
+      (`PITFALLS.md` #49), vérifié pour les cinq profils.
+- [x] Jeu de démonstration rejoué à l'identique sur le nouveau module.
 
 ## Tranche 4 — Le tri en production (M7.1, M7.2, M7.4, M7.5, M7.14, M7.15, M7.16)
 
@@ -240,7 +251,7 @@ réclament.
 - [x] Tranche 0 — livrée le 2026-09-14, premier appel réel passé
 - [x] Tranche 1 — livrée le 2026-09-14 sur le jeu de démonstration ; le jeu réel viendra des usages bêta
 - [x] Tranche 2 — livrée le 2026-09-14
-- [ ] Tranche 3
+- [x] Tranche 3 — livrée le 2026-09-14
 - [ ] Tranche 4
 - [ ] Tranche 5
 - [ ] Tranche 6

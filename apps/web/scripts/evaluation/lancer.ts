@@ -71,7 +71,7 @@ async function trier(
     },
     conversation: { canal: cas.canal, messages: cas.messages },
     // La date du jour est celle du dernier message : « avant jeudi » se lit par rapport à elle.
-    aujourdHui: dernier.recuLe,
+    instant: { maintenant: dernier.recuLe },
   });
   try {
     const { sortie, mesure } = await extract({
