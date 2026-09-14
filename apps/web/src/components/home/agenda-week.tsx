@@ -21,6 +21,7 @@ import type { TaskItemData } from "@/lib/task-item-data";
 import { updateTaskAction } from "@/server/actions/tasks";
 import { folderColor } from "@/lib/display";
 import { cn } from "@/lib/utils";
+import { ListPanel } from "@/components/shared/list-panel";
 
 // Semainier (Accueil, onglet « Agenda ») — RAIL de jours qui glisse librement de
 // gauche à droite (scroll horizontal natif, sans chevrons), AUJOURD'HUI centré au
@@ -275,7 +276,7 @@ export function AgendaWeek({
           ))}
         </div>
 
-        <div className="mb-1 px-5 pt-3.5 text-[12.5px] font-bold tracking-[0.3px] text-[#a8a69d] uppercase">
+        <div className="mb-1.5 px-5 pt-3.5 text-[12.5px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase">
           {selectedDesc.isToday ? "Aujourd'hui" : selectedDesc.longLabel}
         </div>
         {dayTasks.length === 0 ? (
@@ -285,9 +286,11 @@ export function AgendaWeek({
               : "Rien de prévu ce jour-là."}
           </p>
         ) : (
-          dayTasks.map((t) => (
-            <DayTaskRow key={t.id} task={t} onStatusChange={setTaskStatus} />
-          ))
+          <ListPanel>
+            {dayTasks.map((t) => (
+              <DayTaskRow key={t.id} task={t} onStatusChange={setTaskStatus} />
+            ))}
+          </ListPanel>
         )}
       </div>
 
@@ -344,16 +347,18 @@ function DayCell({
       onClick={onSelect}
       aria-pressed={isSelected}
       className={cn(
-        "relative w-[58px] flex-none rounded-[16px] pt-[13px] pb-3 text-center transition-shadow",
-        desc.isToday ? "bg-relvo" : "bg-[#f5f3ef]",
-        isSelected && "ring-2 ring-relvo ring-offset-2 ring-offset-white",
-        isOver && "ring-2 ring-relvo ring-offset-2 ring-offset-white",
+        "relative w-[58px] flex-none rounded-[12px] pt-[13px] pb-3 text-center transition-shadow",
+        desc.isToday
+          ? "bg-relvo"
+          : "border border-(--hairline) bg-white shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(20_18_40/0.05)]",
+        isSelected && "ring-2 ring-relvo ring-offset-2 ring-offset-(--stone)",
+        isOver && "ring-2 ring-relvo ring-offset-2 ring-offset-(--stone)",
       )}
     >
       {openCount > 0 ? (
         <span
           className={cn(
-            "absolute -top-1.5 -right-1.5 grid size-[18px] place-items-center rounded-full text-[10.5px] font-extrabold text-white ring-2 ring-white",
+            "absolute -top-1.5 -right-1.5 grid size-[18px] place-items-center rounded-full font-numeric text-[10.5px] font-bold text-white ring-2 ring-(--stone)",
             isPast ? "bg-(--red-600)" : "bg-relvo",
           )}
         >
@@ -363,15 +368,15 @@ function DayCell({
       <div
         className={cn(
           "text-[11px] font-bold tracking-[0.3px] uppercase",
-          desc.isToday ? "text-white/80" : "text-[#a8a69d]",
+          desc.isToday ? "text-white/80" : "text-(--text-tertiary)",
         )}
       >
         {desc.weekday}
       </div>
       <div
         className={cn(
-          "mt-[3px] font-heading text-[22px] font-extrabold",
-          desc.isToday ? "text-white" : "text-[#2a2832]",
+          "mt-[3px] font-heading text-[20px] font-semibold tracking-[-0.02em]",
+          desc.isToday ? "text-white" : "text-(--text-primary)",
         )}
       >
         {desc.day}

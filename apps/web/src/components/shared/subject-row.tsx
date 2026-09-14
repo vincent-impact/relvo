@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 // SubjectRow — un Sujet rendu comme une LIGNE de liste façon e-mail (Direction
 // B simplifiée) : icône teintée par domaine, référence + badges (Urgent / Nouveau),
 // titre, résumé, progression des tâches. Pas de rail latéral ni de carte arrondie.
-// Le FOND distingue l'état : rouge pâle = urgent, bleu pâle = non vu (new).
+// Les BADGES distinguent l'état (« Urgent » rouge, « Nouveau » bleu) — plus
+// d'aplat de fond depuis la Direction « Instrument » (2026-09).
 
 export type SubjectRowData = {
   id: string;
@@ -54,10 +55,13 @@ export function SubjectRow({
 
   return (
     <article
+      data-list-row
       className={cn(
-        "relative flex gap-3 border-b border-[#f1efeb] px-4 py-3.5",
-        urgent ? "bg-[#fdf1f1]" : isNew ? "bg-(--blue-50)" : null,
-        done && "opacity-60",
+        // Direction « Instrument » : plus d'aplat rouge/bleu sur la ligne — les
+        // badges « Urgent » / « Nouveau » portent seuls le signal, dans un panneau
+        // blanc. Le sujet fait s'affiche « enfoncé » (--surface).
+        "relative flex gap-3 border-b border-(--border-light) px-4 py-3.5",
+        done && "bg-(--surface) opacity-60",
       )}
     >
       {data.unreadCount > 0 ? (
@@ -68,7 +72,7 @@ export function SubjectRow({
 
       {/* Icône du domaine à gauche (tuile colorée, légèrement réduite). */}
       <span
-        className="grid size-9 flex-none place-items-center self-start rounded-[11px] text-white"
+        className="grid size-9 flex-none place-items-center self-start rounded-[10px] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_1px_2px_rgb(20_18_40/0.15)]"
         style={{ background: color }}
         title={data.folderSlug ?? undefined}
       >
@@ -95,7 +99,7 @@ export function SubjectRow({
 
         <h3
           className={cn(
-            "mt-1 text-[16.5px] font-bold tracking-[-0.2px]",
+            "mt-1 text-[16px] leading-[1.25] font-semibold tracking-[-0.01em]",
             done && "line-through",
           )}
         >
@@ -112,7 +116,7 @@ export function SubjectRow({
         </h3>
 
         {data.summary ? (
-          <p className="mt-1 text-[13.5px] leading-[1.4] text-[#86857d]">
+          <p className="mt-1 text-[13.5px] leading-[1.4] text-(--text-secondary)">
             {data.summary}
           </p>
         ) : null}
@@ -128,7 +132,7 @@ export function SubjectRow({
                   )}
                   strokeWidth={2.2}
                 />
-                <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-[#e7e5e0]">
+                <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-[#e7e5e0] shadow-[inset_0_1px_1px_rgb(20_18_40/0.08)]">
                   <span
                     className="absolute inset-y-0 left-0 rounded-full bg-(--green-600) transition-[width]"
                     style={{ width: `${pct}%` }}
@@ -140,7 +144,7 @@ export function SubjectRow({
               </div>
             ) : null}
             {data.waitingForReply ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-[#f0eeea] px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap text-[#86857d]">
+              <span className="inline-flex items-center gap-1 rounded-full bg-(--surface-2) px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap text-(--text-secondary)">
                 <Hourglass className="size-3" strokeWidth={2.2} />
                 En attente
               </span>

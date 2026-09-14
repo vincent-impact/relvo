@@ -32,8 +32,7 @@ export function SubjectKpiTabs({
 }) {
   return (
     <div
-      className="relative z-[3] mx-4 -mt-[30px] flex gap-1 rounded-[22px] bg-white px-1.5 py-2"
-      style={{ boxShadow: "var(--shadow-metrics)" }}
+      className="relative z-[3] mx-4 -mt-[30px] flex gap-1 rounded-[14px] bg-white px-1.5 py-2 shadow-surface-2"
       role="tablist"
     >
       {TABS.map((t) => {
@@ -47,14 +46,14 @@ export function SubjectKpiTabs({
             aria-selected={isActive}
             onClick={() => onChange(t.key)}
             className={cn(
-              "flex flex-1 flex-col items-center gap-[3px] rounded-[15px] px-1 py-1.5 transition-colors",
+              "flex flex-1 flex-col items-center gap-[3px] rounded-[10px] px-1 py-1.5 transition-colors",
               isActive ? "bg-relvo-bg" : "active:bg-(--surface-2)",
             )}
           >
             <span
               className={cn(
                 "flex h-[30px] items-center font-numeric text-[23px] font-bold tracking-[-1px]",
-                isActive ? "text-relvo" : "text-[#1c1a22]",
+                isActive ? "text-relvo" : "text-(--text-primary)",
               )}
             >
               {count}
@@ -62,7 +61,7 @@ export function SubjectKpiTabs({
             <span
               className={cn(
                 "text-center text-[11.5px] leading-[1.2] font-semibold",
-                isActive ? "text-relvo" : "text-[#9a988f]",
+                isActive ? "text-relvo" : "text-(--text-secondary)",
               )}
             >
               {t.label}

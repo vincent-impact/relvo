@@ -1,11 +1,18 @@
 import { cn } from "@/lib/utils";
 
-// Logo Relvo — VECTORISÉ (Direction « Instrument », 2026-09). Un disque + trois
-// étoiles à quatre branches. Le disque est en `currentColor` : posé dans un
-// élément `text-relvo`, le logo suit le token — et suivra un mode sombre — sans
-// nouveau fichier. Les PNG de la PWA (`public/relvo-icon-*.png`, apple-touch)
-// se GÉNÈRENT depuis ce même tracé : `pnpm icons` (scripts/generate-icons.mjs).
-// ⚠️ Modifier le tracé ici ET dans le script, ou mieux : le script lit ce fichier.
+// Logo Relvo — VECTORISÉ. Un disque + trois étoiles à quatre branches, en trois
+// variantes selon le fond (règle de charte : un logo a une version inversée pour
+// les fonds de sa propre couleur) :
+//   • `full`     — disque en `currentColor`, étoiles blanches. Fonds CLAIRS.
+//   • `inverted` — disque blanc, étoiles en `currentColor`. Fonds VIOLETS où le
+//                  logo est un OBJET (le bouton d'accès à Relvo).
+//   • `mark`     — les étoiles seules, en `currentColor`. Fonds violets où le
+//                  logo est une MARQUE (hero de connexion) : pas de tuile, pas de
+//                  disque — un disque violet sur violet ne laisse qu'un halo.
+// Posé dans un élément `text-relvo` / `text-white`, le logo suit le token — et
+// suivra un mode sombre — sans nouveau fichier. Les PNG de la PWA
+// (`public/relvo-icon-*.png`, apple-touch) se GÉNÈRENT depuis ce même tracé :
+// `pnpm icons` (scripts/generate-icons.mjs lit ce fichier).
 
 export const RELVO_LOGO_PATHS = {
   disc: { cx: 256, cy: 256, r: 200 },
@@ -16,20 +23,34 @@ export const RELVO_LOGO_PATHS = {
   ],
 } as const;
 
+export type RelvoLogoVariant = "full" | "inverted" | "mark";
+
 export function RelvoLogo({
   size = 32,
+  variant = "full",
   className,
   title = "Relvo",
 }: {
   size?: number;
+  variant?: RelvoLogoVariant;
   className?: string;
   /** Libellé accessible ; `""` pour un logo purement décoratif. */
   title?: string;
 }) {
   const { disc, stars } = RELVO_LOGO_PATHS;
+  const discFill =
+    variant === "full"
+      ? "currentColor"
+      : variant === "inverted"
+        ? "#fafafa"
+        : null;
+  const starFill = variant === "full" ? "#fafafa" : "currentColor";
+  // Les étoiles s'inscrivent dans le carré 116..412 : en `mark`, la viewBox se
+  // resserre dessus pour que `size` soit la taille RÉELLE de la marque.
+  const viewBox = variant === "mark" ? "116 104 296 296" : "0 0 512 512";
   return (
     <svg
-      viewBox="0 0 512 512"
+      viewBox={viewBox}
       width={size}
       height={size}
       className={cn("shrink-0", className)}
@@ -37,8 +58,10 @@ export function RelvoLogo({
       aria-label={title || undefined}
       aria-hidden={title ? undefined : true}
     >
-      <circle cx={disc.cx} cy={disc.cy} r={disc.r} fill="currentColor" />
-      <g fill="#fafafa">
+      {discFill ? (
+        <circle cx={disc.cx} cy={disc.cy} r={disc.r} fill={discFill} />
+      ) : null}
+      <g fill={starFill}>
         {stars.map((d) => (
           <path key={d} d={d} />
         ))}

@@ -9,6 +9,11 @@ import { cn } from "@/lib/utils";
 // false`), précédé du slot `action` qui sert le CONTEXTE de la page (ex. « + »
 // Nouveau sujet sur Mon fil). `children` loge le brief, la carte métriques, un
 // segmented… Le header SCROLLE avec le contenu.
+//
+// Direction « Instrument » (2026-09) : violet ENCRE, rayon bas plafonné
+// (--hero-round = 20px), un GRAIN discret (`.grain`) à la place du halo — c'est
+// ce qui fait « matière » plutôt qu'aplat plastique — et des titres en Geist 600
+// interlettrage -0.02em (plus d'extrabold : le sérieux vient de la retenue).
 
 export function RelvoHeader({
   title,
@@ -51,39 +56,31 @@ export function RelvoHeader({
   return (
     <header
       className={cn(
-        "relative overflow-hidden bg-relvo pb-5 text-white",
+        "grain relative overflow-hidden bg-relvo pb-5 text-white",
         rounded && "rounded-b-(--hero-round)",
         className,
       )}
       style={{ paddingTop: "max(env(safe-area-inset-top), 14px)" }}
     >
-      {/* Halo lumineux côté droit. Volontairement décalé vers le BAS (centre ~y+50
-          plutôt que sous la status bar) : le bord haut du header reste un violet
-          plat identique au themeColor, sans couture visible avec la barre d'état. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-[50px] size-60 rounded-full"
-        style={{
-          top: "max(env(safe-area-inset-top), 14px)",
-          background:
-            "radial-gradient(circle, rgb(255 255 255 / 0.18), transparent 70%)",
-        }}
-      />
-
       {detail ? (
         <div className="relative z-[1] flex items-center gap-3 px-3.5 pt-0.5 pb-1">
           <Link
             href={back!}
             aria-label="Retour"
-            className="grid size-[38px] flex-none place-items-center rounded-full active:scale-95"
-            style={{ background: "rgb(255 255 255 / 0.16)" }}
+            className="pressable grid size-[38px] flex-none place-items-center rounded-full"
+            style={{
+              background: "rgb(255 255 255 / 0.14)",
+              border: "1px solid rgb(255 255 255 / 0.28)",
+              boxShadow:
+                "inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(0 0 0 / 0.18)",
+            }}
           >
             <ChevronLeft className="size-5" strokeWidth={2.2} />
           </Link>
           <div className="min-w-0 flex-1">
             <h1
               className={cn(
-                "font-heading text-[19px] font-extrabold tracking-[-0.3px]",
+                "font-heading text-[19px] font-semibold tracking-[-0.01em]",
                 titleFull
                   ? "leading-[1.2]"
                   : wrapTitle
@@ -104,7 +101,7 @@ export function RelvoHeader({
       ) : (
         <div className="relative z-[1] flex items-center justify-between gap-3 px-[22px] pt-1">
           <div className="min-w-0">
-            <h1 className="font-heading text-[27px] leading-tight font-extrabold tracking-[-0.6px]">
+            <h1 className="font-heading text-[26px] leading-[1.15] font-semibold tracking-[-0.02em]">
               {title}
             </h1>
             {subtitle ? (

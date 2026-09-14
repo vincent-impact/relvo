@@ -67,7 +67,7 @@ export function SubjectBody({
 
   return (
     <>
-      <main className="min-h-0 flex-1 overflow-y-auto bg-white">
+      <main className="min-h-0 flex-1 overflow-y-auto bg-background">
         {header}
         <SegTabs
           options={options}

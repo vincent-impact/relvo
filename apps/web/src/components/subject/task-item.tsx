@@ -89,10 +89,11 @@ export function TaskItem({
   return (
     <>
       <div
+        data-list-row
         onClick={() => setOpen(true)}
         className={cn(
-          "flex cursor-pointer items-start gap-2.5 border-b border-[#f1efeb] px-4 py-3.5",
-          done ? "bg-[#f5f3ef]" : late && "bg-(--red-50)",
+          "flex cursor-pointer items-start gap-2.5 border-b border-(--border-light) px-4 py-3.5 active:bg-(--surface-2)",
+          done && "bg-(--surface)",
         )}
       >
         {/* Case à cocher (gauche) — terminer / remettre à faire. */}
@@ -108,7 +109,7 @@ export function TaskItem({
             "mt-px grid size-[22px] flex-none place-items-center rounded-md border-2 transition-colors",
             done
               ? "border-(--green-600) bg-(--green-600) text-white"
-              : "border-(--border) text-transparent hover:border-(--green-600)",
+              : "border-[#d9d7d1] bg-white text-transparent shadow-pressed hover:border-(--green-600)",
             pending && "opacity-60",
           )}
         >
@@ -134,10 +135,18 @@ export function TaskItem({
               done && "text-[#a8a69d] line-through",
             )}
           >
+            {/* Retard : le signal est un POINT rouge + la date en rouge, plus un
+                aplat rose sur toute la ligne (la rareté est le signal). */}
+            {late ? (
+              <span
+                aria-hidden
+                className="mr-1.5 inline-block size-1.5 rounded-full bg-(--red-600) align-middle"
+              />
+            ) : null}
             {task.title}
           </div>
           {showSubjectLine ? (
-            <p className="mt-0.5 truncate text-[13px] text-[#86857d]">
+            <p className="mt-0.5 truncate text-[13px] text-(--text-secondary)">
               {task.subjectTitle ? (
                 subjectHref ? (
                   <Link
@@ -168,7 +177,7 @@ export function TaskItem({
                   <span
                     className={cn(
                       "text-[12px] font-semibold",
-                      late ? "text-(--red-600)" : "text-[#86857d]",
+                      late ? "text-(--red-600)" : "text-(--text-secondary)",
                     )}
                   >
                     {dateLine}
@@ -178,7 +187,7 @@ export function TaskItem({
                   <span
                     className={cn(
                       "font-numeric text-[14px] font-bold",
-                      late ? "text-(--red-600)" : "text-[#2a2832]",
+                      late ? "text-(--red-600)" : "text-(--text-primary)",
                     )}
                   >
                     {timeLine}

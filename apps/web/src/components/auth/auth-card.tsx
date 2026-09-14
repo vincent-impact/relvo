@@ -18,12 +18,12 @@ export function AuthCard({
   return (
     <div
       className={cn(
-        "rounded-(--hero-round) border border-(--border-light) bg-white p-6 shadow-(--shadow-card)",
+        "rounded-[20px] border border-(--hairline) bg-white p-6 shadow-surface-2",
         className,
       )}
     >
       <div className="mb-5">
-        <h1 className="font-heading text-[22px] leading-tight font-extrabold tracking-[-0.3px] text-(--text-primary)">
+        <h1 className="font-heading text-[22px] leading-tight font-semibold tracking-[-0.02em] text-(--text-primary)">
           {title}
         </h1>
         {description ? (

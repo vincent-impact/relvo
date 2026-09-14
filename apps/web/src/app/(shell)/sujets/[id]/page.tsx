@@ -20,6 +20,7 @@ import { TaskItem } from "@/components/subject/task-item";
 import { toConversationRowData } from "@/lib/conversation-row";
 import { contactFullName, formatRelative } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
+import { ListPanel } from "@/components/shared/list-panel";
 
 // Fiche Sujet (2026-07-27) — hero violet (titre éditable + progression), 4
 // onglets Informations / Tâches / Conversations / Documents. Les conversations
@@ -184,29 +185,31 @@ export default async function SujetPage({
                 Aucune tâche.
               </p>
             ) : (
-              tasks.map((t) => (
-                <TaskItem
-                  key={t.id}
-                  meta="date"
-                  task={{
-                    id: t.id,
-                    title: t.title,
-                    startDate: t.startDate
-                      ? t.startDate.toISOString().slice(0, 10)
-                      : null,
-                    startTime: t.startTime
-                      ? t.startTime.toISOString().slice(11, 16)
-                      : null,
-                    status: t.status,
-                    sourceActor: t.sourceActor,
-                    subjectId: subject.id,
-                    subjectTitle: subject.title,
-                    folderSlug:
-                      folders.find((f) => f.id === subject.folderId)?.slug ??
-                      null,
-                  }}
-                />
-              ))
+              <ListPanel>
+                {tasks.map((t) => (
+                  <TaskItem
+                    key={t.id}
+                    meta="date"
+                    task={{
+                      id: t.id,
+                      title: t.title,
+                      startDate: t.startDate
+                        ? t.startDate.toISOString().slice(0, 10)
+                        : null,
+                      startTime: t.startTime
+                        ? t.startTime.toISOString().slice(11, 16)
+                        : null,
+                      status: t.status,
+                      sourceActor: t.sourceActor,
+                      subjectId: subject.id,
+                      subjectTitle: subject.title,
+                      folderSlug:
+                        folders.find((f) => f.id === subject.folderId)?.slug ??
+                        null,
+                    }}
+                  />
+                ))}
+              </ListPanel>
             )}
             <AddTask
               subjectId={subject.id}

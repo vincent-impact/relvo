@@ -24,6 +24,11 @@ import { cn } from "@/lib/utils";
 // Place FIXE (plus d'auto-masquage au scroll, décision 2026-06-27) sur fond
 // VIOLET, exactement comme l'ancien composer : actif = blanc plein, inactif =
 // blanc translucide. L'accès à Relvo a quitté le bas pour le header (haut-droite).
+//
+// Direction « Instrument » (2026-09) : le verre est porté par l'utilitaire
+// `.glass-relvo` (globals.css) — violet encre translucide + flou, avec un REPLI
+// OPAQUE quand backdrop-filter n'existe pas. Le verre n'a de sens que parce que
+// la liste défile dessous ; il reste réservé au chrome.
 
 type Tab = {
   href: string;
@@ -71,16 +76,12 @@ export function BottomTabBar() {
 
   return (
     <nav
-      className="flex flex-none items-stretch"
+      className="glass-relvo flex flex-none items-stretch"
       style={{
         // On rogne volontairement la safe-area iOS (~34px) : la reco laissait un
         // grand vide violet sous les libellés. On garde un minimum pour ne pas
         // coller au bord / à l'indicateur d'accueil (décision 2026-06-27).
         paddingBottom: "max(calc(env(safe-area-inset-bottom) - 16px), 6px)",
-        background:
-          "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
-        backdropFilter: "blur(28px) saturate(170%)",
-        WebkitBackdropFilter: "blur(28px) saturate(170%)",
         boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.22)",
       }}
     >

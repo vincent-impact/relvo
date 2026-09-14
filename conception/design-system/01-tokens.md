@@ -30,6 +30,14 @@ bulles, pastilles de journal, badges de source d'une tâche, avatars.
 bloc émanant de Relvo sont violets ; un élément violet qui ne vient pas de Relvo casse la seule
 convention que l'utilisateur a apprise sans qu'on la lui explique.
 
+Le header violet est aussi **structurel** : c'est lui qui donne à l'œil une zone de départ et
+fait lire le reste comme « le contenu ». Un chrome neutre gagne en clarté locale et perd la carte
+de la page — sur téléphone, à une main, la carte prime.
+
+Le violet est un violet **encre** (profond, peu saturé) et le logo est **vectorisé** : il prend
+la couleur du token (`RelvoLogo`, `currentColor`), et les icônes PWA se régénèrent depuis lui
+(`pnpm icons`).
+
 ## Les domaines (Folder) — une couleur par domaine, héritée par tout ce qui en dépend
 
 Un domaine porte une couleur ; le sujet qui lui appartient l'hérite, et la tâche qui appartient
@@ -44,33 +52,67 @@ de la ligne, jamais au bord de l'écran, où il devient invisible. Tokens : `--f
 `--warning` (ambre) pour ce qui attend. Ces trois-là ne servent qu'à ça : ils ne sont jamais
 empruntés pour de la mise en forme.
 
-## Les surfaces « Liquid Glass »
+## Le verre — réservé au chrome
 
-La barre d'onglets et le header sont des surfaces **translucides** (`--glass-*`, `--blur-glass`,
-`--sat-glass`) : le contenu défile visiblement dessous. C'est ce qui fait que l'écran paraît
-plus grand qu'il n'est, sur un appareil tenu à une main.
+La barre d'onglets et le composer Relvo sont des surfaces **translucides** (`.glass-relvo`,
+`--glass-*`, `--blur-glass`, `--sat-glass`) : le contenu défile visiblement dessous. C'est ce qui
+fait que l'écran paraît plus grand qu'il n'est, sur un appareil tenu à une main.
+
+Le verre reste **réservé au chrome** (barres, feuilles) et ne touche jamais le contenu : un texte
+sur verre est le premier à devenir illisible en plein soleil, et `backdrop-filter` coûte cher au
+défilement sur un téléphone d'entrée de gamme. Sans `backdrop-filter`, `.glass-relvo` se replie
+sur un aplat opaque.
 
 ⚠️ Une surface de verre **exige du contenu derrière elle** pour exister. Posée sur un fond plat,
 elle ne se distingue pas d'un aplat — et le lecteur perd le repère de profondeur.
 
 ## La typographie
 
-Trois familles, trois rôles, chargées via `next/font` :
+Deux familles, chargées via `next/font` :
 
 | Rôle | Famille | Pourquoi |
 |---|---|---|
-| Titres | **Bricolage Grotesque** (`--font-heading`) | Grotesque contemporaine chaleureuse, sûre d'elle en grand corps — le produit assume de gros titres et peu d'éléments par écran |
-| Interface et texte courant | **Geist** (`--font-sans`) | Neutre, très lisible en pleine lumière |
+| Titres, interface et texte courant | **Geist** (`--font-sans`, `--font-heading`) | Une seule famille : le caractère d'un titre vient de sa graisse (600) et de son interlettrage serré (−0.02em), pas du dessin des lettres. Une typo « à personnalité » en titres donne un ton ludique que le produit ne veut pas |
 | Chiffres et références | **Geist Mono** (`--font-numeric`) | Chiffres tabulaires pour les KPI, et les références `SUB-xxxx` qui doivent s'aligner |
+
+Les titres ne dépassent pas la graisse 600 : le sérieux vient de la retenue.
 
 L'échelle de corps est **mobile d'abord** : elle est calibrée pour un écran d'environ 390 px, et
 le desktop en hérite sans la remonter.
 
-## Les rayons, l'élévation, le mouvement
+## La matière : fond pierre, surfaces posées, trois niveaux
 
-Un rayon dit à quel point un objet est « posé » : discret sur un contrôle, marqué sur une carte,
-maximal sur ce qui est rond par nature (pastilles, avatars). L'ombre dit la même chose en
-profondeur — et **une barre ancrée en bas projette son ombre vers le haut**, jamais l'inverse.
+Le fond de page n'est pas blanc mais **pierre** (`--stone`, légèrement teinté) : c'est ce qui
+permet au blanc d'une surface de devenir une **élévation**. Sur un fond blanc pur, rien ne peut
+être posé.
+
+Une surface posée porte trois choses, toujours ensemble (`--elev-*`, utilitaires
+`shadow-surface-1/2/3`) : un **filet de lumière** de 1px en haut (ce qui rend le bord
+« touchable »), une **ombre de contact** courte et nette, une **ombre ambiante** large et floue.
+
+| Niveau | Ce que c'est | Exemples |
+|---|---|---|
+| 0 | le fond pierre | l'écran |
+| 1 | un panneau posé | une liste, une carte de la fiche Sujet |
+| 2 | un objet flottant | barre KPI, segmented, menu |
+| 3 | une feuille | dialogue, sheet |
+
+**Une liste = un panneau** (`ListPanel`) : les lignes vivent dans un panneau blanc unique, séparées
+par un filet, jamais nues sur la pierre et jamais une carte par ligne. Une ligne « en retrait »
+(lue, faite) s'enfonce dans le panneau (`--surface`) au lieu de changer de couleur.
+
+**Ce qui se presse s'enfonce** (`.pressable`) : 1px de translation, l'ombre portée disparaît, une
+ombre interne apparaît. C'est le retour tactile que le flat design n'a pas. Un aplat de couleur
+n'est jamais le seul signal d'un état.
+
+Le **grain** (`.grain`) casse l'effet plastique des grands aplats — le header violet le porte ;
+un panneau blanc ne le porte pas.
+
+Les **rayons sont plafonnés** : 8–10 sur un contrôle, 12–14 sur un panneau, 20 sur une feuille
+ou le bas du header. Au-delà, l'objet redevient un jouet. Seul ce qui est rond par nature
+(pastilles, avatars) est rond.
+
+**Une barre ancrée en bas projette son ombre vers le haut**, jamais l'inverse.
 
 Le mouvement est court et sort vite (`--dur-*`, `--ease-*`) : une transition qu'on remarque est
 une transition trop longue sur une app qu'on ouvre trente fois par jour.

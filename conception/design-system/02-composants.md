@@ -30,10 +30,12 @@ que le registre fournit est une **erreur de process**, pas un choix esthétique.
 
 ## Les règles de composition qui ne se devinent pas
 
-**Une entité de liste est une LIGNE, pas une carte flottante.** Un sujet, une tâche, une
-conversation se rendent en ligne pleine largeur, séparées par un filet. Des cartes empilées avec
-leurs marges et leurs ombres divisent par deux le nombre d'éléments visibles à l'écran — sur un
-produit dont le travail est de *trier*, c'est le mauvais arbitrage.
+**Une entité de liste est une LIGNE dans UN panneau, pas une carte flottante.** Un sujet, une
+tâche, une conversation se rendent en ligne, séparées par un filet, dans un panneau blanc unique
+(`ListPanel`) posé sur le fond pierre. Des cartes empilées avec leurs marges et leurs ombres
+divisent par deux le nombre d'éléments visibles à l'écran — sur un produit dont le travail est de
+*trier*, c'est le mauvais arbitrage. Une ligne pose `data-list-row` sur sa racine : c'est ce qui
+retire le filet de la dernière.
 
 **Une présentation unique par entité, partout.** Une tâche se rend de la même façon dans la
 liste d'un sujet et dans une liste à plat ; seul le contexte affiché varie (le titre du sujet

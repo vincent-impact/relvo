@@ -17,6 +17,7 @@ import {
   extendSubjectToConversationAction,
 } from "@/server/actions/subject-conversations";
 import { cn } from "@/lib/utils";
+import { ListPanel } from "@/components/shared/list-panel";
 
 // Conversations d'un sujet, en LISTE (2026-07-27). On abandonne le fil embarqué
 // dans la fiche : chaque ligne ouvre la conversation dans son écran dédié
@@ -44,15 +45,16 @@ function ConversationRow({
   return (
     <Link
       href={`/conversations/${row.id}?from=${encodeURIComponent(fromHref)}`}
+      data-list-row
       className={cn(
-        "flex gap-3 border-b border-[#f1efeb] px-[18px] py-3.5 last:border-b-0 active:bg-(--surface-2)",
-        unread ? "bg-white" : "bg-[#f7f6f3]",
+        "flex gap-3 border-b border-(--border-light) px-4 py-3.5 active:bg-(--surface-2)",
+        unread ? "bg-white" : "bg-(--surface)",
       )}
     >
       {/* Avatar = canal du fil (objectif : rendre le canal évident d'un coup). */}
       <span
         className={cn(
-          "grid size-[42px] flex-none place-items-center self-start rounded-full text-white",
+          "grid size-[42px] flex-none place-items-center self-start rounded-full text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_1px_2px_rgb(20_18_40/0.15)]",
           unread ? "bg-(--amber-600)" : "bg-[#c7c5bd]",
         )}
       >
@@ -165,11 +167,11 @@ export function SubjectConversationsList({
           </p>
         </div>
       ) : (
-        <div>
+        <ListPanel>
           {rows.map((row) => (
             <ConversationRow key={row.id} row={row} fromHref={fromHref} />
           ))}
-        </div>
+        </ListPanel>
       )}
 
       {availableChannels.length > 0 ? (

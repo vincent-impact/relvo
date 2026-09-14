@@ -14,7 +14,7 @@ export function MobileFrame({
   return (
     <div
       className={cn(
-        "relative mx-auto flex w-full max-w-120 flex-col overflow-hidden bg-white sm:border-x sm:border-(--hairline)",
+        "relative mx-auto flex w-full max-w-120 flex-col overflow-hidden bg-background sm:border-x sm:border-(--hairline)",
         className,
       )}
       // Hauteur pilotée par JS en PWA iOS (cf. ViewportHeight) ; `100dvh` = repli

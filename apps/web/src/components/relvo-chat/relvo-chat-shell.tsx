@@ -52,8 +52,13 @@ export function RelvoChatShell({
           <Link
             href="/relvo/historique"
             aria-label="Historique des conversations"
-            className="grid size-[38px] flex-none place-items-center rounded-full active:scale-95"
-            style={{ background: "rgb(255 255 255 / 0.16)" }}
+            className="pressable grid size-[38px] flex-none place-items-center rounded-full"
+            style={{
+              background: "rgb(255 255 255 / 0.14)",
+              border: "1px solid rgb(255 255 255 / 0.28)",
+              boxShadow:
+                "inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(0 0 0 / 0.18)",
+            }}
           >
             <History className="size-5" strokeWidth={2} />
           </Link>
@@ -62,7 +67,7 @@ export function RelvoChatShell({
 
       {contextLabel ? (
         <div className="flex flex-none items-center gap-2 border-b border-(--border-light) px-4 py-2 text-[12.5px] text-(--text-secondary)">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-(--border) bg-white px-2.5 py-1 font-semibold text-(--text-primary)">
+          <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-full border border-(--hairline) bg-white px-2.5 py-1 font-semibold text-(--text-primary) shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(20_18_40/0.05)]">
             Contexte : {contextLabel}
           </span>
           <Link
@@ -75,12 +80,12 @@ export function RelvoChatShell({
         </div>
       ) : null}
 
-      <main className="min-h-0 flex-1 overflow-y-auto bg-white px-[18px] py-7">
+      <main className="min-h-0 flex-1 overflow-y-auto bg-background px-[18px] py-7">
         <div className="mb-5 flex flex-col items-center gap-2.5 text-center">
-          <div className="grid size-[52px] place-items-center rounded-full bg-relvo text-white shadow-(--shadow-relvo)">
+          <div className="grid size-[52px] place-items-center rounded-full border border-[#3d3399] bg-linear-to-b from-[#5a4fc9] to-relvo text-white shadow-(--shadow-relvo)">
             <Sparkles className="size-6" fill="currentColor" strokeWidth={0} />
           </div>
-          <h3 className="font-heading text-[19px] font-extrabold tracking-[-0.3px]">
+          <h3 className="font-heading text-[19px] font-semibold tracking-[-0.01em]">
             Comment puis-je vous aider ?
           </h3>
           <p className="text-[13.5px] text-(--text-secondary)">
@@ -93,7 +98,7 @@ export function RelvoChatShell({
               key={p}
               type="button"
               onClick={() => fill(p)}
-              className="rounded-xl border border-dashed border-(--border) px-3.5 py-3 text-left text-[13.5px] text-(--text-tertiary) italic"
+              className="rounded-xl border border-dashed border-[#d4d2cc] bg-white/50 px-3.5 py-3 text-left text-[13.5px] text-(--text-tertiary) italic active:bg-white"
             >
               {p}
             </button>
@@ -102,20 +107,17 @@ export function RelvoChatShell({
       </main>
 
       <div
-        className="relative flex flex-none items-center gap-2.5 px-3.5 pt-[11px]"
+        className="glass-relvo relative flex flex-none items-center gap-2.5 px-3.5 pt-[11px]"
         style={{
           paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
-          background:
-            "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
-          backdropFilter: "blur(28px) saturate(170%)",
-          WebkitBackdropFilter: "blur(28px) saturate(170%)",
-          boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.34)",
+          boxShadow:
+            "inset 0 1px 0 rgb(255 255 255 / 0.34), 0 -8px 24px rgb(20 18 40 / 0.1)",
         }}
       >
         <div
-          className="flex min-w-0 flex-1 items-center gap-[7px] rounded-[22px] py-[5px] pr-2 pl-[13px]"
+          className="flex min-w-0 flex-1 items-center gap-[7px] rounded-[16px] py-[5px] pr-2 pl-[13px]"
           style={{
-            background: "rgb(255 255 255 / 0.06)",
+            background: "rgb(255 255 255 / 0.08)",
             border: "1px solid rgb(255 255 255 / 0.28)",
             boxShadow:
               "inset 0 1px 0 rgb(255 255 255 / 0.3), inset 0 -1px 0 rgb(0 0 0 / 0.04)",
@@ -146,8 +148,11 @@ export function RelvoChatShell({
           onClick={() =>
             typing && toast.info("La conversation avec Relvo arrive en M10.")
           }
-          className="grid size-[45px] flex-none place-items-center rounded-full bg-white text-relvo active:scale-95"
-          style={{ boxShadow: "0 5px 16px rgb(0 0 0 / 0.22)" }}
+          className="pressable grid size-[45px] flex-none place-items-center rounded-full bg-white text-relvo"
+          style={{
+            boxShadow:
+              "inset 0 -1px 0 rgb(20 18 40 / 0.08), 0 5px 16px rgb(0 0 0 / 0.22)",
+          }}
         >
           {typing ? (
             <Send className="size-[19px]" strokeWidth={2} />

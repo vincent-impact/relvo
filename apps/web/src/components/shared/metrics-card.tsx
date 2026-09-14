@@ -110,7 +110,7 @@ export function MetricsCard({
   return (
     <div
       className={cn(
-        "relative z-[3] mx-4 flex rounded-[22px] bg-white px-1 py-2.5",
+        "relative z-[3] mx-4 flex rounded-[14px] bg-white px-1 py-2.5",
         overlap && "-mt-[30px]",
         className,
       )}

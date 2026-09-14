@@ -29,20 +29,18 @@ export default function AuthLayout({
           }}
         />
         <div className="relative z-[1] flex flex-col items-center pt-7 text-center">
-          <span
-            className="grid size-16 place-items-center rounded-2xl"
-            style={{
-              background: "rgb(255 255 255 / 0.15)",
-              boxShadow: "inset 0 0 0 1px rgb(255 255 255 / 0.3)",
-            }}
-          >
+          {/* Lockup : la MARQUE (étoiles seules, blanches) à gauche du nom — pas
+              un bouton : ni tuile ni disque, un disque violet sur violet ne
+              laisse qu'un halo. */}
+          <span className="flex items-center gap-3">
             <RelvoLogo
               size={40}
-              className="text-relvo drop-shadow-[0_2px_6px_rgb(0_0_0/0.28)]"
+              variant="mark"
+              className="text-white drop-shadow-[0_2px_8px_rgb(0_0_0/0.25)]"
             />
-          </span>
-          <span className="mt-3 font-heading text-[28px] leading-none font-semibold tracking-[-0.02em]">
-            Relvo
+            <span className="font-heading text-[34px] leading-none font-semibold tracking-[-0.02em]">
+              Relvo
+            </span>
           </span>
           <p className="mt-2 text-[13.5px] text-(--on-violet)">
             Votre assistant de pilotage des sollicitations

@@ -10,8 +10,14 @@ import { cn } from "@/lib/utils";
 // client. Chip active = remplie de la couleur du domaine ; inactive = blanche à
 // icône colorée.
 
+// Direction « Instrument » : un chip est un BOUTON — rayon 10, posé (filet de
+// lumière + ombre de contact), enfoncé au toucher — plus une pilule à part.
 const CHIP =
-  "inline-flex h-9 flex-none items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold whitespace-nowrap transition-colors active:scale-95";
+  "pressable inline-flex h-9 flex-none items-center gap-1.5 rounded-[10px] border px-3.5 text-[13px] font-semibold whitespace-nowrap transition-colors";
+const CHIP_IDLE =
+  "border-(--hairline) bg-white text-(--text-secondary) shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(20_18_40/0.05)]";
+const CHIP_ON =
+  "border-transparent text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_1px_2px_rgb(20_18_40/0.18)]";
 
 export function FeedDomainBar({
   domain,
@@ -32,9 +38,7 @@ export function FeedDomainBar({
         aria-pressed={domain == null}
         className={cn(
           CHIP,
-          domain == null
-            ? "border-transparent bg-(--text-primary) text-white"
-            : "border-(--border) bg-white text-(--text-secondary)",
+          domain == null ? cn(CHIP_ON, "bg-(--text-primary)") : CHIP_IDLE,
         )}
       >
         Tous
@@ -54,12 +58,7 @@ export function FeedDomainBar({
             type="button"
             onClick={() => onDomain(active ? null : f.slug)}
             aria-pressed={active}
-            className={cn(
-              CHIP,
-              active
-                ? "border-transparent text-white"
-                : "border-(--border) bg-white text-(--text-secondary)",
-            )}
+            className={cn(CHIP, active ? CHIP_ON : CHIP_IDLE)}
             style={
               active
                 ? { background: viz.color, borderColor: viz.color }

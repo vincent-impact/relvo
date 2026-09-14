@@ -137,7 +137,7 @@ export function InformationsPane({
   return (
     <div className="space-y-6 px-4 pt-4 pb-2">
       {/* 1. Descriptif — cœur de la fiche (carte), édité en pop-up */}
-      <section className="rounded-2xl border border-(--border-light) bg-white p-4 shadow-(--shadow-card)">
+      <section className="rounded-[14px] border border-(--hairline) bg-white p-4 shadow-surface-1">
         <div className="flex items-center justify-between">
           <h2 className="text-[15px] font-bold text-(--text-primary)">
             Descriptif
@@ -178,7 +178,7 @@ export function InformationsPane({
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="inline-flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-(--border) bg-white px-3 py-2.5 text-left active:bg-(--surface-2)"
+          className="pressable inline-flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-(--hairline) bg-white px-3 py-2.5 text-left shadow-surface-1"
         >
           <span
             className="grid size-7 flex-none place-items-center rounded-lg text-white"
@@ -221,7 +221,7 @@ export function InformationsPane({
       </section>
 
       {/* 3. Journal (tiroir) */}
-      <details className="group overflow-hidden rounded-2xl border border-(--border-light) bg-white">
+      <details className="group overflow-hidden rounded-[14px] border border-(--hairline) bg-white shadow-surface-1">
         <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3.5 [&::-webkit-details-marker]:hidden">
           <span className="flex items-center gap-2.5">
             <History

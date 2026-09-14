@@ -16,7 +16,7 @@ export function LandscapeGuard() {
       <div className="grid size-16 place-items-center rounded-2xl bg-white/15">
         <Smartphone className="size-8" strokeWidth={2} />
       </div>
-      <p className="font-heading text-[19px] font-extrabold tracking-[-0.3px]">
+      <p className="font-heading text-[19px] font-semibold tracking-[-0.01em]">
         Relvo s’utilise en portrait
       </p>
       <p className="max-w-[260px] text-[14px] leading-snug text-white/80">

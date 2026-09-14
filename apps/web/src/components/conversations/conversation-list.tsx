@@ -44,6 +44,7 @@ import {
   type ContactPrefill,
 } from "@/components/contacts/contact-create-dialog";
 import { cn } from "@/lib/utils";
+import { ListPanel } from "@/components/shared/list-panel";
 
 // Liste /conversations (M6bis.8) — la surface de TRI, hors navigation, atteinte
 // par le KPI « Sans sujet » de la page Sujets.
@@ -218,14 +219,15 @@ function ConversationRow({
       }
     >
       <div
+        data-list-row
         className={cn(
-          "flex gap-3 border-b border-[#f1efeb] px-[18px] py-3.5",
-          unread ? "bg-white" : "bg-[#f7f6f3]",
+          "flex gap-3 border-b border-(--border-light) px-4 py-3.5",
+          unread ? "bg-white" : "bg-(--surface)",
         )}
       >
         {(() => {
           const avatarClass = cn(
-            "grid size-[42px] flex-none place-items-center self-start rounded-full text-[14px] font-extrabold text-white",
+            "grid size-[42px] flex-none place-items-center self-start rounded-full text-[14px] font-extrabold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_1px_2px_rgb(20_18_40/0.15)]",
             unread ? "bg-(--amber-600)" : "bg-[#c7c5bd]",
           );
           const inner = registered ? (
@@ -447,15 +449,17 @@ export function ConversationList({
           </p>
         </div>
       ) : (
-        items.map((c) => (
-          <ConversationRow
-            key={c.id}
-            data={c}
-            filter={filter}
-            onRemove={remove}
-            onCreateContact={setContactPrefill}
-          />
-        ))
+        <ListPanel className="mt-2">
+          {items.map((c) => (
+            <ConversationRow
+              key={c.id}
+              data={c}
+              filter={filter}
+              onRemove={remove}
+              onCreateContact={setContactPrefill}
+            />
+          ))}
+        </ListPanel>
       )}
 
       {cursor ? (

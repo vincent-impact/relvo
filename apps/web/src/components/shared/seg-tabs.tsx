@@ -3,8 +3,10 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// SegTabs — segmented « Direction B » : pilule blanche ombrée, onglet actif en
-// violet Relvo, badges de compteur ronds. Variante `overlap` pour chevaucher le
+// SegTabs — segmented : conteneur blanc POSÉ (niveau 2, rayon 12), onglet actif
+// en violet Relvo lui-même posé (ombre de contact), badges de compteur ronds.
+// Direction « Instrument » (2026-09) : plus de pilule — les rayons sont
+// plafonnés, et l'onglet actif a une épaisseur au lieu d'être un aplat. Variante `overlap` pour chevaucher le
 // bas du hero violet. Présentationnel et contrôlé (l'état vit dans le parent).
 // Sert aux filtres Mon fil, aux onglets Sujet et aux onglets Réglages.
 //
@@ -47,11 +49,10 @@ export function SegTabs({
     <div
       role="tablist"
       className={cn(
-        "flex gap-1.5 rounded-full bg-white p-1.5",
+        "flex gap-1 rounded-xl bg-white p-[5px] shadow-surface-2",
         overlap && "relative z-[3] mx-4 -mt-[25px]",
         className,
       )}
-      style={{ boxShadow: "0 8px 24px rgb(28 22 60 / 0.14)" }}
     >
       {options.map((opt) => {
         const active = opt.value === value;
@@ -66,9 +67,11 @@ export function SegTabs({
             title={iconOnly ? opt.label : undefined}
             onClick={() => onValueChange(opt.value)}
             className={cn(
-              "flex flex-1 items-center justify-center gap-1.5 rounded-full px-2 text-[14px] font-bold whitespace-nowrap transition-colors",
+              "flex flex-1 items-center justify-center gap-1.5 rounded-[9px] px-2 text-[14px] font-semibold whitespace-nowrap transition-colors",
               iconOnly ? "py-[11px]" : "py-[9px]",
-              active ? "bg-relvo text-white" : "text-[#8a8980]",
+              active
+                ? "bg-relvo text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.2),0_1px_2px_rgb(20_18_40/0.2)]"
+                : "text-(--text-tertiary) active:bg-(--surface-2)",
             )}
           >
             {iconOnly && Icon ? (
@@ -89,10 +92,10 @@ export function SegTabs({
             {typeof opt.count === "number" ? (
               <span
                 className={cn(
-                  "inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10.5px] font-extrabold",
+                  "inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 font-numeric text-[10.5px] font-bold",
                   active
                     ? "bg-white/30 text-white"
-                    : "bg-[#eceae6] text-[#8a8980]",
+                    : "bg-(--surface-2) text-(--text-tertiary)",
                 )}
               >
                 {opt.count}

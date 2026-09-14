@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AgendaWeek } from "@/components/home/agenda-week";
 import { TaskKpiTabs, type TaskTab } from "@/components/home/task-kpi-tabs";
 import { TaskItem, type TaskItemData } from "@/components/subject/task-item";
+import { ListPanel } from "@/components/shared/list-panel";
 
 // Cœur de l'Accueil (Direction B) — page « plan d'action ». UNE SEULE barre
 // (2026-07-24) qui fusionne l'ancienne carte KPI et la barre de tri : trois
@@ -77,11 +78,11 @@ export function HomeTabs({
         overdue.length === 0 ? (
           <Empty>Aucune tâche en retard ✦</Empty>
         ) : (
-          <div>
+          <ListPanel className="mt-4">
             {overdue.map((t) => (
               <TaskItem key={t.id} task={t} flat meta="date" />
             ))}
-          </div>
+          </ListPanel>
         )
       ) : null}
 
@@ -89,11 +90,11 @@ export function HomeTabs({
         untriaged.length === 0 ? (
           <Empty>Aucune tâche à trier.</Empty>
         ) : (
-          <div>
+          <ListPanel className="mt-4">
             {untriaged.map((t) => (
               <TaskItem key={t.id} task={t} flat />
             ))}
-          </div>
+          </ListPanel>
         )
       ) : null}
     </>

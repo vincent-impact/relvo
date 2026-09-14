@@ -14,6 +14,7 @@ import {
   type SubjectRowData,
 } from "@/components/shared/subject-row";
 import type { FolderChip } from "@/server/cached";
+import { ListPanel } from "@/components/shared/list-panel";
 
 // Vue complète de Sujets (client) — la carte KPI est une BARRE D'ONGLETS chiffrée
 // par STATUT (Ouverts · Validés · Fermés), et la barre de filtres ne propose que
@@ -108,17 +109,15 @@ export function FeedView({
         {filtered.length} sujet{filtered.length > 1 ? "s" : ""}
       </p>
 
-      <div className="pt-0.5">
-        {filtered.length === 0 ? (
-          <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
-            {domain != null
-              ? "Aucun sujet ne correspond à ce domaine."
-              : "Rien ici pour le moment."}
-          </p>
-        ) : (
-          filtered.map(renderRow)
-        )}
-      </div>
+      {filtered.length === 0 ? (
+        <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
+          {domain != null
+            ? "Aucun sujet ne correspond à ce domaine."
+            : "Rien ici pour le moment."}
+        </p>
+      ) : (
+        <ListPanel className="mt-1">{filtered.map(renderRow)}</ListPanel>
+      )}
     </>
   );
 }

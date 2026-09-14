@@ -76,10 +76,10 @@ export function ConversationFilters({
               type="button"
               onClick={() => go({ channel: opt.value })}
               className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12.5px] font-semibold transition-colors",
+                "pressable inline-flex h-9 items-center gap-1.5 rounded-[10px] border px-3.5 text-[13px] font-semibold transition-colors",
                 active
-                  ? "border-transparent bg-relvo text-white"
-                  : "border-(--border) bg-white text-(--text-secondary)",
+                  ? "border-transparent bg-relvo text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_1px_2px_rgb(20_18_40/0.18)]"
+                  : "border-(--hairline) bg-white text-(--text-secondary) shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(20_18_40/0.05)]",
               )}
             >
               {Icon ? (

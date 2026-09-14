@@ -18,7 +18,10 @@ export default async function ConnexionPage() {
   if (await getCurrentAccount()) redirect("/");
 
   return (
-    <AuthCard title="Connexion" description="Accédez à votre espace Relvo.">
+    <AuthCard
+      title="Votre assistant de messagerie"
+      description="Accédez à votre espace Relvo."
+    >
       <div className="space-y-4">
         {googleEnabled && (
           <>

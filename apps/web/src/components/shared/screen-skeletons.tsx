@@ -29,7 +29,7 @@ export function RowsSkeleton({
 export function MetricsCardSkeleton() {
   return (
     <div
-      className="relative z-[3] mx-4 -mt-[30px] h-[90px] animate-pulse rounded-[22px] bg-white"
+      className="relative z-[3] mx-4 -mt-[30px] h-[90px] animate-pulse rounded-[14px] bg-white"
       style={{ boxShadow: "var(--shadow-metrics)" }}
     />
   );
