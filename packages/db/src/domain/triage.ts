@@ -608,3 +608,73 @@ export async function logTriageFailure(
     metadata: { conversationId: input.conversationId },
   });
 }
+
+// ─────────────────────────────────────────────────────────────
+// Le bilan — ce que Relvo a fait en l'absence de l'utilisateur
+// ─────────────────────────────────────────────────────────────
+
+export type RelvoActivitySummary = {
+  /** Début de la fenêtre observée. */
+  since: Date;
+  /** Conversations sur lesquelles Relvo a rendu un verdict dans la fenêtre. */
+  read: number;
+  /** … qu'il a fait taire (bruit en confiance haute). */
+  ignored: number;
+  /** … sur lesquelles il a ouvert un sujet. */
+  opened: number;
+  /** … qu'il a rattachées à un sujet existant. */
+  attached: number;
+  /** … qu'il a laissées à trier (verdict seul). */
+  leftUnsorted: number;
+  /** Dernier verdict rendu, ou null. */
+  lastAt: Date | null;
+};
+
+/**
+ * Compte, sur une fenêtre, ce que Relvo a fait des conversations : lues,
+ * ignorées, ouvertes en sujet, rattachées, laissées à trier. Quatre comptages
+ * et un maximum — rien de lourd, la page Conversations l'affiche à chaque
+ * ouverture. « Laissées à trier » est le reste : lues moins rangées.
+ */
+export async function getRelvoActivitySummary(
+  db: TenantDb,
+  opts: { since: Date } | { days: number },
+): Promise<RelvoActivitySummary> {
+  const since =
+    "since" in opts
+      ? opts.since
+      : new Date(Date.now() - opts.days * 86_400_000);
+  const [read, ignored, opened, attached, last] = await Promise.all([
+    db.conversation.count({ where: { triagedAt: { gte: since } } }),
+    db.conversation.count({
+      where: {
+        triagedAt: { gte: since },
+        status: ConversationStatus.ignored,
+        ignoredByActor: Actor.ai,
+      },
+    }),
+    db.subject.count({
+      where: { createdByActor: Actor.ai, createdAt: { gte: since } },
+    }),
+    db.eventLog.count({
+      where: {
+        eventType: EVENT_TYPES.conversationAttached,
+        actor: Actor.ai,
+        createdAt: { gte: since },
+      },
+    }),
+    db.conversation.aggregate({
+      _max: { triagedAt: true },
+      where: { triagedAt: { gte: since } },
+    }),
+  ]);
+  return {
+    since,
+    read,
+    ignored,
+    opened,
+    attached,
+    leftUnsorted: Math.max(0, read - ignored - opened - attached),
+    lastAt: last._max.triagedAt,
+  };
+}

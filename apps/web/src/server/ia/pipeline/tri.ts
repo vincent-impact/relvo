@@ -3,6 +3,7 @@ import {
   applyTriageMatter,
   getTriageProjection,
   hasAiSolicitationForMessage,
+  ignoreConversation,
   isAssistantEnabled,
   logAiSolicitation,
   logTriageFailure,
@@ -15,7 +16,7 @@ import { inferenceDisponible, NIVEAU_RETENU } from "../config";
 import { contexteTri } from "../contexte";
 import { SortieTri } from "../schemas";
 import { detecterBruitDeterministe } from "./bruit";
-import { deciderTri, verdictEnBase } from "./decision";
+import { deciderTri, verdictEnBase, type CategorieBruit } from "./decision";
 
 // LE TRI EN PRODUCTION (M7, tranche 4 — M7.1, M7.4, M7.5, M7.14 à M7.16) :
 // « un e-mail entrant devient un sujet titré et classé ». Déclenché par le
@@ -25,11 +26,14 @@ import { deciderTri, verdictEnBase } from "./decision";
 // Ordre, et ce que chaque étape garantit :
 //   1. Assistant actif sur le compte, inférence joignable, idempotence — sinon rien.
 //   2. Projection depuis la base, par le domaine (`getTriageProjection`).
-//   3. Filtre déterministe du bruit : verdict sans appel, zéro jeton (05 §9.5).
+//   3. Filtre déterministe du bruit : verdict sans appel, zéro jeton (05 §9.5),
+//      et la source est mise en sourdine — la règle est sûre.
 //   4. Appel de tri, sortie conforme au schéma ; l'appel est consigné AVANT
 //      d'être exploité — un coût est un coût, même si la suite échoue.
-//   5. Verdict, confiance et raison écrits sur la conversation ; sous la
-//      frontière de confiance, rien d'autre (05 §1.1).
+//   5. Verdict, confiance et raison écrits sur la conversation. Puis la
+//      décision (`./decision`) : bruit en confiance haute → la source est
+//      ignorée, avec la catégorie pour raison ; affaire au-dessus de la
+//      frontière → ouverture ou rattachement ; sinon rien d'autre (05 §1.1).
 //   6. Ouverture ou rattachement par les primitives du domaine.
 //   7. Cache de données invalidé après toute écriture (PITFALLS.md #45).
 //
@@ -45,6 +49,7 @@ export type IssueTri =
   | "non-orpheline"
   | "sans-message-entrant"
   | "bruit-deterministe"
+  | "ignore"
   | "verdict-seul"
   | "ouvert"
   | "rattache"
@@ -76,6 +81,16 @@ export async function trierConversationEmail(args: {
   const entrant = projection.dernierEntrant;
   if (!entrant) return { issue: "sans-message-entrant" };
 
+  // Faire taire la source sur un verdict « bruit » sûr (05 §9.5) : la catégorie
+  // devient la raison d'ignorance, la phrase de Relvo la note. Réversible d'un
+  // appui dans le filtre « Ignorées ».
+  const ignorer = (categorie: CategorieBruit, raison: string) =>
+    ignoreConversation(db, conversationId, {
+      reason: categorie,
+      note: raison,
+      actor: "ai",
+    });
+
   try {
     const bruit = detecterBruitDeterministe({
       adresse: entrant.adresse,
@@ -95,6 +110,7 @@ export async function trierConversationEmail(args: {
         source: "deterministic",
         rule: bruit.regle,
       });
+      await ignorer(bruit.categorie, bruit.raison);
       expireTenantData();
       return { issue: "bruit-deterministe", detail: bruit.regle };
     }
@@ -126,6 +142,11 @@ export async function trierConversationEmail(args: {
     if (decision.type === "verdict-seul") {
       expireTenantData();
       return { issue: "verdict-seul", detail: decision.motif };
+    }
+    if (decision.type === "ignorer") {
+      await ignorer(decision.categorie, decision.raison);
+      expireTenantData();
+      return { issue: "ignore", detail: decision.categorie };
     }
 
     const applied = await applyTriageMatter(db, {

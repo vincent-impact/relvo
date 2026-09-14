@@ -45,7 +45,12 @@ import {
   ContactCreateDialog,
   type ContactPrefill,
 } from "@/components/contacts/contact-create-dialog";
-import type { ThreadMessageData } from "@/lib/conversation-row";
+import type {
+  IgnoreData,
+  RelvoVerdictData,
+  ThreadMessageData,
+} from "@/lib/conversation-row";
+import { RelvoVerdictLine } from "@/components/conversations/relvo-verdict-line";
 import { cn } from "@/lib/utils";
 
 // Détail d'une conversation (header enrichi 2026-07-23, v3). TOUT le contexte vit
@@ -97,6 +102,8 @@ export function ConversationDetail({
   backTo,
   folders,
   subjects,
+  relvo,
+  ignore,
 }: {
   conversationId: string;
   title: string;
@@ -117,6 +124,10 @@ export function ConversationDetail({
   folders: FolderOption[];
   /** Sujets ouverts candidats au « Lier à un sujet existant ». */
   subjects: SubjectPickerOption[];
+  /** Le dernier verdict de Relvo sur ce fil, ou null s'il ne l'a pas lu (M7.20). */
+  relvo: RelvoVerdictData | null;
+  /** Raison et auteur de l'ignorance, si le fil est en sourdine. */
+  ignore: IgnoreData | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -357,6 +368,18 @@ export function ConversationDetail({
             <div className="flex items-center gap-1.5 text-[12.5px] font-semibold text-(--on-violet)">
               <ChannelIcon className="size-[14px] flex-none" strokeWidth={2} />
               {channelLabel}
+            </div>
+
+            {/* Ce que Relvo en pense (M7.20) — verdict, raison, heure ; ou
+                « Relvo n'a pas encore lu ce fil ». Sur le violet, en blanc. */}
+            <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 [&_.text-\(--text-secondary\)]:text-white/85 [&_.text-\(--text-tertiary\)]:text-white/70 [&_.text-relvo]:text-white">
+              {relvo || ignore ? (
+                <RelvoVerdictLine relvo={relvo} ignore={ignore} clamp={false} />
+              ) : (
+                <p className="text-[12.5px] text-white/70">
+                  Relvo n’a pas encore lu ce fil.
+                </p>
+              )}
             </div>
 
             {/* Interlocuteurs — TOUS les contacts du fil, en colonne compacte.

@@ -505,6 +505,9 @@ model Conversation {
   /// pas, jamais pourquoi.
   ignoreReason      IgnoreReason?      @map("ignore_reason")
   ignoreNote        String?            @map("ignore_note")
+  /// Qui a fait taire la source : l'utilisateur (geste), ou Relvo (verdict
+  /// « bruit » en confiance haute, 05 §9.5). Null tant que la conversation est active.
+  ignoredByActor    Actor?             @map("ignored_by_actor")
   /// Le DERNIER verdict de tri de Relvo sur cette conversation orpheline (05 §1.1) :
   /// verdict, catégorie du bruit (vocabulaire des raisons d'ignorance), confiance,
   /// raison en une phrase, horodatage. Visible dans la liste à trier ; l'utilisateur

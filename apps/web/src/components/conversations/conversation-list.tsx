@@ -45,6 +45,7 @@ import {
 } from "@/components/contacts/contact-create-dialog";
 import { cn } from "@/lib/utils";
 import { ListPanel } from "@/components/shared/list-panel";
+import { RelvoVerdictLine } from "@/components/conversations/relvo-verdict-line";
 
 // Liste /conversations (M6bis.8) — la surface de TRI, hors navigation, atteinte
 // par le KPI « Sans sujet » de la page Sujets.
@@ -302,6 +303,14 @@ function ConversationRow({
               </span>
             ) : null}
           </div>
+
+          {/* Ce que Relvo en pense (M7.20) : verdict et raison, ou « ignorée par
+              Relvo ». Rien si Relvo n'a pas encore lu ce fil. */}
+          <RelvoVerdictLine
+            relvo={data.relvo}
+            ignore={data.ignore}
+            className="mt-1"
+          />
         </div>
       </div>
 

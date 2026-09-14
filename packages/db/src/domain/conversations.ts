@@ -1,10 +1,14 @@
 import { z } from "zod";
 import {
+  Actor,
   ChannelType,
   ConversationStatus,
   ConversationType,
+  IgnoreReason,
   MessageDirection,
   SubjectStatus,
+  TriageConfidence,
+  TriageVerdict,
 } from "../generated/prisma/enums";
 import { Prisma } from "../generated/prisma/client";
 import type { TenantDb, Tx } from "../tenant";
@@ -498,6 +502,14 @@ export type ConversationListItem = {
    * plusieurs sujets ». Vide = pas de confirmation, on écarte directement.
    */
   listeningSubjects: { id: string; title: string }[];
+  /** Le dernier verdict de Relvo sur ce fil, ou null s'il ne l'a pas encore lu. */
+  triage: ConversationTriage | null;
+  /** Raison et acteur de l'ignorance (statut `ignored`), sinon null. */
+  ignore: {
+    reason: IgnoreReason | null;
+    note: string | null;
+    by: Actor;
+  } | null;
 };
 
 const CONVERSATION_ITEM_INCLUDE = {
@@ -635,6 +647,42 @@ function toConversationListItem(c: ConversationItemRow): ConversationListItem {
       id: s.subject.id,
       title: s.subject.title,
     })),
+    triage: triageOf(c),
+    ignore: ignoreOf(c),
+  };
+}
+
+type TriageColumns = {
+  triageVerdict: TriageVerdict | null;
+  triageNoiseReason: IgnoreReason | null;
+  triageConfidence: TriageConfidence | null;
+  triageReason: string | null;
+  triagedAt: Date | null;
+};
+
+/** Projette les cinq colonnes du verdict en un objet, ou null si Relvo n'a pas lu le fil. */
+export function triageOf(c: TriageColumns): ConversationTriage | null {
+  if (!c.triageVerdict || !c.triageConfidence || !c.triagedAt) return null;
+  return {
+    verdict: c.triageVerdict,
+    noiseReason: c.triageNoiseReason,
+    confidence: c.triageConfidence,
+    reason: c.triageReason ?? "",
+    at: c.triagedAt,
+  };
+}
+
+export function ignoreOf(c: {
+  status: ConversationStatus;
+  ignoreReason: IgnoreReason | null;
+  ignoreNote: string | null;
+  ignoredByActor: Actor | null;
+}): ConversationListItem["ignore"] {
+  if (c.status !== ConversationStatus.ignored) return null;
+  return {
+    reason: c.ignoreReason,
+    note: c.ignoreNote,
+    by: c.ignoredByActor ?? Actor.user,
   };
 }
 
@@ -729,33 +777,83 @@ export async function listConversationGroups(
   }));
 }
 
+/** Le verdict de Relvo tel que la liste et le fil l'affichent (02, « Le verdict de tri »). */
+export type ConversationTriage = {
+  verdict: TriageVerdict;
+  noiseReason: IgnoreReason | null;
+  confidence: TriageConfidence;
+  reason: string;
+  at: Date;
+};
+
+export const ignoreConversationSchema = z.object({
+  /** Raison choisie en un appui — ou la catégorie du verdict quand c'est Relvo qui fait taire. */
+  reason: z.enum(IgnoreReason).optional().nullable(),
+  note: z.string().trim().max(1000).optional().nullable(),
+  /** L'utilisateur (défaut), ou Relvo sur un verdict « bruit » en confiance haute (05 §9.5). */
+  actor: z.enum(Actor).optional(),
+});
+
+export type IgnoreConversationInput = z.input<typeof ignoreConversationSchema>;
+
 /**
  * Ignorer une source. Relvo cesse d'analyser, de résumer et de trier ses
  * messages — mais ils continuent d'ARRIVER et d'être stockés : on ne perd rien,
  * ils sortent seulement du champ de travail de l'assistant. C'est le remède au
- * « groupe WhatsApp bavard ».
+ * « groupe WhatsApp bavard ». L'ignorance porte une RAISON et l'acteur qui l'a
+ * posée — le geste de l'utilisateur, ou le verdict de Relvo — pour que la liste
+ * dise « ignorée par Relvo » et que le journal soit relisible (05 §9.1).
  */
-export async function ignoreConversation(db: TenantDb, id: string) {
+export async function ignoreConversation(
+  db: TenantDb,
+  id: string,
+  input: IgnoreConversationInput = {},
+) {
+  const data = ignoreConversationSchema.parse(input);
+  const actor = data.actor ?? Actor.user;
   const conversation = await getConversation(db, id);
   await db.conversation.updateMany({
     where: { id },
-    data: { status: ConversationStatus.ignored },
+    data: {
+      status: ConversationStatus.ignored,
+      ignoreReason: data.reason ?? null,
+      ignoreNote: data.note ?? null,
+      ignoredByActor: actor,
+    },
   });
   await logEvent(db as Tx, {
     entityType: "system",
     entityId: id,
     eventType: EVENT_TYPES.conversationIgnored,
-    title: `Conversation ignorée — ${conversation.title}`,
-    actor: "user",
+    title:
+      actor === Actor.ai
+        ? `Conversation ignorée par Relvo — ${conversation.title}`
+        : `Conversation ignorée — ${conversation.title}`,
+    description: data.note ?? null,
+    actor,
+    metadata: { reason: data.reason ?? null },
   });
-  return { ...conversation, status: ConversationStatus.ignored };
+  return {
+    ...conversation,
+    status: ConversationStatus.ignored,
+    ignoreReason: data.reason ?? null,
+    ignoreNote: data.note ?? null,
+    ignoredByActor: actor,
+  };
 }
 
 export async function reactivateConversation(db: TenantDb, id: string) {
   const conversation = await getConversation(db, id);
+  // Réactiver contredit l'ignorance : la raison et l'acteur s'effacent, le
+  // verdict de Relvo reste (c'est lui que le journal confronte au geste).
   await db.conversation.updateMany({
     where: { id },
-    data: { status: ConversationStatus.active },
+    data: {
+      status: ConversationStatus.active,
+      ignoreReason: null,
+      ignoreNote: null,
+      ignoredByActor: null,
+    },
   });
   await logEvent(db as Tx, {
     entityType: "system",
@@ -763,8 +861,18 @@ export async function reactivateConversation(db: TenantDb, id: string) {
     eventType: EVENT_TYPES.conversationReactivated,
     title: `Conversation réactivée — ${conversation.title}`,
     actor: "user",
+    metadata: {
+      wasIgnoredBy: conversation.ignoredByActor,
+      reason: conversation.ignoreReason,
+    },
   });
-  return { ...conversation, status: ConversationStatus.active };
+  return {
+    ...conversation,
+    status: ConversationStatus.active,
+    ignoreReason: null,
+    ignoreNote: null,
+    ignoredByActor: null,
+  };
 }
 
 /**
@@ -871,6 +979,10 @@ export type ConversationThread = {
    * (écoutes terminées). Une conversation email n'a qu'une écoute, permanente.
    */
   listenings: ConversationListening[];
+  /** Le dernier verdict de Relvo sur ce fil, ou null s'il ne l'a pas encore lu. */
+  triage: ConversationTriage | null;
+  /** Raison et acteur de l'ignorance (statut `ignored`), sinon null. */
+  ignore: ConversationListItem["ignore"];
 };
 
 const CONVERSATION_MESSAGE_INCLUDE = {
@@ -1065,6 +1177,8 @@ export async function getConversationThread(
     interlocutorName,
     participants,
     listenings,
+    triage: triageOf(conversation),
+    ignore: ignoreOf(conversation),
     messages: rows.map((m) => ({
       id: m.id,
       direction: m.direction,

@@ -1,5 +1,10 @@
 import { Suspense } from "react";
-import { countUnsortedConversations, listConversationItems } from "@relvo/db";
+import {
+  countUnsortedConversations,
+  getRelvoActivitySummary,
+  listConversationItems,
+} from "@relvo/db";
+import { RelvoActivityCard } from "@/components/conversations/relvo-activity-card";
 import { PollRefresh } from "@/components/shared/poll-refresh";
 import { ConversationFilters } from "@/components/conversations/conversation-filters";
 import { ConversationList } from "@/components/conversations/conversation-list";
@@ -16,7 +21,10 @@ import {
   parseFilterSlug,
   toConversationRowData,
 } from "@/lib/conversation-row";
-import { getTenantDb } from "@/server/auth-context";
+import { getTenantDb, requireAccount } from "@/server/auth-context";
+
+/** Fenêtre du bilan de Relvo en tête de page : les sept derniers jours. */
+const ACTIVITY_WINDOW_DAYS = 7;
 
 // Conversations (M6bis.8) — la surface de TRI, hors navigation : on y arrive par
 // le KPI « Sans sujet » de la page Sujets. Elle remplace à terme `/messages`,
@@ -66,8 +74,11 @@ export default async function ConversationsPage({
   const filter = parseFilterSlug(filtre);
   const channel = parseChannelSlug(canal);
 
-  const db = await getTenantDb();
-  const unsorted = await countUnsortedConversations(db);
+  const [account, db] = await Promise.all([requireAccount(), getTenantDb()]);
+  const [unsorted, summary] = await Promise.all([
+    countUnsortedConversations(db),
+    getRelvoActivitySummary(db, { days: ACTIVITY_WINDOW_DAYS }),
+  ]);
 
   return (
     <Screen>
@@ -84,6 +95,13 @@ export default async function ConversationsPage({
       />
 
       <ConversationFilters filter={filter} channel={channel} />
+
+      {/* Ce que Relvo a fait en l'absence de l'utilisateur (M7, tranche 4). */}
+      <RelvoActivityCard
+        summary={summary}
+        assistantEnabled={account.assistantEnabled}
+        windowLabel={`ces ${ACTIVITY_WINDOW_DAYS} derniers jours`}
+      />
 
       <Suspense fallback={<RowsSkeleton count={5} />}>
         <List filter={filter} channel={channel} />

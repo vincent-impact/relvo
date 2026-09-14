@@ -321,7 +321,7 @@ Préférences (« Assistant Relvo »). Un administrateur doit pouvoir **couper l
 — faute de temps, pas de doute sur le besoin. En attendant, le plafond de dépense sur la clé du
 fournisseur reste la garde de dernier recours.
 
-### Frontière de confiance et verdict « incertain » — réglés par défaut, à confirmer en usage
+### Frontières de confiance et verdict « incertain » — réglées par défaut, à confirmer en usage
 
 **`proposé`** · `05 §1.1` place la frontière « entre moyenne et basse » et la fait régler sur le
 jeu d'évaluation. Le jeu de démonstration ne la règle pas : sur les 22 fils, le tri rend **22
@@ -333,9 +333,14 @@ ailleurs que là où la conception la met.
 « affaire » **et** la confiance est **haute ou moyenne** ; en confiance basse, seul le verdict
 est écrit sur la conversation, raison visible dans la liste à trier. Le verdict « incertain »
 est traité comme une confiance basse : verdict écrit, rien d'autre — c'est le renvoi au
-dirigeant, pas un échec. Un verdict « bruit » n'ignore jamais la conversation : il pose sa
-catégorie et attend le geste (`05 §9.5`, « Relvo ne décide rien à la place de l'utilisateur au
-premier jour »).
+dirigeant, pas un échec.
+
+**Tranché le jour même, à l'essai sur le premier e-mail réel** : un verdict « bruit » en confiance
+**haute** met la source en sourdine — la conversation passe en ignorée, catégorie pour raison,
+phrase pour note, acteur Relvo, réversible d'un appui. La première version laissait tout bruit
+dans « Sans sujet » avec sa pastille ; le produit a tranché l'inverse : « trier, c'est aussi faire
+disparaître ce qui n'a pas à être là ». En confiance moyenne ou basse, le verdict seul est écrit.
+Le seuil d'ignorance est une seconde constante, au même endroit que la première.
 
 **Ce qui tranchera** : le journal des premiers usages réels — verdicts rendus, confiance,
 gestes de confirmation ou de contradiction — relu après quelques semaines. Deux signaux à

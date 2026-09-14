@@ -6,14 +6,18 @@ import {
   EVENT_TYPES,
   applyTriageMatter,
   createSubject,
+  getRelvoActivitySummary,
   getTriageProjection,
   hasAiSolicitationForMessage,
+  ignoreConversation,
   ingestInboundEmail,
   ingestInboundWhatsApp,
   isAssistantEnabled,
+  listConversationItems,
   logAiSolicitation,
   logTriageFailure,
   prisma,
+  reactivateConversation,
   recordTriageVerdict,
   setAssistantEnabled,
   tenantDb,
@@ -521,5 +525,155 @@ describe("compteur et échec", () => {
     expect(await db.subject.count()).toBe(0);
     const p = await getTriageProjection(db, message.conversationId);
     expect(p.orpheline).toBe(true);
+  });
+});
+
+describe("faire taire une source, et le bilan", () => {
+  it("Relvo ignore un fil avec sa catégorie pour raison ; réactiver efface la raison, pas le verdict", async () => {
+    const { db, channel } = await makeAccount("m@test.fr");
+    const { message } = await mail(db, channel.id, "e1", {
+      senderRaw: "promo@grossiste.fr",
+    });
+    await recordTriageVerdict(db, {
+      conversationId: message.conversationId,
+      messageId: message.id,
+      verdict: "noise",
+      noiseReason: "advertising",
+      confidence: "high",
+      reason: "Promotion générique.",
+      source: "model",
+    });
+    const ignored = await ignoreConversation(db, message.conversationId, {
+      reason: "advertising",
+      note: "Promotion générique.",
+      actor: Actor.ai,
+    });
+    expect(ignored.status).toBe("ignored");
+    expect(ignored.ignoredByActor).toBe(Actor.ai);
+
+    const c = await db.conversation.findFirstOrThrow({
+      where: { id: message.conversationId },
+    });
+    expect(c.ignoreReason).toBe("advertising");
+    expect(c.ignoreNote).toBe("Promotion générique.");
+    expect(c.ignoredByActor).toBe(Actor.ai);
+    // Sortie de « Sans sujet », visible dans « Ignorées » avec son auteur.
+    const unsorted = await listConversationItems(db, { filter: "unsorted" });
+    expect(unsorted.items).toHaveLength(0);
+    const ignoredList = await listConversationItems(db, { filter: "ignored" });
+    expect(ignoredList.items[0]).toMatchObject({
+      ignore: { reason: "advertising", by: Actor.ai },
+      triage: { verdict: "noise", noiseReason: "advertising" },
+    });
+    const ev = await db.eventLog.findFirstOrThrow({
+      where: { eventType: EVENT_TYPES.conversationIgnored },
+    });
+    expect(ev.actor).toBe(Actor.ai);
+    expect(ev.title).toContain("par Relvo");
+
+    // L'utilisateur se dédit : la raison s'efface, le verdict de Relvo reste.
+    await reactivateConversation(db, message.conversationId);
+    const c2 = await db.conversation.findFirstOrThrow({
+      where: { id: message.conversationId },
+    });
+    expect(c2.status).toBe("active");
+    expect(c2.ignoreReason).toBeNull();
+    expect(c2.ignoredByActor).toBeNull();
+    expect(c2.triageVerdict).toBe("noise");
+  });
+
+  it("le geste de l'utilisateur reste porté par lui, sans raison obligatoire", async () => {
+    const { db, channel } = await makeAccount("n@test.fr");
+    const { message } = await mail(db, channel.id, "e1");
+    await ignoreConversation(db, message.conversationId);
+    const c = await db.conversation.findFirstOrThrow({
+      where: { id: message.conversationId },
+    });
+    expect(c.ignoredByActor).toBe(Actor.user);
+    expect(c.ignoreReason).toBeNull();
+  });
+
+  it("compte ce que Relvo a fait sur une fenêtre : lues, ignorées, ouvertes, rattachées, laissées", async () => {
+    const { db, channel } = await makeAccount("o@test.fr");
+    const existant = await createSubject(db, { title: "Retard livraison" });
+    const since = new Date(Date.now() - 60_000);
+
+    // 1. ignorée par Relvo
+    const a = await mail(db, channel.id, "a", { subjectLine: "Promo" });
+    await recordTriageVerdict(db, {
+      conversationId: a.message.conversationId,
+      messageId: a.message.id,
+      verdict: "noise",
+      noiseReason: "advertising",
+      confidence: "high",
+      reason: "Promo.",
+      source: "model",
+    });
+    await ignoreConversation(db, a.message.conversationId, {
+      reason: "advertising",
+      actor: Actor.ai,
+    });
+    // 2. ouverte en sujet
+    const b = await mail(db, channel.id, "b", { subjectLine: "Rupture" });
+    await recordTriageVerdict(db, {
+      conversationId: b.message.conversationId,
+      messageId: b.message.id,
+      verdict: "matter",
+      confidence: "high",
+      reason: "Une validation attendue.",
+      source: "model",
+    });
+    await applyTriageMatter(db, {
+      conversationId: b.message.conversationId,
+      messageId: b.message.id,
+      title: "Rupture",
+    });
+    // 3. rattachée
+    const c = await mail(db, channel.id, "c", { subjectLine: "RE: palette" });
+    await recordTriageVerdict(db, {
+      conversationId: c.message.conversationId,
+      messageId: c.message.id,
+      verdict: "matter",
+      confidence: "high",
+      reason: "Prolonge le retard.",
+      source: "model",
+    });
+    await applyTriageMatter(db, {
+      conversationId: c.message.conversationId,
+      messageId: c.message.id,
+      existingSubjectReference: existant.reference,
+    });
+    // 4. laissée à trier (incertain)
+    const d = await mail(db, channel.id, "d", { subjectLine: "Question" });
+    await recordTriageVerdict(db, {
+      conversationId: d.message.conversationId,
+      messageId: d.message.id,
+      verdict: "uncertain",
+      confidence: "low",
+      reason: "Pas clair.",
+      source: "model",
+    });
+    // 5. jamais lue par Relvo
+    await mail(db, channel.id, "e", { subjectLine: "Non lue" });
+    // 6. ignorée par l'utilisateur, hors du compte de Relvo
+    const f = await mail(db, channel.id, "f", { subjectLine: "Perso" });
+    await ignoreConversation(db, f.message.conversationId);
+
+    const s = await getRelvoActivitySummary(db, { since });
+    expect(s).toMatchObject({
+      read: 4,
+      ignored: 1,
+      opened: 1,
+      attached: 1,
+      leftUnsorted: 1,
+    });
+    expect(s.lastAt).not.toBeNull();
+
+    // Une fenêtre future : rien.
+    const vide = await getRelvoActivitySummary(db, {
+      since: new Date(Date.now() + 60_000),
+    });
+    expect(vide).toMatchObject({ read: 0, ignored: 0, opened: 0, attached: 0 });
+    expect(vide.lastAt).toBeNull();
   });
 });

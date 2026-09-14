@@ -207,10 +207,13 @@ la clé.
 conversation. Les messages continuent d'être **reçus et stockés** — on ne perd rien —, ils
 sortent seulement du champ de travail de l'assistant. Réversible par le seul utilisateur.
 
-L'ignorance porte une **raison**, choisie par l'utilisateur en un appui — publicité, prospection,
-notification automatique, personnel, pas mon rôle, déjà traité ailleurs, autre — et une note libre
-optionnelle. La raison est ce qui rend le geste exploitable par Relvo (cf. `05 §9`) : sans elle,
-une conversation ignorée dit qu'on n'en veut pas, jamais pourquoi.
+L'ignorance porte une **raison** — publicité, prospection, notification automatique, personnel, pas
+mon rôle, déjà traité ailleurs, autre —, une note libre optionnelle, et l'**acteur** qui l'a posée :
+l'utilisateur, en un appui, ou Relvo, sur un verdict « bruit » sûr (cf. `05 §9.5`), auquel cas la
+catégorie du verdict est la raison et sa phrase la note. La raison est ce qui rend le geste
+exploitable par Relvo (cf. `05 §9`) : sans elle, une conversation ignorée dit qu'on n'en veut pas,
+jamais pourquoi. L'acteur est ce qui permet à la liste de dire « ignorée par Relvo ». Réactiver
+efface la raison et l'acteur ; le verdict de tri, lui, reste.
 
 ### Le verdict de tri
 

@@ -225,9 +225,25 @@ consommateur de l'inférence, et ses parties pures sont testées sans base.
       (`jetons.cacheLecture`) ; à relire après les premiers verdicts réels. Sur la démonstration,
       1 881 jetons relus sur 2 596.
 
-**Ce que la tranche laisse volontairement de côté** : le verdict et sa raison ne sont pas
-encore **affichés** dans la liste à trier (c'est M7.20, avec la pastille) ; WhatsApp (A8) ; les
-préférences observées et les antécédents de tri restent vides tant que M17 ne les calcule pas.
+**Ajouts du premier essai réel (le soir même)**, après un e-mail de test classé « bruit » sans
+que rien ne le montre :
+
+- [x] **Un bruit sûr fait taire la source** : verdict « bruit » en confiance haute (ou règle
+      déterministe) → conversation ignorée, catégorie pour raison, phrase pour note, acteur Relvo
+      (`ignored_by_actor`, migration `20260914150000`) ; réversible d'un appui. Seconde frontière
+      dans `decision.ts`, décision dans `ecarts` (« Frontières de confiance »). `05 §9.5` récrit.
+- [x] **Ce que Relvo en pense, visible** (première forme de M7.20) : sous chaque conversation
+      lue, la ligne « Relvo · bruit · publicité — raison » ou « Ignorée par Relvo · … » ; en tête
+      du fil, la même ligne, ou « Relvo n'a pas encore lu ce fil ».
+- [x] **Le bilan en tête de l'onglet Conversations** : ce que Relvo a fait ces sept derniers
+      jours — lues, ignorées, sujets ouverts, rattachées, laissées à trier — chaque compteur
+      menant au filtre concerné (`getRelvoActivitySummary`, quatre comptages). Coupé, la carte
+      renvoie vers le réglage. La fenêtre de sept jours est une constante de la page ; « depuis
+      ma dernière visite » demanderait un horodatage de visite qui n'existe pas.
+
+**Ce que la tranche laisse volontairement de côté** : la pastille d'un appui avec provenance
+(le reste de M7.20) ; WhatsApp (A8) ; les préférences observées et les antécédents de tri
+restent vides tant que M17 ne les calcule pas.
 
 ## Tranche 5 — La structuration (M7.6, M7.18, M7.20)
 

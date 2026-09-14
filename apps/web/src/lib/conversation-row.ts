@@ -3,8 +3,74 @@ import type {
   ConversationFilter,
   ConversationListItem,
   ConversationMessageItem,
+  ConversationTriage,
 } from "@relvo/db";
 import { formatRelative } from "@/lib/display";
+
+// ── Ce que Relvo a conclu sur un fil (M7) ───────────────────────────────────
+// Libellés FRANÇAIS des énumérés du verdict et des raisons d'ignorance, en un
+// seul endroit : la liste, le fil et le bilan parlent la même langue.
+
+export const VERDICT_LABELS: Record<ConversationTriage["verdict"], string> = {
+  noise: "bruit",
+  matter: "affaire",
+  uncertain: "incertain",
+};
+
+export const IGNORE_REASON_LABELS: Record<string, string> = {
+  advertising: "publicité",
+  prospecting: "prospection",
+  automatic: "automatique",
+  personal: "personnel",
+  not_my_role: "pas mon rôle",
+  handled_elsewhere: "traité ailleurs",
+  other: "autre",
+};
+
+/** Le verdict de Relvo, prêt à afficher — sérialisable (le temps est préformaté). */
+export type RelvoVerdictData = {
+  verdict: ConversationTriage["verdict"];
+  /** « bruit · publicité », « affaire », « incertain ». */
+  label: string;
+  reason: string;
+  /** « 35 min », « hier »… */
+  time: string;
+};
+
+export function toRelvoVerdictData(
+  t: ConversationTriage | null,
+): RelvoVerdictData | null {
+  if (!t) return null;
+  const base = VERDICT_LABELS[t.verdict];
+  const label =
+    t.verdict === "noise" && t.noiseReason
+      ? `${base} · ${IGNORE_REASON_LABELS[t.noiseReason] ?? t.noiseReason}`
+      : base;
+  return {
+    verdict: t.verdict,
+    label,
+    reason: t.reason,
+    time: formatRelative(t.at) ?? "",
+  };
+}
+
+/** L'ignorance, prête à afficher : « Ignorée par Relvo · publicité ». */
+export type IgnoreData = {
+  byRelvo: boolean;
+  reasonLabel: string | null;
+  note: string | null;
+};
+
+export function toIgnoreData(
+  i: ConversationListItem["ignore"],
+): IgnoreData | null {
+  if (!i) return null;
+  return {
+    byRelvo: i.by === "ai",
+    reasonLabel: i.reason ? (IGNORE_REASON_LABELS[i.reason] ?? i.reason) : null,
+    note: i.note,
+  };
+}
 
 /** Taille de page de la liste Conversations (scroll infini). */
 export const CONVERSATIONS_PAGE_SIZE = 50;
@@ -30,6 +96,10 @@ export type ConversationRowData = {
   ignored: boolean;
   /** Sujets écoutant encore ce fil — nomment la confirmation du swipe gauche. */
   listeningSubjects: { id: string; title: string }[];
+  /** Le dernier verdict de Relvo, ou null s'il n'a pas encore lu ce fil. */
+  relvo: RelvoVerdictData | null;
+  /** Raison et auteur de l'ignorance (filtre « Ignorées »), sinon null. */
+  ignore: IgnoreData | null;
 };
 
 export function toConversationRowData(
@@ -48,6 +118,8 @@ export function toConversationRowData(
     unreadCount: item.unreadCount,
     ignored: item.status === "ignored",
     listeningSubjects: item.listeningSubjects,
+    relvo: toRelvoVerdictData(item.triage),
+    ignore: toIgnoreData(item.ignore),
   };
 }
 

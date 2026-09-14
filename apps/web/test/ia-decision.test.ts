@@ -2,13 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   deciderTri,
   FRONTIERE_CONFIANCE,
+  FRONTIERE_IGNORANCE,
   verdictEnBase,
 } from "@/server/ia/pipeline/decision";
 import type { SortieTri } from "@/server/ia/schemas";
 
-// LA DÉCISION DU TRI (M7 tranche 4, 05 §1.1) : bruit et incertain n'écrivent
-// que le verdict ; une affaire sous la frontière de confiance aussi ; au-dessus,
-// ouverture ou rattachement. La frontière est UN endroit, testé.
+// LA DÉCISION DU TRI (M7 tranche 4, 05 §1.1 et §9.5) : incertain n'écrit que
+// le verdict ; une affaire sous la frontière de confiance aussi ; au-dessus,
+// ouverture ou rattachement ; un bruit en confiance haute fait taire la source,
+// en dessous il attend le geste. Les deux frontières sont UN endroit, testé.
 
 const affaire: SortieTri = {
   verdict: "affaire",
@@ -22,8 +24,17 @@ const affaire: SortieTri = {
   priorite: "normal",
 };
 
+const bruit: SortieTri = {
+  ...affaire,
+  verdict: "bruit",
+  categorie_bruit: "advertising",
+  raison: "Promotion générique sans action attendue.",
+  domaine: null,
+  titre: null,
+};
+
 describe("décision du tri", () => {
-  it("la frontière par défaut est « moyenne » : haute et moyenne ouvrent, basse non", () => {
+  it("la frontière d'affaire par défaut est « moyenne » : haute et moyenne ouvrent, basse non", () => {
     expect(FRONTIERE_CONFIANCE).toBe("moyenne");
     expect(deciderTri(affaire).type).toBe("affaire");
     expect(deciderTri({ ...affaire, confiance: "moyenne" }).type).toBe(
@@ -34,20 +45,45 @@ describe("décision du tri", () => {
       motif: "sous-la-frontiere",
     });
     // Frontière relevée à « haute » : moyenne ne suffit plus.
-    expect(deciderTri({ ...affaire, confiance: "moyenne" }, "haute")).toEqual({
-      type: "verdict-seul",
-      motif: "sous-la-frontiere",
+    expect(
+      deciderTri({ ...affaire, confiance: "moyenne" }, { affaire: "haute" }),
+    ).toEqual({ type: "verdict-seul", motif: "sous-la-frontiere" });
+  });
+
+  it("un bruit en confiance haute fait taire la source, avec sa catégorie et sa raison", () => {
+    expect(FRONTIERE_IGNORANCE).toBe("haute");
+    expect(deciderTri(bruit)).toEqual({
+      type: "ignorer",
+      categorie: "advertising",
+      raison: "Promotion générique sans action attendue.",
+    });
+    // Sans catégorie, « autre » ; sans raison, une phrase de repli.
+    expect(
+      deciderTri({ ...bruit, categorie_bruit: null, raison: " " }),
+    ).toEqual({
+      type: "ignorer",
+      categorie: "other",
+      raison: "Sans raison donnée.",
     });
   });
 
-  it("bruit et incertain n'écrivent que le verdict, quelle que soit la confiance", () => {
+  it("un bruit en confiance moyenne ou basse n'écrit que le verdict, à l'utilisateur de trancher", () => {
+    expect(deciderTri({ ...bruit, confiance: "moyenne" })).toEqual({
+      type: "verdict-seul",
+      motif: "bruit",
+    });
+    expect(deciderTri({ ...bruit, confiance: "basse" })).toEqual({
+      type: "verdict-seul",
+      motif: "bruit",
+    });
+    // Frontière abaissée à « moyenne » : moyenne fait taire aussi.
     expect(
-      deciderTri({
-        ...affaire,
-        verdict: "bruit",
-        categorie_bruit: "advertising",
-      }),
-    ).toEqual({ type: "verdict-seul", motif: "bruit" });
+      deciderTri({ ...bruit, confiance: "moyenne" }, { ignorance: "moyenne" })
+        .type,
+    ).toBe("ignorer");
+  });
+
+  it("incertain n'écrit que le verdict, quelle que soit la confiance", () => {
     expect(deciderTri({ ...affaire, verdict: "incertain" })).toEqual({
       type: "verdict-seul",
       motif: "incertain",
@@ -83,8 +119,7 @@ describe("décision du tri", () => {
     });
     expect(
       verdictEnBase({
-        ...affaire,
-        verdict: "bruit",
+        ...bruit,
         categorie_bruit: "prospecting",
         confiance: "basse",
         raison: "  ",

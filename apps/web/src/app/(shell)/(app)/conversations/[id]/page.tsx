@@ -2,7 +2,11 @@ import { notFound } from "next/navigation";
 import { getConversationThread } from "@relvo/db";
 import { ConversationDetail } from "@/components/conversations/conversation-detail";
 import { MarkConversationRead } from "@/components/conversations/mark-conversation-read";
-import { toThreadMessageData } from "@/lib/conversation-row";
+import {
+  toIgnoreData,
+  toRelvoVerdictData,
+  toThreadMessageData,
+} from "@/lib/conversation-row";
 import { getTenantDb } from "@/server/auth-context";
 
 // Détail d'une conversation (M6ter, header enrichi 2026-07-23 v2) — TOUT le
@@ -69,6 +73,8 @@ export default async function ConversationDetailPage({
         externalThreadId={thread.externalThreadId}
         listenings={thread.listenings}
         messages={messages}
+        relvo={toRelvoVerdictData(thread.triage)}
+        ignore={toIgnoreData(thread.ignore)}
         backTo={backTo}
         folders={folders}
         subjects={subjectRows.map((s) => ({
