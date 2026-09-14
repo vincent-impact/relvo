@@ -309,7 +309,7 @@ appels réels (`usage.output_tokens_details.reasoning_tokens` est renvoyé par l
 
 ### 6.3 Résidence des données
 
-Sans objet comme critère de sélection (§1). Pour mémoire, si la question revient : la résidence UE chez OpenAI **se décide à la création du projet et ne peut pas être ajoutée après** (« Existing Projects cannot be updated for European residency after creation »). **Créer le projet OpenAI avec ce réglage coûte zéro aujourd'hui et est irrattrapable demain.** À faire même si la conformité n'est pas une priorité — c'est une option gratuite.
+Sans objet comme critère de sélection (§1). Pour mémoire, si la question revient : la résidence UE chez OpenAI **se décide à la création du projet et ne peut pas être ajoutée après** (« Existing Projects cannot be updated for European residency after creation »). **Mais elle n'est pas en libre-service** — constaté le 14/09/2026 à l'ouverture du compte : le sélecteur de région n'apparaît qu'aux organisations rendues éligibles par l'équipe commerciale d'OpenAI, après approbation de surveillance des abus et avenant de rétention (« Contact our sales team to see if you're eligible for using data residency controls »). Le projet Relvo est « Global ». Si l'éligibilité est demandée et accordée, il faudra **recréer** le projet avec la région et passer le point d'entrée sur `eu.api.openai.com` — une variable d'environnement, aucun code.
 
 ### 6.4 Couche d'abstraction — mince
 

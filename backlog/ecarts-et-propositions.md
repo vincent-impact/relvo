@@ -203,9 +203,14 @@ sur ce motif ; l'analyse reste consignée dans [`benchmark-iag.md`](benchmark-ia
 titre d'information.
 
 **Ce que la décision n'annule pas** : la couche d'abstraction par tier reste exigée, parce
-qu'elle est ce qui rend la décision réversible sans refonte. Et le projet chez le fournisseur se
-crée avec le réglage de résidence européenne quand il existe — chez OpenAI il ne peut pas être
-ajouté après coup, ce qui en fait une option gratuite aujourd'hui et irrattrapable demain.
+qu'elle est ce qui rend la décision réversible sans refonte.
+
+**Constaté à l'ouverture du compte (2026-09-14)** : la résidence européenne chez OpenAI n'est
+**pas en libre-service**. Le sélecteur de région n'apparaît qu'aux organisations qu'OpenAI a
+rendues éligibles après une demande commerciale, une approbation de surveillance des abus et un
+avenant de rétention. Le projet Relvo est donc « Global », et c'est conforme à cette décision.
+Le point d'entrée de l'API est en configuration : si l'éligibilité est accordée un jour, le
+projet se recrée avec la région (elle ne s'ajoute pas après coup) et une variable change.
 
 ### Un disjoncteur de consommation par compte, avant la mise en production
 **`tranché`** · Aucun compte ne doit pouvoir faire exploser la facture, ni par usage atypique, ni
@@ -240,6 +245,21 @@ production. Aucune donnée publique n'existe sur sa qualité en français. **C'e
 décision**, et il se tranche par le jeu d'évaluation maison, pas par un classement. Le recours
 est peu coûteux : basculer le seul tier d'extraction structurée vers le modèle supérieur coûte
 quelques euros par mois et par compte, pas dix fois le prix.
+
+### Pas de passerelle d'inférence : l'API du fournisseur est appelée en direct
+**`tranché`** · La conception prévoyait une passerelle d'inférence hébergée par la plateforme de
+déploiement, pour l'observabilité par appel et la bascule de fournisseur sans toucher au code.
+Écartée : avec un seul fournisseur, elle n'apporte que ce que son tableau de bord offre déjà
+(usage par clé, plafond de dépense), elle exige un moyen de paiement supplémentaire sur la
+plateforme, et surtout elle **ne permet pas de choisir le point d'entrée du fournisseur** — or la
+résidence européenne d'un projet, si elle est accordée un jour, ne vaut que si les requêtes
+partent vers le point d'entrée européen. Le seul coût d'inférence accepté est la facture du
+fournisseur ; la plateforme n'est payée que pour l'hébergement.
+
+**Ce que la décision conserve** : la couche d'abstraction par tier, qui reste ce qui rend un
+changement de fournisseur possible sans refonte — le fournisseur est instancié en un seul
+endroit. Et l'observabilité par sollicitation, qui vient du journal de Relvo, pas d'un
+intermédiaire.
 
 ### Le niveau de raisonnement se pose explicitement à chaque site d'appel
 **`tranché`** · Les jetons de raisonnement sont facturés au tarif de **sortie**, et le défaut de

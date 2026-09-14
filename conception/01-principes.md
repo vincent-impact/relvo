@@ -332,8 +332,8 @@ mot dit ce que le geste fait vraiment.
     correspondant qui appelle **la même fonction métier**. Les actions sont rendues en blocs
     visuels **annulables**.
 26. **Conscient de la page** : l'URL et le contexte sont transmis à chaque tour.
-27. Outillage : SDK IA + passerelle, appels d'outils natifs (**pas de MCP en V1**), mise en cache
-    de prompt, API de fichiers, citations.
+27. Outillage : SDK IA et **appel direct du fournisseur** (pas de passerelle), appels d'outils
+    natifs (**pas de MCP en V1**), mise en cache de prompt, API de fichiers, citations.
 28. **État vide** : quelques exemples de questions contextuels à la page, jamais de fausses
     bulles.
 29. **Pas de recherche vectorielle** : contexte long et mise en cache pour les connaissances,

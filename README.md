@@ -14,6 +14,8 @@ tâches, journal de bord et aide à la décision.
 - **Docker** — pour la base Postgres locale
 - Un compte **Unipile** (ingestion e-mail et WhatsApp), un bucket **Cloudflare R2**, une clé
   **Resend** : facultatifs en dev, les flux concernés dégradent proprement sans eux.
+- Une clé **OpenAI** du projet de l'organisation : sans elle, le pipeline laisse les
+  conversations orphelines, il n'échoue pas.
 
 ## Installation
 
@@ -56,8 +58,9 @@ pnpm test           # tests d'intégration (base relvo_test, créée au besoin)
 | `AUTH_GOOGLE_ID` · `AUTH_GOOGLE_SECRET` | OAuth Google — optionnel. Sans les **deux**, seul le login e-mail / mot de passe est proposé |
 | `RESEND_API_KEY` | E-mails de vérification et de réinitialisation. Sans clé, le lien est logué en console (dev) |
 | `EMAIL_FROM` | Expéditeur des e-mails transactionnels |
-| `AI_GATEWAY_API_KEY` | Vercel AI Gateway — routage des modèles Claude |
-| `ANTHROPIC_API_KEY` | Files API Anthropic — copie d'inférence des PDF, jamais le stockage de vérité |
+| `OPENAI_API_KEY` | Clé du projet OpenAI de l'organisation, une par environnement. Sans clé, aucun appel : conversations orphelines |
+| `OPENAI_BASE_URL` | Vide = point d'entrée standard. À passer sur `eu.api.openai.com` le jour où la résidence européenne est accordée au projet |
+| `RELVO_IA_MODELE_*` | Affectation modèle ↔ tier (classification, extraction, rédaction, raisonnement). Vides = défauts du code. Tout modèle affecté doit figurer dans la table de tarifs |
 | `UNIPILE_DSN` · `UNIPILE_API_KEY` | Instance et clé Unipile (ingestion e-mail + WhatsApp) |
 | `UNIPILE_WEBHOOK_SECRET` | Secret du header `Unipile-Auth`, vérifié sur `/api/webhooks/unipile`. `openssl rand -base64 32` |
 | `R2_ACCOUNT_ID` | Cloudflare R2 — identifiant de compte |
@@ -124,5 +127,5 @@ pnpm db:studio       # explorer la base
 ## Stack
 
 Next.js (App Router) · TypeScript · Tailwind + shadcn/ui sur Base UI · Prisma + PostgreSQL ·
-Auth.js · Vercel AI SDK + AI Gateway (Claude) · Cloudflare R2 · Unipile (e-mail + WhatsApp) ·
+Auth.js · Vercel AI SDK + API OpenAI en direct · Cloudflare R2 · Unipile (e-mail + WhatsApp) ·
 Resend · dnd-kit · dexie.

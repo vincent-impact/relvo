@@ -128,11 +128,18 @@
       "statut": "a-faire",
       "gauche": 81.42,
       "largeur": 4.37
+    },
+    {
+      "titre": "Relvo apprend de vos gestes",
+      "resume": "Ce que vous ignorez, ce que vous corrigez, ce que vous gardez : Relvo s'en souvient et trie mieux la semaine suivante. Il retrouve les affaires passées qui ressemblent à celle du jour, et vous pose ses questions là où vous pouvez y répondre en un geste.",
+      "statut": "a-faire",
+      "gauche": 85.79,
+      "largeur": 8.2
     }
   ],
   "livraison": {
-    "date": "2026-11-05",
-    "gauche": 85.79
+    "date": "2026-11-20",
+    "gauche": 93.99
   },
   "en_cours": "Tri automatique des messages",
   "journal": [

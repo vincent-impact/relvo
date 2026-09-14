@@ -31,7 +31,7 @@ capable d'agir, accessible partout, avec une palette d'outils **symétrique à l
 | M10.4 | Historique des derniers échanges, titrés automatiquement |
 | M10.5 | Bandeau de contexte, avec bascule en discussion générale |
 | M10.6 | État vide : exemples contextuels à la page, en texte discret — **pas de fausses bulles** |
-| M10.7 | Route d'échange orchestrant le SDK et la passerelle |
+| M10.7 | Route d'échange orchestrant le SDK, sur le client d'inférence de M7 |
 | M10.8 | **Outils symétriques à l'interface** — chaque opération de l'UI a son outil, qui appelle **la même fonction métier** |
 | M10.9 | Actions rendues en **blocs visuels** dans le fil |
 | M10.10 | **Annulation** d'une action, dans une courte fenêtre |

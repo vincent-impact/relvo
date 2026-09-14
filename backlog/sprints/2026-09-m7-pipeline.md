@@ -29,25 +29,42 @@ retour — étiquettes, raisons, questions — est M17.
 
 ## Tranche 0 — Prérequis, avant la première ligne de code
 
-- [ ] **Compte OpenAI au nom de l'organisation.** Créer l'organisation, puis **le projet avec la
-      résidence européenne activée à la création** : ce réglage ne s'ajoute pas après coup. Il
-      ne coûte rien aujourd'hui et est irrattrapable demain (`benchmark-iag.md` §6.3).
-- [ ] **Clé d'API dédiée à Relvo**, et **plafond de dépense mensuel posé sur le projet le jour
-      même** : c'est la seule garde qui tient si le compteur applicatif est lui-même en cause.
-- [ ] **Passerelle.** Ouvrir l'AI Gateway sur l'équipe Vercel du projet et y déclarer la clé
-      OpenAI. C'est elle qui donne l'observabilité des jetons par appel et la bascule de
-      fournisseur sans toucher au code (`05 §11.8`).
-- [ ] **Variables d'environnement.** Clé de passerelle dans Vercel, production et aperçu, puis
-      `vercel env pull` vers `.env.local`. Documenter le bloc dans `.env.example` comme les
-      blocs Unipile et R2.
-- [ ] **Dépendances.** L'AI SDK et son fournisseur de passerelle dans `apps/web`. Rien dans
-      `packages/` : le client d'inférence est une intégration de l'application, comme Unipile.
-- [ ] **Abstraction à quatre méthodes** — `classify`, `extract`, `draft`, `chat` — par-dessus le
-      SDK, dans un module serveur dédié. Le modèle et le niveau de raisonnement de chaque tier
-      sont de la **configuration** ; le niveau de raisonnement est **posé explicitement à chaque
-      site d'appel**, jamais laissé au défaut (`05 §10.5`). Un test refuse un appel sans niveau.
-- [ ] **Table de tarifs versionnée** : jetons → euros, par modèle. C'est ce qui rend la mesure
-      indépendante d'un changement de modèle.
+**Le code est posé (2026-09-14) ; il attend la clé OpenAI.** La passerelle d'inférence prévue
+a été écartée le même jour (`ecarts-et-propositions.md`, « Pas de passerelle d'inférence ») :
+l'API OpenAI est appelée en direct, et le seul coût d'inférence est la facture OpenAI.
+
+- [x] **Compte OpenAI au nom de l'organisation** (« Vccimpact »), projet « Relvo ». ⚠️ La
+      résidence européenne **n'est pas en libre-service** : le sélecteur n'apparaît qu'aux
+      organisations rendues éligibles par l'équipe commerciale d'OpenAI (`benchmark-iag.md`
+      §6.3). Le projet est « Global », conforme à la décision « la conformité n'est pas un
+      critère ». Si l'éligibilité est demandée un jour, le projet se recrée avec la région et
+      `OPENAI_BASE_URL` change — aucun code.
+- [ ] **Clé d'API dédiée à Relvo** (`relvo-prod`), et **plafond de dépense mensuel posé sur le
+      projet le jour même** : c'est la seule garde qui tient si le compteur applicatif est
+      lui-même en cause.
+- [x] **Variables d'environnement.** `OPENAI_API_KEY` posée dans Vercel, production et aperçu,
+      et dans `.env.local`. ⚠️ Piège rencontré : `OPENAI_API_KEY =` avec un espace avant le
+      signe égal n'est pas lu — la clé est « vide » sans autre message. Bloc documenté dans
+      `.env.example` et le README, avec `OPENAI_BASE_URL` (vide = point d'entrée standard) et
+      les quatre surcharges `RELVO_IA_MODELE_*`.
+- [x] **Premier appel réel** (2026-09-14, Luna, effort `none`, classification d'un e-mail de
+      livraison) : sortie conforme au schéma, 98 jetons d'entrée, 21 de sortie, **0 de
+      raisonnement** — le niveau `none` est bien honoré. 5,2 s au premier appel, 1,2 s au
+      second. `cache_read` à 0 sur les deux : attendu, le préfixe est sous le seuil de cache
+      du fournisseur (05 §10.5) ; à revérifier dès qu'un appel porte la couche Produit.
+      Reste à confirmer dans le tableau de bord OpenAI que l'appel apparaît sur le projet Relvo.
+- [x] **Dépendances.** `ai` (v7) et `@ai-sdk/openai` dans `apps/web`, API Responses. Rien dans
+      `packages/`.
+- [x] **Abstraction à quatre méthodes** — `apps/web/src/server/ia/` : `classify`, `extract`,
+      `draft`, `chat`. Fournisseur instancié en un seul endroit, modèle par tier en
+      configuration (`config.ts`), niveau de raisonnement **exigé par le type et revérifié au
+      runtime** ; le test `ia-niveau-raisonnement` refuse un appel sans niveau sur les quatre
+      méthodes et vérifie que le niveau atteint le modèle. Jetons de sortie bornés par tier,
+      allers-retours d'outils bornés par tour.
+- [x] **Table de tarifs versionnée** — `tarifs.ts` : jetons → euros par modèle, raisonnement
+      compté à part et facturé au tarif de sortie ; un modèle sans tarif est **refusé avant
+      l'appel**. Le test `ia-tarifs` tient le taux de change égal à celui de
+      `scripts/cout-iag.py` et vérifie que tout modèle affecté à un tier a un tarif.
 
 ## Tranche 1 — Le banc d'essai et le jeu d'évaluation (M7.17)
 
@@ -189,7 +206,7 @@ réclament.
 
 ## Où on en est
 
-- [ ] Tranche 0
+- [x] Tranche 0 — livrée le 2026-09-14, premier appel réel passé
 - [ ] Tranche 1
 - [ ] Tranche 2
 - [ ] Tranche 3
