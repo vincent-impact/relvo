@@ -7,19 +7,16 @@ met **le tri en production** : le webhook e-mail déclenche, après sa réponse 
 qui filtre le bruit sans appel, appelle le tri sur une conversation orpheline, écrit le verdict
 sur la conversation, puis ouvre ou rattache par les primitives du domaine — journal à chaque
 sous-action et à chaque sollicitation, coût en euros compris. Il ne tourne que pour les comptes
-où l'**interrupteur** est activé, et **il ne l'est nulle part encore** : rien ne part en
-production sans un geste explicite. **La prochaine étape est double** : (1) activer le tri sur le
-compte du dirigeant — une ligne SQL, ci-dessous — et relire les premiers verdicts et le
-`cache_read` dans le journal ; (2) la tranche 5, la structuration. Deux décisions ont été posées
-**par défaut**, faute de chiffres discriminants sur la démonstration (22 verdicts sur 22 en
-confiance haute) : frontière de confiance à « moyenne », « incertain » traité comme une
-confiance basse — `ecarts-et-propositions.md`, « Frontière de confiance et verdict incertain ».
-Elles se confirment sur le journal réel, pas sur un compte de test.
-
-```sql
--- Activer le tri automatique sur un compte (le dirigeant d'abord, puis les bêta-testeurs).
-UPDATE accounts SET auto_triage_enabled = true WHERE email = 'adresse@du.compte';
-```
+où l'**assistant est activé** — réglage « Assistant Relvo » dans Réglages › Préférences, coupé
+par défaut, **coupé partout pour l'instant** : rien ne part en production sans un geste
+explicite, et ce geste passe par la méthode du domaine (`setAssistantEnabled`), jamais par la
+base. **La prochaine étape est double** : (1) le dirigeant active l'assistant sur son compte,
+depuis l'application, puis on relit les premiers verdicts et le `cache_read` dans le journal ;
+(2) la tranche 5, la structuration. Deux décisions ont été posées **par défaut**, faute de
+chiffres discriminants sur la démonstration (22 verdicts sur 22 en confiance haute) : frontière
+de confiance à « moyenne », « incertain » traité comme une confiance basse —
+`ecarts-et-propositions.md`, « Frontière de confiance et verdict incertain ». Elles se
+confirment sur le journal réel, pas sur un compte de test.
 
 **Tout le socle fonctionne, sauf le cœur.** Ce sprint ouvre M7 : le pipeline qui transforme un
 message entrant en sujet. La conception est à jour et fait foi : les cinq couches de contexte et
@@ -191,9 +188,13 @@ consommateur de l'inférence, et ses parties pures sont testées sans base.
       les dix derniers messages, expéditeur nommé et adressé, sens), dernier entrant brut pour le
       filtre. ⚠️ Le compte ne porte pas de raison sociale : le nom du dirigeant tient lieu
       d'identité dans la couche Compte tant que le profil n'en a pas.
-- [x] **Interrupteur par compte** : colonne `auto_triage_enabled`, fausse par défaut
-      (migration `20260914095431_m7_tranche4_interrupteur_tri`). Activation par SQL, voir le
-      démarrage à froid ; aucun écran.
+- [x] **Interrupteur par compte** : colonne `assistant_enabled`, fausse par défaut — elle
+      gouverne tout ce que Relvo fait de lui-même, pas seulement le tri (renommée depuis
+      `auto_triage_enabled`, migration `20260914130000`). Méthode du domaine
+      `setAssistantEnabled`, journalisée ; réglage « Assistant Relvo » dans Réglages ›
+      Préférences pour l'utilisateur. Un administrateur doit pouvoir couper un compte à tout
+      moment : c'est la même méthode, depuis le backoffice à venir (`ecarts`, « L'assistant
+      s'active par un réglage du compte »).
 - [x] Orchestration : le webhook `mail_received` enregistre le message comme avant, puis, si le
       message est nouveau et qu'aucun sujet ne l'a capté au rangement, déclenche le tri **après
       la réponse HTTP** (`after()` de Next). Idempotence à deux niveaux : `created` côté
@@ -300,7 +301,7 @@ réclament.
 - [x] Tranche 1 — livrée le 2026-09-14 sur le jeu de démonstration ; le jeu réel viendra des usages bêta
 - [x] Tranche 2 — livrée le 2026-09-14
 - [x] Tranche 3 — livrée le 2026-09-14
-- [x] Tranche 4 — livrée le 2026-09-14 ; interrupteur à activer compte par compte
+- [x] Tranche 4 — livrée le 2026-09-14 ; l'assistant s'active compte par compte, dans Préférences
 - [ ] Tranche 5
 - [ ] Tranche 6
 - [ ] Tranche 7

@@ -34,25 +34,8 @@ import { attachEmailConversationToSubject } from "./subject-conversations";
 //      sollicitation (M7.16), avec les clés de métadonnées posées ici, premier
 //      écrivain (02, EventLog).
 
-// ─────────────────────────────────────────────────────────────
-// L'interrupteur par compte
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Le tri automatique ne tourne que pour les comptes où il est activé — le
- * dirigeant d'abord, puis les bêta-testeurs. `Account` n'est pas scopé par le
- * client tenant, d'où l'identifiant explicite.
- */
-export async function isAutoTriageEnabled(
-  db: TenantDb,
-  accountId: string,
-): Promise<boolean> {
-  const account = await db.account.findUnique({
-    where: { id: accountId },
-    select: { autoTriageEnabled: true },
-  });
-  return account?.autoTriageEnabled ?? false;
-}
+// L'interrupteur du compte (« l'assistant est-il actif ? ») vit dans
+// `./accounts` : il gouverne plus que le tri.
 
 // ─────────────────────────────────────────────────────────────
 // La projection — ce que le tri a le droit de lire

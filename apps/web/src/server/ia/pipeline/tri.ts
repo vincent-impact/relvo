@@ -3,7 +3,7 @@ import {
   applyTriageMatter,
   getTriageProjection,
   hasAiSolicitationForMessage,
-  isAutoTriageEnabled,
+  isAssistantEnabled,
   logAiSolicitation,
   logTriageFailure,
   recordTriageVerdict,
@@ -23,7 +23,7 @@ import { deciderTri, verdictEnBase } from "./decision";
 // orpheline. E-mail seul ; WhatsApp attend.
 //
 // Ordre, et ce que chaque étape garantit :
-//   1. Interrupteur par compte, inférence joignable, idempotence — sinon rien.
+//   1. Assistant actif sur le compte, inférence joignable, idempotence — sinon rien.
 //   2. Projection depuis la base, par le domaine (`getTriageProjection`).
 //   3. Filtre déterministe du bruit : verdict sans appel, zéro jeton (05 §9.5).
 //   4. Appel de tri, sortie conforme au schéma ; l'appel est consigné AVANT
@@ -64,8 +64,7 @@ export async function trierConversationEmail(args: {
   const db = tenantDb(accountId);
 
   if (!inferenceDisponible()) return { issue: "inference-indisponible" };
-  if (!(await isAutoTriageEnabled(db, accountId)))
-    return { issue: "desactive" };
+  if (!(await isAssistantEnabled(db, accountId))) return { issue: "desactive" };
   if (await hasAiSolicitationForMessage(db, messageId, "tri")) {
     return { issue: "deja-traite" };
   }

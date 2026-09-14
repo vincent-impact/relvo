@@ -307,6 +307,20 @@ la conception (`05 §10.5`, extraction à effort minimal) reste la valeur de con
 le jeu réel n'a pas confirmé ; la bascule se fait par la configuration du tier, sans code. Ce qui
 tranchera : le même passage sur trente à cinquante e-mails réels anonymisés.
 
+### L'assistant s'active par un réglage du compte ; l'administration viendra avec le backoffice
+
+**`tranché`** · Le pipeline ne tourne que pour les comptes où l'assistant est activé. La
+première version de cet interrupteur était une colonne sans écran, à basculer en base. Écarté :
+**on ne touche jamais à la base directement** — tout changement d'état passe par une méthode
+du domaine, journalisée, que l'interface comme les outils d'exploitation appellent.
+
+**Retenu** : un champ unique sur le compte, `assistant_enabled`, qui gouverne **tout** ce que
+Relvo fait de lui-même — pas seulement le tri —, réglé par l'utilisateur dans Réglages ›
+Préférences (« Assistant Relvo »). Un administrateur doit pouvoir **couper l'usage d'un compte
+à tout moment** : ce sera la même méthode, depuis un backoffice qui n'est pas encore construit
+— faute de temps, pas de doute sur le besoin. En attendant, le plafond de dépense sur la clé du
+fournisseur reste la garde de dernier recours.
+
 ### Frontière de confiance et verdict « incertain » — réglés par défaut, à confirmer en usage
 
 **`proposé`** · `05 §1.1` place la frontière « entre moyenne et basse » et la fait régler sur le

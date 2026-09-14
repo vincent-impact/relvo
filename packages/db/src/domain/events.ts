@@ -77,6 +77,9 @@ export const EVENT_TYPES = {
   triageVerdict: "triage_verdict",
   /** Le tri a échoué : la conversation reste orpheline, rien n'est inventé (M7.15). */
   triageFailed: "triage_failed",
+  // Compte — l'assistant activé ou coupé (réglage de l'utilisateur, backoffice demain).
+  assistantEnabled: "assistant_enabled",
+  assistantDisabled: "assistant_disabled",
 } as const;
 
 export type EventInput = {

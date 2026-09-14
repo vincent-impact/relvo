@@ -10,11 +10,12 @@ import {
   hasAiSolicitationForMessage,
   ingestInboundEmail,
   ingestInboundWhatsApp,
-  isAutoTriageEnabled,
+  isAssistantEnabled,
   logAiSolicitation,
   logTriageFailure,
   prisma,
   recordTriageVerdict,
+  setAssistantEnabled,
   tenantDb,
 } from "../src/index";
 
@@ -93,15 +94,39 @@ const mesure = {
   reponseId: "resp_1",
 };
 
-describe("interrupteur par compte", () => {
-  it("est faux par défaut, et se lit par compte", async () => {
+describe("assistant actif sur le compte", () => {
+  it("est coupé par défaut, s'active et se coupe par la méthode du domaine, journalisé", async () => {
     const { account, db } = await makeAccount("a@test.fr");
-    expect(await isAutoTriageEnabled(db, account.id)).toBe(false);
-    await prisma.account.update({
-      where: { id: account.id },
-      data: { autoTriageEnabled: true },
+    expect(await isAssistantEnabled(db, account.id)).toBe(false);
+
+    expect(await setAssistantEnabled(db, account.id, true)).toEqual({
+      assistantEnabled: true,
+      changed: true,
     });
-    expect(await isAutoTriageEnabled(db, account.id)).toBe(true);
+    expect(await isAssistantEnabled(db, account.id)).toBe(true);
+    // Idempotent : aucun événement en double.
+    expect(await setAssistantEnabled(db, account.id, true)).toEqual({
+      assistantEnabled: true,
+      changed: false,
+    });
+
+    expect(
+      await setAssistantEnabled(db, account.id, false, Actor.system),
+    ).toMatchObject({ assistantEnabled: false, changed: true });
+    expect(await isAssistantEnabled(db, account.id)).toBe(false);
+
+    const events = await db.eventLog.findMany({
+      where: {
+        eventType: {
+          in: [EVENT_TYPES.assistantEnabled, EVENT_TYPES.assistantDisabled],
+        },
+      },
+      orderBy: { createdAt: "asc" },
+    });
+    expect(events.map((e) => [e.eventType, e.actor])).toEqual([
+      [EVENT_TYPES.assistantEnabled, Actor.user],
+      [EVENT_TYPES.assistantDisabled, Actor.system],
+    ]);
   });
 });
 

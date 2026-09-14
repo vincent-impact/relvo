@@ -229,7 +229,7 @@ async function ParametresTabs({ initialTab }: { initialTab: ParamTab }) {
         ),
         preferences: (
           <div className="px-4 pt-5">
-            <PreferencesToggles />
+            <PreferencesToggles assistantEnabled={account.assistantEnabled} />
           </div>
         ),
       }}

@@ -75,9 +75,11 @@ observées** : un texte court, régénéré par agrégation du journal, qui dit 
 garde et ce qu'il écarte. Ce texte n'est jamais saisi ni édité par personne — il est
 **recalculé**. C'est le seul endroit où l'apprentissage se matérialise sur le compte.
 
-Il porte un **interrupteur du tri automatique**, faux par défaut : le pipeline d'arrivée (cf.
-`05 §1`) ne sollicite le modèle que pour les comptes où il est activé. Un compte nouveau ne
-déclenche rien tant que personne ne l'a ouvert.
+Il porte un **interrupteur de l'assistant**, faux par défaut : il gouverne tout ce que Relvo
+fait de lui-même sur le compte — le tri à l'arrivée (cf. `05 §1`), et demain la structuration,
+la relecture et l'échange. Un compte nouveau ne sollicite rien tant que personne ne l'a ouvert.
+L'utilisateur le règle dans ses préférences ; un administrateur peut le couper à tout moment,
+et l'état ne change jamais que par la méthode du domaine qui le journalise.
 
 ## Folder
 

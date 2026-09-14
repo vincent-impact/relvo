@@ -238,7 +238,7 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
   // Tri automatique (M7, tranche 4) — APRÈS la réponse HTTP, une fois par
   // message (`created`), et seulement si aucun sujet n'a capté le message au
   // rangement : sinon la conversation n'est pas orpheline et il n'y a rien à
-  // trier. Le pipeline revérifie tout (interrupteur du compte, idempotence,
+  // trier. Le pipeline revérifie tout (assistant actif sur le compte, idempotence,
   // orphelinat) et n'échoue jamais vers l'appelant : un échec laisse la
   // conversation orpheline, journalisé.
   if (created && !message.subjectId) {

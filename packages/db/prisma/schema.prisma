@@ -301,10 +301,12 @@ model Account {
   /// sur le compte.
   observedPreferences   String?     @map("observed_preferences") @db.Text
   observedPreferencesAt DateTime?   @map("observed_preferences_at")
-  /// Interrupteur du tri automatique (M7, tranche 4) : le pipeline ne tourne que
-  /// pour les comptes où il est activé — le dirigeant d'abord, puis les
-  /// bêta-testeurs. Faux par défaut : un compte nouveau ne sollicite rien.
-  autoTriageEnabled     Boolean     @default(false) @map("auto_triage_enabled")
+  /// L'assistant est-il actif sur ce compte ? Gouverne TOUT ce que Relvo fait
+  /// de lui-même — tri à l'arrivée aujourd'hui, structuration, relecture et
+  /// échange demain. Faux par défaut : un compte nouveau ne sollicite rien.
+  /// Réglage de l'utilisateur (Réglages › Préférences) ; un administrateur
+  /// pourra le couper à tout moment depuis le backoffice à venir.
+  assistantEnabled      Boolean     @default(false) @map("assistant_enabled")
   createdAt             DateTime    @default(now()) @map("created_at")
   updatedAt             DateTime    @updatedAt @map("updated_at")
 
