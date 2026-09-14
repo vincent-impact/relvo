@@ -14,6 +14,7 @@ export async function setAssistantEnabledAction(enabled: boolean) {
   const result = await domainAction((db) =>
     setAssistantEnabled(db, accountId, Boolean(enabled)),
   );
+  console.info("[compte] assistant", { accountId, enabled, ok: result.ok });
   if (result.ok) revalidatePath("/parametres");
   return result;
 }
