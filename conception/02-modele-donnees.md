@@ -67,6 +67,14 @@ d'activité, et les marqueurs de vérification d'adresse.
 **Un compte = un humain en V1.** Le partage d'un compte entre plusieurs personnes est reporté et
 impliquera une entité `User` distincte.
 
+Il porte aussi ses **secteurs** d'activité — food, bâtiment, autre — en **tableau** : un même
+dirigeant peut être dans la restauration et dans le bâtiment, et le produit ne le force pas à
+choisir. Ils sélectionnent les socles métier chargés dans la couche Produit du contexte (cf.
+`05 §10`). Il porte enfin les **préférences
+observées** : un texte court, régénéré par agrégation du journal, qui dit ce que l'utilisateur
+garde et ce qu'il écarte. Ce texte n'est jamais saisi ni édité par personne — il est
+**recalculé**. C'est le seul endroit où l'apprentissage se matérialise sur le compte.
+
 ## Folder
 
 Un **domaine** : conteneur métier qui regroupe les sujets d'un périmètre, les documents de
@@ -106,6 +114,12 @@ aucun appelant ne compare deux adresses à la main.
 |---|---|---|
 | `auto` | fiche déduite d'un message (signature, nom d'expéditeur) — partielle, non vérifiée | `ai` |
 | `complete` | l'utilisateur a vérifié et complété | `user` |
+
+**Ce que Relvo écrit sur la fiche.** Un **rôle** — fournisseur, client, salarié, administration,
+partenaire, autre — et une **note de Relvo** d'une ligne : le ton employé, les habitudes de
+l'interlocuteur. Les deux sont rédigés par Relvo et corrigeables par l'utilisateur ; la
+correction l'emporte toujours. Le délai de réponse constaté et les antécédents de tri d'un
+expéditeur ne sont **pas stockés** : ils se dérivent des messages et des conversations.
 
 Un champ « fonction » subsiste en base mais n'est plus éditable dans l'interface. Il n'est pas
 supprimé : une colonne retirée ne se récupère pas, et rien ne coûte à la garder.
@@ -187,6 +201,21 @@ la clé.
 conversation. Les messages continuent d'être **reçus et stockés** — on ne perd rien —, ils
 sortent seulement du champ de travail de l'assistant. Réversible par le seul utilisateur.
 
+L'ignorance porte une **raison**, choisie par l'utilisateur en un appui — publicité, prospection,
+notification automatique, personnel, pas mon rôle, déjà traité ailleurs, autre — et une note libre
+optionnelle. La raison est ce qui rend le geste exploitable par Relvo (cf. `05 §9`) : sans elle,
+une conversation ignorée dit qu'on n'en veut pas, jamais pourquoi.
+
+### Le verdict de tri
+
+Sur une conversation orpheline, Relvo dépose son **verdict de tri** — bruit, affaire, incertain —,
+une **confiance** à trois niveaux — haute, moyenne, basse —, une **raison** en une phrase, et
+l'horodatage. Ces champs portent le **dernier** verdict et sont visibles dans la liste à trier :
+l'utilisateur confirme ou contredit d'un geste, et l'accord comme le désaccord sont journalisés.
+
+⚠️ **Le verdict ne conditionne rien.** La conversation est rangée et lisible quel qu'il soit ; il
+dit seulement ce que Relvo en pense, et pourquoi.
+
 ## SubjectConversation
 
 Table de liaison entre un sujet et une conversation. **Chaque ligne est une écoute.**
@@ -216,6 +245,15 @@ Porte une **référence** lisible générée automatiquement, un **titre**, un *
 **description**, un **domaine** nullable, un **set de contacts**, un **statut** de cycle de vie à
 trois valeurs, une **priorité** à deux valeurs, un marqueur d'attente de réponse, le canal
 d'origine, et l'acteur qui l'a créé.
+
+Il porte aussi une **situation structurée** en quatre champs courts — où on en est, la prochaine
+étape, de qui on attend quoi, l'échéance qui compte — maintenue par Relvo à chaque relecture, avec
+l'horodatage de sa dernière mise à jour. Le résumé libre reste pour l'humain ; la situation
+structurée est ce que Relvo **relit**, et ce qui rend les sujets comparables entre eux.
+
+Les **étiquettes** sont un tableau de clés du registre du compte (cf. `Label`), attribuées par
+Relvo seul. Le **domaine proposé** est un nom libre, renseigné quand aucun domaine existant ne
+convient : c'est de l'accumulation de ces propositions que naît un domaine nouveau (cf. `04 §10`).
 
 Il porte enfin une série d'horodatages, chacun répondant à une question distincte :
 
@@ -251,8 +289,12 @@ au calcul. Seuls `priority` et `waiting_for_reply` sont des champs.
 Le message porte aussi : l'expéditeur (contact **nullable**, plus l'adresse brute et le nom
 affiché conservés quand aucun contact n'existe encore), le destinataire, le **sens**, les
 identifiants externes de message et de fil, un indicateur de groupe, la ligne d'objet, le
-contenu **en texte et en HTML**, les horodatages de réception et d'envoi, un statut, et
-`read_at`.
+contenu **en texte et en HTML**, l'**origine du contenu** — saisi, ou transcrit d'un message
+vocal —, les horodatages de réception et d'envoi, un statut, et `read_at`.
+
+**Un message vocal est un message.** Sa transcription est son contenu ; l'audio reste une pièce
+jointe. Le rangement n'attend pas la transcription, et un message dont la transcription a échoué
+est un message au contenu vide et à l'audio lisible.
 
 ⚠️ **`read_at` se pose à l'ouverture de la CONVERSATION**, pas du sujet. C'est là que les
 messages arrivent.
@@ -294,6 +336,10 @@ Unité de travail **du sujet**, pas de l'utilisateur.
 - **`completion_mode`** — comment la tâche a été terminée : manuellement, par correspondance avec
   un message, ou avec une action.
 - **`completed_by_actor`** — qui l'a cochée.
+- **`metadata`** — porte la **provenance d'une déduction** — la référence du sujet précédent ou
+  du document de connaissance sur lequel Relvo s'est appuyé — et la **raison** en une phrase.
+  C'est ce qui rend la tâche auditable : « d'après *Ouverture magasin Béziers* », « le
+  fournisseur demande un retour avant jeudi ».
 
 ⚠️ **La valeur `deleted` du statut subsiste dans l'énuméré mais n'est plus posée** : la
 suppression est un vrai effacement. Les références depuis le journal et les actions sont en
@@ -329,9 +375,9 @@ Exécution concrète déclenchée depuis l'interface — en V1, essentiellement 
 Rattachée au sujet, optionnellement à une tâche et à un message. Porte un type, un titre, un
 **payload** opaque, un statut, et qui l'a exécutée, quand.
 
-**Le brouillon de Relvo vit dans le payload** — destinataire, canal, contenu. Il est présenté
-dans la zone de rédaction, clairement identifié comme une suggestion modifiable. **Ce n'est pas
-un message tant qu'il n'a pas été envoyé.**
+**Le brouillon de Relvo vit dans le payload** — destinataire, canal, contenu, et la raison et la
+provenance, comme une tâche. Il est présenté dans la zone de rédaction, clairement identifié
+comme une suggestion modifiable. **Ce n'est pas un message tant qu'il n'a pas été envoyé.**
 
 ## EventLog
 
@@ -346,6 +392,18 @@ libres.
 Les métadonnées portent notamment la **provenance** d'une opération, ce qui permet de distinguer
 une tâche créée depuis l'échange avec Relvo d'une tâche créée par suggestion automatique ou par
 un clic.
+
+Deux familles d'entrées portent la **boucle d'apprentissage** et la **maîtrise du coût** :
+
+- **Tout geste sur un objet proposé par Relvo conserve la proposition d'origine.** Une tâche
+  supprimée ou modifiée, un domaine reclassé, un verdict de tri confirmé ou contredit, un
+  brouillon envoyé après retouche : l'entrée porte ce que Relvo avait proposé **et** ce que
+  l'utilisateur en a fait. La suppression d'une tâche étant un vrai effacement, c'est **ici, et
+  nulle part ailleurs**, que l'original survit.
+- **Chaque sollicitation du modèle est une entrée** : la sollicitation, le tier, le niveau de
+  raisonnement, les jetons d'entrée, de sortie, de cache et de raisonnement, et le coût converti
+  en euros par une table de tarifs versionnée (cf. `05 §10`). C'est ce compteur qui alimente le
+  disjoncteur, pas la facture.
 
 ## KnowledgeDocument
 
@@ -375,6 +433,41 @@ d'activation.
 
 **La portée « sujet » n'existe pas.** Un document spécifique à une affaire ponctuelle reste une
 pièce jointe du message qui l'a apporté.
+
+Une instruction peut naître d'une **correction** : quand l'utilisateur reclasse un sujet ou
+écarte une tâche et dit pourquoi, son explication devient une instruction du domaine. Elle garde
+alors la référence du **sujet qui l'a provoquée** — nullable, la plupart des instructions étant
+écrites directement.
+
+## Label
+
+Une **étiquette** : un marqueur thématique attribué au sujet par Relvo, qui **traverse les
+domaines**. Le domaine est le périmètre de mémoire que l'utilisateur contrôle ; l'étiquette est
+une facette que Relvo tient pour lui-même — pour retrouver un précédent hors du domaine, filtrer,
+et poser des analogies que ni le contact ni la date ne suggèrent.
+
+Le registre est **par compte**. Une étiquette porte une clé normalisée — unique par compte —, un
+libellé, une **origine** — amorcée par un socle de secteur, ou proposée par Relvo — et un
+**statut** : candidate tant qu'un seul sujet la porte, active dès qu'un second la reprend.
+
+⚠️ **L'utilisateur n'écrit jamais une étiquette.** Il peut filtrer dessus, jamais en saisir : un
+vocabulaire à deux mains diverge en quelques semaines, et une étiquette portée par un seul sujet
+ne relie rien. Le comportement — attribution, promotion, choix dans le registre — fait foi dans
+`04 §10` et `05 §9`.
+
+## RelvoQuestion
+
+Une **question de Relvo** : ce qu'il aurait besoin de savoir pour mieux faire, formulé à la
+structuration d'un sujet — « Narbonne est-il une franchise ? ».
+
+Elle porte une **portée** — un contact, un domaine ou un sujet —, un texte, un statut — ouverte,
+répondue, écartée —, la réponse, le sujet qui l'a fait naître, et les horodatages de question et
+de réponse.
+
+⚠️ **Une question n'est jamais une tâche.** Elle vit sur la fiche où on y répond, pas dans
+l'agenda : une question dans l'agenda serait exactement la tâche artificielle que le produit
+refuse. La réponse devient un champ de la fiche ou une instruction du domaine ; la question
+elle-même n'est jamais injectée dans les prompts.
 
 ## VerificationToken
 

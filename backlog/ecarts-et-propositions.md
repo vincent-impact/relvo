@@ -170,6 +170,160 @@ le frontmatter comme clé de jointure.
 
 ---
 
+### Le choix des modèles est un choix de gamme, pas de fournisseur
+**`tranché`** · Le benchmark des fournisseurs IAG ([`benchmark-iag.md`](benchmark-iag.md))
+concluait d'abord à un écart de 6 entre une pile Anthropic et une pile DeepSeek. C'était une
+erreur de lecture : l'affectation par tiers de `conception/05-ia.md` §10.5 est une hiérarchie
+**Anthropic**, et elle avait été transposée telle quelle chez OpenAI en prenant les modèles
+moyens et hauts comme équivalents. Or le modèle d'entrée de gamme d'OpenAI n'a pas d'équivalent
+dans la gamme Anthropic : il est moins cher que le plus petit Claude tout en obtenant un meilleur
+index.
+
+À gamme comparable, l'écart entre fournisseurs occidentaux et fournisseurs à bas coût se referme
+presque entièrement. **La décision porte donc sur le tier, et le fournisseur se choisit ensuite
+sur les caractéristiques techniques**, pas sur le prix.
+
+**Retenu** : le tier d'entrée de gamme sur toute la chaîne, avec une seule exception —
+l'analyse de document, où le PDF natif texte+image justifie un modèle supérieur.
+
+### La sortie structurée ne tourne jamais sur un modèle sans schéma strict
+**`tranché`** · A2–A6 et A7 écrivent en base sans revue humaine. Un fournisseur qui ne garantit
+pas la conformité au schéma impose une boucle de validation et de reprise.
+
+**Le chiffrage montre que cette boucle coûte plus cher que l'écart de prix avec un modèle qui
+garantit le schéma** : une pile qui réserve l'extraction structurée à un modèle à schéma strict
+est moins chère qu'une pile homogène à bas coût. Le résultat tient tant que le taux de reprise
+dépasse environ 4 %.
+
+Ce n'est donc pas un arbitrage entre qualité et prix : les deux vont dans le même sens.
+
+### La conformité RGPD n'est pas un critère de sélection du fournisseur
+**`tranché`** · Le prix et la qualité de service priment. Les fournisseurs ne sont plus écartés
+sur ce motif ; l'analyse reste consignée dans [`benchmark-iag.md`](benchmark-iag.md) §1 et §9 à
+titre d'information.
+
+**Ce que la décision n'annule pas** : la couche d'abstraction par tier reste exigée, parce
+qu'elle est ce qui rend la décision réversible sans refonte. Et le projet chez le fournisseur se
+crée avec le réglage de résidence européenne quand il existe — chez OpenAI il ne peut pas être
+ajouté après coup, ce qui en fait une option gratuite aujourd'hui et irrattrapable demain.
+
+### Un disjoncteur de consommation par compte, avant la mise en production
+**`tranché`** · Aucun compte ne doit pouvoir faire exploser la facture, ni par usage atypique, ni
+par bug, ni par boucle d'outils dans l'échange avec Relvo.
+
+Mesure en **euros** et non en tokens — une table de tarifs versionnée convertit les tokens à
+l'enregistrement, ce qui survit à un changement de modèle. Trois seuils par compte et par mois :
+alerte, dégradation de gamme, puis coupure des sollicitations automatiques. Plus une garde en
+**vitesse** (consommation journalière anormale), des plafonds par appel et par tour, et un
+plafond de dépense sur la clé du fournisseur — seul garde-fou qui tienne si le compteur
+applicatif est lui-même en cause.
+
+**Ce qui rend la coupure peu coûteuse à construire** : elle ne crée aucun mode de défaillance
+nouveau. Le rangement d'un message entrant étant déterministe et sans IA, la coupure laisse
+simplement les conversations orphelines — état déjà prévu, déjà compté dans le KPI « Sans sujet »,
+déjà traitable à la main. **Le mode dégradé du disjoncteur est le mode nominal de la V1.**
+
+**Conséquence commerciale** : suppose un forfait de messages inclus par siège, annoncé au client.
+
+### Pile IAG : un seul fournisseur, son entrée de gamme
+**`tranché`** · GPT-5.6 Luna sur la classification, l'extraction structurée et la rédaction ;
+GPT-5.6 Terra sur l'échange avec Relvo complexe et l'analyse de document. **Un seul fournisseur.**
+
+**Ce qui a porté la décision** : une seule API, un seul format d'outils, un seul SDK à apprendre
+sur une V1 développée seul — et un modèle d'entrée de gamme qui garantit le schéma JSON et
+accepte les fichiers en entrée, ce qui ôte le besoin d'une exception sur un second fournisseur
+pour les pièces jointes.
+
+**Ce qui est assumé** : le modèle retenu est l'entrée de gamme du fournisseur. Son score
+d'intelligence publié est mesuré à un niveau de raisonnement maximal, qui ne sera pas celui de la
+production. Aucune donnée publique n'existe sur sa qualité en français. **C'est le pari de cette
+décision**, et il se tranche par le jeu d'évaluation maison, pas par un classement. Le recours
+est peu coûteux : basculer le seul tier d'extraction structurée vers le modèle supérieur coûte
+quelques euros par mois et par compte, pas dix fois le prix.
+
+### Le niveau de raisonnement se pose explicitement à chaque site d'appel
+**`tranché`** · Les jetons de raisonnement sont facturés au tarif de **sortie**, et le défaut de
+l'API est un niveau intermédiaire. Laisser ce défaut **multiplie la facture par 2,2** et dégrade
+la latence dans des proportions incompatibles avec une conversation.
+
+**Règle** : aucun appel ne part sans un niveau de raisonnement explicite. Classification :
+aucun raisonnement — une classification de domaine se reconnaît, elle ne se raisonne pas.
+Extraction structurée et rédaction : minimal. Échange complexe et analyse de document :
+intermédiaire.
+
+**Conséquence pour le disjoncteur** : les jetons de raisonnement sont comptés **séparément** des
+jetons de sortie. Un site d'appel dont le niveau a dérivé se voit dans ce compteur avant de se
+voir sur la facture.
+
+### Le contexte du modèle est assemblé en cinq couches
+**`tranché`** · Un appel n'a pas de mémoire et chaque mot envoyé se paie. Le contexte est donc
+assemblé par empilement, de la couche la plus stable (le produit, partagée entre tous les comptes
+qui ont les mêmes secteurs — un compte peut en avoir plusieurs) à la plus volatile (l'instant), et chaque sollicitation a son **profil** — le tri ne
+charge pas le domaine, l'étiquette d'une pièce jointe ne charge presque rien.
+
+**Ce qui a tranché** : le cache de prompt est un préfixe. Ordonner les couches du stable au volatile
+est ce qui le rend efficace ; et un profil par sollicitation est ce qui évite de payer un contexte
+complet pour une classification. La couche Situation est la seule payée plein tarif : c'est là que
+porte tout l'effort de compacité, par des fiches que Relvo rédige lui-même — la situation
+structurée d'un sujet est la mémoire que le prochain appel relit, jamais l'historique.
+
+### Le tri et la structuration d'un sujet nouveau sont deux appels
+**`tranché`** · Le tri découvre le domaine ; la structuration a besoin des instructions et des
+précédents de ce domaine. Ils ne peuvent pas tenir dans un seul appel. Un message sur un sujet
+existant reste un seul appel, la relecture. En contrepartie, la classification de domaine n'est
+plus un appel séparé mais un champ de la sortie du tri, et la mise à jour d'une tâche de réponse
+à l'envoi devient déterministe. Les deux effets se compensent sur le budget.
+
+### Les étiquettes sont attribuées par Relvo seul
+**`tranché`** · Un marqueur thématique qui traverse les domaines, choisi dans un registre par
+compte amorcé par les secteurs du compte ; une étiquette nouvelle reste candidate tant qu'un second sujet ne
+la reprend pas.
+
+**Ce qui a tranché** : un vocabulaire libre se dégrade en quelques semaines — synonymes, pluriels,
+étiquettes à un seul sujet qui ne relient rien. Le registre garantit la convergence, et réserver
+l'écriture à Relvo évite le vocabulaire à deux mains. L'utilisateur filtre, il ne saisit pas.
+
+### L'apprentissage n'attend pas la V2 : c'est une boucle sur le journal
+**`tranché`** · Le journal conserve, pour tout geste sur une proposition de Relvo, la proposition
+d'origine et le geste ; le geste d'ignorer porte une raison choisie en un appui ; le tri dépose son
+verdict, sa confiance et sa raison. Ce brut est distillé — préférences observées calculées par
+agrégation, instructions nées d'une correction, fiches de contact et de clôture — dans les couches
+du prochain appel. Aucun réentraînement.
+
+**Ce qui a tranché** : le premier obstacle du produit est le bruit — un Relvo qui ouvre des sujets
+sur des newsletters ne survit pas une semaine — et le raisonnement de l'utilisateur doit être
+capturé sans qu'il l'écrive. Une raison en un appui et des accords ou désaccords journalisés le
+font ; un écran de paramétrage ne le ferait pas.
+
+### Les questions de Relvo ne sont jamais des tâches
+**`tranché`** · Ce que Relvo ne sait pas devient une question posée sur la fiche du contact, du
+domaine ou du sujet, avec la réponse saisie sur place. Une question dans l'agenda serait la tâche
+artificielle que le produit refuse, et diluerait le signal du calendrier.
+
+### Le brouillon se prépare à la première ouverture de la zone de rédaction
+**`tranché`** · L'épique disait « quand une tâche de réponse est créée ». Beaucoup de brouillons
+ne seraient jamais lus ; les préparer à l'ouverture de la zone de rédaction économise ces appels
+sans que rien de visible ne change. L'épique est alignée.
+
+### Les domaines émergent du courrier
+**`tranché`** · Au premier jour, aucun domaine. Relvo n'en crée jamais ; il pose un domaine
+proposé sur les sujets qu'aucun domaine n'accueille, et l'interface suggère la création dès que
+plusieurs sujets partagent la proposition. Les socles des secteurs proposent des domaines typiques à la
+prise en main. Le rattrapage du courrier récent, en lot, produit ces propositions dès le lendemain
+de la connexion — c'est aussi la démonstration attendue par les clients.
+
+### Sept extensions de l'IA, retenues sans écran de paramétrage
+**`tranché`** · Transcription des messages vocaux, étiquette par vision sur les images, relance
+dérivée de la situation structurée, raison affichée d'un appui sur chaque proposition, titres des
+sujets ouverts récents dans le contexte du tri, part d'aide de Relvo comme unique indicateur, et
+brief du matin en notification. Chacune passe par un geste ou une surface qui existe déjà ;
+aucune n'ajoute un réglage.
+
+**Ce qui a tranché** : le public dicte plus qu'il n'écrit et photographie plus qu'il ne scanne —
+sans la voix et l'image, une part du courrier reste invisible au pipeline. Les autres extensions
+sont des dérivés gratuits de ce qui est déjà stocké : la situation structurée, le journal, les
+titres des sujets.
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté
@@ -251,6 +405,12 @@ reste du temps, le swipe garde son coût de zéro clic.
 ---
 
 ## Propositions
+
+### Benchmarker la transcription vocale et la vision avant de figer leurs tiers
+**`proposé`** · Les deux extensions dont le coût est proportionnel à la durée ou à l'image, pas au
+nombre de messages. Le modèle de coût ne les chiffre pas encore ; les tarifs de reconnaissance
+vocale et de vision des fournisseurs retenus sont à relever, et les deux postes à ajouter au
+script de coût et au disjoncteur, avec une garde par minute d'audio et par image.
 
 ### Exposer la base locale sur un port dédié
 **`proposé`** · Le port par défaut de PostgreSQL est presque toujours déjà pris par un autre

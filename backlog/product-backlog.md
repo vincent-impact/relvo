@@ -40,6 +40,7 @@ frontmatter l'est.
 | [M11 — Connaissances](epics/M11-connaissances.md) | ⬜ | M7, M10 |
 | [M10 — Échange avec Relvo](epics/M10-echange-relvo.md) | ⬜ | — |
 | [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md) | ⬜ | — |
+| [M17 — Mémoire et apprentissage](epics/M17-memoire-apprentissage.md) | ⬜ | la qualité du tri dans la durée |
 | [M12 — Mécanismes transverses](epics/M12-transverses.md) | 🟡 partiellement livré au fil de l'eau | — |
 | [M13 — Onboarding et bêta](epics/M13-onboarding-beta.md) | ⬜ | mise en service |
 | [M14 — Qualité et exploitation](epics/M14-qualite-exploitation.md) | ⬜ | — |
@@ -51,7 +52,8 @@ frontmatter l'est.
 M1 → M2 → M3 ─┬─→ M4 ──────────────→ M11 ─┐
               ├─→ M5 → M6 → M6bis        ├─→ M7 ─┬─→ M10
               │        → M6ter → M6quater ┘       ├─→ M8
-              └─→ M9                              └─→ M13 → M14
+              └─→ M9                              ├─→ M17
+                                                  └─→ M13 → M14
 ```
 
 **M7 est le verrou.** Tout ce qui reste d'ambitieux dans le produit en dépend, et c'est aussi ce

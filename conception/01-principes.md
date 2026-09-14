@@ -198,7 +198,8 @@ conversation, augmentée de vues structurées quand on veut creuser.
 La page d'atterrissage répond à « qu'est-ce qui m'attend ? » en trente secondes : des
 indicateurs, l'agenda de la semaine, les tâches du jour. C'est le **premier tour de parole de
 Relvo**, rendu en cartes — pas une page muette, et pas non plus un chat vide qui attendrait une
-question.
+question. Le brief est aussi **poussé** : une notification à l'heure d'ouverture, avec les
+compteurs du jour — « deux réponses attendues, une urgence ». Un calcul, aucune génération.
 
 L'échange proprement dit est une **surface plein écran**, atteinte depuis un bouton présent au
 même endroit sur toutes les pages, et qui transmet le contexte de la page d'origine.

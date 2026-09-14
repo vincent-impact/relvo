@@ -14,6 +14,8 @@ classDiagram
     class Account {
         <<tenant>>
         Toutes les ressources portent account_id
+        +Sector[] sectors          « sélectionnent les socles métier de la couche Produit »
+        +string observed_preferences « RECALCULÉ par agrégation du journal, jamais saisi »
     }
 
     class Folder {
@@ -23,6 +25,7 @@ classDiagram
 
     class Contact {
         +ContactStatus status
+        +ContactRole role          « écrit par Relvo, corrigé par l'utilisateur »
         +string email / phone      « primaires »
         +string[] additional_*     « secondaires, consultés au rattachement »
     }
@@ -39,6 +42,9 @@ classDiagram
         +string[] contact_ids      « e-mail : le set »
         +string contact_id         « messagerie : 1 ou groupe »
         +ConversationStatus status « active | ignored = PAUSE »
+        +IgnoreReason ignored_reason « choisie en un appui — la leçon »
+        +TriageVerdict triage_verdict « bruit | affaire | incertain — ne conditionne RIEN »
+        +Confidence triage_confidence « haute | moyenne | basse »
     }
 
     class SubjectConversation {
@@ -55,6 +61,9 @@ classDiagram
         +datetime last_opened_at   « null ⇒ marqueur Nouveau »
         +bool waiting_for_reply
         +string[] contact_ids
+        +string[] labels           « clés du registre, écrites par Relvo SEUL »
+        +text situation / next_step / waiting_on / key_deadline « la mémoire que Relvo relit »
+        +string proposed_folder    « fait émerger un domaine, jamais créé par Relvo »
     }
 
     class Message {
@@ -89,7 +98,20 @@ classDiagram
         +KnowledgeKind kind        « file = référence | note = mémoire »
         +AbsorptionStatus absorption_status
         +string storage_key        « source de VÉRITÉ »
-        +string anthropic_file_id  « copie d'inférence, écriture seule »
+        +string provider_file_id   « copie d'inférence, écriture seule »
+    }
+
+    class Label {
+        <<registre par compte>>
+        +string key                « unique par compte »
+        +LabelOrigin origin        « secteur | relvo »
+        +LabelStatus status        « candidate → active au 2e sujet »
+    }
+
+    class RelvoQuestion {
+        <<jamais une tâche>>
+        +QuestionScope scope       « contact | domaine | sujet »
+        +QuestionStatus status     « ouverte | répondue | écartée »
     }
 
     class PendingFileDeletion {
@@ -102,6 +124,9 @@ classDiagram
     Account "1" --> "*" Channel
     Account "1" --> "*" Conversation
     Account "1" --> "*" Subject
+    Account "1" --> "*" Label
+    Account "1" --> "*" RelvoQuestion
+    Subject "1" --> "*" RelvoQuestion : fait naître
 
     Channel "1" --> "*" Conversation
     Conversation "1" --> "*" Message : range à la réception
@@ -123,5 +148,7 @@ classDiagram
     note for SubjectConversation "Aucune contrainte d'unicité sur subject_id.\nLa poser interdirait le changement d'objet,\nl'extension à un second canal et le\nchangement d'adresse d'un interlocuteur.\n\nPlusieurs sujets simultanés : interdits par une\nRÈGLE MÉTIER V1, pas par le schéma — la lever\nne demande aucune migration."
 
     note for Message "subject_id sur le MESSAGE, jamais sur la\nconversation : c'est ce qui rend l'écoute\ndémontable le jour où le pipeline IA décidera\nmessage par message."
+
+    note for Label "Un vocabulaire à deux mains diverge.\nL'utilisateur filtre, ne saisit jamais.\nCandidate tant qu'un seul sujet la porte."
 
     note for Subject "closed_at ne borne RIEN.\nAppartenance (bornes) et statut sont deux axes\nindépendants — les confondre ampute le périmètre\nd'un sujet quand on le valide."

@@ -266,6 +266,10 @@ cas de rattachement manuel — sans lui, une erreur serait irréversible.
 **reprendre** l'alimentation. Si elle posait une borne de fin, « Réactiver » serait un bouton
 sans effet observable.
 
+**Ignorer se fait avec une raison.** Le geste propose une raison en un appui, et c'est elle qui
+rend l'ignorance exploitable : un expéditeur ignoré plusieurs fois pour publicité n'est plus
+soumis au tri. Sans raison, une conversation ignorée est un fait ; avec, c'est une leçon.
+
 ⚠️ **Écarter une conversation écoutée exige une confirmation qui NOMME les sujets concernés.**
 Jamais « un ou plusieurs sujets » : le nom. On ne demande pas à quelqu'un de confirmer un risque
 sans lui dire lequel — une confirmation sans information se clique sans être lue.
@@ -367,7 +371,7 @@ stocké comme statut ; tous sont **dérivés** :
 | **Nouveau** | `last_opened_at == null` sur un sujet ouvert — ouvrir la fiche l'éteint |
 | **Urgent** | `priority = urgent` |
 | **À faire** | il reste au moins une tâche ouverte |
-| **En attente** | `waiting_for_reply`, posé par Relvo |
+| **En attente** | `waiting_for_reply` — posé après un envoi quand il ne reste aucune tâche ouverte, levé par tout message entrant. **Mécanique, sans IA** ; Relvo ne le pose lui-même qu'en relecture, quand un sujet attend un tiers sans qu'aucun envoi ne l'ait dit |
 
 Un sujet **ouvert** peut afficher en même temps Urgent et « À faire » — impossible à représenter
 dans un énuméré exclusif. C'est la preuve que les deux axes devaient être séparés.
@@ -394,6 +398,19 @@ tâche ouverte à échéance passée, à la granularité du jour ; une flottante
 La **source** (`Relvo` ou `Moi`) est un attribut historique permanent : elle reste lisible pour
 toute la vie de la tâche.
 
+**Une tâche de réponse se coche seule, sans IA.** Quand un message sortant part vers un contact
+du sujet alors qu'une tâche de réponse y est ouverte, elle est terminée par correspondance. Un
+jugement du modèle n'y apporterait rien et coûterait un appel par message envoyé.
+
+**La relance se dérive de la situation, sans IA.** Quand la situation structurée d'un sujet dit
+qu'on attend un tiers et que l'échéance passe sans message entrant, une tâche « Relancer » naît,
+portée par Relvo, datée du jour. Une seule par échéance : si l'utilisateur la supprime, elle n'est
+pas recréée pour la même attente. C'est le premier bénéfice concret d'une situation structurée.
+
+**Une tâche proposée par Relvo ne s'efface jamais sans trace.** Sa suppression est un vrai
+effacement, mais le journal conserve la tâche telle qu'elle avait été proposée, avec le geste :
+c'est la matière première de l'apprentissage (cf. `05 §9`).
+
 ### Contact
 
 Un contact naît **complet** quand l'utilisateur le crée, **automatique** quand Relvo le déduit.
@@ -402,6 +419,10 @@ expéditeur inconnu reste une chaîne brute jusqu'à ce qu'un sujet existe.
 
 Un contact porte une adresse et un téléphone **primaires**, plus des **secondaires**.
 L'auto-rattachement des messages entrants consulte **les deux**.
+
+Relvo écrit sur la fiche un **rôle** et une **note** d'une ligne ; l'utilisateur corrige, et la
+correction l'emporte. Un contact automatique reste « à compléter » tant que l'utilisateur ne l'a
+pas vérifié.
 
 ### Folder
 
@@ -412,6 +433,27 @@ Le folder **« Général »** est auto-créé, **purement documentaire**, et **n
 ne contient jamais de sujet. Il accueille les connaissances transversales, chargées dans le
 contexte de tous les sujets. Un sujet que Relvo ne sait pas classer reste **sans domaine** — il
 n'atterrit **pas** dans Général.
+
+**Un domaine n'est jamais créé par Relvo.** Quand aucun domaine ne convient, Relvo pose sur le
+sujet un **domaine proposé**. Dès que plusieurs sujets portent la même proposition, l'interface
+suggère de créer le domaine et d'y reclasser ces sujets — un geste, réversible. Les socles des
+secteurs du compte proposent par ailleurs des domaines typiques à la prise en main. Les domaines **émergent du
+courrier** ; ils ne s'inventent pas devant un formulaire vide.
+
+### Label
+
+Une étiquette naît **candidate** quand Relvo la propose sur un sujet, devient **active** dès
+qu'un second sujet la porte, et n'est jamais supprimée : une étiquette sans sujet est simplement
+inutilisée. Relvo choisit dans le registre actif et ne propose au plus qu'une étiquette nouvelle
+par sujet. L'utilisateur ne la saisit jamais ; il filtre dessus.
+
+### RelvoQuestion
+
+Une question naît **ouverte** à la structuration d'un sujet, sur la fiche du contact, du domaine
+ou du sujet qu'elle concerne. Elle devient **répondue** quand l'utilisateur y répond sur place —
+la réponse est écrite dans la fiche ou dans une instruction, dans la même transaction — ou
+**écartée** d'un geste. Une question écartée n'est pas reposée. Une question n'entre jamais dans
+l'agenda.
 
 ### KnowledgeDocument
 

@@ -17,6 +17,7 @@ debut: 2026-06-10
 | M12.4 | Recalcul des indicateurs, en cache, invalidé à la mutation | ✅ |
 | M12.5 | Invalidation d'une suggestion de validation quand une activité postérieure la contredit | ⬜ |
 | M12.6 | Accès à la pile des tâches sans date depuis les surfaces calendaires | ⬜ |
+| M12.7 | Brief du matin en notification : les compteurs du jour à l'heure d'ouverture, sans génération | ⬜ |
 
 > **M12 se livre au fil de l'eau**, en accompagnement des autres épiques. C'est la seule qui n'a
 > pas vocation à faire l'objet d'un sprint dédié.

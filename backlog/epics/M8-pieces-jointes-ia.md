@@ -24,6 +24,8 @@ fin: 2026-10-28
 | M8.3 | *(reporté)* Niveau 3 — analyse approfondie, à la demande explicite |
 | M8.4 | Stratégie de cache : l'horodatage **est** le drapeau — jamais deux appels pour un même document au même niveau |
 | M8.5 | Badge d'étiquette à côté du nom du fichier |
+| M8.6 | Étiquette de niveau 1 sur une **image**, par vision — ⚠️ coût à benchmarker avant de figer le tier |
+| M8.7 | **Transcription des messages vocaux** à la réception ; l'audio reste une pièce jointe — ⚠️ coût proportionnel à la durée, à benchmarker et à inscrire au disjoncteur |
 
 **Pourquoi l'étiquette a de la valeur alors que le résumé peut attendre.** Un nom de fichier est
 souvent illisible — un scan numéroté, un export automatique. L'étiquette rend la pièce jointe
