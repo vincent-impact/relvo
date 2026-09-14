@@ -11,7 +11,7 @@
  */
 
 .page {
-  --relvo: #6b5bd6;
+  --relvo: #4a3fb5;
   --relvo-deep: #5a4bc4;
   --relvo-bg: #f1effc;
   --green: #1f7a45;
@@ -32,7 +32,8 @@
   --radius-lg: 14px;
   --radius-pill: 999px;
   --shadow-metrics: 0 10px 30px rgb(28 22 60 / 0.13);
-  --font-display: var(--font-display), "Geist", -apple-system, sans-serif;
+  /* Direction « Instrument » : plus de police display, Geist partout. */
+  --font-display: var(--font-geist-sans), "Geist", -apple-system, sans-serif;
   --font-sans:
     var(--font-geist-sans), -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono:
@@ -50,7 +51,7 @@
 @media (prefers-color-scheme: dark) {
   .page {
     --relvo: #8b7cf0;
-    --relvo-deep: #6b5bd6;
+    --relvo-deep: #4a3fb5;
     --relvo-bg: #241f3d;
     --green: #4cbf82;
     --green-bg: #102a1d;

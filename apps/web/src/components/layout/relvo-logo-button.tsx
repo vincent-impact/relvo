@@ -1,11 +1,15 @@
-import Image from "next/image";
 import Link from "next/link";
+import { RelvoLogo } from "@/components/layout/relvo-logo";
 import { cn } from "@/lib/utils";
 
-// Bouton logo Relvo — pastille translucide blanche + liseré interne + logo Relvo.
-// Forme « bouton » réutilisable sur n'importe quel fond foncé (header violet,
-// composer d’échange…). `href` paramétrable : c'est l'accès à Relvo, posé
-// désormais en HAUT À DROITE du header (cf. RelvoHeaderButton, page-aware).
+// Bouton logo Relvo — pastille de verre (blanc translucide + liseré) posée sur
+// un fond violet, et le logo vectorisé dedans. Forme « bouton » réutilisable sur
+// n'importe quel fond foncé (header violet, composer d'échange…). `href`
+// paramétrable : c'est l'accès à Relvo, posé en HAUT À DROITE du header (cf.
+// RelvoHeaderButton, page-aware).
+//
+// Direction « Instrument » : la pastille a un filet de lumière et une ombre de
+// contact (elle est « posée »), et s'enfonce au toucher (`pressable`).
 
 export function RelvoLogoButton({
   size = 42,
@@ -24,23 +28,22 @@ export function RelvoLogoButton({
       href={href}
       aria-label={label}
       className={cn(
-        "grid flex-none place-items-center rounded-full active:scale-95",
+        "pressable grid flex-none place-items-center rounded-full text-relvo",
         className,
       )}
       style={{
         width: size,
         height: size,
-        background: "rgb(255 255 255 / 0.15)",
-        boxShadow: "inset 0 0 0 1px rgb(255 255 255 / 0.3)",
+        background: "rgb(255 255 255 / 0.14)",
+        border: "1px solid rgb(255 255 255 / 0.28)",
+        boxShadow:
+          "inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(0 0 0 / 0.18)",
       }}
     >
-      <Image
-        src="/relvo-icon.png"
-        alt="Relvo"
-        width={logo}
-        height={logo}
-        priority
-        style={{ filter: "drop-shadow(0 2px 6px rgb(0 0 0 / 0.28))" }}
+      <RelvoLogo
+        size={logo}
+        title=""
+        className="drop-shadow-[0_2px_6px_rgb(0_0_0/0.28)]"
       />
     </Link>
   );

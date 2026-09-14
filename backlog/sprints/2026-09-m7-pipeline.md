@@ -2,6 +2,16 @@
 
 ## Démarrage à froid — à lire en premier
 
+**Où on en est (2026-09-14, fin de journée)** : les tranches 0 à 3 sont livrées et commitées —
+client d'inférence OpenAI en direct, jeu d'évaluation sur la démonstration, migration du
+modèle, module de contexte. **La prochaine étape est la tranche 4, le tri en production**, dans
+l'ordre écrit dans sa section : chargeurs, filtre déterministe, appel de tri, ouverture ou
+rattachement, journal, orchestration. Deux décisions à soumettre avec des chiffres au passage : la
+frontière de confiance sous laquelle un sujet ne s'ouvre pas sans geste, et le traitement du
+verdict « incertain ». Et un **interrupteur par compte** avant tout déploiement : le tri s'active
+sur le compte du dirigeant d'abord, puis sur ceux des deux bêta-testeurs. Pas de compte de test :
+la vérité terrain viendra des usages réels.
+
 **Tout le socle fonctionne, sauf le cœur.** Ce sprint ouvre M7 : le pipeline qui transforme un
 message entrant en sujet. La conception est à jour et fait foi : les cinq couches de contexte et
 la boucle d'apprentissage dans [`../../conception/05-ia.md`](../../conception/05-ia.md) §9 et
@@ -161,7 +171,15 @@ la base arrivent avec l'orchestration, tranche 4.
 ## Tranche 4 — Le tri en production (M7.1, M7.2, M7.4, M7.5, M7.14, M7.15, M7.16)
 
 **« Un e-mail entrant devient un sujet titré et classé. »** E-mail seul ; WhatsApp attend.
+Ordre de construction retenu : chargeurs → filtre déterministe → appel de tri → ouverture ou
+rattachement → journal → orchestration → interrupteur par compte.
 
+- [ ] **Chargeurs** : remplir les types de `src/server/ia/contexte/types.ts` depuis la base —
+      compte (secteurs, domaines avec description, sujets ouverts récents bornés), conversation
+      et messages avec nom et entreprise du contact. Lectures par le paquet domaine, jamais par
+      un client instancié à la main.
+- [ ] **Interrupteur par compte** : le tri automatique ne tourne que pour les comptes où il est
+      activé ; le dirigeant d'abord, les bêta-testeurs ensuite.
 - [ ] Orchestration : le webhook enregistre le message comme aujourd'hui, puis déclenche le
       traitement **après la réponse HTTP**, idempotent — une sollicitation par message, jamais
       deux. Sur le plan Vercel actuel, pas de cron à la minute : l'exécution différée après

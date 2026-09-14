@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { RelvoLogo } from "@/components/layout/relvo-logo";
 
 // Tunnel d'authentification (M9.23, Direction B) — hero violet de marque +
 // carte blanche « à cheval » (overlap), à l'image des écrans de l'app.
@@ -36,16 +36,12 @@ export default function AuthLayout({
               boxShadow: "inset 0 0 0 1px rgb(255 255 255 / 0.3)",
             }}
           >
-            <Image
-              src="/relvo-icon.png"
-              alt="Relvo"
-              width={40}
-              height={40}
-              priority
-              style={{ filter: "drop-shadow(0 2px 6px rgb(0 0 0 / 0.28))" }}
+            <RelvoLogo
+              size={40}
+              className="text-relvo drop-shadow-[0_2px_6px_rgb(0_0_0/0.28)]"
             />
           </span>
-          <span className="mt-3 font-heading text-[28px] leading-none font-extrabold tracking-[-0.6px]">
+          <span className="mt-3 font-heading text-[28px] leading-none font-semibold tracking-[-0.02em]">
             Relvo
           </span>
           <p className="mt-2 text-[13.5px] text-(--on-violet)">

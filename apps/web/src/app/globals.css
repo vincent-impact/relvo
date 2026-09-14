@@ -9,8 +9,10 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  /* Direction B : titres en Bricolage Grotesque, chiffres/refs en Geist Mono */
-  --font-heading: var(--font-display), var(--font-geist-sans);
+  /* Direction « Instrument » (2026-09) : UNE seule famille. Les titres sont en
+     Geist, le caractère vient de la graisse (600) et de l'interlettrage serré
+     (-0.02em), pas du dessin — Bricolage Grotesque donnait le ton « ludique ». */
+  --font-heading: var(--font-geist-sans);
   --font-numeric: var(--font-geist-mono);
   /* Couleurs de marque Relvo (cf. mockup/css/styles.css) */
   --color-brand: var(--brand);
@@ -48,13 +50,20 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  /* Rayons PLAFONNÉS (Direction « Instrument ») : un contrôle 8-10, un panneau
+     12-14, une feuille 20. Au-delà, l'objet redevient un jouet. */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 14px;
+  --radius-3xl: 16px;
+  --radius-4xl: 20px;
+  /* Ombres exposées en utilitaires : shadow-surface-1 / -2 / -3, shadow-pressed */
+  --shadow-surface-1: var(--elev-1);
+  --shadow-surface-2: var(--elev-2);
+  --shadow-surface-3: var(--elev-3);
+  --shadow-pressed: var(--elev-pressed);
 }
 
 :root {
@@ -64,8 +73,8 @@
   --brand-accent: #e63150;
 
   /* Violet Relvo (voix de l'agent) — cf. mockup/mobile/css/app.css */
-  --relvo: #6b5bd6;
-  --relvo-bg: #f1effc;
+  --relvo: #4a3fb5; /* violet ENCRE (ex #6b5bd6) — plus profond, moins saturé */
+  --relvo-bg: #eceaf7; /* violet-gris (ex lavande #f1effc) */
 
   /* Palette de badges/marqueurs (échelles fixes du mockup mobile). Référencées
      via var() dans les composants partagés — ne PAS écraser la palette Tailwind. */
@@ -89,39 +98,69 @@
   --green-600: #1f7a45;
   --green-800: #155c33;
 
-  /* Surfaces neutres mobile (légèrement chaudes) */
-  --surface: #f7f7f5;
-  --surface-2: #eeecea;
-  --hairline: #e4e2de;
-  --border-light: #eeecea;
-  --text-primary: #1a1a1a;
-  --text-secondary: #6b6b6b;
-  --text-tertiary: #9a9a9a;
+  /* Neutres « pierre » (Direction « Instrument »). Le fond de page est teinté
+     (--background) pour que le BLANC des panneaux devienne une élévation : sur un
+     fond blanc pur, aucune surface ne peut être « posée ». */
+  --stone: #f4f3f0;
+  --surface: #faf9f7; /* surface enfoncée DANS un panneau blanc (ligne lue, fait) */
+  --surface-2: #eeecea; /* état pressé, puce neutre */
+  --hairline: #e6e4df; /* bord d'un panneau posé sur la pierre */
+  --border-light: #edebe7; /* filet ENTRE deux lignes d'un même panneau */
+  --text-primary: #1c1b20;
+  --text-secondary: #7a786f;
+  --text-tertiary: #8a887f;
 
   /* Chrome mobile : hauteurs barre d'onglets / composer Relvo */
   --tab-h: 58px;
   --bar-h: 56px;
-  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 1px 3px rgb(16 24 40 / 0.06);
-  --shadow-up: 0 -2px 12px rgb(16 24 40 / 0.06);
-  --shadow-menu: 0 10px 28px rgb(16 24 40 / 0.18);
-  --shadow-relvo: 0 2px 8px rgb(107 91 214 / 0.35);
-  --shadow-dock: 0 -12px 30px rgb(24 20 48 / 0.12);
-  --shadow-metrics: 0 10px 30px rgb(28 22 60 / 0.13);
+  /* PROFONDEUR (Direction « Instrument ») — trois niveaux, tous BICOUCHES :
+     un filet de lumière 1px en haut (ce qui rend le bord « touchable »), une
+     ombre de CONTACT courte et nette, une ombre AMBIANTE large et floue.
+       1 = panneau posé sur la pierre (liste, carte)
+       2 = objet flottant (barre KPI, segmented, menu)
+       3 = feuille / dialogue
+     --elev-pressed = l'état enfoncé : l'ombre portée disparaît, une ombre
+     interne apparaît (à combiner avec translateY(1px)). */
+  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.9);
+  --elev-1:
+    var(--highlight), 0 1px 2px rgb(20 18 40 / 0.05),
+    0 6px 18px rgb(20 18 40 / 0.05);
+  --elev-2:
+    var(--highlight), 0 1px 2px rgb(20 18 40 / 0.06),
+    0 8px 24px rgb(20 18 40 / 0.1);
+  --elev-3:
+    var(--highlight), 0 1px 2px rgb(20 18 40 / 0.06),
+    0 12px 32px rgb(20 18 40 / 0.14);
+  --elev-pressed: inset 0 1px 2px rgb(20 18 40 / 0.1);
+  /* Anciens noms — désormais des ALIAS des trois niveaux, pour ne rien casser
+     en attendant la migration des composants. */
+  --shadow-card: var(--elev-1);
+  --shadow-metrics: var(--elev-2);
+  --shadow-menu: var(--elev-3);
+  --shadow-up: 0 -1px 0 var(--hairline), 0 -8px 24px rgb(20 18 40 / 0.06);
+  --shadow-dock:
+    inset 0 1px 0 rgb(255 255 255 / 0.22), 0 -8px 24px rgb(20 18 40 / 0.1);
+  --shadow-relvo:
+    inset 0 1px 0 rgb(255 255 255 / 0.28), 0 1px 2px rgb(74 63 181 / 0.35),
+    0 6px 16px rgb(74 63 181 / 0.28);
+  /* Grain : bruit monochrome à poser en overlay (opacité ~7 %) sur les grands
+     aplats — le header violet d'abord — pour casser l'effet plastique. */
+  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 
   /* Surfaces « Liquid Glass » (Direction B) : tab bar givrée + composer violet.
      Opacités relevées vs le mockup : par-dessus le fond blanc de l'app, le seul
      backdrop-filter laissait le dock quasi invisible — on garde le flou (frost)
      mais on densifie pour une tab bar nettement blanche et un composer violet. */
-  --glass-tab: rgb(255 255 255 / 0.4);
-  --glass-relvo-1: rgb(123 107 230 / 0.95);
-  --glass-relvo-2: rgb(101 85 210 / 0.97);
+  --glass-tab: rgb(244 243 240 / 0.78);
+  --glass-relvo-1: rgb(80 68 190 / 0.86);
+  --glass-relvo-2: rgb(66 56 168 / 0.92);
   --glass-human-1: rgb(53 123 232 / 0.95);
   --glass-human-2: rgb(33 99 205 / 0.97);
   --glass-stroke: rgb(255 255 255 / 0.55);
-  --on-violet: rgb(255 255 255 / 0.74);
-  --blur-glass: 26px;
-  --sat-glass: 190%;
-  --hero-round: 34px;
+  --on-violet: rgb(255 255 255 / 0.68);
+  --blur-glass: 22px;
+  --sat-glass: 160%;
+  --hero-round: 20px; /* ex 34px — plafonné avec les rayons */
 
   /* Couleurs de dossier (« mémoire de Relvo » — rails colorés par domaine) */
   --folder-suppliers: var(--blue-600);
@@ -130,32 +169,34 @@
   --folder-ops: var(--green-600);
   --folder-clients: var(--brand-accent);
 
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
+  --background: var(
+    --stone
+  ); /* fond de page PIERRE — les panneaux blancs se posent dessus */
+  --foreground: var(--text-primary);
+  --card: #ffffff;
+  --card-foreground: var(--text-primary);
+  --popover: #ffffff;
+  --popover-foreground: var(--text-primary);
   /* primary = blue Relvo */
   --primary: #2b6fe0;
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
+  --muted: var(--surface);
+  --muted-foreground: var(--text-secondary);
+  --accent: var(--surface);
   --accent-foreground: oklch(0.205 0 0);
   /* destructive = red Relvo (drapeau urgent, actions destructrices) */
   --destructive: #e63150;
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
+  --border: var(--hairline);
+  --input: var(--hairline);
   --ring: #2b6fe0;
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 10px;
   /* Sidebar = navy Relvo */
   --sidebar: #0a1128;
   --sidebar-foreground: oklch(0.985 0 0);
@@ -223,4 +264,41 @@
   .landscape-guard {
     display: flex;
   }
+}
+
+/* Direction « Instrument » — utilitaires de matière. Règles NON-layered pour
+   passer devant les utilitaires Tailwind quand elles sont combinées. */
+
+/* Grain sur un grand aplat : l'élément doit être `position: relative` et rogné. */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--grain);
+  opacity: 0.07;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+}
+
+/* Verre de chrome (tab bar, composer, feuilles) avec REPLI OPAQUE : sans
+   backdrop-filter, le verre n'est qu'un aplat transparent — illisible. */
+.glass-relvo {
+  background: linear-gradient(
+    180deg,
+    var(--glass-relvo-1),
+    var(--glass-relvo-2)
+  );
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--sat-glass));
+  backdrop-filter: blur(var(--blur-glass)) saturate(var(--sat-glass));
+}
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-relvo {
+    background: linear-gradient(180deg, #5044be, #4238a8);
+  }
+}
+
+/* État enfoncé : +1px et l'ombre s'écrase. À poser sur un bouton `shadow-surface-*`. */
+.pressable:active {
+  transform: translateY(1px);
+  box-shadow: var(--elev-pressed);
 }

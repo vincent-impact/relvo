@@ -13,7 +13,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "eval:extraire": "node --env-file=.env.local --import tsx scripts/evaluation/extraire.ts",
-    "eval:tri": "node --env-file=.env.local --import tsx scripts/evaluation/lancer.ts"
+    "eval:tri": "node --env-file=.env.local --import tsx scripts/evaluation/lancer.ts",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.66",

@@ -29,7 +29,7 @@ export type FolderVisual = {
 };
 
 // ── Palette curée (8 teintes) — clés stockées en base ────────────────────────
-// Le VIOLET (#6b5bd6) est RÉSERVÉ à Relvo (chrome de l'app) : volontairement
+// Le VIOLET (#4a3fb5) est RÉSERVÉ à Relvo (chrome de l'app) : volontairement
 // absent de cette palette pour ne pas confondre un domaine avec l'agent. À sa
 // place, un vert anis (« lime ») qui comble le trou jaune-vert de la palette.
 export const FOLDER_COLORS: { key: string; value: string }[] = [

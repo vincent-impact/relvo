@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 // themeColor + viewport-fit=cover : couleur de la barre de statut alignée sur le
 // hero violet, et activation des env(safe-area-inset-*) déjà utilisés par Screen.
 export const viewport: Viewport = {
-  themeColor: "#6b5bd6",
+  themeColor: "#4a3fb5",
   width: "device-width",
   initialScale: 1,
   // Zoom BLOQUÉ : le pinch-zoom et le zoom au focus d'un input changent la taille
