@@ -250,7 +250,11 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
         messageId: message.id,
         entetes,
       });
-      console.info("[ia] tri", message.id, resultat);
+      console.info("[ia] tri", {
+        accountId: config.accountId,
+        messageId: message.id,
+        ...resultat,
+      });
     });
   }
 
