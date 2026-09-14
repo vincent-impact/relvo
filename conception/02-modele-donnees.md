@@ -510,6 +510,17 @@ clés étrangères et les index : une clé composite ajoutée à la main lui app
 dans un changement qui semble sans rapport. Pour une règle qui croise deux tables, l'outil est
 donc un **trigger de contrainte**, jamais une clé composite.
 
+**Ce qui est posé en base, hors ORM.** La première colonne est le nom exact de l'objet, celui
+que le test lit.
+
+| Objet | Table | Ce qu'il garantit |
+| --- | --- | --- |
+| `attachments_enqueue_file_deletion` | `attachments` | trigger : toute suppression, cascade comprise, enfile la clé d'objet dans l'outbox de suppression de fichiers |
+| `knowledge_documents_enqueue_file_deletion` | `knowledge_documents` | trigger : même garantie pour les documents de connaissance |
+| `subjects_search_vector` | `subjects` | trigger : le vecteur plein texte (titre pondéré A, situation structurée pondérée B, dictionnaire français) est tenu à chaque écriture — le code ne l'écrit jamais |
+| `conversations_triage_noise_reason_check` | `conversations` | vérification : la catégorie d'un verdict n'est posée que si le verdict est « bruit », et jamais avec une raison que seul l'utilisateur connaît (pas mon rôle, déjà traité ailleurs) |
+| `relvo_questions_scope_target_check` | `relvo_questions` | vérification : une question a exactement une cible, celle de sa portée |
+
 ### Comment cette liste reste vraie
 
 Elle ne reste pas vraie par la vigilance : **elle est tenue par un test.**

@@ -84,7 +84,7 @@ function expediteur(m: {
 async function main() {
   const email = arg("compte");
   const nom = arg("nom");
-  const secteurs = arg("secteurs", "food").split(",");
+  const secteurs = arg("secteurs", "food").split(","); // valeurs de l'énuméré Sector : food, construction, other
   const entreprise = arg("entreprise", `${compteNom()}`);
 
   const compte = await prisma.account.findUniqueOrThrow({ where: { email } });

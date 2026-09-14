@@ -107,22 +107,31 @@ téléphones et IBAN pseudonymisés ; **les noms de personnes se relisent à la 
 
 ## Tranche 2 — La migration du modèle
 
-Tout ce que `02` porte de nouveau, en une migration, avant le pipeline qui l'écrit.
+**Livrée le 2026-09-14** — migration `20260914084214_m7_tranche2_modele`, en une seule fois,
+avant le pipeline qui l'écrit. Les énumérés sont en anglais comme le reste du schéma ; le code
+IA (`schemas.ts`, `produit/`) en est le miroir.
 
-- [ ] `Account` : secteurs en tableau, préférences observées.
-- [ ] `Contact` : rôle, note de Relvo.
-- [ ] `Conversation` : raison d'ignorance et note ; verdict, confiance, raison et horodatage du
-      tri.
-- [ ] `Subject` : situation structurée en quatre champs et son horodatage, étiquettes, domaine
-      proposé.
-- [ ] `Message` : origine du contenu, saisi ou transcrit.
-- [ ] `KnowledgeDocument` : sujet d'origine d'une instruction ; renommage de l'identifiant de
-      copie d'inférence en `provider_file_id`.
-- [ ] Nouvelles tables `Label` et `RelvoQuestion`.
-- [ ] `EventLog` : conventions de métadonnées pour la proposition d'origine et pour les
-      sollicitations (tier, niveau, jetons, coût).
-- [ ] `pnpm db:generate` après la migration (`PITFALLS.md` #33), index plein texte sur titre et
-      situation des sujets, test d'intégration doc ↔ base à jour.
+- [x] `Account` : secteurs en tableau (`Sector` : food, construction, other), préférences
+      observées et leur horodatage. Le compte de démonstration porte `food`.
+- [x] `Contact` : rôle (`ContactRole`), note de Relvo — distincte des notes de l'utilisateur.
+- [x] `Conversation` : raison d'ignorance (`IgnoreReason`) et note ; verdict, **catégorie du
+      bruit** (même énuméré que les raisons d'ignorance, restreint par une contrainte), confiance,
+      raison et horodatage du tri.
+- [x] `Subject` : situation structurée en quatre champs et son horodatage, étiquettes (clés du
+      registre), domaine proposé.
+- [x] `Message` : origine du contenu, saisi ou transcrit.
+- [x] `KnowledgeDocument` : sujet d'origine d'une instruction ; **renommage** de
+      `anthropic_file_id` en `provider_file_id` — écrit à la main dans la migration, l'outil
+      proposait un DROP + ADD.
+- [x] Nouvelles tables `Label` et `RelvoQuestion`, cette dernière sous une contrainte « une
+      cible, celle de la portée ».
+- [x] `EventLog` : les conventions de métadonnées (proposition d'origine, sollicitations) sont
+      décrites dans `02` ; leurs clés se posent dans le code au premier écrivain, tranche 4.
+- [x] `pnpm db:generate` après la migration (`PITFALLS.md` #33), index plein texte GIN sur un
+      vecteur `search_vector` tenu par trigger (titre pondéré A, situation pondérée B, dictionnaire
+      français), et le **test doc ↔ base qui n'existait pas encore** : `test/schema-catalogue.test.ts`
+      confronte le tableau de `02` aux triggers et contraintes de vérification du catalogue, dans
+      les deux sens. Contrôle de dérive schéma ↔ base : aucune.
 
 ## Tranche 3 — L'assemblage du contexte (M7.3)
 
@@ -230,7 +239,7 @@ réclament.
 
 - [x] Tranche 0 — livrée le 2026-09-14, premier appel réel passé
 - [x] Tranche 1 — livrée le 2026-09-14 sur le jeu de démonstration ; le jeu réel viendra des usages bêta
-- [ ] Tranche 2
+- [x] Tranche 2 — livrée le 2026-09-14
 - [ ] Tranche 3
 - [ ] Tranche 4
 - [ ] Tranche 5

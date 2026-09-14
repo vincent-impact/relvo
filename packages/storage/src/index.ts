@@ -6,7 +6,7 @@
 // call site métier.
 //
 // ⚠️ Rappel d'architecture : R2 est la SOURCE DE VÉRITÉ. La Files API
-// d'Anthropic (`anthropic_file_id`) n'est qu'une copie d'inférence en écriture
+// du fournisseur d'inférence (`provider_file_id`) n'est qu'une copie d'inférence en écriture
 // seule — un fichier qu'on y uploade porte `downloadable: false` et n'est
 // jamais relisible. L'affichage utilisateur passe toujours par ici.
 

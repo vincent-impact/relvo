@@ -7,6 +7,8 @@ import { prisma } from "../src/index";
 // Ordre indifférent grâce à CASCADE ; accounts/folders en tête par lisibilité.
 const TABLES = [
   "event_logs",
+  "relvo_questions",
+  "labels",
   "actions",
   "tasks",
   "attachments",

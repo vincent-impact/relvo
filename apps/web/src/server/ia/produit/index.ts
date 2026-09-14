@@ -10,15 +10,15 @@ import { SOCLE_PRODUIT } from "./socle";
 // est partagée entre tous les comptes d'un même secteur, c'est le gain de
 // cache le plus sûr, à condition qu'elle ne grossisse pas sans qu'on le voie.
 
-/** Miroir des secteurs d'`Account` (`02`). `autre` ne charge aucun socle. */
-export type Secteur = "food" | "batiment" | "autre";
+/** Miroir de l'énuméré `Sector` (Prisma). `other` ne charge aucun socle. */
+export type Secteur = "food" | "construction" | "other";
 
 /** Ordre CANONIQUE des socles. Ne jamais dépendre de l'ordre reçu. */
-const ORDRE: readonly Exclude<Secteur, "autre">[] = ["food", "batiment"];
+const ORDRE: readonly Exclude<Secteur, "other">[] = ["food", "construction"];
 
-const SOCLES: Record<Exclude<Secteur, "autre">, string> = {
+const SOCLES: Record<Exclude<Secteur, "other">, string> = {
   food: SOCLE_FOOD,
-  batiment: SOCLE_BATIMENT,
+  construction: SOCLE_BATIMENT,
 };
 
 /** Estimation grossière — ~3,5 caractères par jeton en français. Sert aux budgets, pas à la facture. */

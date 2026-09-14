@@ -105,6 +105,8 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       email: DEMO_EMAIL,
       firstName: "Mam's",
       lastName: "Diallo",
+      // Secteur du compte de démonstration : sélectionne le socle food (05 §10.1).
+      sectors: ["food"],
       emailVerified: new Date(),
       // Mot de passe de démo : « demo1234 » (bcrypt, 12 tours). Connexion :
       // demo@tastycrousty.fr / demo1234.

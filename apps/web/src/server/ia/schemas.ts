@@ -15,19 +15,21 @@ export const VERDICTS = ["bruit", "affaire", "incertain"] as const;
 export const CONFIANCES = ["haute", "moyenne", "basse"] as const;
 export const PRIORITES = ["normal", "urgent"] as const;
 /**
- * Catégorie d'un verdict « bruit » — alignée sur les RAISONS D'IGNORANCE de
- * `02` (Conversation) : ce que le tri conclut est exactement ce que
- * l'utilisateur confirme d'un geste, et la liste à trier se regroupe dessus.
- * `personnel` = hors du champ professionnel ; `publicite` = envois de masse ;
- * `automatique` = notifications, accusés de réception, alertes de plateformes ;
- * `prospection` = démarchage non sollicité ; `autre` = informatif sans suite.
+ * Catégorie d'un verdict « bruit » — sous-ensemble de l'énuméré `IgnoreReason`
+ * (Prisma), les RAISONS D'IGNORANCE de `02` : ce que le tri conclut est
+ * exactement ce que l'utilisateur confirme d'un geste, et la liste à trier se
+ * regroupe dessus. `personal` = hors du champ professionnel ; `advertising` =
+ * envois de masse ; `automatic` = notifications, accusés de réception, alertes
+ * de plateformes ; `prospecting` = démarchage non sollicité ; `other` =
+ * informatif sans suite. Une contrainte en base interdit les deux autres
+ * raisons au tri.
  */
 export const CATEGORIES_BRUIT = [
-  "personnel",
-  "publicite",
-  "automatique",
-  "prospection",
-  "autre",
+  "personal",
+  "advertising",
+  "automatic",
+  "prospecting",
+  "other",
 ] as const;
 /** Miroir de `TaskKind` (Prisma) — le schéma de sortie n'importe pas le client. */
 export const TYPES_TACHE = [
@@ -39,13 +41,14 @@ export const TYPES_TACHE = [
   "follow_up",
   "other",
 ] as const;
+/** Miroir de `ContactRole` (Prisma). */
 export const ROLES_CONTACT = [
-  "fournisseur",
-  "client",
-  "salarie",
+  "supplier",
+  "customer",
+  "employee",
   "administration",
-  "partenaire",
-  "autre",
+  "partner",
+  "other",
 ] as const;
 
 const dateIso = z

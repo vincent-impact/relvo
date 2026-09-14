@@ -30,6 +30,16 @@ enum Actor {
   system
 }
 
+/// Secteurs d'activité d'un compte (M7) — en TABLEAU sur Account : un dirigeant
+/// peut être dans la restauration ET le bâtiment. Ils sélectionnent les socles
+/// métier chargés dans la couche Produit du contexte (05 §10.1). `other` ne
+/// charge aucun socle.
+enum Sector {
+  food
+  construction
+  other
+}
+
 enum AccountRole {
   admin
   ceo
@@ -41,6 +51,16 @@ enum AccountRole {
 enum ContactStatus {
   auto
   complete
+}
+
+/// Rôle d'un contact, écrit par Relvo et corrigeable par l'utilisateur (02).
+enum ContactRole {
+  supplier
+  customer
+  employee
+  administration
+  partner
+  other
 }
 
 enum ChannelType {
@@ -93,6 +113,39 @@ enum ConversationStatus {
   ignored
 }
 
+/// Raison d'ignorance d'une conversation, choisie par l'utilisateur en un appui
+/// (02, Conversation). C'est AUSSI le vocabulaire de la catégorie d'un verdict
+/// « bruit » du tri (`Conversation.triageNoiseReason`) : ce que Relvo conclut est
+/// exactement ce que l'utilisateur confirme d'un geste, et la confirmation
+/// devient la raison. `not_my_role` et `handled_elsewhere` ne sont jamais posés
+/// par le tri — seul l'utilisateur les connaît.
+enum IgnoreReason {
+  advertising
+  prospecting
+  automatic
+  personal
+  not_my_role
+  handled_elsewhere
+  other
+}
+
+/// Verdict de tri déposé par Relvo sur une conversation orpheline (05 §1.1).
+/// Il ne conditionne RIEN : la conversation est rangée et lisible quel qu'il soit.
+enum TriageVerdict {
+  noise
+  matter
+  uncertain
+}
+
+/// Confiance d'un verdict — trois niveaux, JAMAIS un pourcentage (un modèle
+/// annonce mal ses probabilités). La frontière moyenne/basse se règle sur le jeu
+/// d'évaluation ; en dessous, Relvo ne crée ni sujet ni contact.
+enum TriageConfidence {
+  high
+  medium
+  low
+}
+
 /// 2 niveaux d'urgence : `normal` (par défaut) et `urgent` (drapeau rouge rare).
 /// La rareté est le signal. La disposition « ignoré » est un STATUT, pas une
 /// priorité (cf. SubjectStatus.ignored), distincte de l'axe d'urgence.
@@ -106,6 +159,14 @@ enum Priority {
 enum AbsorptionStatus {
   read
   ignored
+}
+
+/// Origine du contenu d'un message : saisi, ou transcrit d'un message vocal.
+/// Un message vocal EST un message ; sa transcription est son contenu, l'audio
+/// reste une pièce jointe (02, Message).
+enum ContentOrigin {
+  typed
+  transcribed
 }
 
 enum MessageDirection {
@@ -181,6 +242,33 @@ enum KnowledgeKind {
   note
 }
 
+/// Origine d'une étiquette : amorcée par un socle de secteur, ou proposée par Relvo.
+enum LabelOrigin {
+  sector
+  relvo
+}
+
+/// Statut d'une étiquette : candidate tant qu'un seul sujet la porte, active dès
+/// qu'un second la reprend. Jamais supprimée (04 §10).
+enum LabelStatus {
+  candidate
+  active
+}
+
+/// Portée d'une question de Relvo : la fiche où on y répond (04 §10).
+enum QuestionScope {
+  contact
+  folder
+  subject
+}
+
+/// Cycle d'une question : ouverte → répondue (sur place) ou écartée (jamais reposée).
+enum QuestionStatus {
+  open
+  answered
+  dismissed
+}
+
 /// Nature d'un jeton à usage unique envoyé par email (vérification ou reset password).
 enum VerificationTokenType {
   email_verification
@@ -192,24 +280,33 @@ enum VerificationTokenType {
 // ─────────────────────────────────────────────────────────────
 
 model Account {
-  id            String      @id @default(uuid()) @db.Uuid
-  email         String      @unique
+  id                    String      @id @default(uuid()) @db.Uuid
+  email                 String      @unique
   // Nullable : un compte créé via Google OAuth n'a pas de mot de passe local.
-  passwordHash  String?     @map("password_hash")
-  firstName     String      @map("first_name")
-  lastName      String      @map("last_name")
-  role          AccountRole @default(ceo)
-  isActive      Boolean     @default(true) @map("is_active")
+  passwordHash          String?     @map("password_hash")
+  firstName             String      @map("first_name")
+  lastName              String      @map("last_name")
+  role                  AccountRole @default(ceo)
+  isActive              Boolean     @default(true) @map("is_active")
   // Vérification email (convention Auth.js : null = non vérifié, sinon date de vérif).
-  emailVerified DateTime?   @map("email_verified")
+  emailVerified         DateTime?   @map("email_verified")
   // Avatar (renseigné via Google OAuth principalement).
-  image         String?
+  image                 String?
   // Identifiant Google (sub) — lie un compte à son identité OAuth Google.
-  googleId      String?     @unique @map("google_id")
-  createdAt     DateTime    @default(now()) @map("created_at")
-  updatedAt     DateTime    @updatedAt @map("updated_at")
+  googleId              String?     @unique @map("google_id")
+  /// Secteurs d'activité, en tableau (M7) — sélectionnent les socles de la couche Produit.
+  sectors               Sector[]    @default([])
+  /// Préférences observées : texte court RECALCULÉ par agrégation du journal,
+  /// jamais saisi ni édité (02). Seul endroit où l'apprentissage se matérialise
+  /// sur le compte.
+  observedPreferences   String?     @map("observed_preferences") @db.Text
+  observedPreferencesAt DateTime?   @map("observed_preferences_at")
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
 
   folders              Folder[]
+  labels               Label[]
+  relvoQuestions       RelvoQuestion[]
   contacts             Contact[]
   channels             Channel[]
   channelConfigs       ChannelConfig[]
@@ -250,6 +347,7 @@ model Folder {
   messages           Message[]
   knowledgeDocuments KnowledgeDocument[]
   defaultForContacts Contact[]           @relation("ContactDefaultFolder")
+  relvoQuestions     RelvoQuestion[]
 
   @@unique([accountId, slug])
   @@index([accountId])
@@ -261,30 +359,36 @@ model Folder {
 // ─────────────────────────────────────────────────────────────
 
 model Contact {
-  id              String        @id @default(uuid()) @db.Uuid
-  accountId       String        @map("account_id") @db.Uuid
-  firstName       String?       @map("first_name")
-  lastName        String        @map("last_name")
-  email           String?
-  phone           String?
+  id               String        @id @default(uuid()) @db.Uuid
+  accountId        String        @map("account_id") @db.Uuid
+  firstName        String?       @map("first_name")
+  lastName         String        @map("last_name")
+  email            String?
+  phone            String?
   // Coordonnées SECONDAIRES (« Email 2… », « Téléphone 2… ») — le primaire reste
   // `email`/`phone` (Email 1 / Téléphone 1). Un contact peut porter plusieurs
   // adresses et numéros (2026-07-28).
-  additionalEmails String[]     @default([]) @map("additional_emails")
-  additionalPhones String[]     @default([]) @map("additional_phones")
-  company         String?
-  jobTitle        String?       @map("job_title")
-  defaultFolderId String?       @map("default_folder_id") @db.Uuid
-  status          ContactStatus @default(auto)
-  sourceActor     Actor         @map("source_actor")
-  notes           String?       @db.Text
-  createdAt       DateTime      @default(now()) @map("created_at")
-  updatedAt       DateTime      @updatedAt @map("updated_at")
+  additionalEmails String[]      @default([]) @map("additional_emails")
+  additionalPhones String[]      @default([]) @map("additional_phones")
+  company          String?
+  jobTitle         String?       @map("job_title")
+  defaultFolderId  String?       @map("default_folder_id") @db.Uuid
+  status           ContactStatus @default(auto)
+  sourceActor      Actor         @map("source_actor")
+  notes            String?       @db.Text
+  /// Rôle écrit par Relvo (fournisseur, client…), corrigeable — la correction l'emporte.
+  role             ContactRole?
+  /// Note de Relvo d'une ligne : ton, habitudes de l'interlocuteur. Distincte de
+  /// `notes`, qui appartient à l'utilisateur.
+  relvoNote        String?       @map("relvo_note")
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
 
-  account          Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  defaultFolder    Folder?        @relation("ContactDefaultFolder", fields: [defaultFolderId], references: [id], onDelete: SetNull)
-  sentMessages     Message[]      @relation("MessageSenderContact")
-  receivedMessages Message[]      @relation("MessageRecipientContact")
+  account          Account         @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  defaultFolder    Folder?         @relation("ContactDefaultFolder", fields: [defaultFolderId], references: [id], onDelete: SetNull)
+  sentMessages     Message[]       @relation("MessageSenderContact")
+  receivedMessages Message[]       @relation("MessageRecipientContact")
+  relvoQuestions   RelvoQuestion[]
   conversations    Conversation[]
   eventLogs        EventLog[]
 
@@ -390,6 +494,21 @@ model Conversation {
   /// et le débogage ; la clé fait déjà foi.
   normalizedSubject String?            @map("normalized_subject")
   status            ConversationStatus @default(active)
+  /// Raison de l'ignorance, choisie en un appui — ce qui rend le geste exploitable
+  /// par Relvo (05 §9). Sans elle, une conversation ignorée dit qu'on n'en veut
+  /// pas, jamais pourquoi.
+  ignoreReason      IgnoreReason?      @map("ignore_reason")
+  ignoreNote        String?            @map("ignore_note")
+  /// Le DERNIER verdict de tri de Relvo sur cette conversation orpheline (05 §1.1) :
+  /// verdict, catégorie du bruit (vocabulaire des raisons d'ignorance), confiance,
+  /// raison en une phrase, horodatage. Visible dans la liste à trier ; l'utilisateur
+  /// confirme ou contredit d'un geste, et les deux issues sont journalisées.
+  /// ⚠️ Contrainte en base : la catégorie n'est posée que si le verdict est `noise`.
+  triageVerdict     TriageVerdict?     @map("triage_verdict")
+  triageNoiseReason IgnoreReason?      @map("triage_noise_reason")
+  triageConfidence  TriageConfidence?  @map("triage_confidence")
+  triageReason      String?            @map("triage_reason")
+  triagedAt         DateTime?          @map("triaged_at")
   /// Pilote le tri de la liste (plus récent en tête).
   lastMessageAt     DateTime?          @map("last_message_at")
   /// Dernier message reçu/envoyé — dénormalisé, et c'est délibéré : le KPI
@@ -435,21 +554,21 @@ model Conversation {
 // ─────────────────────────────────────────────────────────────
 
 model SubjectConversation {
-  id              String   @id @default(uuid()) @db.Uuid
-  accountId       String   @map("account_id") @db.Uuid
-  subjectId       String   @map("subject_id") @db.Uuid
-  conversationId  String   @map("conversation_id") @db.Uuid
+  id               String   @id @default(uuid()) @db.Uuid
+  accountId        String   @map("account_id") @db.Uuid
+  subjectId        String   @map("subject_id") @db.Uuid
+  conversationId   String   @map("conversation_id") @db.Uuid
   /// DÉBUT de l'écoute. Les messages ANTÉRIEURS restent dans la conversation sans
   /// appartenir au sujet. NULL = pas d'ancre = tout le fil (cas email : le sujet
   /// EST le fil). Sur un fil WhatsApp, un swipe droite sur un message plus ancien
   /// la fait REMONTER jusqu'à lui.
-  anchorMessageId String?  @map("anchor_message_id") @db.Uuid
+  anchorMessageId  String?  @map("anchor_message_id") @db.Uuid
   /// FIN de l'écoute — posée quand le sujet est validé/fermé (WhatsApp). Les
   /// messages POSTÉRIEURS n'appartiennent plus au sujet et retombent orphelins.
   /// NULL = écoute encore ouverte (ou lien email, jamais borné). Sans backfill :
   /// une colonne ajoutée par M6ter, vide sur les liens existants.
-  closingMessageId String? @map("closing_message_id") @db.Uuid
-  createdAt       DateTime @default(now()) @map("created_at")
+  closingMessageId String?  @map("closing_message_id") @db.Uuid
+  createdAt        DateTime @default(now()) @map("created_at")
 
   account        Account      @relation(fields: [accountId], references: [id], onDelete: Cascade)
   subject        Subject      @relation(fields: [subjectId], references: [id], onDelete: Cascade)
@@ -468,52 +587,73 @@ model SubjectConversation {
 // ─────────────────────────────────────────────────────────────
 
 model Subject {
-  id                    String        @id @default(uuid()) @db.Uuid
-  accountId             String        @map("account_id") @db.Uuid
+  id                    String                   @id @default(uuid()) @db.Uuid
+  accountId             String                   @map("account_id") @db.Uuid
   reference             String
   title                 String
-  summary               String?       @db.Text
+  summary               String?                  @db.Text
   /// Descriptif rédigé par l'UTILISATEUR (onglet Informations) — aide l'IA à
   /// rattacher un domaine et à chercher dans les bonnes conversations. Distinct
   /// de `summary`, qui héberge le futur rapport d'activité généré par Relvo.
-  description           String?       @db.Text
-  folderId              String?       @map("folder_id") @db.Uuid
-  contactIds            String[]      @default([]) @map("contact_ids") @db.Uuid
-  status                SubjectStatus @default(open)
+  description           String?                  @db.Text
+  folderId              String?                  @map("folder_id") @db.Uuid
+  contactIds            String[]                 @default([]) @map("contact_ids") @db.Uuid
+  status                SubjectStatus            @default(open)
   /// Date de validation OU de fermeture — SIMPLE DATE (déclassée par M6ter). Elle
   /// ne gouverne plus l'appartenance : ce sont les bornes d'écoute
   /// (SubjectConversation.anchor/closing) qui disent quels messages sont dans le
   /// sujet. Null tant que le sujet est ouvert. Cf. invariant n°13bis.
-  closedAt              DateTime?     @map("closed_at")
-  priority              Priority      @default(normal)
+  closedAt              DateTime?                @map("closed_at")
+  priority              Priority                 @default(normal)
   // Marqueur « En attente » (cumulable, distinct du statut) — posé par Relvo
   // quand un sujet attend une réponse externe. Cf. invariant produit n°7.
-  waitingForReply       Boolean       @default(false) @map("waiting_for_reply")
-  sourceChannelId       String?       @map("source_channel_id") @db.Uuid
-  openedAt              DateTime      @default(now()) @map("opened_at")
-  resolvedAt            DateTime?     @map("resolved_at")
-  lastActivityAt        DateTime?     @map("last_activity_at")
-  lastOpenedAt          DateTime?     @map("last_opened_at")
-  resolutionSuggestedAt DateTime?     @map("resolution_suggested_at")
-  createdByActor        Actor         @map("created_by_actor")
-  createdAt             DateTime      @default(now()) @map("created_at")
-  updatedAt             DateTime      @updatedAt @map("updated_at")
+  waitingForReply       Boolean                  @default(false) @map("waiting_for_reply")
+  sourceChannelId       String?                  @map("source_channel_id") @db.Uuid
+  openedAt              DateTime                 @default(now()) @map("opened_at")
+  resolvedAt            DateTime?                @map("resolved_at")
+  lastActivityAt        DateTime?                @map("last_activity_at")
+  lastOpenedAt          DateTime?                @map("last_opened_at")
+  resolutionSuggestedAt DateTime?                @map("resolution_suggested_at")
+  /// Situation STRUCTURÉE en quatre champs courts, maintenue par Relvo à chaque
+  /// relecture (05 §1.6) : c'est ce que Relvo RELIT — jamais l'historique —, et ce
+  /// qui rend les sujets comparables entre eux. `summary` reste pour l'humain.
+  situationWhere        String?                  @map("situation_where")
+  situationNextStep     String?                  @map("situation_next_step")
+  situationWaitingFor   String?                  @map("situation_waiting_for")
+  situationDeadline     DateTime?                @map("situation_deadline") @db.Date
+  situationUpdatedAt    DateTime?                @map("situation_updated_at")
+  /// Clés du registre d'étiquettes du compte (`Label.key`), attribuées par Relvo seul.
+  labels                String[]                 @default([])
+  /// Nom libre posé quand aucun domaine existant ne convient ; c'est de
+  /// l'accumulation de ces propositions que naît un domaine (04 §10).
+  proposedFolder        String?                  @map("proposed_folder")
+  /// Vecteur plein texte (français) sur titre + situation, tenu par un TRIGGER
+  /// (`subjects_search_vector`) — sert à retrouver les précédents (05 §10.1),
+  /// sans base vectorielle. Colonne non supportée par l'ORM : jamais écrite par le code.
+  searchVector          Unsupported("tsvector")? @map("search_vector")
+  createdByActor        Actor                    @map("created_by_actor")
+  createdAt             DateTime                 @default(now()) @map("created_at")
+  updatedAt             DateTime                 @updatedAt @map("updated_at")
 
-  account       Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  folder        Folder?               @relation(fields: [folderId], references: [id], onDelete: SetNull)
-  sourceChannel Channel?              @relation(fields: [sourceChannelId], references: [id], onDelete: SetNull)
-  conversations SubjectConversation[]
-  messages      Message[]
-  attachments   Attachment[]
-  tasks         Task[]
-  actions       Action[]
-  eventLogs     EventLog[]
+  account              Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  folder               Folder?               @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  sourceChannel        Channel?              @relation(fields: [sourceChannelId], references: [id], onDelete: SetNull)
+  conversations        SubjectConversation[]
+  messages             Message[]
+  attachments          Attachment[]
+  tasks                Task[]
+  actions              Action[]
+  eventLogs            EventLog[]
+  originOfInstructions KnowledgeDocument[]   @relation("KnowledgeDocumentOriginSubject")
+  relvoQuestions       RelvoQuestion[]       @relation("RelvoQuestionSubject")
+  originOfQuestions    RelvoQuestion[]       @relation("RelvoQuestionOriginSubject")
 
   @@unique([accountId, reference])
   @@index([accountId])
   @@index([accountId, status])
   @@index([accountId, priority])
   @@index([accountId, folderId])
+  @@index([searchVector], type: Gin)
   @@map("subjects")
 }
 
@@ -559,7 +699,9 @@ model Message {
   /// (aperçus de liste, recherche, IA) ; `contentHtml` porte la mise en forme
   /// d'origine, rendue dans un iframe ISOLÉ (le CSS d'un e-mail est envahissant,
   /// son JS hostile). Null pour WhatsApp et nos envois (texte simple).
-  contentHtml        String?          @db.Text @map("content_html")
+  contentHtml        String?          @map("content_html") @db.Text
+  /// Saisi, ou transcrit d'un message vocal (02).
+  contentOrigin      ContentOrigin    @default(typed) @map("content_origin")
   receivedAt         DateTime?        @map("received_at")
   sentAt             DateTime?        @map("sent_at")
   // Lecture d'un message (incoming) : posé quand on ouvre la CONVERSATION (et
@@ -755,21 +897,27 @@ model KnowledgeDocument {
   /// Clé de l'objet dans le stockage (R2), pas une URL — cf. Attachment.storageKey.
   storageKey       String?          @map("storage_key")
   fileSize         Int?             @map("file_size")
-  anthropicFileId  String?          @map("anthropic_file_id")
+  /// Copie d'inférence chez le fournisseur — en ÉCRITURE SEULE, jamais relisible.
+  /// La source de vérité reste `storageKey` (04 §10).
+  providerFileId   String?          @map("provider_file_id")
   // État d'absorption (kind=file) : Relvo a lu (✦) ou écarté le document.
   absorptionStatus AbsorptionStatus @default(read) @map("absorption_status")
   aiLabel          String?          @map("ai_label")
   aiSummary        String?          @map("ai_summary") @db.Text
   // kind = note
   content          String?          @db.Text
+  /// Sujet qui a provoqué une instruction née d'une correction (02) — nullable,
+  /// la plupart des instructions étant écrites directement.
+  originSubjectId  String?          @map("origin_subject_id") @db.Uuid
   // traçabilité
   createdByActor   Actor            @map("created_by_actor")
   updatedByActor   Actor?           @map("updated_by_actor")
   createdAt        DateTime         @default(now()) @map("created_at")
   updatedAt        DateTime         @updatedAt @map("updated_at")
 
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  folder  Folder  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  account       Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  folder        Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  originSubject Subject? @relation("KnowledgeDocumentOriginSubject", fields: [originSubjectId], references: [id], onDelete: SetNull)
 
   @@index([accountId])
   @@index([accountId, folderId])
@@ -794,6 +942,60 @@ model VerificationToken {
 
   @@index([identifier])
   @@map("verification_tokens")
+}
+
+/// Étiquette (02, Label) : marqueur thématique attribué au sujet par Relvo, qui
+/// TRAVERSE les domaines. Registre PAR COMPTE, amorcé par les socles des secteurs.
+/// L'utilisateur n'en saisit jamais une : il filtre dessus. Cycle dans 04 §10.
+model Label {
+  id        String      @id @default(uuid()) @db.Uuid
+  accountId String      @map("account_id") @db.Uuid
+  /// Clé normalisée, unique par compte — c'est elle que `Subject.labels` porte.
+  key       String
+  label     String
+  origin    LabelOrigin
+  status    LabelStatus @default(candidate)
+  createdAt DateTime    @default(now()) @map("created_at")
+  updatedAt DateTime    @updatedAt @map("updated_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@unique([accountId, key])
+  @@index([accountId, status])
+  @@map("labels")
+}
+
+/// Question de Relvo (02, RelvoQuestion) : ce qu'il aurait besoin de savoir pour
+/// mieux faire, posée sur la fiche concernée — contact, domaine ou sujet —, JAMAIS
+/// dans l'agenda. ⚠️ Contrainte en base : exactement une cible, celle de `scope`.
+model RelvoQuestion {
+  id              String         @id @default(uuid()) @db.Uuid
+  accountId       String         @map("account_id") @db.Uuid
+  scope           QuestionScope
+  contactId       String?        @map("contact_id") @db.Uuid
+  folderId        String?        @map("folder_id") @db.Uuid
+  subjectId       String?        @map("subject_id") @db.Uuid
+  text            String
+  status          QuestionStatus @default(open)
+  answer          String?        @db.Text
+  /// Le sujet dont la structuration a fait naître la question.
+  originSubjectId String?        @map("origin_subject_id") @db.Uuid
+  askedAt         DateTime       @default(now()) @map("asked_at")
+  answeredAt      DateTime?      @map("answered_at")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  account       Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  contact       Contact? @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  folder        Folder?  @relation(fields: [folderId], references: [id], onDelete: Cascade)
+  subject       Subject? @relation("RelvoQuestionSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  originSubject Subject? @relation("RelvoQuestionOriginSubject", fields: [originSubjectId], references: [id], onDelete: SetNull)
+
+  @@index([accountId, status])
+  @@index([accountId, contactId])
+  @@index([accountId, folderId])
+  @@index([accountId, subjectId])
+  @@map("relvo_questions")
 }
 
 /// Outbox de suppression de fichiers (M4.6).

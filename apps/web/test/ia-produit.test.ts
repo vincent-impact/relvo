@@ -41,11 +41,11 @@ describe("couche Produit", () => {
   });
 
   it("assemble les socles dans un ordre canonique, quel que soit l'ordre reçu", () => {
-    const a = coucheProduit(["food", "batiment"]);
-    const b = coucheProduit(["batiment", "food"]);
+    const a = coucheProduit(["food", "construction"]);
+    const b = coucheProduit(["construction", "food"]);
     expect(a).toBe(b);
     expect(a.indexOf(SOCLE_FOOD)).toBeLessThan(a.indexOf(SOCLE_BATIMENT));
-    expect(coucheProduit(["autre"])).toBe(SOCLE_PRODUIT);
+    expect(coucheProduit(["other"])).toBe(SOCLE_PRODUIT);
     expect(coucheProduit([])).toBe(SOCLE_PRODUIT);
   });
 
