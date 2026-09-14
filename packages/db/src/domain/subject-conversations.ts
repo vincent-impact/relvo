@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { Prisma } from "../generated/prisma/client";
 import {
+  Actor,
   ChannelType,
   ConversationStatus,
   ConversationType,
@@ -252,6 +253,8 @@ export const attachConversationSchema = z.object({
    * après coup par `ensureSubjectAnchors`.
    */
   anchorMessageId: z.uuid().optional().nullable(),
+  /** Qui rattache : l'utilisateur (défaut) ou Relvo, par le tri (M7). */
+  actor: z.enum(Actor).optional(),
 });
 
 export type AttachConversationInput = z.infer<typeof attachConversationSchema>;
@@ -303,7 +306,7 @@ export async function attachConversationToSubject(
       subjectId: subject.id,
       eventType: EVENT_TYPES.conversationAttached,
       title: `Conversation rattachée — ${conversation.title}`,
-      actor: "user",
+      actor: data.actor ?? Actor.user,
       metadata: { conversationId: conversation.id, type: conversation.type },
     });
     return link;
@@ -320,10 +323,12 @@ export async function attachEmailConversationToSubject(
   db: TenantDb,
   subjectId: string,
   conversationId: string,
+  actor: Actor = Actor.user,
 ) {
   const link = await attachConversationToSubject(db, {
     subjectId,
     conversationId,
+    actor,
   });
   await sweepConversationIntoSubject(db, {
     conversationId,

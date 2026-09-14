@@ -307,6 +307,29 @@ la conception (`05 §10.5`, extraction à effort minimal) reste la valeur de con
 le jeu réel n'a pas confirmé ; la bascule se fait par la configuration du tier, sans code. Ce qui
 tranchera : le même passage sur trente à cinquante e-mails réels anonymisés.
 
+### Frontière de confiance et verdict « incertain » — réglés par défaut, à confirmer en usage
+
+**`proposé`** · `05 §1.1` place la frontière « entre moyenne et basse » et la fait régler sur le
+jeu d'évaluation. Le jeu de démonstration ne la règle pas : sur les 22 fils, le tri rend **22
+verdicts en confiance haute, 0 moyenne, 0 basse, 0 incertain** — les cas synthétiques sont
+trop nets pour faire hésiter le modèle. Aucun chiffre ne justifie donc de placer la frontière
+ailleurs que là où la conception la met.
+
+**Retenu, à titre provisoire** : un sujet s'ouvre (ou se rattache) quand le verdict est
+« affaire » **et** la confiance est **haute ou moyenne** ; en confiance basse, seul le verdict
+est écrit sur la conversation, raison visible dans la liste à trier. Le verdict « incertain »
+est traité comme une confiance basse : verdict écrit, rien d'autre — c'est le renvoi au
+dirigeant, pas un échec. Un verdict « bruit » n'ignore jamais la conversation : il pose sa
+catégorie et attend le geste (`05 §9.5`, « Relvo ne décide rien à la place de l'utilisateur au
+premier jour »).
+
+**Ce qui tranchera** : le journal des premiers usages réels — verdicts rendus, confiance,
+gestes de confirmation ou de contradiction — relu après quelques semaines. Deux signaux à
+surveiller : des sujets ouverts en confiance moyenne que l'utilisateur ferme aussitôt
+(frontière à relever à « haute »), ou des « incertain » nombreux qui finissent tous en sujet
+(les traiter comme une affaire en confiance moyenne). La frontière est une constante du code,
+en un seul endroit, testée.
+
 ### Le personnel, la publicité et l'automatique sont des raisons, pas des domaines
 
 **`tranché`** · Le besoin exprimé à l'ouverture du pipeline : trier par défaut, sans rien

@@ -338,6 +338,7 @@ Sollicitation mesurée : le **tri** (`05 §1.1`), un appel, sortie structurée, 
 3. **L'unique verdict faux commun aux trois configurations** (un fournisseur confirme un remplacement gratuit, étiqueté « affaire » avec une tâche dans la démo) est une étiquette discutable, pas une erreur du modèle : un message sans action attendue est du bruit selon `05 §1.1`.
 4. **Latence** : 2 à 2,5 s par tri, dont la moitié en temps de premier jeton ; compatible avec un traitement après la réponse HTTP du webhook.
 5. **Le facteur 2,2 du raisonnement ne s'est pas vu ici** : `low` ajoute ~22 jetons de raisonnement sur 110 de sortie. Le tri est trop court pour que l'effort pèse ; la structuration et la relecture, plus longues, restent à mesurer.
+6. **La confiance ne discrimine pas sur ce jeu** (passage du 14/09 après-midi, Luna `low`, 0,29 €/1 000, 2,6 s) : 22 verdicts sur 22 en confiance **haute**, aucun « moyenne », « basse » ni « incertain ». La frontière de confiance de `05 §1.1` ne peut donc pas se régler ici ; elle est posée par défaut (`ecarts-et-propositions.md`, « Frontière de confiance et verdict incertain ») et se réglera sur le journal des usages réels.
 
 **Décision provisoire** (`ecarts-et-propositions.md`) : Luna sur le tri, effort `none`. À confirmer sur le jeu réel avant de figer.
 

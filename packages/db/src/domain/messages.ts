@@ -7,6 +7,7 @@ import {
   ConversationType,
   MessageDirection,
   MessageStatus,
+  Priority,
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
 import {
@@ -771,6 +772,8 @@ export const openSubjectOnConversationSchema = z.object({
   description: z.string().trim().max(5000).optional().nullable(),
   folderId: z.uuid().optional().nullable(),
   createdByActor: z.enum(Actor).optional(),
+  /** Posée par le tri quand le fil est urgent (05 §5.4) ; normale sinon. */
+  priority: z.enum(Priority).optional(),
 });
 
 export type OpenSubjectOnConversationInput = z.infer<
@@ -824,6 +827,8 @@ export async function openSubjectOnConversation(
 
   // Contact : le fil s'il en porte un, sinon l'expéditeur de la graine réutilisé
   // ou matérialisé depuis son `sender_raw` (nom de profil privilégié).
+  // L'acteur du contact suit celui du sujet : ouvert par Relvo, le contact naît
+  // `auto` — « à compléter » tant que l'utilisateur ne l'a pas vérifié (04 §10).
   let contactId = isGroup
     ? null
     : (conversation.contactId ?? seed?.senderContactId ?? null);
@@ -834,7 +839,7 @@ export async function openSubjectOnConversation(
       ...splitFullName(seed.senderName ?? rawId ?? ""),
       email: isEmail ? rawId : null,
       phone: rawId && !isEmail ? rawId : null,
-      sourceActor: Actor.user,
+      sourceActor: data.createdByActor ?? Actor.user,
     });
     contactId = contact.id;
     if (seed.senderContactId == null) {
@@ -865,6 +870,7 @@ export async function openSubjectOnConversation(
     folderId: data.folderId ?? seed?.folderId ?? null,
     contactIds: contactId ? [contactId] : [],
     createdByActor: data.createdByActor ?? Actor.user,
+    priority: data.priority,
   });
 
   await db.subjectConversation.create({

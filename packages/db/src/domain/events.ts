@@ -69,6 +69,14 @@ export const EVENT_TYPES = {
   actionDraftPrepared: "action_draft_prepared",
   actionSendMessageDone: "action_send_message_done",
   actionCancelled: "action_cancelled",
+  // Pipeline IA (M7, tranche 4) — les clés de métadonnées de ces entrées sont
+  // posées dans `domain/triage.ts`, premier écrivain (02, EventLog).
+  /** Une entrée PAR SOLLICITATION du modèle : jetons, cache, raisonnement, coût en euros (M7.16). */
+  iaSollicitation: "ia_sollicitation",
+  /** Verdict de tri déposé sur une conversation orpheline (M7.14). */
+  triageVerdict: "triage_verdict",
+  /** Le tri a échoué : la conversation reste orpheline, rien n'est inventé (M7.15). */
+  triageFailed: "triage_failed",
 } as const;
 
 export type EventInput = {

@@ -2,15 +2,24 @@
 
 ## Démarrage à froid — à lire en premier
 
-**Où on en est (2026-09-14, fin de journée)** : les tranches 0 à 3 sont livrées et commitées —
-client d'inférence OpenAI en direct, jeu d'évaluation sur la démonstration, migration du
-modèle, module de contexte. **La prochaine étape est la tranche 4, le tri en production**, dans
-l'ordre écrit dans sa section : chargeurs, filtre déterministe, appel de tri, ouverture ou
-rattachement, journal, orchestration. Deux décisions à soumettre avec des chiffres au passage : la
-frontière de confiance sous laquelle un sujet ne s'ouvre pas sans geste, et le traitement du
-verdict « incertain ». Et un **interrupteur par compte** avant tout déploiement : le tri s'active
-sur le compte du dirigeant d'abord, puis sur ceux des deux bêta-testeurs. Pas de compte de test :
-la vérité terrain viendra des usages réels.
+**Où on en est (2026-09-14, soir)** : les tranches 0 à 4 sont livrées et commitées. La tranche 4
+met **le tri en production** : le webhook e-mail déclenche, après sa réponse HTTP, un pipeline
+qui filtre le bruit sans appel, appelle le tri sur une conversation orpheline, écrit le verdict
+sur la conversation, puis ouvre ou rattache par les primitives du domaine — journal à chaque
+sous-action et à chaque sollicitation, coût en euros compris. Il ne tourne que pour les comptes
+où l'**interrupteur** est activé, et **il ne l'est nulle part encore** : rien ne part en
+production sans un geste explicite. **La prochaine étape est double** : (1) activer le tri sur le
+compte du dirigeant — une ligne SQL, ci-dessous — et relire les premiers verdicts et le
+`cache_read` dans le journal ; (2) la tranche 5, la structuration. Deux décisions ont été posées
+**par défaut**, faute de chiffres discriminants sur la démonstration (22 verdicts sur 22 en
+confiance haute) : frontière de confiance à « moyenne », « incertain » traité comme une
+confiance basse — `ecarts-et-propositions.md`, « Frontière de confiance et verdict incertain ».
+Elles se confirment sur le journal réel, pas sur un compte de test.
+
+```sql
+-- Activer le tri automatique sur un compte (le dirigeant d'abord, puis les bêta-testeurs).
+UPDATE accounts SET auto_triage_enabled = true WHERE email = 'adresse@du.compte';
+```
 
 **Tout le socle fonctionne, sauf le cœur.** Ce sprint ouvre M7 : le pipeline qui transforme un
 message entrant en sujet. La conception est à jour et fait foi : les cinq couches de contexte et
@@ -171,32 +180,53 @@ la base arrivent avec l'orchestration, tranche 4.
 ## Tranche 4 — Le tri en production (M7.1, M7.2, M7.4, M7.5, M7.14, M7.15, M7.16)
 
 **« Un e-mail entrant devient un sujet titré et classé. »** E-mail seul ; WhatsApp attend.
-Ordre de construction retenu : chargeurs → filtre déterministe → appel de tri → ouverture ou
-rattachement → journal → orchestration → interrupteur par compte.
+**Livrée le 2026-09-14.** Le partage est net : ce qui lit et écrit la base vit dans le domaine
+(`packages/db/src/domain/triage.ts`, testé contre la base) ; le pipeline — filtre, appel,
+décision, orchestration — vit dans l'application (`apps/web/src/server/ia/pipeline/`), unique
+consommateur de l'inférence, et ses parties pures sont testées sans base.
 
-- [ ] **Chargeurs** : remplir les types de `src/server/ia/contexte/types.ts` depuis la base —
-      compte (secteurs, domaines avec description, sujets ouverts récents bornés), conversation
-      et messages avec nom et entreprise du contact. Lectures par le paquet domaine, jamais par
-      un client instancié à la main.
-- [ ] **Interrupteur par compte** : le tri automatique ne tourne que pour les comptes où il est
-      activé ; le dirigeant d'abord, les bêta-testeurs ensuite.
-- [ ] Orchestration : le webhook enregistre le message comme aujourd'hui, puis déclenche le
-      traitement **après la réponse HTTP**, idempotent — une sollicitation par message, jamais
-      deux. Sur le plan Vercel actuel, pas de cron à la minute : l'exécution différée après
-      réponse est le choix simple.
-- [ ] **Filtre déterministe du bruit** avant tout appel : en-tête de désabonnement, expéditeur
-      sans réponse possible, envoi en masse, accusé automatique → « à trier », zéro jeton.
-- [ ] Appel de tri sur une conversation orpheline ; verdict, confiance et raison écrits sur la
-      conversation ; sous la frontière de confiance, rien d'autre n'est écrit.
-- [ ] Ouverture ou rattachement par les fonctions du domaine existantes —
-      `openSubjectOnConversation`, `createSubjectFromConversation` — jamais par un chemin
-      parallèle.
-- [ ] **Un échec laisse la conversation orpheline**, il n'invente rien (M7.15).
-- [ ] Une entrée de journal par sollicitation, avec jetons et coût en euros (M7.16), et une par
-      sous-action (M7.14).
-- [ ] Invalidation du cache de données après écriture (`PITFALLS.md` #45).
-- [ ] Vérifier `cache_read` sur les appels répétés : un cache à zéro signale un invalidateur
-      silencieux.
+- [x] **Chargeurs** : `getTriageProjection` remplit, depuis la base et par le domaine, les
+      projections que le profil « tri » consomme — compte (nom du dirigeant, secteurs, domaines
+      actifs avec description, quarante sujets ouverts les plus récents), fil (le plus ancien et
+      les dix derniers messages, expéditeur nommé et adressé, sens), dernier entrant brut pour le
+      filtre. ⚠️ Le compte ne porte pas de raison sociale : le nom du dirigeant tient lieu
+      d'identité dans la couche Compte tant que le profil n'en a pas.
+- [x] **Interrupteur par compte** : colonne `auto_triage_enabled`, fausse par défaut
+      (migration `20260914095431_m7_tranche4_interrupteur_tri`). Activation par SQL, voir le
+      démarrage à froid ; aucun écran.
+- [x] Orchestration : le webhook `mail_received` enregistre le message comme avant, puis, si le
+      message est nouveau et qu'aucun sujet ne l'a capté au rangement, déclenche le tri **après
+      la réponse HTTP** (`after()` de Next). Idempotence à deux niveaux : `created` côté
+      webhook, et « une sollicitation `tri` déjà consignée pour ce message » côté pipeline.
+- [x] **Filtre déterministe du bruit** (`pipeline/bruit.ts`) : expéditeur sans réponse
+      possible, accusé ou réponse automatique à l'objet, lien de désabonnement en fin de
+      message — et les en-têtes (`List-Unsubscribe`, `Auto-Submitted`, `Precedence`) **le jour
+      où le webhook les fournira** : il ne les expose pas aujourd'hui, `toEmailHeaders` les
+      lira s'ils apparaissent. Verdict « bruit » avec sa catégorie et sa règle, zéro jeton.
+- [x] Appel de tri sur une conversation orpheline (`extract`, tier extraction, niveau retenu de
+      la configuration) ; verdict, catégorie, confiance, raison et horodatage écrits sur la
+      conversation. Décision en un seul endroit (`pipeline/decision.ts`) : bruit, incertain et
+      confiance basse n'écrivent que le verdict.
+- [x] Ouverture ou rattachement par `openSubjectOnConversation` (acteur Relvo, contact
+      automatique, priorité, domaine résolu par son nom — jamais « Général », jamais un domaine
+      inactif ; sinon sans domaine, avec le domaine proposé) et
+      `attachEmailConversationToSubject` sur la référence d'un sujet ouvert ; une référence
+      fermée ou inconnue ouvre. Le domaine résolu est posé sur les messages du fil.
+- [x] **Un échec laisse la conversation orpheline** (M7.15) : tout est sous un seul `try`,
+      l'échec est journalisé (`triage_failed`) et le webhook n'en sait rien.
+- [x] Journal : `ia_sollicitation` par appel — sollicitation, tier, modèle, niveau, jetons
+      d'entrée / cache / sortie / raisonnement, coût en euros et version des tarifs, durée
+      (M7.16) ; `triage_verdict` par verdict, avec la proposition intégrale et la source
+      (modèle ou règle) (M7.14) ; `subject_created` et `conversation_attached` portent l'acteur
+      Relvo.
+- [x] Invalidation du cache de données après chaque écriture du pipeline (`PITFALLS.md` #45).
+- [ ] Vérifier `cache_read` sur les appels répétés **en production** : le journal le porte
+      (`jetons.cacheLecture`) ; à relire après les premiers verdicts réels. Sur la démonstration,
+      1 881 jetons relus sur 2 596.
+
+**Ce que la tranche laisse volontairement de côté** : le verdict et sa raison ne sont pas
+encore **affichés** dans la liste à trier (c'est M7.20, avec la pastille) ; WhatsApp (A8) ; les
+préférences observées et les antécédents de tri restent vides tant que M17 ne les calcule pas.
 
 ## Tranche 5 — La structuration (M7.6, M7.18, M7.20)
 
@@ -270,7 +300,7 @@ réclament.
 - [x] Tranche 1 — livrée le 2026-09-14 sur le jeu de démonstration ; le jeu réel viendra des usages bêta
 - [x] Tranche 2 — livrée le 2026-09-14
 - [x] Tranche 3 — livrée le 2026-09-14
-- [ ] Tranche 4
+- [x] Tranche 4 — livrée le 2026-09-14 ; interrupteur à activer compte par compte
 - [ ] Tranche 5
 - [ ] Tranche 6
 - [ ] Tranche 7

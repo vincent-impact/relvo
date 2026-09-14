@@ -301,6 +301,10 @@ model Account {
   /// sur le compte.
   observedPreferences   String?     @map("observed_preferences") @db.Text
   observedPreferencesAt DateTime?   @map("observed_preferences_at")
+  /// Interrupteur du tri automatique (M7, tranche 4) : le pipeline ne tourne que
+  /// pour les comptes où il est activé — le dirigeant d'abord, puis les
+  /// bêta-testeurs. Faux par défaut : un compte nouveau ne sollicite rien.
+  autoTriageEnabled     Boolean     @default(false) @map("auto_triage_enabled")
   createdAt             DateTime    @default(now()) @map("created_at")
   updatedAt             DateTime    @updatedAt @map("updated_at")
 

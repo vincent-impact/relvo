@@ -75,6 +75,10 @@ observées** : un texte court, régénéré par agrégation du journal, qui dit 
 garde et ce qu'il écarte. Ce texte n'est jamais saisi ni édité par personne — il est
 **recalculé**. C'est le seul endroit où l'apprentissage se matérialise sur le compte.
 
+Il porte un **interrupteur du tri automatique**, faux par défaut : le pipeline d'arrivée (cf.
+`05 §1`) ne sollicite le modèle que pour les comptes où il est activé. Un compte nouveau ne
+déclenche rien tant que personne ne l'a ouvert.
+
 ## Folder
 
 Un **domaine** : conteneur métier qui regroupe les sujets d'un périmètre, les documents de

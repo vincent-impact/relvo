@@ -227,3 +227,39 @@ export function toInboundWhatsApp(
     receivedAt: messagingReceivedAt(evt.timestamp),
   };
 }
+
+/**
+ * En-têtes de l'e-mail, clés en minuscules, SI le webhook les porte — sous
+ * forme d'objet `{ nom: valeur }` ou de liste `[{ name, value }]`. Le webhook
+ * `mail_received` observé n'en expose aucun : le filtre déterministe du bruit
+ * (M7) fonctionne sans, et les lira le jour où ils arrivent.
+ */
+export function toEmailHeaders(
+  mail: UnipileMailWebhook,
+): Record<string, string> | undefined {
+  const raw = (mail as { headers?: unknown }).headers;
+  if (!raw || typeof raw !== "object") return undefined;
+  const out: Record<string, string> = {};
+  const poser = (nom: unknown, valeur: unknown) => {
+    if (typeof nom !== "string" || !nom) return;
+    const v = Array.isArray(valeur)
+      ? valeur.filter((x): x is string => typeof x === "string").join(", ")
+      : typeof valeur === "string"
+        ? valeur
+        : null;
+    if (v) out[nom.toLowerCase()] = v;
+  };
+  if (Array.isArray(raw)) {
+    for (const h of raw) {
+      if (h && typeof h === "object") {
+        const { name, value } = h as { name?: unknown; value?: unknown };
+        poser(name, value);
+      }
+    }
+  } else {
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      poser(k, v);
+    }
+  }
+  return Object.keys(out).length ? out : undefined;
+}

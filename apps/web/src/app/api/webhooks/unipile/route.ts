@@ -4,12 +4,17 @@ import {
   MAX_FILE_SIZE_BYTES,
   getStorage,
 } from "@relvo/storage";
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { tenantDb } from "@/lib/tenant-db";
 import { expireTenantData } from "@/server/cached";
 import { createAttachment } from "@relvo/db";
-import { toInboundEmail, toInboundWhatsApp } from "@/server/unipile/map";
+import { trierConversationEmail } from "@/server/ia/pipeline/tri";
+import {
+  toEmailHeaders,
+  toInboundEmail,
+  toInboundWhatsApp,
+} from "@/server/unipile/map";
 import {
   UNIPILE_AUTH_HEADER,
   verifyWebhookAuth,
@@ -229,6 +234,25 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
   // depuis `unstable_cache`) resteraient périmés jusqu'au revalidate 120 s et le
   // polling client (router.refresh) relirait le cache sans rien voir.
   if (created) expireTenantData();
+
+  // Tri automatique (M7, tranche 4) — APRÈS la réponse HTTP, une fois par
+  // message (`created`), et seulement si aucun sujet n'a capté le message au
+  // rangement : sinon la conversation n'est pas orpheline et il n'y a rien à
+  // trier. Le pipeline revérifie tout (interrupteur du compte, idempotence,
+  // orphelinat) et n'échoue jamais vers l'appelant : un échec laisse la
+  // conversation orpheline, journalisé.
+  if (created && !message.subjectId) {
+    const entetes = toEmailHeaders(mail);
+    after(async () => {
+      const resultat = await trierConversationEmail({
+        accountId: config.accountId,
+        conversationId: message.conversationId,
+        messageId: message.id,
+        entetes,
+      });
+      console.info("[ia] tri", message.id, resultat);
+    });
+  }
 
   return ok({ ok: true, messageId: message.id, created, attachments: stored });
 }
