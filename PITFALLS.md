@@ -176,6 +176,26 @@ crée dans `(public)`, **jamais** à la racine de `app/` : il n'y a plus de layo
 elle serait orpheline. ⚠️ Ne pas « corriger » en assouplissant le garde : sa condition a été
 payée par la saga du viewport (#5 bis dans le kit) et se casse à la première exception.
 
+### #49 — Un caractère modifié DANS le message système annule TOUT son cache de prompt
+
+**Symptôme** : la couche Produit (près de deux mille jetons, identique pour tous les appels) n'est
+**jamais** relue depuis le cache, alors que le fournisseur annonce un cache implicite sur le
+préfixe. Le compteur `cache_read` reste à zéro d'un appel à l'autre, et la facture d'entrée est
+pleine sur chaque message.
+
+**Cause** : la liste des sujets ouverts du compte — qui change à chaque sujet — était concaténée
+**à la fin du même message système** que la couche Produit. Mesuré sur le fournisseur retenu :
+un message système qui diffère de quelques dizaines de jetons à sa fin obtient **zéro** jeton en
+cache, pas « le préfixe commun » ; alors qu'un message système strictement identique suivi d'un
+message utilisateur différent obtient tout le message système en cache. Le cache n'est pas
+« le plus long préfixe commun », il s'arrête à la frontière des messages.
+
+**Règle** : **le message système ne porte que ce qui est identique pour tous les comptes d'un
+même secteur** — la couche Produit. Tout ce qui varie par compte ou par appel (domaines, sujets
+ouverts, date, fil) va dans le message utilisateur, dans l'ordre du plus stable au plus volatil.
+Un test tient l'invariant (`test/ia-produit.test.ts`) ; le jeu d'évaluation affiche `cache_read`
+pour que la régression se voie.
+
 ---
 
 ## Si une MAJEURE a bougé

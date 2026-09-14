@@ -1,4 +1,3 @@
-import "server-only";
 import { createOpenAI, type OpenAIProvider } from "@ai-sdk/openai";
 import {
   generateText,
@@ -44,7 +43,9 @@ import {
 //   3. Les jetons de sortie sont bornés par défaut (`05 §10.6`).
 //
 // Comme le client Unipile, c'est une intégration de l'APPLICATION : rien ici
-// n'appartient à `packages/`. Sans configuration (`inferenceDisponible()`
+// n'appartient à `packages/`. La garde `server-only` est posée sur `./index`,
+// l'entrée que l'application importe ; ce fichier reste importable par les
+// scripts d'évaluation (`scripts/evaluation/`), qui tournent hors Next. Sans configuration (`inferenceDisponible()`
 // faux), le pipeline ne tente rien — la conversation reste orpheline, mode
 // nominal de la V1.
 

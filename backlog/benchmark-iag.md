@@ -319,6 +319,28 @@ Pas un framework, pas un routeur dynamique. Une interface interne à quatre mét
 
 50 à 100 messages réels de Tasty Crousty, anonymisés, avec la sortie attendue pour A1, A3 et A6. À faire tourner sur **GPT-5.6 Luna, Gemini 3.5 Flash-Lite et deepseek-flash** pour le tier S, et sur **Luna, Terra, Gemini 3.8 Flash et Sonnet 5** pour le tier M. **C'est la seule donnée qui manque et que personne ne publiera jamais** (§3.4). Un après-midi de travail qui vaut tous les classements.
 
+### 6.6 Premier passage du jeu d'évaluation — 14/09/2026, jeu de DÉMONSTRATION
+
+⚠️ **Données synthétiques** : les 22 fils e-mail du compte de démonstration (19 affaires, 3 bruits, 7 domaines sans description), pas encore les e-mails réels anonymisés. Les chiffres disent ce que vaut la mécanique — contexte, cache, coût, latence — pas encore ce que vaut le tri sur du vrai courrier. Reproductible : `pnpm --filter web eval:tri --jeu demo`.
+
+Sollicitation mesurée : le **tri** (`05 §1.1`), un appel, sortie structurée, couche Produit food + couche Compte + le fil.
+
+| Configuration | Verdicts justes | Domaines justes | €/1 000 messages | Latence moy. | Entrée moy. (dont cache) | Sortie moy. (dont raisonnement) |
+|---|---|---|---|---|---|---|
+| Luna, effort `none` | 21/22 | 14/18 | **0,24** | 2,5 s | 2 377 (1 699) | 89 (0) |
+| Luna, effort `low` | 20/22 | 15/17 | 0,26 | 2,1 s | 2 377 (1 699) | 110 (22) |
+| Terra, effort `low` | 21/22 | 17/18 | 2,32 | 2,1 s | 2 377 (1 699) | 83 (0) |
+
+**Ce que le passage a appris, dans l'ordre d'importance.**
+
+1. **Le cache ne se gagne qu'à la frontière des messages** (`PITFALLS.md` #49). Avant la correction, la liste des sujets ouverts vivait dans le message système et `cache_read` valait zéro sur 19 fils sur 22 ; le tri coûtait 0,44 €/1 000. Après isolement de la couche Produit dans le message système : 1 699 jetons relus sur 2 377, coût divisé par près de deux.
+2. **Sur le tri, le raisonnement n'apporte rien** : `none` fait aussi bien que `low` sur les verdicts, et Luna `none` fait jeu égal avec Terra `low` sur les verdicts, pour dix fois moins cher. La différence de Terra est sur les **domaines** (17/18 contre 14/18) — mais les domaines de la démo n'ont **aucune description** : « Business » contre « Communication » est une devinette pour tout le monde. C'est la couche Compte qu'il faut nourrir, pas le tier.
+3. **L'unique verdict faux commun aux trois configurations** (un fournisseur confirme un remplacement gratuit, étiqueté « affaire » avec une tâche dans la démo) est une étiquette discutable, pas une erreur du modèle : un message sans action attendue est du bruit selon `05 §1.1`.
+4. **Latence** : 2 à 2,5 s par tri, dont la moitié en temps de premier jeton ; compatible avec un traitement après la réponse HTTP du webhook.
+5. **Le facteur 2,2 du raisonnement ne s'est pas vu ici** : `low` ajoute ~22 jetons de raisonnement sur 110 de sortie. Le tri est trop court pour que l'effort pèse ; la structuration et la relecture, plus longues, restent à mesurer.
+
+**Décision provisoire** (`ecarts-et-propositions.md`) : Luna sur le tri, effort `none`. À confirmer sur le jeu réel avant de figer.
+
 ---
 
 ## 7. Disjoncteur de consommation

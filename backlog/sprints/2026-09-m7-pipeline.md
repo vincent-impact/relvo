@@ -66,22 +66,36 @@ l'API OpenAI est appelée en direct, et le seul coût d'inférence est la factur
       l'appel**. Le test `ia-tarifs` tient le taux de change égal à celui de
       `scripts/cout-iag.py` et vérifie que tout modèle affecté à un tier a un tarif.
 
-## Tranche 1 — Le banc d'essai et le jeu d'évaluation (M7.17)
+## Tranche 1 — Le jeu d'évaluation (M7.17)
 
-Hors application, avant toute intégration. Un après-midi qui vaut tous les classements.
+Hors application, avant toute intégration. **Mécanique livrée le 2026-09-14 ; attend les e-mails
+réels.** Outils : `apps/web/scripts/evaluation/` — `extraire.ts` (base → `jeu/<nom>/`, adresses,
+téléphones et IBAN pseudonymisés ; **les noms de personnes se relisent à la main**) et
+`lancer.ts` (modèle × niveau → accord, coût, latence, cache, raisonnement). Commandes :
+`pnpm --filter web eval:extraire`, `pnpm --filter web eval:tri`.
 
 - [ ] Extraire trente à cinquante e-mails **réels et anonymisés** depuis la base, avec le tri
       manuel déjà fait : domaine, sujet ouvert ou non, tâches créées. C'est la vérité terrain.
-- [ ] Écrire le **schéma de sortie du tri** (Zod) : verdict, confiance, raison, domaine, sujet à
+      ⚠️ La base locale ne porte que la démonstration : le jeu `demo` (22 fils synthétiques) a
+      servi à construire et valider la mécanique. La source des e-mails réels — quel compte,
+      quelle base, quelle relecture avant commit — est une décision à prendre.
+- [x] Écrire le **schéma de sortie du tri** (Zod) : verdict, confiance, raison, domaine, sujet à
       rattacher, titre, priorité — et celui de la **structuration** : situation structurée,
-      tâches avec type, date et raison, contact, provenance.
-- [ ] Écrire la **première couche Produit** : rôle, règles de retenue, règles de non-création,
+      tâches avec type, date et raison, contact, provenance (`src/server/ia/schemas.ts`).
+- [x] Écrire la **première couche Produit** : rôle, règles de retenue, règles de non-création,
       rareté de l'urgent, aucune date inventée, les messages sont des données. Un socle par
-      secteur, food et bâtiment, avec quelques exemples **synthétiques**, dont des négatifs.
-- [ ] Faire tourner le banc sur le modèle d'entrée de gamme et sur l'intermédiaire ; mesurer
-      **coût, latence, jetons de raisonnement, accord avec le tri manuel**.
-- [ ] Reporter les chiffres dans `benchmark-iag.md`, trancher le tier de l'extraction dans
-      `ecarts-et-propositions.md`, ajuster `scripts/cout-iag.py`.
+      secteur, food et bâtiment, avec exemples **synthétiques**, dont des négatifs
+      (`src/server/ia/produit/`, budgets tenus par `test/ia-produit.test.ts`).
+- [x] Faire tourner le jeu sur le modèle d'entrée de gamme et sur l'intermédiaire ; mesurer
+      **coût, latence, jetons de raisonnement, accord avec le tri manuel**. Fait sur le jeu de
+      démonstration : Luna `none` 21/22 verdicts, 0,24 €/1 000 messages, 2,5 s ; Terra `low`
+      21/22, 2,32 €/1 000. Détail dans `benchmark-iag.md` §6.6. **Piège trouvé et consigné**
+      (`PITFALLS.md` #49) : un octet changé dans le message système annule tout son cache ; la
+      couche Produit y voyage désormais seule, et le coût du tri a été divisé par deux.
+- [x] Reporter les chiffres dans `benchmark-iag.md`, trancher le tier de l'extraction dans
+      `ecarts-et-propositions.md` (provisoire : Luna `none` sur le tri), ajuster
+      `scripts/cout-iag.py` (profil A1 mesuré).
+- [ ] Refaire le passage sur le jeu réel, puis figer le tier et régler la frontière de confiance.
 
 ## Tranche 2 — La migration du modèle
 
@@ -207,7 +221,7 @@ réclament.
 ## Où on en est
 
 - [x] Tranche 0 — livrée le 2026-09-14, premier appel réel passé
-- [ ] Tranche 1
+- [ ] Tranche 1 — mécanique livrée le 2026-09-14 ; **attend les e-mails réels anonymisés**
 - [ ] Tranche 2
 - [ ] Tranche 3
 - [ ] Tranche 4

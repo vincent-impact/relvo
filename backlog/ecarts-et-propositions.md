@@ -275,6 +275,18 @@ intermédiaire.
 jetons de sortie. Un site d'appel dont le niveau a dérivé se voit dans ce compteur avant de se
 voir sur la facture.
 
+### Le tri tourne sur l'entrée de gamme sans raisonnement — provisoire
+**`proposé`** · Premier passage du jeu d'évaluation (`benchmark-iag.md` §6.6), sur le jeu de
+démonstration : sur le tri, le modèle d'entrée de gamme sans raisonnement rend les mêmes verdicts
+que le même modèle avec raisonnement faible, et que le modèle supérieur, pour dix fois moins cher
+que ce dernier. L'écart observé sur les domaines tient à des domaines sans description, pas au
+tier.
+
+**Retenu, à titre provisoire** : tri sur l'entrée de gamme à effort `none`. Le niveau retenu de
+la conception (`05 §10.5`, extraction à effort minimal) reste la valeur de configuration tant que
+le jeu réel n'a pas confirmé ; la bascule se fait par la configuration du tier, sans code. Ce qui
+tranchera : le même passage sur trente à cinquante e-mails réels anonymisés.
+
 ### Le contexte du modèle est assemblé en cinq couches
 **`tranché`** · Un appel n'a pas de mémoire et chaque mot envoyé se paie. Le contexte est donc
 assemblé par empilement, de la couche la plus stable (le produit, partagée entre tous les comptes

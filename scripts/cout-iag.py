@@ -36,7 +36,8 @@ CHAT_TOURS, CHAT_ALLERS, PART_CHAT_L, CHAT_CONVS = 300, 2.4, 0.30, 60
 #    tier S = classification / M = extraction+redaction / L = raisonnement
 # --------------------------------------------------------------------------
 SOLL = [
-    ("A1  classification domaine",   "S", MSG_IN,                              0,    700,   30),
+    # A1 mesure le 14/09/2026 (jeu demo, tri = A1+verdict en un appel) : 1700 en cache, 700 frais, 90 sortie
+    ("A1  tri (verdict + domaine)",   "S", MSG_IN,                           1700,    700,   90),
     ("A2-A6 ouverture/rattachement", "M", int(MSG_IN*TAUX_ORPHELIN),        6000,   4000,  600),
     ("A7  relecture sujet suivi",    "M", int(MSG_IN*TAUX_SUIVI),           6000,   3500,  450),
     ("A9  etiquetage PJ",            "S", int(MSG_IN*TAUX_PJ),                 0,   1500,   20),
@@ -55,7 +56,7 @@ OPT = []
 for ref, tier, n, ci, fi, o in SOLL:
     if   ref.startswith("A10"): OPT.append((ref+" *", "S", n, 0, 1200, 80))
     elif ref.startswith("A7"):  OPT.append((ref+" *", "M", n, 6000, int(fi*0.7), o))
-    elif ref.startswith("A1 "): OPT.append((ref+" *", "S", n, 0, 450, 30))
+    elif ref.startswith("A1 "): OPT.append((ref, "S", n, ci, fi, o))  # deja mesure, plus d'optimisation supposee
     else:                       OPT.append((ref, tier, n, ci, fi, o))
 
 # --------------------------------------------------------------------------

@@ -1,0 +1,136 @@
+{
+  "entreprise": "Tasty Crousty",
+  "secteurs": ["food"],
+  "domaines": [
+    {
+      "nom": "Business",
+      "description": null
+    },
+    {
+      "nom": "Communication",
+      "description": null
+    },
+    {
+      "nom": "Fournisseurs",
+      "description": null
+    },
+    {
+      "nom": "Général",
+      "description": "Connaissances transversales chargées dans le contexte de tous les sujets."
+    },
+    {
+      "nom": "Juridique",
+      "description": null
+    },
+    {
+      "nom": "Production",
+      "description": null
+    },
+    {
+      "nom": "RH",
+      "description": null
+    }
+  ],
+  "sujetsOuverts": [
+    {
+      "reference": "SUB-0082",
+      "titre": "Renouvellement contrat climatisation"
+    },
+    {
+      "reference": "SUB-0103",
+      "titre": "Réassort papier d'emballage"
+    },
+    {
+      "reference": "SUB-0117",
+      "titre": "Panne congélateur — réserve"
+    },
+    {
+      "reference": "SUB-0131",
+      "titre": "Virement client à rapprocher"
+    },
+    {
+      "reference": "SUB-0142",
+      "titre": "Rupture sauce blanche"
+    },
+    {
+      "reference": "SUB-0148",
+      "titre": "Congé maternité — organisation du remplacement"
+    },
+    {
+      "reference": "SUB-0205",
+      "titre": "Hausse de tarif sur le poulet"
+    },
+    {
+      "reference": "SUB-0211",
+      "titre": "Retard de livraison riz"
+    },
+    {
+      "reference": "SUB-0214",
+      "titre": "Contrôle hygiène DDPP annoncé"
+    },
+    {
+      "reference": "SUB-0216",
+      "titre": "Renouvellement du bail commercial"
+    },
+    {
+      "reference": "SUB-0219",
+      "titre": "Nouveau contrat boissons"
+    },
+    {
+      "reference": "SUB-0221",
+      "titre": "Recrutement équipier polyvalent"
+    },
+    {
+      "reference": "SUB-0222",
+      "titre": "Renégociation commission Uber Eats"
+    },
+    {
+      "reference": "SUB-0224",
+      "titre": "Arrêt maladie — réorganisation des shifts"
+    },
+    {
+      "reference": "SUB-0225",
+      "titre": "Baisse de fréquentation en semaine"
+    },
+    {
+      "reference": "SUB-0226",
+      "titre": "Demande d'augmentation"
+    },
+    {
+      "reference": "SUB-0227",
+      "titre": "Friteuse n°2 hors service"
+    },
+    {
+      "reference": "SUB-0230",
+      "titre": "Partenariat @ParisFoodGuide"
+    },
+    {
+      "reference": "SUB-0231",
+      "titre": "Demande de tournage TikTok"
+    },
+    {
+      "reference": "SUB-0232",
+      "titre": "Sponsoring AS Épinay Football"
+    },
+    {
+      "reference": "SUB-0233",
+      "titre": "Achat groupé huile de friture"
+    },
+    {
+      "reference": "SUB-0234",
+      "titre": "Renfort samedi soir"
+    },
+    {
+      "reference": "SUB-0240",
+      "titre": "Réceptions & livraisons fournisseurs"
+    },
+    {
+      "reference": "SUB-0241",
+      "titre": "Hygiène & maintenance quotidiennes"
+    },
+    {
+      "reference": "SUB-0242",
+      "titre": "Plannings & briefings équipe"
+    }
+  ]
+}

@@ -11,7 +11,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eval:extraire": "node --env-file=.env.local --import tsx scripts/evaluation/extraire.ts",
+    "eval:tri": "node --env-file=.env.local --import tsx scripts/evaluation/lancer.ts"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.66",
@@ -46,6 +48,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.7",
     "tailwindcss": "^4",
+    "tsx": "^4.19.2",
     "typescript": "^5",
     "vitest": "^3.0.5"
   }
