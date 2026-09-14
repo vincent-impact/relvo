@@ -3,8 +3,8 @@
 import { cn } from "@/lib/utils";
 
 // Barre KPI-ONGLETS de Sujets — la carte à chiffres est un SÉLECTEUR : chaque
-// cellule porte son compteur ET agit comme un onglet, teinté de violet Relvo à
-// l'état actif.
+// cellule porte son compteur ET agit comme un onglet, violet PLEIN à l'état
+// actif (même idiome que les segmented et les chips ; chiffres Geist tabulaires).
 //
 // UN SEUL AXE : le STATUT (Ouverts · Validés · Fermés) — décision 2026-07-24.
 // Les anciens onglets « Urgents » et « Nouveaux » ont été retirés : ce sont des
@@ -47,13 +47,15 @@ export function SubjectKpiTabs({
             onClick={() => onChange(t.key)}
             className={cn(
               "flex flex-1 flex-col items-center gap-[3px] rounded-[10px] px-1 py-1.5 transition-colors",
-              isActive ? "bg-relvo-bg" : "active:bg-(--surface-2)",
+              isActive
+                ? "bg-relvo shadow-[inset_0_1px_0_rgb(255_255_255/0.2),0_1px_2px_rgb(20_18_40/0.2)]"
+                : "active:bg-(--surface-2)",
             )}
           >
             <span
               className={cn(
-                "flex h-[30px] items-center font-numeric text-[23px] font-bold tracking-[-1px]",
-                isActive ? "text-relvo" : "text-(--text-primary)",
+                "flex h-[30px] items-center text-[22px] font-semibold tracking-[-0.02em] tabular-nums",
+                isActive ? "text-white" : "text-(--text-primary)",
               )}
             >
               {count}
@@ -61,7 +63,7 @@ export function SubjectKpiTabs({
             <span
               className={cn(
                 "text-center text-[11.5px] leading-[1.2] font-semibold",
-                isActive ? "text-relvo" : "text-(--text-secondary)",
+                isActive ? "text-white" : "text-(--text-secondary)",
               )}
             >
               {t.label}

@@ -12,6 +12,9 @@ import { cn } from "@/lib/utils";
 
 // Direction « Instrument » : un chip est un BOUTON — rayon 10, posé (filet de
 // lumière + ombre de contact), enfoncé au toucher — plus une pilule à part.
+// MONOCHROME, comme tous les sélecteurs (segmented, canaux) : blanc au repos,
+// violet Relvo sélectionné. La couleur du domaine reste portée par la tuile de
+// chaque ligne — ici elle ferait un deuxième vocabulaire de sélection.
 const CHIP =
   "pressable inline-flex h-9 flex-none items-center gap-1.5 rounded-[10px] border px-3.5 text-[13px] font-semibold whitespace-nowrap transition-colors";
 const CHIP_IDLE =
@@ -38,7 +41,7 @@ export function FeedDomainBar({
         aria-pressed={domain == null}
         className={cn(
           CHIP,
-          domain == null ? cn(CHIP_ON, "bg-(--text-primary)") : CHIP_IDLE,
+          domain == null ? cn(CHIP_ON, "bg-relvo") : CHIP_IDLE,
         )}
       >
         Tous
@@ -58,18 +61,9 @@ export function FeedDomainBar({
             type="button"
             onClick={() => onDomain(active ? null : f.slug)}
             aria-pressed={active}
-            className={cn(CHIP, active ? CHIP_ON : CHIP_IDLE)}
-            style={
-              active
-                ? { background: viz.color, borderColor: viz.color }
-                : undefined
-            }
+            className={cn(CHIP, active ? cn(CHIP_ON, "bg-relvo") : CHIP_IDLE)}
           >
-            <Icon
-              className="size-[15px] flex-none"
-              strokeWidth={2.2}
-              style={active ? undefined : { color: viz.color }}
-            />
+            <Icon className="size-[15px] flex-none" strokeWidth={2.2} />
             {f.name}
           </button>
         );

@@ -8,7 +8,9 @@ import { cn } from "@/lib/utils";
 //   • Agenda   → nombre de tâches AUJOURD'HUI
 //   • En retard → nombre de tâches en retard (chiffre rouge dès qu'il est > 0)
 //   • À trier   → nombre de tâches sans date
-// La cellule active se teinte de violet Relvo.
+// La cellule active est violet PLEIN, blanc dessus — le même idiome que les
+// segmented et les chips (un seul vocabulaire de sélection dans l'app). Les
+// chiffres sont en Geist tabulaire : alignés, sans le zéro barré de la mono.
 
 export type TaskTab = "agenda" | "retard" | "afaire";
 
@@ -47,16 +49,20 @@ export function TaskKpiTabs({
             onClick={() => onChange(t.key)}
             className={cn(
               "flex flex-1 flex-col items-center gap-[3px] rounded-[10px] px-1 py-1.5 transition-colors",
-              isActive ? "bg-relvo-bg" : "active:bg-(--surface-2)",
+              isActive
+                ? "bg-relvo shadow-[inset_0_1px_0_rgb(255_255_255/0.2),0_1px_2px_rgb(20_18_40/0.2)]"
+                : "active:bg-(--surface-2)",
             )}
           >
             <span
               className={cn(
-                "flex h-[30px] items-center font-numeric text-[23px] font-bold tracking-[-1px]",
-                lateSignal
-                  ? "text-(--red-600)"
-                  : isActive
-                    ? "text-relvo"
+                "flex h-[30px] items-center text-[22px] font-semibold tracking-[-0.02em] tabular-nums",
+                // Sélectionné : blanc sur violet — le rouge du retard cède, on
+                // regarde déjà la liste ; il reprend dès qu'on change d'onglet.
+                isActive
+                  ? "text-white"
+                  : lateSignal
+                    ? "text-(--red-600)"
                     : "text-(--text-primary)",
               )}
             >
@@ -65,7 +71,7 @@ export function TaskKpiTabs({
             <span
               className={cn(
                 "text-center text-[11.5px] leading-[1.2] font-semibold",
-                isActive ? "text-relvo" : "text-(--text-secondary)",
+                isActive ? "text-white" : "text-(--text-secondary)",
               )}
             >
               {t.label}
