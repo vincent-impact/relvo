@@ -33,7 +33,7 @@ distillé dans le contexte du prochain appel. **M7 produit ; M17 apprend.**
 | M17.4  | Registre des étiquettes par compte, amorcé par les socles de secteur ; attribution à la structuration et à la relecture ; promotion candidate → active ; filtre dans Sujets et Recherche |
 | M17.5  | Précédents par étiquettes, en plus du domaine — étend M7.18 hors du domaine                                                                                                              |
 | M17.6  | Questions de Relvo : entité, encart sur les fiches contact, domaine et sujet, réponse sur place, compteur sur l'Accueil                                                                  |
-| M17.7  | « Dire pourquoi à Relvo » sur un reclassement ou la suppression d'une tâche : instruction du domaine, avec le sujet d'origine                                                            |
+| M17.7  | « Dire pourquoi à Relvo » sur un reclassement, la suppression d'une tâche **ou la réactivation d'un fil que Relvo avait écarté** : une question d'un appui, optionnelle, jamais bloquante (trois ou quatre réponses, un champ libre) ; instruction du domaine ou préférence de tri, avec le sujet ou le fil d'origine |
 | M17.8  | Préférences observées : agrégation déterministe du journal, injectée dans la couche Compte                                                                                               |
 | M17.9  | Ignorance automatique d'un expéditeur après plusieurs accords sur le même motif, réversible depuis la fiche                                                                              |
 | M17.10 | Domaines proposés : suggestion de création dès que plusieurs sujets partagent la proposition, reclassement en un geste ; domaines typiques des secteurs à la prise en main               |
@@ -45,7 +45,10 @@ distillé dans le contexte du prochain appel. **M7 produit ; M17 apprend.**
 ## Découpage proposé, en tranches verticales
 
 1. **« Le bruit s'apprend »** — M17.1, M17.2, M17.3, M17.9. La première semaine d'un compte se
-   joue ici : c'est ce qui empêche Relvo d'être jugé sur ses newsletters.
+   joue ici : c'est ce qui empêche Relvo d'être jugé sur ses newsletters. La contradiction
+   inverse compte autant que l'accord : réactiver un fil que Relvo avait écarté est déjà
+   journalisé avec sa décision d'origine (M7) ; cette tranche le fait peser — cas d'évaluation,
+   part d'aide, antécédent de l'expéditeur — et M17.7 y greffe le « pourquoi » optionnel.
 2. **« Relvo se souvient »** — M17.4, M17.5, M17.11. Les étiquettes et les précédents hors du
    domaine ; la fiche contact comme mémoire des relations.
 3. **« Relvo demande et retient »** — M17.6, M17.7, M17.8, M17.10. Les questions, les
