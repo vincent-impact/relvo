@@ -28,6 +28,8 @@ export const draftReplySchema = z.object({
   channel: z.string().trim().max(40).optional(),
   content: z.string(),
   title: z.string().trim().max(300).optional(),
+  /** La conversation dans laquelle le brouillon se répond (M7.7). */
+  conversationId: z.uuid().optional().nullable(),
 });
 
 export type CreateActionInput = z.infer<typeof createActionSchema>;
@@ -94,6 +96,7 @@ export async function createDraftReply(db: TenantDb, input: DraftReplyInput) {
           to: data.to,
           channel: data.channel ?? null,
           content: data.content,
+          conversationId: data.conversationId ?? null,
         } as Prisma.InputJsonValue,
       } as Prisma.ActionUncheckedCreateInput,
     });

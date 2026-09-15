@@ -13,7 +13,7 @@ sujet, aucune sur un message informatif — pour 0,60 € les mille sujets. Comm
 structuration ne tourne que pour les comptes où l'**assistant est activé** (Réglages ›
 Préférences), coupé partout pour l'instant. **La prochaine étape est double** : (1) activer
 l'assistant sur le compte du dirigeant et relire les premières structurations réelles — situation,
-tâches, `cache_read` — dans le journal ; (2) la tranche 7 **avancée avant la 6** à la demande du dirigeant : le bouton « Répondre » sur une tâche de réponse, le brouillon rédigé à l'appui, la tâche cochée à l'envoi — c'est le passage à l'action ; puis la tranche 6, la relecture. Les deux décisions par
+tâches, `cache_read` — dans le journal ; (2) la tranche 6, la relecture — la tranche 7 (bouton « Répondre », brouillon à l'appui, tâche cochée à l'envoi) a été livrée avant elle, à la demande du dirigeant : c'est le passage à l'action. Les deux décisions par
 défaut de la tranche 4 (frontière de confiance à « moyenne », « incertain » traité comme une
 confiance basse) restent à confirmer sur le journal réel.
 
@@ -332,12 +332,25 @@ reste nul dans sa fiche ; le sujet rattaché par le tri attend la relecture (tra
 
 ## Tranche 7 — Le brouillon (M7.7, M7.10)
 
-**« Le sujet arrive avec un brouillon prêt. »**
+**« Le sujet arrive avec un brouillon prêt. »** **Livrée le 2026-09-15**, avancée avant la
+tranche 6 à la demande du dirigeant : c'est le passage à l'action. Domaine
+`packages/db/src/domain/{brouillon,reply-match}.ts` (testés contre la base), pipeline
+`apps/web/src/server/ia/pipeline/brouillon.ts`, action serveur `actions/brouillon.ts`.
 
-- [ ] Brouillon préparé **à la première ouverture de la zone de rédaction**, pas à la création de
-      la tâche ; régénération sur demande ; jamais envoyé seul.
-- [ ] Complétion d'une tâche de réponse à l'envoi, **déterministe** (M7.10), sans appel.
-- [ ] Brouillon suggéré et message envoyé conservés côte à côte dans le journal.
+- [x] **Bouton « Répondre »** sur une tâche qui se règle par un message (réponse, décision),
+      dans la fiche du sujet comme sur l'Accueil : ouvre le fil de la tâche — celui de son
+      message d'origine, sinon celui que le sujet écoute — avec la zone de rédaction.
+- [x] Brouillon rédigé **à l'appui**, jamais à la création de la tâche ; brouillon ouvert
+      repris ; régénération et effacement dans la barre du composer ; jamais envoyé seul.
+      Une décision non prise laisse le choix entre crochets.
+- [x] Complétion d'une tâche de réponse à l'envoi, **déterministe** (M7.10), dans la
+      transaction de `createMessage` : la tâche du brouillon et les tâches de réponse ouvertes
+      cochées par correspondance, le brouillon exécuté, « En attente » posé s'il ne reste rien
+      et levé au message entrant suivant (04 §9).
+- [x] Brouillon suggéré et message envoyé côte à côte dans le journal : l'Action porte le
+      brouillon, le message sortant y est rattaché à l'envoi.
+- [x] Banc d'essai (`pnpm --filter web eval:brouillon`, `benchmark-iag.md` §6.8) : 0,30 € les
+      mille brouillons, 4 s, texte court dans le ton du fil.
 
 ## Tranche 8 — Durcissement (M7.12, M7.13, M7.15, M7.16)
 
@@ -377,6 +390,6 @@ réclament.
 - [x] Tranche 4 — livrée le 2026-09-14 ; l'assistant s'active compte par compte, dans Préférences
 - [x] Tranche 5 — livrée le 2026-09-15 ; banc d'essai en `benchmark-iag.md` §6.7
 - [ ] Tranche 6
-- [ ] Tranche 7
+- [x] Tranche 7 — livrée le 2026-09-15, avant la 6 ; banc d'essai en `benchmark-iag.md` §6.8
 - [ ] Tranche 8
 - [ ] Tranche 9

@@ -24,6 +24,8 @@ export type TaskItemData = {
   folderSlug?: string | null;
   /** Pourquoi Relvo propose cette tâche, et d'après quoi (M7.20) — null pour une tâche de l'utilisateur ou sans raison. */
   relvo?: RelvoTaskInfo | null;
+  /** Le fil dans lequel la tâche se répond d'un appui (M7.7) — ouvre le composer avec le brouillon de Relvo. */
+  replyConversationId?: string | null;
 };
 
 export type RelvoTaskInfo = {
@@ -73,5 +75,6 @@ export function toTaskItemData(e: EnrichedTask): TaskItemData {
     contactName: e.contactName,
     folderSlug: e.folderSlug,
     relvo: relvoTaskInfo(e.task.metadata),
+    replyConversationId: e.replyConversationId,
   };
 }

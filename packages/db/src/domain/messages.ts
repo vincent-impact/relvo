@@ -38,6 +38,7 @@ import {
   attachConversationToSubject,
   sweepConversationIntoSubject,
 } from "./subject-conversations";
+import { applyIncomingMatch, applyOutgoingMatch } from "./reply-match";
 import { createSubject, getSubject, reopenSubject } from "./subjects";
 
 // Domaine Messages (M3.8). Un message reste « Sans sujet » tant que subject_id
@@ -277,6 +278,19 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
       title: incoming ? "Message reçu" : "Message envoyé",
       actor: incoming ? "contact" : "user",
     });
+    // Correspondance à l'envoi (M7.10) et marqueur « En attente » (04 §9),
+    // dans la même transaction : un sortant coche les tâches de réponse et
+    // clôt les brouillons ; un entrant lève l'attente. Sans appel au modèle.
+    if (message.subjectId) {
+      if (incoming) {
+        await applyIncomingMatch(tx as Tx, { subjectId: message.subjectId });
+      } else {
+        await applyOutgoingMatch(tx as Tx, {
+          subjectId: message.subjectId,
+          messageId: message.id,
+        });
+      }
+    }
     return message;
   });
 

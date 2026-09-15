@@ -129,12 +129,16 @@ export type PrecedentProjection = {
   clos: ClosedSubjectProjection | null;
 };
 
-export type StructurationProjection = {
+/** La FICHE d'un sujet, telle que les sollicitations la relisent : compte, domaine, sujet, contact. */
+export type SubjectSheetProjection = {
   compte: TriageAccountProjection;
   domaine: StructurationDomainProjection | null;
   sujet: StructurationSubjectProjection;
   /** Le premier contact du sujet — celui que le sujet a créé ou reconnu —, sinon null. */
   contact: StructurationContactProjection | null;
+};
+
+export type StructurationProjection = SubjectSheetProjection & {
   precedents: PrecedentProjection[];
 };
 
@@ -335,14 +339,35 @@ export async function findPrecedents(
 
 /**
  * Charge tout ce que le profil « structuration » du contexte consomme, depuis
- * la base : le compte avec ses instructions générales et son registre
- * d'étiquettes, le domaine du sujet avec ses instructions et documents lus,
- * la fiche du sujet, la fiche de son contact, les précédents.
+ * la base : la fiche du sujet (`loadSubjectSheet`) et ses précédents.
  */
 export async function getStructurationProjection(
   db: TenantDb,
   subjectId: string,
 ): Promise<StructurationProjection> {
+  const sheet = await loadSubjectSheet(db, subjectId);
+  const precedents = await findPrecedents(db, {
+    accountId: sheet.accountId,
+    subjectId: sheet.sujet.id,
+    folderId: sheet.sujet.folderId,
+    labels: sheet.sujet.etiquettes,
+    titre: sheet.sujet.titre,
+  });
+  return { ...sheet, precedents };
+}
+
+/**
+ * La fiche d'un sujet, depuis la base : le compte avec ses instructions
+ * générales et son registre d'étiquettes, le domaine du sujet avec ses
+ * instructions et documents lus, la fiche du sujet avec ses derniers messages,
+ * la fiche de son contact. Partagée par la structuration et le brouillon ;
+ * la relecture la reprendra.
+ */
+export async function loadSubjectSheet(
+  db: TenantDb,
+  subjectId: string,
+  options: { messages?: number } = {},
+): Promise<SubjectSheetProjection & { accountId: string }> {
   const subject = assertFound(
     await db.subject.findFirst({
       where: { id: subjectId },
@@ -431,7 +456,7 @@ export async function getStructurationProjection(
       db.message.findMany({
         where: { subjectId },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        take: STRUCTURATION_LAST_MESSAGES,
+        take: options.messages ?? STRUCTURATION_LAST_MESSAGES,
         include: {
           senderContact: {
             select: { firstName: true, lastName: true, company: true },
@@ -455,14 +480,6 @@ export async function getStructurationProjection(
         contact: premier,
       })
     : null;
-
-  const precedents = await findPrecedents(db, {
-    accountId: subject.accountId,
-    subjectId: subject.id,
-    folderId: subject.folderId,
-    labels: subject.labels,
-    titre: subject.title,
-  });
 
   const instructionsGenerales = knowledge
     .filter((k) => k.folder.isDefault && k.kind === KnowledgeKind.note)
@@ -495,6 +512,7 @@ export async function getStructurationProjection(
   });
 
   return {
+    accountId: subject.accountId,
     compte: {
       dirigeant: `${account.firstName} ${account.lastName}`.trim(),
       entreprise: null,
@@ -577,7 +595,6 @@ export async function getStructurationProjection(
             antecedentsTri: profil.antecedentsTri,
           }
         : null,
-    precedents,
   };
 }
 

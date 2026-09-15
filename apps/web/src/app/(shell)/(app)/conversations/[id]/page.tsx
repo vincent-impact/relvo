@@ -21,10 +21,10 @@ export default async function ConversationDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ filtre?: string; from?: string }>;
+  searchParams: Promise<{ filtre?: string; from?: string; repondre?: string }>;
 }) {
   const { id } = await params;
-  const { filtre, from } = await searchParams;
+  const { filtre, from, repondre } = await searchParams;
 
   const db = await getTenantDb();
   const thread = await getConversationThread(db, id).catch(() => null);
@@ -76,6 +76,9 @@ export default async function ConversationDetailPage({
         relvo={toRelvoVerdictData(thread.triage)}
         ignore={toIgnoreData(thread.ignore, thread.triage)}
         backTo={backTo}
+        // « Répondre » depuis une tâche (M7.7) : le composer s'ouvre avec le
+        // brouillon de Relvo en rédaction pour cette tâche.
+        draftTaskId={repondre ?? null}
         folders={folders}
         subjects={subjectRows.map((s) => ({
           id: s.id,

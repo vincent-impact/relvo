@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check } from "lucide-react";
+import { Check, Reply } from "lucide-react";
 import { toast } from "sonner";
 import { type TaskItemData } from "@/lib/task-item-data";
 import { TaskModal } from "@/components/subject/task-modal";
@@ -19,7 +19,8 @@ import { cn } from "@/lib/utils";
 //   meta="time"  → heure (ou « — »)            (ex. agenda « Aujourd'hui »)
 //   meta="date"  → date + heure                (ex. « En retard », liste d'un sujet)
 // Cocher = terminer / décocher = remettre « à faire » (état fait : barré + gris).
-// Tap sur la ligne = modale d'édition.
+// Tap sur la ligne = modale d'édition. « Répondre » (M7.7) sur une tâche qui se
+// règle par un message : ouvre le fil avec le brouillon de Relvo en rédaction.
 
 export type { TaskItemData };
 
@@ -79,6 +80,12 @@ export function TaskItem({
   const subjectHref =
     task.subjectId && task.subjectTitle
       ? `/sujets/${task.subjectId}?from=${encodeURIComponent(pathname)}`
+      : null;
+
+  // Répondre d'un appui : le fil de la tâche, avec le brouillon de Relvo.
+  const replyHref =
+    task.replyConversationId && !done
+      ? `/conversations/${task.replyConversationId}?repondre=${task.id}&from=${encodeURIComponent(pathname)}`
       : null;
 
   const dateLine = meta === "date" ? dateShortLabel(task.startDate) : null;
@@ -163,6 +170,16 @@ export function TaskItem({
               {task.subjectTitle && task.contactName ? " · " : ""}
               {task.contactName}
             </p>
+          ) : null}
+          {replyHref ? (
+            <Link
+              href={replyHref}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-relvo-bg px-2.5 py-1 text-[12.5px] font-bold text-relvo active:opacity-80"
+            >
+              <Reply className="size-[14px]" strokeWidth={2.4} />
+              Répondre
+            </Link>
           ) : null}
         </div>
 

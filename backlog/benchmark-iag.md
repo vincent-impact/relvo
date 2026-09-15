@@ -366,6 +366,16 @@ Sollicitation mesurée : la **structuration** (`05 §1.6`, §2), le second appel
 
 **Décision** (`ecarts-et-propositions.md`, « La structuration retient moins qu'elle ne propose ») : Luna sur la structuration, effort `low`. À confirmer sur le jeu réel.
 
+### 6.8 Premier passage du brouillon — 15/09/2026, jeu de DÉMONSTRATION
+
+Six brouillons rédigés sur les cas « à traiter » de la démonstration qui attendent une réponse ou une décision — fiche du sujet, tâche, fil, aucun contact ni instruction. Reproductible : `pnpm --filter web eval:brouillon --jeu demo`.
+
+| Configuration      | Longueur moy. | €/1 000 brouillons | Latence moy. | Entrée moy. (dont cache) | Sortie moy. (dont raisonnement) |
+| ------------------ | ------------- | ------------------ | ------------ | ------------------------ | ------------------------------- |
+| Luna, effort `low` | 150 car.      | **0,30**           | 3,9 s        | 2 400 (1 630)            | 137 (98)                        |
+
+**Ce que le passage a appris.** Les brouillons sont courts, dans le ton du fil (tutoiement repris quand le contact tutoie), et posent une question quand une information manque plutôt que d'inventer. Un cas de **décision non prise** (reconduire ou résilier un contrat) a produit un refus de rédiger : la consigne demande désormais de poser le cadre et de laisser le choix entre crochets. Le raisonnement pèse la majorité de la sortie (98 jetons sur 137) : `none` est à essayer sur le jeu réel. Coût par appui deux fois inférieur à la structuration, et payé seulement quand l'utilisateur ouvre la réponse.
+
 ---
 
 ## 7. Disjoncteur de consommation

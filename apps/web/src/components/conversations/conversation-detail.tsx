@@ -26,6 +26,10 @@ import {
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
+import {
+  clearDraftAction,
+  prepareDraftAction,
+} from "@/server/actions/brouillon";
 import { createSubjectFromConversationAction } from "@/server/actions/conversations";
 import { createSubjectFromMessageAction } from "@/server/actions/messages";
 import { sendEmailReplyAction } from "@/server/actions/email";
@@ -104,6 +108,7 @@ export function ConversationDetail({
   subjects,
   relvo,
   ignore,
+  draftTaskId = null,
 }: {
   conversationId: string;
   title: string;
@@ -128,6 +133,8 @@ export function ConversationDetail({
   relvo: RelvoVerdictData | null;
   /** Raison et auteur de l'ignorance, si le fil est en sourdine. */
   ignore: IgnoreData | null;
+  /** « Répondre » depuis une tâche (M7.7) : Relvo rédige le brouillon pour cette tâche à l'ouverture. */
+  draftTaskId?: string | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -170,6 +177,53 @@ export function ConversationDetail({
   // Nouveau) s'efface. Détacher/arrêter l'écoute vit dans « Suivi dans ».
   const activeListening = listenings.find((l) => l.active) ?? null;
   const attached = activeListening != null;
+
+  // Brouillon de Relvo (M7.7) — rédigé à l'ouverture quand on arrive d'une
+  // tâche, réutilisé s'il existe déjà, régénérable, effaçable. Jamais envoyé
+  // seul : il se pose dans le composer, l'envoi reste le geste de l'utilisateur.
+  const [draft, setDraft] = useState<{
+    loading: boolean;
+    text: string | null;
+    actionId: string | null;
+  }>({ loading: Boolean(draftTaskId && attached), text: null, actionId: null });
+  const draftRequested = useRef(false);
+  useEffect(() => {
+    if (!draftTaskId || !attached || draftRequested.current) return;
+    draftRequested.current = true;
+    void prepareDraftAction(draftTaskId).then((res) => {
+      if (res.ok) {
+        setDraft({
+          loading: false,
+          text: res.data.contenu,
+          actionId: res.data.actionId,
+        });
+      } else {
+        setDraft({ loading: false, text: null, actionId: null });
+        toast.error(res.message);
+      }
+    });
+  }, [draftTaskId, attached]);
+  function regenerateDraft() {
+    if (!draftTaskId) return;
+    setDraft((d) => ({ ...d, loading: true }));
+    void prepareDraftAction(draftTaskId, { regenerer: true }).then((res) => {
+      if (res.ok) {
+        setDraft({
+          loading: false,
+          text: res.data.contenu,
+          actionId: res.data.actionId,
+        });
+      } else {
+        setDraft((d) => ({ ...d, loading: false }));
+        toast.error(res.message);
+      }
+    });
+  }
+  function clearDraft() {
+    const id = draft.actionId;
+    setDraft({ loading: false, text: null, actionId: null });
+    if (id) void clearDraftAction(id);
+  }
   const composerPlaceholder = isGroup
     ? "Répondre au groupe…"
     : participants[0]?.name
@@ -537,6 +591,16 @@ export function ConversationDetail({
           <RecipientComposer
             placeholder={composerPlaceholder}
             onSend={handleSend}
+            draft={
+              draftTaskId
+                ? {
+                    loading: draft.loading,
+                    text: draft.text,
+                    onRegenerate: regenerateDraft,
+                    onClear: clearDraft,
+                  }
+                : null
+            }
           />
         </div>
       ) : inSelection ? (

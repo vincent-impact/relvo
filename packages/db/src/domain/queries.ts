@@ -9,6 +9,7 @@ import {
 import { Actor, SubjectStatus } from "../generated/prisma/enums";
 import type { TenantDb } from "../tenant";
 import { contactDisplayName } from "./contacts";
+import { resolveReplyTargets } from "./brouillon";
 import { countUnsortedConversations } from "./conversations";
 import { cursorArgs, paginationSchema, toPage } from "./pagination";
 
@@ -239,6 +240,8 @@ export type EnrichedTask = {
   contactName: string | null;
   /** Tâche datée dont l'échéance est passée (granularité jour). */
   overdue: boolean;
+  /** Le fil dans lequel la tâche se répond d'un appui (M7.7), ou null. */
+  replyConversationId: string | null;
 };
 
 export async function enrichTasks(
@@ -273,6 +276,7 @@ export async function enrichTasks(
       })
     : [];
   const nameById = new Map(contacts.map((c) => [c.id, contactDisplayName(c)]));
+  const replyTargets = await resolveReplyTargets(db, tasks);
 
   return tasks.map((task) => {
     const s = task.subjectId ? subById.get(task.subjectId) : undefined;
@@ -288,6 +292,7 @@ export async function enrichTasks(
         ? (nameById.get(firstContactId) ?? null)
         : null,
       overdue: task.startDate != null && task.startDate < start,
+      replyConversationId: replyTargets.get(task.id) ?? null,
     };
   });
 }

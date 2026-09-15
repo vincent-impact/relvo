@@ -390,6 +390,34 @@ cumulées — la fiche passée au modèle le présentait comme connu, et l'hygi�
 retiré la signature, là où sont le nom et l'entreprise. La fiche dit désormais qu'elle est
 automatique, et porte la signature du dernier message, extraite avant l'hygiène.
 
+### « Répondre » sur une tâche : le brouillon se rédige à l'appui, l'envoi coche la tâche
+
+**`tranché`** · Le dirigeant a demandé que les tâches qui appellent une réponse proposent une
+action directe : un appui qui mène à la conversation avec le brouillon déjà rédigé. C'est M7.7
+et M7.10 reliés à un geste, et la tranche 7 est passée avant la 6 pour cela.
+
+**Retenu** :
+
+- **Une tâche « se répond »** quand elle s'accomplit par un message au contact — réponse ou
+  décision à communiquer — et qu'un fil sait la porter : celui du message qui l'a fait naître,
+  sinon celui que le sujet écoute. Elle porte alors un bouton « Répondre », qui ouvre ce fil,
+  seule surface de réponse, avec la zone de rédaction.
+- **Le brouillon se rédige à l'appui**, pas à la création de la tâche : on ne paie que ce qu'on
+  ouvre. Un brouillon ouvert est repris ; « régénérer » l'annule et en rédige un autre ;
+  « effacer » l'annule. Il se pose dans le champ, étiqueté comme une suggestion modifiable,
+  et n'est jamais envoyé seul.
+- **Une décision non prise ne bloque pas** : le brouillon pose le cadre et laisse le choix
+  entre crochets. Relvo ne décide jamais à la place du dirigeant.
+- **L'envoi règle les tâches, sans appel** : dans la transaction du message sortant, la tâche
+  dont le brouillon est parti est cochée quel que soit son type, et toute tâche de réponse
+  ouverte du sujet l'est aussi ; le brouillon passe « exécuté » ; « En attente » se pose s'il
+  ne reste aucune tâche, et se lève au message entrant suivant. C'est le seul endroit où ces
+  règles vivent, pour tous les points d'entrée.
+
+**Écarté** : un brouillon préparé à la structuration, d'avance, pour toutes les tâches de
+réponse — la majorité ne serait jamais ouverte ; et une complétion des tâches de décision sur
+n'importe quel envoi — seul le message parti de leur brouillon les règle.
+
 ### La structuration retient moins qu'elle ne propose
 
 **`tranché`** · Le second appel — situation, résumé, tâches, contact — écrit en base sans revue

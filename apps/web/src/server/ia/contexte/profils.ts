@@ -217,7 +217,11 @@ export function contexteBrouillon(args: {
         .filter(Boolean)
         .join("\n\n"),
     },
-    `# Ton brouillon\nRédige la réponse qui accomplit la tâche « ${args.tache.titre} », au nom du dirigeant, dans le ton des échanges précédents, sans rien inventer. Texte seul, prêt à envoyer, sans objet ni signature.`,
+    [
+      `# Ton brouillon`,
+      `Rédige la réponse qui accomplit la tâche « ${args.tache.titre} », au nom du dirigeant, dans le ton des échanges précédents, sans rien inventer. Texte seul, prêt à envoyer, sans objet ni signature.`,
+      `Si la tâche suppose une décision que le dirigeant n'a pas encore prise, tu rédiges quand même : la réponse pose le cadre et laisse le choix entre crochets, par exemple « nous retenons le modèle [8 m³ / 12 m³] ». Tu ne refuses jamais de rédiger, et tu ne décides jamais à sa place.`,
+    ].join("\n"),
   );
 }
 

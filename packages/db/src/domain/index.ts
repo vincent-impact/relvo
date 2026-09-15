@@ -27,4 +27,6 @@ export * from "./actions";
 export * from "./queries";
 export * from "./triage";
 export * from "./structuration";
+export * from "./brouillon";
+export * from "./reply-match";
 export * from "./accounts";
