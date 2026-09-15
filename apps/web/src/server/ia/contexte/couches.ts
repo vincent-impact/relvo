@@ -123,12 +123,21 @@ export function blocExpediteur(e: ExpediteurContexte): string[] {
   return [`## L'expéditeur`, identite, ...passe, ``];
 }
 
-/** Couche Compte, profil du TRI : identité, domaines, sujets ouverts, préférences. Pas d'instructions : le domaine n'est pas connu. */
-export function coucheCompteTri(compte: CompteContexte): string {
+/**
+ * Couche Compte, profil du TRI : identité, domaines, sujets ouverts,
+ * préférences. Pas d'instructions : le domaine n'est pas connu. Les sujets
+ * ouverts ne servent qu'au tri (reconnaître une affaire déjà suivie, 05 §1.2) ;
+ * le profil complet les omet.
+ */
+export function coucheCompteTri(
+  compte: CompteContexte,
+  options: { sujetsOuverts?: boolean } = {},
+): string {
   const domaines = trierParNom(compte.domaines)
     .filter((d) => d.nom !== "Général")
     .map((d) => `- ${d.nom}${d.description ? ` — ${d.description}` : ""}`);
   const sujets = trierParReference(compte.sujetsOuverts).map(ligneSujet);
+  const avecSujets = options.sujetsOuverts ?? true;
   return [
     `# Le compte`,
     ...enteteCompte(compte),
@@ -145,12 +154,16 @@ export function coucheCompteTri(compte: CompteContexte): string {
       ? `Le champ « domaine » de ta sortie doit être l'un de ces noms, EXACTEMENT, ou null.`
       : `Ce compte n'a encore aucun domaine : laisse « domaine » à null et propose un nom.`,
     ...domaines,
-    ``,
-    `## Sujets ouverts`,
-    sujets.length
-      ? `Si le fil prolonge l'un d'eux, renvoie sa référence dans « sujet_existant ».`
-      : `Aucun sujet ouvert.`,
-    ...sujets,
+    ...(avecSujets
+      ? [
+          ``,
+          `## Sujets ouverts`,
+          sujets.length
+            ? `Si le fil prolonge l'un d'eux, renvoie sa référence dans « sujet_existant ».`
+            : `Aucun sujet ouvert.`,
+          ...sujets,
+        ]
+      : []),
   ].join("\n");
 }
 
@@ -163,7 +176,7 @@ export function coucheCompteComplete(compte: CompteContexte): string {
     a.localeCompare(b, "fr"),
   );
   return [
-    coucheCompteTri(compte),
+    coucheCompteTri(compte, { sujetsOuverts: false }),
     ``,
     `## Instructions générales`,
     instructions.length ? instructions.join("\n\n") : `Aucune.`,

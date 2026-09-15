@@ -2,21 +2,20 @@
 
 ## Démarrage à froid — à lire en premier
 
-**Où on en est (2026-09-14, soir)** : les tranches 0 à 4 sont livrées et commitées. La tranche 4
-met **le tri en production** : le webhook e-mail déclenche, après sa réponse HTTP, un pipeline
-qui filtre le bruit sans appel, appelle le tri sur une conversation orpheline, écrit le verdict
-sur la conversation, puis ouvre ou rattache par les primitives du domaine — journal à chaque
-sous-action et à chaque sollicitation, coût en euros compris. Il ne tourne que pour les comptes
-où l'**assistant est activé** — réglage « Assistant Relvo » dans Réglages › Préférences, coupé
-par défaut, **coupé partout pour l'instant** : rien ne part en production sans un geste
-explicite, et ce geste passe par la méthode du domaine (`setAssistantEnabled`), jamais par la
-base. **La prochaine étape est double** : (1) le dirigeant active l'assistant sur son compte,
-depuis l'application, puis on relit les premiers verdicts et le `cache_read` dans le journal ;
-(2) la tranche 5, la structuration. Deux décisions ont été posées **par défaut**, faute de
-chiffres discriminants sur la démonstration (22 verdicts sur 22 en confiance haute) : frontière
-de confiance à « moyenne », « incertain » traité comme une confiance basse —
-`ecarts-et-propositions.md`, « Frontière de confiance et verdict incertain ». Elles se
-confirment sur le journal réel, pas sur un compte de test.
+**Où on en est (2026-09-15, après-midi)** : les tranches 0 à 5 sont livrées et commitées. La
+tranche 5 met **la structuration en production** : quand le tri ouvre un sujet, un second appel
+charge tout — le domaine et ses connaissances lues, la fiche du sujet, celle du contact, les
+précédents du domaine classés par recherche plein texte — et écrit la situation structurée, le
+résumé, les tâches avec leur raison et leur provenance, complète le contact automatique. La fiche
+du sujet montre « ce que Relvo a compris » ; la modale d'une tâche de Relvo dit pourquoi et
+d'après quoi. Le banc d'essai (`benchmark-iag.md` §6.7) montre un Relvo sobre — une tâche par
+sujet, aucune sur un message informatif — pour 0,60 € les mille sujets. Comme le tri, la
+structuration ne tourne que pour les comptes où l'**assistant est activé** (Réglages ›
+Préférences), coupé partout pour l'instant. **La prochaine étape est double** : (1) activer
+l'assistant sur le compte du dirigeant et relire les premières structurations réelles — situation,
+tâches, `cache_read` — dans le journal ; (2) la tranche 6, la relecture. Les deux décisions par
+défaut de la tranche 4 (frontière de confiance à « moyenne », « incertain » traité comme une
+confiance basse) restent à confirmer sur le journal réel.
 
 **Tout le socle fonctionne, sauf le cœur.** Ce sprint ouvre M7 : le pipeline qui transforme un
 message entrant en sujet. La conception est à jour et fait foi : les cinq couches de contexte et
@@ -265,18 +264,48 @@ restent vides tant que M17 ne les calcule pas.
 ## Tranche 5 — La structuration (M7.6, M7.18, M7.20)
 
 **« Le sujet arrive avec ses tâches et sa date. »** Second appel, uniquement quand un sujet
-vient d'être ouvert.
+vient d'être ouvert par le tri. **Livrée le 2026-09-15.** Même partage que la tranche 4 : ce qui
+lit et écrit la base vit dans le domaine (`packages/db/src/domain/structuration.ts`, testé
+contre la base) ; le pipeline — retenue de la proposition, orchestration — vit dans
+l'application (`apps/web/src/server/ia/pipeline/{proposition,structuration}.ts`), et sa partie
+pure est testée sans base.
 
-- [ ] Couche Domaine chargée : instructions et documents du domaine. ⚠️ Sans M11.4, la couche
-      est vide et la tranche fonctionne quand même ; avec, elle devient utile. Livrer M11.4 en
-      parallèle si possible.
-- [ ] Situation structurée, tâches déductibles avec type, date et **raison**, contact automatique
-      avec rôle, domaine proposé quand aucun ne convient.
-- [ ] **Précédents par domaine** : titres des sujets validés, fiches de clôture des plus proches
-      par recherche plein texte, provenance en métadonnée de chaque tâche (M7.18).
-- [ ] Raison et provenance affichées d'un appui sur la pastille Relvo (M7.20).
-- [ ] Aucune tâche artificielle : le banc d'essai doit montrer des sujets **sans tâche** quand le
-      message est informatif.
+- [x] Couche Domaine chargée : instructions et documents **lus** du domaine du sujet, plus les
+      instructions de « Général » et le registre d'étiquettes dans la couche Compte. M11.4 étant
+      déjà livré (rédaction des instructions dans la fiche d'un domaine), la couche est utile dès
+      la première instruction écrite. La couche Compte du profil complet ne liste plus les sujets
+      ouverts : ils ne servent qu'au tri.
+- [x] Situation structurée en quatre champs et résumé écrits sur le sujet ; tâches déductibles
+      avec type, date conforme à la sémantique asymétrique (`02`, Task) et **raison** en
+      métadonnée ; contact automatique complété (identité, entreprise, **rôle**) — un contact
+      vérifié ne reçoit que le rôle, s'il est vide ; domaine proposé quand le sujet n'en a ni un,
+      ni une proposition du tri. Tout passe par `createTask` et par un journal
+      `subject_structured` qui porte la proposition intégrale.
+- [x] **Précédents par domaine** (M7.18) : titres des sujets validés du même domaine (ou
+      partageant une étiquette), fiches de clôture des trois plus proches par recherche plein
+      texte sur `search_vector` (requête brute, filtre tenant posé à la main) — tâches réalisées
+      dans l'ordre, tâches de Relvo écartées relues depuis le journal, que `deleteTask` conserve
+      désormais telles que proposées. La provenance d'une tâche est **résolue** contre ce que le
+      modèle a lu (référence d'un précédent, titre d'une instruction ou d'un document) ; une
+      référence inconnue n'est jamais reconnue.
+- [x] Raison et provenance affichées d'un appui (M7.20) : la modale d'une tâche de Relvo dit
+      « pourquoi » et « d'après quoi » sous la pastille Relvo ; la fiche du sujet ouvre sur « ce
+      que Relvo a compris » — situation en quatre lignes et résumé — dès que le sujet a été
+      structuré.
+- [x] Aucune tâche artificielle : le banc d'essai (`pnpm --filter web eval:structuration`)
+      montre les deux messages informatifs de la démonstration **sans tâche**, et une tâche par
+      sujet en moyenne là où la démonstration en attendait deux — l'écart est du savoir métier
+      que Relvo n'a pas le droit d'inventer (`benchmark-iag.md` §6.7). La consigne a été
+      resserrée sur les dates (dans les champs, jamais dans le titre) et les demandes explicites.
+- [ ] Relire les premières structurations réelles dans le journal : situation, tâches gardées ou
+      supprimées, `cache_read`.
+
+**Ce que la tranche laisse volontairement de côté** : l'étiquette nouvelle et les questions de
+Relvo sont **conservées dans le journal** (proposition intégrale) mais pas matérialisées — le
+registre, sa promotion et l'encart des questions sont M17.4 et M17.6 ; un sujet ouvert **par
+l'utilisateur** (glissement sur une conversation) n'est pas structuré — décision dans `ecarts`
+(« La structuration retient moins qu'elle ne propose ») ; le délai de réponse constaté du contact
+reste nul dans sa fiche ; le sujet rattaché par le tri attend la relecture (tranche 6).
 
 ## Tranche 6 — La relecture (M7.9, M7.11, M12.5)
 
@@ -335,7 +364,7 @@ réclament.
 - [x] Tranche 2 — livrée le 2026-09-14
 - [x] Tranche 3 — livrée le 2026-09-14
 - [x] Tranche 4 — livrée le 2026-09-14 ; l'assistant s'active compte par compte, dans Préférences
-- [ ] Tranche 5
+- [x] Tranche 5 — livrée le 2026-09-15 ; banc d'essai en `benchmark-iag.md` §6.7
 - [ ] Tranche 6
 - [ ] Tranche 7
 - [ ] Tranche 8

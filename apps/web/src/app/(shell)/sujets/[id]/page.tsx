@@ -19,6 +19,7 @@ import { SubjectTitleInline } from "@/components/subject/subject-title-inline";
 import { TaskItem } from "@/components/subject/task-item";
 import { toConversationRowData } from "@/lib/conversation-row";
 import { contactFullName, formatRelative } from "@/lib/display";
+import { relvoTaskInfo } from "@/lib/task-item-data";
 import { getTenantDb } from "@/server/auth-context";
 import { ListPanel } from "@/components/shared/list-panel";
 
@@ -126,6 +127,26 @@ export default async function SujetPage({
             folderId={subject.folderId}
             priority={subject.priority}
             events={events}
+            // Ce que Relvo a compris du sujet (M7.6) : résumé et situation
+            // structurée, préformatés — la fiche ne relit pas l'historique.
+            relvo={
+              subject.situationUpdatedAt
+                ? {
+                    summary: subject.summary,
+                    where: subject.situationWhere,
+                    nextStep: subject.situationNextStep,
+                    waitingFor: subject.situationWaitingFor,
+                    deadline: subject.situationDeadline
+                      ? subject.situationDeadline.toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "long",
+                          timeZone: "UTC",
+                        })
+                      : null,
+                    updatedAt: formatRelative(subject.situationUpdatedAt) ?? "",
+                  }
+                : null
+            }
           />
         }
         conversationsPane={
@@ -206,6 +227,7 @@ export default async function SujetPage({
                       folderSlug:
                         folders.find((f) => f.id === subject.folderId)?.slug ??
                         null,
+                      relvo: relvoTaskInfo(t.metadata),
                     }}
                   />
                 ))}

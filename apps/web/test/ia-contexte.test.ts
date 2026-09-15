@@ -271,6 +271,15 @@ describe("profils et budgets", () => {
     });
   }
 
+  it("la structuration charge les instructions et le registre, mais pas la liste des sujets ouverts", () => {
+    const c = contextes.structuration.couches.compte;
+    expect(c).toContain("## Instructions générales");
+    expect(c).toContain("## Étiquettes du compte");
+    expect(c).not.toContain("## Sujets ouverts");
+    expect(c).not.toContain("sujet_existant");
+    expect(contextes.tri.couches.compte).toContain("## Sujets ouverts");
+  });
+
   it("le tri n'a pas de couche Domaine et exclut « Général »", () => {
     expect(contextes.tri.couches.domaine).toBe("");
     expect(contextes.tri.prompt).not.toContain("Général");

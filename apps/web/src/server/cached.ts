@@ -51,9 +51,10 @@ export const TENANT_DATA_TAG = "tenant-data";
 // (+ subjectId) + agenda servi en tâches (cachedAgendaTasks) ; v8 = TaskItemData
 // (+ folderSlug, rail de couleur par domaine) ; v9 = SubjectStatus à 3 valeurs
 // (open/validated/closed) → CachedFeed { ouverts, valides, fermes } ; v10 =
-// SubjectRowData (+ folderColor/folderIcon → icône de domaine fidèle au logo).
-// Suivant = "v11".
-const CACHE_V = "v10";
+// SubjectRowData (+ folderColor/folderIcon → icône de domaine fidèle au logo) ;
+// v11 = TaskItemData (+ relvo : raison et provenance d'une tâche de Relvo).
+// Suivant = "v12".
+const CACHE_V = "v11";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 

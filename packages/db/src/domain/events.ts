@@ -77,6 +77,10 @@ export const EVENT_TYPES = {
   triageVerdict: "triage_verdict",
   /** Le tri a échoué : la conversation reste orpheline, rien n'est inventé (M7.15). */
   triageFailed: "triage_failed",
+  /** Un sujet nouveau a reçu sa structuration — situation, résumé, tâches, contact (M7.6) ; la proposition intégrale est en métadonnée (05 §9.1). */
+  subjectStructured: "subject_structured",
+  /** La structuration a échoué : le sujet reste tel que le tri l'a ouvert, sans tâche (M7.15). */
+  structurationFailed: "structuration_failed",
   // Compte — l'assistant activé ou coupé (réglage de l'utilisateur, backoffice demain).
   assistantEnabled: "assistant_enabled",
   assistantDisabled: "assistant_disabled",

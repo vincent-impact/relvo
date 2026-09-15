@@ -213,6 +213,7 @@ export function TaskItem({
             subjectTitle: task.subjectTitle,
             subjectFolderSlug: task.folderSlug,
             sourceActor: task.sourceActor,
+            relvo: task.relvo ?? null,
           }}
         />
       ) : null}

@@ -159,7 +159,13 @@ export function contexteStructuration(args: {
         .filter(Boolean)
         .join("\n\n"),
     },
-    `# Ta structuration\nCe sujet vient d'être ouvert. Rédige sa situation structurée et son résumé, déduis les tâches (aucune si le message est informatif), complète le contact s'il est inconnu, choisis les étiquettes dans le registre, et nomme ce qui te manque pour mieux faire.`,
+    [
+      `# Ta structuration`,
+      `Ce sujet vient d'être ouvert. Rédige sa situation structurée et son résumé, déduis les tâches, complète le contact s'il est inconnu, choisis les étiquettes dans le registre, et nomme ce qui te manque pour mieux faire.`,
+      `Une tâche par action que le message DEMANDE au dirigeant — répondre, confirmer, décider, envoyer — et aucune s'il est informatif. Une demande explicite (« pouvez-vous confirmer ? ») est toujours une tâche.`,
+      `La date d'une tâche va dans ses champs de date, JAMAIS dans son titre : « demain », « avant jeudi », « entre 8 h et 10 h » se lisent par rapport à la date du jour et donnent date, heure et heure de fin. Sans formulation temporelle, aucune date.`,
+      `Chaque tâche porte sa raison en une phrase, et sa provenance quand elle vient d'un précédent, d'une instruction ou d'un document que tu as lus — sinon null.`,
+    ].join("\n"),
   );
 }
 

@@ -342,6 +342,30 @@ Sollicitation mesurée : le **tri** (`05 §1.1`), un appel, sortie structurée, 
 
 **Décision provisoire** (`ecarts-et-propositions.md`) : Luna sur le tri, effort `none`. À confirmer sur le jeu réel avant de figer.
 
+### 6.7 Premier passage de la structuration — 15/09/2026, jeu de DÉMONSTRATION
+
+⚠️ **Mêmes réserves qu'en 6.6** : 20 sujets synthétiques « à traiter », sans instruction ni précédent (le compte de démonstration n'en a pas). Reproductible : `pnpm --filter web eval:structuration --jeu demo`.
+
+Sollicitation mesurée : la **structuration** (`05 §1.6`, §2), le second appel sur un sujet que le tri vient d'ouvrir — couche Produit food, couche Compte complète, couche Domaine (vide ici), fiche du sujet avec le fil, puis la retenue de la proposition (`pipeline/proposition.ts`).
+
+| Configuration       | Tâches / sujet | Sujets à tâches rendus sans tâche | Tâches datées | €/1 000 sujets | Latence moy. | Entrée moy. (dont cache) | Sortie moy. (dont raisonnement) |
+| ------------------- | -------------- | --------------------------------- | ------------- | -------------- | ------------ | ------------------------ | ------------------------------- |
+| Luna, effort `none` | 0,8            | 4/20                              | 3/16          | 0,45           | 4,6 s        | 2 950 (2 370)            | 301 (0)                         |
+| Luna, effort `low`  | 0,9            | 2/20                              | 1/18          | 0,58           | 6,0 s        | 2 950 (2 370)            | 433 (133)                       |
+| Luna, `low`, consigne resserrée | 1,1 | 2/20                          | 2/21          | **0,60**       | 5,4 s        | 2 950 (2 370)            | 444 (133)                       |
+
+**Ce que le passage a appris, dans l'ordre d'importance.**
+
+1. **Relvo est sobre, et c'est ce qu'on voulait.** La démonstration attend 44 tâches sur 20 sujets ; Relvo en propose 21. L'écart est presque entièrement fait de tâches de **savoir métier** — « vérifier le stock de riz », « briefer l'équipe » — que `05 §2.1` interdit de déduire sans matière. Les deux sujets rendus sans tâche sont deux messages **informatifs** (une livraison décalée, un lot remplacé sans frais) : aucune tâche artificielle. Le jeu de démonstration ne porte **aucun** cas informatif étiqueté comme tel ; le lanceur le dit, et le jeu réel devra en avoir.
+2. **La consigne compte plus que le niveau.** Avant resserrement, `low` mettait la date d'un créneau **dans le titre** (« (2026-07-30 08:00) ») au lieu des champs de date, et `none` ratait une demande explicite (« pouvez-vous confirmer la réception ? »). Trois phrases ajoutées à la question de structuration — une tâche par action demandée, la date dans ses champs et jamais dans le titre, la raison et la provenance — corrigent les deux, pour deux centimes de plus aux mille sujets.
+3. **`low` garde l'avantage sur la structuration**, contrairement au tri : deux demandes explicites de moins ratées que `none`, pour 30 % de coût en plus et une seconde de latence. La sortie est trois fois plus longue que celle du tri (situation en quatre champs, résumé, tâches avec raison) ; le raisonnement y pèse 133 jetons. Niveau retenu : `low`, celui de la configuration.
+4. **Le cache travaille comme prévu** : 2 370 jetons relus sur 2 950 — la couche Produit et la couche Compte, identiques d'un sujet à l'autre du même compte. Seule la fiche du sujet est payée plein tarif.
+5. **Latence 5 à 6 s**, enchaînée derrière les 2,5 s du tri, après la réponse HTTP du webhook : compatible avec le traitement de fond, à surveiller quand la couche Domaine et les précédents pèseront.
+
+**Ce que le passage ne mesure pas** : la provenance (aucun précédent ni instruction dans la démonstration), le contact (aucune signature dans les messages synthétiques), la qualité de la situation structurée — lue à la main sur quelques cas, juste et concise.
+
+**Décision** (`ecarts-et-propositions.md`, « La structuration retient moins qu'elle ne propose ») : Luna sur la structuration, effort `low`. À confirmer sur le jeu réel.
+
 ---
 
 ## 7. Disjoncteur de consommation

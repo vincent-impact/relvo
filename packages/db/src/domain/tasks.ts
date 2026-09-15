@@ -14,9 +14,45 @@ import { cursorArgs, paginationSchema, toPage } from "./pagination";
 
 // Domaine Tasks (M3.9). Unité de travail DU sujet (pas de l'utilisateur).
 // Dates asymétriques : start_* = deadline, end_* = durée (cf. 02-modele §9).
-// Suppression = soft delete (status=deleted), pas d'effacement physique.
+// Suppression = vrai effacement ; le journal conserve la tâche telle qu'elle
+// avait été proposée (02, Task et EventLog).
+//
+// `metadata` porte la PROVENANCE d'une déduction de Relvo — le précédent, le
+// document ou l'instruction sur lesquels il s'est appuyé — et sa RAISON en une
+// phrase (M7.6, M7.18). C'est ce qui rend une tâche auditable d'un appui.
 
 const actorEnum = z.enum(Actor);
+
+/**
+ * Provenance d'une tâche déduite (05 §2.1, §10.4) : un précédent (référence
+ * d'un sujet validé), une instruction ou un document du domaine — nommés par
+ * leur libellé lisible —, ou une source libre. Stockée telle quelle, lue par
+ * la fiche : « d'après SUB-0042 · Ouverture magasin Béziers ».
+ */
+export const taskProvenanceSchema = z.object({
+  type: z.enum(["precedent", "instruction", "document", "autre"]),
+  /** Référence lisible (sujet) quand il y en a une, sinon null. */
+  reference: z.string().trim().max(40).nullable(),
+  libelle: z.string().trim().min(1).max(300),
+});
+
+export const taskMetadataSchema = z.object({
+  /** « le fournisseur demande un retour avant jeudi » (05 §2.4). */
+  raison: z.string().trim().max(1000),
+  provenance: taskProvenanceSchema.nullable(),
+});
+
+export type TaskProvenance = z.infer<typeof taskProvenanceSchema>;
+export type TaskMetadata = z.infer<typeof taskMetadataSchema>;
+
+/**
+ * Lit la raison et la provenance d'une tâche depuis sa colonne `metadata`,
+ * sans faire confiance à sa forme (une tâche créée avant M7 n'en a pas).
+ */
+export function readTaskMetadata(metadata: unknown): TaskMetadata | null {
+  const parsed = taskMetadataSchema.safeParse(metadata);
+  return parsed.success ? parsed.data : null;
+}
 
 const dateFields = {
   startDate: z.date().optional().nullable(),
@@ -35,6 +71,8 @@ export const createTaskSchema = z
     sourceActor: actorEnum.default(Actor.user),
     kind: z.enum(TaskKind).optional(),
     completionMode: z.enum(CompletionMode).optional(),
+    /** Raison et provenance d'une déduction (02, Task) — posées par Relvo, jamais par l'interface. */
+    metadata: taskMetadataSchema.optional().nullable(),
     ...dateFields,
   })
   .refine((d) => !(d.endDate && !d.startDate), {
@@ -104,6 +142,9 @@ export async function createTask(db: TenantDb, input: CreateTaskInput) {
         sourceActor: data.sourceActor,
         ...(data.kind ? { kind: data.kind } : {}),
         ...(data.completionMode ? { completionMode: data.completionMode } : {}),
+        ...(data.metadata
+          ? { metadata: data.metadata as Prisma.InputJsonValue }
+          : {}),
         startDate: data.startDate ?? null,
         startTime: data.startTime ?? null,
         endDate: data.endDate ?? null,
@@ -126,7 +167,10 @@ export async function createTask(db: TenantDb, input: CreateTaskInput) {
           ? EVENT_TYPES.taskCreatedByAi
           : EVENT_TYPES.taskCreatedByUser,
       title: `Tâche créée : ${task.title}`,
+      // Une tâche de Relvo dit pourquoi, et d'après quoi (M7.20).
+      description: data.metadata?.raison || null,
       actor: data.sourceActor,
+      metadata: data.metadata ?? null,
     });
     return task;
   });
@@ -292,6 +336,11 @@ export async function reopenTask(db: TenantDb, id: string) {
  * ligne disparaît sans casser les journaux/actions existants. On consigne d'abord
  * l'évènement de suppression dans le journal du sujet (sans `taskId`, puisque la
  * tâche n'existe plus après le DELETE), pour garder une trace lisible.
+ *
+ * Le journal conserve la tâche TELLE QU'ELLE AVAIT ÉTÉ PROPOSÉE — source, type,
+ * date, raison et provenance (02, EventLog ; 05 §9.1) : c'est ici, et nulle
+ * part ailleurs, que l'original d'une tâche de Relvo survit. La fiche de clôture
+ * d'un sujet validé y relit les tâches écartées.
  */
 export async function deleteTask(db: TenantDb, id: string) {
   return db.$transaction(async (tx) => {
@@ -314,6 +363,15 @@ export async function deleteTask(db: TenantDb, id: string) {
       eventType: EVENT_TYPES.taskDeleted,
       title: `Tâche supprimée : ${task.title}`,
       actor: "user",
+      metadata: {
+        proposal: {
+          title: task.title,
+          sourceActor: task.sourceActor,
+          kind: task.kind,
+          startDate: task.startDate?.toISOString().slice(0, 10) ?? null,
+          metadata: readTaskMetadata(task.metadata),
+        },
+      },
     });
     return task;
   });

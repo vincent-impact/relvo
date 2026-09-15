@@ -26,4 +26,5 @@ export * from "./attachments";
 export * from "./actions";
 export * from "./queries";
 export * from "./triage";
+export * from "./structuration";
 export * from "./accounts";

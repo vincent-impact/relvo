@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { RelvoSummary } from "@/components/subject/relvo-summary";
 import {
   setSubjectPriorityAction,
   updateSubjectAction,
@@ -22,6 +23,9 @@ import { cn } from "@/lib/utils";
 
 // Onglet « Informations » de la fiche Sujet (refonte 2026-07-28 : moins
 // « technique », plus « fiche »). Ordre FIXE :
+//   0. Ce que Relvo a compris (M7.6) — quand le sujet a été structuré : le
+//      résumé et la situation en quatre lignes, dans un bloc Relvo. Absent tant
+//      que Relvo n'a pas lu le sujet : pas de bloc vide.
 //   1. Descriptif — CARTE en tête : le texte est LU (pas un textarea nu, qui
 //      donnait un air de brouillon jamais fini), une phrase en italique rappelle
 //      son rôle, le stylo ouvre une POP-UP d'édition (jamais dans le flux, trop
@@ -46,6 +50,17 @@ export type PaneEvent = {
   actor: Actor;
   createdAt: Date;
 };
+/** Résumé et situation structurée, préformatés côté serveur (05 §1.6). */
+export type PaneRelvo = {
+  summary: string | null;
+  where: string | null;
+  nextStep: string | null;
+  waitingFor: string | null;
+  /** « 11 septembre », ou null. */
+  deadline: string | null;
+  /** « il y a 2 h ». */
+  updatedAt: string;
+};
 
 const ACTOR_DOT: Record<Actor, string> = {
   user: "bg-brand",
@@ -61,6 +76,7 @@ export function InformationsPane({
   folderId,
   priority,
   events,
+  relvo = null,
 }: {
   subjectId: string;
   description: string | null;
@@ -68,6 +84,7 @@ export function InformationsPane({
   folderId: string | null;
   priority: Priority;
   events: PaneEvent[];
+  relvo?: PaneRelvo | null;
 }) {
   const router = useRouter();
   const [value, setValue] = useState(description ?? "");
@@ -136,6 +153,21 @@ export function InformationsPane({
 
   return (
     <div className="space-y-6 px-4 pt-4 pb-2">
+      {/* 0. Ce que Relvo a compris — résumé et situation (M7.6) */}
+      {relvo ? (
+        <RelvoSummary
+          tone="card"
+          text={relvo.summary}
+          situation={[
+            { label: "Où on en est", value: relvo.where },
+            { label: "Prochaine étape", value: relvo.nextStep },
+            { label: "On attend", value: relvo.waitingFor },
+            { label: "Échéance", value: relvo.deadline },
+          ]}
+          footer={`Relu ${relvo.updatedAt}`}
+        />
+      ) : null}
+
       {/* 1. Descriptif — cœur de la fiche (carte), édité en pop-up */}
       <section className="rounded-[14px] border border-(--hairline) bg-white p-4 shadow-surface-1">
         <div className="flex items-center justify-between">

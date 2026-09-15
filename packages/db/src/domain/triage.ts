@@ -102,7 +102,12 @@ export type TriageSenderProfile = {
     /** ISO 8601, ou null. */
     derniereActiviteLe: string | null;
   }[];
+  /** Ses derniers sujets VALIDÉS — la fiche contact de la structuration les montre (05 §10.1). */
+  sujetsValidesRecents: { reference: string; titre: string }[];
 };
+
+/** Derniers sujets validés d'un expéditeur poussés dans sa fiche. */
+export const SENDER_VALIDATED_SUBJECTS_MAX = 5;
 
 export type TriageProjection = {
   /** Aucun sujet n'écoute ce fil, et il n'est pas en sourdine. */
@@ -164,13 +169,16 @@ function senderConversationsWhere(
 
 /**
  * Le profil de l'expéditeur, en UNE requête sur ses conversations (la
- * courante exclue) : sujets nés de ses fils, domaine habituel, ignorances par
- * raison, sujets ouverts avec lui et leur attente.
+ * courante exclue, quand il y en a une) : sujets nés de ses fils, domaine
+ * habituel, ignorances par raison, sujets ouverts avec lui et leur attente,
+ * derniers sujets validés. Sert au tri (par le fil) et à la structuration
+ * (par le contact du sujet).
  */
 export async function getSenderProfile(
   db: TenantDb,
   args: {
-    conversationId: string;
+    /** Le fil en cours de tri, exclu du décompte ; null hors tri. */
+    conversationId: string | null;
     contactId: string | null;
     adresse: string | null;
     contact?: {
@@ -193,11 +201,14 @@ export async function getSenderProfile(
     domaineHabituel: null,
     antecedentsTri: [],
     sujetsEnCours: [],
+    sujetsValidesRecents: [],
   };
   if (!where) return base;
 
   const conversations = await db.conversation.findMany({
-    where: { AND: [where, { id: { not: args.conversationId } }] },
+    where: args.conversationId
+      ? { AND: [where, { id: { not: args.conversationId } }] }
+      : where,
     select: {
       status: true,
       ignoreReason: true,
@@ -259,6 +270,16 @@ export async function getSenderProfile(
         enAttente: s.waitingForReply,
         derniereActiviteLe: s.lastActivityAt?.toISOString() ?? null,
       })),
+    sujetsValidesRecents: [...sujets.values()]
+      .filter((s) => s.status === SubjectStatus.validated)
+      .sort(
+        (a, b) =>
+          (b.lastActivityAt?.getTime() ?? 0) -
+            (a.lastActivityAt?.getTime() ?? 0) ||
+          b.reference.localeCompare(a.reference),
+      )
+      .slice(0, SENDER_VALIDATED_SUBJECTS_MAX)
+      .map((s) => ({ reference: s.reference, titre: s.title })),
   };
 }
 
@@ -810,6 +831,26 @@ export async function hasAiSolicitationForMessage(
     where: {
       eventType: EVENT_TYPES.iaSollicitation,
       messageId,
+      metadata: { path: ["sollicitation"], equals: sollicitation },
+    },
+    select: { id: true },
+  });
+  return found !== null;
+}
+
+/**
+ * Une structuration par sujet, jamais deux : vrai si un appel de cette
+ * sollicitation a déjà été consigné pour ce sujet.
+ */
+export async function hasAiSolicitationForSubject(
+  db: TenantDb,
+  subjectId: string,
+  sollicitation: string,
+): Promise<boolean> {
+  const found = await db.eventLog.findFirst({
+    where: {
+      eventType: EVENT_TYPES.iaSollicitation,
+      subjectId,
       metadata: { path: ["sollicitation"], equals: sollicitation },
     },
     select: { id: true },

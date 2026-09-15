@@ -14,6 +14,7 @@
     "test": "vitest run",
     "eval:extraire": "node --env-file=.env.local --import tsx scripts/evaluation/extraire.ts",
     "eval:tri": "node --env-file=.env.local --import tsx scripts/evaluation/lancer.ts",
+    "eval:structuration": "node --env-file=.env.local --import tsx scripts/evaluation/structurer.ts",
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {

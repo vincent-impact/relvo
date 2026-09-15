@@ -24,6 +24,7 @@ import {
   deciderTri,
   type Nature,
 } from "./decision";
+import { structurerSujet, type IssueStructuration } from "./structuration";
 
 // LE TRI EN PRODUCTION (M7, tranche 4 — M7.1, M7.4, M7.5, M7.14 à M7.16) :
 // « un e-mail entrant devient un sujet titré et classé ». Déclenché par le
@@ -47,6 +48,9 @@ import {
 //      fait taire ; sinon l'avis seul (05 §1.1, §1.2, §9.5).
 //   6. Ouverture ou rattachement par les primitives du domaine.
 //   7. Cache de données invalidé après toute écriture (PITFALLS.md #45).
+//   8. Un sujet OUVERT enchaîne sur la STRUCTURATION (`./structuration`,
+//      tranche 5) : le second appel, qui apporte les tâches et la date. Son
+//      échec ne défait pas l'ouverture — le sujet reste, sans tâche.
 //
 // UN ÉCHEC LAISSE LA CONVERSATION ORPHELINE, il n'invente rien (M7.15) : le
 // message est déjà rangé et lisible, l'utilisateur peut trier à la main, et
@@ -68,7 +72,14 @@ export type IssueTri =
   | "rattache"
   | "echec";
 
-export type ResultatTri = { issue: IssueTri; detail?: string };
+export type ResultatTri = {
+  issue: IssueTri;
+  detail?: string;
+  /** Ce qu'a donné la structuration, quand un sujet a été ouvert. */
+  structuration?: IssueStructuration;
+  /** Tâches déduites par la structuration. */
+  taches?: number;
+};
 
 export async function trierConversationEmail(args: {
   accountId: string;
@@ -218,9 +229,21 @@ export async function trierConversationEmail(args: {
       priority: decision.priorite,
     });
     expireTenantData();
+    if (applied.action === "attached") {
+      return { issue: "rattache", detail: applied.reference };
+    }
+    // Le sujet vient d'être ouvert : le second appel le structure. Il gère ses
+    // propres échecs ; le tri, lui, a réussi.
+    const structuration = await structurerSujet({
+      accountId,
+      subjectId: applied.subjectId,
+      messageId,
+    });
     return {
-      issue: applied.action === "opened" ? "ouvert" : "rattache",
+      issue: "ouvert",
       detail: applied.reference,
+      structuration: structuration.issue,
+      taches: structuration.taches,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

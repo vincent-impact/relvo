@@ -6,6 +6,7 @@ import { CalendarDays, Clock, Search, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Actor } from "@relvo/db";
 import { ActorPill } from "@/components/shared/actor-pill";
+import type { RelvoTaskInfo } from "@/lib/task-item-data";
 import {
   Dialog,
   DialogContent,
@@ -24,7 +25,9 @@ import { cn } from "@/lib/utils";
 // Modale d'une tâche — PARTAGÉE entre édition (TaskItem) et création (bouton +
 // de l'Accueil). Champs : titre, date/heure, et SUJET rattaché (affiché + (re)
 // assignable, ou détaché — une tâche peut ne pas avoir de sujet). Le créateur
-// (Relvo/Moi) est rappelé ici (retiré des lignes pour ne pas les surcharger).
+// (Relvo/Moi) est rappelé ici (retiré des lignes pour ne pas les surcharger) —
+// et, pour une tâche de Relvo, POURQUOI il la propose et D'APRÈS QUOI (M7.20) :
+// c'est ce qui rend une suggestion vérifiable d'un appui, sans rouvrir le fil.
 
 type SubjectOption = {
   id: string;
@@ -52,6 +55,8 @@ export function TaskModal({
     subjectTitle?: string | null;
     subjectFolderSlug?: string | null;
     sourceActor?: Actor;
+    /** Raison et provenance d'une tâche de Relvo, en clair (M7.20). */
+    relvo?: RelvoTaskInfo | null;
   };
 }) {
   const router = useRouter();
@@ -323,11 +328,31 @@ export function TaskModal({
           ) : null}
         </div>
 
-        {/* Créateur (édition seulement) — rappel discret. */}
+        {/* Créateur (édition seulement) — rappel discret ; pour Relvo, la
+            raison et la provenance de la proposition (M7.20). */}
         {mode === "edit" && initial.sourceActor ? (
-          <div className="flex items-center gap-2 text-[12.5px] text-(--text-tertiary)">
-            <ActorPill actor={initial.sourceActor} />
-            Créée par {initial.sourceActor === "ai" ? "Relvo" : "vous"}
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2 text-[12.5px] text-(--text-tertiary)">
+              <ActorPill actor={initial.sourceActor} />
+              Créée par {initial.sourceActor === "ai" ? "Relvo" : "vous"}
+            </div>
+            {initial.sourceActor === "ai" && initial.relvo ? (
+              <div className="rounded-xl border border-(--purple-100) bg-relvo-bg px-3 py-2.5 text-[13px] leading-[1.45]">
+                {initial.relvo.raison ? (
+                  <p className="text-brand-dark">{initial.relvo.raison}</p>
+                ) : null}
+                {initial.relvo.provenance ? (
+                  <p
+                    className={cn(
+                      "text-[12.5px] text-relvo",
+                      initial.relvo.raison && "mt-1",
+                    )}
+                  >
+                    {initial.relvo.provenance}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         ) : null}
 

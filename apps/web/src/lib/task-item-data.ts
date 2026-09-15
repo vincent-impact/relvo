@@ -1,4 +1,4 @@
-import type { Actor, EnrichedTask } from "@relvo/db";
+import { readTaskMetadata, type Actor, type EnrichedTask } from "@relvo/db";
 
 // Forme PLATE d'une tâche pour TaskItem — isolée dans un module serveur-safe (pas
 // de "use client") car le mapper `toTaskItemData` est appelé côté serveur (cache,
@@ -22,7 +22,37 @@ export type TaskItemData = {
   contactName?: string | null;
   /** Slug du domaine (Folder) hérité du sujet → rail de couleur. */
   folderSlug?: string | null;
+  /** Pourquoi Relvo propose cette tâche, et d'après quoi (M7.20) — null pour une tâche de l'utilisateur ou sans raison. */
+  relvo?: RelvoTaskInfo | null;
 };
+
+export type RelvoTaskInfo = {
+  /** « le fournisseur demande un retour avant jeudi ». */
+  raison: string | null;
+  /** « D'après SUB-0042 · Ouverture magasin Béziers », ou null. */
+  provenance: string | null;
+};
+
+/**
+ * La raison et la provenance d'une tâche, en clair, depuis sa colonne
+ * `metadata` (02, Task). Une tâche sans les deux rend null : rien à montrer.
+ */
+export function relvoTaskInfo(metadata: unknown): RelvoTaskInfo | null {
+  const m = readTaskMetadata(metadata);
+  if (!m) return null;
+  const p = m.provenance;
+  const provenance = !p
+    ? null
+    : p.type === "precedent"
+      ? `D'après ${p.reference} · ${p.libelle}`
+      : p.type === "instruction"
+        ? `D'après l'instruction « ${p.libelle} »`
+        : p.type === "document"
+          ? `D'après le document « ${p.libelle} »`
+          : `D'après ${p.libelle}`;
+  const raison = m.raison.trim() || null;
+  return raison || provenance ? { raison, provenance } : null;
+}
 
 /** Mappe une tâche enrichie (couche domaine) vers la forme plate de TaskItem. */
 export function toTaskItemData(e: EnrichedTask): TaskItemData {
@@ -42,5 +72,6 @@ export function toTaskItemData(e: EnrichedTask): TaskItemData {
     subjectTitle: e.subjectTitle,
     contactName: e.contactName,
     folderSlug: e.folderSlug,
+    relvo: relvoTaskInfo(e.task.metadata),
   };
 }

@@ -349,6 +349,45 @@ surveiller : des sujets ouverts en confiance moyenne que l'utilisateur ferme aus
 (les traiter comme une affaire en confiance moyenne). La frontière est une constante du code,
 en un seul endroit, testée.
 
+### La structuration retient moins qu'elle ne propose
+
+**`tranché`** · Le second appel — situation, résumé, tâches, contact — écrit en base sans revue
+humaine, comme le tri. Ce qu'il a le droit d'écrire est donc décidé en un seul endroit, un module
+pur (`pipeline/proposition.ts`), avant le domaine, et le banc d'essai a servi à régler la
+consigne plutôt que le tier.
+
+**Retenu** :
+
+- **Un plafond de six tâches, sans doublon, aux dates conformes** : la deadline vit dans le début
+  ; une heure sans date, une fin avant le début, une heure de fin sans heure de début sont
+  retirées, et dites. Le modèle mettait la date d'un créneau dans le titre ; la consigne le lui
+  interdit désormais, et lui demande une tâche par action explicitement demandée.
+- **Une provenance se résout, elle ne s'invente pas.** Une tâche ne cite un précédent, une
+  instruction ou un document que si le modèle les a eus sous les yeux ; une référence inconnue
+  reste une source libre. C'est ce qui rend « d'après SUB-0042 » digne de confiance.
+- **Un contact vérifié n'est jamais réécrit.** Relvo complète la fiche qu'il a lui-même créée
+  (statut automatique) ; sur une fiche que l'utilisateur a vérifiée, il ne pose que le rôle, et
+  seulement s'il est vide. La correction l'emporte toujours.
+- **L'étiquette nouvelle et les questions vont au journal, pas en base.** Le registre, sa
+  promotion et l'encart des questions sont M17 ; la proposition intégrale est conservée pour
+  qu'il n'y ait rien à recalculer ce jour-là.
+- **Seuls les sujets ouverts par Relvo sont structurés.** Un sujet ouvert à la main par
+  l'utilisateur ne déclenche pas d'appel : il a déjà décidé, et le coût d'un appel se justifie
+  d'abord là où Relvo décide seul. Étendre au geste manuel est un réglage de l'orchestration,
+  pas du modèle — à décider sur l'usage.
+- **Les précédents viennent du même domaine ou d'une étiquette partagée**, classés par
+  recherche plein texte de la base sur le titre ; sans domaine ni étiquette, aucun précédent.
+  Une recherche sur tout le compte serait le filet suivant, si le journal montre que les sujets
+  sans domaine en manquent.
+
+**Écarté** : un troisième appel pour les tâches seules, ou une tâche « lire le message » quand
+le message est informatif. Le banc montre que le modèle sait rendre zéro tâche ; il faut le
+laisser faire.
+
+**Ce qui tranchera** : le journal, par les tâches de Relvo supprimées (conservées telles que
+proposées) et par les sujets structurés sans tâche que l'utilisateur complète à la main — c'est
+la part d'aide de M17.12.
+
 ### Le profil de l'expéditeur décide avant le modèle
 
 **`tranché`** · Après la règle du rattachement, le dirigeant s'est inquiété du socle qui grossit
