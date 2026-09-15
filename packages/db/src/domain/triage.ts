@@ -12,6 +12,7 @@ import {
   TriageNature,
   TriageVerdict,
 } from "../generated/prisma/enums";
+import type { Prisma } from "../generated/prisma/client";
 import type { TenantDb, Tx } from "../tenant";
 import {
   countUnsortedConversations,
@@ -72,12 +73,44 @@ export type TriageMessageProjection = {
   sens: "entrant" | "sortant";
 };
 
+/**
+ * Le PROFIL DE L'EXPÉDITEUR — miroir structurel d'`ExpediteurContexte`
+ * (application). Tout ce que la base sait de lui, SANS appel : c'est notre
+ * meilleure information, et elle décide avant le modèle quand elle le peut
+ * (05 §9.5), rétrécit ce qu'on lui montre, et pèse dans son avis.
+ */
+export type TriageSenderProfile = {
+  adresse: string | null;
+  /** Un contact du carnet porte cette adresse. */
+  connu: boolean;
+  nom: string | null;
+  entreprise: string | null;
+  /** Valeur de `ContactRole`, ou null. */
+  role: string | null;
+  /** Sujets nés de ses fils, tous statuts confondus. */
+  sujetsParSesFils: number;
+  sujetsValides: number;
+  /** Le domaine le plus fréquent de ses sujets. */
+  domaineHabituel: string | null;
+  /** Ses conversations ignorées, par raison — l'antécédent qui fait taire une source (05 §9.5). */
+  antecedentsTri: { raison: IgnoreReason; nombre: number }[];
+  /** Ses sujets OUVERTS, avec l'attente : c'est ce qui fait rattacher sans appel. */
+  sujetsEnCours: {
+    reference: string;
+    titre: string;
+    enAttente: boolean;
+    /** ISO 8601, ou null. */
+    derniereActiviteLe: string | null;
+  }[];
+};
+
 export type TriageProjection = {
   /** Aucun sujet n'écoute ce fil, et il n'est pas en sourdine. */
   orpheline: boolean;
   statut: ConversationStatus;
   type: ConversationType;
   compte: TriageAccountProjection;
+  expediteur: TriageSenderProfile;
   conversation: {
     canal: "email" | "whatsapp";
     messages: TriageMessageProjection[];
@@ -92,8 +125,13 @@ export type TriageProjection = {
   } | null;
 };
 
-/** Titres de sujets ouverts poussés au tri — des titres, jamais des fiches (05 §1.2). */
-export const TRIAGE_OPEN_SUBJECTS_MAX = 40;
+/**
+ * Titres de sujets ouverts poussés au tri — des titres, jamais des fiches
+ * (05 §1.2). La liste est CHOISIE, pas tronquée : les sujets ouverts avec
+ * l'expéditeur, puis ceux qui attendent une réponse, puis les plus récents
+ * jusqu'à ce plafond. Moins de jetons, et la bonne chance de rattacher au bon.
+ */
+export const TRIAGE_OPEN_SUBJECTS_MAX = 20;
 /** Messages chargés d'un fil : le plus ancien et les derniers ; la couche Situation borne encore. */
 export const TRIAGE_LAST_MESSAGES = 10;
 
@@ -104,6 +142,131 @@ function displayContact(c: {
 }): string {
   const nom = [c.firstName, c.lastName].filter(Boolean).join(" ");
   return c.company ? `${nom} (${c.company})` : nom;
+}
+
+/** Où-clause « les conversations de cet expéditeur », par contact si connu, sinon par adresse. */
+function senderConversationsWhere(
+  contactId: string | null,
+  adresse: string | null,
+): Prisma.ConversationWhereInput | null {
+  if (contactId) {
+    return { OR: [{ contactId }, { contactIds: { has: contactId } }] };
+  }
+  const a = adresse?.trim().toLowerCase();
+  if (!a) return null;
+  return {
+    OR: [
+      { interlocutorRaw: { equals: a, mode: "insensitive" } },
+      { participantsRaw: { has: a } },
+    ],
+  };
+}
+
+/**
+ * Le profil de l'expéditeur, en UNE requête sur ses conversations (la
+ * courante exclue) : sujets nés de ses fils, domaine habituel, ignorances par
+ * raison, sujets ouverts avec lui et leur attente.
+ */
+export async function getSenderProfile(
+  db: TenantDb,
+  args: {
+    conversationId: string;
+    contactId: string | null;
+    adresse: string | null;
+    contact?: {
+      firstName: string | null;
+      lastName: string;
+      company: string | null;
+      role: string | null;
+    } | null;
+  },
+): Promise<TriageSenderProfile> {
+  const where = senderConversationsWhere(args.contactId, args.adresse);
+  const base: TriageSenderProfile = {
+    adresse: args.adresse,
+    connu: args.contactId !== null,
+    nom: args.contact ? displayContactName(args.contact) : null,
+    entreprise: args.contact?.company ?? null,
+    role: args.contact?.role ?? null,
+    sujetsParSesFils: 0,
+    sujetsValides: 0,
+    domaineHabituel: null,
+    antecedentsTri: [],
+    sujetsEnCours: [],
+  };
+  if (!where) return base;
+
+  const conversations = await db.conversation.findMany({
+    where: { AND: [where, { id: { not: args.conversationId } }] },
+    select: {
+      status: true,
+      ignoreReason: true,
+      subjects: {
+        select: {
+          subject: {
+            select: {
+              id: true,
+              reference: true,
+              title: true,
+              status: true,
+              waitingForReply: true,
+              lastActivityAt: true,
+              folder: { select: { name: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const parRaison = new Map<IgnoreReason, number>();
+  const sujets = new Map<
+    string,
+    (typeof conversations)[number]["subjects"][number]["subject"]
+  >();
+  for (const c of conversations) {
+    if (c.status === ConversationStatus.ignored && c.ignoreReason) {
+      parRaison.set(c.ignoreReason, (parRaison.get(c.ignoreReason) ?? 0) + 1);
+    }
+    for (const l of c.subjects) sujets.set(l.subject.id, l.subject);
+  }
+  const parDomaine = new Map<string, number>();
+  for (const s of sujets.values()) {
+    if (s.folder)
+      parDomaine.set(s.folder.name, (parDomaine.get(s.folder.name) ?? 0) + 1);
+  }
+  const domaineHabituel =
+    [...parDomaine.entries()].sort(
+      (a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "fr"),
+    )[0]?.[0] ?? null;
+
+  return {
+    ...base,
+    sujetsParSesFils: sujets.size,
+    sujetsValides: [...sujets.values()].filter(
+      (s) => s.status === SubjectStatus.validated,
+    ).length,
+    domaineHabituel,
+    antecedentsTri: [...parRaison.entries()]
+      .map(([raison, nombre]) => ({ raison, nombre }))
+      .sort((a, b) => b.nombre - a.nombre || a.raison.localeCompare(b.raison)),
+    sujetsEnCours: [...sujets.values()]
+      .filter((s) => s.status === SubjectStatus.open)
+      .sort((a, b) => a.reference.localeCompare(b.reference))
+      .map((s) => ({
+        reference: s.reference,
+        titre: s.title,
+        enAttente: s.waitingForReply,
+        derniereActiviteLe: s.lastActivityAt?.toISOString() ?? null,
+      })),
+  };
+}
+
+function displayContactName(c: {
+  firstName: string | null;
+  lastName: string;
+}): string {
+  return [c.firstName, c.lastName].filter(Boolean).join(" ");
 }
 
 /**
@@ -157,7 +320,11 @@ export async function getTriageProjection(
       db.subject.findMany({
         where: { status: SubjectStatus.open },
         select: { reference: true, title: true, waitingForReply: true },
-        orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
+        orderBy: [
+          { waitingForReply: "desc" },
+          { lastActivityAt: "desc" },
+          { createdAt: "desc" },
+        ],
         take: TRIAGE_OPEN_SUBJECTS_MAX,
       }),
       db.channel.findMany({
@@ -172,7 +339,12 @@ export async function getTriageProjection(
         take: 1,
         include: {
           senderContact: {
-            select: { firstName: true, lastName: true, company: true },
+            select: {
+              firstName: true,
+              lastName: true,
+              company: true,
+              role: true,
+            },
           },
         },
       }),
@@ -182,7 +354,12 @@ export async function getTriageProjection(
         take: TRIAGE_LAST_MESSAGES,
         include: {
           senderContact: {
-            select: { firstName: true, lastName: true, company: true },
+            select: {
+              firstName: true,
+              lastName: true,
+              company: true,
+              role: true,
+            },
           },
         },
       }),
@@ -226,6 +403,44 @@ export async function getTriageProjection(
     .filter((m) => m.direction === MessageDirection.incoming)
     .at(-1);
 
+  const expediteur = await getSenderProfile(db, {
+    conversationId,
+    contactId: lastIncoming?.senderContactId ?? null,
+    adresse: lastIncoming?.senderRaw ?? null,
+    contact: lastIncoming?.senderContact
+      ? {
+          firstName: lastIncoming.senderContact.firstName,
+          lastName: lastIncoming.senderContact.lastName,
+          company: lastIncoming.senderContact.company,
+          role: lastIncoming.senderContact.role,
+        }
+      : null,
+  });
+
+  // Les sujets poussés au tri : ceux de l'expéditeur d'abord, puis ceux qui
+  // attendent une réponse, puis les plus récents — sans doublon, plafonnés.
+  const sujetsOuverts = new Map<
+    string,
+    { reference: string; titre: string; enAttente: boolean }
+  >();
+  for (const s of expediteur.sujetsEnCours) {
+    sujetsOuverts.set(s.reference, {
+      reference: s.reference,
+      titre: s.titre,
+      enAttente: s.enAttente,
+    });
+  }
+  for (const s of openSubjects) {
+    if (sujetsOuverts.size >= TRIAGE_OPEN_SUBJECTS_MAX) break;
+    if (!sujetsOuverts.has(s.reference)) {
+      sujetsOuverts.set(s.reference, {
+        reference: s.reference,
+        titre: s.title,
+        enAttente: s.waitingForReply,
+      });
+    }
+  }
+
   return {
     orpheline:
       conversation.status === ConversationStatus.active && listening === null,
@@ -244,12 +459,9 @@ export async function getTriageProjection(
       instructionsGenerales: [],
       etiquettes: [],
       preferencesObservees: account.observedPreferences,
-      sujetsOuverts: openSubjects.map((s) => ({
-        reference: s.reference,
-        titre: s.title,
-        enAttente: s.waitingForReply,
-      })),
+      sujetsOuverts: [...sujetsOuverts.values()],
     },
+    expediteur,
     conversation: {
       canal:
         conversation.type === ConversationType.email_subject

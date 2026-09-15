@@ -16,6 +16,7 @@ import {
   listConversationItems,
   logAiSolicitation,
   logTriageFailure,
+  openSubjectOnConversation,
   markConversationFilterSeen,
   prisma,
   reactivateConversation,
@@ -174,6 +175,14 @@ describe("projection du tri", () => {
     ]);
     expect(p.compte.instructionsGenerales).toEqual([]);
     expect(p.compte.etiquettes).toEqual([]);
+    // L'expéditeur : adresse inconnue du carnet, rien d'autre à dire.
+    expect(p.expediteur).toMatchObject({
+      adresse: "karim@sogood.fr",
+      connu: false,
+      sujetsParSesFils: 0,
+      antecedentsTri: [],
+      sujetsEnCours: [],
+    });
     // Le fil, dans l'ordre, expéditeur nommé et adressé.
     expect(p.conversation.canal).toBe("email");
     expect(p.conversation.messages.map((m) => m.contenu)).toEqual([
@@ -534,6 +543,99 @@ describe("compteur et échec", () => {
     expect(await db.subject.count()).toBe(0);
     const p = await getTriageProjection(db, message.conversationId);
     expect(p.orpheline).toBe(true);
+  });
+});
+
+describe("profil de l'expéditeur", () => {
+  it("sait, sans appel, ce que ses fils ont produit, ce qu'on en a écarté, et ce qui l'attend", async () => {
+    const { db, channel, fournisseurs } = await makeAccount("p@test.fr");
+    const karim = await db.contact.create({
+      data: {
+        firstName: "Karim",
+        lastName: "Benali",
+        email: "karim@sogood.fr",
+        company: "SoGood",
+        role: "supplier",
+        sourceActor: Actor.user,
+      },
+    });
+    // Deux fils passés : un sujet validé, un sujet ouvert en attente de sa réponse.
+    const a = await mail(db, channel.id, "k1", { subjectLine: "Palettes" });
+    await openSubjectOnConversation(db, {
+      conversationId: a.message.conversationId,
+      title: "Palettes de juin",
+      folderId: fournisseurs.id,
+    });
+    const valide = await db.subject.findFirstOrThrow({
+      where: { title: "Palettes de juin" },
+    });
+    await db.subject.update({
+      where: { id: valide.id },
+      data: { status: "validated" },
+    });
+    const b = await mail(db, channel.id, "k2", { subjectLine: "Sauce" });
+    await openSubjectOnConversation(db, {
+      conversationId: b.message.conversationId,
+      title: "Rupture sauce blanche",
+      folderId: fournisseurs.id,
+    });
+    const ouvert = await db.subject.findFirstOrThrow({
+      where: { title: "Rupture sauce blanche" },
+    });
+    await db.subject.update({
+      where: { id: ouvert.id },
+      data: { waitingForReply: true, lastActivityAt: new Date() },
+    });
+    // Un fil ignoré, d'une autre adresse : il ne compte pas pour Karim.
+    const autre = await mail(db, channel.id, "x1", {
+      senderRaw: "promo@grossiste.fr",
+      senderName: null,
+    });
+    await ignoreConversation(db, autre.message.conversationId, {
+      reason: "advertising",
+    });
+
+    // Le fil à trier, de Karim.
+    const c = await mail(db, channel.id, "k3", { subjectLine: "RE: palette" });
+    const p = await getTriageProjection(db, c.message.conversationId);
+    expect(p.expediteur).toMatchObject({
+      connu: true,
+      nom: "Karim Benali",
+      entreprise: "SoGood",
+      role: "supplier",
+      sujetsParSesFils: 2,
+      sujetsValides: 1,
+      domaineHabituel: "Fournisseurs",
+      antecedentsTri: [],
+    });
+    expect(p.expediteur.sujetsEnCours).toEqual([
+      {
+        reference: ouvert.reference,
+        titre: "Rupture sauce blanche",
+        enAttente: true,
+        derniereActiviteLe: expect.any(String),
+      },
+    ]);
+    expect(karim.id).toBeTruthy();
+    // Les sujets poussés au tri : ceux de Karim d'abord, puis les autres ouverts.
+    expect(p.compte.sujetsOuverts[0]).toEqual({
+      reference: ouvert.reference,
+      titre: "Rupture sauce blanche",
+      enAttente: true,
+    });
+
+    // L'adresse inconnue, elle, porte son antécédent.
+    const d = await mail(db, channel.id, "x2", {
+      senderRaw: "promo@grossiste.fr",
+      senderName: null,
+      subjectLine: "Promo",
+    });
+    const q = await getTriageProjection(db, d.message.conversationId);
+    expect(q.expediteur).toMatchObject({
+      connu: false,
+      antecedentsTri: [{ raison: "advertising", nombre: 1 }],
+      sujetsEnCours: [],
+    });
   });
 });
 

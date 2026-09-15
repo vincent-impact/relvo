@@ -349,6 +349,37 @@ surveiller : des sujets ouverts en confiance moyenne que l'utilisateur ferme aus
 (les traiter comme une affaire en confiance moyenne). La frontière est une constante du code,
 en un seul endroit, testée.
 
+### Le profil de l'expéditeur décide avant le modèle
+
+**`tranché`** · Après la règle du rattachement, le dirigeant s'est inquiété du socle qui grossit
+et a posé l'objectif : faire passer un maximum de traitement dans nos algorithmes plutôt que
+dans l'IA, pour délester l'API et le contexte. Les chiffres du jeu d'évaluation disent que le
+socle, servi depuis le cache, ne pèse pas dans le coût par message ; mais le principe reste le
+bon pour une autre raison : chaque décision confiée au modèle est une décision qu'il peut rater.
+
+**Retenu** : notre meilleure information n'est pas dans le message, elle est dans ce que la
+base sait de qui l'envoie. Un **profil de l'expéditeur** est calculé sans appel à chaque fil à
+trier — contact connu ou non, sujets nés de ses fils, domaine habituel, ignorances par raison,
+sujets ouverts avec lui et leur attente — et sert à trois choses :
+
+- **Décider sans appel quand il le peut.** Une source écartée trois fois pour la même raison se
+  tait ; un contact connu dont le seul sujet ouvert attend sa réponse, actif depuis moins de
+  trente jours, est rattaché. Deux règles prudentes, seuil et fenêtre en constantes testées.
+- **Rétrécir le contexte au lieu de le grossir.** La liste des sujets poussée au tri est
+  choisie autour de l'expéditeur — les siens, puis ceux en attente, puis les récents —, plafond
+  ramené de quarante à vingt titres. C'est ce qui manquait sur la démonstration pour rattacher
+  au bon sujet.
+- **Peser dans l'avis** en trois lignes, sans règle écrite : « contact connu, fournisseur ; ses
+  fils ont ouvert quatre sujets ; jamais ignoré ».
+
+**Écarté** : une « importance » chiffrée du message, évaluée par le modèle. Ce serait un
+quatrième axe à lire, et bruyant. L'importance est dérivée de faits que nous détenons — le
+contact est connu, un sujet l'attend, la priorité est urgente —, jamais une note.
+
+**Ce qui tranchera** : le journal, par la règle qui a conclu (`source-deja-ecartee`,
+`sujet-en-attente`) — un rattachement sans appel contredit par la relecture, ou une source
+écartée que l'utilisateur réactive, feront relever le seuil ou resserrer la fenêtre.
+
 ### L'avis de Relvo parle en deux parts — une action, une nature — et le rattachement prime
 
 **`tranché`** · Le second e-mail réel trié a exposé trois défauts d'un coup. À l'écran, la

@@ -67,9 +67,33 @@ export type MessageContexte = {
   piecesJointes?: readonly { nom: string; etiquette: string | null }[];
 };
 
+/**
+ * Le PROFIL DE L'EXPÉDITEUR d'un fil à trier — calculé par le domaine, sans
+ * appel (`05 §9.5`). Miroir structurel de `TriageSenderProfile` (paquet db).
+ */
+export type ExpediteurContexte = {
+  adresse: string | null;
+  connu: boolean;
+  nom: string | null;
+  entreprise: string | null;
+  role: string | null;
+  sujetsParSesFils: number;
+  sujetsValides: number;
+  domaineHabituel: string | null;
+  antecedentsTri: readonly { raison: string; nombre: number }[];
+  sujetsEnCours: readonly {
+    reference: string;
+    titre: string;
+    enAttente: boolean;
+    derniereActiviteLe: string | null;
+  }[];
+};
+
 export type ConversationContexte = {
   canal: "email" | "whatsapp";
   messages: readonly MessageContexte[];
+  /** Ce que la base sait de l'expéditeur — pèse dans l'avis sans qu'on écrive de règle. */
+  expediteur?: ExpediteurContexte;
   /** Indices techniques d'automate relevés sans appel (`pipeline/bruit`), en clair — jamais une conclusion. */
   signaux?: readonly string[];
 };

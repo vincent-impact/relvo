@@ -17,6 +17,7 @@ import { inferenceDisponible, NIVEAU_RETENU } from "../config";
 import { contexteTri } from "../contexte";
 import { SortieTri } from "../schemas";
 import { detecterBruitDeterministe, signauxAutomatiques } from "./bruit";
+import { NATURE_DE_LA_RAISON, deciderParExpediteur } from "./expediteur";
 import {
   NATURE_EN_BASE,
   avisEnBase,
@@ -35,6 +36,9 @@ import {
 //   3. Filtre déterministe de la publicité : avis sans appel, zéro jeton
 //      (05 §9.5), et la source est mise en sourdine — la règle est sûre. Les
 //      signaux d'automate, eux, sont relevés et poussés au modèle.
+//   3 bis. Ce que l'EXPÉDITEUR décide sans appel (`./expediteur`) : une source
+//      déjà écartée est mise en sourdine ; un contact connu dont le seul sujet
+//      ouvert attend sa réponse est rattaché. Sinon, son profil part au modèle.
 //   4. Appel de tri, sortie conforme au schéma ; l'appel est consigné AVANT
 //      d'être exploité — un coût est un coût, même si la suite échoue.
 //   5. Action, nature, confiance et raison écrites sur la conversation. Puis
@@ -56,6 +60,8 @@ export type IssueTri =
   | "non-orpheline"
   | "sans-message-entrant"
   | "bruit-deterministe"
+  | "source-ecartee"
+  | "sujet-en-attente"
   | "ignore"
   | "avis-seul"
   | "ouvert"
@@ -124,10 +130,50 @@ export async function trierConversationEmail(args: {
       return { issue: "bruit-deterministe", detail: bruit.regle };
     }
 
+    const parExpediteur = deciderParExpediteur(projection.expediteur);
+    if (parExpediteur?.type === "ignorer") {
+      const nature = NATURE_DE_LA_RAISON[parExpediteur.raison] ?? "publicite";
+      const raison = `Cette adresse a déjà été écartée ${parExpediteur.nombre} fois pour la même raison.`;
+      await recordTriageVerdict(db, {
+        conversationId,
+        messageId,
+        verdict: "noise",
+        nature: NATURE_EN_BASE[nature],
+        confidence: "high",
+        reason: raison,
+        source: "deterministic",
+        rule: "source-deja-ecartee",
+      });
+      await ignorer(nature, raison);
+      expireTenantData();
+      return { issue: "source-ecartee", detail: parExpediteur.raison };
+    }
+    if (parExpediteur?.type === "rattacher") {
+      const raison = `Prolonge le sujet ${parExpediteur.reference}, qui attendait la réponse de ce contact.`;
+      await recordTriageVerdict(db, {
+        conversationId,
+        messageId,
+        verdict: "matter",
+        nature: "professional",
+        confidence: "high",
+        reason: raison,
+        source: "deterministic",
+        rule: "sujet-en-attente",
+      });
+      const applied = await applyTriageMatter(db, {
+        conversationId,
+        messageId,
+        existingSubjectReference: parExpediteur.reference,
+      });
+      expireTenantData();
+      return { issue: "sujet-en-attente", detail: applied.reference };
+    }
+
     const { system, prompt } = contexteTri({
       compte: projection.compte,
       conversation: {
         ...projection.conversation,
+        expediteur: projection.expediteur,
         signaux: signauxAutomatiques(entree),
       },
       instant: { maintenant: new Date().toISOString() },

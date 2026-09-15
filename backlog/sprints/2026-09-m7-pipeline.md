@@ -249,6 +249,15 @@ que rien ne le montre :
       cadre du message reçu et nomme le dirigeant comme tel. Décision dans `ecarts` (« L'avis de
       Relvo parle en deux parts »). Jeu d'évaluation réétiqueté, deux cas ajoutés.
 
+- [x] **Le profil de l'expéditeur, avant le modèle** : calculé par le domaine en une requête
+      (`getSenderProfile`) — contact connu, sujets nés de ses fils, domaine habituel, ignorances
+      par raison, sujets ouverts avec lui et leur attente. Deux règles sans appel
+      (`pipeline/expediteur.ts`, seuil et fenêtre en constantes testées) : une source écartée
+      trois fois pour la même raison se tait ; un contact dont le seul sujet ouvert attend sa
+      réponse est rattaché. La liste des sujets poussée au tri est choisie autour de lui, plafond
+      ramené de quarante à vingt. Le profil part au modèle en trois lignes. Décision dans `ecarts`
+      (« Le profil de l'expéditeur décide avant le modèle »).
+
 **Ce que la tranche laisse volontairement de côté** : la pastille d'un appui avec provenance
 (le reste de M7.20) ; WhatsApp (A8) ; les préférences observées et les antécédents de tri
 restent vides tant que M17 ne les calcule pas.
