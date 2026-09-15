@@ -1,23 +1,28 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarDays, FileText, Info, MessagesSquare } from "lucide-react";
+import { FileText, History, Info, MessagesSquare } from "lucide-react";
 import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 
 // Orchestrateur de la fiche Sujet (corps interactif). QUATRE onglets
-// (2026-07-27) : Informations · Tâches · Conversations · Documents. Les
-// conversations sont désormais une simple LISTE (plus de fil embarqué ni de
-// composer ici) : on clique une ligne pour ouvrir la conversation dans son écran
-// dédié (`/conversations/[id]`), seule surface d'affichage. On répond LÀ-BAS.
-// Cela supersède les deux onglets par canal (M6quater) : le split e-mail/
-// messagerie vit dans l'écran conversation, pas dans la fiche.
+// (2026-09-15) : Informations · Conversations · Documents · Journal. La page
+// principale porte le domaine, le résumé ET LES TÂCHES : le sujet, c'est ce
+// qu'il reste à faire, on n'a pas à changer d'onglet pour le voir. Le journal,
+// qu'on n'ouvre que pour comprendre ce que Relvo a fait, passe en dernier.
+// Les conversations sont une simple LISTE (plus de fil embarqué ni de composer
+// ici) : on clique une ligne pour ouvrir la conversation dans son écran dédié
+// (`/conversations/[id]`), seule surface d'affichage. On répond LÀ-BAS.
 //
 // ⚠️ AUCUN dock d'action ici (2026-09-07, retour bêta). Valider / Fermer /
 // Remettre / Supprimer se font TOUS au swipe sur la page Sujets : les boutons de
 // la fiche doublonnaient ces gestes et, affichés en grand sous le contenu,
 // déroutaient plus qu'ils ne servaient.
 
-type Tab = "informations" | "conversations" | "taches" | "documents";
+export type SubjectTab =
+  | "informations"
+  | "conversations"
+  | "documents"
+  | "journal";
 
 export function SubjectBody({
   header,
@@ -26,29 +31,36 @@ export function SubjectBody({
   conversationsCount,
   conversationsHasNew,
   informationsPane,
-  tachesPane,
   conversationsPane,
   documentsPane,
   documentsCount,
+  journalPane,
+  journalCount,
 }: {
   header: React.ReactNode;
-  defaultTab?: Tab;
+  defaultTab?: SubjectTab;
+  /** Tâches ouvertes — compteur de l'onglet principal. */
   tasksCount: number;
   /** Nombre total de conversations (compteur neutre, homogène aux autres onglets). */
   conversationsCount: number;
   /** Au moins un fil a du non-lu → point rouge sur l'icône. */
   conversationsHasNew: boolean;
   informationsPane: React.ReactNode;
-  tachesPane: React.ReactNode;
   conversationsPane: React.ReactNode;
   documentsPane: React.ReactNode;
   documentsCount: number;
+  journalPane: React.ReactNode;
+  journalCount: number;
 }) {
-  const [tab, setTab] = useState<Tab>(defaultTab);
+  const [tab, setTab] = useState<SubjectTab>(defaultTab);
 
   const options: SegTabOption[] = [
-    { value: "informations", label: "Informations", icon: Info },
-    { value: "taches", label: "Tâches", icon: CalendarDays, count: tasksCount },
+    {
+      value: "informations",
+      label: "Informations et tâches",
+      icon: Info,
+      count: tasksCount,
+    },
     {
       value: "conversations",
       label: "Conversations",
@@ -63,6 +75,7 @@ export function SubjectBody({
       icon: FileText,
       count: documentsCount,
     },
+    { value: "journal", label: "Journal", icon: History, count: journalCount },
   ];
 
   return (
@@ -72,15 +85,15 @@ export function SubjectBody({
         <SegTabs
           options={options}
           value={tab}
-          onValueChange={(v) => setTab(v as Tab)}
+          onValueChange={(v) => setTab(v as SubjectTab)}
           overlap
           iconOnly
         />
 
         {tab === "informations" ? informationsPane : null}
         {tab === "conversations" ? conversationsPane : null}
-        {tab === "taches" ? tachesPane : null}
         {tab === "documents" ? documentsPane : null}
+        {tab === "journal" ? journalPane : null}
       </main>
     </>
   );

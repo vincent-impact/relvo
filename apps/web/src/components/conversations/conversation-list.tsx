@@ -304,13 +304,16 @@ function ConversationRow({
             ) : null}
           </div>
 
-          {/* Ce que Relvo en pense (M7.20) : verdict et raison, ou « ignorée par
-              Relvo ». Rien si Relvo n'a pas encore lu ce fil. */}
-          <RelvoVerdictLine
-            relvo={data.relvo}
-            ignore={data.ignore}
-            className="mt-1"
-          />
+          {/* L'avis de tri (M7.20) : action, nature et raison, ou « ignorée par
+              Relvo ». Rien si Relvo n'a pas encore lu ce fil — ni si un sujet
+              le suit : l'avis a servi, la mémoire vivante est dans le sujet. */}
+          {data.listeningSubjects.length === 0 || data.ignored ? (
+            <RelvoVerdictLine
+              relvo={data.relvo}
+              ignore={data.ignore}
+              className="mt-1"
+            />
+          ) : null}
         </div>
       </div>
 

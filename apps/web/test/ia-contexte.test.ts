@@ -6,6 +6,7 @@ import {
   contexteRelecture,
   contexteStructuration,
   contexteTri,
+  extraireSignature,
   feriesProches,
   ficheCloture,
   ficheSujet,
@@ -192,6 +193,22 @@ describe("hygiène du message", () => {
     expect(
       retirerSignature("Cordialement, voici le point : rien ne change."),
     ).toContain("rien ne change");
+  });
+
+  it("extrait la signature que l'hygiène retire, sans la formule de politesse", () => {
+    expect(
+      extraireSignature(
+        "Bonjour,\nla livraison est décalée à 9h, merci de confirmer.\n\nBien cordialement,\n\nLaurent Mercier\nResponsable commercial — Froid Occitanie SAS\n06 12 45 78 90\n\nLe 12 sept., Vincent a écrit :\n> ok",
+      ),
+    ).toBe(
+      "Laurent Mercier\nResponsable commercial — Froid Occitanie SAS\n06 12 45 78 90",
+    );
+    expect(extraireSignature("Bonjour, rien à signaler.")).toBeNull();
+    expect(
+      extraireSignature(
+        "Cordialement,\nun message qui commence poliment et continue longuement sans signature",
+      ),
+    ).toBeNull();
   });
 
   it("plafonne avec un marqueur explicite, et reste idempotente", () => {

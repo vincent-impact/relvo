@@ -13,7 +13,7 @@ sujet, aucune sur un message informatif — pour 0,60 € les mille sujets. Comm
 structuration ne tourne que pour les comptes où l'**assistant est activé** (Réglages ›
 Préférences), coupé partout pour l'instant. **La prochaine étape est double** : (1) activer
 l'assistant sur le compte du dirigeant et relire les premières structurations réelles — situation,
-tâches, `cache_read` — dans le journal ; (2) la tranche 6, la relecture. Les deux décisions par
+tâches, `cache_read` — dans le journal ; (2) la tranche 7 **avancée avant la 6** à la demande du dirigeant : le bouton « Répondre » sur une tâche de réponse, le brouillon rédigé à l'appui, la tâche cochée à l'envoi — c'est le passage à l'action ; puis la tranche 6, la relecture. Les deux décisions par
 défaut de la tranche 4 (frontière de confiance à « moyenne », « incertain » traité comme une
 confiance basse) restent à confirmer sur le journal réel.
 
@@ -304,6 +304,11 @@ pure est testée sans base.
       de Relvo signalé par sa pastille, l'édition reprend le texte affiché —, la prochaine étape
       avec son échéance en dessous, domaine et urgence en tête. Décision dans `ecarts` (« Un seul
       résumé sur la fiche »).
+- [x] Deuxième relecture (même jour) : les tâches passent sur la page principale du sujet, le
+      journal en dernier onglet, la prochaine étape n'est plus affichée ; l'avis de tri ne
+      s'affiche plus sur un fil suivi (liste et header) ; le contact automatique est désormais
+      complété (la fiche passée au modèle se déclare « à compléter »). Décision dans `ecarts`
+      (« La fiche du sujet, c'est le résumé et les tâches »).
 - [ ] Relire les structurations réelles suivantes : tâches gardées ou supprimées, `cache_read`.
 
 **Ce que la tranche laisse volontairement de côté** : l'étiquette nouvelle et les questions de

@@ -370,17 +370,26 @@ export function ConversationDetail({
               {channelLabel}
             </div>
 
-            {/* Ce que Relvo en pense (M7.20) — verdict, raison, heure ; ou
-                « Relvo n'a pas encore lu ce fil ». Sur le violet, en blanc. */}
-            <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 [&_.text-\(--text-secondary\)]:text-white/85 [&_.text-\(--text-tertiary\)]:text-white/70 [&_.text-relvo]:text-white">
-              {relvo || ignore ? (
-                <RelvoVerdictLine relvo={relvo} ignore={ignore} clamp={false} />
-              ) : (
-                <p className="text-[12.5px] text-white/70">
-                  Relvo n’a pas encore lu ce fil.
-                </p>
-              )}
-            </div>
+            {/* L'avis de tri de Relvo (M7.20) — action, nature, raison, heure ;
+                ou « Relvo n'a pas encore lu ce fil ». Sur le violet, en blanc.
+                SEULEMENT tant que le fil n'est pas suivi : c'est là qu'il sert
+                (confirmer ou contredire, réactiver). Un fil suivi par un sujet
+                a sa mémoire dans le sujet ; l'avis reste dans le journal. */}
+            {!activeListening ? (
+              <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 [&_.text-\(--text-secondary\)]:text-white/85 [&_.text-\(--text-tertiary\)]:text-white/70 [&_.text-relvo]:text-white">
+                {relvo || ignore ? (
+                  <RelvoVerdictLine
+                    relvo={relvo}
+                    ignore={ignore}
+                    clamp={false}
+                  />
+                ) : (
+                  <p className="text-[12.5px] text-white/70">
+                    Relvo n’a pas encore lu ce fil.
+                  </p>
+                )}
+              </div>
+            ) : null}
 
             {/* Interlocuteurs — TOUS les contacts du fil, en colonne compacte.
                 Tap = fiche (enregistré) ou pop-up de création (non enregistré) ;

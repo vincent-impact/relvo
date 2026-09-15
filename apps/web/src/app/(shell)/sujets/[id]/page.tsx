@@ -11,22 +11,21 @@ import { RelvoHeader } from "@/components/layout/relvo-header";
 import { AcknowledgeOnOpen } from "@/components/subject/acknowledge-on-open";
 import { PollRefresh } from "@/components/shared/poll-refresh";
 import { AttachmentViewer } from "@/components/shared/attachment-viewer";
-import { AddTask } from "@/components/subject/add-task";
 import { InformationsPane } from "@/components/subject/informations-pane";
+import { JournalPane } from "@/components/subject/journal-pane";
 import { SubjectBody } from "@/components/subject/subject-body";
 import { SubjectConversationsList } from "@/components/subject/subject-conversations-list";
 import { SubjectTitleInline } from "@/components/subject/subject-title-inline";
-import { TaskItem } from "@/components/subject/task-item";
 import { toConversationRowData } from "@/lib/conversation-row";
 import { contactFullName, formatRelative } from "@/lib/display";
 import { relvoTaskInfo } from "@/lib/task-item-data";
 import { getTenantDb } from "@/server/auth-context";
-import { ListPanel } from "@/components/shared/list-panel";
 
-// Fiche Sujet (2026-07-27) — hero violet (titre éditable + progression), 4
-// onglets Informations / Tâches / Conversations / Documents. Les conversations
-// sont une LISTE : on clique une ligne pour ouvrir la conversation dans son écran
-// dédié (`/conversations/[id]`), seule surface d'affichage — on répond là-bas.
+// Fiche Sujet (2026-09-15) — hero violet (titre éditable + progression), 4
+// onglets Informations (domaine, résumé, TÂCHES) / Conversations / Documents /
+// Journal. Les conversations sont une LISTE : on clique une ligne pour ouvrir la
+// conversation dans son écran dédié (`/conversations/[id]`), seule surface
+// d'affichage — on répond là-bas.
 
 export default async function SujetPage({
   params,
@@ -105,18 +104,22 @@ export default async function SujetPage({
       <SubjectBody
         defaultTab={
           (
-            ["informations", "conversations", "taches", "documents"] as const
+            ["informations", "conversations", "documents", "journal"] as const
           ).includes(
             (tab ?? "") as
               | "informations"
               | "conversations"
-              | "taches"
-              | "documents",
+              | "documents"
+              | "journal",
           )
-            ? (tab as "informations" | "conversations" | "taches" | "documents")
+            ? (tab as
+                | "informations"
+                | "conversations"
+                | "documents"
+                | "journal")
             : "informations"
         }
-        tasksCount={tasks.length}
+        tasksCount={tasks.filter((t) => t.status !== "done").length}
         conversationsCount={rows.length}
         conversationsHasNew={rows.some((r) => r.unreadCount > 0)}
         informationsPane={
@@ -126,23 +129,28 @@ export default async function SujetPage({
             folders={folders}
             folderId={subject.folderId}
             priority={subject.priority}
-            events={events}
-            // Ce que Relvo a rédigé à la structuration (M7.6) : résumé court
-            // et prochaine étape, préformatés — la fiche ne relit pas l'historique.
+            subjectTitle={subject.title}
+            tasks={tasks.map((t) => ({
+              id: t.id,
+              title: t.title,
+              startDate: t.startDate
+                ? t.startDate.toISOString().slice(0, 10)
+                : null,
+              startTime: t.startTime
+                ? t.startTime.toISOString().slice(11, 16)
+                : null,
+              status: t.status,
+              sourceActor: t.sourceActor,
+              subjectId: subject.id,
+              subjectTitle: subject.title,
+              folderSlug:
+                folders.find((f) => f.id === subject.folderId)?.slug ?? null,
+              relvo: relvoTaskInfo(t.metadata),
+            }))}
+            // Ce que Relvo a rédigé à la structuration (M7.6) : le résumé court,
+            // affiché tant que l'utilisateur n'a pas écrit le sien.
             relvo={
-              subject.situationUpdatedAt
-                ? {
-                    summary: subject.summary,
-                    nextStep: subject.situationNextStep,
-                    deadline: subject.situationDeadline
-                      ? subject.situationDeadline.toLocaleDateString("fr-FR", {
-                          day: "numeric",
-                          month: "long",
-                          timeZone: "UTC",
-                        })
-                      : null,
-                  }
-                : null
+              subject.situationUpdatedAt ? { summary: subject.summary } : null
             }
           />
         }
@@ -196,49 +204,6 @@ export default async function SujetPage({
             </div>
           </RelvoHeader>
         }
-        tachesPane={
-          <div className="pt-3 pb-2">
-            {tasks.length === 0 ? (
-              <p className="px-[22px] text-[13.5px] text-(--text-tertiary)">
-                Aucune tâche.
-              </p>
-            ) : (
-              <ListPanel>
-                {tasks.map((t) => (
-                  <TaskItem
-                    key={t.id}
-                    meta="date"
-                    task={{
-                      id: t.id,
-                      title: t.title,
-                      startDate: t.startDate
-                        ? t.startDate.toISOString().slice(0, 10)
-                        : null,
-                      startTime: t.startTime
-                        ? t.startTime.toISOString().slice(11, 16)
-                        : null,
-                      status: t.status,
-                      sourceActor: t.sourceActor,
-                      subjectId: subject.id,
-                      subjectTitle: subject.title,
-                      folderSlug:
-                        folders.find((f) => f.id === subject.folderId)?.slug ??
-                        null,
-                      relvo: relvoTaskInfo(t.metadata),
-                    }}
-                  />
-                ))}
-              </ListPanel>
-            )}
-            <AddTask
-              subjectId={subject.id}
-              subjectTitle={subject.title}
-              subjectFolderSlug={
-                folders.find((f) => f.id === subject.folderId)?.slug ?? null
-              }
-            />
-          </div>
-        }
         documentsPane={
           <div className="px-4 pt-4 pb-2">
             <p className="mb-3 text-[12.5px] leading-[1.4] text-(--text-tertiary)">
@@ -281,6 +246,8 @@ export default async function SujetPage({
             )}
           </div>
         }
+        journalCount={events.length}
+        journalPane={<JournalPane events={events} />}
       />
     </MobileFrame>
   );

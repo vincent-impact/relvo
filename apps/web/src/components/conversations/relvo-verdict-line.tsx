@@ -12,6 +12,9 @@ import { cn } from "@/lib/utils";
 //   • avis seul → « Relvo · À traiter · professionnel — raison »,
 //     « Relvo · Rien à faire · automatique — raison », « Relvo · À considérer · … »
 //   • rien → null : Relvo n'a pas lu ce fil (rien n'est affiché en liste).
+// Ce n'est PAS un résumé de la conversation : c'est un verdict daté, rendu sur
+// le fil à son arrivée. Les appelants ne l'affichent que sur un fil sans sujet
+// ou ignoré ; un fil suivi a sa mémoire dans le sujet (05 §1.6).
 // Les mots sont ceux de l'utilisateur (`lib/conversation-row`), jamais ceux du
 // modèle : « bruit » ou « autre » ne s'affichent nulle part.
 

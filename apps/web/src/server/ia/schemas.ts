@@ -126,7 +126,7 @@ export const SortieStructuration = z.object({
     ),
   /** Vide si le message est informatif (`05 §2.2`). */
   taches: z.array(TacheProposee),
-  /** Null si l'interlocuteur est connu, ou si la conversation est un groupe. */
+  /** Null seulement si la fiche du contact est vérifiée, ou si la conversation est un groupe. */
   contact: z
     .object({
       prenom: z.string().nullable(),
@@ -134,7 +134,10 @@ export const SortieStructuration = z.object({
       entreprise: z.string().nullable(),
       role: z.enum(ROLES_CONTACT),
     })
-    .nullable(),
+    .nullable()
+    .describe(
+      "Identité et rôle de l'interlocuteur, déduits de la signature ou du message. Null seulement si sa fiche est vérifiée ou s'il s'agit d'un groupe.",
+    ),
   /** Clés du registre du compte, uniquement. */
   etiquettes: z.array(z.string()),
   /** Au plus une étiquette hors registre par sujet (`05 §9.3`). */

@@ -58,6 +58,40 @@ export function retirerSignature(texte: string): string {
   return texte.slice(0, coupe);
 }
 
+/** Longueur maximale d'une signature extraite, en caractères. */
+export const PLAFOND_SIGNATURE = 300;
+
+/**
+ * EXTRAIT la signature — ce que `retirerSignature` retire — pour la seule
+ * sollicitation qui en a besoin : compléter un contact automatique (nom,
+ * entreprise, fonction, téléphone). Coupe plus tôt que le retrait — dès le
+ * premier tiers : ici un faux positif ne coûte qu'un bout de corps montré au
+ * modèle, alors qu'un message court sans signature extraite laisse le contact
+ * à l'état d'adresse. La formule de politesse n'est pas conservée. Null quand
+ * il n'y a rien.
+ */
+export function extraireSignature(texte: string): string | null {
+  const sansCitations = retirerCitations(texte);
+  let coupe = -1;
+  let longueurFormule = 0;
+  for (const re of DEBUT_SIGNATURE) {
+    const m = re.exec(sansCitations);
+    if (
+      m &&
+      m.index >= sansCitations.length / 3 &&
+      (coupe < 0 || m.index < coupe)
+    ) {
+      coupe = m.index;
+      longueurFormule = m[0].length;
+    }
+  }
+  if (coupe < 0) return null;
+  const signature = normaliserBlancs(
+    sansCitations.slice(coupe + longueurFormule),
+  );
+  return signature ? signature.slice(0, PLAFOND_SIGNATURE) : null;
+}
+
 /** Normalise les blancs : fins de ligne, espaces en fin de ligne, lignes vides en série. */
 export function normaliserBlancs(texte: string): string {
   return texte

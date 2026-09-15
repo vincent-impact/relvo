@@ -101,6 +101,14 @@ export function ficheContact(c: ContactContexte): string {
     .join(", ");
   return [
     `# Contact · ${c.nom}${c.entreprise ? ` (${c.entreprise})` : ""}`,
+    ...(c.aCompleter
+      ? [
+          `Fiche AUTOMATIQUE, créée à l'ouverture depuis l'adresse d'envoi : le nom peut être une adresse. Déduis prénom, nom, entreprise et rôle de la signature ou du corps du message, et renvoie-les dans « contact ».`,
+          ...(c.signature
+            ? [`Signature du dernier message :`, c.signature]
+            : []),
+        ]
+      : []),
     [
       ligne("Rôle", c.role),
       ligne("Note de Relvo", c.noteRelvo),

@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, History, Pencil } from "lucide-react";
+import { ChevronDown, Pencil } from "lucide-react";
 import { toast } from "sonner";
-import type { Actor, Priority } from "@relvo/db";
+import type { Priority } from "@relvo/db";
 import {
   Dialog,
   DialogContent,
@@ -13,12 +13,15 @@ import {
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { ActorPill } from "@/components/shared/actor-pill";
+import { ListPanel } from "@/components/shared/list-panel";
+import { AddTask } from "@/components/subject/add-task";
+import { TaskItem } from "@/components/subject/task-item";
+import type { TaskItemData } from "@/lib/task-item-data";
 import {
   setSubjectPriorityAction,
   updateSubjectAction,
 } from "@/server/actions/subjects";
 import { folderVisual } from "@/lib/folders";
-import { formatRelative } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
 // Onglet « Informations » de la fiche Sujet (refonte 2026-07-28 : moins
@@ -29,10 +32,11 @@ import { cn } from "@/lib/utils";
 //   2. Résumé — UN SEUL champ, court : le descriptif de l'utilisateur s'il l'a
 //      écrit, sinon le résumé que Relvo a rédigé à la structuration, signalé par
 //      sa pastille. Le stylo ouvre une POP-UP d'édition pré-remplie ; ce que
-//      l'utilisateur enregistre devient SON descriptif et l'emporte. Sous le
-//      résumé, la PROCHAINE ÉTAPE vue par Relvo, avec l'échéance qui compte.
-//      Jamais la liste des tâches : elles vivent dans l'onglet Tâches.
-//   3. Journal (tiroir)
+//      l'utilisateur enregistre devient SON descriptif et l'emporte.
+//   3. Les TÂCHES, juste dessous : ce sont elles qui disent la suite. La
+//      « prochaine étape » de Relvo n'est pas affichée, elle serait redondante
+//      (elle sert à Relvo pour la relecture et la relance).
+// Le journal a son propre onglet, le dernier.
 // Le « Rapport d'activité de Relvo » (placeholder) est retiré tant qu'il n'a
 // rien à montrer. ⚠️ La fiche ne porte AUCUNE action de statut (2026-09-07) :
 // valider / fermer / remettre / supprimer vivent tous dans les SWIPES de la page
@@ -45,26 +49,10 @@ export type PaneFolder = {
   color: string | null;
   icon: string | null;
 };
-export type PaneEvent = {
-  id: string;
-  title: string;
-  actor: Actor;
-  createdAt: Date;
-};
-/** Ce que Relvo a rédigé à la structuration, préformaté côté serveur (05 §1.6). */
+/** Ce que Relvo a rédigé à la structuration (05 §1.6). */
 export type PaneRelvo = {
   /** Résumé court de Relvo — affiché quand l'utilisateur n'a pas écrit le sien. */
   summary: string | null;
-  nextStep: string | null;
-  /** « 11 septembre », ou null. */
-  deadline: string | null;
-};
-
-const ACTOR_DOT: Record<Actor, string> = {
-  user: "bg-brand",
-  ai: "bg-relvo",
-  contact: "bg-(--amber-600)",
-  system: "bg-(--text-tertiary)",
 };
 
 export function InformationsPane({
@@ -73,16 +61,19 @@ export function InformationsPane({
   folders,
   folderId,
   priority,
-  events,
   relvo = null,
+  tasks,
+  subjectTitle,
 }: {
   subjectId: string;
   description: string | null;
   folders: PaneFolder[];
   folderId: string | null;
   priority: Priority;
-  events: PaneEvent[];
   relvo?: PaneRelvo | null;
+  /** Les tâches du sujet, ouvertes d'abord — la page principale les porte. */
+  tasks: TaskItemData[];
+  subjectTitle: string;
 }) {
   const router = useRouter();
   const [value, setValue] = useState(description ?? "");
@@ -95,7 +86,6 @@ export function InformationsPane({
   const relvoSummary = (relvo?.summary ?? "").trim();
   const shown = base || relvoSummary;
   const byRelvo = !base && Boolean(relvoSummary);
-  const nextStep = (relvo?.nextStep ?? "").trim();
   const folder = folders.find((f) => f.id === folderId) ?? null;
   const folderViz = folderVisual(
     folder
@@ -234,75 +224,30 @@ export function InformationsPane({
             Résumer ce sujet en une phrase…
           </button>
         )}
-
-        {nextStep ? (
-          <div className="mt-3 border-t border-(--border-light) pt-3">
-            <div className="text-[10.5px] font-bold tracking-[0.3px] text-relvo uppercase">
-              Prochaine étape
-            </div>
-            <p className="mt-1 text-[14.5px] leading-[1.5] text-(--text-primary)">
-              {nextStep}
-              {relvo?.deadline ? (
-                <span className="text-(--text-secondary)">
-                  {" "}
-                  · pour le {relvo.deadline}
-                </span>
-              ) : null}
-            </p>
-          </div>
-        ) : null}
       </section>
 
-      {/* 3. Journal (tiroir) */}
-      <details className="group overflow-hidden rounded-[14px] border border-(--hairline) bg-white shadow-surface-1">
-        <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3.5 [&::-webkit-details-marker]:hidden">
-          <span className="flex items-center gap-2.5">
-            <History
-              className="size-[18px] flex-none text-(--text-tertiary)"
-              strokeWidth={2}
-            />
-            <span className="text-[15px] font-bold">Journal</span>
-            <span className="text-[13px] font-semibold text-(--text-tertiary)">
-              {events.length}
-            </span>
-          </span>
-          <ChevronDown
-            className="size-5 flex-none text-(--text-tertiary) transition-transform group-open:rotate-180"
-            strokeWidth={2.2}
-          />
-        </summary>
-        <div className="px-4 pb-3">
-          {events.length === 0 ? (
-            <p className="pb-1 text-[13.5px] text-(--text-tertiary)">
-              Journal vide.
-            </p>
-          ) : (
-            <div className="pt-1 pb-1">
-              {events.map((ev, i) => (
-                <div key={ev.id} className="relative flex gap-[13px] pb-[17px]">
-                  <span
-                    className={cn(
-                      "z-[1] mt-[3px] size-[11px] flex-none rounded-full border-2 border-white",
-                      ACTOR_DOT[ev.actor],
-                    )}
-                  />
-                  {i < events.length - 1 ? (
-                    <span className="absolute top-[13px] -bottom-1 left-[5px] w-0.5 bg-[#ece9e3]" />
-                  ) : null}
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[13.5px] leading-[1.4] text-[#3a3833]">
-                      {ev.title}
-                    </div>
-                    <div className="mt-[3px] text-[11.5px] text-[#a8a69d]">
-                      {formatRelative(ev.createdAt)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </details>
+      {/* 3. Tâches — sur la page principale : le sujet, c'est ce qu'il reste à faire */}
+      <section>
+        <h2 className="mb-2 px-1 text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
+          Tâches
+        </h2>
+        {tasks.length === 0 ? (
+          <p className="px-1 text-[13.5px] text-(--text-tertiary)">
+            Aucune tâche.
+          </p>
+        ) : (
+          <ListPanel>
+            {tasks.map((t) => (
+              <TaskItem key={t.id} meta="date" task={t} />
+            ))}
+          </ListPanel>
+        )}
+        <AddTask
+          subjectId={subjectId}
+          subjectTitle={subjectTitle}
+          subjectFolderSlug={folder?.slug ?? null}
+        />
+      </section>
 
       {/* Sélecteur de domaine */}
       <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>

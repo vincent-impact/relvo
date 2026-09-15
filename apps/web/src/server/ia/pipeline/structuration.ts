@@ -14,6 +14,7 @@ import { extract } from "../client";
 import { inferenceDisponible, NIVEAU_RETENU } from "../config";
 import {
   contexteStructuration,
+  extraireSignature,
   ficheCloture,
   type ContactContexte,
   type DomaineContexte,
@@ -114,6 +115,17 @@ export function entreesDuContexte(p: StructurationProjection): {
     contact: p.contact
       ? {
           nom: p.contact.nom,
+          aCompleter: p.contact.statut === "auto",
+          // La signature que l'hygiène retire du fil : c'est là que sont le
+          // nom, l'entreprise et le téléphone d'un contact à compléter.
+          signature:
+            p.contact.statut === "auto"
+              ? extraireSignature(
+                  [...p.sujet.messages]
+                    .reverse()
+                    .find((m) => m.sens === "entrant")?.contenu ?? "",
+                )
+              : null,
           entreprise: p.contact.entreprise,
           role: p.contact.role,
           noteRelvo: p.contact.noteRelvo,

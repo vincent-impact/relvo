@@ -143,6 +143,10 @@ export type SujetContexte = {
 /** Fiche CONTACT (`05 §10.1`). */
 export type ContactContexte = {
   nom: string;
+  /** Fiche automatique, créée par Relvo à l'ouverture : nom, entreprise et rôle sont à déduire du message. */
+  aCompleter?: boolean;
+  /** Signature du dernier message entrant — l'hygiène la retire du fil, la fiche la garde pour compléter le contact. */
+  signature?: string | null;
   entreprise: string | null;
   role: string | null;
   noteRelvo: string | null;

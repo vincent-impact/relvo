@@ -366,6 +366,30 @@ relit, sans écran. Domaine et urgence passent en tête : de quoi on parle, avan
 **Écarté** : deux blocs (Relvo et utilisateur) côte à côte, et un résumé en quatre lignes
 étiquetées — l'étiquette à gauche perdait la largeur d'un téléphone.
 
+### La fiche du sujet, c'est le résumé et les tâches ; l'avis de tri s'efface quand un sujet suit le fil
+
+**`tranché`** · Deuxième relecture en production, le même jour. Les tâches vivaient dans un
+onglet : pour voir ce qu'il reste à faire, il fallait un geste de plus, et la « prochaine
+étape » de Relvo sur la page principale répétait la première tâche. Dans le fil, l'avis de tri
+restait en tête d'une conversation déjà suivie, et se lisait comme un résumé figé, portant
+sur le premier message seulement, redondant avec celui du sujet.
+
+**Retenu** : la page principale du sujet porte le domaine et l'urgence, le résumé, puis **les
+tâches** ; la prochaine étape n'est plus affichée (Relvo la garde pour la relecture et la
+relance) ; le journal devient le dernier onglet. L'**avis de tri** n'est pas un résumé : c'est
+un verdict daté, rendu à l'arrivée du fil, qui sert à confirmer ou contredire Relvo. Il ne
+s'affiche que sur un fil **sans sujet** ou **ignoré**, dans la liste comme en tête du fil ; un
+fil suivi n'a que son bloc « Suivi dans » — sa mémoire vivante est le résumé du sujet, et
+l'avis reste dans le journal.
+
+**Écarté** : un résumé de conversation entretenu par Relvo. Deux mémoires au même endroit
+divergent ; la situation du sujet est la seule que Relvo relit (05 §1.6).
+
+**Au passage** : la structuration ne complétait pas le contact automatique, pour deux raisons
+cumulées — la fiche passée au modèle le présentait comme connu, et l'hygiène du message avait
+retiré la signature, là où sont le nom et l'entreprise. La fiche dit désormais qu'elle est
+automatique, et porte la signature du dernier message, extraite avant l'hygiène.
+
 ### La structuration retient moins qu'elle ne propose
 
 **`tranché`** · Le second appel — situation, résumé, tâches, contact — écrit en base sans revue

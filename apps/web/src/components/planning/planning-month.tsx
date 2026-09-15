@@ -142,7 +142,7 @@ export function PlanningMonth({
   const active = tasks.find((t) => t.id === activeId) ?? null;
 
   function onOpen(t: PlanningTask) {
-    if (t.subjectId) router.push(`/sujets/${t.subjectId}?tab=taches`);
+    if (t.subjectId) router.push(`/sujets/${t.subjectId}`);
   }
 
   function onDragStart(e: DragStartEvent) {
