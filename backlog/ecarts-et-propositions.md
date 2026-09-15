@@ -349,6 +349,23 @@ surveiller : des sujets ouverts en confiance moyenne que l'utilisateur ferme aus
 (les traiter comme une affaire en confiance moyenne). La frontière est une constante du code,
 en un seul endroit, testée.
 
+### Un seul résumé sur la fiche, plus court que le message
+
+**`tranché`** · Le premier sujet structuré en production portait un résumé plus long que
+l'e-mail, avec un bouton « voir plus », qui répétait les tâches ; à côté, un « Descriptif » vide
+attendait l'utilisateur ; le domaine venait après. Le dirigeant a demandé un résumé qui
+accélère la lecture, pas qui la remplace.
+
+**Retenu** : un résumé est **une phrase, deux au plus**, qui dit de quoi il s'agit et jamais ce
+qu'il y a à faire — les tâches vivent dans leur onglet. La fiche n'a qu'**un** champ « Résumé »
+: la description de l'utilisateur, sinon le résumé de Relvo avec sa pastille ; corriger reprend
+le texte affiché, et la version de l'utilisateur l'emporte. La **prochaine étape** et son
+échéance s'affichent dessous ; « où on en est » et « on attend » restent des champs que Relvo
+relit, sans écran. Domaine et urgence passent en tête : de quoi on parle, avant tout.
+
+**Écarté** : deux blocs (Relvo et utilisateur) côte à côte, et un résumé en quatre lignes
+étiquetées — l'étiquette à gauche perdait la largeur d'un téléphone.
+
 ### La structuration retient moins qu'elle ne propose
 
 **`tranché`** · Le second appel — situation, résumé, tâches, contact — écrit en base sans revue

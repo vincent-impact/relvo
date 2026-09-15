@@ -106,15 +106,24 @@ export type TacheProposee = z.infer<typeof TacheProposee>;
  */
 export const SortieStructuration = z.object({
   situation: z.object({
-    ou_on_en_est: z.string(),
-    prochaine_etape: z.string(),
+    ou_on_en_est: z.string().describe("Une phrase."),
+    prochaine_etape: z
+      .string()
+      .describe("UNE action, en quelques mots, sans date."),
     /** De qui on attend quoi ; null si on n'attend personne. */
-    attente: z.string().nullable(),
+    attente: z
+      .string()
+      .nullable()
+      .describe("De qui on attend quoi, en quelques mots ; null sinon."),
     /** L'échéance qui compte, AAAA-MM-JJ, ou null. */
     echeance: dateIso,
   }),
-  /** Résumé libre de quelques lignes, pour l'humain. */
-  resume: z.string(),
+  /** Résumé court, pour l'humain : de quoi il s'agit — jamais les tâches. */
+  resume: z
+    .string()
+    .describe(
+      "De quoi il s'agit, en une phrase (deux au plus). Jamais les actions à faire ni les dates.",
+    ),
   /** Vide si le message est informatif (`05 §2.2`). */
   taches: z.array(TacheProposee),
   /** Null si l'interlocuteur est connu, ou si la conversation est un groupe. */

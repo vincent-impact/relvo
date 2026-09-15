@@ -162,6 +162,7 @@ export function contexteStructuration(args: {
     [
       `# Ta structuration`,
       `Ce sujet vient d'être ouvert. Rédige sa situation structurée et son résumé, déduis les tâches, complète le contact s'il est inconnu, choisis les étiquettes dans le registre, et nomme ce qui te manque pour mieux faire.`,
+      `COURT, toujours plus court que le message. Le résumé dit DE QUOI il s'agit en une phrase, deux au plus — jamais ce qu'il y a à faire, ni les dates : les tâches sont là pour ça. « Où on en est » tient en une phrase ; « prochaine étape » nomme UNE action, en quelques mots ; « attente » dit de qui on attend quoi, en quelques mots. Pas de répétition entre ces champs.`,
       `Une tâche par action que le message DEMANDE au dirigeant — répondre, confirmer, décider, envoyer — et aucune s'il est informatif. Une demande explicite (« pouvez-vous confirmer ? ») est toujours une tâche.`,
       `La date d'une tâche va dans ses champs de date, JAMAIS dans son titre : « demain », « avant jeudi », « entre 8 h et 10 h » se lisent par rapport à la date du jour et donnent date, heure et heure de fin. Sans formulation temporelle, aucune date.`,
       `Chaque tâche porte sa raison en une phrase, et sa provenance quand elle vient d'un précédent, d'une instruction ou d'un document que tu as lus — sinon null.`,

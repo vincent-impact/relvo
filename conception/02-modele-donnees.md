@@ -265,8 +265,14 @@ d'origine, et l'acteur qui l'a créé.
 
 Il porte aussi une **situation structurée** en quatre champs courts — où on en est, la prochaine
 étape, de qui on attend quoi, l'échéance qui compte — maintenue par Relvo à chaque relecture, avec
-l'horodatage de sa dernière mise à jour. Le résumé libre reste pour l'humain ; la situation
-structurée est ce que Relvo **relit**, et ce qui rend les sujets comparables entre eux.
+l'horodatage de sa dernière mise à jour. La situation structurée est ce que Relvo **relit**, et
+ce qui rend les sujets comparables entre eux.
+
+**Le résumé et la description sont deux colonnes pour un seul champ à l'écran.** La description
+est ce que l'utilisateur écrit ; le résumé, ce que Relvo rédige — une phrase, deux au plus, qui
+dit de quoi il s'agit et jamais ce qu'il y a à faire. La fiche montre la description si elle
+existe, sinon le résumé de Relvo signalé comme tel ; l'utilisateur qui corrige écrit dans la
+description, et sa version l'emporte sur toutes les relectures suivantes.
 
 Les **étiquettes** sont un tableau de clés du registre du compte (cf. `Label`), attribuées par
 Relvo seul. Le **domaine proposé** est un nom libre, renseigné quand aucun domaine existant ne

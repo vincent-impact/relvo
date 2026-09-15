@@ -221,6 +221,9 @@ async function main() {
       `  écarts (retenue)      : ${ok.reduce((a, r) => a + r.retenue!.ecarts.length, 0)}`,
     );
     console.log(
+      `  longueurs moy. (car.) : résumé ${Math.round(moy(ok.map((r) => r.retenue!.resume?.length ?? 0)))} · où on en est ${Math.round(moy(ok.map((r) => r.retenue!.situation.ouOnEnEst?.length ?? 0)))} · prochaine étape ${Math.round(moy(ok.map((r) => r.retenue!.situation.prochaineEtape?.length ?? 0)))} · message ${Math.round(moy(cas.map((c) => c.messages.reduce((a, m) => a + m.contenu.length, 0))))}`,
+    );
+    console.log(
       `  coût moyen            : ${coutMoyen.toFixed(5)} € → ${(coutMoyen * 1000).toFixed(2)} € / 1 000 sujets`,
     );
     console.log(
@@ -237,6 +240,12 @@ async function main() {
       console.log(
         `  · ${r.cas} — attendues ${r.attendues}, proposées ${r.proposees}${r.erreur ? ` — ERREUR ${r.erreur}` : ""}`,
       );
+      if (r.retenue) {
+        console.log(`      résumé : ${r.retenue.resume ?? "—"}`);
+        console.log(
+          `      étape  : ${r.retenue.situation.prochaineEtape ?? "—"}${r.retenue.situation.echeance ? ` (${r.retenue.situation.echeance})` : ""}`,
+        );
+      }
       for (const x of t) {
         console.log(
           `      - [${x.type}] ${x.titre}${x.date ? ` (${x.date}${x.heure ? ` ${x.heure}` : ""})` : ""} — ${x.raison}`,

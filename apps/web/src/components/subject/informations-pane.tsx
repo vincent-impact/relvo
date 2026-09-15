@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { RelvoSummary } from "@/components/subject/relvo-summary";
+import { ActorPill } from "@/components/shared/actor-pill";
 import {
   setSubjectPriorityAction,
   updateSubjectAction,
@@ -22,15 +22,16 @@ import { formatRelative } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
 // Onglet « Informations » de la fiche Sujet (refonte 2026-07-28 : moins
-// « technique », plus « fiche »). Ordre FIXE :
-//   0. Ce que Relvo a compris (M7.6) — quand le sujet a été structuré : le
-//      résumé et la situation en quatre lignes, dans un bloc Relvo. Absent tant
-//      que Relvo n'a pas lu le sujet : pas de bloc vide.
-//   1. Descriptif — CARTE en tête : le texte est LU (pas un textarea nu, qui
-//      donnait un air de brouillon jamais fini), une phrase en italique rappelle
-//      son rôle, le stylo ouvre une POP-UP d'édition (jamais dans le flux, trop
-//      perturbant). C'est le cœur de la fiche.
-//   2. Domaine (tap → sélecteur) + Urgence (interrupteur), sur la même ligne
+// « technique », plus « fiche » ; réordonné 2026-09-15 sur les premiers essais
+// réels de la structuration). Ordre FIXE :
+//   1. Domaine (tap → sélecteur) + Urgence (interrupteur), sur la même ligne —
+//      EN TÊTE : de quoi on parle, avant tout le reste.
+//   2. Résumé — UN SEUL champ, court : le descriptif de l'utilisateur s'il l'a
+//      écrit, sinon le résumé que Relvo a rédigé à la structuration, signalé par
+//      sa pastille. Le stylo ouvre une POP-UP d'édition pré-remplie ; ce que
+//      l'utilisateur enregistre devient SON descriptif et l'emporte. Sous le
+//      résumé, la PROCHAINE ÉTAPE vue par Relvo, avec l'échéance qui compte.
+//      Jamais la liste des tâches : elles vivent dans l'onglet Tâches.
 //   3. Journal (tiroir)
 // Le « Rapport d'activité de Relvo » (placeholder) est retiré tant qu'il n'a
 // rien à montrer. ⚠️ La fiche ne porte AUCUNE action de statut (2026-09-07) :
@@ -50,16 +51,13 @@ export type PaneEvent = {
   actor: Actor;
   createdAt: Date;
 };
-/** Résumé et situation structurée, préformatés côté serveur (05 §1.6). */
+/** Ce que Relvo a rédigé à la structuration, préformaté côté serveur (05 §1.6). */
 export type PaneRelvo = {
+  /** Résumé court de Relvo — affiché quand l'utilisateur n'a pas écrit le sien. */
   summary: string | null;
-  where: string | null;
   nextStep: string | null;
-  waitingFor: string | null;
   /** « 11 septembre », ou null. */
   deadline: string | null;
-  /** « il y a 2 h ». */
-  updatedAt: string;
 };
 
 const ACTOR_DOT: Record<Actor, string> = {
@@ -93,6 +91,11 @@ export function InformationsPane({
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const base = (description ?? "").trim();
+  // Le résumé affiché : celui de l'utilisateur, sinon celui de Relvo.
+  const relvoSummary = (relvo?.summary ?? "").trim();
+  const shown = base || relvoSummary;
+  const byRelvo = !base && Boolean(relvoSummary);
+  const nextStep = (relvo?.nextStep ?? "").trim();
   const folder = folders.find((f) => f.id === folderId) ?? null;
   const folderViz = folderVisual(
     folder
@@ -101,15 +104,16 @@ export function InformationsPane({
   );
   const FolderIcon = folderViz.icon;
 
-  // Ouvre la pop-up d'édition en repartant du texte enregistré.
+  // Ouvre la pop-up d'édition en repartant du texte AFFICHÉ : corriger le
+  // résumé de Relvo, c'est le reprendre, pas repartir d'une page blanche.
   function openEditor() {
-    setValue(base);
+    setValue(shown);
     setEditOpen(true);
   }
 
   function saveDescription() {
     const next = value.trim();
-    if (next === base) {
+    if (next === base || (!base && next === relvoSummary)) {
       setEditOpen(false);
       return;
     }
@@ -118,7 +122,7 @@ export function InformationsPane({
         description: next || null,
       });
       if (res.ok) {
-        toast.success("Descriptif enregistré");
+        toast.success("Résumé enregistré");
         setEditOpen(false);
         router.refresh();
       } else {
@@ -153,59 +157,7 @@ export function InformationsPane({
 
   return (
     <div className="space-y-6 px-4 pt-4 pb-2">
-      {/* 0. Ce que Relvo a compris — résumé et situation (M7.6) */}
-      {relvo ? (
-        <RelvoSummary
-          tone="card"
-          text={relvo.summary}
-          situation={[
-            { label: "Où on en est", value: relvo.where },
-            { label: "Prochaine étape", value: relvo.nextStep },
-            { label: "On attend", value: relvo.waitingFor },
-            { label: "Échéance", value: relvo.deadline },
-          ]}
-          footer={`Relu ${relvo.updatedAt}`}
-        />
-      ) : null}
-
-      {/* 1. Descriptif — cœur de la fiche (carte), édité en pop-up */}
-      <section className="rounded-[14px] border border-(--hairline) bg-white p-4 shadow-surface-1">
-        <div className="flex items-center justify-between">
-          <h2 className="text-[15px] font-bold text-(--text-primary)">
-            Descriptif
-          </h2>
-          <button
-            type="button"
-            onClick={openEditor}
-            aria-label="Modifier le descriptif"
-            className="grid size-8 place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
-          >
-            <Pencil className="size-[15px]" strokeWidth={2.1} />
-          </button>
-        </div>
-
-        {base ? (
-          <p className="mt-1.5 text-[15px] leading-[1.6] whitespace-pre-wrap text-(--text-primary)">
-            {base}
-          </p>
-        ) : (
-          <button
-            type="button"
-            onClick={openEditor}
-            className="mt-1.5 block text-[14px] text-(--text-tertiary) italic active:opacity-70"
-          >
-            Ajouter un descriptif…
-          </button>
-        )}
-
-        <p className="mt-3 border-t border-(--border-light) pt-3 text-[12.5px] leading-[1.45] text-(--text-tertiary) italic">
-          Le descriptif permet à Relvo de comprendre le sujet afin d’y rattacher
-          les messages et conversations les plus pertinentes et d’y créer des
-          actions plus précises.
-        </p>
-      </section>
-
-      {/* 2. Domaine (tap → sélecteur) + Urgence (interrupteur), inline */}
+      {/* 1. Domaine (tap → sélecteur) + Urgence (interrupteur), en tête */}
       <section className="flex items-center gap-3">
         <button
           type="button"
@@ -250,6 +202,55 @@ export function InformationsPane({
             className="data-checked:bg-(--red-600)"
           />
         </label>
+      </section>
+
+      {/* 2. Résumé — un seul champ, court ; la prochaine étape en dessous */}
+      <section className="rounded-[14px] border border-(--hairline) bg-white p-4 shadow-surface-1">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="flex min-w-0 items-center gap-2 text-[15px] font-bold text-(--text-primary)">
+            Résumé
+            {byRelvo ? <ActorPill actor="ai" /> : null}
+          </h2>
+          <button
+            type="button"
+            onClick={openEditor}
+            aria-label="Modifier le résumé"
+            className="grid size-8 flex-none place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
+          >
+            <Pencil className="size-[15px]" strokeWidth={2.1} />
+          </button>
+        </div>
+
+        {shown ? (
+          <p className="mt-1.5 text-[15px] leading-[1.55] whitespace-pre-wrap text-(--text-primary)">
+            {shown}
+          </p>
+        ) : (
+          <button
+            type="button"
+            onClick={openEditor}
+            className="mt-1.5 block text-[14px] text-(--text-tertiary) italic active:opacity-70"
+          >
+            Résumer ce sujet en une phrase…
+          </button>
+        )}
+
+        {nextStep ? (
+          <div className="mt-3 border-t border-(--border-light) pt-3">
+            <div className="text-[10.5px] font-bold tracking-[0.3px] text-relvo uppercase">
+              Prochaine étape
+            </div>
+            <p className="mt-1 text-[14.5px] leading-[1.5] text-(--text-primary)">
+              {nextStep}
+              {relvo?.deadline ? (
+                <span className="text-(--text-secondary)">
+                  {" "}
+                  · pour le {relvo.deadline}
+                </span>
+              ) : null}
+            </p>
+          </div>
+        ) : null}
       </section>
 
       {/* 3. Journal (tiroir) */}
@@ -360,18 +361,18 @@ export function InformationsPane({
         </DialogContent>
       </Dialog>
 
-      {/* Édition du descriptif — pop-up dédiée (jamais dans le flux de la fiche) */}
+      {/* Édition du résumé — pop-up dédiée (jamais dans le flux de la fiche) */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="gap-4 p-5">
           <DialogHeader>
-            <DialogTitle>Descriptif du sujet</DialogTitle>
+            <DialogTitle>Résumé du sujet</DialogTitle>
           </DialogHeader>
           <textarea
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            rows={5}
+            rows={4}
             autoFocus
-            placeholder="Décrivez ce sujet en quelques mots…"
+            placeholder="Résumez ce sujet en une phrase ou deux…"
             className="w-full resize-y rounded-xl border border-(--border) bg-white px-3 py-2.5 text-[14px] leading-[1.5] text-(--text-primary) outline-none placeholder:text-(--text-tertiary) focus:border-brand"
           />
           <div className="flex justify-end gap-2">

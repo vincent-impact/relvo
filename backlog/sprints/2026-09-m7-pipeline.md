@@ -297,8 +297,14 @@ pure est testée sans base.
       sujet en moyenne là où la démonstration en attendait deux — l'écart est du savoir métier
       que Relvo n'a pas le droit d'inventer (`benchmark-iag.md` §6.7). La consigne a été
       resserrée sur les dates (dans les champs, jamais dans le titre) et les demandes explicites.
-- [ ] Relire les premières structurations réelles dans le journal : situation, tâches gardées ou
-      supprimées, `cache_read`.
+- [x] Première structuration réelle relue (le soir même) : juste sur le fond, mais un résumé plus
+      long que l'e-mail, les tâches répétées dans l'analyse, deux résumés côte à côte (Relvo et
+      descriptif), domaine sous le résumé. Corrigé : consigne de brièveté (résumé d'une phrase, sans
+      les actions), **un seul champ « Résumé »** — le descriptif de l'utilisateur, sinon le résumé
+      de Relvo signalé par sa pastille, l'édition reprend le texte affiché —, la prochaine étape
+      avec son échéance en dessous, domaine et urgence en tête. Décision dans `ecarts` (« Un seul
+      résumé sur la fiche »).
+- [ ] Relire les structurations réelles suivantes : tâches gardées ou supprimées, `cache_read`.
 
 **Ce que la tranche laisse volontairement de côté** : l'étiquette nouvelle et les questions de
 Relvo sont **conservées dans le journal** (proposition intégrale) mais pas matérialisées — le

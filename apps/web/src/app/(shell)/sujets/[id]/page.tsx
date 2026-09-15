@@ -127,15 +127,13 @@ export default async function SujetPage({
             folderId={subject.folderId}
             priority={subject.priority}
             events={events}
-            // Ce que Relvo a compris du sujet (M7.6) : résumé et situation
-            // structurée, préformatés — la fiche ne relit pas l'historique.
+            // Ce que Relvo a rédigé à la structuration (M7.6) : résumé court
+            // et prochaine étape, préformatés — la fiche ne relit pas l'historique.
             relvo={
               subject.situationUpdatedAt
                 ? {
                     summary: subject.summary,
-                    where: subject.situationWhere,
                     nextStep: subject.situationNextStep,
-                    waitingFor: subject.situationWaitingFor,
                     deadline: subject.situationDeadline
                       ? subject.situationDeadline.toLocaleDateString("fr-FR", {
                           day: "numeric",
@@ -143,7 +141,6 @@ export default async function SujetPage({
                           timeZone: "UTC",
                         })
                       : null,
-                    updatedAt: formatRelative(subject.situationUpdatedAt) ?? "",
                   }
                 : null
             }
