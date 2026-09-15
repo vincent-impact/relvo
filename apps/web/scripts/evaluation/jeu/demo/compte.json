@@ -1,5 +1,7 @@
 {
+  "dirigeant": "Mam's Crousty",
   "entreprise": "Tasty Crousty",
+  "messageries": ["contact@tastycrousty.fr"],
   "secteurs": ["food"],
   "domaines": [
     {
@@ -34,103 +36,128 @@
   "sujetsOuverts": [
     {
       "reference": "SUB-0082",
-      "titre": "Renouvellement contrat climatisation"
+      "titre": "Renouvellement contrat climatisation",
+      "enAttente": false
     },
     {
       "reference": "SUB-0103",
-      "titre": "Réassort papier d'emballage"
+      "titre": "Réassort papier d'emballage",
+      "enAttente": true
     },
     {
       "reference": "SUB-0117",
-      "titre": "Panne congélateur — réserve"
+      "titre": "Panne congélateur — réserve",
+      "enAttente": false
     },
     {
       "reference": "SUB-0131",
-      "titre": "Virement client à rapprocher"
+      "titre": "Virement client à rapprocher",
+      "enAttente": false
     },
     {
       "reference": "SUB-0142",
-      "titre": "Rupture sauce blanche"
+      "titre": "Rupture sauce blanche",
+      "enAttente": false
     },
     {
       "reference": "SUB-0148",
-      "titre": "Congé maternité — organisation du remplacement"
+      "titre": "Congé maternité — organisation du remplacement",
+      "enAttente": false
     },
     {
       "reference": "SUB-0205",
-      "titre": "Hausse de tarif sur le poulet"
+      "titre": "Hausse de tarif sur le poulet",
+      "enAttente": false
     },
     {
       "reference": "SUB-0211",
-      "titre": "Retard de livraison riz"
+      "titre": "Retard de livraison riz",
+      "enAttente": false
     },
     {
       "reference": "SUB-0214",
-      "titre": "Contrôle hygiène DDPP annoncé"
+      "titre": "Contrôle hygiène DDPP annoncé",
+      "enAttente": false
     },
     {
       "reference": "SUB-0216",
-      "titre": "Renouvellement du bail commercial"
+      "titre": "Renouvellement du bail commercial",
+      "enAttente": false
     },
     {
       "reference": "SUB-0219",
-      "titre": "Nouveau contrat boissons"
+      "titre": "Nouveau contrat boissons",
+      "enAttente": false
     },
     {
       "reference": "SUB-0221",
-      "titre": "Recrutement équipier polyvalent"
+      "titre": "Recrutement équipier polyvalent",
+      "enAttente": false
     },
     {
       "reference": "SUB-0222",
-      "titre": "Renégociation commission Uber Eats"
+      "titre": "Renégociation commission Uber Eats",
+      "enAttente": false
     },
     {
       "reference": "SUB-0224",
-      "titre": "Arrêt maladie — réorganisation des shifts"
+      "titre": "Arrêt maladie — réorganisation des shifts",
+      "enAttente": false
     },
     {
       "reference": "SUB-0225",
-      "titre": "Baisse de fréquentation en semaine"
+      "titre": "Baisse de fréquentation en semaine",
+      "enAttente": false
     },
     {
       "reference": "SUB-0226",
-      "titre": "Demande d'augmentation"
+      "titre": "Demande d'augmentation",
+      "enAttente": false
     },
     {
       "reference": "SUB-0227",
-      "titre": "Friteuse n°2 hors service"
+      "titre": "Friteuse n°2 hors service",
+      "enAttente": false
     },
     {
       "reference": "SUB-0230",
-      "titre": "Partenariat @ParisFoodGuide"
+      "titre": "Partenariat @ParisFoodGuide",
+      "enAttente": false
     },
     {
       "reference": "SUB-0231",
-      "titre": "Demande de tournage TikTok"
+      "titre": "Demande de tournage TikTok",
+      "enAttente": false
     },
     {
       "reference": "SUB-0232",
-      "titre": "Sponsoring AS Épinay Football"
+      "titre": "Sponsoring AS Épinay Football",
+      "enAttente": false
     },
     {
       "reference": "SUB-0233",
-      "titre": "Achat groupé huile de friture"
+      "titre": "Achat groupé huile de friture",
+      "enAttente": false
     },
     {
       "reference": "SUB-0234",
-      "titre": "Renfort samedi soir"
+      "titre": "Renfort samedi soir",
+      "enAttente": false
     },
     {
       "reference": "SUB-0240",
-      "titre": "Réceptions & livraisons fournisseurs"
+      "titre": "Réceptions & livraisons fournisseurs",
+      "enAttente": false
     },
     {
       "reference": "SUB-0241",
-      "titre": "Hygiène & maintenance quotidiennes"
+      "titre": "Hygiène & maintenance quotidiennes",
+      "enAttente": false
     },
     {
       "reference": "SUB-0242",
-      "titre": "Plannings & briefings équipe"
+      "titre": "Plannings & briefings équipe",
+      "enAttente": false
     }
   ],
   "instructionsGenerales": [],

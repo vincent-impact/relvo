@@ -1,5 +1,6 @@
 import "server-only";
 import {
+  IGNORE_REASON_OF_NATURE,
   applyTriageMatter,
   getTriageProjection,
   hasAiSolicitationForMessage,
@@ -15,8 +16,13 @@ import { extract } from "../client";
 import { inferenceDisponible, NIVEAU_RETENU } from "../config";
 import { contexteTri } from "../contexte";
 import { SortieTri } from "../schemas";
-import { detecterBruitDeterministe } from "./bruit";
-import { deciderTri, verdictEnBase, type CategorieBruit } from "./decision";
+import { detecterBruitDeterministe, signauxAutomatiques } from "./bruit";
+import {
+  NATURE_EN_BASE,
+  avisEnBase,
+  deciderTri,
+  type Nature,
+} from "./decision";
 
 // LE TRI EN PRODUCTION (M7, tranche 4 — M7.1, M7.4, M7.5, M7.14 à M7.16) :
 // « un e-mail entrant devient un sujet titré et classé ». Déclenché par le
@@ -26,14 +32,15 @@ import { deciderTri, verdictEnBase, type CategorieBruit } from "./decision";
 // Ordre, et ce que chaque étape garantit :
 //   1. Assistant actif sur le compte, inférence joignable, idempotence — sinon rien.
 //   2. Projection depuis la base, par le domaine (`getTriageProjection`).
-//   3. Filtre déterministe du bruit : verdict sans appel, zéro jeton (05 §9.5),
-//      et la source est mise en sourdine — la règle est sûre.
+//   3. Filtre déterministe de la publicité : avis sans appel, zéro jeton
+//      (05 §9.5), et la source est mise en sourdine — la règle est sûre. Les
+//      signaux d'automate, eux, sont relevés et poussés au modèle.
 //   4. Appel de tri, sortie conforme au schéma ; l'appel est consigné AVANT
 //      d'être exploité — un coût est un coût, même si la suite échoue.
-//   5. Verdict, confiance et raison écrits sur la conversation. Puis la
-//      décision (`./decision`) : bruit en confiance haute → la source est
-//      ignorée, avec la catégorie pour raison ; affaire au-dessus de la
-//      frontière → ouverture ou rattachement ; sinon rien d'autre (05 §1.1).
+//   5. Action, nature, confiance et raison écrites sur la conversation. Puis
+//      la décision (`./decision`) : le rattachement prime ; « à traiter »
+//      au-dessus de la frontière ouvre ; « rien à faire » en confiance haute
+//      fait taire ; sinon l'avis seul (05 §1.1, §1.2, §9.5).
 //   6. Ouverture ou rattachement par les primitives du domaine.
 //   7. Cache de données invalidé après toute écriture (PITFALLS.md #45).
 //
@@ -50,7 +57,7 @@ export type IssueTri =
   | "sans-message-entrant"
   | "bruit-deterministe"
   | "ignore"
-  | "verdict-seul"
+  | "avis-seul"
   | "ouvert"
   | "rattache"
   | "echec";
@@ -81,43 +88,48 @@ export async function trierConversationEmail(args: {
   const entrant = projection.dernierEntrant;
   if (!entrant) return { issue: "sans-message-entrant" };
 
-  // Faire taire la source sur un verdict « bruit » sûr (05 §9.5) : la catégorie
-  // devient la raison d'ignorance, la phrase de Relvo la note. Réversible d'un
+  // Faire taire la source sur un « rien à faire » sûr (05 §9.5) : la nature
+  // donne la raison d'ignorance, la phrase de Relvo la note. Réversible d'un
   // appui dans le filtre « Ignorées ».
-  const ignorer = (categorie: CategorieBruit, raison: string) =>
+  const ignorer = (nature: Nature, raison: string) =>
     ignoreConversation(db, conversationId, {
-      reason: categorie,
+      reason: IGNORE_REASON_OF_NATURE[NATURE_EN_BASE[nature]],
       note: raison,
       actor: "ai",
     });
 
+  const entree = {
+    adresse: entrant.adresse,
+    nom: entrant.nom,
+    objet: entrant.objet,
+    contenu: entrant.contenu,
+    entetes: args.entetes,
+  };
+
   try {
-    const bruit = detecterBruitDeterministe({
-      adresse: entrant.adresse,
-      nom: entrant.nom,
-      objet: entrant.objet,
-      contenu: entrant.contenu,
-      entetes: args.entetes,
-    });
+    const bruit = detecterBruitDeterministe(entree);
     if (bruit) {
       await recordTriageVerdict(db, {
         conversationId,
         messageId,
         verdict: "noise",
-        noiseReason: bruit.categorie,
+        nature: NATURE_EN_BASE[bruit.nature],
         confidence: "high",
         reason: bruit.raison,
         source: "deterministic",
         rule: bruit.regle,
       });
-      await ignorer(bruit.categorie, bruit.raison);
+      await ignorer(bruit.nature, bruit.raison);
       expireTenantData();
       return { issue: "bruit-deterministe", detail: bruit.regle };
     }
 
     const { system, prompt } = contexteTri({
       compte: projection.compte,
-      conversation: projection.conversation,
+      conversation: {
+        ...projection.conversation,
+        signaux: signauxAutomatiques(entree),
+      },
       instant: { maintenant: new Date().toISOString() },
     });
     const { sortie, mesure } = await extract({
@@ -133,29 +145,30 @@ export async function trierConversationEmail(args: {
     await recordTriageVerdict(db, {
       conversationId,
       messageId,
-      ...verdictEnBase(sortie),
+      ...avisEnBase(sortie),
       source: "model",
       proposal: sortie,
     });
 
     const decision = deciderTri(sortie);
-    if (decision.type === "verdict-seul") {
+    if (decision.type === "avis-seul") {
       expireTenantData();
-      return { issue: "verdict-seul", detail: decision.motif };
+      return { issue: "avis-seul", detail: decision.motif };
     }
     if (decision.type === "ignorer") {
-      await ignorer(decision.categorie, decision.raison);
+      await ignorer(decision.nature, decision.raison);
       expireTenantData();
-      return { issue: "ignore", detail: decision.categorie };
+      return { issue: "ignore", detail: decision.nature };
     }
 
     const applied = await applyTriageMatter(db, {
       conversationId,
       messageId,
-      title: decision.titre,
+      title: decision.type === "ouvrir" ? decision.titre : null,
       folderName: decision.domaine,
       proposedFolder: decision.domainePropose,
-      existingSubjectReference: decision.sujetExistant,
+      existingSubjectReference:
+        decision.type === "rattacher" ? decision.sujetExistant : null,
       priority: decision.priorite,
     });
     expireTenantData();

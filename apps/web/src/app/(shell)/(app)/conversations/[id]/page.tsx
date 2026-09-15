@@ -74,7 +74,7 @@ export default async function ConversationDetailPage({
         listenings={thread.listenings}
         messages={messages}
         relvo={toRelvoVerdictData(thread.triage)}
-        ignore={toIgnoreData(thread.ignore)}
+        ignore={toIgnoreData(thread.ignore, thread.triage)}
         backTo={backTo}
         folders={folders}
         subjects={subjectRows.map((s) => ({

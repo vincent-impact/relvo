@@ -49,38 +49,39 @@ export type Profil =
  * Budgets en jetons (estimés), par profil et par couche. Dépassement = test
  * rouge. La couche Compte du tri porte jusqu'à quarante titres de sujets
  * ouverts (le chargeur plafonne la liste) : des titres, jamais des fiches.
+ * La couche Produit vaut le socle plus deux secteurs (`BUDGET_PRODUIT`).
  */
 export const BUDGETS: Record<Profil, Record<Couche, number>> = {
   tri: {
-    produit: 3_400,
+    produit: 3_600,
     compte: 1_100,
     domaine: 0,
     situation: 3_000,
     instant: 120,
   },
   structuration: {
-    produit: 3_400,
+    produit: 3_600,
     compte: 1_600,
     domaine: 3_500,
     situation: 4_500,
     instant: 120,
   },
   relecture: {
-    produit: 3_400,
+    produit: 3_600,
     compte: 1_600,
     domaine: 3_500,
     situation: 3_500,
     instant: 120,
   },
   brouillon: {
-    produit: 3_400,
+    produit: 3_600,
     compte: 1_600,
     domaine: 3_500,
     situation: 3_500,
     instant: 120,
   },
   "etiquette-piece-jointe": {
-    produit: 3_400,
+    produit: 3_600,
     compte: 0,
     domaine: 0,
     situation: 300,

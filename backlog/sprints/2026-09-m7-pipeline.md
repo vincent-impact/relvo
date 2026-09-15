@@ -242,6 +242,13 @@ que rien ne le montre :
       `markConversationFilterSeen`). Volontairement hétérogène, décision dans `ecarts`
       (« Trois pastilles, deux natures »). A remplacé une carte de bilan sur sept jours, retirée.
 
+- [x] **L'avis parle en deux parts, dans les mots de l'utilisateur** : action (à traiter, à
+      considérer, rien à faire) et nature (professionnel, publicité, automatique, personnel),
+      toujours posée — `triage_nature`, migration `20260915090000`. Le rattachement prime sur
+      l'action ; le filtre déterministe ne conclut plus que sur la publicité ; le contexte pose le
+      cadre du message reçu et nomme le dirigeant comme tel. Décision dans `ecarts` (« L'avis de
+      Relvo parle en deux parts »). Jeu d'évaluation réétiqueté, deux cas ajoutés.
+
 **Ce que la tranche laisse volontairement de côté** : la pastille d'un appui avec provenance
 (le reste de M7.20) ; WhatsApp (A8) ; les préférences observées et les antécédents de tri
 restent vides tant que M17 ne les calcule pas.

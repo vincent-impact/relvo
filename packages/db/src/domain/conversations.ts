@@ -8,6 +8,7 @@ import {
   MessageDirection,
   SubjectStatus,
   TriageConfidence,
+  TriageNature,
   TriageVerdict,
 } from "../generated/prisma/enums";
 import { Prisma } from "../generated/prisma/client";
@@ -654,7 +655,7 @@ function toConversationListItem(c: ConversationItemRow): ConversationListItem {
 
 type TriageColumns = {
   triageVerdict: TriageVerdict | null;
-  triageNoiseReason: IgnoreReason | null;
+  triageNature: TriageNature | null;
   triageConfidence: TriageConfidence | null;
   triageReason: string | null;
   triagedAt: Date | null;
@@ -665,7 +666,7 @@ export function triageOf(c: TriageColumns): ConversationTriage | null {
   if (!c.triageVerdict || !c.triageConfidence || !c.triagedAt) return null;
   return {
     verdict: c.triageVerdict,
-    noiseReason: c.triageNoiseReason,
+    nature: c.triageNature,
     confidence: c.triageConfidence,
     reason: c.triageReason ?? "",
     at: c.triagedAt,
@@ -778,16 +779,17 @@ export async function listConversationGroups(
 }
 
 /** Le verdict de Relvo tel que la liste et le fil l'affichent (02, « Le verdict de tri »). */
+/** L'avis de Relvo : l'ACTION (`verdict`) et la NATURE, sa confiance, sa raison. */
 export type ConversationTriage = {
   verdict: TriageVerdict;
-  noiseReason: IgnoreReason | null;
+  nature: TriageNature | null;
   confidence: TriageConfidence;
   reason: string;
   at: Date;
 };
 
 export const ignoreConversationSchema = z.object({
-  /** Raison choisie en un appui — ou la catégorie du verdict quand c'est Relvo qui fait taire. */
+  /** Raison choisie en un appui — ou dérivée de la nature de l'avis quand c'est Relvo qui fait taire. */
   reason: z.enum(IgnoreReason).optional().nullable(),
   note: z.string().trim().max(1000).optional().nullable(),
   /** L'utilisateur (défaut), ou Relvo sur un verdict « bruit » en confiance haute (05 §9.5). */

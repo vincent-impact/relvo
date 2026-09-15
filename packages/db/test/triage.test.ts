@@ -152,7 +152,11 @@ describe("projection du tri", () => {
     const p = await getTriageProjection(db, m1.conversationId);
     expect(p.orpheline).toBe(true);
     expect(p.type).toBe("email_subject");
-    expect(p.compte.entreprise).toBe("Mam's Crousty");
+    // Le dirigeant est nommé comme tel, jamais comme « l'entreprise » ; la
+    // messagerie sur laquelle le fil est arrivé est donnée.
+    expect(p.compte.dirigeant).toBe("Mam's Crousty");
+    expect(p.compte.entreprise).toBeNull();
+    expect(p.compte.messageries).toEqual(["b@test.fr"]);
     expect(p.compte.secteurs).toEqual(["food"]);
     // Domaines actifs, « Général » compris (la couche le filtre) ; l'inactif non.
     expect(p.compte.domaines.map((d) => d.nom)).toEqual([
@@ -162,7 +166,11 @@ describe("projection du tri", () => {
     expect(p.compte.domaines[0]?.description).toBe("Achats et livraisons");
     // Des titres de sujets OUVERTS, jamais les validés.
     expect(p.compte.sujetsOuverts).toEqual([
-      { reference: ouvert.reference, titre: "Bail — renouvellement" },
+      {
+        reference: ouvert.reference,
+        titre: "Bail — renouvellement",
+        enAttente: false,
+      },
     ]);
     expect(p.compte.instructionsGenerales).toEqual([]);
     expect(p.compte.etiquettes).toEqual([]);
@@ -235,17 +243,17 @@ describe("verdict de tri", () => {
       conversationId: message.conversationId,
       messageId: message.id,
       verdict: "noise",
-      noiseReason: "advertising",
+      nature: "advertising",
       confidence: "high",
       reason: "Promotion générique sans action attendue.",
       source: "model",
-      proposal: { verdict: "bruit", titre: null },
+      proposal: { action: "rien_a_faire", titre: null },
     });
     const c = await db.conversation.findFirstOrThrow({
       where: { id: message.conversationId },
     });
     expect(c.triageVerdict).toBe("noise");
-    expect(c.triageNoiseReason).toBe("advertising");
+    expect(c.triageNature).toBe("advertising");
     expect(c.triageConfidence).toBe("high");
     expect(c.triageReason).toBe("Promotion générique sans action attendue.");
     expect(c.triagedAt).not.toBeNull();
@@ -256,12 +264,12 @@ describe("verdict de tri", () => {
       where: { eventType: EVENT_TYPES.triageVerdict, messageId: message.id },
     });
     expect(ev.actor).toBe(Actor.ai);
-    expect(ev.title).toBe("Tri : bruit — publicité (confiance haute)");
+    expect(ev.title).toBe("Tri : rien à faire · publicité (confiance haute)");
     expect(ev.metadata).toMatchObject({
       verdict: "noise",
-      noiseReason: "advertising",
+      nature: "advertising",
       source: "model",
-      proposal: { verdict: "bruit" },
+      proposal: { action: "rien_a_faire" },
     });
 
     // Un second verdict REMPLACE le premier (le dernier fait foi, 02).
@@ -269,7 +277,7 @@ describe("verdict de tri", () => {
       conversationId: message.conversationId,
       messageId: message.id,
       verdict: "matter",
-      noiseReason: "advertising", // ignorée : la catégorie ne va qu'avec « bruit »
+      nature: "professional", // la nature est toujours posée, quelle que soit l'action
       confidence: "medium",
       reason: "Une commande à valider.",
       source: "model",
@@ -278,32 +286,32 @@ describe("verdict de tri", () => {
       where: { id: message.conversationId },
     });
     expect(c2.triageVerdict).toBe("matter");
-    expect(c2.triageNoiseReason).toBeNull();
+    expect(c2.triageNature).toBe("professional");
     expect(c2.triageConfidence).toBe("medium");
   });
 
   it("journalise un verdict déterministe sans appel", async () => {
     const { db, channel } = await makeAccount("f@test.fr");
     const { message } = await mail(db, channel.id, "e1", {
-      senderRaw: "noreply@banque.fr",
+      senderRaw: "promo@grossiste.fr",
     });
     await recordTriageVerdict(db, {
       conversationId: message.conversationId,
       messageId: message.id,
       verdict: "noise",
-      noiseReason: "automatic",
+      nature: "advertising",
       confidence: "high",
-      reason: "Expéditeur sans réponse possible (noreply@…).",
+      reason: "Envoi en masse : l'e-mail porte un en-tête de désabonnement.",
       source: "deterministic",
-      rule: "expediteur-sans-reponse",
+      rule: "en-tete-desabonnement",
     });
     const ev = await db.eventLog.findFirstOrThrow({
       where: { eventType: EVENT_TYPES.triageVerdict, messageId: message.id },
     });
-    expect(ev.title).toBe("Tri : bruit — automatique (règle, sans appel)");
+    expect(ev.title).toBe("Tri : rien à faire · publicité (règle, sans appel)");
     expect(ev.metadata).toMatchObject({
       source: "deterministic",
-      rule: "expediteur-sans-reponse",
+      rule: "en-tete-desabonnement",
     });
     expect(
       await db.eventLog.count({
@@ -539,7 +547,7 @@ describe("faire taire une source, et les pastilles", () => {
       conversationId: message.conversationId,
       messageId: message.id,
       verdict: "noise",
-      noiseReason: "advertising",
+      nature: "advertising",
       confidence: "high",
       reason: "Promotion générique.",
       source: "model",
@@ -564,7 +572,7 @@ describe("faire taire une source, et les pastilles", () => {
     const ignoredList = await listConversationItems(db, { filter: "ignored" });
     expect(ignoredList.items[0]).toMatchObject({
       ignore: { reason: "advertising", by: Actor.ai },
-      triage: { verdict: "noise", noiseReason: "advertising" },
+      triage: { verdict: "noise", nature: "advertising" },
     });
     const ev = await db.eventLog.findFirstOrThrow({
       where: { eventType: EVENT_TYPES.conversationIgnored },
@@ -604,7 +612,7 @@ describe("faire taire une source, et les pastilles", () => {
       conversationId: a.message.conversationId,
       messageId: a.message.id,
       verdict: "noise",
-      noiseReason: "advertising",
+      nature: "advertising",
       confidence: "high",
       reason: "Promo.",
       source: "model",
@@ -688,7 +696,7 @@ describe("faire taire une source, et les pastilles", () => {
       conversationId: g.message.conversationId,
       messageId: g.message.id,
       verdict: "noise",
-      noiseReason: "advertising",
+      nature: "advertising",
       confidence: "high",
       reason: "Promotion.",
       source: "model",

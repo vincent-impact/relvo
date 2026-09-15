@@ -1,13 +1,21 @@
-// Filtre DÉTERMINISTE du bruit (M7, tranche 4 ; `05 §9.5`, premier dispositif) —
-// AVANT tout appel au modèle, zéro jeton. Un en-tête de désabonnement, un
-// expéditeur sans réponse possible, un accusé automatique, un envoi en masse :
-// ces fils ne sollicitent personne. Ils reçoivent un verdict « bruit » avec sa
-// catégorie et sa règle, restent dans « à trier », et l'utilisateur confirme ou
-// contredit d'un geste — Relvo ne décide rien à sa place au premier jour.
+// Filtre DÉTERMINISTE de la publicité (M7, tranche 4 ; `05 §9.5`, premier
+// dispositif) — AVANT tout appel au modèle, zéro jeton. Un en-tête de
+// désabonnement, un envoi marqué « bulk », un lien de désabonnement en fin de
+// message : ces fils ne sollicitent personne et ne prolongent aucun sujet. Ils
+// reçoivent un avis « rien à faire · publicité » avec sa règle, et la source
+// est mise en sourdine.
+//
+// Les signaux d'AUTOMATE — expéditeur sans réponse possible, en-tête
+// auto-submitted, objet d'accusé ou de réponse automatique — ne concluent
+// PLUS ici : une confirmation de commande ou un accusé de réception est
+// souvent le message qu'un sujet ouvert ATTENDAIT, et seul le modèle, qui voit
+// les sujets ouverts, peut le rattacher (`05 §1.2`). Ils sont relevés par
+// `signauxAutomatiques` et poussés au modèle comme indices : la nature
+// « automatique » lui coûte alors une ligne, et le rattachement reste possible.
 //
 // Module PUR, sans base ni fournisseur. Les règles sont volontairement
 // PRUDENTES : dans le doute, on laisse passer au modèle — un vrai message
-// étiqueté « automatique » coûte plus cher qu'un appel de tri.
+// mis en sourdine coûte plus cher qu'un appel de tri.
 
 export type EntreeBruit = {
   /** Adresse brute de l'expéditeur. */
@@ -25,7 +33,7 @@ export type EntreeBruit = {
 };
 
 export type VerdictBruit = {
-  categorie: "automatic" | "advertising";
+  nature: "publicite";
   /** Nom court de la règle qui a conclu — journalisé, visible dans la liste à trier. */
   regle: string;
   raison: string;
@@ -78,57 +86,30 @@ function partieLocale(adresse: string | null): string {
 }
 
 /**
- * Rend un verdict « bruit » quand une règle déterministe conclut, sinon null —
- * et null veut dire « au modèle de décider », pas « pas du bruit ».
+ * Rend un avis « rien à faire · publicité » quand une règle déterministe
+ * conclut, sinon null — et null veut dire « au modèle de décider », pas « pas
+ * de la publicité ».
  */
 export function detecterBruitDeterministe(e: EntreeBruit): VerdictBruit | null {
   // 1. En-têtes, quand ils existent : les signaux les plus sûrs.
   if (entete(e.entetes, "list-unsubscribe")) {
     return {
-      categorie: "advertising",
+      nature: "publicite",
       regle: "en-tete-desabonnement",
       raison: "Envoi en masse : l'e-mail porte un en-tête de désabonnement.",
-    };
-  }
-  const auto = entete(e.entetes, "auto-submitted");
-  if (auto && !/^no$/i.test(auto.trim())) {
-    return {
-      categorie: "automatic",
-      regle: "en-tete-auto-submitted",
-      raison: "Message émis automatiquement, sans expéditeur humain.",
     };
   }
   const precedence = entete(e.entetes, "precedence");
   if (precedence && /^(bulk|list|junk)$/i.test(precedence.trim())) {
     return {
-      categorie: "advertising",
+      nature: "publicite",
       regle: "en-tete-precedence",
       raison:
         "Envoi en masse : l'e-mail est marqué « bulk » par son expéditeur.",
     };
   }
 
-  // 2. Expéditeur sans réponse possible.
-  const locale = partieLocale(e.adresse);
-  if (locale && EXPEDITEUR_SANS_REPONSE.some((re) => re.test(locale))) {
-    return {
-      categorie: "automatic",
-      regle: "expediteur-sans-reponse",
-      raison: `Expéditeur sans réponse possible (${locale}@…).`,
-    };
-  }
-
-  // 3. Accusé ou réponse automatique, à l'objet.
-  const objet = (e.objet ?? "").trim();
-  if (objet && OBJET_AUTOMATIQUE.some((re) => re.test(objet))) {
-    return {
-      categorie: "automatic",
-      regle: "objet-automatique",
-      raison: "Accusé de réception ou réponse automatique.",
-    };
-  }
-
-  // 4. Lien de désabonnement en fin de message : envoi en masse. Le corps doit
+  // 2. Lien de désabonnement en fin de message : envoi en masse. Le corps doit
   //    porter un lien ET la formule dans son dernier tiers — un client qui écrit
   //    « je souhaite me désabonner » en deux lignes n'a ni lien ni fin de page.
   const contenu = e.contenu.trim();
@@ -136,7 +117,7 @@ export function detecterBruitDeterministe(e: EntreeBruit): VerdictBruit | null {
     const queue = contenu.slice(Math.floor(contenu.length * (2 / 3)));
     if (DESABONNEMENT.test(queue)) {
       return {
-        categorie: "advertising",
+        nature: "publicite",
         regle: "lien-desabonnement",
         raison:
           "Envoi en masse : le message se termine par un lien de désabonnement.",
@@ -145,4 +126,27 @@ export function detecterBruitDeterministe(e: EntreeBruit): VerdictBruit | null {
   }
 
   return null;
+}
+
+/**
+ * Les indices d'AUTOMATE, en clair, pour le modèle — jamais une conclusion.
+ * Vide quand rien ne le signale.
+ */
+export function signauxAutomatiques(e: EntreeBruit): string[] {
+  const signaux: string[] = [];
+  const auto = entete(e.entetes, "auto-submitted");
+  if (auto && !/^no$/i.test(auto.trim())) {
+    signaux.push(
+      "l'e-mail est marqué « émis automatiquement » par son en-tête",
+    );
+  }
+  const locale = partieLocale(e.adresse);
+  if (locale && EXPEDITEUR_SANS_REPONSE.some((re) => re.test(locale))) {
+    signaux.push(`l'expéditeur ne lit pas les réponses (${locale}@…)`);
+  }
+  const objet = (e.objet ?? "").trim();
+  if (objet && OBJET_AUTOMATIQUE.some((re) => re.test(objet))) {
+    signaux.push("l'objet est celui d'un accusé ou d'une réponse automatique");
+  }
+  return signaux;
 }

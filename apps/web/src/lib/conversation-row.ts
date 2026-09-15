@@ -8,15 +8,27 @@ import type {
 import { formatRelative } from "@/lib/display";
 
 // ── Ce que Relvo a conclu sur un fil (M7) ───────────────────────────────────
-// Libellés FRANÇAIS des énumérés du verdict et des raisons d'ignorance, en un
-// seul endroit : la liste, le fil et le bilan parlent la même langue.
+// Libellés FRANÇAIS de l'avis — l'ACTION et la NATURE — et des raisons
+// d'ignorance, en un seul endroit : la liste et le fil parlent la même langue,
+// celle de l'utilisateur, jamais celle du modèle ni de la base.
 
-export const VERDICT_LABELS: Record<ConversationTriage["verdict"], string> = {
-  noise: "bruit",
-  matter: "affaire",
-  uncertain: "incertain",
+export const ACTION_LABELS: Record<ConversationTriage["verdict"], string> = {
+  matter: "À traiter",
+  uncertain: "À considérer",
+  noise: "Rien à faire",
 };
 
+export const NATURE_LABELS: Record<
+  NonNullable<ConversationTriage["nature"]>,
+  string
+> = {
+  professional: "professionnel",
+  advertising: "publicité",
+  automatic: "automatique",
+  personal: "personnel",
+};
+
+/** Les raisons que l'utilisateur choisit d'un appui. */
 export const IGNORE_REASON_LABELS: Record<string, string> = {
   advertising: "publicité",
   prospecting: "prospection",
@@ -30,7 +42,7 @@ export const IGNORE_REASON_LABELS: Record<string, string> = {
 /** Le verdict de Relvo, prêt à afficher — sérialisable (le temps est préformaté). */
 export type RelvoVerdictData = {
   verdict: ConversationTriage["verdict"];
-  /** « bruit · publicité », « affaire », « incertain ». */
+  /** « À traiter · professionnel », « Rien à faire · publicité ». */
   label: string;
   reason: string;
   /** « 35 min », « hier »… */
@@ -41,11 +53,8 @@ export function toRelvoVerdictData(
   t: ConversationTriage | null,
 ): RelvoVerdictData | null {
   if (!t) return null;
-  const base = VERDICT_LABELS[t.verdict];
-  const label =
-    t.verdict === "noise" && t.noiseReason
-      ? `${base} · ${IGNORE_REASON_LABELS[t.noiseReason] ?? t.noiseReason}`
-      : base;
+  const base = ACTION_LABELS[t.verdict];
+  const label = t.nature ? `${base} · ${NATURE_LABELS[t.nature]}` : base;
   return {
     verdict: t.verdict,
     label,
@@ -54,7 +63,11 @@ export function toRelvoVerdictData(
   };
 }
 
-/** L'ignorance, prête à afficher : « Ignorée par Relvo · publicité ». */
+/**
+ * L'ignorance, prête à afficher : « Ignorée par Relvo · publicité » — la
+ * NATURE de l'avis quand c'est Relvo qui a fait taire, la raison choisie
+ * quand c'est l'utilisateur.
+ */
 export type IgnoreData = {
   byRelvo: boolean;
   reasonLabel: string | null;
@@ -63,13 +76,18 @@ export type IgnoreData = {
 
 export function toIgnoreData(
   i: ConversationListItem["ignore"],
+  triage: ConversationTriage | null,
 ): IgnoreData | null {
   if (!i) return null;
-  return {
-    byRelvo: i.by === "ai",
-    reasonLabel: i.reason ? (IGNORE_REASON_LABELS[i.reason] ?? i.reason) : null,
-    note: i.note,
-  };
+  const byRelvo = i.by === "ai";
+  const reasonLabel = byRelvo
+    ? triage?.nature
+      ? NATURE_LABELS[triage.nature]
+      : null
+    : i.reason
+      ? (IGNORE_REASON_LABELS[i.reason] ?? i.reason)
+      : null;
+  return { byRelvo, reasonLabel, note: i.note };
 }
 
 /** Taille de page de la liste Conversations (scroll infini). */
@@ -119,7 +137,7 @@ export function toConversationRowData(
     ignored: item.status === "ignored",
     listeningSubjects: item.listeningSubjects,
     relvo: toRelvoVerdictData(item.triage),
-    ignore: toIgnoreData(item.ignore),
+    ignore: toIgnoreData(item.ignore, item.triage),
   };
 }
 

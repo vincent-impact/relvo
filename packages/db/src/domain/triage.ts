@@ -3,11 +3,13 @@ import {
   Actor,
   ConversationStatus,
   ConversationType,
+  ChannelType,
   IgnoreReason,
   MessageDirection,
   Priority,
   SubjectStatus,
   TriageConfidence,
+  TriageNature,
   TriageVerdict,
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
@@ -46,13 +48,19 @@ import { attachEmailConversationToSubject } from "./subject-conversations";
 
 /** Miroir structurel de `CompteContexte` (application) : le tri ne charge ni instructions ni étiquettes. */
 export type TriageAccountProjection = {
-  entreprise: string;
+  /** Le dirigeant, nommé comme tel — jamais présenté comme « l'entreprise ». */
+  dirigeant: string;
+  /** Raison sociale ; le compte n'en porte pas encore. */
+  entreprise: string | null;
+  /** Adresses des canaux e-mail actifs : ce sur quoi le fil a été REÇU. */
+  messageries: string[];
   secteurs: ("food" | "construction" | "other")[];
   domaines: { nom: string; description: string | null }[];
   instructionsGenerales: { titre: string; contenu: string }[];
   etiquettes: string[];
   preferencesObservees: string | null;
-  sujetsOuverts: { reference: string; titre: string }[];
+  /** Sujets ouverts récents, avec le marqueur « en attente d'une réponse » : c'est ce qui fait reconnaître un accusé. */
+  sujetsOuverts: { reference: string; titre: string; enAttente: boolean }[];
 };
 
 /** Miroir structurel de `MessageContexte` (application). */
@@ -139,40 +147,46 @@ export async function getTriageProjection(
     "Compte",
   );
 
-  const [folders, openSubjects, listening, oldest, latest] = await Promise.all([
-    db.folder.findMany({
-      where: { isActive: true },
-      select: { name: true, description: true },
-      orderBy: { name: "asc" },
-    }),
-    db.subject.findMany({
-      where: { status: SubjectStatus.open },
-      select: { reference: true, title: true },
-      orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
-      take: TRIAGE_OPEN_SUBJECTS_MAX,
-    }),
-    findListeningSubjectForConversation(db, conversationId),
-    db.message.findMany({
-      where: { conversationId },
-      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-      take: 1,
-      include: {
-        senderContact: {
-          select: { firstName: true, lastName: true, company: true },
+  const [folders, openSubjects, mailboxes, listening, oldest, latest] =
+    await Promise.all([
+      db.folder.findMany({
+        where: { isActive: true },
+        select: { name: true, description: true },
+        orderBy: { name: "asc" },
+      }),
+      db.subject.findMany({
+        where: { status: SubjectStatus.open },
+        select: { reference: true, title: true, waitingForReply: true },
+        orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
+        take: TRIAGE_OPEN_SUBJECTS_MAX,
+      }),
+      db.channel.findMany({
+        where: { type: ChannelType.email, isActive: true },
+        select: { identifier: true },
+        orderBy: { identifier: "asc" },
+      }),
+      findListeningSubjectForConversation(db, conversationId),
+      db.message.findMany({
+        where: { conversationId },
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        take: 1,
+        include: {
+          senderContact: {
+            select: { firstName: true, lastName: true, company: true },
+          },
         },
-      },
-    }),
-    db.message.findMany({
-      where: { conversationId },
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      take: TRIAGE_LAST_MESSAGES,
-      include: {
-        senderContact: {
-          select: { firstName: true, lastName: true, company: true },
+      }),
+      db.message.findMany({
+        where: { conversationId },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        take: TRIAGE_LAST_MESSAGES,
+        include: {
+          senderContact: {
+            select: { firstName: true, lastName: true, company: true },
+          },
         },
-      },
-    }),
-  ]);
+      }),
+    ]);
 
   // Le plus ancien et les derniers, sans doublon, dans l'ordre chronologique.
   const byId = new Map<string, (typeof latest)[number]>();
@@ -218,9 +232,10 @@ export async function getTriageProjection(
     statut: conversation.status,
     type: conversation.type,
     compte: {
-      // Le compte ne porte pas de raison sociale : le nom du dirigeant tient
-      // lieu d'identité tant que le profil n'en a pas.
-      entreprise: `${account.firstName} ${account.lastName}`.trim(),
+      dirigeant: `${account.firstName} ${account.lastName}`.trim(),
+      // Le compte ne porte pas encore de raison sociale.
+      entreprise: null,
+      messageries: mailboxes.map((c) => c.identifier),
       secteurs: account.sectors,
       domaines: folders.map((f) => ({
         nom: f.name,
@@ -232,6 +247,7 @@ export async function getTriageProjection(
       sujetsOuverts: openSubjects.map((s) => ({
         reference: s.reference,
         titre: s.title,
+        enAttente: s.waitingForReply,
       })),
     },
     conversation: {
@@ -262,21 +278,25 @@ export async function getTriageProjection(
 // ─────────────────────────────────────────────────────────────
 
 /** Catégories de bruit que le tri a le droit de poser (contrainte en base : jamais les deux autres). */
-export const TRIAGE_NOISE_REASONS = [
-  IgnoreReason.personal,
-  IgnoreReason.advertising,
-  IgnoreReason.automatic,
-  IgnoreReason.prospecting,
-  IgnoreReason.other,
-] as const;
+/**
+ * La raison d'ignorance qui dérive de la NATURE de l'avis, quand c'est Relvo
+ * qui fait taire : c'est ce que l'utilisateur lit dans « Ignorées ».
+ */
+export const IGNORE_REASON_OF_NATURE: Record<TriageNature, IgnoreReason> = {
+  advertising: IgnoreReason.advertising,
+  automatic: IgnoreReason.automatic,
+  personal: IgnoreReason.personal,
+  professional: IgnoreReason.other,
+};
 
 export const recordTriageVerdictSchema = z.object({
   conversationId: z.uuid(),
   /** Le message qui a déclenché le tri — porte l'entrée de journal. */
   messageId: z.uuid(),
+  /** L'ACTION : à traiter (matter), à considérer (uncertain), rien à faire (noise). */
   verdict: z.enum(TriageVerdict),
-  /** Renseignée si et seulement si le verdict est « bruit » (contrainte en base). */
-  noiseReason: z.enum(TRIAGE_NOISE_REASONS).optional().nullable(),
+  /** La NATURE, toujours posée par le modèle ; le filtre déterministe ne connaît que la publicité. */
+  nature: z.enum(TriageNature).optional().nullable(),
   confidence: z.enum(TriageConfidence),
   /** Une phrase, visible dans la liste à trier. */
   reason: z.string().trim().min(1).max(1000),
@@ -293,44 +313,40 @@ export type RecordTriageVerdictInput = z.input<
 >;
 
 const VERDICT_LABELS: Record<TriageVerdict, string> = {
-  noise: "bruit",
-  matter: "affaire",
-  uncertain: "incertain",
+  noise: "rien à faire",
+  matter: "à traiter",
+  uncertain: "à considérer",
 };
 const CONFIDENCE_LABELS: Record<TriageConfidence, string> = {
   high: "haute",
   medium: "moyenne",
   low: "basse",
 };
-const NOISE_LABELS: Record<IgnoreReason, string> = {
-  personal: "personnel",
+const NATURE_LABELS: Record<TriageNature, string> = {
+  professional: "professionnel",
   advertising: "publicité",
   automatic: "automatique",
-  prospecting: "prospection",
-  not_my_role: "pas mon rôle",
-  handled_elsewhere: "traité ailleurs",
-  other: "autre",
+  personal: "personnel",
 };
 
 /**
- * Dépose le verdict de tri sur la conversation (le DERNIER verdict, 02) et
- * journalise la proposition. Le verdict ne conditionne rien : la conversation
- * est rangée et lisible quel qu'il soit.
+ * Dépose l'avis de tri sur la conversation (le DERNIER avis, 02) et journalise
+ * la proposition. L'avis ne conditionne rien : la conversation est rangée et
+ * lisible quel qu'il soit.
  */
 export async function recordTriageVerdict(
   db: TenantDb,
   input: RecordTriageVerdictInput,
 ) {
   const data = recordTriageVerdictSchema.parse(input);
-  const noiseReason =
-    data.verdict === TriageVerdict.noise ? (data.noiseReason ?? null) : null;
+  const nature = data.nature ?? null;
   const now = new Date();
   return db.$transaction(async (tx) => {
     const { count } = await tx.conversation.updateMany({
       where: { id: data.conversationId },
       data: {
         triageVerdict: data.verdict,
-        triageNoiseReason: noiseReason,
+        triageNature: nature,
         triageConfidence: data.confidence,
         triageReason: data.reason,
         triagedAt: now,
@@ -338,10 +354,9 @@ export async function recordTriageVerdict(
     });
     if (count === 0)
       throw new DomainError("NOT_FOUND", "Conversation introuvable.");
-    const label =
-      data.verdict === TriageVerdict.noise && noiseReason
-        ? `${VERDICT_LABELS[data.verdict]} — ${NOISE_LABELS[noiseReason]}`
-        : VERDICT_LABELS[data.verdict];
+    const label = nature
+      ? `${VERDICT_LABELS[data.verdict]} · ${NATURE_LABELS[nature]}`
+      : VERDICT_LABELS[data.verdict];
     await logEvent(tx as Tx, {
       entityType: "message",
       entityId: data.messageId,
@@ -356,7 +371,7 @@ export async function recordTriageVerdict(
       metadata: {
         conversationId: data.conversationId,
         verdict: data.verdict,
-        noiseReason,
+        nature,
         confidence: data.confidence,
         reason: data.reason,
         source: data.source,

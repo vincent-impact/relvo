@@ -1,9 +1,11 @@
 // Extraction d'un JEU D'ÉVALUATION depuis la base (M7.17, tranche 1).
 //
 // La vérité terrain, c'est le tri déjà fait à la main : une conversation
-// e-mail qui porte un sujet est une « affaire », avec son domaine, son titre et
-// ses tâches ; une conversation ignorée ou sans sujet est du « bruit ». Le
-// script sort deux fichiers dans `jeu/<nom>/` : `compte.json` (le contexte du
+// e-mail qui porte un sujet est « à traiter », professionnelle, avec son
+// domaine, son titre et ses tâches ; une conversation ignorée ou sans sujet
+// est « rien à faire », sa nature dérivée de la raison d'ignorance. Un fil qui
+// aurait dû rejoindre un sujet préexistant (« rattache ») ne se déduit pas de
+// la base : il s'annote à la main. Le script sort deux fichiers dans `jeu/<nom>/` : `compte.json` (le contexte du
 // compte au moment de l'extraction) et `cas.jsonl` (un cas par ligne).
 //
 // ⚠️ Anonymisation : adresses e-mail, téléphones et IBAN sont remplacés de
@@ -13,17 +15,14 @@
 //
 // Usage :
 //   node --env-file=.env.local --import tsx scripts/evaluation/extraire.ts \
-//     --compte demo@tastycrousty.fr --nom demo [--secteurs food,batiment]
+//     --compte demo@tastycrousty.fr --nom demo [--secteurs food,batiment] \
+//     [--entreprise "Tasty Crousty"] [--messagerie contact@tastycrousty.fr]
 
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { prisma } from "@relvo/db";
 import type { Cas, CompteEvaluation } from "./types";
-
-function compteNom(): string {
-  return "Entreprise";
-}
 
 function arg(nom: string, defaut?: string): string {
   const i = process.argv.indexOf(`--${nom}`);
@@ -85,9 +84,10 @@ async function main() {
   const email = arg("compte");
   const nom = arg("nom");
   const secteurs = arg("secteurs", "food").split(","); // valeurs de l'énuméré Sector : food, construction, other
-  const entreprise = arg("entreprise", `${compteNom()}`);
+  const entreprise = arg("entreprise", "") || null;
 
   const compte = await prisma.account.findUniqueOrThrow({ where: { email } });
+  const messagerie = arg("messagerie", email);
   const domaines = await prisma.folder.findMany({
     where: { accountId: compte.id, isActive: true },
     orderBy: { name: "asc" },
@@ -95,7 +95,7 @@ async function main() {
   const sujetsOuverts = await prisma.subject.findMany({
     where: { accountId: compte.id, status: "open" },
     orderBy: { reference: "asc" },
-    select: { reference: true, title: true },
+    select: { reference: true, title: true, waitingForReply: true },
   });
   const conversations = await prisma.conversation.findMany({
     where: { accountId: compte.id, type: "email_subject" },
@@ -120,7 +120,9 @@ async function main() {
   mkdirSync(dossier, { recursive: true });
 
   const compteEval: CompteEvaluation = {
+    dirigeant: `${compte.firstName} ${compte.lastName}`.trim(),
     entreprise,
+    messageries: [anonymiser(messagerie)],
     secteurs: secteurs as CompteEvaluation["secteurs"],
     domaines: domaines.map((d) => ({
       nom: d.name,
@@ -132,6 +134,7 @@ async function main() {
     sujetsOuverts: sujetsOuverts.map((s) => ({
       reference: s.reference,
       titre: anonymiser(s.title),
+      enAttente: s.waitingForReply,
     })),
   };
   writeFileSync(
@@ -153,8 +156,18 @@ async function main() {
         contenu: anonymiser(m.content ?? ""),
       })),
       verite: {
-        verdict: c.status === "ignored" || !sujet ? "bruit" : "affaire",
+        action: c.status === "ignored" || !sujet ? "rien_a_faire" : "a_traiter",
+        nature: sujet
+          ? "professionnel"
+          : c.ignoreReason === "advertising" || c.ignoreReason === "prospecting"
+            ? "publicite"
+            : c.ignoreReason === "automatic"
+              ? "automatique"
+              : c.ignoreReason === "personal"
+                ? "personnel"
+                : "professionnel",
         reference: sujet?.reference ?? null,
+        rattache: null,
         domaine: sujet?.folder?.name ?? null,
         titre: sujet ? anonymiser(sujet.title) : null,
         priorite: sujet?.priority ?? null,
@@ -170,9 +183,9 @@ async function main() {
     resolve(dossier, "cas.jsonl"),
     cas.map((x) => JSON.stringify(x)).join("\n") + "\n",
   );
-  const affaires = cas.filter((x) => x.verite.verdict === "affaire").length;
+  const affaires = cas.filter((x) => x.verite.action === "a_traiter").length;
   console.log(
-    `${cas.length} cas écrits dans ${dossier} — ${affaires} affaires, ${cas.length - affaires} bruit, ${domaines.length} domaines, ${sujetsOuverts.length} sujets ouverts.`,
+    `${cas.length} cas écrits dans ${dossier} — ${affaires} à traiter, ${cas.length - affaires} rien à faire, ${domaines.length} domaines, ${sujetsOuverts.length} sujets ouverts.`,
   );
   console.log(
     "⚠️ Relire le fichier avant de le commiter : les noms de personnes ne sont pas anonymisés automatiquement.",

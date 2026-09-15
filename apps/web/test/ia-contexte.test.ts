@@ -41,7 +41,9 @@ function message(i: number, longueur = 3_000): MessageContexte {
 }
 
 const compte: CompteContexte = {
+  dirigeant: "Mam's Crousty",
   entreprise: "Tasty Crousty",
+  messageries: ["contact@tastycrousty.fr"],
   secteurs: ["food", "construction"],
   domaines: [
     { nom: "RH", description: "Personnel, plannings, recrutement" },

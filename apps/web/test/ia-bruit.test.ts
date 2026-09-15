@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { detecterBruitDeterministe } from "@/server/ia/pipeline/bruit";
+import {
+  detecterBruitDeterministe,
+  signauxAutomatiques,
+} from "@/server/ia/pipeline/bruit";
 
-// LE FILTRE DÉTERMINISTE DU BRUIT (M7 tranche 4, 05 §9.5) : ce qui ne
-// sollicite personne n'appelle pas le modèle. Et surtout ce qu'il LAISSE
-// PASSER — un vrai message étiqueté « automatique » coûte plus cher qu'un
-// appel de tri.
+// LE FILTRE DÉTERMINISTE DE LA PUBLICITÉ (M7 tranche 4, 05 §9.5) : un envoi
+// en masse n'appelle pas le modèle. Les signaux d'AUTOMATE, eux, ne concluent
+// plus — un accusé de réception est souvent le message qu'un sujet attendait —
+// ils sont relevés pour le modèle. Et surtout ce que le filtre LAISSE PASSER :
+// un vrai message mis en sourdine coûte plus cher qu'un appel de tri.
 
 const base = {
   adresse: "karim@sogood.fr",
@@ -14,7 +18,7 @@ const base = {
     "Bonjour, la sauce blanche est en rupture cette semaine. On remplace par la SB-210 ?\nKarim",
 };
 
-describe("filtre déterministe du bruit", () => {
+describe("filtre déterministe de la publicité", () => {
   it("laisse passer un message ordinaire", () => {
     expect(detecterBruitDeterministe(base)).toBeNull();
   });
@@ -29,7 +33,7 @@ describe("filtre déterministe du bruit", () => {
     ).toBeNull();
   });
 
-  it("reconnaît un expéditeur sans réponse possible", () => {
+  it("un expéditeur sans réponse possible ne conclut plus : il est signalé au modèle", () => {
     for (const adresse of [
       "noreply@banque.fr",
       "no-reply@uber.com",
@@ -40,22 +44,27 @@ describe("filtre déterministe du bruit", () => {
       "notifications@github.com",
       "newsletter@metro.fr",
     ]) {
-      const v = detecterBruitDeterministe({ ...base, adresse });
-      expect(v?.categorie, adresse).toBe("automatic");
-      expect(v?.regle, adresse).toBe("expediteur-sans-reponse");
+      expect(
+        detecterBruitDeterministe({ ...base, adresse }),
+        adresse,
+      ).toBeNull();
+      expect(signauxAutomatiques({ ...base, adresse }), adresse).toHaveLength(
+        1,
+      );
     }
+    expect(signauxAutomatiques(base)).toEqual([]);
   });
 
   it("ne confond pas « info@ » ou « contact@ » avec un automate", () => {
     expect(
-      detecterBruitDeterministe({ ...base, adresse: "info@packplus.fr" }),
-    ).toBeNull();
+      signauxAutomatiques({ ...base, adresse: "info@packplus.fr" }),
+    ).toEqual([]);
     expect(
-      detecterBruitDeterministe({ ...base, adresse: "contact@climapro.fr" }),
-    ).toBeNull();
+      signauxAutomatiques({ ...base, adresse: "contact@climapro.fr" }),
+    ).toEqual([]);
   });
 
-  it("reconnaît un accusé ou une réponse automatique à l'objet", () => {
+  it("un accusé ou une réponse automatique à l'objet est signalé, jamais conclu", () => {
     for (const objet of [
       "Réponse automatique : Rupture sauce blanche",
       "Automatic reply: Devis",
@@ -64,9 +73,10 @@ describe("filtre déterministe du bruit", () => {
       "Delivery Status Notification (Failure)",
       "Échec de la remise",
     ]) {
-      const v = detecterBruitDeterministe({ ...base, objet });
-      expect(v?.categorie, objet).toBe("automatic");
-      expect(v?.regle, objet).toBe("objet-automatique");
+      expect(detecterBruitDeterministe({ ...base, objet }), objet).toBeNull();
+      expect(signauxAutomatiques({ ...base, objet })[0], objet).toContain(
+        "accusé",
+      );
     }
   });
 
@@ -77,7 +87,7 @@ describe("filtre déterministe du bruit", () => {
       adresse: "offres@grossiste.fr",
       contenu: promo,
     });
-    expect(v?.categorie).toBe("advertising");
+    expect(v?.nature).toBe("publicite");
     expect(v?.regle).toBe("lien-desabonnement");
   });
 
@@ -93,7 +103,7 @@ describe("filtre déterministe du bruit", () => {
         entetes: { "list-unsubscribe": "<https://x.fr/u>" },
       }),
     ).toMatchObject({
-      categorie: "advertising",
+      nature: "publicite",
       regle: "en-tete-desabonnement",
     });
     expect(
@@ -101,18 +111,18 @@ describe("filtre déterministe du bruit", () => {
         ...base,
         entetes: { "auto-submitted": "auto-replied" },
       }),
-    ).toMatchObject({
-      categorie: "automatic",
-      regle: "en-tete-auto-submitted",
-    });
-    expect(
-      detecterBruitDeterministe({
-        ...base,
-        entetes: { "auto-submitted": "no" },
-      }),
     ).toBeNull();
     expect(
+      signauxAutomatiques({
+        ...base,
+        entetes: { "auto-submitted": "auto-replied" },
+      }),
+    ).toHaveLength(1);
+    expect(
+      signauxAutomatiques({ ...base, entetes: { "auto-submitted": "no" } }),
+    ).toEqual([]);
+    expect(
       detecterBruitDeterministe({ ...base, entetes: { precedence: "bulk" } }),
-    ).toMatchObject({ categorie: "advertising", regle: "en-tete-precedence" });
+    ).toMatchObject({ nature: "publicite", regle: "en-tete-precedence" });
   });
 });

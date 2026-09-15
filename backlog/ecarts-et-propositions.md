@@ -349,6 +349,43 @@ surveiller : des sujets ouverts en confiance moyenne que l'utilisateur ferme aus
 (les traiter comme une affaire en confiance moyenne). La frontière est une constante du code,
 en un seul endroit, testée.
 
+### L'avis de Relvo parle en deux parts — une action, une nature — et le rattachement prime
+
+**`tranché`** · Le second e-mail réel trié a exposé trois défauts d'un coup. À l'écran, la
+ligne disait « Relvo · bruit · autre » : les énumérés du modèle passés tels quels, un terme de
+traitement du signal et une catégorie qui ne dit rien. Le fil — une demande de devis reçue
+d'une adresse personnelle portant le nom du dirigeant — a été mis en sourdine : le contexte
+présentait le dirigeant comme « Entreprise : Vincent Chollet », le message arrivait « De :
+Vincent Chollet », et le modèle en a conclu un message sortant, où l'action attendue était
+chez l'autre. Enfin, un accusé de réception qu'un sujet attendait, arrivé comme un e-mail
+neuf, aurait été ignoré au lieu de rejoindre ce sujet.
+
+**Retenu, à la proposition du dirigeant** :
+
+- **Une action, dans ses mots** : à traiter (Relvo ouvre ou rattache, à l'utilisateur de
+  traiter le sujet), à considérer (le fil reste à trier avec l'avis), rien à faire (en
+  confiance haute, mis en sourdine). Les énumérés internes restent ; l'écran ne les montre plus.
+- **Une nature, toujours posée, quatre valeurs** : professionnel, publicité (démarchage
+  compris), automatique, personnel. « Autre » disparaît — c'est la catégorie qui avait
+  englouti le devis. Le domaine ne se pose que sur le professionnel.
+- **Le cadre du message reçu**, en une phrase du contexte : l'expéditeur est un tiers, homonyme
+  ou pas, et l'avis se rend sur ce que le message demande. Le dirigeant est nommé
+  « Dirigeant », sa messagerie est donnée.
+- **Le rattachement prime sur l'action** : un fil qui prolonge un sujet ouvert le rejoint même
+  sans rien à faire. Corollaire : le filtre déterministe ne conclut plus sur les signaux
+  d'automate — un accusé est souvent attendu —, il ne conclut que sur la publicité. Chaque sujet
+  ouvert poussé au tri porte son marqueur « en attente d'une réponse ».
+
+**Ce qui tranchera** : le jeu d'évaluation, qui porte désormais les deux cas — le devis reçu
+d'une adresse personnelle au nom du dirigeant, l'accusé qu'un sujet attendait — et les avis
+réels des semaines qui viennent. Première mesure sur la démonstration : le devis est reconnu « à
+traiter · professionnel », l'accusé « rien à faire · automatique » et rattaché ; mais entre le
+sujet précis marqué « en attente » et un sujet général du même thème (« Réceptions & livraisons
+fournisseurs »), le modèle choisit le général deux fois sur trois. Le lanceur compte désormais
+les rattachements non attendus. Un compte réel n'a pas de sujets parapluie ; si les usages en
+font apparaître, la consigne de rattachement est le levier. Le socle Produit a grossi d'un bloc pour porter la nature et
+le cadre ; son budget a été relevé d'autant, une fois, avec ce motif.
+
 ### Trois pastilles, deux natures — ce que Relvo a fait en mon absence
 
 **`tranché`** · Au premier e-mail réel trié, le dirigeant a demandé à voir « ce que Relvo a fait

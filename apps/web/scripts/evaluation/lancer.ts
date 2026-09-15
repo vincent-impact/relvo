@@ -1,9 +1,9 @@
 // LANCEUR du jeu d'évaluation (M7.17, tranche 1) — le TRI, hors application.
 //
-// Pour chaque configuration (modèle × niveau de raisonnement), rend le verdict
-// de tri sur chaque cas et mesure : accord avec le tri manuel (verdict,
-// domaine), coût en euros, latence, jetons de raisonnement, jetons lus en
-// cache. C'est la première question du sprint : combien coûte un message
+// Pour chaque configuration (modèle × niveau de raisonnement), rend l'avis de
+// tri sur chaque cas et mesure : accord avec le tri manuel (action, nature,
+// rattachement, domaine), coût en euros, latence, jetons de raisonnement,
+// jetons lus en cache. C'est la première question du sprint : combien coûte un message
 // traité, à quelle latence — et le tier de l'extraction se tranche dessus.
 //
 // Usage :
@@ -33,7 +33,11 @@ type Resultat = {
   sortie: SortieTri | null;
   erreur: string | null;
   mesure: MesureSollicitation | null;
-  accordVerdict: boolean | null;
+  /** null quand le modèle rend « a_considerer » : ni juste ni faux. */
+  accordAction: boolean | null;
+  accordNature: boolean | null;
+  /** Le fil devait rejoindre un sujet ouvert — l'a-t-il fait ? null si rien n'était attendu. */
+  accordRattachement: boolean | null;
   accordDomaine: boolean | null;
 };
 
@@ -83,14 +87,18 @@ async function trier(
       reasoning: config.niveau,
       modele: config.modele,
     });
-    // « incertain » n'est ni juste ni faux : c'est un renvoi au dirigeant. On le
-    // compte à part, jamais comme un accord.
-    const accordVerdict =
-      sortie.verdict === "incertain"
+    // « a_considerer » n'est ni juste ni faux : c'est un renvoi au dirigeant.
+    // On le compte à part, jamais comme un accord.
+    const accordAction =
+      sortie.action === "a_considerer"
         ? null
-        : sortie.verdict === cas.verite.verdict;
+        : sortie.action === cas.verite.action;
+    const accordNature = sortie.nature === cas.verite.nature;
+    const accordRattachement = cas.verite.rattache
+      ? (sortie.sujet_existant ?? "").trim() === cas.verite.rattache
+      : null;
     const accordDomaine =
-      cas.verite.verdict === "affaire" && sortie.verdict === "affaire"
+      cas.verite.action === "a_traiter" && sortie.action === "a_traiter"
         ? (sortie.domaine ?? null) === cas.verite.domaine
         : null;
     return {
@@ -98,7 +106,9 @@ async function trier(
       sortie,
       erreur: null,
       mesure,
-      accordVerdict,
+      accordAction,
+      accordNature,
+      accordRattachement,
       accordDomaine,
     };
   } catch (e) {
@@ -107,7 +117,9 @@ async function trier(
       sortie: null,
       erreur: e instanceof Error ? e.message.slice(0, 200) : String(e),
       mesure: null,
-      accordVerdict: null,
+      accordAction: null,
+      accordNature: null,
+      accordRattachement: null,
       accordDomaine: null,
     };
   }
@@ -155,17 +167,36 @@ async function main() {
       trier(compte, c, config),
     );
     const ok = resultats.filter((r) => r.mesure);
-    const jugés = resultats.filter((r) => r.accordVerdict !== null);
+    const jugés = resultats.filter((r) => r.accordAction !== null);
+    const natures = resultats.filter((r) => r.accordNature !== null);
+    const rattachements = resultats.filter(
+      (r) => r.accordRattachement !== null,
+    );
     const affaires = resultats.filter((r) => r.accordDomaine !== null);
-    const incertains = resultats.filter(
-      (r) => r.sortie?.verdict === "incertain",
+    const aConsiderer = resultats.filter(
+      (r) => r.sortie?.action === "a_considerer",
     ).length;
+    // Un rattachement que la vérité n'attendait pas : le fil aurait rejoint un
+    // sujet qui n'était pas la même affaire — à surveiller autant que l'inverse.
+    const rattachementsIndus = resultats.filter((r) => {
+      const c = cas.find((x) => x.id === r.cas)!;
+      return !c.verite.rattache && (r.sortie?.sujet_existant ?? "").trim();
+    }).length;
     const synthese = {
-      "verdicts justes": pct(
-        jugés.filter((r) => r.accordVerdict).length,
+      "actions justes": pct(
+        jugés.filter((r) => r.accordAction).length,
         jugés.length,
       ),
-      incertains: `${incertains}`,
+      "natures justes": pct(
+        natures.filter((r) => r.accordNature).length,
+        natures.length,
+      ),
+      "rattachements justes (sur fils qui prolongent un sujet)": pct(
+        rattachements.filter((r) => r.accordRattachement).length,
+        rattachements.length,
+      ),
+      "rattachements non attendus": `${rattachementsIndus}`,
+      "à considérer": `${aConsiderer}`,
       "domaines justes (sur affaires reconnues)": pct(
         affaires.filter((r) => r.accordDomaine).length,
         affaires.length,
@@ -185,26 +216,24 @@ async function main() {
     console.log(`## ${nom}`);
     for (const [k, v] of Object.entries(synthese)) console.log(`- ${k} : ${v}`);
     console.log(
-      `\n| cas | vérité | verdict | conf. | domaine (vérité) | titre proposé | raison |`,
+      `\n| cas | vérité | avis | conf. | sujet (vérité) | domaine (vérité) | titre proposé | raison |`,
     );
-    console.log(`|---|---|---|---|---|---|---|`);
+    console.log(`|---|---|---|---|---|---|---|---|`);
     for (const r of resultats) {
       const c = cas.find((x) => x.id === r.cas)!;
       if (!r.sortie) {
         console.log(
-          `| ${r.cas} | ${c.verite.verdict} | ERREUR | | | | ${r.erreur} |`,
+          `| ${r.cas} | ${c.verite.action} · ${c.verite.nature} | ERREUR | | | | | ${r.erreur} |`,
         );
         continue;
       }
       const marque =
-        r.accordVerdict === false
-          ? " ❌"
-          : r.accordVerdict === null
-            ? " ❔"
-            : "";
+        r.accordAction === false ? " ❌" : r.accordAction === null ? " ❔" : "";
+      const nat = r.accordNature === false ? " ❌" : "";
+      const rat = r.accordRattachement === false ? " ❌" : "";
       const dom = r.accordDomaine === false ? " ❌" : "";
       console.log(
-        `| ${r.cas} | ${c.verite.verdict} | ${r.sortie.verdict}${r.sortie.categorie_bruit ? ` (${r.sortie.categorie_bruit})` : ""}${marque} | ${r.sortie.confiance} | ${r.sortie.domaine ?? "∅"}${dom} (${c.verite.domaine ?? "∅"}) | ${r.sortie.titre ?? ""} | ${r.sortie.raison} |`,
+        `| ${r.cas} | ${c.verite.action} · ${c.verite.nature} | ${r.sortie.action}${marque} · ${r.sortie.nature}${nat} | ${r.sortie.confiance} | ${r.sortie.sujet_existant ?? "∅"}${rat} (${c.verite.rattache ?? "∅"}) | ${r.sortie.domaine ?? "∅"}${dom} (${c.verite.domaine ?? "∅"}) | ${r.sortie.titre ?? ""} | ${r.sortie.raison} |`,
       );
     }
     console.log("");

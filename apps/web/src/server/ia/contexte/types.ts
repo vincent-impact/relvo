@@ -10,7 +10,12 @@ import type { Secteur } from "../produit";
 // une référence lisible (`SUB-0142`) suffit au modèle et aux outils.
 
 export type CompteContexte = {
-  entreprise: string;
+  /** Le dirigeant, nommé comme tel — jamais présenté comme « l'entreprise ». */
+  dirigeant: string;
+  /** Raison sociale, quand le compte en porte une. */
+  entreprise: string | null;
+  /** Adresses des messageries connectées : ce sur quoi un fil a été REÇU. */
+  messageries: readonly string[];
   secteurs: readonly Secteur[];
   /** Domaines du compte, « Général » compris (filtré par couche selon l'usage). */
   domaines: readonly DomaineResume[];
@@ -26,7 +31,12 @@ export type CompteContexte = {
 
 export type DomaineResume = { nom: string; description: string | null };
 
-export type SujetResume = { reference: string; titre: string };
+export type SujetResume = {
+  reference: string;
+  titre: string;
+  /** Le sujet attend une réponse : c'est ce qui fait reconnaître un accusé ou une confirmation (`05 §1.2`). */
+  enAttente?: boolean;
+};
 
 export type InstructionContexte = { titre: string; contenu: string };
 
@@ -60,6 +70,8 @@ export type MessageContexte = {
 export type ConversationContexte = {
   canal: "email" | "whatsapp";
   messages: readonly MessageContexte[];
+  /** Indices techniques d'automate relevés sans appel (`pipeline/bruit`), en clair — jamais une conclusion. */
+  signaux?: readonly string[];
 };
 
 export type TacheContexte = {

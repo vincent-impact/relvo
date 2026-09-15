@@ -1,20 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
+  avisEnBase,
   deciderTri,
   FRONTIERE_CONFIANCE,
   FRONTIERE_IGNORANCE,
-  verdictEnBase,
 } from "@/server/ia/pipeline/decision";
 import type { SortieTri } from "@/server/ia/schemas";
 
-// LA DÉCISION DU TRI (M7 tranche 4, 05 §1.1 et §9.5) : incertain n'écrit que
-// le verdict ; une affaire sous la frontière de confiance aussi ; au-dessus,
-// ouverture ou rattachement ; un bruit en confiance haute fait taire la source,
-// en dessous il attend le geste. Les deux frontières sont UN endroit, testé.
+// LA DÉCISION DU TRI (M7 tranche 4, 05 §1.1, §1.2 et §9.5) : le rattachement
+// prime, quelle que soit l'action ; « à traiter » ouvre au-dessus de la
+// frontière ; « rien à faire » en confiance haute fait taire ; « à considérer »
+// n'écrit que l'avis. Les deux frontières sont UN endroit, testé.
 
-const affaire: SortieTri = {
-  verdict: "affaire",
-  categorie_bruit: null,
+const aTraiter: SortieTri = {
+  action: "a_traiter",
+  nature: "professionnel",
   confiance: "haute",
   raison: "Le fournisseur attend une validation.",
   domaine: "Fournisseurs",
@@ -24,85 +24,151 @@ const affaire: SortieTri = {
   priorite: "normal",
 };
 
-const bruit: SortieTri = {
-  ...affaire,
-  verdict: "bruit",
-  categorie_bruit: "advertising",
+const rienAFaire: SortieTri = {
+  ...aTraiter,
+  action: "rien_a_faire",
+  nature: "publicite",
   raison: "Promotion générique sans action attendue.",
   domaine: null,
   titre: null,
 };
 
 describe("décision du tri", () => {
-  it("la frontière d'affaire par défaut est « moyenne » : haute et moyenne ouvrent, basse non", () => {
-    expect(FRONTIERE_CONFIANCE).toBe("moyenne");
-    expect(deciderTri(affaire).type).toBe("affaire");
-    expect(deciderTri({ ...affaire, confiance: "moyenne" }).type).toBe(
-      "affaire",
+  it("le rattachement prime : un accusé attendu par un sujet ouvert le rejoint, même sans rien à faire", () => {
+    expect(
+      deciderTri({
+        ...rienAFaire,
+        nature: "automatique",
+        sujet_existant: " SUB-0103 ",
+      }),
+    ).toEqual({
+      type: "rattacher",
+      sujetExistant: "SUB-0103",
+      domaine: null,
+      domainePropose: null,
+      priorite: "normal",
+    });
+    // « À traiter » aussi, évidemment ; et « à considérer ».
+    expect(deciderTri({ ...aTraiter, sujet_existant: "SUB-0142" }).type).toBe(
+      "rattacher",
     );
-    expect(deciderTri({ ...affaire, confiance: "basse" })).toEqual({
-      type: "verdict-seul",
+    expect(
+      deciderTri({
+        ...aTraiter,
+        action: "a_considerer",
+        sujet_existant: "SUB-0142",
+      }).type,
+    ).toBe("rattacher");
+  });
+
+  it("mais jamais une publicité ni un fil personnel, ni sous la frontière", () => {
+    expect(deciderTri({ ...rienAFaire, sujet_existant: "SUB-0142" }).type).toBe(
+      "ignorer",
+    );
+    expect(
+      deciderTri({
+        ...aTraiter,
+        nature: "personnel",
+        sujet_existant: "SUB-0142",
+      }),
+    ).toEqual({ type: "avis-seul", motif: "personnel" });
+    expect(
+      deciderTri({
+        ...aTraiter,
+        confiance: "basse",
+        sujet_existant: "SUB-0142",
+      }),
+    ).toEqual({ type: "avis-seul", motif: "sous-la-frontiere" });
+  });
+
+  it("la frontière d'ouverture par défaut est « moyenne » : haute et moyenne ouvrent, basse non", () => {
+    expect(FRONTIERE_CONFIANCE).toBe("moyenne");
+    expect(deciderTri(aTraiter)).toEqual({
+      type: "ouvrir",
+      titre: "Rupture sauce blanche",
+      domaine: "Fournisseurs",
+      domainePropose: null,
+      priorite: "normal",
+    });
+    expect(deciderTri({ ...aTraiter, confiance: "moyenne" }).type).toBe(
+      "ouvrir",
+    );
+    expect(deciderTri({ ...aTraiter, confiance: "basse" })).toEqual({
+      type: "avis-seul",
       motif: "sous-la-frontiere",
     });
     // Frontière relevée à « haute » : moyenne ne suffit plus.
     expect(
-      deciderTri({ ...affaire, confiance: "moyenne" }, { affaire: "haute" }),
-    ).toEqual({ type: "verdict-seul", motif: "sous-la-frontiere" });
+      deciderTri({ ...aTraiter, confiance: "moyenne" }, { affaire: "haute" }),
+    ).toEqual({ type: "avis-seul", motif: "sous-la-frontiere" });
   });
 
-  it("un bruit en confiance haute fait taire la source, avec sa catégorie et sa raison", () => {
+  it("un fil personnel n'ouvre jamais rien ; une publicité ou un automate « à traiter », si", () => {
+    expect(deciderTri({ ...aTraiter, nature: "personnel" })).toEqual({
+      type: "avis-seul",
+      motif: "personnel",
+    });
+    expect(
+      deciderTri({ ...aTraiter, nature: "publicite", domaine: null }).type,
+    ).toBe("ouvrir");
+    expect(deciderTri({ ...aTraiter, nature: "automatique" }).type).toBe(
+      "ouvrir",
+    );
+  });
+
+  it("un « rien à faire » en confiance haute fait taire la source, avec sa nature et sa raison", () => {
     expect(FRONTIERE_IGNORANCE).toBe("haute");
-    expect(deciderTri(bruit)).toEqual({
+    expect(deciderTri(rienAFaire)).toEqual({
       type: "ignorer",
-      categorie: "advertising",
+      nature: "publicite",
       raison: "Promotion générique sans action attendue.",
     });
-    // Sans catégorie, « autre » ; sans raison, une phrase de repli.
+    // Sans raison, une phrase de repli ; la nature professionnelle se tait aussi.
     expect(
-      deciderTri({ ...bruit, categorie_bruit: null, raison: " " }),
+      deciderTri({ ...rienAFaire, nature: "professionnel", raison: " " }),
     ).toEqual({
       type: "ignorer",
-      categorie: "other",
+      nature: "professionnel",
       raison: "Sans raison donnée.",
     });
   });
 
-  it("un bruit en confiance moyenne ou basse n'écrit que le verdict, à l'utilisateur de trancher", () => {
-    expect(deciderTri({ ...bruit, confiance: "moyenne" })).toEqual({
-      type: "verdict-seul",
-      motif: "bruit",
+  it("un « rien à faire » en confiance moyenne ou basse n'écrit que l'avis, à l'utilisateur de trancher", () => {
+    expect(deciderTri({ ...rienAFaire, confiance: "moyenne" })).toEqual({
+      type: "avis-seul",
+      motif: "rien-a-faire",
     });
-    expect(deciderTri({ ...bruit, confiance: "basse" })).toEqual({
-      type: "verdict-seul",
-      motif: "bruit",
+    expect(deciderTri({ ...rienAFaire, confiance: "basse" })).toEqual({
+      type: "avis-seul",
+      motif: "rien-a-faire",
     });
     // Frontière abaissée à « moyenne » : moyenne fait taire aussi.
     expect(
-      deciderTri({ ...bruit, confiance: "moyenne" }, { ignorance: "moyenne" })
-        .type,
+      deciderTri(
+        { ...rienAFaire, confiance: "moyenne" },
+        { ignorance: "moyenne" },
+      ).type,
     ).toBe("ignorer");
   });
 
-  it("incertain n'écrit que le verdict, quelle que soit la confiance", () => {
-    expect(deciderTri({ ...affaire, verdict: "incertain" })).toEqual({
-      type: "verdict-seul",
-      motif: "incertain",
+  it("« à considérer » n'écrit que l'avis, quelle que soit la confiance", () => {
+    expect(deciderTri({ ...aTraiter, action: "a_considerer" })).toEqual({
+      type: "avis-seul",
+      motif: "a-considerer",
     });
   });
 
-  it("porte ce que l'ouverture ou le rattachement a besoin de savoir, sans chaînes vides", () => {
+  it("porte ce que l'ouverture a besoin de savoir, sans chaînes vides", () => {
     expect(
       deciderTri({
-        ...affaire,
-        sujet_existant: " SUB-00012 ",
+        ...aTraiter,
         titre: "  ",
         domaine: "",
         domaine_propose: "Réglementaire",
         priorite: "urgent",
       }),
     ).toEqual({
-      type: "affaire",
-      sujetExistant: "SUB-00012",
+      type: "ouvrir",
       titre: null,
       domaine: null,
       domainePropose: "Réglementaire",
@@ -110,29 +176,26 @@ describe("décision du tri", () => {
     });
   });
 
-  it("traduit la sortie vers les énumérés de la base, catégorie seulement sur « bruit »", () => {
-    expect(verdictEnBase(affaire)).toEqual({
+  it("traduit l'avis vers les énumérés de la base, la nature toujours posée", () => {
+    expect(avisEnBase(aTraiter)).toEqual({
       verdict: "matter",
+      nature: "professional",
       confidence: "high",
-      noiseReason: null,
       reason: "Le fournisseur attend une validation.",
     });
     expect(
-      verdictEnBase({
-        ...bruit,
-        categorie_bruit: "prospecting",
+      avisEnBase({
+        ...rienAFaire,
+        action: "a_considerer",
+        nature: "automatique",
         confiance: "basse",
         raison: "  ",
       }),
     ).toEqual({
-      verdict: "noise",
+      verdict: "uncertain",
+      nature: "automatic",
       confidence: "low",
-      noiseReason: "prospecting",
       reason: "Sans raison donnée.",
     });
-    // Le modèle a posé une catégorie sur une affaire : elle est ignorée.
-    expect(
-      verdictEnBase({ ...affaire, categorie_bruit: "other" }).noiseReason,
-    ).toBeNull();
   });
 });

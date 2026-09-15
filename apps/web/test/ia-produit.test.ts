@@ -50,10 +50,10 @@ describe("couche Produit", () => {
 
   it("chaque socle sectoriel porte des exemples négatifs", () => {
     expect(
-      (SOCLE_FOOD.match(/Décision : bruit/g) ?? []).length,
+      (SOCLE_FOOD.match(/Décision : rien à faire/g) ?? []).length,
     ).toBeGreaterThanOrEqual(2);
     expect(
-      (SOCLE_BATIMENT.match(/Décision : bruit/g) ?? []).length,
+      (SOCLE_BATIMENT.match(/Décision : rien à faire/g) ?? []).length,
     ).toBeGreaterThanOrEqual(2);
   });
 });

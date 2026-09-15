@@ -215,21 +215,22 @@ sortent seulement du champ de travail de l'assistant. Réversible par le seul ut
 
 L'ignorance porte une **raison** — publicité, prospection, notification automatique, personnel, pas
 mon rôle, déjà traité ailleurs, autre —, une note libre optionnelle, et l'**acteur** qui l'a posée :
-l'utilisateur, en un appui, ou Relvo, sur un verdict « bruit » sûr (cf. `05 §9.5`), auquel cas la
-catégorie du verdict est la raison et sa phrase la note. La raison est ce qui rend le geste
+l'utilisateur, en un appui, ou Relvo, sur un avis « rien à faire » sûr (cf. `05 §9.5`), auquel cas
+la nature de l'avis donne la raison et sa phrase la note. La raison est ce qui rend le geste
 exploitable par Relvo (cf. `05 §9`) : sans elle, une conversation ignorée dit qu'on n'en veut pas,
 jamais pourquoi. L'acteur est ce qui permet à la liste de dire « ignorée par Relvo ». Réactiver
 efface la raison et l'acteur ; le verdict de tri, lui, reste.
 
-### Le verdict de tri
+### L'avis de tri
 
-Sur une conversation orpheline, Relvo dépose son **verdict de tri** — bruit, affaire, incertain —,
-la **catégorie** du bruit le cas échéant — dans le vocabulaire des raisons d'ignorance ci-dessus,
-pour qu'une confirmation d'un geste devienne la raison —, une **confiance** à trois niveaux —
-haute, moyenne, basse —, une **raison** en une phrase, et l'horodatage. Ces champs portent le **dernier** verdict et sont visibles dans la liste à trier :
-l'utilisateur confirme ou contredit d'un geste, et l'accord comme le désaccord sont journalisés.
+Sur une conversation orpheline, Relvo dépose son **avis de tri** en deux parts — l'**action** :
+à traiter, à considérer, rien à faire ; la **nature**, toujours posée : professionnel, publicité,
+automatique, personnel —, une **confiance** à trois niveaux — haute, moyenne, basse —, une
+**raison** en une phrase, et l'horodatage (cf. `05 §1.1`). Ces champs portent le **dernier** avis
+et sont visibles dans la liste à trier comme en tête du fil, dans les mots de l'utilisateur :
+il confirme ou contredit d'un geste, et l'accord comme le désaccord sont journalisés.
 
-⚠️ **Le verdict ne conditionne rien.** La conversation est rangée et lisible quel qu'il soit ; il
+⚠️ **L'avis ne conditionne rien.** La conversation est rangée et lisible quel qu'il soit ; il
 dit seulement ce que Relvo en pense, et pourquoi.
 
 ## SubjectConversation
@@ -533,7 +534,6 @@ que le test lit.
 | `attachments_enqueue_file_deletion` | `attachments` | trigger : toute suppression, cascade comprise, enfile la clé d'objet dans l'outbox de suppression de fichiers |
 | `knowledge_documents_enqueue_file_deletion` | `knowledge_documents` | trigger : même garantie pour les documents de connaissance |
 | `subjects_search_vector` | `subjects` | trigger : le vecteur plein texte (titre pondéré A, situation structurée pondérée B, dictionnaire français) est tenu à chaque écriture — le code ne l'écrit jamais |
-| `conversations_triage_noise_reason_check` | `conversations` | vérification : la catégorie d'un verdict n'est posée que si le verdict est « bruit », et jamais avec une raison que seul l'utilisateur connaît (pas mon rôle, déjà traité ailleurs) |
 | `relvo_questions_scope_target_check` | `relvo_questions` | vérification : une question a exactement une cible, celle de sa portée |
 
 ### Comment cette liste reste vraie

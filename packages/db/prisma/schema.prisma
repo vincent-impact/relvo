@@ -114,11 +114,11 @@ enum ConversationStatus {
 }
 
 /// Raison d'ignorance d'une conversation, choisie par l'utilisateur en un appui
-/// (02, Conversation). C'est AUSSI le vocabulaire de la catégorie d'un verdict
-/// « bruit » du tri (`Conversation.triageNoiseReason`) : ce que Relvo conclut est
-/// exactement ce que l'utilisateur confirme d'un geste, et la confirmation
-/// devient la raison. `not_my_role` et `handled_elsewhere` ne sont jamais posés
-/// par le tri — seul l'utilisateur les connaît.
+/// (02, Conversation). Quand c'est Relvo qui fait taire, la raison dérive de la
+/// NATURE de son avis (`TriageNature`) : publicité → advertising, automatique →
+/// automatic, personnel → personal, professionnel → other. `not_my_role` et
+/// `handled_elsewhere` ne sont jamais posés par Relvo — seul l'utilisateur les
+/// connaît.
 enum IgnoreReason {
   advertising
   prospecting
@@ -129,12 +129,27 @@ enum IgnoreReason {
   other
 }
 
-/// Verdict de tri déposé par Relvo sur une conversation orpheline (05 §1.1).
-/// Il ne conditionne RIEN : la conversation est rangée et lisible quel qu'il soit.
+/// L'ACTION de l'avis de tri (05 §1.1) — ce que le fil demande au dirigeant :
+/// `matter` = « à traiter » (un sujet s'ouvre ou se rattache), `uncertain` =
+/// « à considérer » (le dirigeant tranche, le fil reste à trier), `noise` =
+/// « rien à faire » (en confiance haute, la source est mise en sourdine).
+/// L'avis ne conditionne RIEN : la conversation est rangée et lisible quel qu'il soit.
 enum TriageVerdict {
   noise
   matter
   uncertain
+}
+
+/// La NATURE de l'avis de tri (05 §1.1) — de quoi il s'agit, TOUJOURS posée,
+/// quelle que soit l'action : `professional` = l'activité de l'entreprise (et
+/// alors un domaine peut se poser), `advertising` = envois de masse et
+/// démarchage, `automatic` = messages de machines, `personal` = hors du champ
+/// professionnel. Quatre valeurs, pas trente-six : c'est ce que l'utilisateur lit.
+enum TriageNature {
+  professional
+  advertising
+  automatic
+  personal
 }
 
 /// Confiance d'un verdict — trois niveaux, JAMAIS un pourcentage (un modèle
@@ -514,13 +529,12 @@ model Conversation {
   /// Qui a fait taire la source : l'utilisateur (geste), ou Relvo (verdict
   /// « bruit » en confiance haute, 05 §9.5). Null tant que la conversation est active.
   ignoredByActor    Actor?             @map("ignored_by_actor")
-  /// Le DERNIER verdict de tri de Relvo sur cette conversation orpheline (05 §1.1) :
-  /// verdict, catégorie du bruit (vocabulaire des raisons d'ignorance), confiance,
-  /// raison en une phrase, horodatage. Visible dans la liste à trier ; l'utilisateur
-  /// confirme ou contredit d'un geste, et les deux issues sont journalisées.
-  /// ⚠️ Contrainte en base : la catégorie n'est posée que si le verdict est `noise`.
+  /// Le DERNIER avis de tri de Relvo sur cette conversation orpheline (05 §1.1) :
+  /// action, nature, confiance, raison en une phrase, horodatage. Visible dans
+  /// la liste à trier et en tête du fil ; l'utilisateur confirme ou contredit
+  /// d'un geste, et les deux issues sont journalisées.
   triageVerdict     TriageVerdict?     @map("triage_verdict")
-  triageNoiseReason IgnoreReason?      @map("triage_noise_reason")
+  triageNature      TriageNature?      @map("triage_nature")
   triageConfidence  TriageConfidence?  @map("triage_confidence")
   triageReason      String?            @map("triage_reason")
   triagedAt         DateTime?          @map("triaged_at")

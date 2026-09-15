@@ -7,29 +7,30 @@ import { z } from "zod";
 // aucun n'est « optionnel » — ce qui peut manquer est `null`. C'est aussi ce
 // qui rend une sortie comparable d'un appel à l'autre.
 //
-// Les noms suivent `02-modele-donnees.md` : verdict à trois valeurs, confiance
-// à trois niveaux (jamais un pourcentage — un modèle annonce mal ses
-// probabilités), raison en une phrase, situation structurée en quatre champs.
+// Les noms suivent `02-modele-donnees.md` : un avis en deux parts — l'ACTION
+// à trois valeurs et la NATURE à quatre —, une confiance à trois niveaux
+// (jamais un pourcentage — un modèle annonce mal ses probabilités), une raison
+// en une phrase, une situation structurée en quatre champs.
 
-export const VERDICTS = ["bruit", "affaire", "incertain"] as const;
+/**
+ * L'ACTION — ce que le fil demande au dirigeant. « a_traiter » : un sujet
+ * s'ouvre ou se rattache. « a_considerer » : le dirigeant tranche, le fil
+ * reste à trier. « rien_a_faire » : en confiance haute, la source est mise en
+ * sourdine. Miroir de `TriageVerdict` (Prisma) : matter, uncertain, noise.
+ */
+export const ACTIONS = ["a_traiter", "a_considerer", "rien_a_faire"] as const;
 export const CONFIANCES = ["haute", "moyenne", "basse"] as const;
 export const PRIORITES = ["normal", "urgent"] as const;
 /**
- * Catégorie d'un verdict « bruit » — sous-ensemble de l'énuméré `IgnoreReason`
- * (Prisma), les RAISONS D'IGNORANCE de `02` : ce que le tri conclut est
- * exactement ce que l'utilisateur confirme d'un geste, et la liste à trier se
- * regroupe dessus. `personal` = hors du champ professionnel ; `advertising` =
- * envois de masse ; `automatic` = notifications, accusés de réception, alertes
- * de plateformes ; `prospecting` = démarchage non sollicité ; `other` =
- * informatif sans suite. Une contrainte en base interdit les deux autres
- * raisons au tri.
+ * La NATURE — de quoi il s'agit, TOUJOURS posée, quelle que soit l'action.
+ * Quatre valeurs, pas trente-six : c'est ce que l'utilisateur lit. Un domaine
+ * ne se pose que sur « professionnel ». Miroir de `TriageNature` (Prisma).
  */
-export const CATEGORIES_BRUIT = [
-  "personal",
-  "advertising",
-  "automatic",
-  "prospecting",
-  "other",
+export const NATURES = [
+  "professionnel",
+  "publicite",
+  "automatique",
+  "personnel",
 ] as const;
 /** Miroir de `TaskKind` (Prisma) — le schéma de sortie n'importe pas le client. */
 export const TYPES_TACHE = [
@@ -62,23 +63,23 @@ const heure = z
 
 /**
  * Sortie du TRI (`05 §1.1`, §1.1 ter, §1.2, §1.4) — un appel sur une
- * conversation orpheline. Décide bruit / affaire / incertain, découvre le
- * domaine, repère une affaire déjà suivie, propose un titre.
+ * conversation orpheline. Rend une action et une nature, découvre le domaine,
+ * repère un sujet ouvert que le fil prolonge — même sans action —, propose un
+ * titre.
  */
 export const SortieTri = z.object({
-  verdict: z.enum(VERDICTS),
-  /** Renseignée si et seulement si le verdict est « bruit ». */
-  categorie_bruit: z.enum(CATEGORIES_BRUIT).nullable(),
+  action: z.enum(ACTIONS),
+  nature: z.enum(NATURES),
   confiance: z.enum(CONFIANCES),
   /** Une phrase, visible dans la liste à trier. */
   raison: z.string(),
-  /** Nom EXACT d'un domaine du compte, ou null si aucun ne convient. */
+  /** Nom EXACT d'un domaine du compte, ou null si aucun ne convient ou si la nature n'est pas professionnelle. */
   domaine: z.string().nullable(),
   /** Nom libre quand aucun domaine existant ne convient (`04 §10`). */
   domaine_propose: z.string().nullable(),
-  /** Référence d'un sujet ouvert du compte que ce fil prolonge, sinon null. */
+  /** Référence d'un sujet ouvert du compte que ce fil prolonge — réponse, confirmation, accusé attendu —, sinon null. */
   sujet_existant: z.string().nullable(),
-  /** Titre orienté métier si affaire, sinon null. */
+  /** Titre orienté métier si « a_traiter », sinon null. */
   titre: z.string().nullable(),
   priorite: z.enum(PRIORITES),
 });

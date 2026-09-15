@@ -9,8 +9,11 @@ import { cn } from "@/lib/utils";
 //
 //   • fil ignoré PAR RELVO → « Ignorée par Relvo · publicité — raison »
 //   • fil ignoré par l'utilisateur → « Ignorée · pas mon rôle » (sa raison, s'il en a une)
-//   • verdict seul → « Relvo · bruit · autre — raison » / « Relvo · affaire — raison »
+//   • avis seul → « Relvo · À traiter · professionnel — raison »,
+//     « Relvo · Rien à faire · automatique — raison », « Relvo · À considérer · … »
 //   • rien → null : Relvo n'a pas lu ce fil (rien n'est affiché en liste).
+// Les mots sont ceux de l'utilisateur (`lib/conversation-row`), jamais ceux du
+// modèle : « bruit » ou « autre » ne s'affichent nulle part.
 
 export function RelvoVerdictLine({
   relvo,
