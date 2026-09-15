@@ -264,3 +264,33 @@ describe("correspondance à l'envoi", () => {
     expect(s.waitingForReply).toBe(false);
   });
 });
+
+describe("l'objet de la réponse", () => {
+  it("vient du FIL de départ, pas du titre du sujet : la réponse reste dans la même conversation", async () => {
+    const { db, channel } = await makeAccount("d@test.fr");
+    // Le sujet s'intitule autrement que l'e-mail : « Remplacement de la chambre
+    // froide » pour un objet « Devis chambre froide ».
+    const { message, subjectId } = await sujetAvecTaches(db, channel.id);
+
+    const out = await sendEmailReply(db, FAKE_EMAIL_SENDER, {
+      subjectId,
+      channelId: channel.id,
+      conversationId: message.conversationId,
+      to: [{ identifier: "laurent@froid.fr" }],
+      body: "Nous partons sur le 12 m³.",
+    });
+    expect(out.subjectLine).toBe("Re: Devis chambre froide");
+    expect(out.conversationId).toBe(message.conversationId);
+    expect(await db.conversation.count()).toBe(1);
+
+    // Sans fil ni objet : refusé avant tout envoi.
+    await expect(
+      sendEmailReply(db, FAKE_EMAIL_SENDER, {
+        subjectId,
+        channelId: channel.id,
+        to: [{ identifier: "laurent@froid.fr" }],
+        body: "…",
+      }),
+    ).rejects.toThrow();
+  });
+});

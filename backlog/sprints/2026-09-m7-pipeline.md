@@ -346,6 +346,9 @@ tranche 6 à la demande du dirigeant : c'est le passage à l'action. Domaine
 - [x] Les choix entre crochets **surlignés** dans le composer, comptés dans la barre du
       brouillon, et **l'envoi retenu** tant qu'il en reste un ; composer **élargi** dès qu'on
       rédige plus d'une ligne ; rédaction par Relvo animée (retour du premier brouillon réel).
+- [x] Correctif du premier envoi réel : la réponse partait sous « Re: » + le **titre du sujet**
+      et ouvrait un fil fantôme (la clé de conversation contient l'objet). L'objet vient
+      désormais du fil, dérivé par le domaine — `PITFALLS.md` #50.
 - [x] Complétion d'une tâche de réponse à l'envoi, **déterministe** (M7.10), dans la
       transaction de `createMessage` : la tâche du brouillon et les tâches de réponse ouvertes
       cochées par correspondance, le brouillon exécuté, « En attente » posé s'il ne reste rien

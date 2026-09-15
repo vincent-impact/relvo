@@ -22,6 +22,7 @@ import {
 import {
   findInSetEmailSubject,
   findListeningSubjectForConversation,
+  replySubjectLine,
   resolveConversation,
   resolveWhatsAppChatIdentity,
 } from "./conversations";
@@ -557,30 +558,41 @@ export async function ingestInboundWhatsApp(
 // envoie puis journalise un Message sortant rattaché au sujet.
 // ─────────────────────────────────────────────────────────────
 
-export const sendEmailReplySchema = z.object({
-  subjectId: z.uuid(),
-  channelId: z.uuid(),
-  // SET de destinataires (M6quater) : une conversation e-mail groupe TOUT son set
-  // (« reply-all »). Répondre à un seul romprait le groupe ET, surtout, ferait
-  // retomber le message sortant sur une clé de conversation différente
-  // (`email:<objet>:<set réduit>`) → un fil fantôme hors du sujet. On renvoie donc
-  // au set complet, et on le passe à `createMessage` (`recipients`) pour que la
-  // clé recalculée coïncide avec celle de la conversation d'origine.
-  to: z
-    .array(
-      z.object({
-        identifier: z.email(),
-        displayName: z.string().trim().max(200).optional(),
-      }),
-    )
-    .min(1),
-  // Interlocuteur PRINCIPAL destinataire (contact du composer). Sert à rattacher
-  // le message sortant à un contact ; facultatif pour un groupe sans contact
-  // unique (le rattachement de la conversation, lui, tient par `conversationId`).
-  recipientContactId: z.uuid().optional().nullable(),
-  subject: z.string().trim().min(1).max(500),
-  body: z.string().min(1),
-});
+export const sendEmailReplySchema = z
+  .object({
+    subjectId: z.uuid(),
+    channelId: z.uuid(),
+    // SET de destinataires (M6quater) : une conversation e-mail groupe TOUT son set
+    // (« reply-all »). Répondre à un seul romprait le groupe ET, surtout, ferait
+    // retomber le message sortant sur une clé de conversation différente
+    // (`email:<objet>:<set réduit>`) → un fil fantôme hors du sujet. On renvoie donc
+    // au set complet, et on le passe à `createMessage` (`recipients`) pour que la
+    // clé recalculée coïncide avec celle de la conversation d'origine.
+    to: z
+      .array(
+        z.object({
+          identifier: z.email(),
+          displayName: z.string().trim().max(200).optional(),
+        }),
+      )
+      .min(1),
+    // Interlocuteur PRINCIPAL destinataire (contact du composer). Sert à rattacher
+    // le message sortant à un contact ; facultatif pour un groupe sans contact
+    // unique (le rattachement de la conversation, lui, tient par `conversationId`).
+    recipientContactId: z.uuid().optional().nullable(),
+    // Conversation de DÉPART : l'objet de la réponse en est dérivé (« Re: » +
+    // l'objet du fil). ⚠️ JAMAIS le titre du sujet : la clé d'une conversation
+    // e-mail contient l'objet normalisé, un autre objet ouvre un fil fantôme
+    // (PITFALLS.md #50). `subject` explicite reste possible pour un appelant qui
+    // sait ce qu'il fait (tests, envoi hors fil).
+    conversationId: z.uuid().optional(),
+    subject: z.string().trim().min(1).max(500).optional(),
+    body: z.string().min(1),
+  })
+  .refine((d) => Boolean(d.subject || d.conversationId), {
+    message: "L'objet de la réponse ou la conversation de départ est requis.",
+    path: ["subject"],
+  });
 
 export type SendEmailReplyInput = z.infer<typeof sendEmailReplySchema>;
 
@@ -641,6 +653,20 @@ export async function sendEmailReply(
 
   const identifiers = data.to.map((t) => t.identifier);
 
+  // L'objet : celui du FIL de départ quand on l'a (« Re: <objet> »), sinon
+  // celui que l'appelant impose.
+  let subjectLine = data.subject ?? "Re:";
+  if (data.conversationId) {
+    const conversation = assertFound(
+      await db.conversation.findFirst({
+        where: { id: data.conversationId },
+        select: { title: true },
+      }),
+      "Conversation",
+    );
+    subjectLine = replySubjectLine(conversation.title);
+  }
+
   let emailId: string | null;
   try {
     ({ emailId } = await sender.sendEmail({
@@ -649,7 +675,7 @@ export async function sendEmailReply(
         identifier: t.identifier,
         display_name: t.displayName,
       })),
-      subject: data.subject,
+      subject: subjectLine,
       body: data.body,
     }));
   } catch (error) {
@@ -679,7 +705,7 @@ export async function sendEmailReply(
     // d'origine → le sortant retombe dans LA MÊME conversation e-mail.
     recipients: identifiers,
     externalId: emailId,
-    subjectLine: data.subject,
+    subjectLine,
     content: data.body,
     status: MessageStatus.sent,
   });

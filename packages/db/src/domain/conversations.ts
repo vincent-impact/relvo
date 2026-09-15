@@ -40,6 +40,21 @@ import type { WhatsAppChatDirectoryPort } from "./whatsapp-port";
  * en SQL pour le backfill. Les deux doivent rester d'accord : si l'une dérive,
  * une réponse cesserait de rejoindre la conversation de son message de départ.
  */
+/** Titre d'une conversation e-mail dont le message n'avait pas d'objet. */
+export const EMAIL_NO_SUBJECT_TITLE = "(sans objet)";
+
+/**
+ * L'objet d'une RÉPONSE dans une conversation e-mail : « Re: » + l'objet du
+ * fil, tel quel s'il porte déjà un préfixe de réponse. C'est le SEUL objet qui
+ * ramène le message sortant dans la même conversation (la clé contient
+ * l'objet normalisé) — jamais le titre du sujet, qui peut différer.
+ */
+export function replySubjectLine(conversationTitle: string): string {
+  const title = conversationTitle.trim();
+  if (!title || title === EMAIL_NO_SUBJECT_TITLE) return "Re:";
+  return /^\s*(re|ré|rep|rép)\s*[:：]/i.test(title) ? title : `Re: ${title}`;
+}
+
 export function normalizeSubjectLine(raw: string): string {
   return raw
     .replace(
@@ -163,7 +178,7 @@ export function conversationIdentity(
   return {
     type: ConversationType.email_subject,
     key: `email:${normalized}:${participantsRaw.join(",")}`,
-    title: input.subjectLine?.trim() || "(sans objet)",
+    title: input.subjectLine?.trim() || EMAIL_NO_SUBJECT_TITLE,
     // Valeur d'affichage historique conservée : l'interlocuteur passé, sinon le
     // premier du set. L'UI lira désormais le set (participantsRaw) — étape 4.
     interlocutorRaw: interlocutor || participantsRaw[0] || null,

@@ -288,11 +288,13 @@ export function ConversationDetail({
         toast.error("Aucun destinataire pour répondre.");
         return false;
       }
+      // L'objet de la réponse vient du FIL (« Re: <objet> »), jamais du titre
+      // du sujet : la clé de conversation contient l'objet (PITFALLS.md #50).
       const res = await sendEmailReplyAction({
         subjectId: activeListening.subjectId,
         channelId,
+        conversationId,
         to: set.map((identifier) => ({ identifier })),
-        subject: `Re: ${activeListening.title}`,
         body: text,
       });
       if (!res.ok) {

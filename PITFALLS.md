@@ -196,6 +196,24 @@ ouverts, date, fil) va dans le message utilisateur, dans l'ordre du plus stable 
 Un test tient l'invariant (`test/ia-produit.test.ts`) ; le jeu d'évaluation affiche `cache_read`
 pour que la régression se voie.
 
+### #50 — Une réponse e-mail porte l'objet du FIL, jamais le titre du sujet
+
+**Symptôme** : l'utilisateur répond depuis une conversation, le toast dit « E-mail envoyé »,
+l'e-mail part bien… et n'apparaît pas dans la conversation. Il a atterri dans une conversation
+**fantôme**, rattachée au même sujet, avec un autre objet.
+
+**Cause** : la clé d'une conversation e-mail est `email:<objet normalisé>:<set de
+destinataires>`. Le composer construisait l'objet de la réponse à partir du **titre du sujet**
+(« Re: Remplacement de la chambre froide »), qui diffère de l'objet du fil (« Devis n° 2026-418 —
+remplacement de la chambre froide ») dès que le titre a été retouché — par l'utilisateur, ou par
+le tri qui nomme le sujet dans les mots du dirigeant. Les tests ne l'attrapaient pas : ils
+passaient un objet **égal** à celui du fil.
+
+**Règle** : le domaine dérive l'objet de la réponse **de la conversation** (`replySubjectLine`,
+appelée par `sendEmailReply` quand on lui passe `conversationId`) ; l'interface ne fabrique
+jamais un objet d'e-mail. Un test envoie une réponse depuis un sujet dont le titre diffère de
+l'objet et vérifie que la conversation reste unique (`packages/db/test/brouillon.test.ts`).
+
 ---
 
 ## Si une MAJEURE a bougé
@@ -218,7 +236,7 @@ Les pièges **#3, #12, #13, #17, #24, #25, #26** relèvent de la **plateforme de
 d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revérifier dans la
 documentation de la plateforme, jamais de mémoire.
 
-Les pièges **#18, #20, #23, #27, #28, #30, #45** sont des **règles de conception ou d'hygiène** :
+Les pièges **#18, #20, #23, #27, #28, #30, #45, #50** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
 
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et
