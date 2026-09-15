@@ -37,6 +37,10 @@ import { cn } from "@/lib/utils";
 //      « prochaine étape » de Relvo n'est pas affichée, elle serait redondante
 //      (elle sert à Relvo pour la relecture et la relance).
 // Le journal a son propre onglet, le dernier.
+// HIÉRARCHIE UNIQUE : chaque section porte le MÊME libellé en petites capitales
+// sourdes au-dessus de son panneau (Résumé comme Tâches), et tous les panneaux
+// s'alignent sur la même gouttière — la page n'a qu'une marge, celle du
+// conteneur, aucun panneau n'ajoute la sienne.
 // Le « Rapport d'activité de Relvo » (placeholder) est retiré tant qu'il n'a
 // rien à montrer. ⚠️ La fiche ne porte AUCUNE action de statut (2026-09-07) :
 // valider / fermer / remettre / supprimer vivent tous dans les SWIPES de la page
@@ -194,10 +198,10 @@ export function InformationsPane({
         </label>
       </section>
 
-      {/* 2. Résumé — un seul champ, court ; la prochaine étape en dessous */}
-      <section className="rounded-[14px] border border-(--hairline) bg-white p-4 shadow-surface-1">
-        <div className="flex items-center justify-between gap-2">
-          <h2 className="flex min-w-0 items-center gap-2 text-[15px] font-bold text-(--text-primary)">
+      {/* 2. Résumé — un seul champ, court ; libellé de section + panneau */}
+      <section>
+        <div className="mb-2 flex items-center justify-between gap-2 px-1">
+          <h2 className="flex min-w-0 items-center gap-2 text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
             Résumé
             {byRelvo ? <ActorPill actor="ai" /> : null}
           </h2>
@@ -205,25 +209,26 @@ export function InformationsPane({
             type="button"
             onClick={openEditor}
             aria-label="Modifier le résumé"
-            className="grid size-8 flex-none place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
+            className="-my-2 grid size-8 flex-none place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
           >
             <Pencil className="size-[15px]" strokeWidth={2.1} />
           </button>
         </div>
-
-        {shown ? (
-          <p className="mt-1.5 text-[15px] leading-[1.55] whitespace-pre-wrap text-(--text-primary)">
-            {shown}
-          </p>
-        ) : (
-          <button
-            type="button"
-            onClick={openEditor}
-            className="mt-1.5 block text-[14px] text-(--text-tertiary) italic active:opacity-70"
-          >
-            Résumer ce sujet en une phrase…
-          </button>
-        )}
+        <div className="rounded-[14px] border border-(--hairline) bg-white px-4 py-3.5 shadow-surface-1">
+          {shown ? (
+            <p className="text-[15px] leading-[1.55] whitespace-pre-wrap text-(--text-primary)">
+              {shown}
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={openEditor}
+              className="block text-[14px] text-(--text-tertiary) italic active:opacity-70"
+            >
+              Résumer ce sujet en une phrase…
+            </button>
+          )}
+        </div>
       </section>
 
       {/* 3. Tâches — sur la page principale : le sujet, c'est ce qu'il reste à faire */}
@@ -236,7 +241,7 @@ export function InformationsPane({
             Aucune tâche.
           </p>
         ) : (
-          <ListPanel>
+          <ListPanel className="mx-0">
             {tasks.map((t) => (
               <TaskItem key={t.id} meta="date" task={t} />
             ))}

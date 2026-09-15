@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, History, Info, MessagesSquare } from "lucide-react";
+import { FileText, History, ListChecks, MessagesSquare } from "lucide-react";
 import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 
 // Orchestrateur de la fiche Sujet (corps interactif). QUATRE onglets
@@ -9,6 +9,9 @@ import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 // principale porte le domaine, le résumé ET LES TÂCHES : le sujet, c'est ce
 // qu'il reste à faire, on n'a pas à changer d'onglet pour le voir. Le journal,
 // qu'on n'ouvre que pour comprendre ce que Relvo a fait, passe en dernier.
+// L'icône de l'onglet principal est une liste cochée, pas un « i » : ce qu'on y
+// trouve, c'est la fiche et ce qu'il reste à faire, et son compteur compte les
+// tâches ouvertes.
 // Les conversations sont une simple LISTE (plus de fil embarqué ni de composer
 // ici) : on clique une ligne pour ouvrir la conversation dans son écran dédié
 // (`/conversations/[id]`), seule surface d'affichage. On répond LÀ-BAS.
@@ -58,7 +61,7 @@ export function SubjectBody({
     {
       value: "informations",
       label: "Informations et tâches",
-      icon: Info,
+      icon: ListChecks,
       count: tasksCount,
     },
     {

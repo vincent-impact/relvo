@@ -7,6 +7,7 @@ import { TaskModal } from "@/components/subject/task-modal";
 // Ajout de tâche (onglet Tâches de la fiche Sujet) — « + Ajouter une tâche »
 // ouvre la MODALE PARTAGÉE (task-modal) en mode création, sujet pré-rempli sur la
 // fiche courante (réassignable/détachable depuis la modale comme partout).
+// Il s'aligne sur la gouttière de la section qui le porte (pas de marge propre).
 
 export function AddTask({
   subjectId,
@@ -23,7 +24,7 @@ export function AddTask({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mx-[14px] mt-1 flex items-center gap-2.5 px-[18px] py-3.5 text-[14px] font-bold text-relvo"
+        className="mt-1 flex items-center gap-2.5 px-1 py-3.5 text-[14px] font-bold text-relvo"
       >
         <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-bg">
           <Plus className="size-[15px]" strokeWidth={2.6} />

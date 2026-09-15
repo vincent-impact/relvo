@@ -343,6 +343,9 @@ tranche 6 à la demande du dirigeant : c'est le passage à l'action. Domaine
 - [x] Brouillon rédigé **à l'appui**, jamais à la création de la tâche ; brouillon ouvert
       repris ; régénération et effacement dans la barre du composer ; jamais envoyé seul.
       Une décision non prise laisse le choix entre crochets.
+- [x] Les choix entre crochets **surlignés** dans le composer, comptés dans la barre du
+      brouillon, et **l'envoi retenu** tant qu'il en reste un ; composer **élargi** dès qu'on
+      rédige plus d'une ligne ; rédaction par Relvo animée (retour du premier brouillon réel).
 - [x] Complétion d'une tâche de réponse à l'envoi, **déterministe** (M7.10), dans la
       transaction de `createMessage` : la tâche du brouillon et les tâches de réponse ouvertes
       cochées par correspondance, le brouillon exécuté, « En attente » posé s'il ne reste rien

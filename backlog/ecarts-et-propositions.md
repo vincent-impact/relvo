@@ -735,9 +735,47 @@ Une confirmation apparaît désormais — mais **seulement s'il reste des tâche
 d'ignorance : une confirmation systématique, ou sans information, se clique sans être lue. Le
 reste du temps, le swipe garde son coût de zéro clic.
 
+### Un choix laissé par Relvo se voit, et retient l'envoi
+
+**`tranché`** · Premier brouillon réel envoyé depuis une tâche. Le brouillon laissait, comme
+prévu, la décision non prise entre crochets — « nous retenons le modèle [8 m³ / 12 m³] ». Le
+dirigeant a fait le constat lui-même : pressé, il ne relit pas le brouillon, il fait confiance,
+et le crochet serait parti tel quel au fournisseur.
+
+Décisions : les choix entre crochets d'un brouillon de Relvo sont **surlignés** dans la zone de
+rédaction, la barre du brouillon en **compte** le reste, et **l'envoi est retenu** tant qu'il en
+reste un. Trancher, c'est remplacer le segment ; effacer le brouillon lève la retenue. Le
+surlignage se fait par un calque aux mêmes métriques que le champ — jamais par du gras ni de
+l'italique, qui décaleraient le curseur de saisie sous le texte affiché. Des crochets tapés à la
+main, hors brouillon, ne retiennent rien.
+
+**Ce qui n'a PAS été fait.** L'idéal exprimé — une conversation avec Relvo qui pose les choix
+un à un, puis remplit le brouillon — est une proposition ci-dessous, pas un correctif. La
+retenue à l'envoi en est le filet de sécurité en attendant.
+
+### Le composer s'élargit quand on rédige un e-mail
+
+**`tranché`** · Même essai. Le champ de rédaction, rogné à droite par le bouton d'envoi et le
+trombone, ne laissait qu'une colonne étroite pour relire un e-mail de plusieurs lignes.
+
+Le composer a désormais **deux dispositions** : compacte sur une ligne (le champ, le trombone,
+le bouton rond à côté — la réponse courte de messagerie), élargie dès que le texte dépasse une
+ligne ou qu'un brouillon arrive : le champ prend toute la largeur et les boutons descendent sur
+une rangée sous le texte. On revient en compact quand le champ est vide. Pendant la rédaction
+par Relvo, le champ montre des lignes qui respirent, pas un vide figé.
+
 ---
 
 ## Propositions
+
+### Trancher les choix d'un brouillon avec Relvo, avant de remplir l'e-mail
+
+**`proposé`** · Exprimé par le dirigeant au premier brouillon réel. Quand un brouillon laisse des
+choix entre crochets, l'appui sur « Répondre » pourrait d'abord ouvrir un court échange avec
+Relvo — une question par choix, dans les mots du sujet — et ne poser le brouillon qu'une fois les
+choix tranchés, sans crochet. C'est la suite naturelle du surlignage et de la retenue à l'envoi,
+qui restent le filet de sécurité. À reprendre avec l'échange avec Relvo (M10), qui en est le
+support ; le brouillon est alors rédigé après l'échange, pas avant.
 
 ### Benchmarker la transcription vocale et la vision avant de figer leurs tiers
 
