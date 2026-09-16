@@ -26,6 +26,15 @@ import { cn } from "@/lib/utils";
 // au brouillon sans le relire, on ne laisse pas partir un crochet à un
 // fournisseur. Trancher = remplacer le segment par son choix.
 //
+// TRANCHER D'UN APPUI (retour du premier essai réel, 2026-09-16) : réécrire un
+// crochet au clavier était le pire moment du parcours. Le champ reste un
+// textarea — on ne sait pas poser un menu DANS un texte natif sans le
+// réimplémenter — mais quand le CURSEUR est dans un choix, une rangée de puces
+// apparaît au-dessus du champ : chaque option du crochet, plus « Réécrire »
+// qui retire le crochet et laisse le curseur à sa place. Un appui sur le
+// compte « N choix à trancher » sélectionne le prochain crochet. Le choix se
+// fait donc en lisant le message, là où il se pose, sans pop-up préalable.
+//
 // ⚠️ 2026-07-23 — le SÉLECTEUR d'interlocuteur (avatar + menu) a été RETIRÉ : les
 // conversations sont NOMINATIVES, la conversation courante est déjà choisie par
 // le sélecteur de conversation en tête de l'onglet. Le composer répond donc
@@ -70,6 +79,56 @@ export function splitChoices(
 
 export function countChoices(text: string): number {
   return text.match(CHOICE_RE)?.length ?? 0;
+}
+
+/** Un choix repéré dans le texte : ses bornes (crochets compris) et ses options, s'il en propose. */
+export type Choice = { start: number; end: number; options: string[] };
+
+/** Les options d'un crochet « [a / b / c] » ; aucune si le crochet n'en sépare pas (« [à compléter] »). */
+function optionsDe(segment: string): string[] {
+  const parts = segment
+    .slice(1, -1)
+    .split(/\s*\/\s*/)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  return parts.length >= 2 ? parts : [];
+}
+
+function tousLesChoix(text: string): Choice[] {
+  return [...text.matchAll(CHOICE_RE)].map((m) => ({
+    start: m.index,
+    end: m.index + m[0].length,
+    options: optionsDe(m[0]),
+  }));
+}
+
+/** Le choix dans lequel se trouve le curseur (bornes incluses), sinon null. */
+export function choiceAt(text: string, caret: number): Choice | null {
+  return (
+    tousLesChoix(text).find((c) => caret >= c.start && caret <= c.end) ?? null
+  );
+}
+
+/** Le prochain choix à partir d'une position, en rebouclant au début. */
+export function nextChoice(text: string, from: number): Choice | null {
+  const all = tousLesChoix(text);
+  return all.find((c) => c.start >= from) ?? all[0] ?? null;
+}
+
+/**
+ * Tranche un choix : le segment entre crochets devient l'option retenue, ou
+ * disparaît (« Réécrire », option null) — le curseur se pose juste après.
+ */
+export function applyChoice(
+  text: string,
+  choice: Choice,
+  option: string | null,
+): { text: string; caret: number } {
+  const remplacement = option ?? "";
+  return {
+    text: text.slice(0, choice.start) + remplacement + text.slice(choice.end),
+    caret: choice.start + remplacement.length,
+  };
 }
 
 /** Trois points qui respirent — « Relvo rédige ». */
@@ -119,6 +178,7 @@ export function RecipientComposer({
 }) {
   const cur = value ?? defaultRecipient ?? recipients[0]?.key ?? "relvo";
   const [text, setText] = useState(defaultValue);
+  const taRef = useRef<HTMLTextAreaElement>(null);
   // Le brouillon se pose dans le champ à son arrivée, une seule fois par
   // texte (`seen`) : l'utilisateur reste libre de le retoucher ensuite. `posed`
   // dit qu'un brouillon est DANS le champ — levé à l'envoi et à l'effacement,
@@ -137,6 +197,29 @@ export function RecipientComposer({
   // des crochets tapés à la main ne bloquent rien.
   const draftPosed = posed && !loading;
   const choicesLeft = draftPosed ? countChoices(text) : 0;
+  // Le curseur, suivi pour savoir s'il est DANS un choix : c'est ce qui fait
+  // apparaître les puces pour trancher.
+  const [caret, setCaret] = useState<number | null>(null);
+  const activeChoice =
+    draftPosed && caret !== null ? choiceAt(text, caret) : null;
+  function placerCurseur(position: number, fin: number = position) {
+    const el = taRef.current;
+    setCaret(position);
+    requestAnimationFrame(() => {
+      el?.focus();
+      el?.setSelectionRange(position, fin);
+    });
+  }
+  function trancher(option: string | null) {
+    if (!activeChoice) return;
+    const r = applyChoice(text, activeChoice, option);
+    setText(r.text);
+    placerCurseur(r.caret);
+  }
+  function prochainChoix() {
+    const c = nextChoice(text, (caret ?? -1) + 1);
+    if (c) placerCurseur(c.start, c.end);
+  }
   const r = recipients.find((x) => x.key === cur) || recipients[0];
   const typing = text.trim().length > 0;
 
@@ -157,7 +240,6 @@ export function RecipientComposer({
   // sur une ligne.
   const [multiline, setMultiline] = useState(false);
   const expanded = showDraftBar || multiline;
-  const taRef = useRef<HTMLTextAreaElement>(null);
   const overlayRef = useRef<HTMLDivElement>(null);
   function onChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const next = e.target.value;
@@ -269,9 +351,19 @@ export function RecipientComposer({
             fill="currentColor"
             strokeWidth={0}
           />
-          <span className="flex min-w-0 flex-1 items-center truncate">
-            {barLabel}
-          </span>
+          {choicesLeft > 0 ? (
+            <button
+              type="button"
+              onClick={prochainChoix}
+              className="flex min-w-0 flex-1 items-center truncate text-left underline decoration-(--amber-100)/60 underline-offset-2 active:opacity-70"
+            >
+              {barLabel}
+            </button>
+          ) : (
+            <span className="flex min-w-0 flex-1 items-center truncate">
+              {barLabel}
+            </span>
+          )}
           {!loading && draft?.onRegenerate ? (
             <button
               type="button"
@@ -297,6 +389,40 @@ export function RecipientComposer({
               <X className="size-[16px]" strokeWidth={2.4} />
             </button>
           ) : null}
+        </div>
+      ) : null}
+
+      {/* Trancher d'un appui : le curseur est dans un choix → ses options en
+          puces, et « Réécrire » pour retirer le crochet. */}
+      {activeChoice ? (
+        <div
+          className="flex flex-wrap items-center gap-1.5 px-1"
+          role="group"
+          aria-label="Trancher ce choix"
+        >
+          {activeChoice.options.map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => trancher(opt)}
+              className="rounded-full bg-white px-3 py-1 text-[13px] font-semibold text-relvo shadow-[0_2px_8px_rgb(0_0_0/0.18)] active:scale-95"
+            >
+              {opt}
+            </button>
+          ))}
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => trancher(null)}
+            className="rounded-full px-3 py-1 text-[13px] font-semibold text-white active:scale-95"
+            style={{
+              background: "rgb(255 255 255 / 0.14)",
+              border: "1px solid rgb(255 255 255 / 0.28)",
+            }}
+          >
+            Réécrire
+          </button>
         </div>
       ) : null}
 
@@ -369,6 +495,8 @@ export function RecipientComposer({
                   if (overlayRef.current)
                     overlayRef.current.scrollTop = e.currentTarget.scrollTop;
                 }}
+                onSelect={(e) => setCaret(e.currentTarget.selectionStart)}
+                onBlur={() => setCaret(null)}
                 onKeyDown={(e) => {
                   // Email multi-ligne : Entrée = saut de ligne ; ⌘/Ctrl+Entrée = envoi.
                   if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {

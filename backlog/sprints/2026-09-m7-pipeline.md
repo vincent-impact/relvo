@@ -367,8 +367,13 @@ retenue, orchestration — dans l'application (`apps/web/src/server/ia/pipeline/
       puces pour le contexte (domaine, interlocuteur, urgence) ; Résumé ; Tâches avec leur
       progression dans le titre de la section. Décision dans `ecarts` (« Un
       événement annoncé devient une tâche datée, et la fiche dit avec qui »).
-- [ ] Reprendre l'essai réel à l'e-mail 2 (rendez-vous mardi 8 h attendu, « En attente » posé),
-      puis les e-mails 3 à 6 ; essayer `none` sur le jeu réel.
+- [x] **Second essai réel, scénario complet** : le crochet à réécrire au clavier était le pire
+      moment → le choix se tranche d'un appui dans le texte (puces au-dessus du champ, « Réécrire »,
+      appui sur le compte pour passer au suivant) ; la situation structurée revient sur la fiche
+      sous le résumé (où on en est, prochaine étape, on attend — pour quand) ; les tâches se lisent
+      la plus récente en tête. Décision dans `ecarts` (« Trancher un choix d'un appui… »), avec
+      les questions ouvertes sur la présentation et la mémoire des choix (`proposé`).
+- [ ] Essayer `none` sur la relecture avec le jeu réel.
 - [ ] Une tâche d'événement qui change de date est écartée comme doublon : reprogrammer
       l'existante (point ouvert, `ecarts`).
 

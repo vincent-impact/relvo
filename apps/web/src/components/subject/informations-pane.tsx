@@ -36,10 +36,13 @@ import { cn } from "@/lib/utils";
 //      écrit, sinon le résumé que Relvo a rédigé à la structuration, signalé par
 //      sa pastille. Le stylo ouvre une POP-UP d'édition pré-remplie ; ce que
 //      l'utilisateur enregistre devient SON descriptif et l'emporte.
+//      Sous le résumé, la SITUATION que Relvo tient à jour à chaque relecture —
+//      où on en est, prochaine étape, ce qu'on attend — en trois lignes sourdes
+//      (retour du 2026-09-16 : sur un sujet long, le résumé seul ne suffit plus,
+//      et « En attente » ne disait pas de quoi).
 //   3. Les TÂCHES, juste dessous, avec leur progression dans le titre de la
-//      section : ce sont elles qui disent la suite. La « prochaine étape » de
-//      Relvo n'est pas affichée, elle serait redondante (elle sert à Relvo pour
-//      la relecture et la relance).
+//      section : ce sont elles qui disent la suite. Elles se lisent comme un
+//      FIL, la plus récente en tête (échéance, sinon date de création).
 // Le journal a son propre onglet, le dernier.
 // HIÉRARCHIE UNIQUE : chaque section porte le MÊME libellé en petites capitales
 // sourdes au-dessus de son panneau (Résumé comme Tâches), et tous les panneaux
@@ -63,7 +66,27 @@ export type PaneContact = { id: string; name: string; company: string | null };
 export type PaneRelvo = {
   /** Résumé court de Relvo — affiché quand l'utilisateur n'a pas écrit le sien. */
   summary: string | null;
+  /** La situation structurée, tenue à chaque relecture (05 §1.6). */
+  situation: {
+    where: string | null;
+    nextStep: string | null;
+    waitingFor: string | null;
+    /** AAAA-MM-JJ. */
+    deadline: string | null;
+  } | null;
 };
+
+/** Une échéance AAAA-MM-JJ, lisible : « jeu. 17 sept. ». */
+function jourLisible(iso: string): string {
+  const d = new Date(`${iso}T12:00:00Z`);
+  return Number.isNaN(d.getTime())
+    ? iso
+    : d.toLocaleDateString("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      });
+}
 
 export function InformationsPane({
   subjectId,
@@ -86,7 +109,7 @@ export function InformationsPane({
   relvo?: PaneRelvo | null;
   /** Avec qui on dialogue — les contacts du sujet. */
   contacts?: PaneContact[];
-  /** Les tâches du sujet, ouvertes d'abord — la page principale les porte. */
+  /** Les tâches du sujet, la plus récente en tête — la page principale les porte. */
   tasks: TaskItemData[];
   subjectTitle: string;
   /** Référence du sujet — le bandeau de résolution la nomme. */
@@ -114,6 +137,23 @@ export function InformationsPane({
   const FolderIcon = folderViz.icon;
   const taskTotal = tasks.length;
   const taskDone = tasks.filter((t) => t.status === "done").length;
+  // La situation de Relvo, en lignes nommées ; l'attente porte son échéance.
+  const sit = relvo?.situation;
+  const situationLignes: [string, string][] = sit
+    ? (
+        [
+          ["Où on en est", sit.where],
+          ["Prochaine étape", sit.nextStep],
+          [
+            "On attend",
+            sit.waitingFor
+              ? `${sit.waitingFor}${sit.deadline ? ` — pour le ${jourLisible(sit.deadline)}` : ""}`
+              : null,
+          ],
+        ] as [string, string | null][]
+      ).filter((x): x is [string, string] => Boolean(x[1]))
+    : [];
+  const situation = situationLignes.length ? situationLignes : null;
 
   // Ouvre la pop-up d'édition en repartant du texte AFFICHÉ : corriger le
   // résumé de Relvo, c'est le reprendre, pas repartir d'une page blanche.
@@ -265,7 +305,22 @@ export function InformationsPane({
           <p className="px-1 text-[15.5px] leading-[1.5] whitespace-pre-wrap text-(--text-primary)">
             {shown}
           </p>
-        ) : (
+        ) : null}
+        {situation ? (
+          <dl className="mt-3 space-y-2 px-1">
+            {situation.map(([label, value]) => (
+              <div key={label}>
+                <dt className="text-[10.5px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase">
+                  {label}
+                </dt>
+                <dd className="text-[14px] leading-[1.45] text-(--text-primary)">
+                  {value}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+        {shown ? null : (
           <button
             type="button"
             onClick={openEditor}

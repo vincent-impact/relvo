@@ -150,7 +150,19 @@ export default async function SujetPage({
             // Ce que Relvo a rédigé à la structuration (M7.6) : le résumé court,
             // affiché tant que l'utilisateur n'a pas écrit le sien.
             relvo={
-              subject.situationUpdatedAt ? { summary: subject.summary } : null
+              subject.situationUpdatedAt
+                ? {
+                    summary: subject.summary,
+                    situation: {
+                      where: subject.situationWhere,
+                      nextStep: subject.situationNextStep,
+                      waitingFor: subject.situationWaitingFor,
+                      deadline:
+                        subject.situationDeadline?.toISOString().slice(0, 10) ??
+                        null,
+                    },
+                  }
+                : null
             }
             // Avec qui on dialogue (retour du 2026-09-16) : le domaine dit de
             // quoi on parle, l'interlocuteur dit avec qui — les deux en tête.

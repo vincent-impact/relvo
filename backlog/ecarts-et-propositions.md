@@ -418,6 +418,34 @@ et M7.10 reliés à un geste, et la tranche 7 est passée avant la 6 pour cela.
 réponse — la majorité ne serait jamais ouverte ; et une complétion des tâches de décision sur
 n'importe quel envoi — seul le message parti de leur brouillon les règle.
 
+### Trancher un choix d'un appui, relire la situation, lire les tâches comme un fil
+
+**`tranché`** · Second essai réel de la relecture, sur le scénario complet — devis, imprévu,
+décision, clôture. Trois retours du dirigeant.
+
+- **Le pire moment du parcours était le crochet** : « [recommander la bonne pièce / remplacer
+  la friteuse par le modèle neuf] » à réécrire au clavier, sur téléphone. Poser la question
+  avant d'ouvrir le brouillon ne convient pas : il faut avoir lu le message pour comprendre ce
+  qu'on demande. **Retenu** : le choix se tranche dans le texte, d'un appui — le curseur posé
+  dans un crochet fait apparaître ses options en puces au-dessus du champ, plus « Réécrire »
+  qui retire le crochet ; un appui sur « N choix à trancher » sélectionne le suivant. Le champ
+  reste un textarea natif : on ne réimplémente pas un éditeur pour un menu.
+- **Sur un sujet long, le résumé ne suffit plus**, et « En attente » ne disait pas de quoi.
+  **Retenu** : la situation structurée revient sur la fiche, sous le résumé, en trois lignes
+  sourdes — où on en est, prochaine étape, ce qu'on attend et pour quand. Elle avait été
+  retirée quand la prochaine étape répétait la première tâche ; sur un sujet qui a vécu, elle
+  est ce qui permet de reprendre le fil. C'est la mémoire que Relvo relit, montrée telle
+  quelle.
+- **Les tâches se lisent comme un fil** : la plus récente en tête — par échéance, sinon par
+  date de création —, terminées comprises. Relire les tâches doit aider à s'y retrouver.
+
+**`proposé`** · Comment présenter les choix à faire, et faut-il les retenir ? Deux voies
+possibles : un bouton d'action qui ouvre une pop-up de choix avant de rédiger, ou le choix
+dans le texte de la réponse (retenu pour l'instant). Et deux questions ouvertes : noter
+quelque part les réponses que le dirigeant a faites, ou considérer que l'échange d'e-mails
+suffit ; nommer plus clairement, dans la tâche, les choix qu'il doit faire. On reste simple
+tant que l'usage ne tranche pas.
+
 ### Un événement annoncé devient une tâche datée, et la fiche dit avec qui
 
 **`tranché`** · Premier essai réel de la relecture, le jour de sa livraison, sur un scénario de

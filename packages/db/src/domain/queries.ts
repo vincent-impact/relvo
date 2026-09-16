@@ -474,14 +474,24 @@ export async function getSubjectDetail(db: TenantDb, id: string) {
           },
         },
       }),
-      db.task.findMany({
-        where: { subjectId: id, status: { not: TaskStatus.deleted } },
-        orderBy: [
-          { status: "asc" },
-          { startDate: "asc" },
-          { createdAt: "asc" },
-        ],
-      }),
+      db.task
+        .findMany({
+          where: { subjectId: id, status: { not: TaskStatus.deleted } },
+          orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
+        })
+        // Les tâches se lisent comme un FIL, la plus récente en tête : par
+        // échéance, et par date de création pour celles qui n'en ont pas
+        // (retour du 2026-09-16 — relire les tâches doit aider à s'y
+        // retrouver). Une seule clé, calculée ici : l'ORM ne sait pas ordonner
+        // sur « échéance sinon création ».
+        .then((rows) =>
+          [...rows].sort(
+            (a, b) =>
+              (b.startDate ?? b.createdAt).getTime() -
+                (a.startDate ?? a.createdAt).getTime() ||
+              b.createdAt.getTime() - a.createdAt.getTime(),
+          ),
+        ),
       db.eventLog.findMany({
         where: { subjectId: id },
         orderBy: { createdAt: "desc" },
