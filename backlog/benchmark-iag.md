@@ -399,6 +399,8 @@ Sollicitation mesurée : la **relecture** (`05 §5.2`–§5.5), l'appel unique s
 
 **Ce que le passage ne mesure pas** : la réouverture réelle (la suite « rouvert » simule l'état ; la réouverture mécanique est testée contre la base), la révocation d'une suggestion en cours (aucune suggestion n'a été posée), les précédents et les instructions.
 
+**Second passage, le même jour, après le premier essai réel.** Un e-mail « intervention mardi à 8 h, rien à faire de votre côté » n'avait produit aucune tâche en production. Consigne ajoutée aux deux profils — un événement annoncé à une date est toujours une tâche datée —, trois suites réétiquetées ou ajoutées (une livraison demain, un lot livré demain, l'e-mail du dirigeant rejoué sur le riz). Sur neuf suites : « terminé » et « en attente » 9/9 aux deux niveaux, priorité 7/7 ; tâches ajoutées justes 6/9 à `low` et 8/9 à `none`, les écarts étant des **doublons écartés par la retenue** — la structuration rejouée avait déjà posé « Réceptionner la livraison » et le modèle la repropose avec la nouvelle date. Coût inchangé : 0,60 € les mille à `low`, 0,44 € à `none`. Point ouvert consigné dans `ecarts` : reprogrammer une tâche d'événement qui change de date, au lieu d'écarter la nouvelle.
+
 **Décision** (`ecarts-et-propositions.md`, « La relecture suit l'affaire sans piloter le statut ») : Luna sur la relecture, effort `low`, `none` à essayer sur le jeu réel.
 
 ---

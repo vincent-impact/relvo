@@ -16,7 +16,7 @@
 // Usage :
 //   node --env-file=.env.local --import tsx scripts/evaluation/relire.ts \
 //     --jeu demo [--configs gpt-5.6-luna:low,gpt-5.6-luna:none] \
-//     [--parallele 4] [--sortie /chemin/rapport.json] [--limite 5]
+//     [--parallele 4] [--sortie /chemin/rapport.json] [--limite 5] [--suites suite-002,suite-009]
 
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -240,6 +240,8 @@ async function main() {
     .filter(Boolean)
     .map((l) => JSON.parse(l) as Suite);
   if (limite > 0) suites = suites.slice(0, limite);
+  const seules = arg("suites", "").split(",").filter(Boolean);
+  if (seules.length) suites = suites.filter((s) => seules.includes(s.id));
 
   console.log(
     `Jeu « ${jeu} » : ${suites.length} suites à relire, dont ${suites.filter((s) => s.attendu.termine).length} qui closent, ${suites.filter((s) => s.attendu.en_attente).length} qui mettent en attente, ${suites.filter((s) => s.rouvert).length} qui rouvrent.\n`,

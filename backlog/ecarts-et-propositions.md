@@ -418,6 +418,34 @@ et M7.10 reliés à un geste, et la tranche 7 est passée avant la 6 pour cela.
 réponse — la majorité ne serait jamais ouverte ; et une complétion des tâches de décision sur
 n'importe quel envoi — seul le message parti de leur brouillon les règle.
 
+### Un événement annoncé devient une tâche datée, et la fiche dit avec qui
+
+**`tranché`** · Premier essai réel de la relecture, le jour de sa livraison, sur un scénario de
+dépannage. Le premier e-mail a ouvert le sujet et sa tâche de validation du devis, la réponse a
+fonctionné. Le second — « pièce commandée, intervention mardi matin à 8 h, rien à faire de votre
+côté » — n'a produit **aucune tâche** : la consigne demandait une tâche par action *demandée*
+au dirigeant, et rien n'était demandé. Le dirigeant a arrêté l'essai là : « sinon mon
+utilisateur va oublier ».
+
+**Retenu** :
+
+- **Un événement annoncé à une date — intervention, visite, livraison, rendez-vous — est
+  toujours une tâche datée**, avec l'heure si elle est donnée, même si le message dit « rien à
+  faire de votre côté ». Consigne ajoutée à la structuration et à la relecture, règle écrite
+  dans `05 §2.2`. Le banc le rejoue (`suites.jsonl`, suite-009, l'e-mail du dirigeant) : la
+  tâche « Réception du riz basmati (mardi 8 h) » sort aux deux niveaux.
+- **Les marqueurs du sujet s'affichent sur sa fiche** — « En attente », « À valider ? », le
+  statut terminal —, sous le titre, dans le hero. La liste les portait, la fiche non ; une fiche
+  ne doit pas en savoir moins qu'une ligne de liste.
+- **La fiche dit avec qui on dialogue** : les contacts du sujet, juste sous le domaine, chacun
+  vers sa fiche. Le domaine dit de quoi on parle, l'interlocuteur dit avec qui — les deux en
+  tête, avant le résumé.
+
+**Ce qui reste ouvert** : une tâche d'événement déjà posée qui change de date — « livraison
+décalée à mardi » — est aujourd'hui écartée comme doublon par la retenue, et la nouvelle date
+est perdue. Reprogrammer la tâche existante plutôt que d'en écarter une nouvelle est le
+prochain pas, à faire quand le journal montrera le cas.
+
 ### La relecture suit l'affaire sans piloter le statut
 
 **`tranché`** · Le message entrant sur un sujet suivi est le poste le plus fréquent du pipeline,

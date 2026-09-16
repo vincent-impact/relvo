@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Pencil } from "lucide-react";
+import { ChevronDown, ChevronRight, Pencil, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import type { Priority } from "@relvo/db";
 import {
@@ -28,7 +29,9 @@ import { cn } from "@/lib/utils";
 // « technique », plus « fiche » ; réordonné 2026-09-15 sur les premiers essais
 // réels de la structuration). Ordre FIXE :
 //   1. Domaine (tap → sélecteur) + Urgence (interrupteur), sur la même ligne —
-//      EN TÊTE : de quoi on parle, avant tout le reste.
+//      EN TÊTE : de quoi on parle, avant tout le reste. Juste dessous, AVEC QUI :
+//      les contacts du sujet, chacun vers sa fiche (retour du 2026-09-16 — on
+//      ne savait pas avec qui on dialoguait sans ouvrir l'onglet Conversations).
 //   2. Résumé — UN SEUL champ, court : le descriptif de l'utilisateur s'il l'a
 //      écrit, sinon le résumé que Relvo a rédigé à la structuration, signalé par
 //      sa pastille. Le stylo ouvre une POP-UP d'édition pré-remplie ; ce que
@@ -53,6 +56,8 @@ export type PaneFolder = {
   color: string | null;
   icon: string | null;
 };
+/** Un contact du sujet, vers sa fiche. */
+export type PaneContact = { id: string; name: string; company: string | null };
 /** Ce que Relvo a rédigé à la structuration (05 §1.6). */
 export type PaneRelvo = {
   /** Résumé court de Relvo — affiché quand l'utilisateur n'a pas écrit le sien. */
@@ -66,6 +71,7 @@ export function InformationsPane({
   folderId,
   priority,
   relvo = null,
+  contacts = [],
   tasks,
   subjectTitle,
 }: {
@@ -75,6 +81,8 @@ export function InformationsPane({
   folderId: string | null;
   priority: Priority;
   relvo?: PaneRelvo | null;
+  /** Avec qui on dialogue — les contacts du sujet. */
+  contacts?: PaneContact[];
   /** Les tâches du sujet, ouvertes d'abord — la page principale les porte. */
   tasks: TaskItemData[];
   subjectTitle: string;
@@ -197,6 +205,43 @@ export function InformationsPane({
           />
         </label>
       </section>
+
+      {/* 1 bis. Avec qui — un lien par contact, vers sa fiche */}
+      {contacts.length > 0 ? (
+        <section className="-mt-3">
+          <div className="divide-y divide-(--hairline) rounded-xl border border-(--hairline) bg-white shadow-surface-1">
+            {contacts.map((c) => (
+              <Link
+                key={c.id}
+                href={`/contacts/${c.id}`}
+                className="pressable flex items-center gap-2 px-3 py-2.5"
+              >
+                <span className="grid size-7 flex-none place-items-center rounded-lg bg-(--surface-2) text-(--text-secondary)">
+                  <UserRound className="size-[15px]" strokeWidth={2.1} />
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[10.5px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase">
+                    Avec
+                  </span>
+                  <span className="block truncate text-[14px] font-semibold text-(--text-primary)">
+                    {c.name}
+                    {c.company ? (
+                      <span className="font-normal text-(--text-secondary)">
+                        {" "}
+                        — {c.company}
+                      </span>
+                    ) : null}
+                  </span>
+                </span>
+                <ChevronRight
+                  className="size-4 flex-none text-(--text-tertiary)"
+                  strokeWidth={2.2}
+                />
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* 2. Résumé — un seul champ, court ; libellé de section + panneau */}
       <section>

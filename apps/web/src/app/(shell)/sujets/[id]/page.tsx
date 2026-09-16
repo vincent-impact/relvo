@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { FileText, SquareCheck } from "lucide-react";
+import { FileText, Hourglass, Sparkles, SquareCheck } from "lucide-react";
 import {
   getSubjectDetail,
   listChannels,
@@ -82,7 +82,7 @@ export default async function SujetPage({
     ),
   ].filter((t): t is "email" | "whatsapp" => t === "email" || t === "whatsapp");
 
-  const { subject, tasks, events, attachments } = detail;
+  const { subject, contacts, tasks, events, attachments } = detail;
   // Le fil dans lequel chaque tâche se répond d'un appui (M7.7).
   const replyTargets = await resolveReplyTargets(db, tasks);
   // Contacts joignables pour le dialog « Ajouter une conversation ».
@@ -156,6 +156,9 @@ export default async function SujetPage({
             relvo={
               subject.situationUpdatedAt ? { summary: subject.summary } : null
             }
+            // Avec qui on dialogue (retour du 2026-09-16) : le domaine dit de
+            // quoi on parle, l'interlocuteur dit avec qui — les deux en tête.
+            contacts={contacts}
           />
         }
         conversationsPane={
@@ -186,7 +189,34 @@ export default async function SujetPage({
             subtitle={subject.reference}
             className="pb-10"
           >
-            <div className="px-[22px] pt-3.5">
+            <div className="space-y-3 px-[22px] pt-3.5">
+              {/* Les MARQUEURS du sujet (04 §9), les mêmes que sur sa ligne dans
+                  la liste : la fiche ne doit pas en savoir moins que la liste
+                  (retour du 2026-09-16). Le statut terminal aussi. */}
+              {subject.status !== "open" ||
+              subject.waitingForReply ||
+              subject.resolutionSuggestedAt ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {subject.status === "validated" ? (
+                    <HeaderPill>Validé</HeaderPill>
+                  ) : subject.status === "closed" ? (
+                    <HeaderPill>Fermé</HeaderPill>
+                  ) : null}
+                  {subject.waitingForReply ? (
+                    <HeaderPill>
+                      <Hourglass className="size-3" strokeWidth={2.2} />
+                      En attente
+                    </HeaderPill>
+                  ) : null}
+                  {subject.status === "open" &&
+                  subject.resolutionSuggestedAt ? (
+                    <HeaderPill accent>
+                      <Sparkles className="size-3" strokeWidth={2.2} />À valider
+                      ?
+                    </HeaderPill>
+                  ) : null}
+                </div>
+              ) : null}
               {/* Le domaine vit dans l'onglet Informations. Reste la progression. */}
               {taskTotal > 0 ? (
                 <div className="flex items-center gap-2.5">
@@ -254,5 +284,34 @@ export default async function SujetPage({
         journalPane={<JournalPane events={events} />}
       />
     </MobileFrame>
+  );
+}
+
+/** Une pastille de marqueur dans le hero violet : verre clair, ou plein blanc quand Relvo appelle une décision. */
+function HeaderPill({
+  children,
+  accent = false,
+}: {
+  children: React.ReactNode;
+  accent?: boolean;
+}) {
+  return (
+    <span
+      className={
+        accent
+          ? "inline-flex items-center gap-1 rounded-full bg-white px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap text-relvo"
+          : "inline-flex items-center gap-1 rounded-full px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap text-white"
+      }
+      style={
+        accent
+          ? undefined
+          : {
+              background: "rgb(255 255 255 / 0.14)",
+              border: "1px solid rgb(255 255 255 / 0.28)",
+            }
+      }
+    >
+      {children}
+    </span>
   );
 }

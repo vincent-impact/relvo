@@ -13,10 +13,14 @@ tiers est attendu, clôture suggérée (pastille « À valider ? » sur la ligne
 Relvo ne touche jamais au statut. Domaine `packages/db/src/domain/relecture.ts`, pipeline
 `apps/web/src/server/ia/pipeline/relecture.ts`, retenue `retenirRelecture` dans
 `proposition.ts`, banc `pnpm --filter web eval:relecture` (`benchmark-iag.md` §6.9 : 0,61 € les
-mille, 5 s). **À faire au prochain démarrage** : pousser, puis vérifier en production sur un
-vrai fil — la ligne `[ia] relecture` dans les journaux Vercel, le journal du sujet
-(`subject_reviewed`, `cache_read`), la pastille « À valider ? » ; et lire ce que le modèle fait
-de la priorité (le banc le voit monter « urgent » sur l'échéance d'un tiers). Restent ouverts en
+mille, 5 s). **Poussée en production le jour même, premier essai réel fait** : l'ouverture et la réponse
+sont bonnes ; un événement annoncé (« intervention mardi 8 h ») ne donnait pas de tâche,
+corrigé par la consigne ; marqueurs et interlocuteur ajoutés sur la fiche. **À faire au
+prochain démarrage** : reprendre l'essai à l'e-mail 2 du scénario (rendez-vous mardi 8 h,
+« En attente »), puis les e-mails 3 à 6 (nouvelle tâche et priorité, clôture suggérée,
+réouverture, rattachement sans appel) — la ligne `[ia] relecture` dans les journaux Vercel, le
+journal du sujet (`subject_reviewed`), les pastilles ; et lire ce que le modèle fait de la
+priorité (le banc le voit monter « urgent » sur l'échéance d'un tiers). Restent ouverts en
 arrière-plan : relire les structurations réelles dans le journal, confirmer les deux décisions
 par défaut de la tranche 4 (frontière de confiance à « moyenne », « incertain » traité comme
 une confiance basse), et essayer `none` sur la relecture avec le jeu réel. La prochaine tranche
@@ -354,7 +358,18 @@ retenue, orchestration — dans l'application (`apps/web/src/server/ia/pipeline/
 - [x] Banc d'essai : huit suites (`jeu/demo/suites.jsonl`), `pnpm --filter web eval:relecture`
       — `benchmark-iag.md` §6.9. « Terminé » et « en attente » justes 8/8, 0,61 € les mille
       relectures à `low`, 0,41 € à `none`.
-- [ ] Vérifier en production sur un vrai fil ; essayer `none` sur le jeu réel.
+- [x] **Premier essai réel (le jour même)** : e-mail 1 → sujet, tâche de validation du devis,
+      réponse par « Répondre » : bon. E-mail 2 « intervention mardi 8 h, rien à faire » → aucune
+      tâche : la consigne ne connaissait que les actions *demandées*. Corrigé : **un événement
+      annoncé à une date est toujours une tâche datée** (`05 §2.2`, consigne des deux profils,
+      suite-009 au banc). Deux retours d'écran corrigés : les **marqueurs** (En attente, À
+      valider ?, statut) s'affichent dans le hero de la fiche ; la fiche dit **avec qui** on
+      dialogue (contacts sous le domaine, vers leur fiche). Décision dans `ecarts` (« Un
+      événement annoncé devient une tâche datée, et la fiche dit avec qui »).
+- [ ] Reprendre l'essai réel à l'e-mail 2 (rendez-vous mardi 8 h attendu, « En attente » posé),
+      puis les e-mails 3 à 6 ; essayer `none` sur le jeu réel.
+- [ ] Une tâche d'événement qui change de date est écartée comme doublon : reprogrammer
+      l'existante (point ouvert, `ecarts`).
 
 **Ce que la tranche laisse volontairement de côté** : la note de Relvo sur le contact au fil
 des relectures (`05 §1.3`) ; cocher une tâche devenue obsolète sur un message reçu (`05 §4.2`,
