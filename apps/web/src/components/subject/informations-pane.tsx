@@ -3,14 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  ChevronDown,
-  Flag,
-  Plus,
-  SquareCheck,
-  Sparkles,
-  UserRound,
-} from "lucide-react";
+import { ChevronDown, Flag, Plus, SquareCheck, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import type { Priority } from "@relvo/db";
 import {
@@ -19,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ActorPill } from "@/components/shared/actor-pill";
 import { ListPanel } from "@/components/shared/list-panel";
 import { AddTask } from "@/components/subject/add-task";
 import { ResolutionBanner } from "@/components/subject/resolution-banner";
@@ -120,10 +114,6 @@ export function InformationsPane({
   const FolderIcon = folderViz.icon;
   const taskTotal = tasks.length;
   const taskDone = tasks.filter((t) => t.status === "done").length;
-  // La barre ne s'affiche qu'à partir de 3 tâches : une jauge à un ou deux
-  // segments ne dit rien que le panneau ne montre déjà, et c'est du bruit sur
-  // l'écran le plus lu du produit.
-  const showProgress = taskTotal >= 3;
 
   // Ouvre la pop-up d'édition en repartant du texte AFFICHÉ : corriger le
   // résumé de Relvo, c'est le reprendre, pas repartir d'une page blanche.
@@ -244,50 +234,42 @@ export function InformationsPane({
         </button>
       </section>
 
-      {/* 2. Résumé — TEXTE posé sur la pierre, pas un panneau : le blanc est
-          réservé à ce sur quoi on AGIT (les tâches). L'étiquette « Résumé », la
-          SOURCE et l'action passent en LÉGENDE, sous le texte — un titre de
-          section au-dessus ne pouvait dire ni la source ni l'action, et deux
-          titres de même poids (RÉSUMÉ / TÂCHES) rendaient les deux sections
-          également importantes. Trois états, et le mot ne disparaît jamais :
-            • Relvo a rédigé → « Résumé de Relvo » signé de sa pastille
-            • l'utilisateur a écrit → « Résumé » (sa version l'emporte)
-            • vide (sujet créé à la main) → une INVITE qui est à la fois le
-              libellé et l'action, dans le vocabulaire d'« Ajouter une tâche ». */}
-      <section className="px-1">
-        {shown ? (
-          <>
-            <p className="text-[15.5px] leading-[1.5] whitespace-pre-wrap text-(--text-primary)">
-              {shown}
-            </p>
-            <div className="mt-[7px] flex items-center gap-1.5 text-[11.5px] text-(--text-tertiary)">
-              {byRelvo ? (
-                <>
-                  <Sparkles
-                    className="size-3 text-relvo"
-                    fill="currentColor"
-                    strokeWidth={0}
-                  />
-                  <span>Résumé de Relvo</span>
-                </>
-              ) : (
-                <span>Résumé</span>
-              )}
-              <span aria-hidden>·</span>
+      {/* 2. Résumé — chaque zone est NOMMÉE (SectionHead), sinon un sujet neuf
+          n'est qu'un empilement d'éléments flottants : l'utilisateur ne sait pas
+          à quoi sert quoi. Les deux en-têtes sont SYMÉTRIQUES (libellé à gauche,
+          source et action à droite) ; c'est la MATIÈRE qui porte la hiérarchie,
+          pas le titre — le résumé se lit sur la pierre, les tâches se manipulent
+          dans un panneau blanc. Trois états, et le mot « Résumé » ne disparaît
+          jamais :
+            • Relvo a rédigé → sa pastille d'acteur à côté du libellé
+            • l'utilisateur a écrit → le libellé seul (sa version l'emporte)
+            • vide (sujet créé à la main) → sous le libellé, une INVITE dans le
+              vocabulaire d'« Ajouter une tâche ». */}
+      <section>
+        <SectionHead
+          title="Résumé"
+          badge={byRelvo ? <ActorPill actor="ai" /> : null}
+          right={
+            shown ? (
               <button
                 type="button"
                 onClick={openEditor}
-                className="font-semibold text-(--text-secondary) active:opacity-70"
+                className="text-[12.5px] font-semibold text-(--text-secondary) active:opacity-70"
               >
                 Modifier
               </button>
-            </div>
-          </>
+            ) : null
+          }
+        />
+        {shown ? (
+          <p className="px-1 text-[15.5px] leading-[1.5] whitespace-pre-wrap text-(--text-primary)">
+            {shown}
+          </p>
         ) : (
           <button
             type="button"
             onClick={openEditor}
-            className="flex items-center gap-2.5 active:opacity-70"
+            className="flex items-center gap-2.5 px-1 active:opacity-70"
           >
             <span className="grid size-[30px] flex-none place-items-center rounded-full bg-relvo-bg text-relvo">
               <Plus className="size-[17px]" strokeWidth={2.4} />
@@ -306,35 +288,35 @@ export function InformationsPane({
 
       {/* 3. Tâches — sur la page principale : le sujet, c'est ce qu'il reste à faire */}
       <section>
-        <div className="mb-2 flex items-center justify-between gap-3 px-1">
-          <h2 className="text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
-            Tâches
-          </h2>
-          {showProgress ? (
-            <div className="flex items-center gap-2">
-              <SquareCheck
-                className={cn(
-                  "size-[15px] flex-none",
-                  taskDone >= taskTotal
-                    ? "text-(--green-600)"
-                    : "text-(--text-tertiary)",
-                )}
-                strokeWidth={2.2}
-              />
-              <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-[#e7e5e0] shadow-[inset_0_1px_1px_rgb(20_18_40/0.08)]">
-                <span
-                  className="absolute inset-y-0 left-0 rounded-full bg-(--green-600) transition-[width]"
-                  style={{
-                    width: `${Math.round((100 * taskDone) / taskTotal)}%`,
-                  }}
+        <SectionHead
+          title="Tâches"
+          right={
+            taskTotal > 0 ? (
+              <div className="flex items-center gap-2">
+                <SquareCheck
+                  className={cn(
+                    "size-[15px] flex-none",
+                    taskDone >= taskTotal
+                      ? "text-(--green-600)"
+                      : "text-(--text-tertiary)",
+                  )}
+                  strokeWidth={2.2}
                 />
-              </span>
-              <span className="font-numeric text-[11.5px] font-bold text-(--text-secondary)">
-                {taskDone}/{taskTotal}
-              </span>
-            </div>
-          ) : null}
-        </div>
+                <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-[#e7e5e0] shadow-[inset_0_1px_1px_rgb(20_18_40/0.08)]">
+                  <span
+                    className="absolute inset-y-0 left-0 rounded-full bg-(--green-600) transition-[width]"
+                    style={{
+                      width: `${Math.round((100 * taskDone) / taskTotal)}%`,
+                    }}
+                  />
+                </span>
+                <span className="font-numeric text-[11.5px] font-bold text-(--text-secondary)">
+                  {taskDone}/{taskTotal}
+                </span>
+              </div>
+            ) : null
+          }
+        />
         {tasks.length === 0 ? (
           <p className="px-1 text-[13.5px] text-(--text-tertiary)">
             Aucune tâche.
@@ -444,6 +426,41 @@ export function InformationsPane({
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+/**
+ * En-tête de zone de la fiche — le MÊME pour « Résumé » et « Tâches ».
+ *
+ * C'est lui qui délimite les zones : sans libellé, un sujet neuf n'est qu'une
+ * suite d'éléments flottants dont on ne sait pas à quoi ils servent. Les deux
+ * en-têtes sont volontairement symétriques — libellé à gauche, ce qui qualifie
+ * la zone à droite (la source du résumé, la progression des tâches) — et c'est
+ * la MATIÈRE qui porte la hiérarchie : le résumé se lit à même la pierre, les
+ * tâches se manipulent dans un panneau blanc.
+ *
+ * Il ne réutilise pas `shared/section-label.tsx`, qui porte sa propre gouttière
+ * et n'accepte qu'un lien : ici la fiche impose sa marge, et la droite reçoit
+ * un contenu libre.
+ */
+function SectionHead({
+  title,
+  badge = null,
+  right = null,
+}: {
+  title: string;
+  /** Qui parle — la pastille d'acteur, quand le contenu n'est pas de l'utilisateur. */
+  badge?: React.ReactNode;
+  right?: React.ReactNode;
+}) {
+  return (
+    <div className="mb-2 flex min-h-7 items-center justify-between gap-3 px-1">
+      <h2 className="flex min-w-0 items-center gap-2 text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
+        {title}
+        {badge}
+      </h2>
+      {right}
     </div>
   );
 }

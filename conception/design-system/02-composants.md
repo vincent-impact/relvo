@@ -39,11 +39,17 @@ retire le filet de la dernière.
 
 **Le BLANC est réservé à ce sur quoi on agit.** Sur une fiche, le fond pierre porte ce qui se
 lit (un résumé, une métadonnée), et le panneau blanc porte ce qui se manipule (les tâches, une
-décision à prendre). C'est ce qui crée la hiérarchie sans ajouter un seul libellé : deux panneaux
-blancs de même matière sous deux titres de même poids font deux sections d'égale importance —
-donc aucune. Corollaire : un texte n'a pas besoin d'un panneau, et l'étiquette d'un texte court
-vit mieux en **légende dessous** qu'en titre dessus, parce qu'une légende peut dire en plus d'où
-vient le texte et ce qu'on peut en faire.
+décision à prendre). C'est la MATIÈRE qui dit l'importance, pas le libellé : deux panneaux blancs
+de même matière font deux zones d'égale importance — donc aucune. Corollaire : un texte n'a pas
+besoin d'un panneau.
+
+**Mais toute zone est NOMMÉE, et les en-têtes sont symétriques.** Sans libellé, un écran encore
+vide n'est qu'une suite d'éléments flottants dont le lecteur ne sait pas à quoi ils servent —
+c'est le même patchwork, en plus plat. Chaque zone porte donc le même en-tête : le libellé en
+petites capitales à gauche, et à droite ce qui la qualifie (la source d'un texte, la progression
+d'une liste). La hiérarchie vient de la matière, la lisibilité vient du libellé ; les deux ne
+s'opposent pas. Un libellé ne disparaît jamais parce que sa zone est vide : c'est là qu'il sert
+le plus, au-dessus de l'invite qui amorce le remplissage.
 
 **Un compteur à zéro ne s'affiche pas.** Un badge « 0 » n'informe de rien et encombre la barre
 qui le porte. La règle vaut partout : onglets, pastilles, puces.
