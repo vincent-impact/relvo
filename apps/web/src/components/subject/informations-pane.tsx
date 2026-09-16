@@ -3,7 +3,13 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ChevronRight, Pencil, UserRound } from "lucide-react";
+import {
+  ChevronDown,
+  Flag,
+  Pencil,
+  SquareCheck,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { Priority } from "@relvo/db";
 import {
@@ -12,7 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { ActorPill } from "@/components/shared/actor-pill";
 import { ListPanel } from "@/components/shared/list-panel";
 import { AddTask } from "@/components/subject/add-task";
@@ -28,17 +33,18 @@ import { cn } from "@/lib/utils";
 // Onglet « Informations » de la fiche Sujet (refonte 2026-07-28 : moins
 // « technique », plus « fiche » ; réordonné 2026-09-15 sur les premiers essais
 // réels de la structuration). Ordre FIXE :
-//   1. Domaine (tap → sélecteur) + Urgence (interrupteur), sur la même ligne —
-//      EN TÊTE : de quoi on parle, avant tout le reste. Juste dessous, AVEC QUI :
-//      les contacts du sujet, chacun vers sa fiche (retour du 2026-09-16 — on
-//      ne savait pas avec qui on dialoguait sans ouvrir l'onglet Conversations).
+//   1. Le CONTEXTE, en UNE ligne de puces compactes (retour du 2026-09-16 : des
+//      cartes empilées faisaient un patchwork sans hiérarchie) : le domaine
+//      (tap → sélecteur), avec qui on dialogue (tap → fiche du contact), l'urgence
+//      (tap → bascule). Du contexte, pas l'information principale : petit.
 //   2. Résumé — UN SEUL champ, court : le descriptif de l'utilisateur s'il l'a
 //      écrit, sinon le résumé que Relvo a rédigé à la structuration, signalé par
 //      sa pastille. Le stylo ouvre une POP-UP d'édition pré-remplie ; ce que
 //      l'utilisateur enregistre devient SON descriptif et l'emporte.
-//   3. Les TÂCHES, juste dessous : ce sont elles qui disent la suite. La
-//      « prochaine étape » de Relvo n'est pas affichée, elle serait redondante
-//      (elle sert à Relvo pour la relecture et la relance).
+//   3. Les TÂCHES, juste dessous, avec leur progression dans le titre de la
+//      section : ce sont elles qui disent la suite. La « prochaine étape » de
+//      Relvo n'est pas affichée, elle serait redondante (elle sert à Relvo pour
+//      la relecture et la relance).
 // Le journal a son propre onglet, le dernier.
 // HIÉRARCHIE UNIQUE : chaque section porte le MÊME libellé en petites capitales
 // sourdes au-dessus de son panneau (Résumé comme Tâches), et tous les panneaux
@@ -105,6 +111,8 @@ export function InformationsPane({
       : "general",
   );
   const FolderIcon = folderViz.icon;
+  const taskTotal = tasks.length;
+  const taskDone = tasks.filter((t) => t.status === "done").length;
 
   // Ouvre la pop-up d'édition en repartant du texte AFFICHÉ : corriger le
   // résumé de Relvo, c'est le reprendre, pas repartir d'une page blanche.
@@ -159,89 +167,69 @@ export function InformationsPane({
 
   return (
     <div className="space-y-6 px-4 pt-4 pb-2">
-      {/* 1. Domaine (tap → sélecteur) + Urgence (interrupteur), en tête */}
-      <section className="flex items-center gap-3">
+      {/* 1. Le contexte : une ligne de puces, qui passe à deux rangées si les noms sont longs */}
+      <section className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => setPickerOpen(true)}
-          className="pressable inline-flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-(--hairline) bg-white px-3 py-2.5 text-left shadow-surface-1"
+          className="pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-full border border-(--hairline) bg-white pr-2 pl-1 text-[12.5px] font-semibold text-(--text-primary) shadow-surface-1"
         >
           <span
-            className="grid size-7 flex-none place-items-center rounded-lg text-white"
+            className="grid size-5 flex-none place-items-center rounded-full text-white"
             style={{ background: folderViz.color }}
           >
-            <FolderIcon className="size-[15px]" strokeWidth={2.1} />
+            <FolderIcon className="size-[12px]" strokeWidth={2.2} />
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-[10.5px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase">
-              Domaine
-            </span>
-            <span className="block truncate text-[14px] font-semibold text-(--text-primary)">
-              {folder?.name ?? "Non classé"}
-            </span>
+          <span className="max-w-[44vw] truncate">
+            {folder?.name ?? "Non classé"}
           </span>
           <ChevronDown
-            className="size-4 flex-none text-(--text-tertiary)"
-            strokeWidth={2.2}
+            className="size-3.5 flex-none text-(--text-tertiary)"
+            strokeWidth={2.4}
           />
         </button>
-
-        <label className="flex flex-none flex-col items-center gap-1.5">
-          <span
-            className={cn(
-              "text-[10.5px] font-bold tracking-[0.3px] uppercase",
-              priority === "urgent"
-                ? "text-(--red-600)"
-                : "text-(--text-tertiary)",
-            )}
+        {contacts.map((c) => (
+          <Link
+            key={c.id}
+            href={`/contacts/${c.id}`}
+            className="pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-full border border-(--hairline) bg-white pr-2.5 pl-1 text-[12.5px] font-semibold text-(--text-primary) shadow-surface-1"
           >
-            Urgent
-          </span>
-          <Switch
-            checked={priority === "urgent"}
-            onCheckedChange={toggleUrgent}
-            disabled={pending}
-            className="data-checked:bg-(--red-600)"
+            <span className="grid size-5 flex-none place-items-center rounded-full bg-(--surface-2) text-(--text-secondary)">
+              <UserRound className="size-[12px]" strokeWidth={2.2} />
+            </span>
+            <span className="max-w-[60vw] truncate">
+              {c.name}
+              {/* L'entreprise seulement si elle ajoute quelque chose au nom. */}
+              {c.company && c.company.trim() !== c.name.trim() ? (
+                <span className="font-normal text-(--text-secondary)">
+                  {" "}
+                  · {c.company}
+                </span>
+              ) : null}
+            </span>
+          </Link>
+        ))}
+        <button
+          type="button"
+          role="switch"
+          aria-checked={priority === "urgent"}
+          disabled={pending}
+          onClick={() => toggleUrgent(priority !== "urgent")}
+          className={cn(
+            "pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] font-semibold shadow-surface-1",
+            priority === "urgent"
+              ? "border-transparent bg-(--red-600) text-white"
+              : "border-(--hairline) bg-white text-(--text-secondary)",
+          )}
+        >
+          <Flag
+            className="size-[13px]"
+            strokeWidth={priority === "urgent" ? 0 : 2.2}
+            fill={priority === "urgent" ? "currentColor" : "none"}
           />
-        </label>
+          Urgent
+        </button>
       </section>
-
-      {/* 1 bis. Avec qui — un lien par contact, vers sa fiche */}
-      {contacts.length > 0 ? (
-        <section className="-mt-3">
-          <div className="divide-y divide-(--hairline) rounded-xl border border-(--hairline) bg-white shadow-surface-1">
-            {contacts.map((c) => (
-              <Link
-                key={c.id}
-                href={`/contacts/${c.id}`}
-                className="pressable flex items-center gap-2 px-3 py-2.5"
-              >
-                <span className="grid size-7 flex-none place-items-center rounded-lg bg-(--surface-2) text-(--text-secondary)">
-                  <UserRound className="size-[15px]" strokeWidth={2.1} />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[10.5px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase">
-                    Avec
-                  </span>
-                  <span className="block truncate text-[14px] font-semibold text-(--text-primary)">
-                    {c.name}
-                    {c.company ? (
-                      <span className="font-normal text-(--text-secondary)">
-                        {" "}
-                        — {c.company}
-                      </span>
-                    ) : null}
-                  </span>
-                </span>
-                <ChevronRight
-                  className="size-4 flex-none text-(--text-tertiary)"
-                  strokeWidth={2.2}
-                />
-              </Link>
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       {/* 2. Résumé — un seul champ, court ; libellé de section + panneau */}
       <section>
@@ -278,9 +266,35 @@ export function InformationsPane({
 
       {/* 3. Tâches — sur la page principale : le sujet, c'est ce qu'il reste à faire */}
       <section>
-        <h2 className="mb-2 px-1 text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
-          Tâches
-        </h2>
+        <div className="mb-2 flex items-center justify-between gap-3 px-1">
+          <h2 className="text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
+            Tâches
+          </h2>
+          {taskTotal > 0 ? (
+            <div className="flex items-center gap-2">
+              <SquareCheck
+                className={cn(
+                  "size-[15px] flex-none",
+                  taskDone >= taskTotal
+                    ? "text-(--green-600)"
+                    : "text-(--text-tertiary)",
+                )}
+                strokeWidth={2.2}
+              />
+              <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-[#e7e5e0] shadow-[inset_0_1px_1px_rgb(20_18_40/0.08)]">
+                <span
+                  className="absolute inset-y-0 left-0 rounded-full bg-(--green-600) transition-[width]"
+                  style={{
+                    width: `${Math.round((100 * taskDone) / taskTotal)}%`,
+                  }}
+                />
+              </span>
+              <span className="font-numeric text-[11.5px] font-bold text-(--text-secondary)">
+                {taskDone}/{taskTotal}
+              </span>
+            </div>
+          ) : null}
+        </div>
         {tasks.length === 0 ? (
           <p className="px-1 text-[13.5px] text-(--text-tertiary)">
             Aucune tâche.

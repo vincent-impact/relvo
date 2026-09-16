@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { FileText, Hourglass, Sparkles, SquareCheck } from "lucide-react";
+import { FileText, Hourglass, Sparkles } from "lucide-react";
 import {
   getSubjectDetail,
   listChannels,
@@ -95,10 +95,6 @@ export default async function SujetPage({
 
   const rows = conversationRows.map(toConversationRowData);
 
-  const taskTotal = tasks.length;
-  const taskDone = tasks.filter((t) => t.status === "done").length;
-  const taskPct = taskTotal > 0 ? Math.round((taskDone / taskTotal) * 100) : 0;
-
   return (
     <MobileFrame>
       <AcknowledgeOnOpen subjectId={subject.id} />
@@ -185,58 +181,33 @@ export default async function SujetPage({
                 title={subject.title}
               />
             }
-            // Sous-titre = la RÉFÉRENCE seule.
-            subtitle={subject.reference}
+            // Sous-titre = la référence, puis les MARQUEURS du sujet (04 §9) en
+            // petits chips sur la même ligne — les mêmes que sur sa ligne dans la
+            // liste, sans prendre une ligne de plus (retour du 2026-09-16).
+            subtitle={
+              <span className="inline-flex items-center gap-1.5">
+                <span>{subject.reference}</span>
+                {subject.status === "validated" ? (
+                  <HeroChip>Validé</HeroChip>
+                ) : subject.status === "closed" ? (
+                  <HeroChip>Fermé</HeroChip>
+                ) : null}
+                {subject.waitingForReply ? (
+                  <HeroChip>
+                    <Hourglass className="size-[11px]" strokeWidth={2.4} />
+                    En attente
+                  </HeroChip>
+                ) : null}
+                {subject.status === "open" && subject.resolutionSuggestedAt ? (
+                  <HeroChip accent>
+                    <Sparkles className="size-[11px]" strokeWidth={2.4} />À
+                    valider ?
+                  </HeroChip>
+                ) : null}
+              </span>
+            }
             className="pb-10"
-          >
-            <div className="space-y-3 px-[22px] pt-3.5">
-              {/* Les MARQUEURS du sujet (04 §9), les mêmes que sur sa ligne dans
-                  la liste : la fiche ne doit pas en savoir moins que la liste
-                  (retour du 2026-09-16). Le statut terminal aussi. */}
-              {subject.status !== "open" ||
-              subject.waitingForReply ||
-              subject.resolutionSuggestedAt ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  {subject.status === "validated" ? (
-                    <HeaderPill>Validé</HeaderPill>
-                  ) : subject.status === "closed" ? (
-                    <HeaderPill>Fermé</HeaderPill>
-                  ) : null}
-                  {subject.waitingForReply ? (
-                    <HeaderPill>
-                      <Hourglass className="size-3" strokeWidth={2.2} />
-                      En attente
-                    </HeaderPill>
-                  ) : null}
-                  {subject.status === "open" &&
-                  subject.resolutionSuggestedAt ? (
-                    <HeaderPill accent>
-                      <Sparkles className="size-3" strokeWidth={2.2} />À valider
-                      ?
-                    </HeaderPill>
-                  ) : null}
-                </div>
-              ) : null}
-              {/* Le domaine vit dans l'onglet Informations. Reste la progression. */}
-              {taskTotal > 0 ? (
-                <div className="flex items-center gap-2.5">
-                  <SquareCheck
-                    className="size-[17px] flex-none text-white/85"
-                    strokeWidth={2.2}
-                  />
-                  <span className="relative block h-1.5 flex-1 overflow-hidden rounded-full bg-white/20">
-                    <span
-                      className="absolute inset-y-0 left-0 rounded-full bg-white transition-[width]"
-                      style={{ width: `${taskPct}%` }}
-                    />
-                  </span>
-                  <span className="font-numeric text-[12px] font-bold text-white/90 tabular-nums">
-                    {taskDone}/{taskTotal}
-                  </span>
-                </div>
-              ) : null}
-            </div>
-          </RelvoHeader>
+          />
         }
         documentsPane={
           <div className="px-4 pt-4 pb-2">
@@ -287,8 +258,8 @@ export default async function SujetPage({
   );
 }
 
-/** Une pastille de marqueur dans le hero violet : verre clair, ou plein blanc quand Relvo appelle une décision. */
-function HeaderPill({
+/** Un marqueur dans le sous-titre du hero : verre clair, ou plein blanc quand Relvo appelle une décision. */
+function HeroChip({
   children,
   accent = false,
 }: {
@@ -299,8 +270,8 @@ function HeaderPill({
     <span
       className={
         accent
-          ? "inline-flex items-center gap-1 rounded-full bg-white px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap text-relvo"
-          : "inline-flex items-center gap-1 rounded-full px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap text-white"
+          ? "inline-flex items-center gap-1 rounded-full bg-white px-[7px] py-px text-[10.5px] font-bold whitespace-nowrap text-relvo"
+          : "inline-flex items-center gap-1 rounded-full px-[7px] py-px text-[10.5px] font-bold whitespace-nowrap text-white"
       }
       style={
         accent

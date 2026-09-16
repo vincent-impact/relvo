@@ -435,11 +435,16 @@ utilisateur va oublier ».
   dans `05 §2.2`. Le banc le rejoue (`suites.jsonl`, suite-009, l'e-mail du dirigeant) : la
   tâche « Réception du riz basmati (mardi 8 h) » sort aux deux niveaux.
 - **Les marqueurs du sujet s'affichent sur sa fiche** — « En attente », « À valider ? », le
-  statut terminal —, sous le titre, dans le hero. La liste les portait, la fiche non ; une fiche
-  ne doit pas en savoir moins qu'une ligne de liste.
-- **La fiche dit avec qui on dialogue** : les contacts du sujet, juste sous le domaine, chacun
-  vers sa fiche. Le domaine dit de quoi on parle, l'interlocuteur dit avec qui — les deux en
-  tête, avant le résumé.
+  statut terminal — en petits chips sur la ligne de la référence, dans le hero. La liste les
+  portait, la fiche non ; une fiche ne doit pas en savoir moins qu'une ligne de liste.
+- **La fiche dit avec qui on dialogue**, et le contexte tient en **une ligne de puces** sous
+  les onglets : le domaine (tap → sélecteur), l'interlocuteur (tap → sa fiche), l'urgence (tap
+  → bascule). Une première version empilait un chip d'attente pleine largeur dans le hero, une
+  carte Domaine + interrupteur, une carte « Avec » : le dirigeant a vu un patchwork sans
+  hiérarchie. La hiérarchie retenue : le hero dit **quoi** (titre, référence, marqueurs) ; la
+  ligne de puces dit **le contexte**, petit ; le Résumé et les Tâches — avec leur progression
+  dans le titre de la section, retirée du hero — sont l'information principale, celle qu'on
+  lit à chaque visite.
 
 **Ce qui reste ouvert** : une tâche d'événement déjà posée qui change de date — « livraison
 décalée à mardi » — est aujourd'hui écartée comme doublon par la retenue, et la nouvelle date

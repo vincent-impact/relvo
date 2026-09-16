@@ -362,9 +362,10 @@ retenue, orchestration — dans l'application (`apps/web/src/server/ia/pipeline/
       réponse par « Répondre » : bon. E-mail 2 « intervention mardi 8 h, rien à faire » → aucune
       tâche : la consigne ne connaissait que les actions *demandées*. Corrigé : **un événement
       annoncé à une date est toujours une tâche datée** (`05 §2.2`, consigne des deux profils,
-      suite-009 au banc). Deux retours d'écran corrigés : les **marqueurs** (En attente, À
-      valider ?, statut) s'affichent dans le hero de la fiche ; la fiche dit **avec qui** on
-      dialogue (contacts sous le domaine, vers leur fiche). Décision dans `ecarts` (« Un
+      suite-009 au banc). Deux retours d'écran corrigés, puis la fiche **réorganisée** sur un troisième
+      (« patchwork ») : hero = titre, référence et marqueurs en petits chips ; une ligne de
+      puces pour le contexte (domaine, interlocuteur, urgence) ; Résumé ; Tâches avec leur
+      progression dans le titre de la section. Décision dans `ecarts` (« Un
       événement annoncé devient une tâche datée, et la fiche dit avec qui »).
 - [ ] Reprendre l'essai réel à l'e-mail 2 (rendez-vous mardi 8 h attendu, « En attente » posé),
       puis les e-mails 3 à 6 ; essayer `none` sur le jeu réel.
