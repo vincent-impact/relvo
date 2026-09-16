@@ -189,32 +189,30 @@ export function ConversationDetail({
   // tâche, réutilisé s'il existe déjà, régénérable, effaçable. Jamais envoyé
   // seul : il se pose dans le composer, l'envoi reste le geste de l'utilisateur.
   // Une tâche qui porte une décision sans réponse ne se rédige pas à
-  // l'ouverture : le FORMULAIRE la pose d'abord (05 §3.1), et c'est lui qui
-  // demande le brouillon une fois tout répondu.
-  const decisionsOuvertes = decisionTasks.some(
-    (t) => t.id === draftTaskId && t.decisions.some((d) => d.reponse === null),
+  // l'ouverture : le FORMULAIRE la pose d'abord (05 §3.1), et c'est lui — et
+  // lui seul — qui demande le brouillon, sur « Rédiger la réponse ». Ce qui
+  // compte est l'état À L'ARRIVÉE sur la page : figé dans un état initialisé
+  // une seule fois, sinon la dernière réponse cochée (qui rafraîchit la page et
+  // ferme les décisions) déclencherait la rédaction avant l'appui du dirigeant.
+  const [redigerALArrivee] = useState(
+    () =>
+      Boolean(draftTaskId && attached) &&
+      !decisionTasks.some(
+        (t) =>
+          t.id === draftTaskId && t.decisions.some((d) => d.reponse === null),
+      ),
   );
   const [draft, setDraft] = useState<{
     loading: boolean;
     text: string | null;
     actionId: string | null;
-  }>({
-    loading: Boolean(draftTaskId && attached && !decisionsOuvertes),
-    text: null,
-    actionId: null,
-  });
+  }>({ loading: redigerALArrivee, text: null, actionId: null });
   // La tâche dont le brouillon est dans le composer — celle de l'URL, ou celle
   // du formulaire qui vient de rédiger.
   const [draftFor, setDraftFor] = useState<string | null>(draftTaskId);
   const draftRequested = useRef(false);
   useEffect(() => {
-    if (
-      !draftTaskId ||
-      !attached ||
-      decisionsOuvertes ||
-      draftRequested.current
-    )
-      return;
+    if (!draftTaskId || !redigerALArrivee || draftRequested.current) return;
     draftRequested.current = true;
     void prepareDraftAction(draftTaskId).then((res) => {
       if (res.ok) {
@@ -228,7 +226,7 @@ export function ConversationDetail({
         toast.error(res.message);
       }
     });
-  }, [draftTaskId, attached, decisionsOuvertes]);
+  }, [draftTaskId, redigerALArrivee]);
   function regenerateDraft() {
     if (!draftFor) return;
     setDraft((d) => ({ ...d, loading: true }));
