@@ -203,7 +203,7 @@ export default async function SujetPage({
             // petits chips sur la même ligne — les mêmes que sur sa ligne dans la
             // liste, sans prendre une ligne de plus (retour du 2026-09-16).
             subtitle={
-              <span className="inline-flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-2.5">
                 <span>{subject.reference}</span>
                 {subject.status === "validated" ? (
                   <HeroChip>Validé</HeroChip>

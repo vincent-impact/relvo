@@ -373,6 +373,14 @@ retenue, orchestration — dans l'application (`apps/web/src/server/ia/pipeline/
       sous le résumé (où on en est, prochaine étape, on attend — pour quand) ; les tâches se lisent
       la plus récente en tête. Décision dans `ecarts` (« Trancher un choix d'un appui… »), avec
       les questions ouvertes sur la présentation et la mémoire des choix (`proposé`).
+- [x] **Troisième essai réel, premier e-mail du devis** : sept retours, tous retenus — la
+      description en panneau (Résumé, Où on en est, Prochaine étape en sous-titres, plus de bouton
+      « Modifier ») ; une seule ligne de prochaine étape (« En attente : … » quand on attend) ;
+      **un envoi relit le sujet** (la fiche disait encore « valider le devis » après l'envoi) ;
+      une note conditionnelle « [Si validé : …] » n'est pas un choix (consigne + filet Garder /
+      Retirer) ; un choix se lit comme un bouton ; le fil reste lisible derrière le composer ; le
+      hero respire. Décision dans `ecarts` (« La fiche décrit, un envoi se relit… »), suite-010
+      au jeu d'évaluation.
 - [ ] Essayer `none` sur la relecture avec le jeu réel.
 - [ ] Une tâche d'événement qui change de date est écartée comme doublon : reprogrammer
       l'existante (point ouvert, `ecarts`).

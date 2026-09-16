@@ -35,6 +35,20 @@ import { cn } from "@/lib/utils";
 // compte « N choix à trancher » sélectionne le prochain crochet. Le choix se
 // fait donc en lisant le message, là où il se pose, sans pop-up préalable.
 //
+// DEUX SORTES DE CROCHETS (second essai, 2026-09-16) : un CHOIX — « [a / b] »,
+// « [à compléter] » — se tranche ; une NOTE CONDITIONNELLE — « [Si validé :
+// vous pouvez lancer la commande.] » — dépend d'un choix pris plus haut et ne
+// se choisit pas : une fois le choix pris, on la GARDE (la phrase, sans son
+// « Si … : ») ou on la RETIRE. Elle bloque l'envoi comme un choix, mais ne se
+// présente pas comme une option — elle est sourde, pas en relief. Relvo est
+// consigné pour ne plus en écrire (la conséquence va dans l'option) ; ceci est
+// le filet.
+//
+// L'ALLURE DES CROCHETS : un choix se lit comme un BOUTON — fond clair, liseré,
+// souligné en tirets — parce que le surlignage jaune ne disait pas qu'on
+// pouvait appuyer. Celui où le curseur se trouve est en relief plus fort. Le
+// calque ne change jamais les métriques du texte (ni gras, ni marges).
+//
 // ⚠️ 2026-07-23 — le SÉLECTEUR d'interlocuteur (avatar + menu) a été RETIRÉ : les
 // conversations sont NOMINATIVES, la conversation courante est déjà choisie par
 // le sélecteur de conversation en tête de l'onglet. Le composer répond donc
@@ -64,16 +78,17 @@ const CHOICE_RE = /\[[^[\]\n]+\]/g;
 /** Découpe le texte en segments, les choix marqués — pour le calque de surlignage. */
 export function splitChoices(
   text: string,
-): Array<{ text: string; choice: boolean }> {
-  const out: Array<{ text: string; choice: boolean }> = [];
+): Array<{ text: string; choice: boolean; start: number }> {
+  const out: Array<{ text: string; choice: boolean; start: number }> = [];
   let last = 0;
   for (const m of text.matchAll(CHOICE_RE)) {
     if (m.index > last)
-      out.push({ text: text.slice(last, m.index), choice: false });
-    out.push({ text: m[0], choice: true });
+      out.push({ text: text.slice(last, m.index), choice: false, start: last });
+    out.push({ text: m[0], choice: true, start: m.index });
     last = m.index + m[0].length;
   }
-  if (last < text.length) out.push({ text: text.slice(last), choice: false });
+  if (last < text.length)
+    out.push({ text: text.slice(last), choice: false, start: last });
   return out;
 }
 
@@ -81,8 +96,34 @@ export function countChoices(text: string): number {
   return text.match(CHOICE_RE)?.length ?? 0;
 }
 
-/** Un choix repéré dans le texte : ses bornes (crochets compris) et ses options, s'il en propose. */
-export type Choice = { start: number; end: number; options: string[] };
+/**
+ * Un crochet repéré dans le texte : ses bornes (crochets compris), sa sorte —
+ * un choix à trancher, ou une note conditionnelle à garder ou retirer — et ses
+ * options, s'il en propose.
+ */
+export type Choice = {
+  start: number;
+  end: number;
+  kind: "choix" | "note";
+  options: string[];
+  /** Pour une note : la phrase à garder, sans son « Si … : ». */
+  garder: string | null;
+};
+
+/** « [Si validé : …] », « [si oui, …] » — une note qui dépend d'un choix pris ailleurs. */
+const NOTE_RE = /^\[\s*si\b/i;
+
+function estNote(segment: string): boolean {
+  return NOTE_RE.test(segment);
+}
+
+/** La phrase d'une note, sans sa condition : ce qui reste après « : » ou « , », première lettre en capitale. */
+function phraseDe(segment: string): string {
+  const inner = segment.slice(1, -1).trim();
+  const m = inner.match(/^si\b[^:,]*[:,]\s*([\s\S]+)$/i);
+  const phrase = (m?.[1] ?? inner).trim();
+  return phrase.charAt(0).toUpperCase() + phrase.slice(1);
+}
 
 /** Les options d'un crochet « [a / b / c] » ; aucune si le crochet n'en sépare pas (« [à compléter] »). */
 function optionsDe(segment: string): string[] {
@@ -95,11 +136,25 @@ function optionsDe(segment: string): string[] {
 }
 
 function tousLesChoix(text: string): Choice[] {
-  return [...text.matchAll(CHOICE_RE)].map((m) => ({
-    start: m.index,
-    end: m.index + m[0].length,
-    options: optionsDe(m[0]),
-  }));
+  return [...text.matchAll(CHOICE_RE)].map((m) => {
+    const note = estNote(m[0]);
+    return {
+      start: m.index,
+      end: m.index + m[0].length,
+      kind: note ? "note" : "choix",
+      options: note ? [] : optionsDe(m[0]),
+      garder: note ? phraseDe(m[0]) : null,
+    };
+  });
+}
+
+/** Choix et notes qui restent, séparément — pour le compte de la barre. */
+export function countByKind(text: string): { choix: number; notes: number } {
+  const all = tousLesChoix(text);
+  return {
+    choix: all.filter((c) => c.kind === "choix").length,
+    notes: all.filter((c) => c.kind === "note").length,
+  };
 }
 
 /** Le choix dans lequel se trouve le curseur (bornes incluses), sinon null. */
@@ -117,7 +172,9 @@ export function nextChoice(text: string, from: number): Choice | null {
 
 /**
  * Tranche un choix : le segment entre crochets devient l'option retenue, ou
- * disparaît (« Réécrire », option null) — le curseur se pose juste après.
+ * disparaît (« Réécrire » / « Retirer », option null) — le curseur se pose
+ * juste après. Un crochet qui occupait sa ligne entière emporte sa ligne avec
+ * lui quand il disparaît : retirer une note ne laisse pas un trou.
  */
 export function applyChoice(
   text: string,
@@ -125,9 +182,22 @@ export function applyChoice(
   option: string | null,
 ): { text: string; caret: number } {
   const remplacement = option ?? "";
+  let avant = text.slice(0, choice.start);
+  let apres = text.slice(choice.end);
+  if (remplacement === "") {
+    const seulSurSaLigne =
+      (avant === "" || avant.endsWith("\n")) &&
+      (apres === "" || apres.startsWith("\n"));
+    if (seulSurSaLigne) {
+      // La ligne et le saut qui la suit ; un paragraphe entier (ligne vide
+      // après) part avec le sien.
+      apres = apres.replace(/^\n\n?/, "");
+      if (apres === "") avant = avant.replace(/\n+$/, "");
+    }
+  }
   return {
-    text: text.slice(0, choice.start) + remplacement + text.slice(choice.end),
-    caret: choice.start + remplacement.length,
+    text: avant + remplacement + apres,
+    caret: avant.length + remplacement.length,
   };
 }
 
@@ -196,7 +266,8 @@ export function RecipientComposer({
   // Les choix ne se comptent (et ne se surlignent) que sur un brouillon posé :
   // des crochets tapés à la main ne bloquent rien.
   const draftPosed = posed && !loading;
-  const choicesLeft = draftPosed ? countChoices(text) : 0;
+  const restants = draftPosed ? countByKind(text) : { choix: 0, notes: 0 };
+  const choicesLeft = restants.choix + restants.notes;
   // Le curseur, suivi pour savoir s'il est DANS un choix : c'est ce qui fait
   // apparaître les puces pour trancher.
   const [caret, setCaret] = useState<number | null>(null);
@@ -286,7 +357,17 @@ export function RecipientComposer({
       <ThinkingDots />
     </>
   ) : choicesLeft > 0 ? (
-    `${choicesLeft} choix à trancher avant d'envoyer`
+    // Les deux comptes ensemble ne tiennent pas sur une ligne avec « avant
+    // d'envoyer » : la mention ne s'écrit que quand il n'y en a qu'un.
+    [
+      restants.choix > 0 ? `${restants.choix} choix à trancher` : null,
+      restants.notes > 0
+        ? `${restants.notes} phrase${restants.notes > 1 ? "s" : ""} à confirmer`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(", ") +
+    (restants.choix > 0 && restants.notes > 0 ? "" : " avant d'envoyer")
   ) : (
     "Brouillon de Relvo — modifiez librement avant d'envoyer"
   );
@@ -393,24 +474,40 @@ export function RecipientComposer({
       ) : null}
 
       {/* Trancher d'un appui : le curseur est dans un choix → ses options en
-          puces, et « Réécrire » pour retirer le crochet. */}
+          puces, et « Réécrire » pour retirer le crochet. Dans une NOTE
+          conditionnelle → « Garder » la phrase, ou la « Retirer ». */}
       {activeChoice ? (
         <div
           className="flex flex-wrap items-center gap-1.5 px-1"
           role="group"
-          aria-label="Trancher ce choix"
+          aria-label={
+            activeChoice.kind === "note"
+              ? "Garder ou retirer cette phrase"
+              : "Trancher ce choix"
+          }
         >
-          {activeChoice.options.map((opt) => (
+          {activeChoice.kind === "note" ? (
             <button
-              key={opt}
               type="button"
               onMouseDown={(e) => e.preventDefault()}
-              onClick={() => trancher(opt)}
+              onClick={() => trancher(activeChoice.garder)}
               className="rounded-full bg-white px-3 py-1 text-[13px] font-semibold text-relvo shadow-[0_2px_8px_rgb(0_0_0/0.18)] active:scale-95"
             >
-              {opt}
+              Garder la phrase
             </button>
-          ))}
+          ) : (
+            activeChoice.options.map((opt) => (
+              <button
+                key={opt}
+                type="button"
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={() => trancher(opt)}
+                className="rounded-full bg-white px-3 py-1 text-[13px] font-semibold text-relvo shadow-[0_2px_8px_rgb(0_0_0/0.18)] active:scale-95"
+              >
+                {opt}
+              </button>
+            ))
+          )}
           <button
             type="button"
             onMouseDown={(e) => e.preventDefault()}
@@ -421,7 +518,7 @@ export function RecipientComposer({
               border: "1px solid rgb(255 255 255 / 0.28)",
             }}
           >
-            Réécrire
+            {activeChoice.kind === "note" ? "Retirer" : "Réécrire"}
           </button>
         </div>
       ) : null}
@@ -470,18 +567,26 @@ export function RecipientComposer({
                     FIELD_METRICS,
                   )}
                 >
-                  {splitChoices(text).map((seg, i) =>
-                    seg.choice ? (
+                  {splitChoices(text).map((seg, i) => {
+                    if (!seg.choice) return <span key={i}>{seg.text}</span>;
+                    const note = estNote(seg.text);
+                    const actif = activeChoice?.start === seg.start;
+                    return (
                       <mark
                         key={i}
-                        className="rounded-[3px] bg-(--amber-100) text-(--amber-800)"
+                        className={cn(
+                          "rounded-[4px] underline underline-offset-[3px]",
+                          note
+                            ? "bg-transparent text-white/70 decoration-white/50 decoration-dotted"
+                            : "bg-white/20 text-white decoration-white/70 decoration-dashed shadow-[0_0_0_1px_rgb(255_255_255/0.45)]",
+                          actif &&
+                            "bg-white/30 text-white shadow-[0_0_0_1.5px_rgb(255_255_255/0.9)]",
+                        )}
                       >
                         {seg.text}
                       </mark>
-                    ) : (
-                      <span key={i}>{seg.text}</span>
-                    ),
-                  )}
+                    );
+                  })}
                   {/* Une ligne finale vide doit compter comme une ligne. */}
                   {text.endsWith("\n") ? "​" : null}
                 </div>

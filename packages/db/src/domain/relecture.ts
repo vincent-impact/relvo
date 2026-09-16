@@ -25,8 +25,9 @@ import {
 import { createTask, taskMetadataSchema, taskProvenanceSchema } from "./tasks";
 
 // Domaine RELECTURE (M7, tranche 6 — M7.9, M7.11) — ce que l'appel qui suit
-// un message ENTRANT sur un sujet suivi lit et écrit en base. Un seul appel
-// par message ; c'est le poste le plus fréquent du pipeline (05 §1, §5.2).
+// un message sur un sujet suivi — reçu, ou ENVOYÉ par le dirigeant — lit et
+// écrit en base. Un seul appel par message ; c'est le poste le plus fréquent
+// du pipeline (05 §1, §5.2).
 //
 // Mêmes règles que la structuration (`./structuration`) : projections
 // explicites, écriture par les primitives, journal avec la proposition
@@ -51,7 +52,7 @@ export const RELECTURE_SHEET_MESSAGES = 2;
 export type RelectureProjection = SubjectSheetProjection & {
   accountId: string;
   precedents: PrecedentProjection[];
-  /** Le message entrant qui déclenche la relecture, à part de la fiche. */
+  /** Le message qui déclenche la relecture — reçu ou envoyé (`sens`) —, à part de la fiche. */
   nouveauxMessages: StructurationSubjectProjection["messages"];
   /** Le sujet était validé ou fermé et ce message l'a rouvert — mécaniquement, avant l'appel (05 §5.2). */
   rouvert: boolean;
@@ -123,7 +124,7 @@ const heure = z.string().regex(/^\d{2}:\d{2}$/);
 
 export const applyRelectureSchema = z.object({
   subjectId: z.uuid(),
-  /** Le message entrant relu, rattaché aux tâches et au journal. */
+  /** Le message relu, rattaché aux tâches et au journal. */
   messageId: z.uuid().optional().nullable(),
   situation: z.object({
     where: z.string().trim().max(500).nullable(),

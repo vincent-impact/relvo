@@ -109,7 +109,9 @@ export const SortieStructuration = z.object({
     ou_on_en_est: z.string().describe("Une phrase."),
     prochaine_etape: z
       .string()
-      .describe("UNE action, en quelques mots, sans date."),
+      .describe(
+        "UNE ligne, sans date : l'action du dirigeant, ou ce qu'on attend d'un tiers (« En attente du devis de X »).",
+      ),
     /** De qui on attend quoi ; null si on n'attend personne. */
     attente: z
       .string()
@@ -154,7 +156,7 @@ export type SortieStructuration = z.infer<typeof SortieStructuration>;
 
 /**
  * Sortie de la RELECTURE (`05 §5.2`–§5.5, §8.4–§8.5) — un seul appel quand
- * un message ENTRANT arrive sur un sujet suivi. Met à jour la situation et le
+ * un message arrive sur un sujet suivi — ou que le dirigeant en envoie un. Met à jour la situation et le
  * résumé, ajoute les tâches que le message rend nécessaires (aucune s'il est
  * informatif), recalibre la priorité, dit si le sujet attend un tiers et s'il
  * semble terminé. Relvo ne ferme jamais : il suggère (05 §7.2).

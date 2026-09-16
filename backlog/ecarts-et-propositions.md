@@ -446,6 +446,43 @@ quelque part les réponses que le dirigeant a faites, ou considérer que l'écha
 suffit ; nommer plus clairement, dans la tâche, les choix qu'il doit faire. On reste simple
 tant que l'usage ne tranche pas.
 
+### La fiche décrit, un envoi se relit, une note conditionnelle n'est pas un choix
+
+**`tranché`** · Troisième essai réel, sur le premier e-mail du scénario du devis. Sept retours
+du dirigeant, tous retenus.
+
+- **La description est un panneau**, comme les tâches : sur la pierre, le texte flottait. Elle
+  s'appelle « Description », et le résumé en est une ligne comme « Où on en est » et
+  « Prochaine étape » — des sous-titres, pas des sections. Le bouton « Modifier » en tête est
+  retiré : il ne modifiait que le résumé, et personne n'allait l'appuyer ; un crayon discret sur
+  la ligne du résumé suffit.
+- **La prochaine étape est une ligne, jamais deux.** « On attend » disparaît : quand rien ne
+  revient au dirigeant, la prochaine étape dit « En attente : … » et porte l'échéance. La
+  consigne des deux profils et le schéma le disent au modèle.
+- **Un envoi relit le sujet.** La tâche se cochait mécaniquement à l'envoi (M7.10), mais la
+  fiche disait encore « valider le devis » une fois le devis validé. Un envoi depuis Relvo —
+  e-mail ou messagerie — déclenche désormais une relecture après la réponse à l'écran, avec une
+  consigne d'envoi : ce qui est fait est fait, aucune tâche pour ce que le dirigeant demande à
+  l'autre, la prochaine étape est le plus souvent la réponse qu'on attend. La correspondance
+  tâche ↔ envoi et le marqueur restent mécaniques ; **l'appel ne sert qu'à réécrire la
+  situation** — c'est un appel par message sortant, que le modèle de coût avait écarté quand
+  il ne s'agissait que de cocher une tâche (`benchmark-iag.md` §6.2). Le jeu d'évaluation
+  compte une suite d'envoi (suite-010).
+- **Une note conditionnelle n'est pas un choix.** Le brouillon écrivait « [validons / ne
+  validons pas] » puis « [Si validé : vous pouvez lancer la commande.] » : le second crochet
+  dépend du premier et ne se choisit pas. Consigne au modèle : un crochet est une décision, et
+  chaque option est complète — la conséquence va dans l'option. Filet dans le composer : un
+  crochet qui commence par « Si » se présente sourd, se garde (la phrase, sans sa condition)
+  ou se retire, et retient l'envoi comme un choix.
+- **Un choix se lit comme un bouton** — fond clair, liseré, souligné en tirets ; celui où le
+  curseur se trouve en relief plus fort. Le surlignage jaune ne disait pas qu'on pouvait
+  appuyer.
+- **Le fil reste lisible derrière le composer** : le composer, ancré, grandit avec le
+  brouillon et recouvrait les messages ; le fil se réserve désormais sa hauteur mesurée, et se
+  fait défiler jusqu'au dernier message.
+- **Le hero respire** : de l'air entre le titre sur deux lignes et sa référence, et entre la
+  référence et ses marqueurs.
+
 ### Un événement annoncé devient une tâche datée, et la fiche dit avec qui
 
 **`tranché`** · Premier essai réel de la relecture, le jour de sa livraison, sur un scénario de

@@ -20,8 +20,13 @@ import { entreesDuContexte } from "./structuration";
 // LA RELECTURE EN PRODUCTION (M7, tranche 6 — M7.9, M7.11) : « Relvo suit
 // l'affaire ». UN SEUL appel quand un message ENTRANT arrive sur un sujet
 // suivi — capté au rangement par l'écoute du fil, rattaché par le tri, ou
-// arrivé sur un sujet validé que la mécanique vient de rouvrir. Le poste le
-// plus fréquent du pipeline (05 §1) : son contexte est le plus borné.
+// arrivé sur un sujet validé que la mécanique vient de rouvrir — ET quand le
+// dirigeant ENVOIE une réponse depuis Relvo (retour du second essai réel,
+// 2026-09-16 : la tâche se cochait, la fiche disait encore « valider le
+// devis »). La correspondance tâche ↔ envoi et le marqueur « En attente »
+// restent mécaniques (05 §3.2, §5.3) ; l'appel ne sert qu'à réécrire la
+// situation. Le poste le plus fréquent du pipeline (05 §1) : son contexte est
+// le plus borné.
 //
 // Ordre, et ce que chaque étape garantit :
 //   1. Assistant actif, inférence joignable, idempotence PAR MESSAGE — sinon
@@ -83,7 +88,7 @@ export function cadreDeRelecture(p: RelectureProjection): CadreRelecture {
 export async function relireSujet(args: {
   accountId: string;
   subjectId: string;
-  /** Le message entrant qui déclenche la relecture — clé de l'idempotence. */
+  /** Le message — reçu ou envoyé — qui déclenche la relecture ; clé de l'idempotence. */
   messageId: string;
 }): Promise<ResultatRelecture> {
   const { accountId, subjectId, messageId } = args;

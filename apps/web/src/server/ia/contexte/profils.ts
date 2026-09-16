@@ -162,7 +162,7 @@ export function contexteStructuration(args: {
     [
       `# Ta structuration`,
       `Ce sujet vient d'être ouvert. Rédige sa situation structurée et son résumé, déduis les tâches, complète le contact si sa fiche est automatique ou inconnue, choisis les étiquettes dans le registre, et nomme ce qui te manque pour mieux faire.`,
-      `COURT, toujours plus court que le message. Le résumé dit DE QUOI il s'agit en une phrase, deux au plus — jamais ce qu'il y a à faire, ni les dates : les tâches sont là pour ça. « Où on en est » tient en une phrase ; « prochaine étape » nomme UNE action, en quelques mots ; « attente » dit de qui on attend quoi, en quelques mots. Pas de répétition entre ces champs.`,
+      `COURT, toujours plus court que le message. Le résumé dit DE QUOI il s'agit en une phrase, deux au plus — jamais ce qu'il y a à faire, ni les dates : les tâches sont là pour ça. « Où on en est » tient en une phrase. « prochaine étape » est UNE ligne, ce qui doit se passer ensuite : l'action du dirigeant s'il lui en revient une, sinon ce qu'on attend d'un tiers, écrit comme tel — « En attente du devis de X ». « attente » dit de qui on attend quoi, en quelques mots. Pas de répétition entre ces champs.`,
       `Une tâche par action que le message DEMANDE au dirigeant — répondre, confirmer, décider, envoyer — et aucune s'il est informatif. Une demande explicite (« pouvez-vous confirmer ? ») est toujours une tâche. Un ÉVÉNEMENT annoncé à une date — intervention, visite, livraison, rendez-vous — est toujours une tâche datée (avec l'heure si elle est donnée), même si le message dit « rien à faire de votre côté » : le dirigeant doit y être ou s'y préparer, et l'oublier coûte.`,
       `La date d'une tâche va dans ses champs de date, JAMAIS dans son titre : « demain », « avant jeudi », « entre 8 h et 10 h » se lisent par rapport à la date du jour et donnent date, heure et heure de fin. Sans formulation temporelle, aucune date.`,
       `Chaque tâche porte sa raison en une phrase, et sa provenance quand elle vient d'un précédent, d'une instruction ou d'un document que tu as lus — sinon null.`,
@@ -176,7 +176,10 @@ export const FICHES_PRECEDENTS_RELECTURE = 1;
 /**
  * RELECTURE (`05 §5.2`–§5.5) : la fiche — situation structurée, deux derniers
  * messages ANTÉRIEURS —, les précédents (titres, une fiche), et le message qui
- * vient d'arriver, à part. Le poste le plus fréquent : budget serré.
+ * vient d'arriver — ou que le dirigeant vient d'ENVOYER —, à part. Le poste le
+ * plus fréquent : budget serré. Après un envoi, la consigne change : ce qui est
+ * fait est fait (les tâches accomplies sont déjà cochées dans la fiche), et la
+ * prochaine étape est le plus souvent ce qu'on attend de l'interlocuteur.
  */
 export function contexteRelecture(args: {
   compte: CompteContexte;
@@ -189,6 +192,10 @@ export function contexteRelecture(args: {
   instant: InstantContexte;
 }): Contexte {
   const nouveaux = trierParDate(args.nouveauxMessages);
+  // Un envoi du dirigeant se relit autrement qu'une arrivée : rien n'est
+  // demandé au dirigeant par son propre message.
+  const envoi =
+    nouveaux.length > 0 && nouveaux.every((m) => m.sens === "sortant");
   return assembler(
     {
       produit: coucheProduit(args.compte.secteurs),
@@ -198,17 +205,26 @@ export function contexteRelecture(args: {
       situation: [
         ficheSujet(args.sujet, { messages: 2 }),
         blocPrecedents(args.precedents, FICHES_PRECEDENTS_RELECTURE),
-        `# Ce qui vient d'arriver${args.rouvert ? " — et qui a ROUVERT ce sujet, qui était terminé" : ""}`,
+        envoi
+          ? `# Ce que le dirigeant vient d'envoyer`
+          : `# Ce qui vient d'arriver${args.rouvert ? " — et qui a ROUVERT ce sujet, qui était terminé" : ""}`,
         ...nouveaux.map((m, i) => blocMessage(m, i)),
       ].join("\n\n"),
     },
     [
       `# Ta relecture`,
-      `Un message vient d'arriver sur ce sujet suivi. Mets à jour la situation structurée et le résumé à la lumière de ce message${args.rouvert ? " — le sujet était terminé, il repart" : ""}, ajoute UNIQUEMENT les tâches que ce message rend nécessaires (aucune s'il est informatif, et jamais une tâche déjà ouverte dans la fiche), recalibre la priorité — « urgent » sur signal explicite seulement —, et complète les étiquettes si une clé du registre s'impose.`,
-      `Un ÉVÉNEMENT annoncé à une date — intervention, visite, livraison, rendez-vous — est toujours une tâche datée (avec l'heure si elle est donnée), même si le message dit « rien à faire de votre côté » : le dirigeant doit y être ou s'y préparer, et l'oublier coûte. Le sujet est alors « en attente » de ce tiers.`,
+      envoi
+        ? `Le dirigeant vient d'envoyer ce message sur ce sujet suivi. Mets à jour la situation structurée et le résumé à sa lumière : ce qu'il a fait est FAIT — les tâches qu'il accomplit sont déjà cochées dans la fiche, n'en recrée aucune, et n'invente pas de tâche pour ce que son message demande à l'interlocuteur. Ajoute UNIQUEMENT une tâche qu'il s'engage lui-même à faire ensuite (« je vous rappelle lundi »). Recalibre la priorité — « urgent » sur signal explicite seulement —, et complète les étiquettes si une clé du registre s'impose.`
+        : `Un message vient d'arriver sur ce sujet suivi. Mets à jour la situation structurée et le résumé à la lumière de ce message${args.rouvert ? " — le sujet était terminé, il repart" : ""}, ajoute UNIQUEMENT les tâches que ce message rend nécessaires (aucune s'il est informatif, et jamais une tâche déjà ouverte dans la fiche), recalibre la priorité — « urgent » sur signal explicite seulement —, et complète les étiquettes si une clé du registre s'impose.`,
+      envoi
+        ? null
+        : `Un ÉVÉNEMENT annoncé à une date — intervention, visite, livraison, rendez-vous — est toujours une tâche datée (avec l'heure si elle est donnée), même si le message dit « rien à faire de votre côté » : le dirigeant doit y être ou s'y préparer, et l'oublier coûte. Le sujet est alors « en attente » de ce tiers.`,
+      `« prochaine_etape » est UNE ligne, ce qui doit se passer ensuite : l'action du dirigeant s'il lui en revient une, sinon ce qu'on attend d'un tiers, écrit comme tel — « En attente du devis de X ».${envoi ? " Après un envoi, c'est le plus souvent la réponse de l'interlocuteur qu'on attend." : ""}`,
       `« en_attente » est vrai quand le sujet attend maintenant un TIERS — une livraison promise, un devis annoncé, un retour attendu — sans qu'aucune action ne revienne au dirigeant. « termine » est vrai quand l'affaire semble réglée : confirmation reçue, plus rien à faire, situation close naturellement. Les deux sont faux dès qu'une tâche revient au dirigeant.`,
       `Mêmes règles qu'à la structuration : COURT, le résumé dit de quoi il s'agit sans les actions ni les dates ; la date d'une tâche va dans ses champs, jamais dans son titre ; chaque tâche porte sa raison et sa provenance quand elle vient d'un précédent, d'une instruction ou d'un document lus. « raison » dit en une phrase ce que ce message change.`,
-    ].join("\n"),
+    ]
+      .filter(Boolean)
+      .join("\n"),
   );
 }
 
@@ -238,6 +254,7 @@ export function contexteBrouillon(args: {
       `# Ton brouillon`,
       `Rédige la réponse qui accomplit la tâche « ${args.tache.titre} », au nom du dirigeant, dans le ton des échanges précédents, sans rien inventer. Texte seul, prêt à envoyer, sans objet ni signature.`,
       `Si la tâche suppose une décision que le dirigeant n'a pas encore prise, tu rédiges quand même : la réponse pose le cadre et laisse le choix entre crochets, par exemple « nous retenons le modèle [8 m³ / 12 m³] ». Tu ne refuses jamais de rédiger, et tu ne décides jamais à sa place.`,
+      `Un crochet est UNE décision, et chaque option est complète : ce qui découle d'un choix va DANS l'option — « nous [validons le devis, vous pouvez lancer la commande / ne validons pas le devis] » —, jamais dans un second crochet conditionnel « [Si validé : …] », que le dirigeant ne saurait pas trancher.`,
     ].join("\n"),
   );
 }

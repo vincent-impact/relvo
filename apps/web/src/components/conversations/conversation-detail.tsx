@@ -409,9 +409,28 @@ export function ConversationDetail({
 
   const inSelection = selecting != null;
 
+  // Le composer est ancré PAR-DESSUS le fil et grandit avec le brouillon (barre,
+  // puces, texte long) : on mesure sa hauteur et le fil se réserve la place, pour
+  // que les messages précédents restent lisibles derrière — c'est le contexte
+  // dont on a besoin pour répondre (retour du second essai réel, 2026-09-16).
+  const composerRef = useRef<HTMLDivElement>(null);
+  const [composerHeight, setComposerHeight] = useState<number | null>(null);
+  useEffect(() => {
+    const el = composerRef.current;
+    if (!el) {
+      setComposerHeight(null);
+      return;
+    }
+    const ro = new ResizeObserver(([entry]) => {
+      setComposerHeight(Math.ceil(entry.contentRect.height));
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [attached]);
+
   return (
     <>
-      <Screen>
+      <Screen bottomInset={attached ? composerHeight : null}>
         <RelvoHeader
           back={backTo}
           relvo={false}
@@ -589,7 +608,7 @@ export function ConversationDetail({
           la barre de sélection. Le détachement / l'arrêt d'écoute vivent, eux,
           dans « Suivi dans » (hero). */}
       {attached ? (
-        <div className="absolute inset-x-0 bottom-0 z-30">
+        <div ref={composerRef} className="absolute inset-x-0 bottom-0 z-30">
           <RecipientComposer
             placeholder={composerPlaceholder}
             onSend={handleSend}

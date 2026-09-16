@@ -290,6 +290,29 @@ describe("profils et budgets", () => {
     });
   }
 
+  it("la relecture d'un ENVOI du dirigeant le dit, et ne demande aucune tâche pour ce qu'il a fait", () => {
+    const envoi = contexteRelecture({
+      compte,
+      domaine,
+      sujet,
+      precedents,
+      nouveauxMessages: [{ ...message(99), sens: "sortant" }],
+      instant,
+    });
+    expect(envoi.couches.situation).toContain(
+      "# Ce que le dirigeant vient d'envoyer",
+    );
+    expect(envoi.couches.situation).not.toContain("# Ce qui vient d'arriver");
+    expect(envoi.prompt).toContain("Le dirigeant vient d'envoyer");
+    expect(envoi.prompt).toContain("n'en recrée aucune");
+    expect(envoi.prompt).not.toContain("ÉVÉNEMENT annoncé");
+    // Une arrivée garde sa consigne.
+    expect(contextes.relecture.couches.situation).toContain(
+      "# Ce qui vient d'arriver",
+    );
+    expect(contextes.relecture.prompt).toContain("ÉVÉNEMENT annoncé");
+  });
+
   it("la structuration charge les instructions et le registre, mais pas la liste des sujets ouverts", () => {
     const c = contextes.structuration.couches.compte;
     expect(c).toContain("## Instructions générales");

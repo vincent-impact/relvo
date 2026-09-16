@@ -160,7 +160,18 @@ async function relire(
   config: Config,
 ): Promise<Resultat> {
   try {
-    const sujet = await sujetStructure(compte, cas, config);
+    const structure = await sujetStructure(compte, cas, config);
+    // Un ENVOI du dirigeant coche mécaniquement ses tâches de réponse avant la
+    // relecture (05 §3.2) : la fiche relue les montre terminées.
+    const envoi = suite.message.sens === "sortant";
+    const sujet = envoi
+      ? {
+          ...structure,
+          taches: structure.taches.map((t) =>
+            t.type === "reply" ? { ...t, terminee: true } : t,
+          ),
+        }
+      : structure;
     const tachesOuvertes = sujet.taches.filter((t) => !t.terminee);
     const { system, prompt } = contexteRelecture({
       compte: { ...compte, sujetsOuverts: [] },

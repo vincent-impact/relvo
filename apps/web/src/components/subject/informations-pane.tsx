@@ -3,7 +3,14 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Flag, Plus, SquareCheck, UserRound } from "lucide-react";
+import {
+  ChevronDown,
+  Flag,
+  Pencil,
+  Plus,
+  SquareCheck,
+  UserRound,
+} from "lucide-react";
 import { toast } from "sonner";
 import type { Priority } from "@relvo/db";
 import {
@@ -32,21 +39,27 @@ import { cn } from "@/lib/utils";
 //      cartes empilées faisaient un patchwork sans hiérarchie) : le domaine
 //      (tap → sélecteur), avec qui on dialogue (tap → fiche du contact), l'urgence
 //      (tap → bascule). Du contexte, pas l'information principale : petit.
-//   2. Résumé — UN SEUL champ, court : le descriptif de l'utilisateur s'il l'a
-//      écrit, sinon le résumé que Relvo a rédigé à la structuration, signalé par
-//      sa pastille. Le stylo ouvre une POP-UP d'édition pré-remplie ; ce que
-//      l'utilisateur enregistre devient SON descriptif et l'emporte.
-//      Sous le résumé, la SITUATION que Relvo tient à jour à chaque relecture —
-//      où on en est, prochaine étape, ce qu'on attend — en trois lignes sourdes
-//      (retour du 2026-09-16 : sur un sujet long, le résumé seul ne suffit plus,
-//      et « En attente » ne disait pas de quoi).
+//   2. La DESCRIPTION — UN panneau blanc, comme les tâches, sinon le texte
+//      flotte sur la pierre (retour du second essai réel, 2026-09-16). Trois
+//      sous-parties, nommées, séparées d'un filet, qui se lisent comme les
+//      lignes d'une même fiche :
+//        · Résumé — court : le descriptif de l'utilisateur s'il l'a écrit,
+//          sinon celui que Relvo a rédigé, signalé par sa pastille dans le titre
+//          du panneau. Un crayon discret sur la ligne ouvre la POP-UP d'édition
+//          pré-remplie ; ce que l'utilisateur enregistre devient SON descriptif
+//          et l'emporte. (Le bouton « Modifier » en tête de panneau a été retiré :
+//          il ne modifiait que le résumé, pas la description, et n'appelait pas.)
+//        · Où on en est — la situation que Relvo tient à jour à chaque relecture.
+//        · Prochaine étape — UNE ligne, jamais deux : ce qui doit se passer
+//          ensuite. Quand rien ne revient au dirigeant et qu'on attend un tiers,
+//          la ligne le dit (« En attente : … ») ; l'échéance s'y accroche.
 //   3. Les TÂCHES, juste dessous, avec leur progression dans le titre de la
 //      section : ce sont elles qui disent la suite. Elles se lisent comme un
 //      FIL, la plus récente en tête (échéance, sinon date de création).
 // Le journal a son propre onglet, le dernier.
 // HIÉRARCHIE UNIQUE : chaque section porte le MÊME libellé en petites capitales
-// sourdes au-dessus de son panneau (Résumé comme Tâches), et tous les panneaux
-// s'alignent sur la même gouttière — la page n'a qu'une marge, celle du
+// sourdes au-dessus de son panneau (Description comme Tâches), et tous les
+// panneaux s'alignent sur la même gouttière — la page n'a qu'une marge, celle du
 // conteneur, aucun panneau n'ajoute la sienne.
 // Le « Rapport d'activité de Relvo » (placeholder) est retiré tant qu'il n'a
 // rien à montrer. ⚠️ La fiche ne porte AUCUNE action de statut (2026-09-07) :
@@ -137,17 +150,22 @@ export function InformationsPane({
   const FolderIcon = folderViz.icon;
   const taskTotal = tasks.length;
   const taskDone = tasks.filter((t) => t.status === "done").length;
-  // La situation de Relvo, en lignes nommées ; l'attente porte son échéance.
+  // La situation de Relvo, en deux lignes nommées. La prochaine étape est UNE
+  // ligne : l'action qui vient, ou — quand rien ne revient au dirigeant — ce
+  // qu'on attend, nommé ; l'échéance s'accroche à cette ligne.
   const sit = relvo?.situation;
+  const prochaine = sit
+    ? (sit.nextStep ??
+      (sit.waitingFor ? `En attente : ${sit.waitingFor}` : null))
+    : null;
   const situationLignes: [string, string][] = sit
     ? (
         [
           ["Où on en est", sit.where],
-          ["Prochaine étape", sit.nextStep],
           [
-            "On attend",
-            sit.waitingFor
-              ? `${sit.waitingFor}${sit.deadline ? ` — pour le ${jourLisible(sit.deadline)}` : ""}`
+            "Prochaine étape",
+            prochaine
+              ? `${prochaine}${sit.deadline ? ` — pour le ${jourLisible(sit.deadline)}` : ""}`
               : null,
           ],
         ] as [string, string | null][]
@@ -274,53 +292,55 @@ export function InformationsPane({
         </button>
       </section>
 
-      {/* 2. Résumé — chaque zone est NOMMÉE (SectionHead), sinon un sujet neuf
-          n'est qu'un empilement d'éléments flottants : l'utilisateur ne sait pas
-          à quoi sert quoi. Les deux en-têtes sont SYMÉTRIQUES (libellé à gauche,
-          source et action à droite) ; c'est la MATIÈRE qui porte la hiérarchie,
-          pas le titre — le résumé se lit sur la pierre, les tâches se manipulent
-          dans un panneau blanc. Trois états, et le mot « Résumé » ne disparaît
-          jamais :
+      {/* 2. Description — un PANNEAU, comme les tâches : c'est la surface qui
+          dit où la fiche commence et finit. Dedans, trois lignes nommées
+          (Résumé, Où on en est, Prochaine étape) séparées d'un filet, en
+          sous-titres plus petits que le libellé du panneau : on lit qu'elles
+          sont des parties de la description, pas des sections de la page. Le
+          mot « Description » ne disparaît jamais :
             • Relvo a rédigé → sa pastille d'acteur à côté du libellé
             • l'utilisateur a écrit → le libellé seul (sa version l'emporte)
-            • vide (sujet créé à la main) → sous le libellé, une INVITE dans le
+            • vide (sujet créé à la main) → dans le panneau, une INVITE dans le
               vocabulaire d'« Ajouter une tâche ». */}
       <section>
         <SectionHead
-          title="Résumé"
+          title="Description"
           badge={byRelvo ? <ActorPill actor="ai" /> : null}
-          right={
-            shown ? (
-              <button
-                type="button"
-                onClick={openEditor}
-                className="text-[12.5px] font-semibold text-(--text-secondary) active:opacity-70"
-              >
-                Modifier
-              </button>
-            ) : null
-          }
         />
-        {shown ? (
-          <p className="px-1 text-[15.5px] leading-[1.5] whitespace-pre-wrap text-(--text-primary)">
-            {shown}
-          </p>
-        ) : null}
-        {situation ? (
-          <dl className="mt-3 space-y-2 px-1">
-            {situation.map(([label, value]) => (
-              <div key={label}>
-                <dt className="text-[10.5px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase">
-                  {label}
-                </dt>
-                <dd className="text-[14px] leading-[1.45] text-(--text-primary)">
-                  {value}
-                </dd>
-              </div>
+        {shown || situation ? (
+          <ListPanel className="mx-0 divide-y divide-(--border-light) px-4">
+            <DescriptionLine
+              label="Résumé"
+              action={
+                <button
+                  type="button"
+                  onClick={openEditor}
+                  aria-label="Modifier le résumé"
+                  className="grid size-6 place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
+                >
+                  <Pencil className="size-[13px]" strokeWidth={2.2} />
+                </button>
+              }
+            >
+              {shown ? (
+                <span className="whitespace-pre-wrap">{shown}</span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={openEditor}
+                  className="text-[14.5px] font-semibold text-relvo active:opacity-70"
+                >
+                  Résumer ce sujet en une phrase
+                </button>
+              )}
+            </DescriptionLine>
+            {situation?.map(([label, value]) => (
+              <DescriptionLine key={label} label={label}>
+                {value}
+              </DescriptionLine>
             ))}
-          </dl>
-        ) : null}
-        {shown ? null : (
+          </ListPanel>
+        ) : (
           <button
             type="button"
             onClick={openEditor}
@@ -485,8 +505,34 @@ export function InformationsPane({
   );
 }
 
+/** Une ligne de la description : un sous-titre sourd, plus petit que le libellé du panneau, puis le texte. */
+function DescriptionLine({
+  label,
+  action = null,
+  children,
+}: {
+  label: string;
+  /** Un geste discret à droite du sous-titre (le crayon du résumé). */
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="py-3 first:pt-3.5 last:pb-3.5">
+      <div className="mb-1 flex min-h-6 items-center justify-between gap-2">
+        <span className="text-[10.5px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase">
+          {label}
+        </span>
+        {action}
+      </div>
+      <div className="text-[14.5px] leading-[1.5] text-(--text-primary)">
+        {children}
+      </div>
+    </div>
+  );
+}
+
 /**
- * En-tête de zone de la fiche — le MÊME pour « Résumé » et « Tâches ».
+ * En-tête de zone de la fiche — le MÊME pour « Description » et « Tâches ».
  *
  * C'est lui qui délimite les zones : sans libellé, un sujet neuf n'est qu'une
  * suite d'éléments flottants dont on ne sait pas à quoi ils servent. Les deux

@@ -13,6 +13,7 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { relireApresEnvoi } from "@/server/actions/email";
 import {
   appBaseUrl,
   createWhatsAppHostedAuthLink,
@@ -87,6 +88,11 @@ export async function sendWhatsAppReplyAction(
     const message = await sendWhatsAppReply(db, unipileWhatsAppSender, input);
     return { id: message.id };
   });
-  if (result.ok) revalidatePath(`/sujets/${input.subjectId}`);
+  if (result.ok) {
+    revalidatePath(`/sujets/${input.subjectId}`);
+    // Comme l'e-mail : Relvo relit le sujet après l'envoi, hors du chemin de
+    // la réponse.
+    await relireApresEnvoi(input.subjectId, result.data.id);
+  }
   return result;
 }

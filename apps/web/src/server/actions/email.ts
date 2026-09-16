@@ -12,7 +12,10 @@ import {
   upsertChannelConfig,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { domainAction } from "@/lib/action-result";
+import { getCurrentAccountId } from "@/server/auth-context";
+import { relireSujet } from "@/server/ia/pipeline/relecture";
 import {
   appBaseUrl,
   createEmailHostedAuthLink,
@@ -89,7 +92,14 @@ export async function connectEmailChannelAction(
   }
 }
 
-/** Envoie une réponse email (brouillon du composer déclenché par l'utilisateur). */
+/**
+ * Envoie une réponse email (brouillon du composer déclenché par l'utilisateur).
+ * La tâche de réponse et le marqueur « En attente » suivent mécaniquement
+ * (`createMessage`) ; puis, APRÈS la réponse à l'écran, Relvo RELIT le sujet à
+ * la lumière de ce qui vient de partir — c'est ce qui fait dire à la fiche
+ * « En attente : … » plutôt que « valider le devis » une fois le devis validé.
+ * L'échec de la relecture ne touche pas à l'envoi, déjà fait.
+ */
 export async function sendEmailReplyAction(
   input: SendEmailReplyInput,
 ): Promise<ActionResult<{ id: string }>> {
@@ -97,6 +107,23 @@ export async function sendEmailReplyAction(
     const message = await sendEmailReply(db, unipileEmailSender, input);
     return { id: message.id };
   });
-  if (result.ok) revalidatePath(`/sujets/${input.subjectId}`);
+  if (result.ok) {
+    revalidatePath(`/sujets/${input.subjectId}`);
+    await relireApresEnvoi(input.subjectId, result.data.id);
+  }
   return result;
+}
+
+/** Relecture du sujet après un envoi, hors du chemin de la réponse (le compte se lit AVANT le différé). */
+export async function relireApresEnvoi(subjectId: string, messageId: string) {
+  const accountId = await getCurrentAccountId();
+  if (!accountId) return;
+  after(async () => {
+    const resultat = await relireSujet({ accountId, subjectId, messageId });
+    console.info("[ia] relecture après envoi", {
+      accountId,
+      messageId,
+      ...resultat,
+    });
+  });
 }

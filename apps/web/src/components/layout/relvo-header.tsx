@@ -91,7 +91,8 @@ export function RelvoHeader({
               {title}
             </h1>
             {subtitle ? (
-              <div className="truncate text-[12.5px] text-(--on-violet)">
+              // Un titre sur deux lignes colle son sous-titre sans cet air.
+              <div className="mt-1.5 truncate text-[12.5px] text-(--on-violet)">
                 {subtitle}
               </div>
             ) : null}
