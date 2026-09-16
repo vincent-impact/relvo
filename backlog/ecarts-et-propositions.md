@@ -466,8 +466,12 @@ du dirigeant, tous retenus.
   l'autre, la prochaine étape est le plus souvent la réponse qu'on attend. La correspondance
   tâche ↔ envoi et le marqueur restent mécaniques ; **l'appel ne sert qu'à réécrire la
   situation** — c'est un appel par message sortant, que le modèle de coût avait écarté quand
-  il ne s'agissait que de cocher une tâche (`benchmark-iag.md` §6.2). Le jeu d'évaluation
-  compte une suite d'envoi (suite-010).
+  il ne s'agissait que de cocher une tâche (`benchmark-iag.md` §6.2). **Arbitrage du
+  dirigeant : on garde, même au prix de cet appel** — une réponse peut porter des
+  informations qui comptent, à commencer par des tâches que le dirigeant s'engage à faire
+  (« je passe jeudi à 14 h », « je vous rappelle lundi ») ; ne pas les lire, c'est les
+  oublier. Le jeu d'évaluation compte deux suites d'envoi : une réponse qui met en attente
+  (suite-010), une réponse qui engage le dirigeant et doit créer une tâche datée (suite-011).
 - **Une note conditionnelle n'est pas un choix.** Le brouillon écrivait « [validons / ne
   validons pas] » puis « [Si validé : vous pouvez lancer la commande.] » : le second crochet
   dépend du premier et ne se choisit pas. Consigne au modèle : un crochet est une décision, et

@@ -379,8 +379,10 @@ retenue, orchestration — dans l'application (`apps/web/src/server/ia/pipeline/
       **un envoi relit le sujet** (la fiche disait encore « valider le devis » après l'envoi) ;
       une note conditionnelle « [Si validé : …] » n'est pas un choix (consigne + filet Garder /
       Retirer) ; un choix se lit comme un bouton ; le fil reste lisible derrière le composer ; le
-      hero respire. Décision dans `ecarts` (« La fiche décrit, un envoi se relit… »), suite-010
-      au jeu d'évaluation.
+      hero respire. Décision dans `ecarts` (« La fiche décrit, un envoi se relit… »). **Arbitrage
+      du dirigeant : la relecture après envoi est gardée malgré son coût** — une réponse peut
+      engager sur une tâche ; suites 010 (envoi → en attente) et 011 (envoi → tâche datée) au jeu
+      d'évaluation, justes toutes deux.
 - [ ] Essayer `none` sur la relecture avec le jeu réel.
 - [ ] Une tâche d'événement qui change de date est écartée comme doublon : reprogrammer
       l'existante (point ouvert, `ecarts`).
