@@ -2,20 +2,23 @@
 
 ## Démarrage à froid — à lire en premier
 
-**Où on en est (2026-09-15, après-midi)** : les tranches 0 à 5 sont livrées et commitées. La
-tranche 5 met **la structuration en production** : quand le tri ouvre un sujet, un second appel
-charge tout — le domaine et ses connaissances lues, la fiche du sujet, celle du contact, les
-précédents du domaine classés par recherche plein texte — et écrit la situation structurée, le
-résumé, les tâches avec leur raison et leur provenance, complète le contact automatique. La fiche
-du sujet montre « ce que Relvo a compris » ; la modale d'une tâche de Relvo dit pourquoi et
-d'après quoi. Le banc d'essai (`benchmark-iag.md` §6.7) montre un Relvo sobre — une tâche par
-sujet, aucune sur un message informatif — pour 0,60 € les mille sujets. Comme le tri, la
-structuration ne tourne que pour les comptes où l'**assistant est activé** (Réglages ›
-Préférences), coupé partout pour l'instant. **La prochaine étape est double** : (1) activer
-l'assistant sur le compte du dirigeant et relire les premières structurations réelles — situation,
-tâches, `cache_read` — dans le journal ; (2) la tranche 6, la relecture — la tranche 7 (bouton « Répondre », brouillon à l'appui, tâche cochée à l'envoi) a été livrée avant elle, à la demande du dirigeant : c'est le passage à l'action. Les deux décisions par
-défaut de la tranche 4 (frontière de confiance à « moyenne », « incertain » traité comme une
-confiance basse) restent à confirmer sur le journal réel.
+**Où on en est (2026-09-16, matin)** : les tranches 0 à 5 et la tranche 7 sont livrées, en
+production, et testées par le dirigeant sur un vrai e-mail (devis de chambre froide). Le tri
+ouvre le sujet, la structuration écrit le résumé court, les tâches avec raison et provenance,
+complète le contact ; la fiche du sujet a été refondue sur ses retours (domaine et urgence en
+tête, un seul résumé, les tâches sur la page principale, le journal en dernier onglet, l'avis
+de tri effacé dès qu'un sujet suit le fil). La tranche 7 est passée avant la 6 à sa demande :
+« Répondre » sur une tâche ouvre le fil avec le brouillon de Relvo rédigé à l'appui, les choix
+laissés entre crochets sont surlignés et retiennent l'envoi, l'envoi coche les tâches par
+correspondance et pose « En attente ». Le premier envoi réel a révélé un fil fantôme (l'objet
+de la réponse venait du titre du sujet — `PITFALLS.md` #50), corrigé. **La prochaine étape est
+la tranche 6, la relecture** : un message qui arrive sur un sujet suivi n'est aujourd'hui pas
+analysé — c'est le manque que le dirigeant a constaté sur son second e-mail. Le profil
+`contexteRelecture` existe déjà, `loadSubjectSheet(db, subjectId, { messages })` est la
+projection à réutiliser, et la part mécanique du marqueur « En attente » est faite (tranche 7).
+Restent ouverts en arrière-plan : relire les structurations réelles dans le journal
+(`cache_read`, tâches gardées ou supprimées), et confirmer les deux décisions par défaut de la
+tranche 4 (frontière de confiance à « moyenne », « incertain » traité comme une confiance basse).
 
 **Tout le socle fonctionne, sauf le cœur.** Ce sprint ouvre M7 : le pipeline qui transforme un
 message entrant en sujet. La conception est à jour et fait foi : les cinq couches de contexte et
@@ -325,8 +328,8 @@ reste nul dans sa fiche ; le sujet rattaché par le tri attend la relecture (tra
 - [ ] Message entrant sur une conversation écoutée → relecture : situation mise à jour, nouvelles
       tâches, priorité recalibrée, résolution suggérée ou révoquée.
 - [ ] Réouverture mécanique d'un sujet validé, puis relecture.
-- [ ] Marqueur « En attente » : posé et levé **mécaniquement** (`04 §9`), Relvo n'y touche qu'en
-      relecture.
+- [x] Marqueur « En attente » : posé et levé **mécaniquement** (`04 §9`) — fait en tranche 7
+      (`reply-match.ts`) ; Relvo n'y touche qu'en relecture, à brancher ici.
 - [ ] Contexte frais borné aux derniers messages : c'est le poste le plus fréquent, son budget
       est le plus surveillé.
 
