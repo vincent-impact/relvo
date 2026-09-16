@@ -11,6 +11,7 @@ import {
   deleteSubject,
   openSubject,
   reopenSubject,
+  revokeResolutionSuggestion,
   suggestResolution,
   updateSubject,
   updateSubjectPriority,
@@ -138,6 +139,19 @@ export async function openSubjectAction(id: string) {
     revalidatePath("/");
     revalidatePath("/fil");
   }
+  return result;
+}
+
+/**
+ * « Pas encore » — l'utilisateur écarte la suggestion de clôture depuis la fiche
+ * (bandeau de résolution). Le sujet reste OUVERT et le journal porte la main qui
+ * a retiré la suggestion ; Relvo pourra la reproposer si la situation bouge.
+ */
+export async function dismissResolutionAction(id: string) {
+  const result = await domainAction((db) =>
+    revokeResolutionSuggestion(db, id, { by: "user" }),
+  );
+  if (result.ok) revalidateSubjects();
   return result;
 }
 

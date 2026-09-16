@@ -560,14 +560,23 @@ export async function suggestResolution(
 }
 
 /**
- * Relvo retire sa suggestion de clôture : la situation a évolué — un message
- * rouvre des questions (05 §8.5). Sans suggestion en cours, ne fait rien et
- * ne journalise rien.
+ * La suggestion de clôture est retirée. DEUX mains la retirent, et le journal
+ * doit dire laquelle :
+ *   • Relvo (`by` omis) — la situation a évolué, un message rouvre des
+ *     questions (05 §8.5) ;
+ *   • l'utilisateur (`by: "user"`) — il répond « pas encore » au bandeau de la
+ *     fiche. Le sujet reste ouvert ; Relvo pourra re-suggérer plus tard si de
+ *     nouveaux éléments arrivent.
+ * Sans suggestion en cours, ne fait rien et ne journalise rien.
  */
 export async function revokeResolutionSuggestion(
   db: TenantDb,
   id: string,
-  meta?: { messageId?: string | null; reason?: string | null },
+  meta?: {
+    messageId?: string | null;
+    reason?: string | null;
+    by?: "ai" | "user";
+  },
 ) {
   return db.$transaction(async (tx) => {
     const { count } = await tx.subject.updateMany({
@@ -585,9 +594,12 @@ export async function revokeResolutionSuggestion(
       subjectId: subject.id,
       messageId: meta?.messageId ?? null,
       eventType: EVENT_TYPES.resolutionRevoked,
-      title: `Relvo retire sa suggestion de valider ${subject.reference}`,
+      title:
+        meta?.by === "user"
+          ? `Suggestion de valider ${subject.reference} écartée`
+          : `Relvo retire sa suggestion de valider ${subject.reference}`,
       description: meta?.reason ?? null,
-      actor: "ai",
+      actor: meta?.by === "user" ? "user" : "ai",
     });
     return subject;
   });

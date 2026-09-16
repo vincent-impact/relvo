@@ -96,7 +96,9 @@ export function SegTabs({
             ) : (
               opt.label
             )}
-            {typeof opt.count === "number" ? (
+            {/* Un compteur à ZÉRO ne s'affiche pas : trois badges dont deux à
+                « 0 » n'informent de rien et encombrent une barre déjà dense. */}
+            {typeof opt.count === "number" && opt.count > 0 ? (
               <span
                 className={cn(
                   "inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 font-numeric text-[10.5px] font-bold",

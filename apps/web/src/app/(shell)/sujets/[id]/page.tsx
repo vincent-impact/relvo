@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { FileText, Hourglass, Sparkles } from "lucide-react";
+import { FileText, Hourglass } from "lucide-react";
 import {
   getSubjectDetail,
   listChannels,
@@ -155,6 +155,12 @@ export default async function SujetPage({
             // Avec qui on dialogue (retour du 2026-09-16) : le domaine dit de
             // quoi on parle, l'interlocuteur dit avec qui — les deux en tête.
             contacts={contacts}
+            reference={subject.reference}
+            // Ce que Relvo conclut : le bandeau de résolution remplace le chip
+            // « À valider ? » qui décorait le hero sans rien pouvoir déclencher.
+            resolutionSuggested={
+              subject.status === "open" && subject.resolutionSuggestedAt != null
+            }
           />
         }
         conversationsPane={
@@ -196,12 +202,6 @@ export default async function SujetPage({
                   <HeroChip>
                     <Hourglass className="size-[11px]" strokeWidth={2.4} />
                     En attente
-                  </HeroChip>
-                ) : null}
-                {subject.status === "open" && subject.resolutionSuggestedAt ? (
-                  <HeroChip accent>
-                    <Sparkles className="size-[11px]" strokeWidth={2.4} />À
-                    valider ?
                   </HeroChip>
                 ) : null}
               </span>
@@ -258,29 +258,21 @@ export default async function SujetPage({
   );
 }
 
-/** Un marqueur dans le sous-titre du hero : verre clair, ou plein blanc quand Relvo appelle une décision. */
-function HeroChip({
-  children,
-  accent = false,
-}: {
-  children: React.ReactNode;
-  accent?: boolean;
-}) {
+/**
+ * Un marqueur d'ÉTAT dans le sous-titre du hero : verre clair sur le violet.
+ * Il ne porte que ce qui se constate (« Validé », « Fermé », « En attente »).
+ * Ce que Relvo PROPOSE ne vit plus ici : une suggestion appelle une décision,
+ * et un chip ne peut rien déclencher — c'est le bandeau de résolution de la
+ * fiche qui la porte (cf. ResolutionBanner).
+ */
+function HeroChip({ children }: { children: React.ReactNode }) {
   return (
     <span
-      className={
-        accent
-          ? "inline-flex items-center gap-1 rounded-full bg-white px-[7px] py-px text-[10.5px] font-bold whitespace-nowrap text-relvo"
-          : "inline-flex items-center gap-1 rounded-full px-[7px] py-px text-[10.5px] font-bold whitespace-nowrap text-white"
-      }
-      style={
-        accent
-          ? undefined
-          : {
-              background: "rgb(255 255 255 / 0.14)",
-              border: "1px solid rgb(255 255 255 / 0.28)",
-            }
-      }
+      className="inline-flex items-center gap-1 rounded-full px-[7px] py-px text-[10.5px] font-bold whitespace-nowrap text-white"
+      style={{
+        background: "rgb(255 255 255 / 0.14)",
+        border: "1px solid rgb(255 255 255 / 0.28)",
+      }}
     >
       {children}
     </span>

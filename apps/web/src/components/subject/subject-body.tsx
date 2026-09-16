@@ -20,6 +20,10 @@ import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 // Remettre / Supprimer se font TOUS au swipe sur la page Sujets : les boutons de
 // la fiche doublonnaient ces gestes et, affichés en grand sous le contenu,
 // déroutaient plus qu'ils ne servaient.
+// La seule exception est le BANDEAU DE RÉSOLUTION (cf. ResolutionBanner) : il
+// n'est pas un dock — il n'apparaît que quand Relvo a proposé la clôture, et il
+// évite l'aller-retour qui consistait à revenir sur la liste pour swiper un
+// sujet qu'on vient de lire. Un dock est permanent ; celui-là est rare.
 
 export type SubjectTab =
   | "informations"

@@ -6,8 +6,9 @@ import { useRouter } from "next/navigation";
 import {
   ChevronDown,
   Flag,
-  Pencil,
+  Plus,
   SquareCheck,
+  Sparkles,
   UserRound,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -18,9 +19,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ActorPill } from "@/components/shared/actor-pill";
 import { ListPanel } from "@/components/shared/list-panel";
 import { AddTask } from "@/components/subject/add-task";
+import { ResolutionBanner } from "@/components/subject/resolution-banner";
 import { TaskItem } from "@/components/subject/task-item";
 import type { TaskItemData } from "@/lib/task-item-data";
 import {
@@ -80,6 +81,8 @@ export function InformationsPane({
   contacts = [],
   tasks,
   subjectTitle,
+  reference,
+  resolutionSuggested = false,
 }: {
   subjectId: string;
   description: string | null;
@@ -92,6 +95,10 @@ export function InformationsPane({
   /** Les tâches du sujet, ouvertes d'abord — la page principale les porte. */
   tasks: TaskItemData[];
   subjectTitle: string;
+  /** Référence du sujet — le bandeau de résolution la nomme. */
+  reference: string;
+  /** Relvo pense que le sujet est réglé → bandeau de résolution. */
+  resolutionSuggested?: boolean;
 }) {
   const router = useRouter();
   const [value, setValue] = useState(description ?? "");
@@ -113,6 +120,10 @@ export function InformationsPane({
   const FolderIcon = folderViz.icon;
   const taskTotal = tasks.length;
   const taskDone = tasks.filter((t) => t.status === "done").length;
+  // La barre ne s'affiche qu'à partir de 3 tâches : une jauge à un ou deux
+  // segments ne dit rien que le panneau ne montre déjà, et c'est du bruit sur
+  // l'écran le plus lu du produit.
+  const showProgress = taskTotal >= 3;
 
   // Ouvre la pop-up d'édition en repartant du texte AFFICHÉ : corriger le
   // résumé de Relvo, c'est le reprendre, pas repartir d'une page blanche.
@@ -216,10 +227,12 @@ export function InformationsPane({
           disabled={pending}
           onClick={() => toggleUrgent(priority !== "urgent")}
           className={cn(
-            "pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] font-semibold shadow-surface-1",
+            // Éteint, il est FANTÔME : posé comme les deux autres puces, il se
+            // lirait comme une information alors que c'est un interrupteur.
+            "pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] font-semibold",
             priority === "urgent"
-              ? "border-transparent bg-(--red-600) text-white"
-              : "border-(--hairline) bg-white text-(--text-secondary)",
+              ? "border-transparent bg-(--red-600) text-white shadow-surface-1"
+              : "border-dashed border-[#d4d2cc] bg-transparent text-(--text-tertiary)",
           )}
         >
           <Flag
@@ -231,38 +244,65 @@ export function InformationsPane({
         </button>
       </section>
 
-      {/* 2. Résumé — un seul champ, court ; libellé de section + panneau */}
-      <section>
-        <div className="mb-2 flex items-center justify-between gap-2 px-1">
-          <h2 className="flex min-w-0 items-center gap-2 text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
-            Résumé
-            {byRelvo ? <ActorPill actor="ai" /> : null}
-          </h2>
+      {/* 2. Résumé — TEXTE posé sur la pierre, pas un panneau : le blanc est
+          réservé à ce sur quoi on AGIT (les tâches). L'étiquette « Résumé », la
+          SOURCE et l'action passent en LÉGENDE, sous le texte — un titre de
+          section au-dessus ne pouvait dire ni la source ni l'action, et deux
+          titres de même poids (RÉSUMÉ / TÂCHES) rendaient les deux sections
+          également importantes. Trois états, et le mot ne disparaît jamais :
+            • Relvo a rédigé → « Résumé de Relvo » signé de sa pastille
+            • l'utilisateur a écrit → « Résumé » (sa version l'emporte)
+            • vide (sujet créé à la main) → une INVITE qui est à la fois le
+              libellé et l'action, dans le vocabulaire d'« Ajouter une tâche ». */}
+      <section className="px-1">
+        {shown ? (
+          <>
+            <p className="text-[15.5px] leading-[1.5] whitespace-pre-wrap text-(--text-primary)">
+              {shown}
+            </p>
+            <div className="mt-[7px] flex items-center gap-1.5 text-[11.5px] text-(--text-tertiary)">
+              {byRelvo ? (
+                <>
+                  <Sparkles
+                    className="size-3 text-relvo"
+                    fill="currentColor"
+                    strokeWidth={0}
+                  />
+                  <span>Résumé de Relvo</span>
+                </>
+              ) : (
+                <span>Résumé</span>
+              )}
+              <span aria-hidden>·</span>
+              <button
+                type="button"
+                onClick={openEditor}
+                className="font-semibold text-(--text-secondary) active:opacity-70"
+              >
+                Modifier
+              </button>
+            </div>
+          </>
+        ) : (
           <button
             type="button"
             onClick={openEditor}
-            aria-label="Modifier le résumé"
-            className="-my-2 grid size-8 flex-none place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
+            className="flex items-center gap-2.5 active:opacity-70"
           >
-            <Pencil className="size-[15px]" strokeWidth={2.1} />
+            <span className="grid size-[30px] flex-none place-items-center rounded-full bg-relvo-bg text-relvo">
+              <Plus className="size-[17px]" strokeWidth={2.4} />
+            </span>
+            <span className="text-[14.5px] font-semibold text-relvo">
+              Résumer ce sujet en une phrase
+            </span>
           </button>
-        </div>
-        <div className="rounded-[14px] border border-(--hairline) bg-white px-4 py-3.5 shadow-surface-1">
-          {shown ? (
-            <p className="text-[15px] leading-[1.55] whitespace-pre-wrap text-(--text-primary)">
-              {shown}
-            </p>
-          ) : (
-            <button
-              type="button"
-              onClick={openEditor}
-              className="block text-[14px] text-(--text-tertiary) italic active:opacity-70"
-            >
-              Résumer ce sujet en une phrase…
-            </button>
-          )}
-        </div>
+        )}
       </section>
+
+      {/* 2 bis. Ce que Relvo conclut — RARE, donc fort (cf. ResolutionBanner). */}
+      {resolutionSuggested ? (
+        <ResolutionBanner subjectId={subjectId} reference={reference} />
+      ) : null}
 
       {/* 3. Tâches — sur la page principale : le sujet, c'est ce qu'il reste à faire */}
       <section>
@@ -270,7 +310,7 @@ export function InformationsPane({
           <h2 className="text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
             Tâches
           </h2>
-          {taskTotal > 0 ? (
+          {showProgress ? (
             <div className="flex items-center gap-2">
               <SquareCheck
                 className={cn(

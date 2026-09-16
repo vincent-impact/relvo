@@ -37,6 +37,17 @@ divisent par deux le nombre d'éléments visibles à l'écran — sur un produit
 *trier*, c'est le mauvais arbitrage. Une ligne pose `data-list-row` sur sa racine : c'est ce qui
 retire le filet de la dernière.
 
+**Le BLANC est réservé à ce sur quoi on agit.** Sur une fiche, le fond pierre porte ce qui se
+lit (un résumé, une métadonnée), et le panneau blanc porte ce qui se manipule (les tâches, une
+décision à prendre). C'est ce qui crée la hiérarchie sans ajouter un seul libellé : deux panneaux
+blancs de même matière sous deux titres de même poids font deux sections d'égale importance —
+donc aucune. Corollaire : un texte n'a pas besoin d'un panneau, et l'étiquette d'un texte court
+vit mieux en **légende dessous** qu'en titre dessus, parce qu'une légende peut dire en plus d'où
+vient le texte et ce qu'on peut en faire.
+
+**Un compteur à zéro ne s'affiche pas.** Un badge « 0 » n'informe de rien et encombre la barre
+qui le porte. La règle vaut partout : onglets, pastilles, puces.
+
 **Une présentation unique par entité, partout.** Une tâche se rend de la même façon dans la
 liste d'un sujet et dans une liste à plat ; seul le contexte affiché varie (le titre du sujet
 apparaît dans la liste à plat, la date disparaît quand le semainier la porte déjà). Deux rendus
