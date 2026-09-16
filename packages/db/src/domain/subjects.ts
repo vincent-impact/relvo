@@ -525,8 +525,16 @@ export async function openSubject(db: TenantDb, id: string) {
   });
 }
 
-/** Relvo propose la clôture (resolution_suggested_at). */
-export async function suggestResolution(db: TenantDb, id: string) {
+/**
+ * Relvo propose la clôture (resolution_suggested_at) — jamais la clôture
+ * elle-même (05 §5.5). Re-suggérer après une nouvelle activité met
+ * l'horodatage à jour : c'est ce qui fait revenir le badge (05 §8.4).
+ */
+export async function suggestResolution(
+  db: TenantDb,
+  id: string,
+  meta?: { messageId?: string | null; reason?: string | null },
+) {
   return db.$transaction(async (tx) => {
     const { count } = await tx.subject.updateMany({
       where: { id },
@@ -541,8 +549,44 @@ export async function suggestResolution(db: TenantDb, id: string) {
       entityType: "subject",
       entityId: subject.id,
       subjectId: subject.id,
+      messageId: meta?.messageId ?? null,
       eventType: EVENT_TYPES.resolutionSuggested,
-      title: `Résolution suggérée pour ${subject.reference}`,
+      title: `Relvo suggère de valider ${subject.reference}`,
+      description: meta?.reason ?? null,
+      actor: "ai",
+    });
+    return subject;
+  });
+}
+
+/**
+ * Relvo retire sa suggestion de clôture : la situation a évolué — un message
+ * rouvre des questions (05 §8.5). Sans suggestion en cours, ne fait rien et
+ * ne journalise rien.
+ */
+export async function revokeResolutionSuggestion(
+  db: TenantDb,
+  id: string,
+  meta?: { messageId?: string | null; reason?: string | null },
+) {
+  return db.$transaction(async (tx) => {
+    const { count } = await tx.subject.updateMany({
+      where: { id, resolutionSuggestedAt: { not: null } },
+      data: { resolutionSuggestedAt: null },
+    });
+    if (count === 0) return null;
+    const subject = assertFound(
+      await tx.subject.findFirst({ where: { id } }),
+      "Sujet",
+    );
+    await logEvent(tx as Tx, {
+      entityType: "subject",
+      entityId: subject.id,
+      subjectId: subject.id,
+      messageId: meta?.messageId ?? null,
+      eventType: EVENT_TYPES.resolutionRevoked,
+      title: `Relvo retire sa suggestion de valider ${subject.reference}`,
+      description: meta?.reason ?? null,
       actor: "ai",
     });
     return subject;

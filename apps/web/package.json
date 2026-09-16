@@ -16,6 +16,7 @@
     "eval:tri": "node --env-file=.env.local --import tsx scripts/evaluation/lancer.ts",
     "eval:structuration": "node --env-file=.env.local --import tsx scripts/evaluation/structurer.ts",
     "eval:brouillon": "node --env-file=.env.local --import tsx scripts/evaluation/brouillonner.ts",
+    "eval:relecture": "node --env-file=.env.local --import tsx scripts/evaluation/relire.ts",
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {

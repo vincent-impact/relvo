@@ -24,6 +24,7 @@ import {
   deciderTri,
   type Nature,
 } from "./decision";
+import { relireSujet, type IssueRelecture } from "./relecture";
 import { structurerSujet, type IssueStructuration } from "./structuration";
 
 // LE TRI EN PRODUCTION (M7, tranche 4 — M7.1, M7.4, M7.5, M7.14 à M7.16) :
@@ -50,7 +51,10 @@ import { structurerSujet, type IssueStructuration } from "./structuration";
 //   7. Cache de données invalidé après toute écriture (PITFALLS.md #45).
 //   8. Un sujet OUVERT enchaîne sur la STRUCTURATION (`./structuration`,
 //      tranche 5) : le second appel, qui apporte les tâches et la date. Son
-//      échec ne défait pas l'ouverture — le sujet reste, sans tâche.
+//      échec ne défait pas l'ouverture — le sujet reste, sans tâche. Un fil
+//      RATTACHÉ à un sujet existant — par le modèle ou par la règle de
+//      l'expéditeur — enchaîne sur la RELECTURE (`./relecture`, tranche 6) :
+//      le sujet qui attendait ce message doit lire ce qu'il dit.
 //
 // UN ÉCHEC LAISSE LA CONVERSATION ORPHELINE, il n'invente rien (M7.15) : le
 // message est déjà rangé et lisible, l'utilisateur peut trier à la main, et
@@ -77,6 +81,8 @@ export type ResultatTri = {
   detail?: string;
   /** Ce qu'a donné la structuration, quand un sujet a été ouvert. */
   structuration?: IssueStructuration;
+  /** Ce qu'a donné la relecture, quand le fil a été rattaché à un sujet existant. */
+  relecture?: IssueRelecture;
   /** Tâches déduites par la structuration. */
   taches?: number;
 };
@@ -177,7 +183,17 @@ export async function trierConversationEmail(args: {
         existingSubjectReference: parExpediteur.reference,
       });
       expireTenantData();
-      return { issue: "sujet-en-attente", detail: applied.reference };
+      const relecture = await relireSujet({
+        accountId,
+        subjectId: applied.subjectId,
+        messageId,
+      });
+      return {
+        issue: "sujet-en-attente",
+        detail: applied.reference,
+        relecture: relecture.issue,
+        taches: relecture.taches,
+      };
     }
 
     const { system, prompt } = contexteTri({
@@ -230,7 +246,19 @@ export async function trierConversationEmail(args: {
     });
     expireTenantData();
     if (applied.action === "attached") {
-      return { issue: "rattache", detail: applied.reference };
+      // Le fil rejoint un sujet qui l'attendait : la relecture lit ce qu'il
+      // dit. Elle gère ses propres échecs ; le tri, lui, a réussi.
+      const relecture = await relireSujet({
+        accountId,
+        subjectId: applied.subjectId,
+        messageId,
+      });
+      return {
+        issue: "rattache",
+        detail: applied.reference,
+        relecture: relecture.issue,
+        taches: relecture.taches,
+      };
     }
     // Le sujet vient d'être ouvert : le second appel le structure. Il gère ses
     // propres échecs ; le tri, lui, a réussi.

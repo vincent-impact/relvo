@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Flag, Hourglass, SquareCheck } from "lucide-react";
+import { Flag, Hourglass, Sparkles, SquareCheck } from "lucide-react";
 import type { EnrichedSubject } from "@relvo/db";
 import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,8 @@ export type SubjectRowData = {
   suggestionCount: number;
   unreadCount: number;
   waitingForReply: boolean;
+  /** Relvo suggère de valider le sujet ; le geste reste au swipe (05 §5.5). */
+  resolutionSuggested: boolean;
 };
 
 export function SubjectRow({
@@ -149,6 +151,11 @@ export function SubjectRow({
                 En attente
               </span>
             ) : null}
+            {data.resolutionSuggested && !done ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-relvo-bg px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap text-relvo">
+                <Sparkles className="size-3" strokeWidth={2.2} />À valider ?
+              </span>
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -176,5 +183,7 @@ export function toSubjectRowData(e: EnrichedSubject): SubjectRowData {
     suggestionCount: e.suggestionCount,
     unreadCount: e.unreadCount,
     waitingForReply: e.subject.waitingForReply,
+    resolutionSuggested:
+      e.subject.resolutionSuggestedAt != null && e.subject.status === "open",
   };
 }

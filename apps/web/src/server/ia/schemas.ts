@@ -151,3 +151,27 @@ export const SortieStructuration = z.object({
   domaine_propose: z.string().nullable(),
 });
 export type SortieStructuration = z.infer<typeof SortieStructuration>;
+
+/**
+ * Sortie de la RELECTURE (`05 §5.2`–§5.5, §8.4–§8.5) — un seul appel quand
+ * un message ENTRANT arrive sur un sujet suivi. Met à jour la situation et le
+ * résumé, ajoute les tâches que le message rend nécessaires (aucune s'il est
+ * informatif), recalibre la priorité, dit si le sujet attend un tiers et s'il
+ * semble terminé. Relvo ne ferme jamais : il suggère (05 §7.2).
+ */
+export const SortieRelecture = z.object({
+  situation: SortieStructuration.shape.situation,
+  resume: SortieStructuration.shape.resume,
+  /** Seulement les tâches NOUVELLES ; celles déjà ouvertes sont dans la fiche. Vide si le message est informatif. */
+  taches: z.array(TacheProposee),
+  /** Clés du registre à AJOUTER au sujet, uniquement. */
+  etiquettes: z.array(z.string()),
+  priorite: z.enum(PRIORITES),
+  /** Le sujet attend un tiers — livraison promise, devis annoncé, retour attendu — sans action du dirigeant (`05 §5.3`). */
+  en_attente: z.boolean(),
+  /** L'affaire semble terminée : confirmation reçue, plus rien à faire, situation close naturellement (`05 §5.5`). */
+  termine: z.boolean(),
+  /** Ce que ce message change, en une phrase — pour le journal. */
+  raison: z.string(),
+});
+export type SortieRelecture = z.infer<typeof SortieRelecture>;

@@ -68,6 +68,8 @@ export type StructurationSubjectProjection = {
   statut: "ouvert" | "validé" | "fermé";
   priorite: "normal" | "urgent";
   enAttente: boolean;
+  /** Relvo a suggéré la clôture et l'utilisateur n'a pas encore tranché (05 §5.5). */
+  resolutionSuggeree: boolean;
   ouvertLe: string;
   situation: {
     ouOnEnEst: string | null;
@@ -356,6 +358,56 @@ export async function getStructurationProjection(
   return { ...sheet, precedents };
 }
 
+/** Un message tel qu'une fiche le pousse au modèle. `include` attendu : `senderContact`, `attachments`. */
+export const SHEET_MESSAGE_INCLUDE = {
+  senderContact: {
+    select: { firstName: true, lastName: true, company: true },
+  },
+  attachments: { select: { name: true, aiLabel: true } },
+} as const;
+
+export type SheetMessageRow = {
+  direction: MessageDirection;
+  senderName: string | null;
+  senderRaw: string | null;
+  senderContact: {
+    firstName: string | null;
+    lastName: string;
+    company: string | null;
+  } | null;
+  receivedAt: Date | null;
+  sentAt: Date | null;
+  createdAt: Date;
+  subjectLine: string | null;
+  content: string | null;
+  attachments: { name: string; aiLabel: string | null }[];
+};
+
+export function projectSheetMessage(
+  m: SheetMessageRow,
+  interlocuteur: string,
+): StructurationSubjectProjection["messages"][number] {
+  const sortant = m.direction === MessageDirection.outgoing;
+  const nom =
+    m.senderName ??
+    (m.senderContact ? contactDisplayName(m.senderContact) : null);
+  const expediteur = sortant
+    ? interlocuteur
+    : `${nom ?? ""}${nom && m.senderRaw ? " " : ""}${m.senderRaw ? `<${m.senderRaw}>` : ""}`.trim() ||
+      "inconnu";
+  return {
+    expediteur,
+    recuLe: (m.receivedAt ?? m.sentAt ?? m.createdAt).toISOString(),
+    objet: m.subjectLine,
+    contenu: m.content ?? "",
+    sens: sortant ? ("sortant" as const) : ("entrant" as const),
+    piecesJointes: m.attachments.map((a) => ({
+      nom: a.name,
+      etiquette: a.aiLabel,
+    })),
+  };
+}
+
 /**
  * La fiche d'un sujet, depuis la base : le compte avec ses instructions
  * générales et son registre d'étiquettes, le domaine du sujet avec ses
@@ -366,7 +418,11 @@ export async function getStructurationProjection(
 export async function loadSubjectSheet(
   db: TenantDb,
   subjectId: string,
-  options: { messages?: number } = {},
+  options: {
+    messages?: number;
+    /** Ne pousser dans la fiche que les messages ANTÉRIEURS à cet instant — la relecture sépare ainsi la fiche de ce qui vient d'arriver. */
+    messagesBefore?: Date;
+  } = {},
 ): Promise<SubjectSheetProjection & { accountId: string }> {
   const subject = assertFound(
     await db.subject.findFirst({
@@ -454,15 +510,15 @@ export async function loadSubjectSheet(
         orderBy: [{ startDate: "asc" }, { createdAt: "asc" }],
       }),
       db.message.findMany({
-        where: { subjectId },
+        where: {
+          subjectId,
+          ...(options.messagesBefore
+            ? { createdAt: { lt: options.messagesBefore } }
+            : {}),
+        },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
         take: options.messages ?? STRUCTURATION_LAST_MESSAGES,
-        include: {
-          senderContact: {
-            select: { firstName: true, lastName: true, company: true },
-          },
-          attachments: { select: { name: true, aiLabel: true } },
-        },
+        include: SHEET_MESSAGE_INCLUDE,
       }),
     ]);
 
@@ -489,27 +545,9 @@ export async function loadSubjectSheet(
   );
 
   const interlocuteur = premier ? contactDisplayName(premier) : "le contact";
-  const projectedMessages = [...messages].reverse().map((m) => {
-    const sortant = m.direction === MessageDirection.outgoing;
-    const nom =
-      m.senderName ??
-      (m.senderContact ? contactDisplayName(m.senderContact) : null);
-    const expediteur = sortant
-      ? interlocuteur
-      : `${nom ?? ""}${nom && m.senderRaw ? " " : ""}${m.senderRaw ? `<${m.senderRaw}>` : ""}`.trim() ||
-        "inconnu";
-    return {
-      expediteur,
-      recuLe: (m.receivedAt ?? m.sentAt ?? m.createdAt).toISOString(),
-      objet: m.subjectLine,
-      contenu: m.content ?? "",
-      sens: sortant ? ("sortant" as const) : ("entrant" as const),
-      piecesJointes: m.attachments.map((a) => ({
-        nom: a.name,
-        etiquette: a.aiLabel,
-      })),
-    };
-  });
+  const projectedMessages = [...messages]
+    .reverse()
+    .map((m) => projectSheetMessage(m, interlocuteur));
 
   return {
     accountId: subject.accountId,
@@ -557,6 +595,7 @@ export async function loadSubjectSheet(
       statut: STATUT_LISIBLE[subject.status],
       priorite: subject.priority,
       enAttente: subject.waitingForReply,
+      resolutionSuggeree: subject.resolutionSuggestedAt !== null,
       ouvertLe: subject.openedAt.toISOString(),
       situation: {
         ouOnEnEst: subject.situationWhere,

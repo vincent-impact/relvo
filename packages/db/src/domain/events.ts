@@ -81,6 +81,14 @@ export const EVENT_TYPES = {
   subjectStructured: "subject_structured",
   /** La structuration a échoué : le sujet reste tel que le tri l'a ouvert, sans tâche (M7.15). */
   structurationFailed: "structuration_failed",
+  /** Un message entrant sur un sujet suivi a été relu : situation, tâches, priorité, attente, clôture (M7.9, M7.11) ; la proposition intégrale est en métadonnée. */
+  subjectReviewed: "subject_reviewed",
+  /** La relecture a échoué : le sujet reste tel qu'il était, le message est rangé (M7.15). */
+  relectureFailed: "relecture_failed",
+  /** Relvo retire sa suggestion de clôture : la situation a évolué (05 §8.5). */
+  resolutionRevoked: "resolution_revoked",
+  /** Relvo pose « En attente » en relecture : le sujet attend un tiers sans qu'aucun envoi ne l'ait dit (05 §5.3). */
+  waitingForReplySet: "waiting_for_reply_set",
   // Compte — l'assistant activé ou coupé (réglage de l'utilisateur, backoffice demain).
   assistantEnabled: "assistant_enabled",
   assistantDisabled: "assistant_disabled",

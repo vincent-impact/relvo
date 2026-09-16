@@ -418,6 +418,45 @@ et M7.10 reliés à un geste, et la tranche 7 est passée avant la 6 pour cela.
 réponse — la majorité ne serait jamais ouverte ; et une complétion des tâches de décision sur
 n'importe quel envoi — seul le message parti de leur brouillon les règle.
 
+### La relecture suit l'affaire sans piloter le statut
+
+**`tranché`** · Le message entrant sur un sujet suivi est le poste le plus fréquent du pipeline,
+et le seul appel qui touche à un sujet que l'utilisateur a déjà en main. Ce qu'il a le droit de
+changer est donc borné en un seul endroit, un module pur (`pipeline/proposition.ts`,
+`retenirRelecture`), avant le domaine — et il ne touche jamais au statut.
+
+**Retenu** :
+
+- **La fiche et ce qui vient d'arriver sont séparés.** La relecture relit la situation
+  structurée — la mémoire de Relvo, jamais l'historique — et les deux derniers messages
+  antérieurs ; le message nouveau est poussé à part, en entier. Une seule fiche de précédent,
+  pas trois : c'est le poste dont le budget est le plus surveillé.
+- **La clôture n'est suggérée que sans tâche ouverte** — ni ancienne, ni ajoutée à l'instant.
+  Le modèle peut dire « terminé » ; le code ne suggère que si rien ne reste à faire. Une
+  suggestion en cours est **retirée** dès que le modèle ne conclut plus à la fin ; re-suggérer
+  met l'horodatage à jour et fait revenir la pastille. La pastille dit « À valider ? » : le
+  geste reste au swipe de la liste, dans les mots de l'utilisateur.
+- **« En attente » se pose avec son objet, et ne se lève jamais ici.** Relvo ne le pose qu'en
+  nommant de qui on attend quoi — un marqueur sans objet n'aide personne — et le message entrant
+  l'a déjà levé mécaniquement avant l'appel (04 §9).
+- **Une tâche qui répète une tâche ouverte est écartée**, sans accent ni casse : le modèle les
+  répète même quand la fiche les montre. Plafond de quatre tâches par relecture.
+- **La réouverture est constatée, jamais décidée.** Un message sur un sujet validé le rouvre
+  avant l'appel (`createMessage`) ; la relecture l'apprend du journal et le dit au modèle — « le
+  sujet était terminé, il repart ».
+- **Un fil rattaché par le tri est relu dans la foulée** — par le modèle ou par la règle de
+  l'expéditeur : le sujet qui attendait ce message doit lire ce qu'il dit. Une relecture par
+  message, jamais deux ; un échec laisse le sujet tel qu'il était.
+
+**Écarté** : lever « En attente » sur décision du modèle (la mécanique le fait mieux et sans
+appel) ; cocher une tâche devenue obsolète sur un message reçu (05 §4.2, V2) ; la note de Relvo
+sur le contact au fil des relectures (05 §1.3) — utile, mais c'est un champ de plus à écrire à
+chaque message, à mesurer sur le jeu réel d'abord ; WhatsApp, qui attend l'e-mail stable (A8).
+
+**Ce qui tranchera** : le journal — suggestions de clôture suivies d'un « Valider » ou d'un
+message qui les retire, tâches de relecture supprimées, priorités remises à « normal » par
+l'utilisateur après une montée de Relvo (le banc montre qu'il monte sur l'échéance d'un tiers).
+
 ### La structuration retient moins qu'elle ne propose
 
 **`tranché`** · Le second appel — situation, résumé, tâches, contact — écrit en base sans revue

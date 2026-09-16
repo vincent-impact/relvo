@@ -124,6 +124,8 @@ export type SujetContexte = {
   statut: "ouvert" | "validé" | "fermé";
   priorite: "normal" | "urgent";
   enAttente: boolean;
+  /** Relvo a suggéré la clôture et l'utilisateur n'a pas encore tranché (`05 §5.5`). */
+  resolutionSuggeree?: boolean;
   /** ISO 8601. */
   ouvertLe: string;
   situation: {

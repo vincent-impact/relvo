@@ -105,6 +105,7 @@ export function entreesDuContexte(p: StructurationProjection): {
       statut: p.sujet.statut,
       priorite: p.sujet.priorite,
       enAttente: p.sujet.enAttente,
+      resolutionSuggeree: p.sujet.resolutionSuggeree,
       ouvertLe: p.sujet.ouvertLe,
       situation: p.sujet.situation,
       resume: p.sujet.resume,

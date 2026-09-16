@@ -30,6 +30,9 @@ export function ficheSujet(
   const marqueurs = [
     s.priorite === "urgent" ? "urgent" : null,
     s.enAttente ? "en attente d'un tiers" : null,
+    s.resolutionSuggeree
+      ? "clôture suggérée par Relvo, pas encore tranchée"
+      : null,
   ]
     .filter(Boolean)
     .join(", ");

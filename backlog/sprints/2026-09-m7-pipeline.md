@@ -2,23 +2,25 @@
 
 ## Démarrage à froid — à lire en premier
 
-**Où on en est (2026-09-16, matin)** : les tranches 0 à 5 et la tranche 7 sont livrées, en
-production, et testées par le dirigeant sur un vrai e-mail (devis de chambre froide). Le tri
-ouvre le sujet, la structuration écrit le résumé court, les tâches avec raison et provenance,
-complète le contact ; la fiche du sujet a été refondue sur ses retours (domaine et urgence en
-tête, un seul résumé, les tâches sur la page principale, le journal en dernier onglet, l'avis
-de tri effacé dès qu'un sujet suit le fil). La tranche 7 est passée avant la 6 à sa demande :
-« Répondre » sur une tâche ouvre le fil avec le brouillon de Relvo rédigé à l'appui, les choix
-laissés entre crochets sont surlignés et retiennent l'envoi, l'envoi coche les tâches par
-correspondance et pose « En attente ». Le premier envoi réel a révélé un fil fantôme (l'objet
-de la réponse venait du titre du sujet — `PITFALLS.md` #50), corrigé. **La prochaine étape est
-la tranche 6, la relecture** : un message qui arrive sur un sujet suivi n'est aujourd'hui pas
-analysé — c'est le manque que le dirigeant a constaté sur son second e-mail. Le profil
-`contexteRelecture` existe déjà, `loadSubjectSheet(db, subjectId, { messages })` est la
-projection à réutiliser, et la part mécanique du marqueur « En attente » est faite (tranche 7).
-Restent ouverts en arrière-plan : relire les structurations réelles dans le journal
-(`cache_read`, tâches gardées ou supprimées), et confirmer les deux décisions par défaut de la
-tranche 4 (frontière de confiance à « moyenne », « incertain » traité comme une confiance basse).
+**Où on en est (2026-09-16)** : les tranches 0 à 7 sont livrées. Les tranches 0 à 5 et 7 sont
+en production, testées par le dirigeant sur de vrais e-mails ; **la tranche 6, la relecture, est
+codée et testée, à pousser** — c'est le manque qu'il avait constaté sur son second e-mail : un
+message qui arrive sur un sujet suivi n'était pas analysé. Désormais, tout message entrant capté
+par un sujet — écoute du fil, rattachement par le tri, réouverture mécanique d'un sujet validé —
+déclenche une relecture après la réponse HTTP du webhook : situation et résumé mis à jour,
+tâches nouvelles (sans répéter les ouvertes), priorité recalibrée, « En attente » posé quand un
+tiers est attendu, clôture suggérée (pastille « À valider ? » sur la ligne du sujet) ou retirée.
+Relvo ne touche jamais au statut. Domaine `packages/db/src/domain/relecture.ts`, pipeline
+`apps/web/src/server/ia/pipeline/relecture.ts`, retenue `retenirRelecture` dans
+`proposition.ts`, banc `pnpm --filter web eval:relecture` (`benchmark-iag.md` §6.9 : 0,61 € les
+mille, 5 s). **À faire au prochain démarrage** : pousser, puis vérifier en production sur un
+vrai fil — la ligne `[ia] relecture` dans les journaux Vercel, le journal du sujet
+(`subject_reviewed`, `cache_read`), la pastille « À valider ? » ; et lire ce que le modèle fait
+de la priorité (le banc le voit monter « urgent » sur l'échéance d'un tiers). Restent ouverts en
+arrière-plan : relire les structurations réelles dans le journal, confirmer les deux décisions
+par défaut de la tranche 4 (frontière de confiance à « moyenne », « incertain » traité comme
+une confiance basse), et essayer `none` sur la relecture avec le jeu réel. La prochaine tranche
+est la 8, le durcissement.
 
 **Tout le socle fonctionne, sauf le cœur.** Ce sprint ouvre M7 : le pipeline qui transforme un
 message entrant en sujet. La conception est à jour et fait foi : les cinq couches de contexte et
@@ -319,19 +321,44 @@ Relvo sont **conservées dans le journal** (proposition intégrale) mais pas mat
 registre, sa promotion et l'encart des questions sont M17.4 et M17.6 ; un sujet ouvert **par
 l'utilisateur** (glissement sur une conversation) n'est pas structuré — décision dans `ecarts`
 (« La structuration retient moins qu'elle ne propose ») ; le délai de réponse constaté du contact
-reste nul dans sa fiche ; le sujet rattaché par le tri attend la relecture (tranche 6).
+reste nul dans sa fiche. Le sujet rattaché par le tri est relu depuis la tranche 6.
 
 ## Tranche 6 — La relecture (M7.9, M7.11, M12.5)
 
 **« Relvo suit l'affaire. »** Un seul appel par message arrivant sur un sujet existant.
+**Livrée le 2026-09-16.** Même partage que les tranches 4 et 5 : ce qui lit et écrit la base vit
+dans le domaine (`packages/db/src/domain/relecture.ts`, testé contre la base) ; le pipeline —
+retenue, orchestration — dans l'application (`apps/web/src/server/ia/pipeline/relecture.ts`,
+`retenirRelecture` dans `proposition.ts`), sa partie pure testée sans base. Décision dans
+`ecarts` (« La relecture suit l'affaire sans piloter le statut »).
 
-- [ ] Message entrant sur une conversation écoutée → relecture : situation mise à jour, nouvelles
-      tâches, priorité recalibrée, résolution suggérée ou révoquée.
-- [ ] Réouverture mécanique d'un sujet validé, puis relecture.
-- [x] Marqueur « En attente » : posé et levé **mécaniquement** (`04 §9`) — fait en tranche 7
-      (`reply-match.ts`) ; Relvo n'y touche qu'en relecture, à brancher ici.
-- [ ] Contexte frais borné aux derniers messages : c'est le poste le plus fréquent, son budget
-      est le plus surveillé.
+- [x] Message entrant capté par un sujet → relecture, **après la réponse HTTP** du webhook, une
+      fois par message : situation et résumé réécrits, tâches nouvelles par `createTask` (une
+      tâche qui répète une ouverte est écartée, plafond de quatre), étiquettes ajoutées, priorité
+      recalibrée par `updateSubjectPriority` (acteur Relvo), clôture **suggérée** seulement sans
+      tâche ouverte, **retirée** dès que le message rouvre des questions. Journal
+      `subject_reviewed` avec la proposition intégrale ; échec `relecture_failed`, le sujet reste
+      tel quel.
+- [x] Le fil **rattaché par le tri** — par le modèle ou par la règle de l'expéditeur — enchaîne
+      sur la relecture : c'est ce que la tranche 5 laissait en attente.
+- [x] Réouverture mécanique d'un sujet validé (`createMessage`), **constatée** par la projection
+      dans le journal et dite au modèle ; un sujet non ouvert n'est pas relu.
+- [x] Marqueur « En attente » : posé et levé **mécaniquement** (`04 §9`, tranche 7) ; Relvo le
+      **pose** en relecture quand un tiers est attendu et nommé (`waiting_for_reply_set`), ne le
+      lève jamais.
+- [x] Contexte frais borné : la fiche aux **deux derniers messages antérieurs**, le message
+      nouveau à part, une seule fiche de précédent ; budget de la couche Situation tenu par le
+      test sur la fixture pire que la réalité.
+- [x] Pastille « ✦ À valider ? » sur la ligne du sujet quand la clôture est suggérée ; le geste
+      reste au swipe.
+- [x] Banc d'essai : huit suites (`jeu/demo/suites.jsonl`), `pnpm --filter web eval:relecture`
+      — `benchmark-iag.md` §6.9. « Terminé » et « en attente » justes 8/8, 0,61 € les mille
+      relectures à `low`, 0,41 € à `none`.
+- [ ] Vérifier en production sur un vrai fil ; essayer `none` sur le jeu réel.
+
+**Ce que la tranche laisse volontairement de côté** : la note de Relvo sur le contact au fil
+des relectures (`05 §1.3`) ; cocher une tâche devenue obsolète sur un message reçu (`05 §4.2`,
+V2) ; WhatsApp (A8).
 
 ## Tranche 7 — Le brouillon (M7.7, M7.10)
 
@@ -398,7 +425,7 @@ réclament.
 - [x] Tranche 3 — livrée le 2026-09-14
 - [x] Tranche 4 — livrée le 2026-09-14 ; l'assistant s'active compte par compte, dans Préférences
 - [x] Tranche 5 — livrée le 2026-09-15 ; banc d'essai en `benchmark-iag.md` §6.7
-- [ ] Tranche 6
+- [x] Tranche 6 — livrée le 2026-09-16 ; banc d'essai en `benchmark-iag.md` §6.9 ; à vérifier en production
 - [x] Tranche 7 — livrée le 2026-09-15, avant la 6 ; banc d'essai en `benchmark-iag.md` §6.8
 - [ ] Tranche 8
 - [ ] Tranche 9

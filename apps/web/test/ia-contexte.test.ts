@@ -250,8 +250,10 @@ describe("profils et budgets", () => {
     relecture: contexteRelecture({
       compte,
       domaine,
-      sujet,
+      sujet: { ...sujet, resolutionSuggeree: true },
+      precedents,
       nouveauxMessages: [message(99)],
+      rouvert: true,
       instant,
     }),
     brouillon: contexteBrouillon({
@@ -295,6 +297,23 @@ describe("profils et budgets", () => {
     expect(c).not.toContain("## Sujets ouverts");
     expect(c).not.toContain("sujet_existant");
     expect(contextes.tri.couches.compte).toContain("## Sujets ouverts");
+  });
+
+  it("la relecture sépare la fiche — deux derniers messages, situation, marqueurs — de ce qui vient d'arriver, et ne pousse qu'une fiche de précédent", () => {
+    const s = contextes.relecture.couches.situation;
+    expect(s).toContain("## Derniers messages (18 plus anciens non montrés)");
+    expect(s).toContain("Message 18.");
+    expect(s).toContain("Message 19.");
+    expect(s).not.toContain("Message 17.");
+    expect(s).toContain("clôture suggérée par Relvo");
+    expect(s).toContain("# Ce qui vient d'arriver — et qui a ROUVERT ce sujet");
+    expect(s).toContain("Message 99.");
+    expect(s.indexOf("Message 99.")).toBeGreaterThan(s.indexOf("Message 19."));
+    expect(s.match(/# Précédent SUB-/g)).toHaveLength(1);
+    expect(s).toContain("- SUB-0009 · Précédent 9");
+    expect(contextes.relecture.prompt).toContain(
+      "le sujet était terminé, il repart",
+    );
   });
 
   it("le tri n'a pas de couche Domaine et exclut « Général »", () => {

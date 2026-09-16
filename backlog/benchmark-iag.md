@@ -376,6 +376,31 @@ Six brouillons rédigés sur les cas « à traiter » de la démonstration qui a
 
 **Ce que le passage a appris.** Les brouillons sont courts, dans le ton du fil (tutoiement repris quand le contact tutoie), et posent une question quand une information manque plutôt que d'inventer. Un cas de **décision non prise** (reconduire ou résilier un contrat) a produit un refus de rédiger : la consigne demande désormais de poser le cadre et de laisser le choix entre crochets. Le raisonnement pèse la majorité de la sortie (98 jetons sur 137) : `none` est à essayer sur le jeu réel. Coût par appui deux fois inférieur à la structuration, et payé seulement quand l'utilisateur ouvre la réponse.
 
+### 6.9 Premier passage de la relecture — 16/09/2026, jeu de DÉMONSTRATION
+
+⚠️ **Mêmes réserves qu'en 6.6.** Huit **suites** synthétiques (`jeu/demo/suites.jsonl`) : un message qui arrive sur un cas déjà suivi, avec ce qu'on en attend — deux qui mettent en attente, deux qui closent, une qui rouvre un sujet validé, trois qui ajoutent une tâche. Chaque suite rejoue d'abord la structuration du cas (le sujet tel que Relvo l'a laissé), puis la relecture. Reproductible : `pnpm --filter web eval:relecture --jeu demo`.
+
+Sollicitation mesurée : la **relecture** (`05 §5.2`–§5.5), l'appel unique sur un message entrant d'un sujet suivi — couche Produit food, couche Compte complète, fiche du sujet bornée à ses deux derniers messages antérieurs, précédents (vides ici), le message nouveau à part, puis la retenue (`pipeline/proposition.ts`, `retenirRelecture`).
+
+| Configuration       | « terminé » juste | « en attente » juste | Priorité juste | Tâches ajoutées justes | €/1 000 relectures | Latence moy. | Entrée moy. (dont cache) | Sortie moy. (dont raisonnement) |
+| ------------------- | ----------------- | -------------------- | -------------- | ---------------------- | ------------------ | ------------ | ------------------------ | ------------------------------- |
+| Luna, effort `low`  | 8/8               | 8/8                  | 6/6            | 7/8                    | **0,61**           | 5,0 s        | 3 120 (2 010)            | 368 (174)                       |
+| Luna, effort `none` | 8/8               | 8/8                  | 6/6            | 8/8                    | 0,41               | 3,0 s        | 3 120 (2 010)            | 180 (0)                         |
+
+**Ce que le passage a appris, dans l'ordre d'importance.**
+
+1. **La vérité terrain s'est corrigée sur le modèle, une fois.** Une suite étiquetée « terminée » — un report de livraison annulé, la livraison maintenue jeudi — a été lue par les deux niveaux comme une **attente** : le fournisseur doit encore livrer. C'est la bonne lecture, et l'étiquette a été récrite. Sans cette suite, les deux niveaux étaient à 7/8 sur « terminé » et « en attente ».
+2. **Le modèle répète les tâches déjà ouvertes, et la retenue les écarte.** À `low`, quatre tâches proposées répétaient une tâche de la fiche (« Confirmer la commande standard », « Examiner la candidature ») ; une seule à `none`. Le doublon est détecté sans accent ni casse contre les titres ouverts — c'est pour ça que la fiche les montre, et que la retenue les compare.
+3. **La clôture n'a jamais été suggérée, et c'est juste.** Sur les deux suites qui closent (virement confirmé, tournage abandonné), le modèle dit « terminé » mais la structuration avait laissé une tâche ouverte (« Rapprocher le virement », « Cadrer le tournage ») : la retenue ne suggère pas tant qu'une tâche reste. C'est la règle de `05 §5.5` — « plus de tâches ouvertes » — tenue par le code, pas par le modèle. Le dirigeant coche, et la relecture suivante — ou lui — tranchera.
+4. **« En attente » est posé avec son objet** : « SoGood Distribution doit livrer le lot de remplacement ». Sur les quatre suites où l'attente est vraie, le champ est renseigné les quatre fois ; la garde « pas de marqueur sans objet » n'a pas eu à jouer.
+5. **La priorité monte sur l'échéance d'un tiers.** Une candidate qui « doit répondre à une autre proposition avant vendredi » est passée « urgent » aux deux niveaux. La suite ne juge pas la priorité ; c'est le cas limite à surveiller sur le jeu réel — `05 §5.4` veut l'urgence rare.
+6. **`none` fait mieux que `low` ici** : moins cher d'un tiers, deux fois plus rapide, une tâche en double de moins. Huit suites ne suffisent pas à trancher contre le niveau du tier ; la relecture reste sur `low` (la configuration de l'extraction) et `none` est le premier réglage à essayer sur le jeu réel — c'est le poste le plus fréquent, l'enjeu est réel.
+7. **Le cache travaille** : 2 010 jetons relus sur 3 120, la couche Produit et la couche Compte partagées avec la structuration qui précède.
+
+**Ce que le passage ne mesure pas** : la réouverture réelle (la suite « rouvert » simule l'état ; la réouverture mécanique est testée contre la base), la révocation d'une suggestion en cours (aucune suggestion n'a été posée), les précédents et les instructions.
+
+**Décision** (`ecarts-et-propositions.md`, « La relecture suit l'affaire sans piloter le statut ») : Luna sur la relecture, effort `low`, `none` à essayer sur le jeu réel.
+
 ---
 
 ## 7. Disjoncteur de consommation

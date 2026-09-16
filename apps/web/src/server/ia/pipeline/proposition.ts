@@ -1,4 +1,8 @@
-import type { SortieStructuration, TacheProposee } from "../schemas";
+import type {
+  SortieRelecture,
+  SortieStructuration,
+  TacheProposee,
+} from "../schemas";
 
 // LA RETENUE DE LA PROPOSITION (M7, tranche 5) — de la sortie du modèle à ce
 // que la structuration a le droit d'écrire. Module PUR, testé sans base : les
@@ -24,6 +28,8 @@ import type { SortieStructuration, TacheProposee } from "../schemas";
 
 /** Tâches déductibles au plus par structuration. */
 export const PLAFOND_TACHES = 6;
+/** Tâches ajoutées au plus par relecture — un message n'a jamais six choses de plus à faire. */
+export const PLAFOND_TACHES_RELECTURE = 4;
 /** Questions de Relvo conservées au plus par structuration (journal). */
 export const PLAFOND_QUESTIONS = 3;
 
@@ -172,18 +178,20 @@ export function retenirDates(
   return { date, heure, dateFin, heureFin, retire };
 }
 
-/** Ce que la structuration écrira — rien d'autre n'est jamais écrit. */
-export function retenirProposition(
-  sortie: SortieStructuration,
-  cadre: CadreRetenue,
-): PropositionRetenue {
-  const ecarts: string[] = [];
-
-  // Tâches : titre non vide, sans doublon, plafonnées, dates conformes,
-  // provenance résolue.
-  const vus = new Set<string>();
+/**
+ * Les tâches retenues d'une proposition : titre non vide, sans doublon —
+ * entre elles et avec les tâches DÉJÀ OUVERTES du sujet —, plafonnées, dates
+ * conformes, provenance résolue. Ce qui est écarté est dit.
+ */
+export function retenirTaches(
+  proposees: readonly TacheProposee[],
+  cadre: Pick<CadreRetenue, "precedents" | "instructions" | "documents">,
+  options: { plafond: number; dejaOuvertes?: readonly string[] },
+  ecarts: string[],
+): TacheRetenue[] {
+  const vus = new Set((options.dejaOuvertes ?? []).map(cle));
   const taches: TacheRetenue[] = [];
-  for (const t of sortie.taches) {
+  for (const t of proposees) {
     const titre = nonVide(t.titre);
     if (!titre) {
       ecarts.push("tâche sans titre");
@@ -194,8 +202,8 @@ export function retenirProposition(
       ecarts.push(`tâche en double : ${titre}`);
       continue;
     }
-    if (taches.length >= PLAFOND_TACHES) {
-      ecarts.push(`plafond de ${PLAFOND_TACHES} tâches : ${titre}`);
+    if (taches.length >= options.plafond) {
+      ecarts.push(`plafond de ${options.plafond} tâches : ${titre}`);
       continue;
     }
     vus.add(k);
@@ -212,6 +220,40 @@ export function retenirProposition(
       provenance: resoudreProvenance(t.provenance, cadre),
     });
   }
+  return taches;
+}
+
+/** Les étiquettes retenues : celles du registre, insensibles à la casse et aux accents, et rien d'autre (05 §9.3). */
+function retenirEtiquettes(
+  proposees: readonly string[],
+  registre: Map<string, string>,
+  ecarts: string[],
+): string[] {
+  const etiquettes: string[] = [];
+  for (const e of proposees) {
+    const r = registre.get(cle(e));
+    if (!r) {
+      ecarts.push(`étiquette hors registre : ${e}`);
+      continue;
+    }
+    if (!etiquettes.includes(r)) etiquettes.push(r);
+  }
+  return etiquettes;
+}
+
+/** Ce que la structuration écrira — rien d'autre n'est jamais écrit. */
+export function retenirProposition(
+  sortie: SortieStructuration,
+  cadre: CadreRetenue,
+): PropositionRetenue {
+  const ecarts: string[] = [];
+
+  const taches = retenirTaches(
+    sortie.taches,
+    cadre,
+    { plafond: PLAFOND_TACHES },
+    ecarts,
+  );
 
   // Contact : seulement s'il y en a un à compléter. Le domaine décide ensuite
   // ce que le statut autorise ; ici on ne pousse rien vers un sujet sans contact.
@@ -231,15 +273,7 @@ export function retenirProposition(
 
   // Étiquettes : du registre, et rien d'autre.
   const registre = new Map(cadre.registre.map((r) => [cle(r), r]));
-  const etiquettes: string[] = [];
-  for (const e of sortie.etiquettes) {
-    const r = registre.get(cle(e));
-    if (!r) {
-      ecarts.push(`étiquette hors registre : ${e}`);
-      continue;
-    }
-    if (!etiquettes.includes(r)) etiquettes.push(r);
-  }
+  const etiquettes = retenirEtiquettes(sortie.etiquettes, registre, ecarts);
   const etiquetteNouvelle = nonVide(sortie.etiquette_nouvelle);
   if (etiquetteNouvelle && registre.has(cle(etiquetteNouvelle))) {
     // « Nouvelle » mais déjà connue : c'est une étiquette du registre.
@@ -274,6 +308,97 @@ export function retenirProposition(
         : null,
     questions: sortie.questions.slice(0, PLAFOND_QUESTIONS),
     domainePropose,
+    ecarts,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────
+// La relecture (M7, tranche 6) — ce qu'un message entrant a le droit de changer
+// ─────────────────────────────────────────────────────────────
+
+/** Ce que la relecture avait sous les yeux, et l'état du sujet avant l'appel. */
+export type CadreRelecture = Pick<
+  CadreRetenue,
+  "registre" | "precedents" | "instructions" | "documents"
+> & {
+  /** Titres des tâches encore ouvertes : une tâche proposée qui les répète est écartée. */
+  tachesOuvertes: readonly string[];
+  /** Relvo avait déjà suggéré la clôture. */
+  resolutionSuggeree: boolean;
+};
+
+export type RelectureRetenue = {
+  situation: PropositionRetenue["situation"];
+  resume: string | null;
+  taches: TacheRetenue[];
+  etiquettes: string[];
+  priorite: SortieRelecture["priorite"];
+  /** Vrai : poser « En attente ». Null : ne pas y toucher — la mécanique a déjà fait le sien (04 §9). */
+  enAttente: true | null;
+  /** Suggérer la clôture, la retirer, ou ne rien changer (05 §5.5, §8.4, §8.5). */
+  resolution: "suggerer" | "revoquer" | "garder";
+  raison: string | null;
+  ecarts: string[];
+};
+
+/**
+ * Ce que la relecture écrira — et les deux règles qui ne sont qu'ici :
+ *   • la clôture n'est suggérée que si le modèle le dit ET qu'il ne reste
+ *     aucune tâche ouverte — ni ancienne, ni retenue à l'instant (05 §5.5 :
+ *     « plus de tâches ouvertes ») ; dite « terminée » avec des tâches, elle
+ *     est écartée et dite. Une suggestion en cours est RETIRÉE dès que le
+ *     modèle ne conclut plus à la fin (05 §8.5) ; sinon, re-suggérer met
+ *     l'horodatage à jour et fait revenir le badge (05 §8.4) ;
+ *   • « En attente » n'est posé que si le modèle le dit ET nomme ce qu'on
+ *     attend (situation.attente) — un marqueur sans objet n'aide personne ;
+ *     il n'est jamais LEVÉ ici : le message entrant l'a déjà levé (04 §9).
+ */
+export function retenirRelecture(
+  sortie: SortieRelecture,
+  cadre: CadreRelecture,
+): RelectureRetenue {
+  const ecarts: string[] = [];
+  const taches = retenirTaches(
+    sortie.taches,
+    cadre,
+    { plafond: PLAFOND_TACHES_RELECTURE, dejaOuvertes: cadre.tachesOuvertes },
+    ecarts,
+  );
+  const registre = new Map(cadre.registre.map((r) => [cle(r), r]));
+  const etiquettes = retenirEtiquettes(sortie.etiquettes, registre, ecarts);
+
+  const attente = nonVide(sortie.situation.attente);
+  let enAttente: true | null = null;
+  if (sortie.en_attente) {
+    if (attente) enAttente = true;
+    else ecarts.push("en attente sans dire de qui : marqueur non posé");
+  }
+
+  const resteAFaire = cadre.tachesOuvertes.length + taches.length > 0;
+  let resolution: RelectureRetenue["resolution"] = "garder";
+  if (sortie.termine && !resteAFaire) {
+    resolution = "suggerer";
+  } else {
+    if (sortie.termine) {
+      ecarts.push("terminé avec des tâches ouvertes : clôture non suggérée");
+    }
+    if (cadre.resolutionSuggeree) resolution = "revoquer";
+  }
+
+  return {
+    situation: {
+      ouOnEnEst: nonVide(sortie.situation.ou_on_en_est),
+      prochaineEtape: nonVide(sortie.situation.prochaine_etape),
+      attente,
+      echeance: sortie.situation.echeance,
+    },
+    resume: nonVide(sortie.resume),
+    taches,
+    etiquettes,
+    priorite: sortie.priorite,
+    enAttente,
+    resolution,
+    raison: nonVide(sortie.raison)?.slice(0, 500) ?? null,
     ecarts,
   };
 }

@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { tenantDb } from "@/lib/tenant-db";
 import { expireTenantData } from "@/server/cached";
 import { createAttachment } from "@relvo/db";
+import { relireSujet } from "@/server/ia/pipeline/relecture";
 import { trierConversationEmail } from "@/server/ia/pipeline/tri";
 import {
   toEmailHeaders,
@@ -251,6 +252,26 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
         entetes,
       });
       console.info("[ia] tri", {
+        accountId: config.accountId,
+        messageId: message.id,
+        ...resultat,
+      });
+    });
+  }
+
+  // Relecture (M7, tranche 6) — le message a été capté par un sujet au
+  // rangement (écoute du fil, réouverture mécanique comprise) : Relvo relit
+  // le sujet à sa lumière. Même discipline : après la réponse HTTP, une fois
+  // par message, et un échec laisse le sujet tel qu'il était.
+  if (created && message.subjectId) {
+    const subjectId = message.subjectId;
+    after(async () => {
+      const resultat = await relireSujet({
+        accountId: config.accountId,
+        subjectId,
+        messageId: message.id,
+      });
+      console.info("[ia] relecture", {
         accountId: config.accountId,
         messageId: message.id,
         ...resultat,

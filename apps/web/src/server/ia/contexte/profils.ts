@@ -170,12 +170,22 @@ export function contexteStructuration(args: {
   );
 }
 
-/** RELECTURE (`05 §5.2`) : la fiche + les messages nouveaux. Le poste le plus fréquent : budget serré. */
+/** Fiches de clôture poussées en relecture — une seule : c'est le poste le plus fréquent (`05 §10.1`). */
+export const FICHES_PRECEDENTS_RELECTURE = 1;
+
+/**
+ * RELECTURE (`05 §5.2`–§5.5) : la fiche — situation structurée, deux derniers
+ * messages ANTÉRIEURS —, les précédents (titres, une fiche), et le message qui
+ * vient d'arriver, à part. Le poste le plus fréquent : budget serré.
+ */
 export function contexteRelecture(args: {
   compte: CompteContexte;
   domaine: DomaineContexte | null;
   sujet: SujetContexte;
+  precedents: readonly Precedent[];
   nouveauxMessages: readonly MessageContexte[];
+  /** Le message a ROUVERT un sujet validé ou fermé — mécaniquement, avant l'appel (`05 §5.2`). */
+  rouvert?: boolean;
   instant: InstantContexte;
 }): Contexte {
   const nouveaux = trierParDate(args.nouveauxMessages);
@@ -187,11 +197,17 @@ export function contexteRelecture(args: {
       instant: coucheInstant(args.instant.maintenant),
       situation: [
         ficheSujet(args.sujet, { messages: 2 }),
-        `# Ce qui vient d'arriver`,
+        blocPrecedents(args.precedents, FICHES_PRECEDENTS_RELECTURE),
+        `# Ce qui vient d'arriver${args.rouvert ? " — et qui a ROUVERT ce sujet, qui était terminé" : ""}`,
         ...nouveaux.map((m, i) => blocMessage(m, i)),
-      ].join("\n"),
+      ].join("\n\n"),
     },
-    `# Ta relecture\nMets à jour la situation structurée, ajoute les tâches que ce message rend nécessaires (aucune s'il est informatif), recalibre la priorité, et dis si le sujet te semble terminé ou si la clôture suggérée n'a plus lieu d'être.`,
+    [
+      `# Ta relecture`,
+      `Un message vient d'arriver sur ce sujet suivi. Mets à jour la situation structurée et le résumé à la lumière de ce message${args.rouvert ? " — le sujet était terminé, il repart" : ""}, ajoute UNIQUEMENT les tâches que ce message rend nécessaires (aucune s'il est informatif, et jamais une tâche déjà ouverte dans la fiche), recalibre la priorité — « urgent » sur signal explicite seulement —, et complète les étiquettes si une clé du registre s'impose.`,
+      `« en_attente » est vrai quand le sujet attend maintenant un TIERS — une livraison promise, un devis annoncé, un retour attendu — sans qu'aucune action ne revienne au dirigeant. « termine » est vrai quand l'affaire semble réglée : confirmation reçue, plus rien à faire, situation close naturellement. Les deux sont faux dès qu'une tâche revient au dirigeant.`,
+      `Mêmes règles qu'à la structuration : COURT, le résumé dit de quoi il s'agit sans les actions ni les dates ; la date d'une tâche va dans ses champs, jamais dans son titre ; chaque tâche porte sa raison et sa provenance quand elle vient d'un précédent, d'une instruction ou d'un document lus. « raison » dit en une phrase ce que ce message change.`,
+    ].join("\n"),
   );
 }
 
