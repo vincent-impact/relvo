@@ -1,7 +1,6 @@
 import {
   ActionStatus,
   ActionType,
-  Actor,
   ChannelType,
   TaskKind,
   TaskStatus,
@@ -10,6 +9,7 @@ import type { TenantDb } from "../tenant";
 import { assertFound, DomainError } from "./errors";
 import {
   loadSubjectSheet,
+  projectTask,
   type StructurationTaskProjection,
   type SubjectSheetProjection,
 } from "./structuration";
@@ -138,6 +138,7 @@ export async function getDraftProjection(
         startDate: true,
         sourceActor: true,
         completedAt: true,
+        metadata: true,
       },
     }),
     "Tâche",
@@ -182,15 +183,7 @@ export async function getDraftProjection(
   const contenu = (brouillon?.payload as { content?: unknown } | null)?.content;
   return {
     ...sheet,
-    tache: {
-      id: task.id,
-      titre: task.title,
-      type: task.kind,
-      date: task.startDate?.toISOString().slice(0, 10) ?? null,
-      source: task.sourceActor === Actor.ai ? "relvo" : "moi",
-      terminee: false,
-      termineeLe: null,
-    },
+    tache: { id: task.id, ...projectTask({ ...task, status: task.status }) },
     cible: {
       conversationId: conversation.id,
       canal:

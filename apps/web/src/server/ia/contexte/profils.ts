@@ -166,9 +166,16 @@ export function contexteStructuration(args: {
       `Une tâche par action que le message DEMANDE au dirigeant — répondre, confirmer, décider, envoyer — et aucune s'il est informatif. Une demande explicite (« pouvez-vous confirmer ? ») est toujours une tâche. Un ÉVÉNEMENT annoncé à une date — intervention, visite, livraison, rendez-vous — est toujours une tâche datée (avec l'heure si elle est donnée), même si le message dit « rien à faire de votre côté » : le dirigeant doit y être ou s'y préparer, et l'oublier coûte.`,
       `La date d'une tâche va dans ses champs de date, JAMAIS dans son titre : « demain », « avant jeudi », « entre 8 h et 10 h » se lisent par rapport à la date du jour et donnent date, heure et heure de fin. Sans formulation temporelle, aucune date.`,
       `Chaque tâche porte sa raison en une phrase, et sa provenance quand elle vient d'un précédent, d'une instruction ou d'un document que tu as lus — sinon null.`,
+      CONSIGNE_DECISIONS,
     ].join("\n"),
   );
 }
+
+/**
+ * Les DÉCISIONS (`05 §3.1`) : ce qu'un message demande au dirigeant devient un
+ * formulaire sur la tâche qui se répond — jamais un choix dans le texte.
+ */
+const CONSIGNE_DECISIONS = `Quand le message demande une DÉCISION au dirigeant — valider un devis, choisir entre des options, donner une date ou une quantité —, la tâche de réponse porte ses « decisions » : une question par décision, courte, avec de deux à quatre options COMPLÈTES et courtes (« Oui, commandez », « Non », « 8 m³ », « 12 m³ »), la plus probable en premier, et une précision chiffrée quand elle aide (montant, délai). Une seule tâche de réponse porte toutes les décisions du message. Aucune décision sur une tâche qui ne se répond pas, et aucune si le message n'en demande pas.`;
 
 /** Fiches de clôture poussées en relecture — une seule : c'est le poste le plus fréquent (`05 §10.1`). */
 export const FICHES_PRECEDENTS_RELECTURE = 1;
@@ -222,13 +229,14 @@ export function contexteRelecture(args: {
       `« prochaine_etape » est UNE ligne, ce qui doit se passer ensuite : l'action du dirigeant s'il lui en revient une, sinon ce qu'on attend d'un tiers, écrit comme tel — « En attente du devis de X ».${envoi ? " Après un envoi, c'est le plus souvent la réponse de l'interlocuteur qu'on attend." : ""}`,
       `« en_attente » est vrai quand le sujet attend maintenant un TIERS — une livraison promise, un devis annoncé, un retour attendu — sans qu'aucune action ne revienne au dirigeant. « termine » est vrai quand l'affaire semble réglée : confirmation reçue, plus rien à faire, situation close naturellement. Les deux sont faux dès qu'une tâche revient au dirigeant.`,
       `Mêmes règles qu'à la structuration : COURT, le résumé dit de quoi il s'agit sans les actions ni les dates ; la date d'une tâche va dans ses champs, jamais dans son titre ; chaque tâche porte sa raison et sa provenance quand elle vient d'un précédent, d'une instruction ou d'un document lus. « raison » dit en une phrase ce que ce message change.`,
+      envoi ? null : CONSIGNE_DECISIONS,
     ]
       .filter(Boolean)
       .join("\n"),
   );
 }
 
-/** BROUILLON (`05 §3.1`) : la fiche, le contact, la tâche de réponse, les derniers messages. */
+/** BROUILLON (`05 §3.1`) : la fiche, le contact, la tâche de réponse avec ses décisions prises, les derniers messages. */
 export function contexteBrouillon(args: {
   compte: CompteContexte;
   domaine: DomaineContexte | null;
@@ -237,6 +245,9 @@ export function contexteBrouillon(args: {
   tache: TacheContexte;
   instant: InstantContexte;
 }): Contexte {
+  // Les décisions RÉPONDUES de la tâche : le brouillon les affirme. Celles
+  // sans réponse n'arrivent pas ici — le pipeline ne rédige pas avant.
+  const decisions = (args.tache.decisions ?? []).filter((d) => d.reponse);
   return assembler(
     {
       produit: coucheProduit(args.compte.secteurs),
@@ -253,9 +264,13 @@ export function contexteBrouillon(args: {
     [
       `# Ton brouillon`,
       `Rédige la réponse qui accomplit la tâche « ${args.tache.titre} », au nom du dirigeant, dans le ton des échanges précédents, sans rien inventer. Texte seul, prêt à envoyer, sans objet ni signature.`,
-      `Si la tâche suppose une décision que le dirigeant n'a pas encore prise, tu rédiges quand même : la réponse pose le cadre et laisse le choix entre crochets, par exemple « nous retenons le modèle [8 m³ / 12 m³] ». Tu ne refuses jamais de rédiger, et tu ne décides jamais à sa place.`,
-      `Un crochet est UNE décision, et chaque option est complète : ce qui découle d'un choix va DANS l'option — « nous [validons le devis, vous pouvez lancer la commande / ne validons pas le devis] » —, jamais dans un second crochet conditionnel « [Si validé : …] », que le dirigeant ne saurait pas trancher.`,
-    ].join("\n"),
+      decisions.length
+        ? `Le dirigeant a DÉCIDÉ :\n${decisions.map((d) => `- ${d.question} → ${d.reponse}`).join("\n")}\nLa réponse le dit clairement, sans revenir dessus.`
+        : null,
+      `JAMAIS de crochets, d'alternative ni de blanc à compléter dans le texte : tu ne décides jamais à la place du dirigeant, mais tu n'écris pas non plus « [8 m³ / 12 m³] ». Si une information manque, la phrase la plus simple qui reste vraie suffit (« nous revenons vers vous sur ce point »). Tu ne refuses jamais de rédiger.`,
+    ]
+      .filter(Boolean)
+      .join("\n"),
   );
 }
 

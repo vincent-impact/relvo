@@ -35,6 +35,12 @@ export async function prepareDraftAction(
   if (r.issue === "inference-indisponible") {
     return err("INVALID_STATE", "Relvo n'est pas joignable pour l'instant.");
   }
+  if (r.issue === "decisions-en-attente") {
+    return err(
+      "INVALID_STATE",
+      "Répondez d'abord aux décisions : Relvo rédige ensuite.",
+    );
+  }
   return err("INVALID_STATE", "Relvo n'a pas pu rédiger le brouillon.");
 }
 

@@ -85,6 +85,27 @@ export const SortieTri = z.object({
 });
 export type SortieTri = z.infer<typeof SortieTri>;
 
+/**
+ * Une DÉCISION que le message demande au dirigeant (`05 §3.1`) : portée par la
+ * tâche qui se répond, affichée en formulaire dans le fil, jamais en crochets
+ * dans le texte d'une réponse.
+ */
+export const DecisionProposee = z.object({
+  question: z
+    .string()
+    .describe("La question, courte, telle qu'on la poserait au dirigeant."),
+  precision: z
+    .string()
+    .nullable()
+    .describe("Ce qui aide à décider — montant, délai, quantité — ou null."),
+  options: z
+    .array(z.string())
+    .describe(
+      "2 à 4 réponses possibles, complètes et courtes (« Oui, commandez », « Non »), la plus probable en premier.",
+    ),
+});
+export type DecisionProposee = z.infer<typeof DecisionProposee>;
+
 export const TacheProposee = z.object({
   titre: z.string(),
   type: z.enum(TYPES_TACHE),
@@ -97,6 +118,12 @@ export const TacheProposee = z.object({
   raison: z.string(),
   /** Référence du précédent ou du document d'où la tâche est déduite, sinon null. */
   provenance: z.string().nullable(),
+  /** Les décisions que le message demande pour cette tâche ; vide si aucune (`05 §3.1`). */
+  decisions: z
+    .array(DecisionProposee)
+    .describe(
+      "Seulement sur une tâche qui se répond (reply, decision) et seulement si le message demande une décision au dirigeant ; vide sinon.",
+    ),
 });
 export type TacheProposee = z.infer<typeof TacheProposee>;
 

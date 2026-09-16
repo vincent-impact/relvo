@@ -88,6 +88,18 @@ export function TaskItem({
       ? `/conversations/${task.replyConversationId}?repondre=${task.id}&from=${encodeURIComponent(pathname)}`
       : null;
 
+  // Les décisions portées par la tâche : à prendre (violet, l'appel de Relvo)
+  // ou prises (« Décidé : Oui, commandez »).
+  const decisions = task.decisions ?? [];
+  const restantes = decisions.filter((d) => d.reponse === null).length;
+  const aDecider = restantes > 0 && !done;
+  const decisionsLine =
+    decisions.length === 0
+      ? null
+      : aDecider
+        ? `✦ ${restantes} décision${restantes > 1 ? "s" : ""} à prendre`
+        : `Décidé : ${decisions.map((d) => d.reponse).join(" · ")}`;
+
   const dateLine = meta === "date" ? dateShortLabel(task.startDate) : null;
   const timeLine = meta !== "none" ? (task.startTime ?? null) : null;
   const colEmpty = !dateLine && !timeLine;
@@ -171,6 +183,18 @@ export function TaskItem({
               {task.contactName}
             </p>
           ) : null}
+          {/* Les décisions de la tâche (05 §3.1) : ce qu'il reste à décider,
+              ou ce qui l'a été — la réponse reste lisible sur la tâche. */}
+          {decisionsLine ? (
+            <p
+              className={cn(
+                "mt-1 text-[12.5px] font-semibold",
+                aDecider ? "text-relvo" : "text-(--text-secondary)",
+              )}
+            >
+              {decisionsLine}
+            </p>
+          ) : null}
           {replyHref ? (
             <Link
               href={replyHref}
@@ -178,7 +202,7 @@ export function TaskItem({
               className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-relvo-bg px-2.5 py-1 text-[12.5px] font-bold text-relvo active:opacity-80"
             >
               <Reply className="size-[14px]" strokeWidth={2.4} />
-              Répondre
+              {aDecider ? "Décider et répondre" : "Répondre"}
             </Link>
           ) : null}
         </div>

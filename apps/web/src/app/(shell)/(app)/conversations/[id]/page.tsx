@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
-import { getConversationThread } from "@relvo/db";
+import {
+  getConversationThread,
+  listDecisionTasksForConversation,
+} from "@relvo/db";
 import { ConversationDetail } from "@/components/conversations/conversation-detail";
 import { MarkConversationRead } from "@/components/conversations/mark-conversation-read";
 import {
@@ -31,7 +34,7 @@ export default async function ConversationDetailPage({
   if (!thread) notFound();
 
   // Domaines (dialog de création) + sujets ouverts (« Lier à un sujet existant »).
-  const [folders, subjectRows] = await Promise.all([
+  const [folders, subjectRows, decisionTasks] = await Promise.all([
     db.folder.findMany({
       where: { isDefault: false },
       orderBy: { name: "asc" },
@@ -48,6 +51,9 @@ export default async function ConversationDetailPage({
         folder: { select: { slug: true } },
       },
     }),
+    // Le formulaire de décisions (05 §3.1) : les tâches ouvertes qui se
+    // répondent dans ce fil et portent des questions.
+    listDecisionTasksForConversation(db, id),
   ]);
 
   const messages = thread.messages.map(toThreadMessageData);
@@ -79,6 +85,17 @@ export default async function ConversationDetailPage({
         // « Répondre » depuis une tâche (M7.7) : le composer s'ouvre avec le
         // brouillon de Relvo en rédaction pour cette tâche.
         draftTaskId={repondre ?? null}
+        decisionTasks={decisionTasks.map((t) => ({
+          id: t.id,
+          title: t.title,
+          decisions: t.decisions.map((d) => ({
+            id: d.id,
+            question: d.question,
+            precision: d.precision,
+            options: d.options,
+            reponse: d.reponse,
+          })),
+        }))}
         folders={folders}
         subjects={subjectRows.map((s) => ({
           id: s.id,

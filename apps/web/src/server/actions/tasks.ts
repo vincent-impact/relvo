@@ -1,8 +1,10 @@
 "use server";
 
 import {
+  type AnswerTaskDecisionInput,
   type CreateTaskInput,
   type UpdateTaskInput,
+  answerTaskDecision,
   completeTask,
   createTask,
   deleteTask,
@@ -50,5 +52,18 @@ export async function reopenTaskAction(id: string) {
 export async function deleteTaskAction(id: string) {
   const result = await domainAction((db) => deleteTask(db, id));
   if (result.ok) revalidateTasks();
+  return result;
+}
+
+/**
+ * Répond à une décision portée par une tâche (05 §3.1) — depuis le formulaire
+ * de la conversation. Journalisé par le domaine ; « Changer » repasse ici.
+ */
+export async function answerTaskDecisionAction(input: AnswerTaskDecisionInput) {
+  const result = await domainAction((db) => answerTaskDecision(db, input));
+  if (result.ok) {
+    revalidateTasks();
+    revalidatePath("/conversations/[id]", "page");
+  }
   return result;
 }

@@ -20,7 +20,8 @@ import { entreesDuContexte } from "./structuration";
 // envoyé seul (05 §3.1, §7.4). Un brouillon ouvert est réutilisé ; « régénérer »
 // l'annule et en rédige un autre.
 //
-//   1. Assistant actif, inférence joignable — sinon rien : le composer reste vide.
+//   1. Assistant actif, inférence joignable, et AUCUNE décision de la tâche
+//      sans réponse — sinon rien : le composer reste vide (05 §3.1).
 //   2. Projection depuis la base (`getDraftProjection`) : la fiche du sujet et
 //      du contact, la tâche, le fil cible, le brouillon ouvert s'il existe.
 //   3. Appel de rédaction (tier rédaction), consigné.
@@ -30,6 +31,7 @@ import { entreesDuContexte } from "./structuration";
 export type IssueBrouillon =
   | "desactive"
   | "inference-indisponible"
+  | "decisions-en-attente"
   | "reutilise"
   | "redige"
   | "echec";
@@ -37,7 +39,11 @@ export type IssueBrouillon =
 export type ResultatBrouillon =
   | { issue: "redige" | "reutilise"; actionId: string; contenu: string }
   | {
-      issue: "desactive" | "inference-indisponible" | "echec";
+      issue:
+        | "desactive"
+        | "inference-indisponible"
+        | "decisions-en-attente"
+        | "echec";
       detail?: string;
     };
 
@@ -60,6 +66,11 @@ export async function preparerBrouillon(args: {
 
   try {
     const projection: DraftProjection = await getDraftProjection(db, taskId);
+    // Une décision sans réponse : Relvo ne rédige pas (05 §3.1). Le formulaire
+    // de la conversation la pose ; le composer reste libre d'écrire soi-même.
+    if (projection.tache.decisions?.some((d) => !d.reponse)) {
+      return { issue: "decisions-en-attente" };
+    }
     if (projection.brouillonOuvert && !args.regenerer) {
       return {
         issue: "reutilise",

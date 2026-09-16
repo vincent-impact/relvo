@@ -22,7 +22,12 @@ import {
   suggestResolution,
   updateSubjectPriority,
 } from "./subjects";
-import { createTask, taskMetadataSchema, taskProvenanceSchema } from "./tasks";
+import {
+  createTask,
+  taskDecisionSchema,
+  taskMetadataSchema,
+  taskProvenanceSchema,
+} from "./tasks";
 
 // Domaine RELECTURE (M7, tranche 6 — M7.9, M7.11) — ce que l'appel qui suit
 // un message sur un sujet suivi — reçu, ou ENVOYÉ par le dirigeant — lit et
@@ -145,6 +150,11 @@ export const applyRelectureSchema = z.object({
         endTime: heure.nullable(),
         reason: z.string().trim().max(1000),
         provenance: taskProvenanceSchema.nullable(),
+        /** Les décisions que le message demande, sans réponse encore (05 §3.1). */
+        decisions: z
+          .array(taskDecisionSchema.omit({ reponse: true, repondueLe: true }))
+          .max(3)
+          .optional(),
       }),
     )
     .max(10),
@@ -253,6 +263,15 @@ export async function applyRelecture(
       metadata: taskMetadataSchema.parse({
         raison: t.reason,
         provenance: t.provenance,
+        ...(t.decisions?.length
+          ? {
+              decisions: t.decisions.map((d) => ({
+                ...d,
+                reponse: null,
+                repondueLe: null,
+              })),
+            }
+          : {}),
       }),
     });
     taskIds.push(task.id);

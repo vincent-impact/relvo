@@ -36,14 +36,40 @@ export const taskProvenanceSchema = z.object({
   libelle: z.string().trim().min(1).max(300),
 });
 
+/**
+ * Une DÉCISION que le message demande au dirigeant, portée par la tâche qui se
+ * répond (05 §3.1) : une question courte, ses options, et la réponse quand il
+ * l'a donnée. Le formulaire de décisions de la conversation les affiche ; le
+ * brouillon ne se rédige qu'une fois toutes répondues.
+ */
+export const taskDecisionSchema = z.object({
+  id: z.string().trim().min(1).max(20),
+  question: z.string().trim().min(1).max(200),
+  /** Ce qui aide à décider : « 480 € HT, délai 3 jours ». */
+  precision: z.string().trim().max(200).nullable(),
+  options: z.array(z.string().trim().min(1).max(80)).min(2).max(4),
+  /** La réponse du dirigeant — une option, ou un texte libre ; null tant qu'il n'a pas décidé. */
+  reponse: z.string().trim().min(1).max(300).nullable(),
+  /** ISO 8601. */
+  repondueLe: z.string().nullable(),
+});
+
 export const taskMetadataSchema = z.object({
   /** « le fournisseur demande un retour avant jeudi » (05 §2.4). */
   raison: z.string().trim().max(1000),
   provenance: taskProvenanceSchema.nullable(),
+  /** Les décisions que le message demande — absentes sur une tâche qui n'en appelle aucune. */
+  decisions: z.array(taskDecisionSchema).max(3).optional(),
 });
 
 export type TaskProvenance = z.infer<typeof taskProvenanceSchema>;
+export type TaskDecision = z.infer<typeof taskDecisionSchema>;
 export type TaskMetadata = z.infer<typeof taskMetadataSchema>;
+
+/** Les décisions d'une tâche, depuis sa colonne `metadata` — vide sans décision. */
+export function readTaskDecisions(metadata: unknown): TaskDecision[] {
+  return readTaskMetadata(metadata)?.decisions ?? [];
+}
 
 /**
  * Lit la raison et la provenance d'une tâche depuis sa colonne `metadata`,

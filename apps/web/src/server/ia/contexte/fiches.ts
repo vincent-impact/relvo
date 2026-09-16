@@ -5,6 +5,7 @@ import type {
   Precedent,
   SujetClos,
   SujetContexte,
+  TacheContexte,
 } from "./types";
 
 // Les TROIS FICHES et la fiche de CLÔTURE (`05 §10.1`). Elles servent à toutes
@@ -20,6 +21,18 @@ export const PLAFOND_MESSAGE_FICHE = 1_500;
 
 function ligne(cle: string, valeur: string | null | undefined): string | null {
   return valeur ? `${cle} : ${valeur}` : null;
+}
+
+/** Les décisions d'une tâche, en clair : ce qui est tranché, ce qui ne l'est pas encore. */
+function decisionsDe(t: TacheContexte): string {
+  if (!t.decisions?.length) return "";
+  return t.decisions
+    .map((d) =>
+      d.reponse
+        ? `\n  · décidé : ${d.question} → ${d.reponse}`
+        : `\n  · à décider : ${d.question}`,
+    )
+    .join("");
 }
 
 export function ficheSujet(
@@ -45,7 +58,7 @@ export function ficheSujet(
     )
     .map(
       (t) =>
-        `- ${t.titre}${t.date ? ` — pour le ${t.date}` : ""} (${t.type}, ${t.source === "relvo" ? "proposée par Relvo" : "posée par le dirigeant"})`,
+        `- ${t.titre}${t.date ? ` — pour le ${t.date}` : ""} (${t.type}, ${t.source === "relvo" ? "proposée par Relvo" : "posée par le dirigeant"})${decisionsDe(t)}`,
     );
   const contacts = [...s.contacts]
     .sort((a, b) => a.nom.localeCompare(b.nom, "fr"))

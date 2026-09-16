@@ -197,6 +197,7 @@ export async function structurerSujet(args: {
         endTime: t.heureFin,
         reason: t.raison,
         provenance: t.provenance,
+        decisions: t.decisions,
       })),
       contact: retenue.contact
         ? {

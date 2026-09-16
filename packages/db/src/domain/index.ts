@@ -30,4 +30,5 @@ export * from "./structuration";
 export * from "./relecture";
 export * from "./brouillon";
 export * from "./reply-match";
+export * from "./decisions";
 export * from "./accounts";

@@ -313,6 +313,49 @@ describe("profils et budgets", () => {
     expect(contextes.relecture.prompt).toContain("ÉVÉNEMENT annoncé");
   });
 
+  it("les décisions : la structuration et la relecture d'une arrivée les demandent, pas la relecture d'un envoi", () => {
+    expect(contextes.structuration.prompt).toContain("« decisions »");
+    expect(contextes.relecture.prompt).toContain("« decisions »");
+    const envoi = contexteRelecture({
+      compte,
+      domaine,
+      sujet,
+      precedents,
+      nouveauxMessages: [{ ...message(99), sens: "sortant" }],
+      instant,
+    });
+    expect(envoi.prompt).not.toContain("« decisions »");
+  });
+
+  it("le brouillon affirme les décisions prises et ne laisse jamais de crochets ; la fiche dit ce qui reste à décider", () => {
+    const tache = {
+      ...sujet.taches[1]!,
+      decisions: [
+        { question: "Lancer le remplacement ?", reponse: "Oui, commandez" },
+        { question: "Créneau", reponse: null },
+      ],
+    };
+    const c = contexteBrouillon({
+      compte,
+      domaine,
+      sujet: { ...sujet, taches: [tache, ...sujet.taches.slice(2)] },
+      contact,
+      tache,
+      instant,
+    });
+    expect(c.prompt).toContain("Le dirigeant a DÉCIDÉ :");
+    expect(c.prompt).toContain("- Lancer le remplacement ? → Oui, commandez");
+    expect(c.prompt).not.toContain("- Créneau →");
+    expect(c.prompt).toContain("JAMAIS de crochets");
+    expect(c.prompt).not.toContain("[8 m³ / 12 m³]\u00a0»");
+    expect(c.couches.situation).toContain(
+      "· décidé : Lancer le remplacement ? → Oui, commandez",
+    );
+    expect(c.couches.situation).toContain("· à décider : Créneau");
+    // Sans décision, rien n'est affirmé.
+    expect(contextes.brouillon.prompt).not.toContain("a DÉCIDÉ");
+  });
+
   it("la structuration charge les instructions et le registre, mais pas la liste des sujets ouverts", () => {
     const c = contextes.structuration.couches.compte;
     expect(c).toContain("## Instructions générales");

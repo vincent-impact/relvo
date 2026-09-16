@@ -16,6 +16,10 @@ import { toast } from "sonner";
 import type { ConversationListening, ConversationParticipant } from "@relvo/db";
 import { ConversationThread } from "@/components/conversations/conversation-thread";
 import {
+  DecisionSheet,
+  type SheetTask,
+} from "@/components/conversations/decision-sheet";
+import {
   SubjectCreateDialog,
   type FolderOption,
 } from "@/components/conversations/subject-create-dialog";
@@ -109,6 +113,7 @@ export function ConversationDetail({
   relvo,
   ignore,
   draftTaskId = null,
+  decisionTasks = [],
 }: {
   conversationId: string;
   title: string;
@@ -135,6 +140,8 @@ export function ConversationDetail({
   ignore: IgnoreData | null;
   /** « Répondre » depuis une tâche (M7.7) : Relvo rédige le brouillon pour cette tâche à l'ouverture. */
   draftTaskId?: string | null;
+  /** Les tâches du fil qui portent des décisions (05 §3.1) : le formulaire au-dessus du composer. */
+  decisionTasks?: SheetTask[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -181,14 +188,33 @@ export function ConversationDetail({
   // Brouillon de Relvo (M7.7) — rédigé à l'ouverture quand on arrive d'une
   // tâche, réutilisé s'il existe déjà, régénérable, effaçable. Jamais envoyé
   // seul : il se pose dans le composer, l'envoi reste le geste de l'utilisateur.
+  // Une tâche qui porte une décision sans réponse ne se rédige pas à
+  // l'ouverture : le FORMULAIRE la pose d'abord (05 §3.1), et c'est lui qui
+  // demande le brouillon une fois tout répondu.
+  const decisionsOuvertes = decisionTasks.some(
+    (t) => t.id === draftTaskId && t.decisions.some((d) => d.reponse === null),
+  );
   const [draft, setDraft] = useState<{
     loading: boolean;
     text: string | null;
     actionId: string | null;
-  }>({ loading: Boolean(draftTaskId && attached), text: null, actionId: null });
+  }>({
+    loading: Boolean(draftTaskId && attached && !decisionsOuvertes),
+    text: null,
+    actionId: null,
+  });
+  // La tâche dont le brouillon est dans le composer — celle de l'URL, ou celle
+  // du formulaire qui vient de rédiger.
+  const [draftFor, setDraftFor] = useState<string | null>(draftTaskId);
   const draftRequested = useRef(false);
   useEffect(() => {
-    if (!draftTaskId || !attached || draftRequested.current) return;
+    if (
+      !draftTaskId ||
+      !attached ||
+      decisionsOuvertes ||
+      draftRequested.current
+    )
+      return;
     draftRequested.current = true;
     void prepareDraftAction(draftTaskId).then((res) => {
       if (res.ok) {
@@ -202,11 +228,11 @@ export function ConversationDetail({
         toast.error(res.message);
       }
     });
-  }, [draftTaskId, attached]);
+  }, [draftTaskId, attached, decisionsOuvertes]);
   function regenerateDraft() {
-    if (!draftTaskId) return;
+    if (!draftFor) return;
     setDraft((d) => ({ ...d, loading: true }));
-    void prepareDraftAction(draftTaskId, { regenerer: true }).then((res) => {
+    void prepareDraftAction(draftFor, { regenerer: true }).then((res) => {
       if (res.ok) {
         setDraft({
           loading: false,
@@ -601,6 +627,21 @@ export function ConversationDetail({
           selectedMessageId={selectedMessageId}
           onSelect={setSelectedMessageId}
         />
+
+        {/* Le formulaire de décisions (05 §3.1) — entre le dernier message et
+            le composer : on décide en relisant, puis Relvo rédige. */}
+        {attached
+          ? decisionTasks.map((t) => (
+              <DecisionSheet
+                key={t.id}
+                task={t}
+                onDraft={({ actionId, contenu }) => {
+                  setDraftFor(t.id);
+                  setDraft({ loading: false, text: contenu, actionId });
+                }}
+              />
+            ))
+          : null}
       </Screen>
 
       {/* Rattachée → COMPOSER (répondre = geste par défaut). Sinon → RIEN, sauf
@@ -613,7 +654,7 @@ export function ConversationDetail({
             placeholder={composerPlaceholder}
             onSend={handleSend}
             draft={
-              draftTaskId
+              draftFor
                 ? {
                     loading: draft.loading,
                     text: draft.text,

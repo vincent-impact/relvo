@@ -107,6 +107,8 @@ export type TacheContexte = {
   terminee?: boolean;
   /** ISO 8601, pour ordonner une fiche de clôture. */
   termineeLe?: string | null;
+  /** Les décisions que la tâche porte, et ce que le dirigeant a répondu (`05 §3.1`). */
+  decisions?: readonly { question: string; reponse: string | null }[];
 };
 
 export type ContactResume = {

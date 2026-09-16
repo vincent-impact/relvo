@@ -439,12 +439,37 @@ décision, clôture. Trois retours du dirigeant.
 - **Les tâches se lisent comme un fil** : la plus récente en tête — par échéance, sinon par
   date de création —, terminées comprises. Relire les tâches doit aider à s'y retrouver.
 
-**`proposé`** · Comment présenter les choix à faire, et faut-il les retenir ? Deux voies
-possibles : un bouton d'action qui ouvre une pop-up de choix avant de rédiger, ou le choix
-dans le texte de la réponse (retenu pour l'instant). Et deux questions ouvertes : noter
-quelque part les réponses que le dirigeant a faites, ou considérer que l'échange d'e-mails
-suffit ; nommer plus clairement, dans la tâche, les choix qu'il doit faire. On reste simple
-tant que l'usage ne tranche pas.
+**`tranché`** (le lendemain) · Comment présenter les choix à faire, et faut-il les retenir ?
+Le choix dans le texte n'a pas tenu un essai de plus : voir « Les décisions d'un message
+deviennent un formulaire ».
+
+### Les décisions d'un message deviennent un formulaire, plus un choix dans le texte
+
+**`tranché`** · Quatrième retour sur le brouillon, le même jour : « la mécanique de l'option
+dans l'e-mail ne va vraiment pas ». Les puces au-dessus du champ, le crochet en relief, la
+note conditionnelle à garder ou retirer — trois couches pour sauver un principe qui ne
+fonctionnait pas : un choix ne se prend pas DANS le texte d'une réponse. Trois maquettes ont
+été comparées sur le scénario réel du devis (fiche de décision entre le message et le
+composer ; question dans le fil comme un message de Relvo ; décision portée par la tâche
+dès l'Accueil). **La première est retenue**, et quatre points ont été tranchés :
+
+- **Au plus simple.** Oui / non, un choix parmi deux à quatre, « Autre… » pour une réponse
+  libre. Si les questions ne conviennent pas, le dirigeant écrit son e-mail lui-même — le
+  composer reste libre à tout moment.
+- **La réponse reste dans le fil**, comme sur la maquette (le formulaire se replie en une ligne
+  vérifiable, « Changer » le rouvre), **sur la tâche** (« Décidé : oui »), et **au journal** —
+  même si le dirigeant n'y va jamais, il sera précieux plus tard.
+- **Les questions d'un message et l'envoi de la réponse sont une seule tâche.** Le dirigeant
+  peut répondre sans les aides de Relvo ; c'est l'envoi qui coche la tâche par correspondance,
+  décisions répondues ou non.
+- **« Répondre » garde son comportement** : sur une tâche sans décision, le brouillon se rédige
+  à l'appui. Sur une tâche à décisions, il attend que tout soit répondu.
+
+Ce que ça retire : le surlignage, le comptage et le blocage des crochets dans le composer,
+ainsi que la consigne qui les demandait au modèle — remplacée par « jamais de crochets, ni
+d'alternative, ni de blanc à compléter ». Les décisions vivent dans les métadonnées de la
+tâche, sans migration ; la structuration et la relecture les proposent, la retenue les borne
+(trois par tâche, deux à quatre options), une méthode du domaine les répond et journalise.
 
 ### La fiche décrit, un envoi se relit, une note conditionnelle n'est pas un choix
 

@@ -360,7 +360,9 @@ Unité de travail **du sujet**, pas de l'utilisateur.
   un message, ou avec une action.
 - **`completed_by_actor`** — qui l'a cochée.
 - **`metadata`** — porte la **provenance d'une déduction** — la référence du sujet précédent ou
-  du document de connaissance sur lequel Relvo s'est appuyé — et la **raison** en une phrase.
+  du document de connaissance sur lequel Relvo s'est appuyé —, la **raison** en une phrase, et,
+  sur une tâche qui se répond, les **décisions** que le message demande (question, précision,
+  options, réponse du dirigeant et son horodatage — cf. `05-ia.md` §3.1).
   C'est ce qui rend la tâche auditable : « d'après _Ouverture magasin Béziers_ », « le
   fournisseur demande un retour avant jeudi ».
 

@@ -49,6 +49,7 @@ const tache = (titre: string): SortieRelecture["taches"][number] => ({
   heure_fin: null,
   raison: "Parce que.",
   provenance: null,
+  decisions: [],
 });
 
 describe("retenirRelecture", () => {

@@ -16,7 +16,13 @@ import type { TenantDb, Tx } from "../tenant";
 import { contactDisplayName } from "./contacts";
 import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
-import { createTask, taskMetadataSchema, taskProvenanceSchema } from "./tasks";
+import {
+  createTask,
+  readTaskDecisions,
+  taskDecisionSchema,
+  taskMetadataSchema,
+  taskProvenanceSchema,
+} from "./tasks";
 import {
   getSenderProfile,
   type TriageAccountProjection,
@@ -54,6 +60,8 @@ export type StructurationTaskProjection = {
   source: "relvo" | "moi";
   terminee: boolean;
   termineeLe: string | null;
+  /** Les décisions que la tâche porte, et ce que le dirigeant a répondu (05 §3.1). */
+  decisions?: { question: string; reponse: string | null }[];
 };
 
 /** Miroir structurel de `SujetContexte` (application), plus ce que l'écriture doit savoir. */
@@ -164,14 +172,19 @@ function jour(d: Date | null | undefined): string | null {
   return d ? d.toISOString().slice(0, 10) : null;
 }
 
-function projectTask(t: {
+export function projectTask(t: {
   title: string;
   kind: TaskKind;
   startDate: Date | null;
   sourceActor: Actor;
   status: TaskStatus;
   completedAt: Date | null;
+  metadata?: unknown;
 }): StructurationTaskProjection {
+  const decisions = readTaskDecisions(t.metadata).map((d) => ({
+    question: d.question,
+    reponse: d.reponse,
+  }));
   return {
     titre: t.title,
     type: t.kind,
@@ -179,6 +192,7 @@ function projectTask(t: {
     source: t.sourceActor === Actor.ai ? "relvo" : "moi",
     terminee: t.status === TaskStatus.done,
     termineeLe: iso(t.completedAt),
+    ...(decisions.length ? { decisions } : {}),
   };
 }
 
@@ -506,6 +520,7 @@ export async function loadSubjectSheet(
           sourceActor: true,
           status: true,
           completedAt: true,
+          metadata: true,
         },
         orderBy: [{ startDate: "asc" }, { createdAt: "asc" }],
       }),
@@ -666,6 +681,11 @@ export const applyStructurationSchema = z.object({
         endTime: heure.nullable(),
         reason: z.string().trim().max(1000),
         provenance: taskProvenanceSchema.nullable(),
+        /** Les décisions que le message demande, sans réponse encore (05 §3.1). */
+        decisions: z
+          .array(taskDecisionSchema.omit({ reponse: true, repondueLe: true }))
+          .max(3)
+          .optional(),
       }),
     )
     .max(10),
@@ -780,6 +800,15 @@ export async function applyStructuration(
       metadata: taskMetadataSchema.parse({
         raison: t.reason,
         provenance: t.provenance,
+        ...(t.decisions?.length
+          ? {
+              decisions: t.decisions.map((d) => ({
+                ...d,
+                reponse: null,
+                repondueLe: null,
+              })),
+            }
+          : {}),
       }),
     });
     taskIds.push(task.id);

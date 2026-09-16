@@ -39,6 +39,13 @@ export type Provenance = {
   libelle: string;
 };
 
+export type DecisionRetenue = {
+  id: string;
+  question: string;
+  precision: string | null;
+  options: string[];
+};
+
 export type TacheRetenue = {
   titre: string;
   type: TacheProposee["type"];
@@ -48,7 +55,72 @@ export type TacheRetenue = {
   heureFin: string | null;
   raison: string;
   provenance: Provenance | null;
+  /** Les décisions retenues — seulement sur une tâche qui se répond (05 §3.1). */
+  decisions: DecisionRetenue[];
 };
+
+/** Décisions par tâche, et options par décision : un formulaire se lit d'un coup d'œil. */
+export const PLAFOND_DECISIONS = 3;
+export const PLAFOND_OPTIONS = 4;
+const TYPES_QUI_SE_REPONDENT: readonly TacheProposee["type"][] = [
+  "reply",
+  "decision",
+];
+
+/**
+ * Les décisions retenues d'une tâche : sur une tâche qui se répond seulement,
+ * au plus trois, chacune avec une question et de deux à quatre options
+ * distinctes et courtes ; le reste est écarté, et dit.
+ */
+export function retenirDecisions(
+  proposees: readonly TacheProposee["decisions"][number][],
+  type: TacheProposee["type"],
+  titre: string,
+  ecarts: string[],
+): DecisionRetenue[] {
+  if (proposees.length === 0) return [];
+  if (!TYPES_QUI_SE_REPONDENT.includes(type)) {
+    ecarts.push(`${titre} : décisions sur une tâche qui ne se répond pas`);
+    return [];
+  }
+  const retenues: DecisionRetenue[] = [];
+  for (const d of proposees) {
+    const question = nonVide(d.question);
+    if (!question) {
+      ecarts.push(`${titre} : décision sans question`);
+      continue;
+    }
+    if (retenues.length >= PLAFOND_DECISIONS) {
+      ecarts.push(
+        `${titre} : plafond de ${PLAFOND_DECISIONS} décisions : ${question}`,
+      );
+      continue;
+    }
+    const options: string[] = [];
+    for (const o of d.options) {
+      const v = nonVide(o)?.slice(0, 80);
+      if (!v || options.some((x) => cle(x) === cle(v))) continue;
+      if (options.length >= PLAFOND_OPTIONS) {
+        ecarts.push(
+          `${question} : plafond de ${PLAFOND_OPTIONS} options : ${v}`,
+        );
+        continue;
+      }
+      options.push(v);
+    }
+    if (options.length < 2) {
+      ecarts.push(`${question} : moins de deux options`);
+      continue;
+    }
+    retenues.push({
+      id: `d${retenues.length + 1}`,
+      question: question.slice(0, 200),
+      precision: nonVide(d.precision)?.slice(0, 200) ?? null,
+      options,
+    });
+  }
+  return retenues;
+}
 
 export type ContactRetenu = {
   prenom: string | null;
@@ -218,6 +290,7 @@ export function retenirTaches(
       heureFin: dates.heureFin,
       raison: (nonVide(t.raison) ?? "").slice(0, 1000),
       provenance: resoudreProvenance(t.provenance, cadre),
+      decisions: retenirDecisions(t.decisions, t.type, titre, ecarts),
     });
   }
   return taches;

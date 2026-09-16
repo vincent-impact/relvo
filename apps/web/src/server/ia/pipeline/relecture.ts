@@ -148,6 +148,7 @@ export async function relireSujet(args: {
         endTime: t.heureFin,
         reason: t.raison,
         provenance: t.provenance,
+        decisions: t.decisions,
       })),
       labels: retenue.etiquettes,
       priority: retenue.priorite,

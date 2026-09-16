@@ -383,6 +383,15 @@ retenue, orchestration — dans l'application (`apps/web/src/server/ia/pipeline/
       du dirigeant : la relecture après envoi est gardée malgré son coût** — une réponse peut
       engager sur une tâche ; suites 010 (envoi → en attente) et 011 (envoi → tâche datée) au jeu
       d'évaluation, justes toutes deux.
+- [x] **Quatrième retour, le même jour : le choix dans le texte est abandonné.** Trois
+      maquettes comparées (artefact), la fiche de décision entre le message et le composer
+      retenue. Livré : les **décisions** portées par la tâche de réponse (métadonnées, aucune
+      migration), proposées par la structuration et la relecture, bornées par la retenue ;
+      le **formulaire de décisions** dans le fil (`decision-sheet.tsx`), réponse journalisée,
+      « Rédiger la réponse » une fois tout répondu, repli en une ligne ; la tâche dit
+      « N décisions à prendre » puis « Décidé : … » ; le composer ne surligne ni ne bloque plus
+      rien ; consigne « jamais de crochets ». Décision dans `ecarts` (« Les décisions d'un
+      message deviennent un formulaire »).
 - [ ] Essayer `none` sur la relecture avec le jeu réel.
 - [ ] Une tâche d'événement qui change de date est écartée comme doublon : reprogrammer
       l'existante (point ouvert, `ecarts`).

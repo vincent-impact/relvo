@@ -19,7 +19,7 @@ import { SubjectConversationsList } from "@/components/subject/subject-conversat
 import { SubjectTitleInline } from "@/components/subject/subject-title-inline";
 import { toConversationRowData } from "@/lib/conversation-row";
 import { contactFullName, formatRelative } from "@/lib/display";
-import { relvoTaskInfo } from "@/lib/task-item-data";
+import { relvoTaskInfo, taskDecisionsInfo } from "@/lib/task-item-data";
 import { getTenantDb } from "@/server/auth-context";
 
 // Fiche Sujet (2026-09-15) — hero violet (titre éditable + progression), 4
@@ -146,6 +146,7 @@ export default async function SujetPage({
                 folders.find((f) => f.id === subject.folderId)?.slug ?? null,
               relvo: relvoTaskInfo(t.metadata),
               replyConversationId: replyTargets.get(t.id) ?? null,
+              decisions: taskDecisionsInfo(t.metadata),
             }))}
             // Ce que Relvo a rédigé à la structuration (M7.6) : le résumé court,
             // affiché tant que l'utilisateur n'a pas écrit le sien.

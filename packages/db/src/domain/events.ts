@@ -60,6 +60,8 @@ export const EVENT_TYPES = {
   taskCompleted: "task_completed",
   taskReopened: "task_reopened",
   taskDeleted: "task_deleted",
+  /** Le dirigeant a répondu à une décision portée par une tâche (05 §3.1) — la question et la réponse en métadonnée. */
+  taskDecisionAnswered: "task_decision_answered",
   // Attachments
   attachmentCreated: "attachment_created",
   attachmentLabeled: "attachment_labeled",

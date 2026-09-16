@@ -1,4 +1,9 @@
-import { readTaskMetadata, type Actor, type EnrichedTask } from "@relvo/db";
+import {
+  readTaskDecisions,
+  readTaskMetadata,
+  type Actor,
+  type EnrichedTask,
+} from "@relvo/db";
 
 // Forme PLATE d'une tâche pour TaskItem — isolée dans un module serveur-safe (pas
 // de "use client") car le mapper `toTaskItemData` est appelé côté serveur (cache,
@@ -26,7 +31,19 @@ export type TaskItemData = {
   relvo?: RelvoTaskInfo | null;
   /** Le fil dans lequel la tâche se répond d'un appui (M7.7) — ouvre le composer avec le brouillon de Relvo. */
   replyConversationId?: string | null;
+  /** Les décisions que la tâche porte (05 §3.1) : ce qui reste à décider, ce qui l'est. */
+  decisions?: TaskDecisionInfo[];
 };
+
+export type TaskDecisionInfo = { question: string; reponse: string | null };
+
+/** Les décisions d'une tâche, en clair, depuis sa colonne `metadata`. */
+export function taskDecisionsInfo(metadata: unknown): TaskDecisionInfo[] {
+  return readTaskDecisions(metadata).map((d) => ({
+    question: d.question,
+    reponse: d.reponse,
+  }));
+}
 
 export type RelvoTaskInfo = {
   /** « le fournisseur demande un retour avant jeudi ». */
@@ -76,5 +93,6 @@ export function toTaskItemData(e: EnrichedTask): TaskItemData {
     folderSlug: e.folderSlug,
     relvo: relvoTaskInfo(e.task.metadata),
     replyConversationId: e.replyConversationId,
+    decisions: taskDecisionsInfo(e.task.metadata),
   };
 }

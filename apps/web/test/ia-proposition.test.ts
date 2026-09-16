@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  PLAFOND_DECISIONS,
+  PLAFOND_OPTIONS,
   PLAFOND_QUESTIONS,
   PLAFOND_TACHES,
   resoudreProvenance,
@@ -45,6 +47,7 @@ const sortie: SortieStructuration = {
       heure_fin: null,
       raison: "Retour demandé avant jeudi.",
       provenance: null,
+      decisions: [],
     },
     {
       titre: "Demander le bon de livraison",
@@ -55,6 +58,7 @@ const sortie: SortieStructuration = {
       heure_fin: "16:00",
       raison: "L'instruction l'exige.",
       provenance: "Remplacements",
+      decisions: [],
     },
     {
       titre: "Appeler le magasin",
@@ -65,6 +69,7 @@ const sortie: SortieStructuration = {
       heure_fin: null,
       raison: "Comme la dernière fois.",
       provenance: "d'après SUB-0050",
+      decisions: [],
     },
   ],
   contact: {
@@ -242,6 +247,66 @@ describe("la retenue", () => {
       2,
     );
     expect(beaucoup.questions).toHaveLength(PLAFOND_QUESTIONS);
+  });
+
+  it("garde les décisions d'une tâche qui se répond — questions bornées, options distinctes de deux à quatre — et rien sur les autres", () => {
+    const decision = (question: string, options: string[]) => ({
+      question,
+      precision: " 480 € HT ",
+      options,
+    });
+    const r = retenirProposition(
+      {
+        ...sortie,
+        taches: [
+          {
+            ...sortie.taches[0]!,
+            type: "reply",
+            decisions: [
+              decision("Lancer le remplacement ?", [
+                "Oui, commandez",
+                " oui, commandez ",
+                "Non",
+                "Plus tard",
+                "Autre",
+                "Encore",
+              ]),
+              decision("  ", ["a", "b"]),
+              decision("Une seule option", ["Oui"]),
+              ...Array.from({ length: PLAFOND_DECISIONS + 1 }, (_, i) =>
+                decision(`Question ${i}`, ["a", "b"]),
+              ),
+            ],
+          },
+          {
+            ...sortie.taches[1]!,
+            type: "check",
+            decisions: [decision("Sur une vérification ?", ["a", "b"])],
+          },
+        ],
+      },
+      cadre,
+    );
+    const [reply, check] = r.taches;
+    expect(reply!.decisions).toHaveLength(PLAFOND_DECISIONS);
+    expect(reply!.decisions[0]).toEqual({
+      id: "d1",
+      question: "Lancer le remplacement ?",
+      precision: "480 € HT",
+      options: ["Oui, commandez", "Non", "Plus tard", "Autre"],
+    });
+    expect(reply!.decisions.map((d) => d.id)).toEqual(["d1", "d2", "d3"]);
+    expect(check!.decisions).toEqual([]);
+    expect(r.ecarts).toContain(
+      `Lancer le remplacement ? : plafond de ${PLAFOND_OPTIONS} options : Encore`,
+    );
+    expect(r.ecarts).toContain(
+      "Valider le remplacement : décision sans question",
+    );
+    expect(r.ecarts).toContain("Une seule option : moins de deux options");
+    expect(r.ecarts).toContain(
+      "Demander le bon de livraison : décisions sur une tâche qui ne se répond pas",
+    );
   });
 
   it("ne pousse ni contact vers un sujet sans contact, ni domaine proposé vers un sujet classé", () => {

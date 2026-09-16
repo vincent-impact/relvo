@@ -250,6 +250,12 @@ async function main() {
         console.log(
           `      - [${x.type}] ${x.titre}${x.date ? ` (${x.date}${x.heure ? ` ${x.heure}` : ""})` : ""} — ${x.raison}`,
         );
+        // Les décisions de la tâche (05 §3.1) : ce que le formulaire posera.
+        for (const d of x.decisions) {
+          console.log(
+            `          ? ${d.question}${d.precision ? ` (${d.precision})` : ""} → ${d.options.join(" / ")}`,
+          );
+        }
       }
     }
     console.log();
