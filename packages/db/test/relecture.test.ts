@@ -255,6 +255,7 @@ describe("écriture de la relecture", () => {
     });
     expect(r).toEqual({
       taskIds: [expect.any(String)],
+      completedTaskIds: [],
       retiredTaskIds: [],
       labels: ["contrat", "retard-livraison"],
       priorityChanged: true,
@@ -463,6 +464,73 @@ describe("écriture de la relecture", () => {
     });
     expect(relu.title).toBe("Relvo a relu le sujet : 1 retirée");
     expect(relu.metadata).toMatchObject({ retiredTaskIds: r.retiredTaskIds });
+  });
+
+  it("coche les tâches que le message montre accomplies — celles du dirigeant aussi —, les journalise avec ce qui le dit, et les compte", async () => {
+    const { db, channel } = await makeAccount("done@test.fr");
+    const { subjectId } = await sujetSuivi(db, channel.id);
+    const duDirigeant = await createTask(db, {
+      subjectId,
+      title: "Réceptionner la friteuse neuve",
+      sourceActor: Actor.user,
+      kind: "check",
+    });
+    const { message } = await mail(db, channel.id, "e-done", {
+      content: "Bien reçu, tout fonctionne parfaitement !",
+    });
+    const r = await applyRelecture(db, {
+      subjectId,
+      messageId: message.id,
+      situation: {
+        where: "Friteuse neuve reçue et en service.",
+        nextStep: null,
+        waitingFor: null,
+        deadline: null,
+      },
+      summary: null,
+      tasks: [],
+      completedTasks: [
+        {
+          title: "réceptionner la friteuse neuve",
+          reason: "Le dirigeant dit l'avoir reçue et qu'elle fonctionne.",
+        },
+        { title: "Tâche inconnue", reason: "N'existe pas." },
+      ],
+      obsoleteTasks: [
+        { title: "Réceptionner la friteuse neuve", reason: "Déjà cochée." },
+      ],
+      labels: [],
+      priority: null,
+      waitingForReply: null,
+      resolution: "suggest",
+      reason: "La friteuse est reçue et fonctionne.",
+      proposal: null,
+    });
+    expect(r.completedTaskIds).toEqual([duDirigeant.id]);
+    expect(r.retiredTaskIds).toEqual([]);
+    expect(r.resolution).toBe("suggested");
+    const tache = await db.task.findFirstOrThrow({
+      where: { id: duDirigeant.id },
+    });
+    expect(tache.status).toBe("done");
+    expect(tache.completedByActor).toBe("ai");
+    expect(tache.completionMode).toBe("message_match");
+    const cochee = await db.eventLog.findFirstOrThrow({
+      where: { eventType: EVENT_TYPES.taskCompleted, taskId: duDirigeant.id },
+    });
+    expect(cochee.title).toBe(
+      "Tâche cochée par Relvo : Réceptionner la friteuse neuve",
+    );
+    expect(cochee.description).toBe(
+      "Le dirigeant dit l'avoir reçue et qu'elle fonctionne.",
+    );
+    expect(cochee.messageId).toBe(message.id);
+    expect(cochee.actor).toBe("ai");
+    const relu = await db.eventLog.findFirstOrThrow({
+      where: { eventType: EVENT_TYPES.subjectReviewed },
+    });
+    expect(relu.title).toBe("Relvo a relu le sujet : 1 cochée");
+    expect(relu.metadata).toMatchObject({ completedTaskIds: [duDirigeant.id] });
   });
 
   it("refuse un sujet qui n'est pas ouvert", async () => {

@@ -38,6 +38,7 @@ const sortie: SortieRelecture = {
   en_attente: true,
   termine: false,
   taches_obsoletes: [],
+  taches_terminees: [],
   raison: "Le fournisseur a confirmé la livraison.",
 };
 
@@ -204,6 +205,67 @@ describe("les tâches devenues sans objet (05 §4.2)", () => {
     expect(r.ecarts).toContain(
       "tâche obsolète inconnue de la fiche : Commander la pièce",
     );
+  });
+
+  it("retient les tâches que le message montre accomplies, par leur titre exact ; nommée aussi obsolète, elle est cochée, pas retirée", () => {
+    const r = retenirRelecture(
+      {
+        ...sortie,
+        en_attente: false,
+        taches_terminees: [
+          { titre: "livraison du thermostat", raison: "Reçue ce matin." },
+          { titre: "Commander la pièce", raison: "Inconnue de la fiche." },
+          { titre: "Livraison du thermostat", raison: "En double." },
+        ],
+        taches_obsoletes: [
+          { titre: "Livraison du thermostat", raison: "Plus besoin." },
+          { titre: "Intervention du technicien", raison: "Annulée." },
+        ],
+      },
+      ouvertes,
+    );
+    expect(r.tachesTerminees).toEqual([
+      { titre: "Livraison du thermostat", raison: "Reçue ce matin." },
+    ]);
+    expect(r.tachesObsoletes).toEqual([
+      { titre: "Intervention du technicien", raison: "Annulée." },
+    ]);
+    expect(r.ecarts).toContain(
+      "tâche terminée inconnue de la fiche : Commander la pièce",
+    );
+    expect(r.ecarts).toContain(
+      "tâche à la fois terminée et obsolète, cochée : Livraison du thermostat",
+    );
+  });
+
+  it("une tâche cochée par le message ne compte plus : la clôture peut être suggérée s'il ne reste rien", () => {
+    const [a, b, c] = ouvertes.tachesOuvertes;
+    expect(
+      retenirRelecture(
+        {
+          ...sortie,
+          en_attente: false,
+          termine: true,
+          taches_terminees: [
+            { titre: a!, raison: "Faite." },
+            { titre: b!, raison: "Faite." },
+          ],
+          taches_obsoletes: [{ titre: c!, raison: "Sans objet." }],
+        },
+        ouvertes,
+      ).resolution,
+    ).toBe("suggerer");
+    expect(
+      retenirRelecture(
+        {
+          ...sortie,
+          en_attente: false,
+          termine: true,
+          taches_terminees: [{ titre: a!, raison: "Faite." }],
+        },
+        ouvertes,
+      ).resolution,
+    ).toBe("garder");
   });
 
   it("une fois les tâches obsolètes retirées, la clôture peut être suggérée s'il ne reste rien", () => {

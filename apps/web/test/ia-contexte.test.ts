@@ -313,8 +313,12 @@ describe("profils et budgets", () => {
     expect(contextes.relecture.prompt).toContain("ÉVÉNEMENT annoncé");
   });
 
-  it("la relecture demande les tâches devenues sans objet, à l'arrivée comme après un envoi", () => {
+  it("la relecture demande les tâches devenues sans objet et celles que le message montre accomplies, à l'arrivée comme après un envoi", () => {
     expect(contextes.relecture.prompt).toContain("« taches_obsoletes »");
+    expect(contextes.relecture.prompt).toContain("« taches_terminees »");
+    expect(contextes.relecture.prompt).toContain(
+      "sa parole l'emporte sur le planning",
+    );
     const envoi = contexteRelecture({
       compte,
       domaine,
@@ -324,6 +328,10 @@ describe("profils et budgets", () => {
       instant,
     });
     expect(envoi.prompt).toContain("« taches_obsoletes »");
+    expect(envoi.prompt).toContain("« taches_terminees »");
+    expect(envoi.prompt).toContain(
+      "la tâche ouverte qui l'attendait est terminée",
+    );
   });
 
   it("une fiche contact à compléter demande aussi le téléphone et l'e-mail de la signature", () => {

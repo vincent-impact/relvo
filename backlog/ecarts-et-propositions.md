@@ -443,6 +443,27 @@ décision, clôture. Trois retours du dirigeant.
 Le choix dans le texte n'a pas tenu un essai de plus : voir « Les décisions d'un message
 deviennent un formulaire ».
 
+### Quatre retours du second essai du formulaire de décisions
+
+**`tranché`** · Le même jour, sur le scénario du devis de friteuse joué jusqu'à la livraison.
+Tous retenus, séparément :
+
+- **Le hero d'une conversation, fixé, couvrait un tiers de l'écran.** Il tient sur moitié
+  moins : plus de libellés « Interlocuteur » et « Suivi dans », le canal et les interlocuteurs
+  en puces sur une ligne, les sujets suivis en lignes fines dessous.
+- **Le formulaire de décisions prend toute la largeur** d'un message du fil, au lieu d'une
+  marge en plus.
+- **Le rappel d'un choix fait est une coche violette et le libellé du choix**, rien d'autre :
+  ni panneau, ni « Décidé avec Relvo », ni la question — elle est dans le message juste
+  au-dessus. Le fil ne se sature pas de texte.
+- **« Bien reçu, tout fonctionne » ne cochait pas la livraison** ni ne suggérait la clôture :
+  la relecture savait ajouter et retirer des tâches, pas en cocher. Elle nomme désormais les
+  tâches de la fiche que le message montre **accomplies**, le code les coche — celles du
+  dirigeant comprises, c'est le geste réversible — et une tâche cochée ne compte plus dans ce
+  qui reste. La consigne dit aussi que la parole du dirigeant l'emporte sur le planning :
+  « reçu » vaut reçu, même si la date annoncée n'est pas passée (`conception/05-ia.md` §4.2).
+  Une suite du jeu d'évaluation le vérifie.
+
 ### Huit retours du premier essai du formulaire de décisions
 
 **`tranché`** · Le lendemain de la livraison du formulaire, sur le scénario complet du devis

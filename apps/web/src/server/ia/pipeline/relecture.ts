@@ -151,6 +151,10 @@ export async function relireSujet(args: {
         provenance: t.provenance,
         decisions: t.decisions,
       })),
+      completedTasks: retenue.tachesTerminees.map((t) => ({
+        title: t.titre,
+        reason: t.raison,
+      })),
       obsoleteTasks: retenue.tachesObsoletes.map((t) => ({
         title: t.titre,
         reason: t.raison,
@@ -172,7 +176,7 @@ export async function relireSujet(args: {
     expireTenantData();
     return {
       issue: "relu",
-      detail: `${projection.sujet.reference} · ${applied.resolution}${applied.waitingForReplySet ? " · en attente" : ""}${applied.priorityChanged ? " · priorité" : ""}${applied.retiredTaskIds.length ? ` · ${applied.retiredTaskIds.length} retirée(s)` : ""}`,
+      detail: `${projection.sujet.reference} · ${applied.resolution}${applied.waitingForReplySet ? " · en attente" : ""}${applied.priorityChanged ? " · priorité" : ""}${applied.completedTaskIds.length ? ` · ${applied.completedTaskIds.length} cochée(s)` : ""}${applied.retiredTaskIds.length ? ` · ${applied.retiredTaskIds.length} retirée(s)` : ""}`,
       taches: applied.taskIds.length,
     };
   } catch (err) {

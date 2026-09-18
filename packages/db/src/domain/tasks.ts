@@ -262,6 +262,8 @@ export async function completeTask(
   id: string,
   completedByActor: Actor = Actor.user,
   completionMode?: CompletionMode,
+  /** Ce qui dit qu'elle est faite, et le message qui le dit — quand c'est Relvo qui coche (05 §4.2). */
+  origine?: { reason?: string | null; messageId?: string | null },
 ) {
   return db.$transaction(async (tx) => {
     const current = assertFound(
@@ -299,8 +301,13 @@ export async function completeTask(
       entityId: task.id,
       taskId: task.id,
       subjectId: task.subjectId,
+      messageId: origine?.messageId ?? null,
       eventType: EVENT_TYPES.taskCompleted,
-      title: `Tâche cochée : ${task.title}`,
+      title:
+        completedByActor === Actor.ai
+          ? `Tâche cochée par Relvo : ${task.title}`
+          : `Tâche cochée : ${task.title}`,
+      description: origine?.reason ?? null,
       actor: completedByActor,
     });
     return task;

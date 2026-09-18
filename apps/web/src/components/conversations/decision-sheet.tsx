@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Check, Sparkles } from "lucide-react";
+import type React from "react";
 import { toast } from "sonner";
 import { ListPanel } from "@/components/shared/list-panel";
 import { prepareDraftAction } from "@/server/actions/brouillon";
@@ -43,41 +44,61 @@ export type SheetTask = {
 
 // Le panneau est TEINTÉ Relvo — violet clair, liseré violet — parce qu'un
 // panneau blanc se confondait avec un message du fil (retour du 2026-09-18) :
-// c'est une assistance de Relvo, pas une suite de la conversation.
-const RELVO_PANEL = "mx-4 mt-2 border-(--purple-100) bg-relvo-bg shadow-none";
+// c'est une assistance de Relvo, pas une suite de la conversation. Il prend
+// toute la largeur des messages ; la marge vient du fil, par `className`.
+const RELVO_PANEL = "border-(--purple-100) bg-relvo-bg shadow-none";
 
-/** Ce qui a été décidé, une fois la tâche terminée : une ligne Relvo, sans action. */
-export function DecisionRecord({ task }: { task: SheetTask }) {
+/**
+ * Un choix fait : une coche violette et le libellé, rien d'autre — le fil ne
+ * se sature pas de texte (retour du 2026-09-18). La question est dans le
+ * message juste au-dessus ; le journal et la tâche gardent le reste.
+ */
+function ChoixFait({
+  libelle,
+  action,
+}: {
+  libelle: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center gap-2 text-[14px] text-(--text-primary)">
+      <span className="grid size-5 flex-none place-items-center rounded-full bg-relvo text-white">
+        <Check className="size-3" strokeWidth={3} />
+      </span>
+      <span className="min-w-0 flex-1 font-semibold">{libelle}</span>
+      {action}
+    </div>
+  );
+}
+
+/** Ce qui a été décidé, une fois la tâche terminée : une coche par choix, sans panneau. */
+export function DecisionRecord({
+  task,
+  className,
+}: {
+  task: SheetTask;
+  className?: string;
+}) {
   const prises = task.decisions.filter((d) => d.reponse !== null);
   if (prises.length === 0) return null;
   return (
-    <ListPanel className={RELVO_PANEL}>
-      <div className="flex items-start gap-2.5 px-3.5 py-2.5 text-[13.5px] text-(--text-primary)">
-        <Sparkles
-          className="mt-0.5 size-3.5 flex-none text-relvo"
-          fill="currentColor"
-          strokeWidth={0}
-        />
-        <span className="min-w-0 flex-1">
-          <span className="font-bold text-relvo">Décidé avec Relvo</span>
-          {prises.map((d) => (
-            <span key={d.id} className="block">
-              {d.question} <b className="font-semibold">{d.reponse}</b>
-            </span>
-          ))}
-        </span>
-      </div>
-    </ListPanel>
+    <div className={cn("flex flex-col gap-1.5 px-2 py-1", className)}>
+      {prises.map((d) => (
+        <ChoixFait key={d.id} libelle={d.reponse!} />
+      ))}
+    </div>
   );
 }
 
 export function DecisionSheet({
   task,
   onDraft,
+  className,
 }: {
   task: SheetTask;
   /** Le brouillon rédigé une fois tout répondu — à poser dans le composer. */
   onDraft: (draft: { actionId: string; contenu: string }) => void;
+  className?: string;
 }) {
   const [decisions, setDecisions] = useState(task.decisions);
   const [drafted, setDrafted] = useState(false);
@@ -123,35 +144,32 @@ export function DecisionSheet({
   }
 
   if (collapsed) {
-    // Replié : ce qui a été décidé, vérifiable d'un coup d'œil, et « Changer ».
+    // Replié : une coche par choix, vérifiable d'un coup d'œil, et « Changer ».
     return (
-      <ListPanel className={RELVO_PANEL}>
-        <div className="flex items-center gap-2.5 px-3.5 py-2.5 text-[14px]">
-          <span className="grid size-[22px] flex-none place-items-center rounded-full bg-relvo text-white">
-            <Check className="size-3" strokeWidth={3} />
-          </span>
-          <span className="min-w-0 flex-1 truncate">
-            {decisions.map((d, i) => (
-              <span key={d.id}>
-                {i > 0 ? " · " : ""}
-                <b className="font-semibold">{d.reponse}</b>
-              </span>
-            ))}
-          </span>
-          <button
-            type="button"
-            onClick={() => setCollapsed(false)}
-            className="flex-none text-[12.5px] font-semibold text-(--text-secondary) active:opacity-70"
-          >
-            Changer
-          </button>
-        </div>
-      </ListPanel>
+      <div className={cn("flex flex-col gap-1.5 px-2 py-1", className)}>
+        {decisions.map((d, i) => (
+          <ChoixFait
+            key={d.id}
+            libelle={d.reponse ?? ""}
+            action={
+              i === 0 ? (
+                <button
+                  type="button"
+                  onClick={() => setCollapsed(false)}
+                  className="flex-none text-[12.5px] font-semibold text-(--text-secondary) active:opacity-70"
+                >
+                  Changer
+                </button>
+              ) : null
+            }
+          />
+        ))}
+      </div>
     );
   }
 
   return (
-    <ListPanel className={RELVO_PANEL}>
+    <ListPanel className={cn(RELVO_PANEL, className)}>
       <div className="flex items-center gap-2 border-b border-(--purple-100) px-3.5 py-2.5 text-[12px] font-bold text-relvo">
         <Sparkles className="size-3.5" fill="currentColor" strokeWidth={0} />
         <span className="min-w-0 flex-1 truncate">

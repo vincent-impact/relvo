@@ -486,15 +486,19 @@ export function ConversationDetail({
   const messageIds = new Set(messages.map((m) => m.id));
   const relvoAfter: Record<string, React.ReactNode[]> = {};
   const relvoTrailing: React.ReactNode[] = [];
+  // Alignés sur les messages : dans un fil e-mail, le conteneur porte déjà la
+  // marge et l'espacement ; dans une messagerie, les bulles ont la leur.
+  const relvoInset = isEmail ? "" : "mx-[18px] my-1";
   if (attached) {
     for (const t of decisionTasks) {
       const node =
         t.status === "done" ? (
-          <DecisionRecord key={t.id} task={t} />
+          <DecisionRecord key={t.id} task={t} className={relvoInset} />
         ) : (
           <DecisionSheet
             key={t.id}
             task={t}
+            className={relvoInset}
             onDraft={({ actionId, contenu }) => {
               setDraftFor(t.id);
               setDraft({ loading: false, text: contenu, actionId });
@@ -519,15 +523,13 @@ export function ConversationDetail({
           relvo={false}
           titleFull
           title={title}
-          className="pb-5"
+          className="pb-3.5"
         >
-          <div className="space-y-4 px-[22px] pt-3">
-            {/* Canal, sous le titre (icône + nom). */}
-            <div className="flex items-center gap-1.5 text-[12.5px] font-semibold text-(--on-violet)">
-              <ChannelIcon className="size-[14px] flex-none" strokeWidth={2} />
-              {channelLabel}
-            </div>
-
+          {/* Le hero d'une conversation tient sur PEU (retour du 2026-09-18 :
+              fixé, il couvrait un tiers de l'écran). Plus de libellés de
+              section : le canal et les interlocuteurs en puces sur une ligne,
+              les sujets suivis en lignes fines dessous. */}
+          <div className="space-y-2 px-[18px] pt-2">
             {/* L'avis de tri de Relvo (M7.20) — action, nature, raison, heure ;
                 ou « Relvo n'a pas encore lu ce fil ». Sur le violet, en blanc.
                 SEULEMENT tant que le fil n'est pas suivi : c'est là qu'il sert
@@ -549,32 +551,30 @@ export function ConversationDetail({
               </div>
             ) : null}
 
-            {/* Interlocuteurs — TOUS les contacts du fil, en colonne compacte.
-                Tap = fiche (enregistré) ou pop-up de création (non enregistré) ;
-                pas de sous-libellé, avatar réduit. */}
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-[0.3px] text-(--on-violet) uppercase">
+            {/* Le canal, puis les interlocuteurs — en puces, sur une ligne
+                qui replie. Tap = fiche (enregistré) ou pop-up de création. */}
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="inline-flex h-7 flex-none items-center gap-1 rounded-full bg-white/12 px-2 text-[12px] font-semibold text-(--on-violet)">
                 {isGroup ? (
-                  <>
-                    <Users className="size-3.5" strokeWidth={2.4} />
-                    Groupe · {participants.length} membre
-                    {participants.length > 1 ? "s" : ""}
-                  </>
+                  <Users className="size-[13px]" strokeWidth={2.4} />
                 ) : (
-                  `Interlocuteur${participants.length > 1 ? "s" : ""}`
+                  <ChannelIcon className="size-[13px]" strokeWidth={2.2} />
                 )}
-              </div>
+                {isGroup
+                  ? `${channelLabel} · ${participants.length} membre${participants.length > 1 ? "s" : ""}`
+                  : channelLabel}
+              </span>
               {participants.length === 0 ? (
-                <p className="text-[13px] text-white/70 italic">
+                <span className="text-[12.5px] text-white/70 italic">
                   Aucun interlocuteur identifié.
-                </p>
+                </span>
               ) : (
                 participantsVisibles.map((p, i) => {
                   const pKind = guessContactKind({ name: p.name, raw: p.raw });
                   return (
-                    <div
+                    <span
                       key={`${p.contactId ?? p.raw ?? p.name}-${i}`}
-                      className="flex w-full items-center gap-2"
+                      className="flex max-w-full min-w-0 items-center gap-1"
                     >
                       <button
                         type="button"
@@ -584,41 +584,39 @@ export function ConversationDetail({
                             ? "Voir le contact"
                             : "Voir l’interlocuteur"
                         }
-                        className="flex min-w-0 flex-1 items-center gap-2 active:opacity-80"
+                        className="inline-flex h-7 min-w-0 items-center gap-1.5 rounded-full bg-white/12 pr-2 pl-1 text-[12.5px] font-semibold text-white active:bg-white/20"
                       >
-                        <span className="grid size-8 flex-none place-items-center rounded-full bg-white/20 text-[12px] font-extrabold text-white">
+                        <span className="grid size-5 flex-none place-items-center rounded-full bg-white/25 text-[9.5px] font-extrabold">
                           {p.contactId ? (
                             (initialsFor(p.name) ?? "?")
                           ) : (
                             <ContactAvatarIcon
                               kind={pKind}
-                              className="size-[17px]"
-                              strokeWidth={2.1}
+                              className="size-[12px]"
+                              strokeWidth={2.2}
                             />
                           )}
                         </span>
-                        <span className="truncate text-[14px] font-semibold text-white">
-                          {p.name}
-                        </span>
+                        <span className="truncate">{p.name}</span>
+                        {p.contactId ? (
+                          <ChevronRight
+                            className="size-3.5 flex-none text-white/55"
+                            strokeWidth={2.2}
+                            aria-hidden
+                          />
+                        ) : null}
                       </button>
-                      {/* Action explicite : « Enregistrer » (interlocuteur non
-                          rattaché) ou chevron « voir la fiche » (déjà enregistré). */}
-                      {p.contactId ? (
-                        <ChevronRight
-                          className="size-4 flex-none text-white/45"
-                          strokeWidth={2.2}
-                          aria-hidden
-                        />
-                      ) : (
+                      {/* Interlocuteur non rattaché : « Enregistrer », à côté. */}
+                      {p.contactId ? null : (
                         <button
                           type="button"
                           onClick={() => openCreateForParticipant(p)}
-                          className="flex-none rounded-full border border-white/35 px-2.5 py-1 text-[11.5px] font-bold whitespace-nowrap text-white active:bg-white/10"
+                          className="h-7 flex-none rounded-full border border-white/35 px-2 text-[11.5px] font-bold whitespace-nowrap text-white active:bg-white/10"
                         >
                           Enregistrer
                         </button>
                       )}
-                    </div>
+                    </span>
                   );
                 })
               )}
@@ -627,30 +625,27 @@ export function ConversationDetail({
                   type="button"
                   onClick={() => setMembersOpen((o) => !o)}
                   aria-expanded={membersOpen}
-                  className="text-[12px] font-semibold text-white/75 underline decoration-white/30 underline-offset-2 active:opacity-70"
+                  className="h-7 flex-none rounded-full border border-white/30 px-2.5 text-[12px] font-semibold text-white/85 active:bg-white/10"
                 >
                   {membersOpen
                     ? "Réduire"
-                    : `Voir les ${participants.length - MEMBRES_VISIBLES} autres`}
+                    : `+${participants.length - MEMBRES_VISIBLES}`}
                 </button>
               ) : null}
             </div>
 
-            {/* Sujets suivis — liste verticale ; chaîne brisée = détacher (3e). */}
+            {/* Sujets suivis — une ligne fine par sujet ; chaîne brisée = détacher. */}
             {listenings.length > 0 ? (
-              <div className="space-y-1.5">
-                <div className="text-[11px] font-bold tracking-[0.3px] text-(--on-violet) uppercase">
-                  Suivi dans
-                </div>
+              <div className="space-y-1">
                 {listenings.map((l) => {
                   const color = folderVisual(l.folder ?? undefined).color;
                   return (
                     <div
                       key={l.subjectId}
-                      className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 py-1.5 pr-1.5 pl-2.5"
+                      className="flex h-9 items-center gap-2 rounded-full border border-white/15 bg-white/10 pr-1 pl-3"
                     >
                       <span
-                        className="size-2.5 flex-none rounded-full"
+                        className="size-2 flex-none rounded-full"
                         style={{ background: color }}
                       />
                       <Link
@@ -659,7 +654,7 @@ export function ConversationDetail({
                       >
                         <span
                           className={cn(
-                            "block truncate text-[13.5px] font-semibold text-white",
+                            "block truncate text-[13px] font-semibold text-white",
                             !l.active && "line-through decoration-white/40",
                           )}
                         >
@@ -676,9 +671,9 @@ export function ConversationDetail({
                               ? "Détacher ce fil du sujet"
                               : "Arrêter l'écoute"
                           }
-                          className="grid size-8 flex-none place-items-center rounded-full text-white active:bg-white/15 disabled:opacity-50"
+                          className="grid size-7 flex-none place-items-center rounded-full text-white active:bg-white/15 disabled:opacity-50"
                         >
-                          <Unlink className="size-[16px]" strokeWidth={2.2} />
+                          <Unlink className="size-[15px]" strokeWidth={2.2} />
                         </button>
                       ) : null}
                     </div>

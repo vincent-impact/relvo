@@ -57,6 +57,8 @@ type Suite = {
     priorite: "normal" | "urgent" | null;
     /** Tâches NOUVELLES attendues, exactement. */
     taches: number;
+    /** Tâches de la fiche que le message doit montrer ACCOMPLIES ; absent : non jugé. */
+    terminees?: number;
   };
 };
 
@@ -288,6 +290,10 @@ async function main() {
     const suggereesATort = ok.filter(
       (r) => r.retenue!.resolution === "suggerer" && !r.attendu.termine,
     ).length;
+    const jugesTerminees = ok.filter((r) => r.attendu.terminees !== undefined);
+    const terminees = jugesTerminees.filter(
+      (r) => r.retenue!.tachesTerminees.length === r.attendu.terminees,
+    ).length;
 
     console.log(`=== ${cle} — ${((Date.now() - debut) / 1000).toFixed(0)} s`);
     console.log(`  erreurs                : ${resultats.length - ok.length}`);
@@ -295,6 +301,11 @@ async function main() {
     console.log(`  « en attente » juste   : ${pct(attente, ok.length)}`);
     console.log(`  priorité juste         : ${pct(priorite, juges.length)}`);
     console.log(`  tâches ajoutées justes : ${pct(taches, ok.length)}`);
+    if (jugesTerminees.length) {
+      console.log(
+        `  tâches cochées justes  : ${pct(terminees, jugesTerminees.length)}`,
+      );
+    }
     console.log(
       `  clôtures suggérées     : ${suggerees} (dont à tort : ${suggereesATort}) — la retenue n'en suggère aucune tant qu'une tâche reste ouverte`,
     );
@@ -329,6 +340,12 @@ async function main() {
           console.log(
             `      - [${x.type}] ${x.titre}${x.date ? ` (${x.date}${x.heure ? ` ${x.heure}` : ""})` : ""} — ${x.raison}`,
           );
+        }
+        for (const x of r.retenue.tachesTerminees) {
+          console.log(`      ✓ cochée : ${x.titre} — ${x.raison}`);
+        }
+        for (const x of r.retenue.tachesObsoletes) {
+          console.log(`      ✕ retirée : ${x.titre} — ${x.raison}`);
         }
         for (const e of r.retenue.ecarts) console.log(`      ⚠ ${e}`);
       }

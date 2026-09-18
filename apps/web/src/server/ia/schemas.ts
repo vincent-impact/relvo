@@ -212,6 +212,17 @@ export const SortieRelecture = z.object({
       raison: z.string().describe("Pourquoi ce message la rend sans objet."),
     }),
   ),
+  /** Tâches OUVERTES de la fiche que ce message montre ACCOMPLIES (`05 §4.2`) — livraison reçue, intervention faite, paiement confirmé — titre EXACT de la fiche, et ce qui le dit. Vide sinon. */
+  taches_terminees: z.array(
+    z.object({
+      titre: z
+        .string()
+        .describe("Le titre EXACT d'une tâche ouverte de la fiche."),
+      raison: z
+        .string()
+        .describe("Ce qui, dans ce message, dit qu'elle est faite."),
+    }),
+  ),
   /** Ce que ce message change, en une phrase — pour le journal. */
   raison: z.string(),
 });

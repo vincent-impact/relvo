@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {
   Actor,
+  CompletionMode,
   Priority,
   SubjectStatus,
   TaskKind,
@@ -24,6 +25,7 @@ import {
   updateSubjectPriority,
 } from "./subjects";
 import {
+  completeTask,
   createTask,
   retireTaskByAi,
   taskDecisionSchema,
@@ -170,6 +172,16 @@ export const applyRelectureSchema = z.object({
     )
     .max(5)
     .optional(),
+  /** Tâches OUVERTES du sujet que ce message montre accomplies (05 §4.2) — cochées par Relvo, quel qu'en soit l'auteur ; le titre est celui de la fiche. */
+  completedTasks: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(300),
+        reason: z.string().trim().min(1).max(500),
+      }),
+    )
+    .max(5)
+    .optional(),
   /** Clés du registre, AJOUTÉES à celles du sujet ; ce qui n'y est pas est écarté ici, une seconde fois. */
   labels: z.array(z.string().trim().min(1).max(60)).max(10),
   /** La priorité recalibrée (05 §5.4) ; null pour ne pas y toucher. */
@@ -190,6 +202,8 @@ export type ApplyRelectureResult = {
   taskIds: string[];
   /** Tâches retirées comme devenues sans objet. */
   retiredTaskIds: string[];
+  /** Tâches cochées comme accomplies par ce message. */
+  completedTaskIds: string[];
   labels: string[];
   priorityChanged: boolean;
   waitingForReplySet: boolean;
@@ -301,32 +315,55 @@ export async function applyRelecture(
     taskIds.push(task.id);
   }
 
-  // Les tâches devenues sans objet : celles de la fiche, par leur titre, et
-  // seulement celles que Relvo avait proposées (une tâche du dirigeant n'est
-  // jamais retirée par le modèle). Après l'ajout : une tâche nouvelle ne se
-  // retire pas dans la même relecture.
+  // Les tâches que ce message règle : celles de la fiche, par leur titre.
+  // Après l'ajout : une tâche nouvelle ne se règle pas dans la même relecture.
+  const reglees = new Set<string>();
+  const ouvertes =
+    data.completedTasks?.length || data.obsoleteTasks?.length
+      ? await db.task.findMany({
+          where: {
+            subjectId: subject.id,
+            status: TaskStatus.open,
+            id: { notIn: taskIds },
+          },
+          select: { id: true, title: true, sourceActor: true },
+        })
+      : [];
+  const trouver = (title: string, deRelvoSeulement: boolean) =>
+    ouvertes.find(
+      (t) =>
+        (!deRelvoSeulement || t.sourceActor === Actor.ai) &&
+        normaliserTitre(t.title) === normaliserTitre(title) &&
+        !reglees.has(t.id),
+    );
+
+  // Accomplies : cochées par Relvo, quel qu'en soit l'auteur — cocher se
+  // défait d'un geste, et le message en est la preuve. Journalisé avec ce qui
+  // le dit.
+  const completedTaskIds: string[] = [];
+  for (const c of data.completedTasks ?? []) {
+    const cible = trouver(c.title, false);
+    if (!cible) continue;
+    await completeTask(db, cible.id, Actor.ai, CompletionMode.message_match, {
+      reason: c.reason,
+      messageId: data.messageId ?? null,
+    });
+    reglees.add(cible.id);
+    completedTaskIds.push(cible.id);
+  }
+
+  // Sans objet : retirées, et seulement celles que Relvo avait proposées (une
+  // tâche du dirigeant n'est jamais retirée par le modèle).
   const retiredTaskIds: string[] = [];
   if (data.obsoleteTasks?.length) {
-    const ouvertes = await db.task.findMany({
-      where: {
-        subjectId: subject.id,
-        status: TaskStatus.open,
-        id: { notIn: taskIds },
-      },
-      select: { id: true, title: true, sourceActor: true },
-    });
     for (const o of data.obsoleteTasks) {
-      const cible = ouvertes.find(
-        (t) =>
-          t.sourceActor === Actor.ai &&
-          normaliserTitre(t.title) === normaliserTitre(o.title) &&
-          !retiredTaskIds.includes(t.id),
-      );
+      const cible = trouver(o.title, true);
       if (!cible) continue;
       await retireTaskByAi(db, cible.id, {
         reason: o.reason,
         messageId: data.messageId ?? null,
       });
+      reglees.add(cible.id);
       retiredTaskIds.push(cible.id);
     }
   }
@@ -383,6 +420,9 @@ export async function applyRelecture(
       taskIds.length
         ? `${taskIds.length} tâche${taskIds.length > 1 ? "s" : ""} en plus`
         : null,
+      completedTaskIds.length
+        ? `${completedTaskIds.length} cochée${completedTaskIds.length > 1 ? "s" : ""}`
+        : null,
       retiredTaskIds.length
         ? `${retiredTaskIds.length} retirée${retiredTaskIds.length > 1 ? "s" : ""}`
         : null,
@@ -395,6 +435,7 @@ export async function applyRelecture(
     metadata: {
       proposal: data.proposal ?? null,
       taskIds,
+      completedTaskIds,
       retiredTaskIds,
       labels,
       priorityChanged,
@@ -405,6 +446,7 @@ export async function applyRelecture(
 
   return {
     taskIds,
+    completedTaskIds,
     retiredTaskIds,
     labels,
     priorityChanged,
