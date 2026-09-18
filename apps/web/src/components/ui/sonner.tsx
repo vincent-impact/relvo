@@ -1,6 +1,5 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 import {
   CircleCheckIcon,
@@ -10,12 +9,14 @@ import {
   Loader2Icon,
 } from "lucide-react";
 
+// L'application est CLAIRE, et seulement claire : aucun fournisseur de thème,
+// la classe `.dark` n'est jamais posée. Sonner doit le savoir — laissé à
+// « system », il résout le thème contre le réglage du TÉLÉPHONE et passe sa
+// description en gris clair sur notre fond blanc (PITFALLS.md #51).
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
-
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme="light"
       className="toaster group"
       icons={{
         success: <CircleCheckIcon className="size-4" />,
@@ -35,6 +36,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast: "cn-toast",
+          description: "text-(--text-secondary)!",
         },
       }}
       {...props}

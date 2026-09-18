@@ -216,6 +216,24 @@ l'objet et vérifie que la conversation reste unique (`packages/db/test/brouillo
 
 ---
 
+### #51 — Le composant de notifications résout « system » contre le TÉLÉPHONE, pas contre l'app
+
+**Symptôme** : sur un iPhone en mode sombre, le toast « Sujet fermé » proposait d'ignorer le fil
+en texte gris clair sur fond blanc — illisible. Sur le poste de développement, tout est lisible.
+
+**Cause** : le wrapper du registre lit le thème via `next-themes` — que l'application n'installe
+pas : `useTheme()` répond donc `system`, et Sonner résout « system » contre
+`prefers-color-scheme`. Le téléphone est sombre → Sonner passe en thème sombre et colore sa
+description en gris clair, pendant que notre surcharge de `--normal-bg` garde le fond blanc de
+l'app. Relvo est **clair seulement** : la classe `.dark` n'est jamais posée, aucun fournisseur
+de thème ne tourne. Tout composant qui déduit son thème du système au lieu de l'app dérive de
+la même façon.
+
+**Règle** : `theme="light"` sur le Toaster, description sur nos jetons. Un composant qui propose
+un thème `system` reçoit **toujours** le thème de l'application, jamais celui de l'appareil.
+
+---
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -226,7 +244,7 @@ l'objet et vérifie que la conversation reste unique (`packages/db/test/brouillo
 | **Tailwind** | #15 |
 | **AWS SDK** | #8, #9, #10, #11 |
 | **pnpm** | #29, #46 |
-| **Registre de composants** | #16, #40 |
+| **Registre de composants** | #16, #40, #51 |
 | **Vitest / Vite** | #22, #34 |
 | **Base UI** | #40 |
 | **Zod** | #42 |

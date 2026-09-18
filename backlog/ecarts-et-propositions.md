@@ -448,9 +448,11 @@ deviennent un formulaire ».
 **`tranché`** · Le lendemain de la livraison du formulaire, sur le scénario complet du devis
 de friteuse. Tous retenus, séparément :
 
-- **La pop-up de fermeture et de suppression d'un sujet** sortait en texte clair sur fond
-  blanc sur le téléphone. Les couleurs de la modale de confirmation sont désormais posées
-  explicitement (fond blanc, texte encre), plus héritées des jetons génériques du registre.
+- **La pop-up de fermeture d'un sujet** sortait en texte clair sur fond blanc sur le
+  téléphone. Ce n'était pas la modale de confirmation mais le toast « Sujet fermé » qui propose
+  d'ignorer le fil : le composant de notifications résolvait son thème contre le réglage sombre
+  du téléphone alors que l'application est claire seulement. Il est désormais fixé en clair,
+  et sa description prend nos couleurs (`PITFALLS.md` #51).
 - **Le hero d'un groupe WhatsApp** listait tous les membres et prenait deux écrans : deux
   membres visibles, les autres sur « Voir les N autres ».
 - **Le fil s'ouvre en bas**, sur le dernier message reçu — c'est ce qu'on vient lire.
