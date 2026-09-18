@@ -371,7 +371,7 @@ stocké comme statut ; tous sont **dérivés** :
 | **Nouveau** | `last_opened_at == null` sur un sujet ouvert — ouvrir la fiche l'éteint |
 | **Urgent** | `priority = urgent` |
 | **À faire** | il reste au moins une tâche ouverte |
-| **En attente** | `waiting_for_reply` — posé après un envoi quand il ne reste aucune tâche ouverte, levé par tout message entrant. **Mécanique, sans IA** ; Relvo ne le pose lui-même qu'en relecture, quand un sujet attend un tiers sans qu'aucun envoi ne l'ait dit |
+| **En attente** | `waiting_for_reply` — posé après un envoi quand il ne reste aucune tâche ouverte, levé par tout message entrant **ou quand l'utilisateur coche la dernière tâche ouverte** (§10). **Mécanique, sans IA** ; Relvo ne le pose lui-même qu'en relecture, quand un sujet attend un tiers sans qu'aucun envoi ne l'ait dit |
 
 Un sujet **ouvert** peut afficher en même temps Urgent et « À faire » — impossible à représenter
 dans un énuméré exclusif. C'est la preuve que les deux axes devaient être séparés.
@@ -401,6 +401,15 @@ toute la vie de la tâche.
 **Une tâche de réponse se coche seule, sans IA.** Quand un message sortant part vers un contact
 du sujet alors qu'une tâche de réponse y est ouverte, elle est terminée par correspondance. Un
 jugement du modèle n'y apporterait rien et coûterait un appel par message envoyé.
+
+**La dernière tâche cochée à la main règle le sujet, sans IA.** Quand l'utilisateur coche la
+dernière tâche ouverte d'un sujet ouvert, plus rien ne reste à faire : ce qu'on attendait d'un
+tiers est arrivé — c'est le plus souvent cette tâche même, une livraison, une intervention. Le
+marqueur « En attente » se lève et Relvo propose la clôture, le journal le dit. Rouvrir une tâche
+retire la suggestion. Relvo, lui, ne déclenche pas cette mécanique quand il coche : sa relecture
+décide de la clôture avec toute la situation sous les yeux (`05 §5.5`). La limite est assumée :
+si la tâche cochée n'avait rien à voir avec l'attente, la suggestion est de trop, et « pas
+encore » la retire d'un tap.
 
 **La relance se dérive de la situation, sans IA.** Quand la situation structurée d'un sujet dit
 qu'on attend un tiers et que l'échéance passe sans message entrant, une tâche « Relancer » naît,

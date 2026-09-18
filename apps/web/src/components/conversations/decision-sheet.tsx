@@ -49,29 +49,85 @@ export type SheetTask = {
 const RELVO_PANEL = "border-(--purple-100) bg-relvo-bg shadow-none";
 
 /**
- * Un choix fait : une coche violette et le libellé, rien d'autre — le fil ne
- * se sature pas de texte (retour du 2026-09-18). La question est dans le
- * message juste au-dessus ; le journal et la tâche gardent le reste.
+ * Une décision FIGÉE : la question, ses options telles qu'elles ont été
+ * proposées, et celle qui a été retenue — pleine, avec sa coche. Rien n'est
+ * tapable. Une réponse libre prend la place d'« Autre… ».
  */
-function ChoixFait({
-  libelle,
-  action,
-}: {
-  libelle: string;
-  action?: React.ReactNode;
-}) {
+function DecisionFigee({ decision }: { decision: SheetDecision }) {
+  const libre =
+    decision.reponse !== null && !decision.options.includes(decision.reponse);
+  const puces = [...decision.options, libre ? decision.reponse! : "Autre…"];
   return (
-    <div className="flex items-center gap-2 text-[14px] text-(--text-primary)">
-      <span className="grid size-5 flex-none place-items-center rounded-full bg-relvo text-white">
-        <Check className="size-3" strokeWidth={3} />
-      </span>
-      <span className="min-w-0 flex-1 font-semibold">{libelle}</span>
-      {action}
+    <div className="border-b border-(--purple-100) px-3.5 py-2.5 last:border-b-0">
+      <div className="text-[13.5px] leading-[1.3] font-semibold tracking-[-0.005em]">
+        {decision.question}
+      </div>
+      {decision.precision ? (
+        <div className="mt-0.5 text-[12px] text-(--text-secondary)">
+          {decision.precision}
+        </div>
+      ) : null}
+      <div
+        className="mt-2 flex flex-wrap gap-1.5"
+        aria-label={decision.question}
+      >
+        {puces.map((opt, i) => {
+          const retenue = decision.reponse === opt;
+          const autre = i === decision.options.length && !libre;
+          return (
+            <span
+              key={`${opt}-${i}`}
+              className={cn(
+                "inline-flex min-h-[30px] items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold",
+                retenue
+                  ? "border-transparent bg-relvo text-white"
+                  : autre
+                    ? "border-dashed border-[#d4d2cc] text-(--text-tertiary)"
+                    : "border-[#d9d7d1] bg-white/60 text-(--text-tertiary)",
+              )}
+            >
+              {retenue ? <Check className="size-3.5" strokeWidth={3} /> : null}
+              {opt}
+            </span>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
-/** Ce qui a été décidé, une fois la tâche terminée : une coche par choix, sans panneau. */
+/**
+ * Le formulaire FIGÉ : la même carte Relvo que le formulaire, les choix
+ * gelés. On défile un fil pour retrouver ce qui a été décidé — et avec quoi
+ * on l'a comparé (retour du 2026-09-18). Sert une fois la tâche terminée, et
+ * replié avant l'envoi (avec « Changer »).
+ */
+function FormulaireFige({
+  decisions,
+  titre,
+  action,
+  className,
+}: {
+  decisions: SheetDecision[];
+  titre: string;
+  action?: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <ListPanel className={cn(RELVO_PANEL, className)}>
+      <div className="flex items-center gap-2 border-b border-(--purple-100) px-3.5 py-2 text-[12px] font-bold text-relvo">
+        <Sparkles className="size-3.5" fill="currentColor" strokeWidth={0} />
+        <span className="min-w-0 flex-1 truncate">{titre}</span>
+        {action}
+      </div>
+      {decisions.map((d) => (
+        <DecisionFigee key={d.id} decision={d} />
+      ))}
+    </ListPanel>
+  );
+}
+
+/** Ce qui a été décidé, une fois la tâche terminée : le formulaire figé. */
 export function DecisionRecord({
   task,
   className,
@@ -82,11 +138,11 @@ export function DecisionRecord({
   const prises = task.decisions.filter((d) => d.reponse !== null);
   if (prises.length === 0) return null;
   return (
-    <div className={cn("flex flex-col gap-1.5 px-2 py-1", className)}>
-      {prises.map((d) => (
-        <ChoixFait key={d.id} libelle={d.reponse!} />
-      ))}
-    </div>
+    <FormulaireFige
+      decisions={prises}
+      titre={`Décidé avec Relvo · ${prises.length} choix`}
+      className={className}
+    />
   );
 }
 
@@ -144,27 +200,22 @@ export function DecisionSheet({
   }
 
   if (collapsed) {
-    // Replié : une coche par choix, vérifiable d'un coup d'œil, et « Changer ».
+    // Replié : le formulaire figé, vérifiable d'un coup d'œil, et « Changer ».
     return (
-      <div className={cn("flex flex-col gap-1.5 px-2 py-1", className)}>
-        {decisions.map((d, i) => (
-          <ChoixFait
-            key={d.id}
-            libelle={d.reponse ?? ""}
-            action={
-              i === 0 ? (
-                <button
-                  type="button"
-                  onClick={() => setCollapsed(false)}
-                  className="flex-none text-[12.5px] font-semibold text-(--text-secondary) active:opacity-70"
-                >
-                  Changer
-                </button>
-              ) : null
-            }
-          />
-        ))}
-      </div>
+      <FormulaireFige
+        decisions={decisions}
+        titre={`Relvo · ${total} décision${total > 1 ? "s" : ""} prise${total > 1 ? "s" : ""}`}
+        className={className}
+        action={
+          <button
+            type="button"
+            onClick={() => setCollapsed(false)}
+            className="flex-none text-[12.5px] font-semibold text-(--text-secondary) active:opacity-70"
+          >
+            Changer
+          </button>
+        }
+      />
     );
   }
 

@@ -153,10 +153,15 @@ export function InformationsPane({
   // La situation de Relvo, en deux lignes nommées. La prochaine étape est UNE
   // ligne : l'action qui vient, ou — quand rien ne revient au dirigeant — ce
   // qu'on attend, nommé ; l'échéance s'accroche à cette ligne.
+  // Quand Relvo propose de clore, la prochaine étape N'EST PLUS ce que la
+  // situation disait — la dernière tâche cochée l'a rendue caduque sans
+  // qu'un appel la réécrive (04 §10).
   const sit = relvo?.situation;
   const prochaine = sit
-    ? (sit.nextStep ??
-      (sit.waitingFor ? `En attente : ${sit.waitingFor}` : null))
+    ? resolutionSuggested
+      ? "Plus rien à faire."
+      : (sit.nextStep ??
+        (sit.waitingFor ? `En attente : ${sit.waitingFor}` : null))
     : null;
   const situationLignes: [string, string][] = sit
     ? (
@@ -165,7 +170,7 @@ export function InformationsPane({
           [
             "Prochaine étape",
             prochaine
-              ? `${prochaine}${sit.deadline ? ` — pour le ${jourLisible(sit.deadline)}` : ""}`
+              ? `${prochaine}${sit.deadline && !resolutionSuggested ? ` — pour le ${jourLisible(sit.deadline)}` : ""}`
               : null,
           ],
         ] as [string, string | null][]

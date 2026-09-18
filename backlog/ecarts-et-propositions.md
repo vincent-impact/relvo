@@ -443,6 +443,21 @@ décision, clôture. Trois retours du dirigeant.
 Le choix dans le texte n'a pas tenu un essai de plus : voir « Les décisions d'un message
 deviennent un formulaire ».
 
+### Le choix figé, et la dernière tâche cochée règle le sujet
+
+**`tranché`** · Le même jour, après le second essai.
+
+- **Le rappel d'un choix en une coche et un libellé « flottait »** dans le fil. La représentation
+  était trop simple : le rappel redevient **la carte du formulaire, figée** — fond Relvo, la
+  question, les options telles qu'elles avaient été proposées, celle retenue pleine avec sa
+  coche, rien de tapable. On défilera un fil pour retrouver ce qui a été décidé, et avec quoi on
+  l'a comparé. L'état replié avant l'envoi est la même carte, avec « Changer ».
+- **Cocher à la main la dernière tâche d'un sujet en attente ne changeait rien** : ni l'attente
+  levée, ni la clôture proposée. C'est mécanique, sans appel au modèle : la tâche est reliée au
+  statut (`conception/04-design-domaine.md` §10). La limite est dite : si la tâche cochée n'avait
+  rien à voir avec l'attente, « pas encore » retire la suggestion d'un tap. Relvo qui coche en
+  relecture ne déclenche pas la mécanique, sa relecture décide.
+
 ### Quatre retours du second essai du formulaire de décisions
 
 **`tranché`** · Le même jour, sur le scénario du devis de friteuse joué jusqu'à la livraison.

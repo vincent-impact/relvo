@@ -93,6 +93,8 @@ export const EVENT_TYPES = {
   resolutionRevoked: "resolution_revoked",
   /** Relvo pose « En attente » en relecture : le sujet attend un tiers sans qu'aucun envoi ne l'ait dit (05 §5.3). */
   waitingForReplySet: "waiting_for_reply_set",
+  /** L'attente est levée sans message : le dirigeant a coché la dernière tâche (04 §10). */
+  waitingForReplyLifted: "waiting_for_reply_lifted",
   // Compte — l'assistant activé ou coupé (réglage de l'utilisateur, backoffice demain).
   assistantEnabled: "assistant_enabled",
   assistantDisabled: "assistant_disabled",

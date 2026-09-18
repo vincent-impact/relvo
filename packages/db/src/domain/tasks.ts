@@ -3,6 +3,7 @@ import { Prisma } from "../generated/prisma/client";
 import {
   Actor,
   CompletionMode,
+  SubjectStatus,
   TaskKind,
   TaskStatus,
 } from "../generated/prisma/enums";
@@ -11,6 +12,7 @@ import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { ensureAffected } from "./helpers";
 import { cursorArgs, paginationSchema, toPage } from "./pagination";
+import { revokeResolutionSuggestion, suggestResolution } from "./subjects";
 
 // Domaine Tasks (M3.9). Unité de travail DU sujet (pas de l'utilisateur).
 // Dates asymétriques : start_* = deadline, end_* = durée (cf. 02-modele §9).
@@ -265,7 +267,7 @@ export async function completeTask(
   /** Ce qui dit qu'elle est faite, et le message qui le dit — quand c'est Relvo qui coche (05 §4.2). */
   origine?: { reason?: string | null; messageId?: string | null },
 ) {
-  return db.$transaction(async (tx) => {
+  const task = await db.$transaction(async (tx) => {
     const current = assertFound(
       await tx.task.findFirst({ where: { id } }),
       "Tâche",
@@ -312,6 +314,64 @@ export async function completeTask(
     });
     return task;
   });
+  // Le geste du dirigeant, à la main : la dernière tâche cochée règle le sujet.
+  // Relvo, lui, décide de la clôture dans sa relecture (05 §5.5).
+  if (completedByActor === Actor.user && task.subjectId) {
+    await settleSubjectAfterLastTask(db, task.subjectId, task);
+  }
+  return task;
+}
+
+/**
+ * LA DERNIÈRE TÂCHE COCHÉE PAR LE DIRIGEANT RÈGLE LE SUJET — sans IA (04 §10).
+ * Quand il coche la dernière tâche ouverte d'un sujet ouvert, plus rien ne
+ * reste à faire : ce qu'on attendait d'un tiers est arrivé — c'est le plus
+ * souvent cette tâche même, une livraison, une intervention —, l'attente se
+ * lève, et Relvo propose la clôture. Journalisé, réversible : rouvrir une
+ * tâche retire la suggestion (`reopenTask`). Un jugement du modèle n'y
+ * apporterait rien : la tâche est reliée au statut.
+ */
+export async function settleSubjectAfterLastTask(
+  db: TenantDb,
+  subjectId: string,
+  task: { id: string; title: string },
+): Promise<{ waitingLifted: boolean; resolutionSuggested: boolean }> {
+  const rien = { waitingLifted: false, resolutionSuggested: false };
+  const subject = await db.subject.findFirst({
+    where: { id: subjectId, status: SubjectStatus.open },
+    select: { waitingForReply: true, resolutionSuggestedAt: true },
+  });
+  if (!subject) return rien;
+  const restantes = await db.task.count({
+    where: { subjectId, status: TaskStatus.open },
+  });
+  if (restantes > 0) return rien;
+
+  let waitingLifted = false;
+  if (subject.waitingForReply) {
+    await db.subject.updateMany({
+      where: { id: subjectId },
+      data: { waitingForReply: false },
+    });
+    await logEvent(db as Tx, {
+      entityType: "subject",
+      entityId: subjectId,
+      subjectId,
+      taskId: task.id,
+      eventType: EVENT_TYPES.waitingForReplyLifted,
+      title: `Plus rien à attendre : « ${task.title} » est cochée`,
+      actor: Actor.system,
+    });
+    waitingLifted = true;
+  }
+  let resolutionSuggested = false;
+  if (!subject.resolutionSuggestedAt) {
+    await suggestResolution(db, subjectId, {
+      reason: `Plus rien à faire : « ${task.title} » était la dernière tâche.`,
+    });
+    resolutionSuggested = true;
+  }
+  return { waitingLifted, resolutionSuggested };
 }
 
 /**
@@ -319,7 +379,7 @@ export async function completeTask(
  * la complétion. Réinitialise les champs de complétion. Idempotent si déjà open.
  */
 export async function reopenTask(db: TenantDb, id: string) {
-  return db.$transaction(async (tx) => {
+  const task = await db.$transaction(async (tx) => {
     const current = assertFound(
       await tx.task.findFirst({ where: { id } }),
       "Tâche",
@@ -361,6 +421,14 @@ export async function reopenTask(db: TenantDb, id: string) {
     });
     return task;
   });
+  // Une tâche rouverte : il reste à faire, la suggestion de clôture tombe.
+  if (task.subjectId) {
+    await revokeResolutionSuggestion(db, task.subjectId, {
+      by: "user",
+      reason: `Tâche rouverte : ${task.title}`,
+    });
+  }
+  return task;
 }
 
 /**
