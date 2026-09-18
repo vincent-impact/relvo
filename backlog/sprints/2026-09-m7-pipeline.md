@@ -392,6 +392,12 @@ retenue, orchestration — dans l'application (`apps/web/src/server/ia/pipeline/
       « N décisions à prendre » puis « Décidé : … » ; le composer ne surligne ni ne bloque plus
       rien ; consigne « jamais de crochets ». Décision dans `ecarts` (« Les décisions d'un
       message deviennent un formulaire »).
+- [x] **Premier essai du formulaire (17–18 septembre) : huit retours, tous livrés** — pop-up
+      lisible, membres d'un groupe repliés, fil ouvert en bas, hero fixe, contact au nom
+      d'adresse complété (téléphone et e-mail de la signature), formulaire teinté Relvo, décision
+      prise conservée dans le fil, **tâches devenues sans objet retirées par la relecture**
+      (`retireTaskByAi`, seulement les tâches de Relvo, journal). Décision dans `ecarts` (« Huit
+      retours du premier essai du formulaire de décisions »).
 - [ ] Essayer `none` sur la relecture avec le jeu réel.
 - [ ] Une tâche d'événement qui change de date est écartée comme doublon : reprogrammer
       l'existante (point ouvert, `ecarts`).

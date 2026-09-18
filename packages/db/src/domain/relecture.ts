@@ -4,6 +4,7 @@ import {
   Priority,
   SubjectStatus,
   TaskKind,
+  TaskStatus,
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
 import { DomainError, assertFound } from "./errors";
@@ -24,6 +25,7 @@ import {
 } from "./subjects";
 import {
   createTask,
+  retireTaskByAi,
   taskDecisionSchema,
   taskMetadataSchema,
   taskProvenanceSchema,
@@ -158,6 +160,16 @@ export const applyRelectureSchema = z.object({
       }),
     )
     .max(10),
+  /** Tâches OUVERTES du sujet que ce message rend sans objet (05 §4.2) — retirées si Relvo les avait proposées ; le titre est celui de la fiche. */
+  obsoleteTasks: z
+    .array(
+      z.object({
+        title: z.string().trim().min(1).max(300),
+        reason: z.string().trim().min(1).max(500),
+      }),
+    )
+    .max(5)
+    .optional(),
   /** Clés du registre, AJOUTÉES à celles du sujet ; ce qui n'y est pas est écarté ici, une seconde fois. */
   labels: z.array(z.string().trim().min(1).max(60)).max(10),
   /** La priorité recalibrée (05 §5.4) ; null pour ne pas y toucher. */
@@ -176,11 +188,23 @@ export type ApplyRelectureInput = z.input<typeof applyRelectureSchema>;
 
 export type ApplyRelectureResult = {
   taskIds: string[];
+  /** Tâches retirées comme devenues sans objet. */
+  retiredTaskIds: string[];
   labels: string[];
   priorityChanged: boolean;
   waitingForReplySet: boolean;
   resolution: "suggested" | "revoked" | "kept";
 };
+
+/** Deux titres se valent à la casse, aux accents et à la ponctuation près. */
+function normaliserTitre(t: string): string {
+  return t
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
 
 function utcDate(d: string | null): Date | null {
   return d ? new Date(`${d}T00:00:00.000Z`) : null;
@@ -277,6 +301,36 @@ export async function applyRelecture(
     taskIds.push(task.id);
   }
 
+  // Les tâches devenues sans objet : celles de la fiche, par leur titre, et
+  // seulement celles que Relvo avait proposées (une tâche du dirigeant n'est
+  // jamais retirée par le modèle). Après l'ajout : une tâche nouvelle ne se
+  // retire pas dans la même relecture.
+  const retiredTaskIds: string[] = [];
+  if (data.obsoleteTasks?.length) {
+    const ouvertes = await db.task.findMany({
+      where: {
+        subjectId: subject.id,
+        status: TaskStatus.open,
+        id: { notIn: taskIds },
+      },
+      select: { id: true, title: true, sourceActor: true },
+    });
+    for (const o of data.obsoleteTasks) {
+      const cible = ouvertes.find(
+        (t) =>
+          t.sourceActor === Actor.ai &&
+          normaliserTitre(t.title) === normaliserTitre(o.title) &&
+          !retiredTaskIds.includes(t.id),
+      );
+      if (!cible) continue;
+      await retireTaskByAi(db, cible.id, {
+        reason: o.reason,
+        messageId: data.messageId ?? null,
+      });
+      retiredTaskIds.push(cible.id);
+    }
+  }
+
   let priorityChanged = false;
   if (data.priority && data.priority !== subject.priority) {
     await updateSubjectPriority(db, subject.id, data.priority, Actor.ai, {
@@ -325,15 +379,23 @@ export async function applyRelecture(
     subjectId: subject.id,
     messageId: data.messageId ?? null,
     eventType: EVENT_TYPES.subjectReviewed,
-    title:
-      taskIds.length === 0
-        ? "Relvo a relu le sujet"
-        : `Relvo a relu le sujet : ${taskIds.length} tâche${taskIds.length > 1 ? "s" : ""} en plus`,
+    title: `Relvo a relu le sujet${[
+      taskIds.length
+        ? `${taskIds.length} tâche${taskIds.length > 1 ? "s" : ""} en plus`
+        : null,
+      retiredTaskIds.length
+        ? `${retiredTaskIds.length} retirée${retiredTaskIds.length > 1 ? "s" : ""}`
+        : null,
+    ]
+      .filter(Boolean)
+      .map((x, i) => (i === 0 ? ` : ${x}` : `, ${x}`))
+      .join("")}`,
     description: data.reason ?? data.situation.where ?? null,
     actor: Actor.ai,
     metadata: {
       proposal: data.proposal ?? null,
       taskIds,
+      retiredTaskIds,
       labels,
       priorityChanged,
       waitingForReplySet,
@@ -341,7 +403,14 @@ export async function applyRelecture(
     },
   });
 
-  return { taskIds, labels, priorityChanged, waitingForReplySet, resolution };
+  return {
+    taskIds,
+    retiredTaskIds,
+    labels,
+    priorityChanged,
+    waitingForReplySet,
+    resolution,
+  };
 }
 
 /**

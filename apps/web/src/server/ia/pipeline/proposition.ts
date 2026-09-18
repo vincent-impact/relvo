@@ -127,6 +127,8 @@ export type ContactRetenu = {
   nom: string | null;
   entreprise: string | null;
   role: NonNullable<SortieStructuration["contact"]>["role"];
+  telephone: string | null;
+  email: string | null;
 };
 
 export type PropositionRetenue = {
@@ -335,11 +337,15 @@ export function retenirProposition(
     if (cadre.contact === "aucun") {
       ecarts.push("contact proposé sur un sujet sans contact");
     } else {
+      const email = nonVide(sortie.contact.email);
       contact = {
         prenom: nonVide(sortie.contact.prenom),
         nom: nonVide(sortie.contact.nom),
         entreprise: nonVide(sortie.contact.entreprise),
         role: sortie.contact.role,
+        telephone: nonVide(sortie.contact.telephone)?.slice(0, 40) ?? null,
+        // Une adresse seulement si elle en a la forme.
+        email: email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null,
       };
     }
   }
@@ -410,9 +416,51 @@ export type RelectureRetenue = {
   enAttente: true | null;
   /** Suggérer la clôture, la retirer, ou ne rien changer (05 §5.5, §8.4, §8.5). */
   resolution: "suggerer" | "revoquer" | "garder";
+  /** Tâches ouvertes de la fiche devenues sans objet — par leur titre exact (05 §4.2). */
+  tachesObsoletes: { titre: string; raison: string }[];
   raison: string | null;
   ecarts: string[];
 };
+
+/** Tâches retirées par relecture, au plus. */
+export const PLAFOND_TACHES_OBSOLETES = 5;
+
+/**
+ * Les tâches obsolètes retenues : celles de la fiche, par leur titre (à la
+ * casse et aux accents près), avec une raison ; le reste est écarté, et dit.
+ */
+export function retenirTachesObsoletes(
+  proposees: readonly { titre: string; raison: string }[],
+  tachesOuvertes: readonly string[],
+  ecarts: string[],
+): { titre: string; raison: string }[] {
+  const ouvertes = new Map(tachesOuvertes.map((t) => [cle(t), t]));
+  const retenues: { titre: string; raison: string }[] = [];
+  for (const p of proposees) {
+    const titre = nonVide(p.titre);
+    if (!titre) continue;
+    const exacte = ouvertes.get(cle(titre));
+    if (!exacte) {
+      ecarts.push(`tâche obsolète inconnue de la fiche : ${titre}`);
+      continue;
+    }
+    if (retenues.some((r) => r.titre === exacte)) continue;
+    if (retenues.length >= PLAFOND_TACHES_OBSOLETES) {
+      ecarts.push(
+        `plafond de ${PLAFOND_TACHES_OBSOLETES} tâches obsolètes : ${titre}`,
+      );
+      continue;
+    }
+    retenues.push({
+      titre: exacte,
+      raison: (nonVide(p.raison) ?? "Ce message la rend sans objet.").slice(
+        0,
+        500,
+      ),
+    });
+  }
+  return retenues;
+}
 
 /**
  * Ce que la relecture écrira — et les deux règles qui ne sont qu'ici :
@@ -447,7 +495,14 @@ export function retenirRelecture(
     else ecarts.push("en attente sans dire de qui : marqueur non posé");
   }
 
-  const resteAFaire = cadre.tachesOuvertes.length + taches.length > 0;
+  const tachesObsoletes = retenirTachesObsoletes(
+    sortie.taches_obsoletes,
+    cadre.tachesOuvertes,
+    ecarts,
+  );
+  const retirees = new Set(tachesObsoletes.map((t) => cle(t.titre)));
+  const restantes = cadre.tachesOuvertes.filter((t) => !retirees.has(cle(t)));
+  const resteAFaire = restantes.length + taches.length > 0;
   let resolution: RelectureRetenue["resolution"] = "garder";
   if (sortie.termine && !resteAFaire) {
     resolution = "suggerer";
@@ -471,6 +526,7 @@ export function retenirRelecture(
     priorite: sortie.priorite,
     enAttente,
     resolution,
+    tachesObsoletes,
     raison: nonVide(sortie.raison)?.slice(0, 500) ?? null,
     ecarts,
   };

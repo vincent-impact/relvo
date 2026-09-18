@@ -36,8 +36,40 @@ export type SheetDecision = {
 export type SheetTask = {
   id: string;
   title: string;
+  /** Terminée : ce qui a été décidé reste lisible, sans rien à répondre. */
+  status: "open" | "done";
   decisions: SheetDecision[];
 };
+
+// Le panneau est TEINTÉ Relvo — violet clair, liseré violet — parce qu'un
+// panneau blanc se confondait avec un message du fil (retour du 2026-09-18) :
+// c'est une assistance de Relvo, pas une suite de la conversation.
+const RELVO_PANEL = "mx-4 mt-2 border-(--purple-100) bg-relvo-bg shadow-none";
+
+/** Ce qui a été décidé, une fois la tâche terminée : une ligne Relvo, sans action. */
+export function DecisionRecord({ task }: { task: SheetTask }) {
+  const prises = task.decisions.filter((d) => d.reponse !== null);
+  if (prises.length === 0) return null;
+  return (
+    <ListPanel className={RELVO_PANEL}>
+      <div className="flex items-start gap-2.5 px-3.5 py-2.5 text-[13.5px] text-(--text-primary)">
+        <Sparkles
+          className="mt-0.5 size-3.5 flex-none text-relvo"
+          fill="currentColor"
+          strokeWidth={0}
+        />
+        <span className="min-w-0 flex-1">
+          <span className="font-bold text-relvo">Décidé avec Relvo</span>
+          {prises.map((d) => (
+            <span key={d.id} className="block">
+              {d.question} <b className="font-semibold">{d.reponse}</b>
+            </span>
+          ))}
+        </span>
+      </div>
+    </ListPanel>
+  );
+}
 
 export function DecisionSheet({
   task,
@@ -93,9 +125,9 @@ export function DecisionSheet({
   if (collapsed) {
     // Replié : ce qui a été décidé, vérifiable d'un coup d'œil, et « Changer ».
     return (
-      <ListPanel className="mx-4 mt-2">
+      <ListPanel className={RELVO_PANEL}>
         <div className="flex items-center gap-2.5 px-3.5 py-2.5 text-[14px]">
-          <span className="grid size-[22px] flex-none place-items-center rounded-full bg-(--green-600) text-white">
+          <span className="grid size-[22px] flex-none place-items-center rounded-full bg-relvo text-white">
             <Check className="size-3" strokeWidth={3} />
           </span>
           <span className="min-w-0 flex-1 truncate">
@@ -119,8 +151,8 @@ export function DecisionSheet({
   }
 
   return (
-    <ListPanel className="mx-4 mt-2">
-      <div className="flex items-center gap-2 border-b border-(--border-light) px-3.5 py-2.5 text-[12px] font-bold text-relvo">
+    <ListPanel className={RELVO_PANEL}>
+      <div className="flex items-center gap-2 border-b border-(--purple-100) px-3.5 py-2.5 text-[12px] font-bold text-relvo">
         <Sparkles className="size-3.5" fill="currentColor" strokeWidth={0} />
         <span className="min-w-0 flex-1 truncate">
           Relvo · ce message attend {total} décision{total > 1 ? "s" : ""}
@@ -139,7 +171,7 @@ export function DecisionSheet({
         />
       ))}
 
-      <div className="flex items-center gap-3 bg-(--surface) px-3.5 py-2.5 text-[12.5px] text-(--text-secondary)">
+      <div className="flex items-center gap-3 px-3.5 py-2.5 text-[12.5px] text-(--text-secondary)">
         <span className="min-w-0 flex-1">
           {complete
             ? drafted
@@ -180,7 +212,7 @@ function DecisionLine({
   const freeChosen = decision.reponse !== null && !isOption;
 
   return (
-    <div className="border-b border-(--border-light) px-3.5 py-3">
+    <div className="border-b border-(--purple-100) px-3.5 py-3">
       <div className="text-[15px] leading-[1.3] font-semibold tracking-[-0.005em]">
         {decision.question}
       </div>

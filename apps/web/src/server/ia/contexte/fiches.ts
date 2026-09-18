@@ -119,7 +119,7 @@ export function ficheContact(c: ContactContexte): string {
     `# Contact · ${c.nom}${c.entreprise ? ` (${c.entreprise})` : ""}`,
     ...(c.aCompleter
       ? [
-          `Fiche AUTOMATIQUE, créée à l'ouverture depuis l'adresse d'envoi : le nom peut être une adresse. Déduis prénom, nom, entreprise et rôle de la signature ou du corps du message, et renvoie-les dans « contact ».`,
+          `Fiche AUTOMATIQUE, créée à l'ouverture depuis l'adresse d'envoi : le nom peut être une adresse. Déduis prénom, nom, entreprise, rôle, téléphone et e-mail de la signature ou du corps du message, et renvoie-les dans « contact » (null pour ce que le message ne dit pas).`,
           ...(c.signature
             ? [`Signature du dernier message :`, c.signature]
             : []),

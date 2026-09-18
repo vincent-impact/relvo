@@ -353,6 +353,8 @@ Unité de travail **du sujet**, pas de l'utilisateur.
 - **`subject_id` — nullable.** Une tâche peut exister sans sujet : créée à la volée, ou détachée.
   La clé étrangère reste en cascade — supprimer un sujet supprime ses tâches rattachées.
 - **`source_actor`** — qui a créé ou proposé la tâche. C'est un **attribut historique permanent**.
+  C'est aussi ce qui autorise Relvo à **retirer** une tâche devenue sans objet (statut `deleted`,
+  journalisé — cf. `05-ia.md` §4.2) : seulement une tâche qu'il avait lui-même proposée.
 - **`kind`** — conservé pour deux usages **techniques** : l'auto-complétion d'une tâche de
   réponse à l'envoi d'un message, et le filtrage. Il n'est **pas affiché** : les libellés sont
   trop spécifiques pour apporter une lecture rapide, et le titre suffit.

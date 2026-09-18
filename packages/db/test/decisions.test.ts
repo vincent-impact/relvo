@@ -116,6 +116,10 @@ describe("les décisions d'une tâche", () => {
       message.conversationId,
     );
     expect(listees.map((t) => t.id)).toEqual([repondre.id]);
+    expect(listees[0]).toMatchObject({
+      status: "open",
+      messageId: message.id,
+    });
     expect(listees[0].decisions.map((d) => d.question)).toEqual([
       "Lancer le remplacement du thermostat ?",
       "Créneau d'intervention",
@@ -193,6 +197,42 @@ describe("les décisions d'une tâche", () => {
       { question: "Lancer le remplacement du thermostat ?", reponse: "Non" },
       { question: "Créneau d'intervention", reponse: "Lundi après 14 h" },
     ]);
+  });
+
+  it("une tâche terminée reste listée avec ce qui a été décidé ; sans réponse, elle disparaît", async () => {
+    const { db, channel } = await makeAccount("d4@test.fr");
+    const { message, repondre, sansDecision } = await sujetAvecDecision(
+      db,
+      channel.id,
+    );
+    await answerTaskDecision(db, {
+      taskId: repondre.id,
+      decisionId: "d1",
+      reponse: "Oui, commandez",
+    });
+    await db.task.updateMany({
+      where: { id: { in: [repondre.id, sansDecision.id] } },
+      data: { status: "done" },
+    });
+    const listees = await listDecisionTasksForConversation(
+      db,
+      message.conversationId,
+    );
+    expect(listees.map((t) => [t.id, t.status])).toEqual([
+      [repondre.id, "done"],
+    ]);
+    expect(listees[0].decisions[0].reponse).toBe("Oui, commandez");
+
+    // Terminée sans qu'aucune décision ait été prise : rien à montrer.
+    await db.task.updateMany({
+      where: { id: repondre.id },
+      data: {
+        metadata: { raison: "x", provenance: null, decisions: DECISIONS },
+      },
+    });
+    expect(
+      await listDecisionTasksForConversation(db, message.conversationId),
+    ).toEqual([]);
   });
 
   it("refuse une décision inconnue, et une tâche qui n'est plus ouverte", async () => {

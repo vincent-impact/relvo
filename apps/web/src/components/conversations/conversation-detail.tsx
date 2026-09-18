@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import type { ConversationListening, ConversationParticipant } from "@relvo/db";
 import { ConversationThread } from "@/components/conversations/conversation-thread";
 import {
+  DecisionRecord,
   DecisionSheet,
   type SheetTask,
 } from "@/components/conversations/decision-sheet";
@@ -140,8 +141,8 @@ export function ConversationDetail({
   ignore: IgnoreData | null;
   /** « Répondre » depuis une tâche (M7.7) : Relvo rédige le brouillon pour cette tâche à l'ouverture. */
   draftTaskId?: string | null;
-  /** Les tâches du fil qui portent des décisions (05 §3.1) : le formulaire au-dessus du composer. */
-  decisionTasks?: SheetTask[];
+  /** Les tâches du fil qui portent des décisions (05 §3.1) : le formulaire sous le message qui les pose, ce qui a été décidé ensuite. */
+  decisionTasks?: (SheetTask & { messageId: string | null })[];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -199,7 +200,9 @@ export function ConversationDetail({
       Boolean(draftTaskId && attached) &&
       !decisionTasks.some(
         (t) =>
-          t.id === draftTaskId && t.decisions.some((d) => d.reponse === null),
+          t.id === draftTaskId &&
+          t.status === "open" &&
+          t.decisions.some((d) => d.reponse === null),
       ),
   );
   const [draft, setDraft] = useState<{
@@ -452,15 +455,71 @@ export function ConversationDetail({
     return () => ro.disconnect();
   }, [attached]);
 
+  // Les membres d'un groupe se REPLIENT (retour du 2026-09-18) : un groupe de
+  // huit personnes faisait un hero de deux écrans. Deux visibles, le reste sur
+  // un appui discret.
+  const [membersOpen, setMembersOpen] = useState(false);
+  const MEMBRES_VISIBLES = 2;
+  const membresRepliables = isGroup && participants.length > MEMBRES_VISIBLES;
+  const participantsVisibles =
+    membresRepliables && !membersOpen
+      ? participants.slice(0, MEMBRES_VISIBLES)
+      : participants;
+
+  // Le fil s'ouvre EN BAS, sur le dernier message (retour du 2026-09-18) : c'est
+  // ce qu'on vient lire. Une fois, quand la place du composer est connue.
+  const finDuFil = useRef<HTMLDivElement>(null);
+  const scrolled = useRef(false);
+  useEffect(() => {
+    if (scrolled.current) return;
+    if (attached && composerHeight === null) return;
+    scrolled.current = true;
+    // Jusqu'au BOUT du conteneur (marge du composer comprise), pas jusqu'au
+    // repère : le repère se calerait sous le composer.
+    const scroller = finDuFil.current?.closest("main");
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+  }, [attached, composerHeight]);
+
+  // Ce que Relvo pose DANS le fil, sous le message qui l'a fait naître : le
+  // formulaire d'une tâche ouverte, ce qui a été décidé pour une tâche close.
+  // Sans message d'ancrage dans ce fil : en fin de fil.
+  const messageIds = new Set(messages.map((m) => m.id));
+  const relvoAfter: Record<string, React.ReactNode[]> = {};
+  const relvoTrailing: React.ReactNode[] = [];
+  if (attached) {
+    for (const t of decisionTasks) {
+      const node =
+        t.status === "done" ? (
+          <DecisionRecord key={t.id} task={t} />
+        ) : (
+          <DecisionSheet
+            key={t.id}
+            task={t}
+            onDraft={({ actionId, contenu }) => {
+              setDraftFor(t.id);
+              setDraft({ loading: false, text: contenu, actionId });
+            }}
+          />
+        );
+      if (t.messageId && messageIds.has(t.messageId)) {
+        (relvoAfter[t.messageId] ??= []).push(node);
+      } else {
+        relvoTrailing.push(node);
+      }
+    }
+  }
+
   return (
     <>
-      <Screen bottomInset={attached ? composerHeight : null}>
+      {/* Le hero reste VISIBLE : hors du défilement (retour du 2026-09-18), le
+          retour et les sujets suivis sont toujours à portée. */}
+      <div className="relative z-20 flex-none">
         <RelvoHeader
           back={backTo}
           relvo={false}
           titleFull
           title={title}
-          className="pb-6"
+          className="pb-5"
         >
           <div className="space-y-4 px-[22px] pt-3">
             {/* Canal, sous le titre (icône + nom). */}
@@ -510,7 +569,7 @@ export function ConversationDetail({
                   Aucun interlocuteur identifié.
                 </p>
               ) : (
-                participants.map((p, i) => {
+                participantsVisibles.map((p, i) => {
                   const pKind = guessContactKind({ name: p.name, raw: p.raw });
                   return (
                     <div
@@ -563,6 +622,18 @@ export function ConversationDetail({
                   );
                 })
               )}
+              {membresRepliables ? (
+                <button
+                  type="button"
+                  onClick={() => setMembersOpen((o) => !o)}
+                  aria-expanded={membersOpen}
+                  className="text-[12px] font-semibold text-white/75 underline decoration-white/30 underline-offset-2 active:opacity-70"
+                >
+                  {membersOpen
+                    ? "Réduire"
+                    : `Voir les ${participants.length - MEMBRES_VISIBLES} autres`}
+                </button>
+              ) : null}
             </div>
 
             {/* Sujets suivis — liste verticale ; chaîne brisée = détacher (3e). */}
@@ -617,29 +688,19 @@ export function ConversationDetail({
             ) : null}
           </div>
         </RelvoHeader>
+      </div>
 
+      <Screen bottomInset={attached ? composerHeight : null}>
         <ConversationThread
           messages={messages}
           channelType={channelType}
           selecting={inSelection}
           selectedMessageId={selectedMessageId}
           onSelect={setSelectedMessageId}
+          after={relvoAfter}
+          trailing={relvoTrailing}
         />
-
-        {/* Le formulaire de décisions (05 §3.1) — entre le dernier message et
-            le composer : on décide en relisant, puis Relvo rédige. */}
-        {attached
-          ? decisionTasks.map((t) => (
-              <DecisionSheet
-                key={t.id}
-                task={t}
-                onDraft={({ actionId, contenu }) => {
-                  setDraftFor(t.id);
-                  setDraft({ loading: false, text: contenu, actionId });
-                }}
-              />
-            ))
-          : null}
+        <div ref={finDuFil} aria-hidden />
       </Screen>
 
       {/* Rattachée → COMPOSER (répondre = geste par défaut). Sinon → RIEN, sauf

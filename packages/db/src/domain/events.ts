@@ -62,6 +62,8 @@ export const EVENT_TYPES = {
   taskDeleted: "task_deleted",
   /** Le dirigeant a répondu à une décision portée par une tâche (05 §3.1) — la question et la réponse en métadonnée. */
   taskDecisionAnswered: "task_decision_answered",
+  /** Relvo a retiré une tâche devenue sans objet à la relecture (05 §4.2) — la tâche et la raison en métadonnée. */
+  taskRetiredByAi: "task_retired_by_ai",
   // Attachments
   attachmentCreated: "attachment_created",
   attachmentLabeled: "attachment_labeled",

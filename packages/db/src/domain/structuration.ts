@@ -97,6 +97,8 @@ export type StructurationSubjectProjection = {
 export type StructurationContactProjection = {
   id: string;
   statut: ContactStatus;
+  /** Le nom n'en est pas un — une adresse, un numéro — : Relvo peut le déduire du message, quel que soit le statut. */
+  nomProvisoire: boolean;
   nom: string;
   entreprise: string | null;
   role: string | null;
@@ -632,6 +634,7 @@ export async function loadSubjectSheet(
         ? {
             id: premier.id,
             statut: premier.status,
+            nomProvisoire: isPlaceholderName(premier),
             nom: contactDisplayName(premier),
             entreprise: premier.company,
             role: premier.role,
@@ -695,6 +698,9 @@ export const applyStructurationSchema = z.object({
       lastName: z.string().trim().max(80).nullable(),
       company: z.string().trim().max(120).nullable(),
       role: z.enum(ContactRole),
+      /** Lus dans la signature ; posés seulement si la fiche n'en a pas. */
+      phone: z.string().trim().max(40).nullable().optional(),
+      email: z.string().trim().max(320).nullable().optional(),
     })
     .nullable(),
   /** Clés du registre ; ce qui n'y est pas est écarté ici, une seconde fois. */
@@ -820,6 +826,8 @@ export async function applyStructuration(
         lastName: data.contact.lastName,
         company: data.contact.company,
         role: data.contact.role,
+        phone: data.contact.phone ?? null,
+        email: data.contact.email ?? null,
       })
     : null;
 
@@ -854,6 +862,16 @@ export async function applyStructuration(
  *     seulement s'il est vide. Jamais un nom, jamais une entreprise.
  * Rien n'est écrit sur un sujet sans contact (un groupe, par exemple).
  */
+/** Un « nom » qui est une adresse ou un numéro : posé à l'ouverture faute de mieux. */
+export function isPlaceholderName(c: {
+  firstName: string | null;
+  lastName: string;
+}): boolean {
+  if (c.firstName) return false;
+  const n = c.lastName.trim();
+  return n.includes("@") || /^\+?[\d\s().-]{6,}$/.test(n);
+}
+
 async function completeContactByRelvo(
   db: TenantDb,
   contactId: string | null,
@@ -862,6 +880,8 @@ async function completeContactByRelvo(
     lastName: string | null;
     company: string | null;
     role: ContactRole;
+    phone?: string | null;
+    email?: string | null;
   },
 ): Promise<ApplyStructurationResult["contact"]> {
   if (!contactId) return null;
@@ -874,13 +894,24 @@ async function completeContactByRelvo(
       company: true,
       role: true,
       status: true,
+      phone: true,
+      email: true,
     },
   });
   if (!contact) return null;
 
   const patch: Prisma.ContactUpdateManyMutationInput = {};
   const fields: string[] = [];
-  if (contact.status === ContactStatus.auto) {
+  // Une fiche automatique se complète ; une fiche au NOM PROVISOIRE (une
+  // adresse, un numéro) aussi, quel que soit son statut : personne n'a choisi
+  // ce nom (retour du 2026-09-18). Une adresse qui tenait lieu de nom devient
+  // l'e-mail de la fiche si elle n'en avait pas.
+  const provisoire = isPlaceholderName(contact);
+  if (provisoire && !contact.email && contact.lastName.includes("@")) {
+    patch.email = contact.lastName.trim();
+    fields.push("email");
+  }
+  if (contact.status === ContactStatus.auto || provisoire) {
     if (extrait.lastName && extrait.lastName !== contact.lastName) {
       patch.lastName = extrait.lastName;
       fields.push("lastName");
@@ -901,6 +932,15 @@ async function completeContactByRelvo(
     patch.role = extrait.role;
     fields.push("role");
   }
+  // Téléphone et e-mail lus dans la signature : seulement là où la fiche est vide.
+  if (extrait.phone && !contact.phone) {
+    patch.phone = extrait.phone;
+    fields.push("phone");
+  }
+  if (extrait.email && !contact.email && !patch.email) {
+    patch.email = extrait.email;
+    fields.push("email");
+  }
   if (fields.length === 0) return null;
 
   await db.contact.updateMany({ where: { id: contact.id }, data: patch });
@@ -920,6 +960,8 @@ async function completeContactByRelvo(
         lastName: contact.lastName,
         company: contact.company,
         role: contact.role,
+        phone: contact.phone,
+        email: contact.email,
       },
       after: patch,
     },

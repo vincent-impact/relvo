@@ -255,6 +255,7 @@ describe("écriture de la relecture", () => {
     });
     expect(r).toEqual({
       taskIds: [expect.any(String)],
+      retiredTaskIds: [],
       labels: ["contrat", "retard-livraison"],
       priorityChanged: true,
       waitingForReplySet: true,
@@ -399,6 +400,69 @@ describe("écriture de la relecture", () => {
     expect(
       events.filter((e) => e.eventType === EVENT_TYPES.subjectReviewed),
     ).toHaveLength(3);
+  });
+
+  it("retire les tâches devenues sans objet que Relvo avait proposées — jamais celles du dirigeant —, les journalise, et les compte", async () => {
+    const { db, channel } = await makeAccount("obs@test.fr");
+    const { subjectId } = await sujetSuivi(db, channel.id);
+    const duDirigeant = await createTask(db, {
+      subjectId,
+      title: "Prévenir l'équipe de cuisine",
+      sourceActor: Actor.user,
+      kind: "inform",
+    });
+    const { message } = await mail(db, channel.id, "e-obs", {
+      content: "Finalement on annule : la friteuse est remplacée, pas réparée.",
+    });
+    const r = await applyRelecture(db, {
+      subjectId,
+      messageId: message.id,
+      situation: {
+        where: "Friteuse remplacée.",
+        nextStep: null,
+        waitingFor: null,
+        deadline: null,
+      },
+      summary: null,
+      tasks: [],
+      obsoleteTasks: [
+        {
+          title: "valider le remplacement par la sb-210",
+          reason: "La friteuse est remplacée.",
+        },
+        { title: "Prévenir l'équipe de cuisine", reason: "Plus utile." },
+        { title: "Tâche inconnue", reason: "N'existe pas." },
+      ],
+      labels: [],
+      priority: null,
+      waitingForReply: null,
+      resolution: "keep",
+      reason: "Le remplacement annule la réparation.",
+      proposal: null,
+    });
+    expect(r.retiredTaskIds).toHaveLength(1);
+    const tasks = await db.task.findMany({
+      where: { subjectId },
+      orderBy: { title: "asc" },
+    });
+    expect(tasks.map((t) => [t.title, t.status])).toEqual([
+      ["Prévenir l'équipe de cuisine", "open"],
+      ["Valider le remplacement par la SB-210", "deleted"],
+    ]);
+    expect(duDirigeant.status).toBe("open");
+    const retiree = await db.eventLog.findFirstOrThrow({
+      where: { eventType: EVENT_TYPES.taskRetiredByAi },
+    });
+    expect(retiree.title).toBe(
+      "Tâche retirée par Relvo : Valider le remplacement par la SB-210",
+    );
+    expect(retiree.description).toBe("La friteuse est remplacée.");
+    expect(retiree.messageId).toBe(message.id);
+    const relu = await db.eventLog.findFirstOrThrow({
+      where: { eventType: EVENT_TYPES.subjectReviewed },
+    });
+    expect(relu.title).toBe("Relvo a relu le sujet : 1 retirée");
+    expect(relu.metadata).toMatchObject({ retiredTaskIds: r.retiredTaskIds });
   });
 
   it("refuse un sujet qui n'est pas ouvert", async () => {

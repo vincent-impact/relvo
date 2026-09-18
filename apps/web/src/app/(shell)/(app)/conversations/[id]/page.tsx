@@ -88,6 +88,8 @@ export default async function ConversationDetailPage({
         decisionTasks={decisionTasks.map((t) => ({
           id: t.id,
           title: t.title,
+          status: t.status,
+          messageId: t.messageId,
           decisions: t.decisions.map((d) => ({
             id: d.id,
             question: d.question,

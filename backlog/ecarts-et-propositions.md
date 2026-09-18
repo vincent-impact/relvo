@@ -443,6 +443,34 @@ décision, clôture. Trois retours du dirigeant.
 Le choix dans le texte n'a pas tenu un essai de plus : voir « Les décisions d'un message
 deviennent un formulaire ».
 
+### Huit retours du premier essai du formulaire de décisions
+
+**`tranché`** · Le lendemain de la livraison du formulaire, sur le scénario complet du devis
+de friteuse. Tous retenus, séparément :
+
+- **La pop-up de fermeture et de suppression d'un sujet** sortait en texte clair sur fond
+  blanc sur le téléphone. Les couleurs de la modale de confirmation sont désormais posées
+  explicitement (fond blanc, texte encre), plus héritées des jetons génériques du registre.
+- **Le hero d'un groupe WhatsApp** listait tous les membres et prenait deux écrans : deux
+  membres visibles, les autres sur « Voir les N autres ».
+- **Le fil s'ouvre en bas**, sur le dernier message reçu — c'est ce qu'on vient lire.
+- **Le hero reste visible** : il sort du défilement, le retour et les sujets suivis sont
+  toujours à portée.
+- **Un contact au nom d'adresse.** Sans nom d'affichage, l'adresse tenait lieu de nom sans
+  même remplir l'e-mail, et Relvo ne complétait pas une fiche « vérifiée ». Désormais l'adresse
+  est aussi l'e-mail de la fiche, une fiche dont le nom est une adresse ou un numéro reste à
+  compléter quel que soit son statut, et la structuration lit aussi téléphone et e-mail dans la
+  signature (posés seulement là où la fiche est vide).
+- **Le formulaire de décisions se confondait avec un message** : même fond blanc. Il est
+  teinté Relvo (violet clair, liseré violet), comme tout ce que Relvo pose dans le fil.
+- **Ce qui a été décidé disparaissait** une fois la réponse envoyée. Le formulaire et la
+  décision prise se posent désormais sous le message qui a posé la question, et une tâche
+  close garde sa ligne « Décidé avec Relvo » dans le fil.
+- **Les tâches devenues sans objet n'étaient pas retirées** : la relecture ne savait
+  qu'ajouter. Elle nomme désormais les tâches ouvertes qu'un message rend sans objet (titre
+  exact de la fiche, raison), le code ne retire que celles que Relvo avait proposées, et le
+  journal dit lesquelles et pourquoi — `05 §4.2`, qui était noté V2, devient V1.
+
 ### Les décisions d'un message deviennent un formulaire, plus un choix dans le texte
 
 **`tranché`** · Quatrième retour sur le brouillon, le même jour : « la mécanique de l'option

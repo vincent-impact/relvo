@@ -655,3 +655,86 @@ describe("écriture de la structuration", () => {
     expect(ev.description).toBe("sortie non conforme");
   });
 });
+
+describe("un contact au nom provisoire (05 §1.3)", () => {
+  it("se complète depuis la signature quel que soit son statut, et l'adresse qui tenait lieu de nom devient son e-mail", async () => {
+    const { db, channel } = await makeAccount("prov@test.fr");
+    // Un expéditeur sans nom d'affichage : l'adresse tient lieu de nom.
+    const { message } = await mail(db, channel.id, "e-prov", {
+      senderRaw: "vinz.chollet@gmail.com",
+      senderName: null,
+      content:
+        "Devis à 480 € HT.\n\nSophie Garnier\nMaintenance Sud — 06 12 34 56 78",
+    });
+    const applied = await applyTriageMatter(db, {
+      conversationId: message.conversationId,
+      messageId: message.id,
+      title: "Validation devis thermostat",
+      folderName: "Fournisseurs",
+      proposedFolder: null,
+    });
+    const sujet = await db.subject.findFirstOrThrow({
+      where: { id: applied.subjectId },
+      select: { contactIds: true },
+    });
+    const avant = await db.contact.findFirstOrThrow({
+      where: { id: sujet.contactIds[0]! },
+    });
+    expect(avant.lastName).toBe("vinz.chollet@gmail.com");
+    expect(avant.email).toBe("vinz.chollet@gmail.com");
+    // Même vérifiée à la main, une fiche dont le nom est une adresse reste à compléter.
+    await db.contact.updateMany({
+      where: { id: avant.id },
+      data: { status: "complete", email: null },
+    });
+    const projection = await getStructurationProjection(db, applied.subjectId);
+    expect(projection.contact?.nomProvisoire).toBe(true);
+
+    const r = await applyStructuration(db, {
+      subjectId: applied.subjectId,
+      messageId: message.id,
+      situation: {
+        where: "x",
+        nextStep: "y",
+        waitingFor: null,
+        deadline: null,
+      },
+      summary: null,
+      tasks: [],
+      contact: {
+        firstName: "Sophie",
+        lastName: "Garnier",
+        company: "Maintenance Sud",
+        role: "supplier",
+        phone: "06 12 34 56 78",
+        email: null,
+      },
+      labels: [],
+      proposedFolder: null,
+      proposal: null,
+    });
+    expect(r.contact?.fields).toEqual([
+      "email",
+      "lastName",
+      "firstName",
+      "company",
+      "role",
+      "phone",
+    ]);
+    const apres = await db.contact.findFirstOrThrow({
+      where: { id: avant.id },
+    });
+    expect(apres).toMatchObject({
+      firstName: "Sophie",
+      lastName: "Garnier",
+      company: "Maintenance Sud",
+      phone: "06 12 34 56 78",
+      email: "vinz.chollet@gmail.com",
+      status: "complete",
+    });
+    expect(
+      (await getStructurationProjection(db, applied.subjectId)).contact
+        ?.nomProvisoire,
+    ).toBe(false);
+  });
+});

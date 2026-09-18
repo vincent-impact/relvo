@@ -37,6 +37,7 @@ const sortie: SortieRelecture = {
   priorite: "normal",
   en_attente: true,
   termine: false,
+  taches_obsoletes: [],
   raison: "Le fournisseur a confirmé la livraison.",
 };
 
@@ -163,5 +164,69 @@ describe("retenirRelecture", () => {
       reference: null,
       libelle: "Remplacements",
     });
+  });
+});
+
+describe("les tâches devenues sans objet (05 §4.2)", () => {
+  const ouvertes: CadreRelecture = {
+    ...cadre,
+    tachesOuvertes: [
+      "Intervention du technicien",
+      "Livraison du thermostat",
+      "Valider le devis",
+    ],
+  };
+
+  it("ne retient que les tâches de la fiche, par leur titre exact, avec une raison ; le reste est écarté", () => {
+    const r = retenirRelecture(
+      {
+        ...sortie,
+        en_attente: false,
+        taches_obsoletes: [
+          {
+            titre: "intervention du technicien",
+            raison: "Friteuse remplacée.",
+          },
+          { titre: "Livraison du thermostat ", raison: "" },
+          { titre: "Commander la pièce", raison: "Inconnue de la fiche." },
+          { titre: "Intervention du technicien", raison: "En double." },
+        ],
+      },
+      ouvertes,
+    );
+    expect(r.tachesObsoletes).toEqual([
+      { titre: "Intervention du technicien", raison: "Friteuse remplacée." },
+      {
+        titre: "Livraison du thermostat",
+        raison: "Ce message la rend sans objet.",
+      },
+    ]);
+    expect(r.ecarts).toContain(
+      "tâche obsolète inconnue de la fiche : Commander la pièce",
+    );
+  });
+
+  it("une fois les tâches obsolètes retirées, la clôture peut être suggérée s'il ne reste rien", () => {
+    const tout = ouvertes.tachesOuvertes.map((titre) => ({
+      titre,
+      raison: "Réglé.",
+    }));
+    expect(
+      retenirRelecture(
+        { ...sortie, en_attente: false, termine: true, taches_obsoletes: tout },
+        ouvertes,
+      ).resolution,
+    ).toBe("suggerer");
+    expect(
+      retenirRelecture(
+        {
+          ...sortie,
+          en_attente: false,
+          termine: true,
+          taches_obsoletes: tout.slice(0, 2),
+        },
+        ouvertes,
+      ).resolution,
+    ).toBe("garder");
   });
 });

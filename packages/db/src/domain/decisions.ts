@@ -35,6 +35,10 @@ export type DecisionTask = {
   id: string;
   title: string;
   subjectId: string;
+  /** Le message qui a fait naître la tâche — là où le formulaire se pose dans le fil. */
+  messageId: string | null;
+  /** Ouverte : le formulaire ; terminée : ce qui a été décidé reste lisible. */
+  status: "open" | "done";
   decisions: TaskDecision[];
 };
 
@@ -108,22 +112,26 @@ export async function answerTaskDecision(
       id: task.id,
       title: task.title,
       subjectId: task.subjectId ?? "",
+      messageId: null,
+      status: "open",
       decisions,
     };
   });
 }
 
 /**
- * Les tâches OUVERTES qui se répondent dans ce fil et portent des décisions —
- * ce que le formulaire de décisions de la conversation affiche. Résolu comme
- * « Répondre » le fait : le fil du message d'origine, sinon le fil écouté.
+ * Les tâches qui se répondent dans ce fil et portent des décisions : les
+ * OUVERTES — le formulaire — et les TERMINÉES dont une décision a été prise —
+ * ce qui a été décidé reste lisible dans le fil, comme une interaction avec
+ * Relvo (retour du 2026-09-18). Résolu comme « Répondre » le fait : le fil du
+ * message d'origine, sinon le fil écouté.
  */
 export async function listDecisionTasksForConversation(
   db: TenantDb,
   conversationId: string,
 ): Promise<DecisionTask[]> {
   const listenings = await db.subjectConversation.findMany({
-    where: { conversationId, closingMessageId: null },
+    where: { conversationId },
     select: { subjectId: true },
   });
   const subjectIds = [...new Set(listenings.map((l) => l.subjectId))];
@@ -131,7 +139,7 @@ export async function listDecisionTasksForConversation(
   const tasks = await db.task.findMany({
     where: {
       subjectId: { in: subjectIds },
-      status: TaskStatus.open,
+      status: { in: [TaskStatus.open, TaskStatus.done] },
       kind: { in: [...REPLYABLE_TASK_KINDS] },
     },
     orderBy: [{ createdAt: "asc" }],
@@ -145,17 +153,28 @@ export async function listDecisionTasksForConversation(
       metadata: true,
     },
   });
-  const withDecisions = tasks.filter(
-    (t) => readTaskDecisions(t.metadata).length > 0,
-  );
+  const withDecisions = tasks.filter((t) => {
+    const d = readTaskDecisions(t.metadata);
+    return t.status === TaskStatus.open
+      ? d.length > 0
+      : d.some((x) => x.reponse !== null);
+  });
   if (withDecisions.length === 0) return [];
-  const targets = await resolveReplyTargets(db, withDecisions);
+  // `resolveReplyTargets` ne résout que les tâches ouvertes ; une tâche
+  // terminée se rattache à son message d'origine, ou au fil écouté.
+  const targets = await resolveReplyTargets(
+    db,
+    withDecisions.map((t) => ({ ...t, status: TaskStatus.open })),
+  );
   return withDecisions
     .filter((t) => targets.get(t.id) === conversationId)
     .map((t) => ({
       id: t.id,
       title: t.title,
       subjectId: t.subjectId as string,
+      messageId: t.messageId,
+      status:
+        t.status === TaskStatus.done ? ("done" as const) : ("open" as const),
       decisions: readTaskDecisions(t.metadata),
     }));
 }

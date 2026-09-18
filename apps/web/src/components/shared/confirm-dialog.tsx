@@ -44,7 +44,9 @@ export function ConfirmDialog({
   const destructive = tone === "destructive";
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      {/* Couleurs POSÉES, pas héritées des jetons génériques : sur un téléphone
+          la pop-up sortait en texte clair sur fond blanc (retour du 2026-09-18). */}
+      <AlertDialogContent className="bg-white text-(--text-primary) ring-(--hairline)">
         <AlertDialogHeader>
           {Icon ? (
             <AlertDialogMedia
@@ -57,13 +59,20 @@ export function ConfirmDialog({
               <Icon strokeWidth={2} />
             </AlertDialogMedia>
           ) : null}
-          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogTitle className="text-(--text-primary)">
+            {title}
+          </AlertDialogTitle>
           {description ? (
-            <AlertDialogDescription>{description}</AlertDialogDescription>
+            <AlertDialogDescription className="text-(--text-secondary)">
+              {description}
+            </AlertDialogDescription>
           ) : null}
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={pending}>
+          <AlertDialogCancel
+            disabled={pending}
+            className="border-(--hairline) bg-white text-(--text-primary)"
+          >
             {cancelLabel}
           </AlertDialogCancel>
           <button

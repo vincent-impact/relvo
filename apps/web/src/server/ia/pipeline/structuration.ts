@@ -116,7 +116,7 @@ export function entreesDuContexte(p: StructurationProjection): {
     contact: p.contact
       ? {
           nom: p.contact.nom,
-          aCompleter: p.contact.statut === "auto",
+          aCompleter: p.contact.statut === "auto" || p.contact.nomProvisoire,
           // La signature que l'hygiène retire du fil : c'est là que sont le
           // nom, l'entreprise et le téléphone d'un contact à compléter.
           signature:
@@ -205,6 +205,8 @@ export async function structurerSujet(args: {
             lastName: retenue.contact.nom,
             company: retenue.contact.entreprise,
             role: retenue.contact.role,
+            phone: retenue.contact.telephone,
+            email: retenue.contact.email,
           }
         : null,
       labels: retenue.etiquettes,

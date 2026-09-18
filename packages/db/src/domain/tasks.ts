@@ -368,6 +368,60 @@ export async function reopenTask(db: TenantDb, id: string) {
  * part ailleurs, que l'original d'une tâche de Relvo survit. La fiche de clôture
  * d'un sujet validé y relit les tâches écartées.
  */
+/**
+ * Relvo RETIRE une tâche devenue sans objet (05 §4.2) — une intervention
+ * annulée, une livraison remplacée par une autre. Seulement une tâche OUVERTE
+ * que Relvo avait lui-même proposée : une tâche posée par le dirigeant n'est
+ * jamais retirée par le modèle. La tâche passe `deleted` (elle disparaît des
+ * listes) et le journal dit pourquoi ; rien n'est effacé en base.
+ */
+export async function retireTaskByAi(
+  db: TenantDb,
+  id: string,
+  meta: { reason: string; messageId?: string | null },
+) {
+  return db.$transaction(async (tx) => {
+    const task = assertFound(
+      await tx.task.findFirst({ where: { id } }),
+      "Tâche",
+    );
+    if (task.status !== TaskStatus.open) {
+      throw new DomainError("INVALID_STATE", "Cette tâche n'est plus ouverte.");
+    }
+    if (task.sourceActor !== Actor.ai) {
+      throw new DomainError(
+        "INVALID_STATE",
+        "Relvo ne retire pas une tâche posée par le dirigeant.",
+      );
+    }
+    await tx.task.updateMany({
+      where: { id },
+      data: { status: TaskStatus.deleted },
+    });
+    await logEvent(tx as Tx, {
+      entityType: "task",
+      entityId: task.id,
+      taskId: task.id,
+      subjectId: task.subjectId,
+      messageId: meta.messageId ?? null,
+      eventType: EVENT_TYPES.taskRetiredByAi,
+      title: `Tâche retirée par Relvo : ${task.title}`,
+      description: meta.reason,
+      actor: Actor.ai,
+      metadata: {
+        reason: meta.reason,
+        proposal: {
+          title: task.title,
+          kind: task.kind,
+          startDate: task.startDate?.toISOString().slice(0, 10) ?? null,
+          metadata: readTaskMetadata(task.metadata),
+        },
+      },
+    });
+    return task;
+  });
+}
+
 export async function deleteTask(db: TenantDb, id: string) {
   return db.$transaction(async (tx) => {
     const task = assertFound(

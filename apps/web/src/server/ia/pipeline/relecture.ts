@@ -39,8 +39,9 @@ import { entreesDuContexte } from "./structuration";
 //   3. Appel de relecture, sortie conforme au schéma ; consigné AVANT d'être
 //      exploité.
 //   4. Retenue (`./proposition`, module pur) : tâches sans doublon avec les
-//      ouvertes, plafond, dates, provenances ; la clôture n'est suggérée que
-//      sans tâche ouverte ; « En attente » seulement avec un objet.
+//      ouvertes, plafond, dates, provenances ; tâches OBSOLÈTES seulement par
+//      leur titre exact dans la fiche ; la clôture n'est suggérée que sans
+//      tâche ouverte ; « En attente » seulement avec un objet.
 //   5. Écriture par le domaine (`applyRelecture`) : situation, résumé,
 //      tâches, étiquettes, priorité, attente, suggestion de clôture, journal
 //      avec la proposition intégrale.
@@ -150,6 +151,10 @@ export async function relireSujet(args: {
         provenance: t.provenance,
         decisions: t.decisions,
       })),
+      obsoleteTasks: retenue.tachesObsoletes.map((t) => ({
+        title: t.titre,
+        reason: t.raison,
+      })),
       labels: retenue.etiquettes,
       priority: retenue.priorite,
       waitingForReply: retenue.enAttente,
@@ -167,7 +172,7 @@ export async function relireSujet(args: {
     expireTenantData();
     return {
       issue: "relu",
-      detail: `${projection.sujet.reference} · ${applied.resolution}${applied.waitingForReplySet ? " · en attente" : ""}${applied.priorityChanged ? " · priorité" : ""}`,
+      detail: `${projection.sujet.reference} · ${applied.resolution}${applied.waitingForReplySet ? " · en attente" : ""}${applied.priorityChanged ? " · priorité" : ""}${applied.retiredTaskIds.length ? ` · ${applied.retiredTaskIds.length} retirée(s)` : ""}`,
       taches: applied.taskIds.length,
     };
   } catch (err) {

@@ -873,12 +873,16 @@ export async function openSubjectOnConversation(
     ? null
     : (conversation.contactId ?? seed?.senderContactId ?? null);
   if (!isGroup && !contactId && seed && (seed.senderName || seed.senderRaw)) {
+    // Sans nom d'affichage, l'adresse tient lieu de nom (provisoire, jusqu'à
+    // ce que Relvo lise la signature) — et elle est AUSSI l'e-mail de la fiche.
     const rawId = seed.senderRaw?.trim() || null;
-    const isEmail = rawId?.includes("@") ?? false;
+    const nom = seed.senderName?.trim() || rawId || "";
+    const adresse = rawId ?? (nom.includes("@") ? nom : null);
+    const isEmail = adresse?.includes("@") ?? false;
     const contact = await createContact(db, {
-      ...splitFullName(seed.senderName ?? rawId ?? ""),
-      email: isEmail ? rawId : null,
-      phone: rawId && !isEmail ? rawId : null,
+      ...splitFullName(nom),
+      email: isEmail ? adresse : null,
+      phone: adresse && !isEmail ? adresse : null,
       sourceActor: data.createdByActor ?? Actor.user,
     });
     contactId = contact.id;

@@ -41,6 +41,8 @@ export function ConversationThread({
   selecting = false,
   selectedMessageId = null,
   onSelect,
+  after = {},
+  trailing = null,
 }: {
   messages: ThreadMessageData[];
   channelType: string;
@@ -49,6 +51,10 @@ export function ConversationThread({
   /** Message choisi comme départ de l'écoute (début du cordon). */
   selectedMessageId?: string | null;
   onSelect?: (messageId: string) => void;
+  /** Ce que Relvo pose SOUS un message (formulaire de décisions, ce qui a été décidé), par id de message. */
+  after?: Record<string, React.ReactNode>;
+  /** Idem, sans message d'ancrage : en fin de fil. */
+  trailing?: React.ReactNode;
 }) {
   const isEmail = channelType === "email";
 
@@ -64,8 +70,12 @@ export function ConversationThread({
       <div className="flex flex-col gap-2.5 px-2.5 pt-3.5 pb-3">
         {empty}
         {messages.map((m) => (
-          <EmailMessage key={m.id} data={m} />
+          <div key={m.id} className="contents">
+            <EmailMessage data={m} />
+            {after[m.id] ?? null}
+          </div>
         ))}
+        {trailing}
       </div>
     );
   }
@@ -75,10 +85,14 @@ export function ConversationThread({
       <div className="flex flex-col pt-1.5 pb-3">
         {empty}
         {messages.map((m) => (
-          <div key={m.id} className="flex flex-col px-[18px] py-[7px]">
-            <Bubble m={m} />
+          <div key={m.id} className="contents">
+            <div className="flex flex-col px-[18px] py-[7px]">
+              <Bubble m={m} />
+            </div>
+            {after[m.id] ?? null}
           </div>
         ))}
+        {trailing}
       </div>
     );
   }

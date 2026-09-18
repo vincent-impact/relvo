@@ -162,6 +162,9 @@ export const SortieStructuration = z.object({
       nom: z.string().nullable(),
       entreprise: z.string().nullable(),
       role: z.enum(ROLES_CONTACT),
+      /** Lus dans la signature, tels quels ; null sinon. */
+      telephone: z.string().nullable(),
+      email: z.string().nullable(),
     })
     .nullable()
     .describe(
@@ -200,6 +203,15 @@ export const SortieRelecture = z.object({
   en_attente: z.boolean(),
   /** L'affaire semble terminée : confirmation reçue, plus rien à faire, situation close naturellement (`05 §5.5`). */
   termine: z.boolean(),
+  /** Tâches OUVERTES de la fiche que ce message rend sans objet (`05 §4.2`) — titre EXACT de la fiche, et pourquoi. Vide sinon. */
+  taches_obsoletes: z.array(
+    z.object({
+      titre: z
+        .string()
+        .describe("Le titre EXACT d'une tâche ouverte de la fiche."),
+      raison: z.string().describe("Pourquoi ce message la rend sans objet."),
+    }),
+  ),
   /** Ce que ce message change, en une phrase — pour le journal. */
   raison: z.string(),
 });

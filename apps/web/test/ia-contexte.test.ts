@@ -313,6 +313,37 @@ describe("profils et budgets", () => {
     expect(contextes.relecture.prompt).toContain("ÉVÉNEMENT annoncé");
   });
 
+  it("la relecture demande les tâches devenues sans objet, à l'arrivée comme après un envoi", () => {
+    expect(contextes.relecture.prompt).toContain("« taches_obsoletes »");
+    const envoi = contexteRelecture({
+      compte,
+      domaine,
+      sujet,
+      precedents,
+      nouveauxMessages: [{ ...message(99), sens: "sortant" }],
+      instant,
+    });
+    expect(envoi.prompt).toContain("« taches_obsoletes »");
+  });
+
+  it("une fiche contact à compléter demande aussi le téléphone et l'e-mail de la signature", () => {
+    const c = contexteStructuration({
+      compte,
+      domaine,
+      sujet,
+      contact: {
+        ...contact,
+        nom: "vinz.chollet@gmail.com",
+        aCompleter: true,
+        signature: "Sophie Garnier\nMaintenance Sud — 06 12 34 56 78",
+      },
+      precedents,
+      instant,
+    });
+    expect(c.couches.situation).toContain("téléphone et e-mail");
+    expect(c.couches.situation).toContain("06 12 34 56 78");
+  });
+
   it("les décisions : la structuration et la relecture d'une arrivée les demandent, pas la relecture d'un envoi", () => {
     expect(contextes.structuration.prompt).toContain("« decisions »");
     expect(contextes.relecture.prompt).toContain("« decisions »");

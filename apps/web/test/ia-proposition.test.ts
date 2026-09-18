@@ -77,6 +77,8 @@ const sortie: SortieStructuration = {
     nom: "Benali",
     entreprise: " SoGood ",
     role: "supplier",
+    telephone: null,
+    email: null,
   },
   etiquettes: ["Retard livraison", "urgent"],
   etiquette_nouvelle: "remplacement",
@@ -213,6 +215,8 @@ describe("la retenue", () => {
       nom: "Benali",
       entreprise: "SoGood",
       role: "supplier",
+      telephone: null,
+      email: null,
     });
     expect(r.etiquettes).toEqual(["retard-livraison"]);
     expect(r.ecarts).toContain("étiquette hors registre : urgent");
@@ -247,6 +251,29 @@ describe("la retenue", () => {
       2,
     );
     expect(beaucoup.questions).toHaveLength(PLAFOND_QUESTIONS);
+  });
+
+  it("garde le téléphone et l'e-mail lus dans la signature — l'e-mail seulement s'il en a la forme", () => {
+    const r = retenirProposition(
+      {
+        ...sortie,
+        contact: {
+          ...sortie.contact!,
+          telephone: " 06 12 34 56 78 ",
+          email: "sophie@maintenance-sud.fr",
+        },
+      },
+      cadre,
+    );
+    expect(r.contact).toMatchObject({
+      telephone: "06 12 34 56 78",
+      email: "sophie@maintenance-sud.fr",
+    });
+    const faux = retenirProposition(
+      { ...sortie, contact: { ...sortie.contact!, email: "voir signature" } },
+      cadre,
+    );
+    expect(faux.contact?.email).toBeNull();
   });
 
   it("garde les décisions d'une tâche qui se répond — questions bornées, options distinctes de deux à quatre — et rien sur les autres", () => {
