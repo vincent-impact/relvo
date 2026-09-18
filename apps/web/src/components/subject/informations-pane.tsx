@@ -196,7 +196,7 @@ export function InformationsPane({
         description: next || null,
       });
       if (res.ok) {
-        toast.success("Résumé enregistré");
+        toast.success("Description enregistrée");
         setEditOpen(false);
         router.refresh();
       } else {
@@ -297,30 +297,31 @@ export function InformationsPane({
         </button>
       </section>
 
-      {/* 2. Description — un PANNEAU, comme les tâches : c'est la surface qui
+      {/* 2. Résumé — un PANNEAU, comme les tâches : c'est la surface qui
           dit où la fiche commence et finit. Dedans, trois lignes nommées
-          (Résumé, Où on en est, Prochaine étape) séparées d'un filet, en
+          (Description, Où on en est, Prochaine étape) séparées d'un filet, en
           sous-titres plus petits que le libellé du panneau : on lit qu'elles
-          sont des parties de la description, pas des sections de la page. Le
-          mot « Description » ne disparaît jamais :
+          sont des parties du résumé, pas des sections de la page (libellés
+          intervertis à la demande du dirigeant, 2026-09-18). Le mot « Résumé »
+          ne disparaît jamais :
             • Relvo a rédigé → sa pastille d'acteur à côté du libellé
             • l'utilisateur a écrit → le libellé seul (sa version l'emporte)
             • vide (sujet créé à la main) → dans le panneau, une INVITE dans le
               vocabulaire d'« Ajouter une tâche ». */}
       <section>
         <SectionHead
-          title="Description"
+          title="Résumé"
           badge={byRelvo ? <ActorPill actor="ai" /> : null}
         />
         {shown || situation ? (
           <ListPanel className="mx-0 divide-y divide-(--border-light) px-4">
             <DescriptionLine
-              label="Résumé"
+              label="Description"
               action={
                 <button
                   type="button"
                   onClick={openEditor}
-                  aria-label="Modifier le résumé"
+                  aria-label="Modifier la description"
                   className="grid size-6 place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
                 >
                   <Pencil className="size-[13px]" strokeWidth={2.2} />
@@ -476,7 +477,7 @@ export function InformationsPane({
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="gap-4 p-5">
           <DialogHeader>
-            <DialogTitle>Résumé du sujet</DialogTitle>
+            <DialogTitle>Description du sujet</DialogTitle>
           </DialogHeader>
           <textarea
             value={value}
@@ -537,7 +538,7 @@ function DescriptionLine({
 }
 
 /**
- * En-tête de zone de la fiche — le MÊME pour « Description » et « Tâches ».
+ * En-tête de zone de la fiche — le MÊME pour « Résumé » et « Tâches ».
  *
  * C'est lui qui délimite les zones : sans libellé, un sujet neuf n'est qu'une
  * suite d'éléments flottants dont on ne sait pas à quoi ils servent. Les deux

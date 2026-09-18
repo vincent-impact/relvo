@@ -2,29 +2,22 @@
 
 ## Démarrage à froid — à lire en premier
 
-**Où on en est (2026-09-16)** : les tranches 0 à 7 sont livrées. Les tranches 0 à 5 et 7 sont
-en production, testées par le dirigeant sur de vrais e-mails ; **la tranche 6, la relecture, est
-codée et testée, à pousser** — c'est le manque qu'il avait constaté sur son second e-mail : un
-message qui arrive sur un sujet suivi n'était pas analysé. Désormais, tout message entrant capté
-par un sujet — écoute du fil, rattachement par le tri, réouverture mécanique d'un sujet validé —
-déclenche une relecture après la réponse HTTP du webhook : situation et résumé mis à jour,
-tâches nouvelles (sans répéter les ouvertes), priorité recalibrée, « En attente » posé quand un
-tiers est attendu, clôture suggérée (pastille « À valider ? » sur la ligne du sujet) ou retirée.
-Relvo ne touche jamais au statut. Domaine `packages/db/src/domain/relecture.ts`, pipeline
-`apps/web/src/server/ia/pipeline/relecture.ts`, retenue `retenirRelecture` dans
-`proposition.ts`, banc `pnpm --filter web eval:relecture` (`benchmark-iag.md` §6.9 : 0,61 € les
-mille, 5 s). **Poussée en production le jour même, premier essai réel fait** : l'ouverture et la réponse
-sont bonnes ; un événement annoncé (« intervention mardi 8 h ») ne donnait pas de tâche,
-corrigé par la consigne ; marqueurs et interlocuteur ajoutés sur la fiche. **À faire au
-prochain démarrage** : reprendre l'essai à l'e-mail 2 du scénario (rendez-vous mardi 8 h,
-« En attente »), puis les e-mails 3 à 6 (nouvelle tâche et priorité, clôture suggérée,
-réouverture, rattachement sans appel) — la ligne `[ia] relecture` dans les journaux Vercel, le
-journal du sujet (`subject_reviewed`), les pastilles ; et lire ce que le modèle fait de la
-priorité (le banc le voit monter « urgent » sur l'échéance d'un tiers). Restent ouverts en
-arrière-plan : relire les structurations réelles dans le journal, confirmer les deux décisions
-par défaut de la tranche 4 (frontière de confiance à « moyenne », « incertain » traité comme
-une confiance basse), et essayer `none` sur la relecture avec le jeu réel. La prochaine tranche
-est la 8, le durcissement.
+**Où on en est (2026-09-18)** : les tranches 0 à 7 sont livrées **et vérifiées en production**.
+La tranche 6, la relecture, est close : quatre essais réels sur le scénario complet du devis de
+friteuse (e-mail → devis → décision → envoi → livraison → clôture), une vingtaine de retours du
+dirigeant, tous livrés le jour même. Ce que ces essais ont fait naître, au-delà de la
+relecture : **le formulaire de décisions** (les questions qu'un message pose, portées par la
+tâche de réponse, répondues dans le fil, la carte figée reste dans la conversation), **un envoi
+relit le sujet** (gardé malgré le coût), **la relecture règle les tâches** — elle coche celles
+qu'un message montre accomplies, retire celles qu'il rend sans objet — et **la dernière tâche
+cochée à la main règle le sujet sans IA** (attente levée, clôture proposée). La fiche du sujet a
+été réorganisée trois fois pour finir en un panneau « Résumé » (Description, Où on en est,
+Prochaine étape) et la conversation a un hero compact, fixe, aux membres repliés. Jeu
+d'évaluation à douze suites. **La prochaine tranche est la 8, le durcissement** (citations,
+cache mesuré, plafonds). Restent ouverts en arrière-plan : essayer `none` sur la relecture avec
+le jeu réel, reprogrammer une tâche d'événement dont la date change, relire les structurations
+réelles dans le journal, confirmer les deux décisions par défaut de la tranche 4 (frontière de
+confiance à « moyenne », « incertain » traité comme une confiance basse).
 
 **Tout le socle fonctionne, sauf le cœur.** Ce sprint ouvre M7 : le pipeline qui transforme un
 message entrant en sujet. La conception est à jour et fait foi : les cinq couches de contexte et
@@ -398,13 +391,22 @@ retenue, orchestration — dans l'application (`apps/web/src/server/ia/pipeline/
       prise conservée dans le fil, **tâches devenues sans objet retirées par la relecture**
       (`retireTaskByAi`, seulement les tâches de Relvo, journal). Décision dans `ecarts` (« Huit
       retours du premier essai du formulaire de décisions »).
-- [ ] Essayer `none` sur la relecture avec le jeu réel.
-- [ ] Une tâche d'événement qui change de date est écartée comme doublon : reprogrammer
-      l'existante (point ouvert, `ecarts`).
+- [x] **Second essai du formulaire (18 septembre) : sept retours, tous livrés** — le toast
+      « Sujet fermé » lisible sur un téléphone en mode sombre (piège #51 : l'app est claire
+      seulement) ; hero de conversation compact, sans libellés, membres d'un groupe dépliés
+      depuis la puce du canal ; formulaire pleine largeur ; **le choix fait reste la carte du
+      formulaire, figée** ; **la relecture coche les tâches qu'un message montre accomplies**
+      (`taches_terminees`, la parole du dirigeant l'emporte sur le planning, suite-012) ;
+      **la dernière tâche cochée à la main lève l'attente et propose la clôture, sans IA**
+      (`settleSubjectAfterLastTask`, rouvrir retire la suggestion) ; libellés Résumé /
+      Description intervertis sur la fiche. Décisions dans `ecarts`.
+- [x] **Tranche close le 2026-09-18**, vérifiée en production sur le scénario complet.
+
+**Reste ouvert, hors tranche** : essayer `none` sur la relecture avec le jeu réel ; une tâche
+d'événement qui change de date est écartée comme doublon, reprogrammer l'existante (`ecarts`).
 
 **Ce que la tranche laisse volontairement de côté** : la note de Relvo sur le contact au fil
-des relectures (`05 §1.3`) ; cocher une tâche devenue obsolète sur un message reçu (`05 §4.2`,
-V2) ; WhatsApp (A8).
+des relectures (`05 §1.3`) ; WhatsApp (A8).
 
 ## Tranche 7 — Le brouillon (M7.7, M7.10)
 
@@ -471,7 +473,7 @@ réclament.
 - [x] Tranche 3 — livrée le 2026-09-14
 - [x] Tranche 4 — livrée le 2026-09-14 ; l'assistant s'active compte par compte, dans Préférences
 - [x] Tranche 5 — livrée le 2026-09-15 ; banc d'essai en `benchmark-iag.md` §6.7
-- [x] Tranche 6 — livrée le 2026-09-16 ; banc d'essai en `benchmark-iag.md` §6.9 ; à vérifier en production
+- [x] Tranche 6 — livrée le 2026-09-16, close le 2026-09-18 après quatre essais réels ; banc d'essai en `benchmark-iag.md` §6.9 ; jeu à douze suites
 - [x] Tranche 7 — livrée le 2026-09-15, avant la 6 ; banc d'essai en `benchmark-iag.md` §6.8
 - [ ] Tranche 8
 - [ ] Tranche 9

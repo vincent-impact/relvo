@@ -15,7 +15,7 @@ debut: 2026-06-10
 | M12.2 | Notifications d'interface pour les actions et confirmations                                   | 🟡 partiel                    |
 | M12.3 | Rafraîchissement périodique                                                                   | ✅ livré en avance avec M5.13 |
 | M12.4 | Recalcul des indicateurs, en cache, invalidé à la mutation                                    | ✅                            |
-| M12.5 | Invalidation d'une suggestion de validation quand une activité postérieure la contredit       | ⬜                            |
+| M12.5 | Invalidation d'une suggestion de validation quand une activité postérieure la contredit       | ✅ livré avec M7 (relecture, « pas encore », tâche rouverte) |
 | M12.6 | Accès à la pile des tâches sans date depuis les surfaces calendaires                          | ⬜                            |
 | M12.7 | Brief du matin en notification : les compteurs du jour à l'heure d'ouverture, sans génération | ⬜                            |
 
