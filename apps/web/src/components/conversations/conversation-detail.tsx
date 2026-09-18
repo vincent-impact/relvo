@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Check,
+  ChevronDown,
   ChevronRight,
   Mail,
   MessageCircle,
@@ -455,16 +456,12 @@ export function ConversationDetail({
     return () => ro.disconnect();
   }, [attached]);
 
-  // Les membres d'un groupe se REPLIENT (retour du 2026-09-18) : un groupe de
-  // huit personnes faisait un hero de deux écrans. Deux visibles, le reste sur
-  // un appui discret.
+  // Les membres d'un groupe sont REPLIÉS (retour du 2026-09-18) : un groupe
+  // de vingt personnes surchargeait le hero. Fermés par défaut, ils se
+  // déplient — avec « Enregistrer » — d'un appui sur la puce du canal, qui
+  // porte un chevron pour le dire.
   const [membersOpen, setMembersOpen] = useState(false);
-  const MEMBRES_VISIBLES = 2;
-  const membresRepliables = isGroup && participants.length > MEMBRES_VISIBLES;
-  const participantsVisibles =
-    membresRepliables && !membersOpen
-      ? participants.slice(0, MEMBRES_VISIBLES)
-      : participants;
+  const participantsVisibles = isGroup && !membersOpen ? [] : participants;
 
   // Le fil s'ouvre EN BAS, sur le dernier message (retour du 2026-09-18) : c'est
   // ce qu'on vient lire. Une fois, quand la place du composer est connue.
@@ -554,17 +551,34 @@ export function ConversationDetail({
             {/* Le canal, puis les interlocuteurs — en puces, sur une ligne
                 qui replie. Tap = fiche (enregistré) ou pop-up de création. */}
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex h-7 flex-none items-center gap-1 rounded-full bg-white/12 px-2 text-[12px] font-semibold text-(--on-violet)">
-                {isGroup ? (
+              {isGroup ? (
+                <button
+                  type="button"
+                  onClick={() => setMembersOpen((o) => !o)}
+                  aria-expanded={membersOpen}
+                  className={cn(
+                    "inline-flex h-7 flex-none items-center gap-1 rounded-full px-2 text-[12px] font-semibold text-white active:bg-white/25",
+                    membersOpen ? "bg-white/25" : "bg-white/12",
+                  )}
+                >
                   <Users className="size-[13px]" strokeWidth={2.4} />
-                ) : (
+                  {`${channelLabel} · ${participants.length} membre${participants.length > 1 ? "s" : ""}`}
+                  <ChevronDown
+                    className={cn(
+                      "size-3.5 text-white/70 transition-transform",
+                      membersOpen && "rotate-180",
+                    )}
+                    strokeWidth={2.4}
+                    aria-hidden
+                  />
+                </button>
+              ) : (
+                <span className="inline-flex h-7 flex-none items-center gap-1 rounded-full bg-white/12 px-2 text-[12px] font-semibold text-(--on-violet)">
                   <ChannelIcon className="size-[13px]" strokeWidth={2.2} />
-                )}
-                {isGroup
-                  ? `${channelLabel} · ${participants.length} membre${participants.length > 1 ? "s" : ""}`
-                  : channelLabel}
-              </span>
-              {participants.length === 0 ? (
+                  {channelLabel}
+                </span>
+              )}
+              {participants.length === 0 && !isGroup ? (
                 <span className="text-[12.5px] text-white/70 italic">
                   Aucun interlocuteur identifié.
                 </span>
@@ -620,18 +634,6 @@ export function ConversationDetail({
                   );
                 })
               )}
-              {membresRepliables ? (
-                <button
-                  type="button"
-                  onClick={() => setMembersOpen((o) => !o)}
-                  aria-expanded={membersOpen}
-                  className="h-7 flex-none rounded-full border border-white/30 px-2.5 text-[12px] font-semibold text-white/85 active:bg-white/10"
-                >
-                  {membersOpen
-                    ? "Réduire"
-                    : `+${participants.length - MEMBRES_VISIBLES}`}
-                </button>
-              ) : null}
             </div>
 
             {/* Sujets suivis — une ligne fine par sujet ; chaîne brisée = détacher. */}

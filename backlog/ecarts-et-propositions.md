@@ -465,7 +465,9 @@ Tous retenus, séparément :
 
 - **Le hero d'une conversation, fixé, couvrait un tiers de l'écran.** Il tient sur moitié
   moins : plus de libellés « Interlocuteur » et « Suivi dans », le canal et les interlocuteurs
-  en puces sur une ligne, les sujets suivis en lignes fines dessous.
+  en puces sur une ligne, les sujets suivis en lignes fines dessous. Dans un **groupe**, les
+  membres restent repliés : la puce « WhatsApp · N membres » porte un chevron et les déplie,
+  avec « Enregistrer » — un groupe de vingt personnes ne surcharge jamais le hero.
 - **Le formulaire de décisions prend toute la largeur** d'un message du fil, au lieu d'une
   marge en plus.
 - **Le rappel d'un choix fait est une coche violette et le libellé du choix**, rien d'autre :
