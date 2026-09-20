@@ -487,12 +487,76 @@ deviennent un formulaire ».
 - **Exécuté la nuit par un cron**, pas à la volée : la connexion demande, la nuit exécute, le
   matin montre — une ligne sous le canal dans Réglages. Un message d'historique qui arrive par
   le webhook pendant la synchronisation est rangé mais laissé à la nuit : jamais trié plein
-  tarif à contretemps.
+  tarif à contretemps. **Révisé le jour même** : voir « Le rattrapage commence à la connexion,
+  pas la nuit ».
 - **E-mail seulement.** Le tri de WhatsApp message par message n'existe pas encore (A8) ; le
   rattrapage de la messagerie viendra avec lui.
 - **Ce que la tranche ne fait pas** : la suggestion de créer un domaine quand plusieurs sujets
   partagent la même proposition (M17.10) — les propositions existent dès le matin, l'encart qui
   les regroupe est M17.
+
+### Le rattrapage commence à la connexion, pas la nuit
+
+**`tranché`** · Avec le dirigeant, le jour même de la livraison de la tranche 9. Révise
+l'exécution nocturne consignée dans « Le rattrapage du courrier récent : trente jours, en lot,
+sous plafond » ; les plafonds, la fenêtre, le niveau « flex » et le périmètre e-mail ne bougent
+pas.
+
+- **Le moment juste est la connexion.** Un dirigeant qui vient d'installer Relvo veut voir ses
+  sujets dans les minutes qui suivent ; attendre la nuit rate la première impression, qui est
+  aussi la démonstration attendue. La nuit avait deux motifs : le niveau « flex » tolère une
+  latence libre — vrai à toute heure — et l'agrégateur met quelques minutes à synchroniser
+  l'historique — ce que la reprise par tranches rend inoffensif.
+- **Un travail de fond par tranches, pas un appel synchrone.** Une fonction serverless vit
+  quelques minutes ; trois cents messages en lot en demandent vingt. La connexion lance la
+  première tranche ; chaque tranche importe ce qui est synchronisé, trie du plus récent au plus
+  ancien et enchaîne la suivante ; deux tranches vides de suite closent la ligne. Le compteur de
+  nuits devient un compteur de tranches.
+- **Le courrier vivant reste temps réel.** Le webhook trie chaque e-mail à réception, comme
+  avant ; la règle qui laissait à la nuit un message d'historique disparaît — la tranche en
+  cours le ramasse, ou le fil de l'eau le trie s'il n'y a plus de rattrapage ouvert.
+- **Le cron devient un filet.** Un passage quotidien reprend une ligne restée ouverte parce
+  qu'une tranche est morte sans relancer la suivante ; il ne fait rien dans le cas normal. Le
+  dirigeant le jugeait inutile comme mécanisme principal — il l'est ; comme filet, il coûte trois
+  fichiers déjà écrits.
+- **La messagerie héritera de la mécanique.** WhatsApp, au flux bien plus dense, se lira par
+  paquets plutôt que message par message ; ce sont ces tranches en lot qui y serviront.
+- **Pas avant la présentation du produit** du jour : la tranche 9 reste en production telle que
+  livrée, nocturne ; la révision est la tranche 10 du sprint M7.
+
+### La prise en main est une conversation avec Relvo
+
+**`tranché`** · Avec le dirigeant. Remplace les « trois écrans » de M13.2 par le **premier
+échange** avec Relvo, dans la surface de M10. L'idée a été confrontée avant d'être retenue ; ce
+qui suit est ce qui a tenu.
+
+- **Pourquoi l'échange plutôt que des écrans.** C'est la posture même du produit (`01` §11) :
+  le public dialogue chaque jour avec un assistant et n'apprend pas une interface. La lecture du
+  courrier récent et la prise en main durent le même temps ; l'une occupe l'autre, et à la fin
+  l'application n'est pas vide. Une barre de progression bloquante avait été envisagée :
+  écartée — vingt minutes devant une barre perdent celui qui vient d'installer l'application ;
+  occuper le temps, oui, le confisquer, non.
+- **Scripté, jamais généré.** Le fil est une suite d'étapes écrites, en texte fixe. Le modèle ne
+  mène pas la conversation : coût (le tour d'échange est le poste le plus élastique, `05`
+  §11.9), prévisibilité (la même prise en main pour tous), testabilité (un script se rejoue).
+  Zéro jeton pour le script ; les jetons vont au courrier.
+- **Les questions sont les formulaires déjà livrés** — ceux des décisions d'une tâche de
+  réponse —, dans la couleur de Relvo. Chaque réponse a une destination : un objet du compte
+  par la fonction métier de l'écran, ou une instruction en couche Compte ou Domaine, jamais
+  Produit. Elles sont peu nombreuses et jamais bloquantes. À rapprocher des questions de Relvo
+  (M17.6) : une seule mécanique de question, pas deux.
+- **L'état vit dans le domaine.** Les échanges sont éphémères côté client ; l'étape atteinte et
+  les réponses sont persistées, le rattrapage porte son avancement. On reprend où on en était,
+  et le script rejoue à chaque connexion de canal.
+- **Une carte vivante dans le fil**, une seule, qui se met à jour ; pas un message par message
+  lu. C'est une primitive nouvelle de l'échange.
+- **Ce que ça impose à M10.** L'échange devient le premier écran que voit un nouvel
+  utilisateur ; M13.2 dépend donc de M10, qui reçoit un item « échange scripté ». Et un échange
+  qui montre l'interface se remplir pendant qu'il parle pose la question de sa place — plein
+  écran ou non —, rouverte dans « Rouvrir la disposition générale ».
+- **Ce qui reste ouvert** : le contenu exact du script — le nombre de questions, leur ordre —, à
+  écrire avec les premiers retours ; et ce que l'agrégateur synchronise, en combien de temps,
+  que le script doit traverser sans impasse.
 
 ### Le durcissement : un appel raté coûte, un cache s'adresse, un brouillon cite
 
@@ -872,7 +936,8 @@ ses secteurs, à cocher. C'est déjà l'esprit de M13.2 et M17.10 ; la matière 
 socles de la couche Produit (une liste de domaines typiques par secteur, avec une description
 d'une ligne chacun), et le rattrapage du courrier récent (M7.19) reste le moyen le plus juste :
 les domaines qu'il propose viennent du courrier réel, pas d'une liste générique. À dessiner avec
-les premiers retours des bêta-testeurs.
+les premiers retours des bêta-testeurs. Le lieu est arrêté depuis : le premier échange avec Relvo
+(« La prise en main est une conversation avec Relvo »).
 
 ### Le contexte du modèle est assemblé en cinq couches
 
@@ -935,8 +1000,8 @@ sans que rien de visible ne change. L'épique est alignée.
 **`tranché`** · Au premier jour, aucun domaine. Relvo n'en crée jamais ; il pose un domaine
 proposé sur les sujets qu'aucun domaine n'accueille, et l'interface suggère la création dès que
 plusieurs sujets partagent la proposition. Les socles des secteurs proposent des domaines typiques à la
-prise en main. Le rattrapage du courrier récent, en lot, produit ces propositions dès le lendemain
-de la connexion — c'est aussi la démonstration attendue par les clients.
+prise en main. Le rattrapage du courrier récent, en lot, produit ces propositions dans les minutes
+qui suivent la connexion — c'est aussi la démonstration attendue par les clients.
 
 ### Sept extensions de l'IA, retenues sans écran de paramétrage
 
@@ -1135,3 +1200,12 @@ C'est le **rang 2** de la hiérarchie des sources, et il est vide.
 
 **`proposé`** · Voir la décision correspondante plus haut. Le motif qui a justifié leur entrée
 dans la barre d'onglets disparaît avec le tri manuel.
+
+### Rouvrir la disposition générale : menus, place de l'échange, page d'accueil
+
+**`proposé`** · À traiter dans la session qui suit la présentation du produit, avant M10 et avant
+la tranche 10 de M7. Trois questions, posées par le dirigeant : la position des menus et
+l'intérêt d'un menu « burger » ; la place de l'échange avec Relvo et la façon d'y accéder — la
+surface plein écran de `05` §11.1 est contrainte par la prise en main, qui veut montrer
+l'interface se remplir pendant que Relvo parle ; et la page d'accueil. Recoupe « Rouvrir la
+place des conversations dans la navigation ».

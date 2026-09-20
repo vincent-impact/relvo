@@ -13,8 +13,18 @@ mesuré au banc : tout le préfixe relu sur un message jamais vu, `benchmark-iag
 **le brouillon cite ses sources** (schéma de sortie, résolues, stockées dans l'Action, « Basé
 sur » sous la barre du composer). La **tranche 9, le rattrapage en lot, est livrée le même jour** : trente jours, en lot au
 niveau « flex », sous plafond (trois cents messages, deux euros), demandée à la connexion,
-exécutée la nuit par un cron, bilan sous le canal dans Réglages. **M7 est complet en code** ;
-l'épique se clôt quand les tranches 8 et 9 auront été vérifiées en production.
+exécutée la nuit par un cron, bilan sous le canal dans Réglages. **Le même jour, deux décisions
+révisent la suite** (`ecarts`, « Le rattrapage commence à la connexion, pas la nuit » et « La
+prise en main est une conversation avec Relvo ») : le rattrapage doit commencer **dès la
+connexion**, par tranches enchaînées, le cron n'étant plus qu'un filet — c'est la **tranche 10**,
+définie plus bas, **pas commencée** ; et la prise en main de M13.2 devient le premier échange
+avec Relvo, scripté, dans la surface de M10 — la conception est écrite (`05` §11.11, `01` §11,
+cas Y de `03`), le code attend M10. ⚠️ **Rien de tout cela ne part en production avant la
+présentation du produit du 2026-09-20 au soir** : la tranche 9 tourne telle que livrée. **La
+session suivante rouvre la disposition générale** — menus et menu burger, place de l'échange,
+page d'accueil (`ecarts`, « Rouvrir la disposition générale ») — avant la tranche 10. **M7 est
+complet en code** hors tranche 10 ; l'épique se clôt quand les tranches 8, 9 et 10 auront été
+vérifiées en production.
 Le plafond de dépense sur la clé OpenAI est posé (100 € par mois) ; le cadre économique des
 bêta-testeurs est arrêté (voir `ecarts`, « Un disjoncteur de consommation par compte ») et
 M14.5 le traduira en seuils par compte. Restent ouverts en arrière-plan : essayer `none` sur la
@@ -510,10 +520,38 @@ secret du cron).
       d'historique que l'agrégateur synchronise par défaut n'est pas documentée : si la liste
       revient vide la première nuit, le rattrapage reprend la suivante (trois au plus).
 
+## Tranche 10 — Le rattrapage à la connexion (M7.19, révision)
+
+**« Relvo lit le courrier récent dès la connexion. »** Décidée le 2026-09-20 (`ecarts`, « Le
+rattrapage commence à la connexion, pas la nuit »), **pas commencée** — après la session sur la
+disposition générale, et jamais avant la présentation du produit du 2026-09-20 au soir.
+
+- [ ] Le webhook de fin de connexion demande le rattrapage **et lance la première tranche**
+      (réponse rendue, travail poursuivi dans la fonction, sous sa durée maximale).
+- [ ] Une tranche importe ce que l'agrégateur a synchronisé, trie **du plus récent au plus
+      ancien** (l'ordre des candidats s'inverse), puis **se relance** tant qu'il reste du courrier
+      ou que l'import n'est pas stabilisé ; deux tranches vides de suite closent la ligne ; le
+      compteur de nuits devient un compteur de tranches, plafonné.
+- [ ] La règle des six heures du webhook (`estHistorique`) disparaît : un message d'historique
+      est ramassé par la tranche en cours, ou trié au fil de l'eau s'il n'y a plus de rattrapage
+      ouvert sur le canal.
+- [ ] Le cron reste comme **filet** : il reprend une ligne ouverte dont la dernière tranche date
+      de plus d'un délai ; documenté comme tel (README, `02`).
+- [ ] Le total de candidats au moment où l'import se ferme est mémorisé (`02`), pour que
+      l'avancement se lise en fraction ; la ligne sous le canal dans Réglages devient vivante
+      (« Relvo lit votre courrier récent, 42 messages lus, 6 sujets ouverts »).
+- [ ] Tests : règles pures (relance, arrêt sur tranches vides, ordre), domaine (compteur de
+      tranches), et vérification en production sur une vraie connexion — ⚠️ ce qu'Unipile
+      synchronise, et en combien de temps, reste à observer.
+- [ ] Ce que la tranche ne fait pas : l'échange scripté (M10.16, M13.2) — elle **expose**
+      l'avancement, elle ne le raconte pas.
+
 ## Ce qui attend
 
 - **WhatsApp message par message (A8, M7.4 côté messagerie)** : après que l'e-mail est stable.
   Le modèle le permet déjà — l'appartenance vit sur le message.
+- **M13.2, la prise en main par l'échange** : conception écrite (`05` §11.11, cas Y) ; le code
+  vient avec M10, qui reçoit l'échange scripté (M10.16).
 - **M17** : étiquettes, raisons, questions, préférences, part d'aide. Le pipeline écrit dès M7
   ce que M17 relit ; les champs existent dès la tranche 2.
 - **M10** : l'échange. Même module de contexte, profil différent, plus les outils.
@@ -532,3 +570,4 @@ secret du cron).
 - [x] Tranche 7 — livrée le 2026-09-15, avant la 6 ; banc d'essai en `benchmark-iag.md` §6.8
 - [x] Tranche 8 — livrée le 2026-09-20 ; à vérifier en production ; banc d'essai en `benchmark-iag.md` §6.10
 - [x] Tranche 9 — livrée le 2026-09-20 ; à vérifier en production sur une vraie connexion ; banc d'essai en `benchmark-iag.md` §6.11
+- [ ] Tranche 10 — définie le 2026-09-20, pas commencée ; après la session sur la disposition générale

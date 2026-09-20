@@ -40,6 +40,7 @@ capable d'agir, accessible partout, avec une palette d'outils **symétrique à l
 | M10.13 | Traçabilité de la provenance dans le journal                                                                         |
 | M10.14 | Diffusion en continu des réponses                                                                                    |
 | M10.15 | Gestion d'erreur explicite dans le fil                                                                               |
+| M10.16 | **Échange scripté** : un fil dont Relvo tient les étapes sans le modèle — la prise en main (M13.2), la lecture du courrier à la connexion d'un canal — avec une **carte vivante** d'avancement et des questions sous forme de formulaires |
 
 ⚠️ **M10.8 est la ligne qui décide de tout le reste.** Si un outil réimplémente une règle métier
 au lieu d'appeler la fonction existante, on obtient deux comportements pour une même opération —
@@ -48,3 +49,7 @@ et c'est l'utilisateur qui découvre lequel s'applique.
 ⚠️ **Le brouillon ne s'envoie jamais.** Il atterrit dans la zone de rédaction. Cette limite ne
 bouge pas : un envoi à tort engage la parole de l'utilisateur auprès d'un tiers, et aucune
 annulation ne rattrape ça.
+
+⚠️ **La disposition de M10.1 est rouverte** (`ecarts`, « Rouvrir la disposition générale ») : la
+prise en main veut montrer l'interface se remplir pendant que Relvo parle, ce qu'une surface
+plein écran ne permet pas telle quelle.

@@ -204,6 +204,14 @@ compteurs du jour — « deux réponses attendues, une urgence ». Un calcul, au
 L'échange proprement dit est une **surface plein écran**, atteinte depuis un bouton présent au
 même endroit sur toutes les pages, et qui transmet le contexte de la page d'origine.
 
+### La prise en main est le premier échange, pas un tutoriel
+
+Personne n'apprend Relvo par des infobulles. À la connexion du premier canal, Relvo **prend la
+parole** : il dit qu'il lit le courrier récent, montre ce qu'il trouve à mesure, pose les
+quelques questions dont il a besoin — sous la forme des formulaires du produit — et explique en
+deux phrases ce qu'il faut savoir. Le temps de la lecture est le temps de la prise en main, et
+rien n'est bloqué pendant qu'il travaille. Le détail vit dans `05-ia.md` §11.11.
+
 ### Relvo rend les mêmes composants que l'interface
 
 Les réponses de Relvo ne sont pas que du texte : il **rend les composants structurés du produit

@@ -50,10 +50,9 @@ frontmatter l'est.
 
 ```
 M1 → M2 → M3 ─┬─→ M4 ──────────────→ M11 ─┐
-              ├─→ M5 → M6 → M6bis        ├─→ M7 ─┬─→ M10
+              ├─→ M5 → M6 → M6bis        ├─→ M7 ─┬─→ M10 → M13 → M14
               │        → M6ter → M6quater ┘       ├─→ M8
-              └─→ M9                              ├─→ M17
-                                                  └─→ M13 → M14
+              └─→ M9                              └─→ M17
 ```
 
 **M7 est le verrou.** Tout ce qui reste d'ambitieux dans le produit en dépend, et c'est aussi ce

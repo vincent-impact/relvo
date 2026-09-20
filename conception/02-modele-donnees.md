@@ -156,8 +156,9 @@ simplicité d'usage, et facturation à l'usage chez l'agrégateur.
 §9.6) : la fenêtre lue, l'état — demandé, en cours, terminé, arrêté au plafond, en échec —,
 l'avancement de l'import et du tri, ce que Relvo en a fait (messages lus, sujets ouverts,
 conversations mises en sourdine), le coût en euros, et la raison de l'arrêt. Une ligne par
-rattrapage demandé ; la demande naît à la connexion d'un canal, l'exécution est nocturne et
-reprend tant que la ligne n'est pas close. C'est ce que l'écran des canaux montre au matin.
+rattrapage demandé ; la demande naît à la connexion d'un canal, l'exécution commence aussitôt,
+par tranches, et reprend tant que la ligne n'est pas close. C'est ce que le premier échange avec
+Relvo raconte pendant qu'il lit, et ce que l'écran des canaux montre ensuite.
 
 ## Conversation
 

@@ -14,7 +14,7 @@ fin: 2026-11-05
 # M13 — Onboarding et bêta
 
 **Objectif** — préparer le produit à accueillir ses premiers utilisateurs.
-**Dépendances** : M2, M5, M6, M11.
+**Dépendances** : M2, M5, M6, M7 (M7.19), M10, M11.
 
 **Cible** : bêta privée gratuite, quelques comptes provisionnés à la main. Pas de facturation à
 ce stade.
@@ -22,7 +22,7 @@ ce stade.
 | #     | Item                                                                                                                                                                                                                                |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M13.1 | Provisionnement d'un compte, en ligne de commande ou page protégée                                                                                                                                                                  |
-| M13.2 | Prise en main en trois écrans : connecter ses canaux, choisir ses secteurs, déposer sa première instruction — les domaines sont proposés par le rattrapage du courrier récent (M7.19, M17.10), jamais demandés à un formulaire vide |
+| M13.2 | Prise en main par le **premier échange avec Relvo** (`05` §11.11) : scripté, pendant que Relvo lit le courrier récent (M7.19) ; carte vivante d'avancement ; questions sous forme de formulaires, réponses vers les objets du compte ou les instructions ; secteurs, domaines proposés par le courrier (M17.10), première instruction — jamais un formulaire vide, jamais bloquant. **Dépend de M10** (échange scripté, M10.16) |
 | M13.3 | Pages d'erreur et de maintenance                                                                                                                                                                                                    |
 | M13.4 | Documentation utilisateur courte                                                                                                                                                                                                    |
 | M13.5 | Retour d'expérience depuis l'application                                                                                                                                                                                            |

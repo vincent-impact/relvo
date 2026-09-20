@@ -333,6 +333,28 @@ de temps en temps.
 
 ---
 
+## Cas Y — Il connecte sa boîte e-mail
+
+Il vient d'installer Relvo. Depuis Réglages, il connecte sa boîte e-mail chez son fournisseur,
+et revient dans l'application.
+
+**Ce que voit l'utilisateur.** Relvo lui parle, dans l'échange : « Je lis votre courrier des
+dernières semaines. » Une carte s'y met à jour — messages trouvés, messages lus, sujets
+ouverts. Pendant ce temps, Relvo lui demande ses secteurs, puis lui explique en deux phrases ce
+qu'il appelle un sujet. Les premiers sujets apparaissent sous la carte, comme partout ailleurs.
+Quand plusieurs sujets se ressemblent, Relvo propose des domaines à cocher, tirés de son
+courrier, et lui demande s'il a une consigne pour l'un d'eux. Il répond, ou il passe. À la fin,
+Relvo dit ce qu'il a lu, ouvert et mis en sourdine, et lui propose d'entrer.
+
+**Ce qui pourrait le surprendre.** Relvo n'a pas fini quand lui a fini : une ligne discrète le
+dit, l'application est déjà utilisable, et les sujets continuent d'arriver. Ou bien Relvo n'a
+encore rien trouvé, parce que le fournisseur livre le courrier à son rythme : il le dit, et
+n'insiste pas. Rien ne l'a empêché d'entrer, à aucun moment ; s'il ferme l'application au milieu,
+Relvo reprend l'échange où il en était. Le même échange, plus court, revient quand il connecte un
+autre canal.
+
+---
+
 ## Ce que l'utilisateur ne fait jamais
 
 Écrit ici parce que ce sont les gestes qu'on serait tenté d'ajouter.

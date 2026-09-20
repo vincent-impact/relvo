@@ -58,7 +58,7 @@ Plutôt que d'implémenter les seize items en couche, ouvrir des sprints qui liv
 3. **« Le sujet arrive avec un brouillon prêt »** — M7.7, M7.10.
 4. **« Relvo suggère que c'est terminé »** — M7.11, M7.9.
 5. **Durcissement** — M7.12, M7.13, M7.15, M7.16.
-6. **« Relvo lit le courrier récent la nuit de la connexion »** — M7.19. C'est la démonstration
+6. **« Relvo lit le courrier récent dès la connexion »** — M7.19. C'est la démonstration
    que les clients réclament, sur leur propre courrier, sans rien configurer.
 
 Ce qui nourrit Relvo en retour — étiquettes, raisons, questions, préférences — est une épique à
