@@ -99,7 +99,6 @@ export default async function ConversationsPage({
     <Screen>
       <PollRefresh />
       <RelvoHeader
-        back="/fil"
         title="Conversations"
         subtitle={
           unsorted > 0

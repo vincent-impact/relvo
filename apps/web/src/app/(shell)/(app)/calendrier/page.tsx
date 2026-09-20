@@ -1,12 +1,9 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { HeaderSwitch } from "@/components/layout/header-switch";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
-import {
-  VueSwitch,
-  type CalendrierVue,
-} from "@/components/calendrier/vue-switch";
 import { WeekView } from "@/components/calendrier/week-view";
 import {
   PlanningMonth,
@@ -24,7 +21,7 @@ import {
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
 
 // Calendrier — LA page des tâches (invariant 34), sous un segmented Semaine /
-// Mois posé dans le header. La vue vit dans l'URL (`?vue=mois`, `?m=AAAA-MM`).
+// Mois posé dans le header, sur la ligne du titre. La vue vit dans l'URL (`?vue=mois`, `?m=AAAA-MM`).
 //  • Semaine : la barre d'indicateurs des tâches (Aujourd'hui · Rendez-vous ·
 //    En retard) et le semainier slidable avec drag-and-drop (ex-accueil).
 //  • Mois : la grille pleine largeur, tâches datées colorées par domaine,
@@ -47,6 +44,8 @@ const MONTHS = [
   "Novembre",
   "Décembre",
 ];
+
+type CalendrierVue = "semaine" | "mois";
 
 function ymKey(y: number, m0: number) {
   return `${y}-${String(m0 + 1).padStart(2, "0")}`;
@@ -119,9 +118,10 @@ function weekLabel(now: Date): string {
   const monday = new Date(now);
   const offset = (now.getUTCDay() + 6) % 7;
   monday.setUTCDate(now.getUTCDate() - offset);
+  // Mois court : la ligne du titre porte aussi le segmented et le « + ».
   const label = monday.toLocaleDateString("fr-FR", {
     day: "numeric",
-    month: "long",
+    month: "short",
     timeZone: "UTC",
   });
   return `Semaine du ${label}`;
@@ -229,13 +229,20 @@ export default async function CalendrierPage({
       <RelvoHeader
         title="Calendrier"
         subtitle={vue === "mois" ? `${MONTHS[month0]} ${year}` : weekLabel(now)}
-        className={vue === "mois" ? "pb-6" : "pb-[46px]"}
-        action={<CreateTaskButton />}
-      >
-        <div className="px-[18px] pt-3.5">
-          <VueSwitch vue={vue} />
-        </div>
-      </RelvoHeader>
+        className={vue === "mois" ? "pb-5" : "pb-[46px]"}
+        action={
+          <>
+            <HeaderSwitch
+              value={vue}
+              items={[
+                { value: "semaine", label: "Semaine", href: "/calendrier" },
+                { value: "mois", label: "Mois", href: "/calendrier?vue=mois" },
+              ]}
+            />
+            <CreateTaskButton />
+          </>
+        }
+      />
 
       {vue === "mois" ? (
         <>

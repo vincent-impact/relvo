@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
+import { HeaderSwitch } from "@/components/layout/header-switch";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { RelvoLogo } from "@/components/layout/relvo-logo";
 import { Screen } from "@/components/layout/screen";
@@ -37,41 +37,6 @@ const MONTHS = [
 
 type Periode = "mois" | "tout";
 
-function PeriodeSwitch({ periode }: { periode: Periode }) {
-  const items: { value: Periode; label: string; href: string }[] = [
-    { value: "mois", label: "Mois", href: "/bilan" },
-    { value: "tout", label: "Tout", href: "/bilan?periode=tout" },
-  ];
-  return (
-    <div
-      role="tablist"
-      className="inline-flex flex-none rounded-[9px] p-[2px]"
-      style={{
-        background: "rgb(255 255 255 / 0.14)",
-        border: "1px solid rgb(255 255 255 / 0.22)",
-      }}
-    >
-      {items.map((it) => {
-        const active = it.value === periode;
-        return (
-          <Link
-            key={it.value}
-            href={it.href}
-            role="tab"
-            aria-selected={active}
-            className={cn(
-              "rounded-[7px] px-2.5 py-[5px] text-[12px] font-semibold",
-              active ? "bg-[#fafafa] text-relvo" : "text-white",
-            )}
-          >
-            {it.label}
-          </Link>
-        );
-      })}
-    </div>
-  );
-}
-
 export default async function BilanPage({
   searchParams,
 }: {
@@ -96,7 +61,15 @@ export default async function BilanPage({
             ? `${monthLabel.charAt(0).toUpperCase()}${monthLabel.slice(1)} · depuis le 1er`
             : "Depuis le début"
         }
-        action={<PeriodeSwitch periode={periode} />}
+        action={
+          <HeaderSwitch
+            value={periode}
+            items={[
+              { value: "mois", label: "Mois", href: "/bilan" },
+              { value: "tout", label: "Tout", href: "/bilan?periode=tout" },
+            ]}
+          />
+        }
         className="pb-5"
       />
 
