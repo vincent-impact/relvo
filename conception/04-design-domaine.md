@@ -458,11 +458,13 @@ par sujet. L'utilisateur ne la saisit jamais ; il filtre dessus.
 
 ### RelvoQuestion
 
-Une question naît **ouverte** à la structuration d'un sujet, sur la fiche du contact, du domaine
-ou du sujet qu'elle concerne. Elle devient **répondue** quand l'utilisateur y répond sur place —
-la réponse est écrite dans la fiche ou dans une instruction, dans la même transaction — ou
-**écartée** d'un geste. Une question écartée n'est pas reposée. Une question n'entre jamais dans
-l'agenda.
+Une question naît **ouverte** à la structuration d'un sujet, ou à une étape de la prise en
+main et du rattrapage, avec pour portée le contact, le domaine, le sujet ou le compte qu'elle
+concerne. Elle devient **répondue** quand l'utilisateur y répond — sur la fiche, ou dans
+l'échange par le formulaire —, la réponse étant écrite dans la fiche, dans l'objet du compte ou
+dans une instruction, dans la même transaction ; ou **écartée** d'un geste. Tant qu'une question
+est ouverte, le bouton Relvo porte un badge et l'accueil la montre. Une question écartée n'est
+pas reposée. Une question n'entre jamais dans l'agenda.
 
 ### KnowledgeDocument
 

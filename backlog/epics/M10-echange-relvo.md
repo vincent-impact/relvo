@@ -25,7 +25,7 @@ capable d'agir, accessible partout, avec une palette d'outils **symétrique à l
 
 | #      | Item                                                                                                                 |
 | ------ | -------------------------------------------------------------------------------------------------------------------- |
-| M10.1  | Surface **plein écran**, ouverte depuis le bouton du header, consciente de la page d'origine                         |
+| M10.1  | Surface **plein écran**, ouverte depuis le **bouton central de la barre d'onglets** (M18), consciente de la page d'origine |
 | M10.2  | Stockage local des échanges, côté client                                                                             |
 | M10.3  | Sessions implicites : reprise en deçà d'un court délai                                                               |
 | M10.4  | Historique des derniers échanges, titrés automatiquement                                                             |
@@ -50,6 +50,8 @@ et c'est l'utilisateur qui découvre lequel s'applique.
 bouge pas : un envoi à tort engage la parole de l'utilisateur auprès d'un tiers, et aucune
 annulation ne rattrape ça.
 
-⚠️ **La disposition de M10.1 est rouverte** (`ecarts`, « Rouvrir la disposition générale ») : la
-prise en main veut montrer l'interface se remplir pendant que Relvo parle, ce qu'une surface
-plein écran ne permet pas telle quelle.
+⚠️ **La disposition est tranchée** (`ecarts`, « La disposition générale : quatre vues, Relvo au
+centre ») et livrée par **M18** : M10 construit l'échange sur le bouton central du dock, et les
+questions de Relvo (M18.9, `RelvoQuestion` élargie) y sont posées en formulaires. La surface reste
+plein écran ; ce que la prise en main montre « se remplir », ce sont les composants du produit
+rendus dans le fil (`01 §11`).

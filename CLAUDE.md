@@ -56,8 +56,8 @@ Ces fichiers décrivent **l'état actuel du projet, jamais son histoire**.
 
 ### Où on en est
 
-Voir le **dernier fichier de [`backlog/sprints/`](backlog/sprints/)**. Lire son démarrage à froid
-en premier.
+Voir le **dernier fichier de [`backlog/sprints/`](backlog/sprints/)** — par date de création,
+pas par ordre alphabétique. Lire son démarrage à froid en premier.
 
 ## Architecture
 
@@ -110,26 +110,33 @@ relvo/
 
 ### Routes → écrans
 
+> ⚠️ **Cette table décrit la cible** tranchée le 2026-09-20 (`ecarts`, « La disposition
+> générale »), livrée par l'épique **M18**. Tant que M18 n'est pas livrée, le code porte
+> l'ancienne disposition : `/` est la page des tâches, `/planning` la vue mois, `/dossiers` les
+> domaines, cinq onglets dont Contacts et Réglages, et le bouton Relvo dans le header.
+
 | Route | Écran | Nav |
 |---|---|---|
-| `/` | **Actions** — la page des **tâches** : indicateurs + agenda de la semaine + à trier | onglet |
-| `/fil` | **Sujets** — indicateurs cliquables qui **sélectionnent** la liste, filtres par domaine | onglet |
+| `/` | **Accueil** — brief en quatre zones : dernières nouvelles (header) · activité · aujourd'hui · en attente de vous | onglet |
+| `/calendrier` | **Calendrier** — la page des **tâches** : indicateurs, semaine ou mois | onglet |
+| `/fil` | **Sujets** — indicateurs cliquables qui **sélectionnent** la liste, filtres par domaine, « à trier » | onglet |
 | `/conversations` · `/conversations/[id]` | **Conversations** — **seule surface d'affichage et de réponse** d'un fil | onglet |
-| `/contacts` · `/contacts/[id]` · `/contacts/nouveau` | **Contacts** — annuaire et fiche | onglet |
-| `/parametres` | **Réglages** — Profil · Canaux · **Domaines** · Préférences | onglet |
+| `/relvo` · `/relvo/historique` | **Échange avec Relvo**, plein écran ; questions de Relvo en formulaires | **bouton central du dock** |
+| `/bilan` | **Bilan** — deux familles de chiffres, séparées | menu |
+| `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Mémoire** — instructions du compte, puis les domaines (Instructions / Documents / Sujets) | menu |
+| `/contacts` · `/contacts/[id]` · `/contacts/nouveau` | **Contacts** — annuaire et fiche | menu |
+| `/parametres` | **Réglages** — Profil · Canaux · Préférences · **Usage** (en %, jamais en euros) | menu |
+| `/recherche` | Recherche transverse | menu, en dernier |
 | `/sujets/[id]` · `/sujets/nouveau` | Fiche d'un sujet | hors-nav |
-| `/dossiers/[id]` · `/dossiers/nouveau` | Fiche d'un domaine — Instructions / Documents / Sujets | hors-nav |
-| `/planning` | Calendrier, vue mois | hors-nav |
-| `/recherche` | Recherche transverse | hors-nav |
-| `/relvo` · `/relvo/historique` | **Échange avec Relvo**, plein écran | bouton du header |
 | `/(auth)/*` | Tunnel d'authentification | — |
 
-**Navigation** : barre d'onglets basse, **cinq entrées**, fixe, sur fond violet. L'accès à Relvo
-est un bouton **en haut à droite du header**, présent sur toutes les pages ; les boutons de page
-se posent à sa gauche.
+**Navigation** : barre d'onglets basse, fixe, violette, **cinq places** : Accueil · Calendrier ·
+**Relvo** (bouton central, en relief, badge quand une question attend) · Sujets · Conversations.
+Le **menu latéral** (burger, à gauche du header) porte Bilan, Mémoire, Contacts, Canaux, Profil,
+Préférences, Usage, Rechercher. Les boutons de page se posent **à droite** du header.
 
-⚠️ **`/messages` et `/messages/[id]` existent encore dans le code** alors que la conception les a
-remplacées par `/conversations`. À retirer.
+⚠️ **`/messages`, `/planning` et `/dossiers` disparaissent avec M18** (redirections) ;
+`/messages` est mort depuis la conception de `/conversations`.
 
 ## Invariants produit
 

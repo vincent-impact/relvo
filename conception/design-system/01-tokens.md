@@ -63,6 +63,17 @@ sur verre est le premier à devenir illisible en plein soleil, et `backdrop-filt
 défilement sur un téléphone d'entrée de gamme. Sans `backdrop-filter`, `.glass-relvo` se replie
 sur un aplat opaque.
 
+## Le relief — réservé au bouton Relvo
+
+Le produit est plat : une surface posée a une ombre, jamais un volume. **Une seule exception** :
+le bouton Relvo au centre de la barre d'onglets est un **objet** — disque nacré en dégradé
+radial, reflet en demi-lune, anneau violet et filet blanc, étoiles en dégradé avec ombre portée
+et éclat. C'est ce qui le désigne comme la chose qu'on presse, et comme la voix de l'agent. Le
+relief ne s'étend à rien d'autre : étendu aux tuiles ou aux panneaux, il ferait perdre la seule
+lecture qu'il apporte, « ce qui brille, c'est Relvo ». Les étoiles sont légèrement réduites dans
+le disque, et le badge est repoussé hors du bord : si les deux petites étoiles sont masquées, la
+grande seule se lit comme un trou.
+
 ⚠️ Une surface de verre **exige du contenu derrière elle** pour exister. Posée sur un fond plat,
 elle ne se distingue pas d'un aplat — et le lecteur perd le repère de profondeur.
 

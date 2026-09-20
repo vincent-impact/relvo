@@ -26,10 +26,11 @@ Aucun comportement desktop n'est requis pour qu'une vue soit fonctionnelle. C'es
 Chaque écran est encadré par la **zone agent** — un header violet en haut, la barre d'onglets
 violette en bas. Ce qui se trouve entre les deux appartient à l'utilisateur.
 
-L'accès à Relvo vit **en haut à droite du header**, à la même place sur toutes les pages. Les
-boutons propres à la page se posent **à sa gauche**. La barre d'onglets est **fixe** : elle ne
-se masque pas au défilement — un élément de navigation qui disparaît est un élément qu'on
-cherche.
+L'accès à Relvo vit **au centre de la barre d'onglets**, à la même place sur toutes les pages,
+plus gros que les onglets et sans libellé ; il porte un badge quand Relvo attend une réponse.
+Le **menu latéral** s'ouvre depuis la gauche du header ; les boutons propres à la page se posent
+**à droite**. La barre d'onglets est **fixe** : elle ne se masque pas au défilement — un élément
+de navigation qui disparaît est un élément qu'on cherche.
 
 Une carte peut **chevaucher le bas du header** pour lier les deux zones ; le header réserve
 alors la place par un rembourrage bas.

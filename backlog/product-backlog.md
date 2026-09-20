@@ -36,7 +36,8 @@ frontmatter l'est.
 | [M6quater — Sous-typage de la conversation](epics/M6quater-sous-typage.md) | ✅                                               | M7                              |
 | [M9 — Pages applicatives](epics/M9-pages-applicatives.md)                  | ✅                                               | démo client                     |
 | [M16 — Consolidation](epics/M16-consolidation.md)                          | ✅                                               | —                               |
-| **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en cours**                                  | M8, M10                         |
+| **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en cours** — reste la tranche 10            | M8, M10                         |
+| **[M18 — Disposition générale](epics/M18-disposition-generale.md)**       | ⬜ **prochaine**                                 | M10, M13                        |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
 | [M10 — Échange avec Relvo](epics/M10-echange-relvo.md)                     | ⬜                                               | —                               |
 | [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md)                    | ⬜                                               | —                               |
@@ -57,6 +58,10 @@ M1 → M2 → M3 ─┬─→ M4 ──────────────→ M
 
 **M7 est le verrou.** Tout ce qui reste d'ambitieux dans le produit en dépend, et c'est aussi ce
 qui fera tomber les échafaudages documentés dans `04 §13`.
+
+**M18 s'intercale entre M7 et M10** : l'échange se construit sur la nouvelle disposition — le
+bouton central du dock, les questions de Relvo, l'accueil en brief — et la prise en main de M13
+se joue dans cette surface. La tranche 10 de M7 passe après M18.
 
 ## Ce qui reste manuel jusqu'à M7
 

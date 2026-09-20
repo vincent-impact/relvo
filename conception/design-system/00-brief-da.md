@@ -69,17 +69,16 @@ la DA) :
 
 1. **« L'UI sert à accéder à l'info, Relvo sert à agir. »** L'essentiel des actions
    passe par la **conversation**, pas par les écrans. La conversation avec Relvo est
-   une **surface plein écran**, accessible partout via un **bouton Relvo en haut à
-   droite du header violet**. Les écrans structurés sont des *destinations* où l'on
-   creuse — pas le centre de gravité.
-2. **Mobile-first, agent au centre.** L'**Accueil** s'appelle **« Actions »** : c'est
-   la page des **tâches** (barre KPI Tâches + onglets *Agenda* / *À trier*), avec un
-   header « Bonjour … · Actions du jour ». Le bouton Relvo y est comme partout
-   ailleurs, en haut à droite.
+   une **surface plein écran**, accessible partout via le **bouton Relvo au centre de
+   la barre d'onglets** — plus gros que les onglets, sans libellé, en relief. Les
+   écrans structurés sont des *destinations* où l'on creuse — pas le centre de gravité.
+2. **Mobile-first, agent au centre.** L'**Accueil** est un **brief** en quatre zones :
+   *Dernières nouvelles* (dans le header, dans la voix de Relvo), *Activité*,
+   *Aujourd'hui*, *En attente de vous*. La page des **tâches** est le **Calendrier**.
 
-> ⚠️ **L'accueil n'est pas un brief conversationnel : c'est la page des tâches.** Et
-> il n'y a **pas** de zone de saisie permanente en bas d'écran — l'accès à Relvo vit
-> en haut à droite du header, à la même place sur toutes les pages.
+> ⚠️ Il n'y a **pas** de zone de saisie permanente en bas d'écran : l'accès à Relvo est
+> le bouton central du dock, à la même place sur toutes les pages. Le **menu latéral**
+> (burger, à gauche du header) porte ce qu'on ouvre rarement.
 
 **Trois acteurs, un code couleur identitaire** (le triptyque structure toute la
 lecture de l'app — c'est un pilier de la DA) :
@@ -171,13 +170,18 @@ La DA doit produire un **langage de composants** cohérent. Les pièces (toutes
 visibles dans la maquette, cf. §8) :
 
 **Navigation & chrome**
-- **Barre d'onglets basse, fixe, sur fond violet** — 4 entrées : **Actions** ✅ ·
-  **Sujets** 📥 · **Mémoire** 🧠 · **Réglages** ⚙️. *(Contacts a quitté le dock : c'est
-  un onglet des Réglages.)*
-- **Header violet** — titre + sous-titre + **bouton Relvo en haut à droite**
-  (présent sur toutes les pages). **Élément signature** : c'est le point d'entrée
-  unique de l'agent. Les boutons propres à la page (ex. « + ») se posent **à sa
-  gauche**.
+- **Barre d'onglets basse, fixe, sur fond violet** — cinq places : **Accueil** ·
+  **Calendrier** · **Relvo** (bouton central) · **Sujets** · **Conversations**.
+  *(Contacts et Réglages ont quitté le dock : ils vivent dans le menu latéral.)*
+- **Bouton Relvo** — **l'élément signature du produit**, et le seul objet en relief :
+  disque nacré, reflet, anneau violet, étoiles en relief avec ombre portée, badge
+  quand Relvo attend une réponse. Étoiles légèrement réduites dans le disque, badge
+  repoussé hors du bord : les deux petites étoiles restent visibles.
+- **Menu latéral** (burger, à gauche du header) — Bilan · Mémoire · Contacts · Canaux ·
+  Profil · Préférences · Usage · Rechercher.
+- **Header violet** — bouton menu à gauche, titre + sous-titre ; les boutons propres à
+  la page (ex. « + ») se posent **à droite**. Sur l'accueil, il porte les **Dernières
+  nouvelles** sur un panneau translucide.
 
 **Cartes & blocs (la brique de base — réutilisés dans les écrans ET dans le chat)**
 - **SubjectCard** — la carte-sujet enrichie (avatar contact, titre, référence, badges

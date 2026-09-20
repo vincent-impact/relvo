@@ -2,6 +2,12 @@
 
 ## Démarrage à froid — à lire en premier
 
+> ✅ **La session sur la disposition générale a eu lieu le 2026-09-20.** Les décisions sont dans
+> `ecarts` (« La disposition générale : quatre vues, Relvo au centre, un menu pour le reste »),
+> l'épique **M18** les porte, et le sprint suivant est
+> [`2026-09-m18-disposition-generale.md`](2026-09-m18-disposition-generale.md). **La tranche 10
+> passe après M18.** Ce fichier reste la référence pour M7.
+
 **Où on en est (2026-09-20)** : les tranches 0 à 8 sont livrées ; les tranches 0 à 7 sont
 **vérifiées en production**, la tranche 8 est **livrée en code, à vérifier en production** (un
 brouillon réel avec une instruction de domaine → « Basé sur » ; le journal relu par

@@ -87,6 +87,10 @@ elles comptent ce que Relvo a rangé dans l'onglet depuis, et tombent quand l'on
 « Sans sujet » n'a pas d'horodatage : sa pastille est un stock, le résidu de Relvo, qui ne se
 vide qu'en triant. Une visite n'est pas une décision, elle n'est pas journalisée.
 
+Il porte de même le **dernier passage sur l'accueil**, qui borne « depuis votre dernière
+visite » dans les dernières nouvelles (`05 §11.12`) : le résumé compte ce que le journal a
+enregistré depuis, et l'horodatage avance quand l'accueil est vu.
+
 ## Folder
 
 Un **domaine** : conteneur métier qui regroupe les sujets d'un périmètre, les documents de
@@ -493,16 +497,20 @@ ne relie rien. Le comportement — attribution, promotion, choix dans le registr
 ## RelvoQuestion
 
 Une **question de Relvo** : ce qu'il aurait besoin de savoir pour mieux faire, formulé à la
-structuration d'un sujet — « Narbonne est-il une franchise ? ».
+structuration d'un sujet — « Narbonne est-il une franchise ? » —, ou posé par une étape de la
+prise en main et du rattrapage (`05 §11.11`). C'est l'objet par lequel **Relvo parle en
+premier** (`05 §11.12`).
 
-Elle porte une **portée** — un contact, un domaine ou un sujet —, un texte, un statut — ouverte,
-répondue, écartée —, la réponse, le sujet qui l'a fait naître, et les horodatages de question et
-de réponse.
+Elle porte une **portée** — un contact, un domaine, un sujet ou le compte —, un texte, les
+**réponses proposées** quand elle se pose en formulaire, un statut — ouverte, répondue,
+écartée —, la réponse, ce qui l'a fait naître — un sujet, ou l'étape d'un script —, et les
+horodatages de question et de réponse.
 
-⚠️ **Une question n'est jamais une tâche.** Elle vit sur la fiche où on y répond, pas dans
-l'agenda : une question dans l'agenda serait exactement la tâche artificielle que le produit
-refuse. La réponse devient un champ de la fiche ou une instruction du domaine ; la question
-elle-même n'est jamais injectée dans les prompts.
+⚠️ **Une question n'est jamais une tâche.** Elle vit sur la fiche où on y répond et dans
+l'échange, où Relvo la pose en formulaire ; jamais dans l'agenda, où elle serait exactement la
+tâche artificielle que le produit refuse. Tant qu'une question est ouverte, elle porte le badge
+du bouton Relvo et la ligne de l'accueil. La réponse devient un champ de la fiche, un objet du
+compte ou une instruction ; la question elle-même n'est jamais injectée dans les prompts.
 
 ## VerificationToken
 

@@ -1016,6 +1016,70 @@ sans la voix et l'image, une part du courrier reste invisible au pipeline. Les a
 sont des dérivés gratuits de ce qui est déjà stocké : la situation structurée, le journal, les
 titres des sujets.
 
+### La disposition générale : quatre vues, Relvo au centre, un menu pour le reste
+
+**`tranché`** · Réponse aux trois questions de « Rouvrir la disposition générale », construite
+sur planches — sept écrans au format téléphone, dans les tokens du produit — puis tranchée. Les
+planches de référence sont citées dans le sprint qui les met en œuvre.
+
+- **La navigation.** La barre d'onglets porte cinq places : **Accueil · Calendrier · Relvo ·
+  Sujets · Conversations**, Relvo au centre, plus gros, sans libellé. Le bouton d'accès à Relvo
+  quitte le header : il est **sous le pouce**, et il est le centre de gravité que `01 §11`
+  réclame. L'invariant 22 reste vrai, le bouton est au même endroit sur toutes les pages. Tout ce
+  qu'on ouvre moins d'une fois par jour va dans un **menu latéral** (burger, à gauche du header) :
+  Bilan, Mémoire, Contacts, puis Canaux, Profil, Préférences, Usage, et Rechercher en dernier,
+  comme une action. Les cinq onglets et le header saturé sont écartés ; Contacts et Réglages,
+  jamais visités, sortent du dock. **Retenu contre** un bouton Relvo gardé dans le header avec
+  quatre onglets : le bouton le plus important y était le moins visible, en haut à droite, là où
+  le pouce ne va pas.
+- **Conversations restent dans le dock**, faute de pouvoir trancher aujourd'hui : c'est l'usage
+  après M7 qui décidera. « Rouvrir la place des conversations » reste ouverte.
+- **L'accueil est un brief en quatre zones**, dans cet ordre : **Dernières nouvelles** (ce que
+  Relvo a fait depuis la dernière visite, et ce qu'il attend de l'utilisateur), **Activité**
+  (trois chiffres sur sept jours), **Aujourd'hui** (les tâches du jour), **En attente de vous**
+  (les sujets qui attendent une réponse ou une décision). Chaque zone est une porte vers une vue
+  ou vers l'échange ; l'accueil ne duplique aucune vue et ne porte pas de barre d'indicateurs.
+  La page des tâches devient **Calendrier**, qui absorbe la semaine et le mois ; « À trier »
+  quitte l'accueil et devient un filtre de Sujets et de Conversations. L'invariant 30 est
+  périmé, remplacé par 34.
+- **Les nouvelles vivent dans le header**, sur un panneau translucide dans la zone violette,
+  avec le logo en tête. **Retenu contre** un bloc violet plein sur la pierre : deux aplats
+  violets se suivaient, séparés d'une bande de pierre sans rôle. Le titre est « Dernières
+  nouvelles », jamais « Relvo vous parle ». Le bloc porte le résumé calculé et **au plus deux
+  suggestions**, qui ouvrent l'échange ; jamais de raccourcis vers les sujets, qui finiraient
+  par saturer. Le header prend alors jusqu'à un tiers de l'écran : c'est le prix accepté, et
+  c'est pour ça que les suggestions sont plafonnées.
+- **Deux familles de chiffres, deux domiciles.** « Ce que Relvo a fait pour vous » est
+  cumulatif et justifie le produit : messages lus, sujets ouverts, tâches créées, brouillons
+  préparés, contacts reconnus, sources en sourdine. « Où en êtes-vous » est un flux et parle de
+  productivité : messages reçus par jour, sujets ouverts contre fermés, tâches faites, délai
+  médian de réponse, retards. Le **Bilan**, page du menu, porte les deux, séparées ; l'accueil
+  porte la seconde en trois chiffres. **Jamais de « temps gagné »** : c'est un chiffre inventé,
+  et le public le sentira. Le Bilan est **V1**.
+- **L'usage se lit en pourcentage, jamais en euros.** L'utilisateur n'a pas à savoir ce qu'on
+  lui alloue. La page Usage montre la part du plafond consommée dans le mois, et rien d'autre.
+  Le plafond est celui de M14.5 : la ligne du menu est une promesse sur le disjoncteur, à tenir
+  dans le même chantier.
+- **« Domaines » devient « Mémoire »**, page du menu : les instructions du compte en tête, les
+  domaines en lignes dessous, et une zone « Ce que Relvo a appris » réservée à M17, qui donnera
+  à cette page une raison d'être visitée.
+- **Relvo parle en premier.** Ce qui a besoin de l'utilisateur — une question, une étape de la
+  prise en main ou du rattrapage — est un objet persisté du compte, la `RelvoQuestion` élargie,
+  et c'est lui qui porte le badge du bouton Relvo, la notification, et la ligne « Une question
+  pour vous » de l'accueil. Le dialogue reste éphémère (invariant 23) ; ce sont les questions et
+  leurs réponses qui persistent. Une question se répond dans l'échange, par le formulaire de la
+  prise en main, ou sur la fiche concernée : même fonction métier.
+- **Le bouton Relvo est un objet, pas un aplat** : disque nacré, reflet, anneau, étoiles en
+  relief avec ombre portée. C'est la seule exception à la charte des surfaces plates, et elle
+  reste unique : si le relief s'étend aux tuiles ou aux panneaux, on perd « ce qui brille, c'est
+  Relvo ». Les étoiles sont légèrement réduites dans le disque et le badge est repoussé hors du
+  bord, pour que les deux petites étoiles restent visibles : masquées, la grande étoile seule se
+  lit comme un orifice.
+
+**Mis en œuvre par** l'épique M18, avant la tranche 10 de M7 et avant M10.
+
+---
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté
@@ -1199,13 +1263,12 @@ C'est le **rang 2** de la hiérarchie des sources, et il est vide.
 ### Rouvrir la place des conversations dans la navigation, à la livraison de M7
 
 **`proposé`** · Voir la décision correspondante plus haut. Le motif qui a justifié leur entrée
-dans la barre d'onglets disparaît avec le tri manuel.
+dans la barre d'onglets disparaît avec le tri manuel. **Gardées dans le dock** à la disposition
+générale (« La disposition générale : quatre vues, Relvo au centre ») : le dirigeant ne peut pas
+trancher aujourd'hui, c'est l'usage après M7 qui décidera.
 
 ### Rouvrir la disposition générale : menus, place de l'échange, page d'accueil
 
-**`proposé`** · À traiter dans la session qui suit la présentation du produit, avant M10 et avant
-la tranche 10 de M7. Trois questions, posées par le dirigeant : la position des menus et
-l'intérêt d'un menu « burger » ; la place de l'échange avec Relvo et la façon d'y accéder — la
-surface plein écran de `05` §11.1 est contrainte par la prise en main, qui veut montrer
-l'interface se remplir pendant que Relvo parle ; et la page d'accueil. Recoupe « Rouvrir la
-place des conversations dans la navigation ».
+**`proposé` — tranché** · Les trois questions — la position des menus et l'intérêt d'un menu
+« burger », la place de l'échange avec Relvo, la page d'accueil — sont tranchées dans « La
+disposition générale : quatre vues, Relvo au centre, un menu pour le reste », plus haut.

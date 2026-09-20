@@ -195,14 +195,30 @@ conversation, augmentée de vues structurées quand on veut creuser.
 
 ### L'accueil est un brief, pas un chat
 
-La page d'atterrissage répond à « qu'est-ce qui m'attend ? » en trente secondes : des
-indicateurs, l'agenda de la semaine, les tâches du jour. C'est le **premier tour de parole de
-Relvo**, rendu en cartes — pas une page muette, et pas non plus un chat vide qui attendrait une
-question. Le brief est aussi **poussé** : une notification à l'heure d'ouverture, avec les
+La page d'atterrissage répond à « qu'est-ce qui m'attend ? » en trente secondes, en **quatre
+zones**, dans cet ordre : les **dernières nouvelles** de Relvo — ce qu'il a fait depuis la
+dernière visite, et ce qu'il attend de l'utilisateur —, l'**activité** des sept derniers jours en
+trois chiffres, les **tâches du jour**, et les **sujets en attente** d'une réponse ou d'une
+décision. C'est le **premier tour de parole de Relvo**, rendu en cartes — pas une page muette, et
+pas non plus un chat vide qui attendrait une question. Les nouvelles vivent dans le header, dans
+la voix de Relvo ; elles portent un résumé et **au plus deux suggestions**, qui ouvrent
+l'échange, jamais une liste de raccourcis. Chaque zone est une porte vers une vue ; l'accueil ne
+duplique aucune vue et ne porte pas de barre d'indicateurs. La page des tâches est le
+**Calendrier**. Le brief est aussi **poussé** : une notification à l'heure d'ouverture, avec les
 compteurs du jour — « deux réponses attendues, une urgence ». Un calcul, aucune génération.
 
-L'échange proprement dit est une **surface plein écran**, atteinte depuis un bouton présent au
-même endroit sur toutes les pages, et qui transmet le contexte de la page d'origine.
+### Quatre vues, un centre
+
+La barre d'onglets porte cinq places, et rien de plus : **Accueil · Calendrier · Relvo · Sujets
+· Conversations**. Relvo est au centre, plus gros, sans libellé : c'est le seul objet en relief
+du produit, et il est sous le pouce. L'échange proprement dit est une **surface plein écran**,
+atteinte depuis ce bouton, présent au même endroit sur toutes les pages, et qui transmet le
+contexte de la page d'origine. Quand Relvo attend une réponse, le bouton porte un badge.
+
+Tout ce qu'on ouvre moins d'une fois par jour vit dans un **menu latéral**, ouvert depuis la
+gauche du header : le Bilan, la Mémoire, les Contacts, puis les Canaux, le Profil, les
+Préférences, l'Usage, et la Recherche en dernier, comme une action. Un écran de configuration n'a
+pas sa place dans une barre qu'on regarde trente fois par jour.
 
 ### La prise en main est le premier échange, pas un tutoriel
 
@@ -349,8 +365,9 @@ mot dit ce que le geste fait vraiment.
 
 **Actions et tâches**
 
-30. La page d'accueil (« **Actions** ») est la page des **tâches**, pas des sujets. La barre
-    d'indicateurs est **contextuelle par page** — jamais deux lentilles sur un écran.
+30. **Périmé.** ~~La page d'accueil (« Actions ») est la page des tâches, pas des sujets.~~
+    Remplacé par 34. Ce qui en reste : la barre d'indicateurs est **contextuelle par page** —
+    jamais deux lentilles sur un écran.
 31. **Présentation unique des tâches partout** : même rendu dans la liste d'un sujet et dans une
     liste à plat, seul le contexte affiché varie. Cocher termine, décocher remet à faire ; le tap
     ouvre la fiche ; le rail de couleur porte le domaine.
@@ -362,3 +379,18 @@ mot dit ce que le geste fait vraiment.
     par de la prose extraite.** Le générateur lit le **frontmatter** des épiques et le journal des
     versions, et **n'ouvre jamais le corps d'un fichier**. Rien de `conception/`, du registre des
     écarts, des pièges ou des sprints n'est publiable. → détail : `../backlog/suivi-client.md`.
+
+**Disposition**
+
+34. L'**accueil est un brief en quatre zones** — dernières nouvelles, activité, tâches du jour,
+    sujets en attente — qui ne duplique aucune vue et ne porte aucune barre d'indicateurs. Le
+    **Calendrier** est la page des tâches.
+35. **Cinq places dans la barre d'onglets** : Accueil, Calendrier, Relvo au centre, Sujets,
+    Conversations. Tout le reste vit dans le menu latéral. Une entrée ne s'ajoute pas à la barre,
+    elle en remplace une.
+36. **Relvo parle en premier** : ce qu'il attend de l'utilisateur est une `RelvoQuestion`
+    persistée, qui porte le badge du bouton, la notification et la ligne de l'accueil. Le
+    dialogue reste éphémère ; les questions et leurs réponses persistent.
+37. **Deux familles de chiffres, jamais mêlées** : ce que Relvo a fait (cumulatif) et où en est
+    l'utilisateur (flux). Aucun « temps gagné » estimé, nulle part.
+38. **L'usage d'inférence se montre en pourcentage du plafond, jamais en euros.**
