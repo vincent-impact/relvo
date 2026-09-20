@@ -16,6 +16,7 @@ const TABLES = [
   "messages",
   "conversations",
   "subjects",
+  "channel_catchups",
   "channel_configs",
   "channels",
   "contacts",

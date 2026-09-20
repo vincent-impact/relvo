@@ -85,6 +85,8 @@ export type ResultatTri = {
   relecture?: IssueRelecture;
   /** Tâches déduites par la structuration. */
   taches?: number;
+  /** Ce que le tri et ce qu'il a enchaîné ont coûté, en euros — le rattrapage compte (M7.19). */
+  coutEur: number;
 };
 
 export async function trierConversationEmail(args: {
@@ -94,22 +96,27 @@ export async function trierConversationEmail(args: {
   messageId: string;
   /** En-têtes de l'e-mail, clés en minuscules, si le transport les fournit. */
   entetes?: Record<string, string>;
+  /** En LOT (rattrapage, M7.19) : niveau de service « flex », moitié prix, latence libre. */
+  lot?: boolean;
 }): Promise<ResultatTri> {
   const { accountId, conversationId, messageId } = args;
+  const lot = args.lot ?? false;
   const db = tenantDb(accountId);
 
-  if (!inferenceDisponible()) return { issue: "inference-indisponible" };
-  if (!(await isAssistantEnabled(db, accountId))) return { issue: "desactive" };
+  if (!inferenceDisponible())
+    return { issue: "inference-indisponible", coutEur: 0 };
+  if (!(await isAssistantEnabled(db, accountId)))
+    return { issue: "desactive", coutEur: 0 };
   if (await hasAiSolicitationForMessage(db, messageId, "tri")) {
-    return { issue: "deja-traite" };
+    return { issue: "deja-traite", coutEur: 0 };
   }
 
   const projection = await getTriageProjection(db, conversationId);
   if (projection.type !== "email_subject")
-    return { issue: "canal-non-couvert" };
-  if (!projection.orpheline) return { issue: "non-orpheline" };
+    return { issue: "canal-non-couvert", coutEur: 0 };
+  if (!projection.orpheline) return { issue: "non-orpheline", coutEur: 0 };
   const entrant = projection.dernierEntrant;
-  if (!entrant) return { issue: "sans-message-entrant" };
+  if (!entrant) return { issue: "sans-message-entrant", coutEur: 0 };
 
   // Faire taire la source sur un « rien à faire » sûr (05 §9.5) : la nature
   // donne la raison d'ignorance, la phrase de Relvo la note. Réversible d'un
@@ -144,7 +151,7 @@ export async function trierConversationEmail(args: {
       });
       await ignorer(bruit.nature, bruit.raison);
       expireTenantData();
-      return { issue: "bruit-deterministe", detail: bruit.regle };
+      return { issue: "bruit-deterministe", detail: bruit.regle, coutEur: 0 };
     }
 
     const parExpediteur = deciderParExpediteur(projection.expediteur);
@@ -163,7 +170,11 @@ export async function trierConversationEmail(args: {
       });
       await ignorer(nature, raison);
       expireTenantData();
-      return { issue: "source-ecartee", detail: parExpediteur.raison };
+      return {
+        issue: "source-ecartee",
+        detail: parExpediteur.raison,
+        coutEur: 0,
+      };
     }
     if (parExpediteur?.type === "rattacher") {
       const raison = `Prolonge le sujet ${parExpediteur.reference}, qui attendait la réponse de ce contact.`;
@@ -187,12 +198,14 @@ export async function trierConversationEmail(args: {
         accountId,
         subjectId: applied.subjectId,
         messageId,
+        lot,
       });
       return {
         issue: "sujet-en-attente",
         detail: applied.reference,
         relecture: relecture.issue,
         taches: relecture.taches,
+        coutEur: relecture.coutEur,
       };
     }
 
@@ -214,8 +227,10 @@ export async function trierConversationEmail(args: {
       reasoning: NIVEAU_RETENU.extraction,
       cacheCle: accountId,
       prefixeStable: prefixeStable(contexte),
+      lot,
     });
     await logAiSolicitation(db, { ...mesure, messageId, conversationId });
+    const coutTri = mesure.cout.eur;
 
     await recordTriageVerdict(db, {
       conversationId,
@@ -228,12 +243,12 @@ export async function trierConversationEmail(args: {
     const decision = deciderTri(sortie);
     if (decision.type === "avis-seul") {
       expireTenantData();
-      return { issue: "avis-seul", detail: decision.motif };
+      return { issue: "avis-seul", detail: decision.motif, coutEur: coutTri };
     }
     if (decision.type === "ignorer") {
       await ignorer(decision.nature, decision.raison);
       expireTenantData();
-      return { issue: "ignore", detail: decision.nature };
+      return { issue: "ignore", detail: decision.nature, coutEur: coutTri };
     }
 
     const applied = await applyTriageMatter(db, {
@@ -254,12 +269,14 @@ export async function trierConversationEmail(args: {
         accountId,
         subjectId: applied.subjectId,
         messageId,
+        lot,
       });
       return {
         issue: "rattache",
         detail: applied.reference,
         relecture: relecture.issue,
         taches: relecture.taches,
+        coutEur: coutTri + relecture.coutEur,
       };
     }
     // Le sujet vient d'être ouvert : le second appel le structure. Il gère ses
@@ -268,12 +285,14 @@ export async function trierConversationEmail(args: {
       accountId,
       subjectId: applied.subjectId,
       messageId,
+      lot,
     });
     return {
       issue: "ouvert",
       detail: applied.reference,
       structuration: structuration.issue,
       taches: structuration.taches,
+      coutEur: coutTri + structuration.coutEur,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -303,6 +322,11 @@ export async function trierConversationEmail(args: {
       console.error("[ia] échec non journalisé", e);
     }
     expireTenantData();
-    return { issue: "echec", detail: message };
+    return {
+      issue: "echec",
+      detail: message,
+      coutEur:
+        err instanceof EchecSollicitation ? (err.mesure?.cout.eur ?? 0) : 0,
+    };
   }
 }

@@ -13,7 +13,14 @@
 import type { NiveauRaisonnement, Tier } from "./config";
 
 /** Date du relevé. À incrémenter à CHAQUE changement de prix ou de taux. */
-export const TARIFS_VERSION = "2026-09-13";
+export const TARIFS_VERSION = "2026-09-20";
+
+/**
+ * Remise du niveau de service « flex » (appel EN LOT, `05 §10.5`) : entrée,
+ * cache et sortie à moitié prix, contre une latence libre. Relevée sur la page
+ * tarifaire du fournisseur avec les prix ci-dessous.
+ */
+export const FACTEUR_LOT = 0.5;
 
 /** BCE, 11/09/2026 — même valeur que `scripts/cout-iag.py`. */
 export const USD_PAR_EUR = 1.1592;
@@ -89,13 +96,18 @@ export function tarifDuModele(modele: string): Tarif {
   return tarif;
 }
 
-/** Coût d'un appel. Pur, sans arrondi : l'arrondi est un choix d'affichage. */
-export function estimerCout(modele: string, conso: Consommation): Cout {
+/** Coût d'un appel. Pur, sans arrondi : l'arrondi est un choix d'affichage. Un appel en lot vaut sa remise. */
+export function estimerCout(
+  modele: string,
+  conso: Consommation,
+  options: { lot?: boolean } = {},
+): Cout {
   const t = tarifDuModele(modele);
   const totalEntree = conso.entree + conso.cacheLecture + conso.cacheEcriture;
   const long = t.longContexte && totalEntree > t.longContexte.seuil;
-  const kEntree = long ? t.longContexte!.entree : 1;
-  const kSortie = long ? t.longContexte!.sortie : 1;
+  const remise = options.lot ? FACTEUR_LOT : 1;
+  const kEntree = (long ? t.longContexte!.entree : 1) * remise;
+  const kSortie = (long ? t.longContexte!.sortie : 1) * remise;
   const usd =
     (conso.entree * t.entree * kEntree +
       conso.cacheLecture * t.cacheLecture * kEntree +
@@ -120,6 +132,8 @@ export type MesureSollicitation = {
   dureeMs: number;
   /** Identifiant de réponse OpenAI, pour retrouver l'appel dans les journaux du fournisseur. */
   reponseId?: string;
+  /** Appel EN LOT — niveau de service « flex », coût remisé (`FACTEUR_LOT`). */
+  lot?: boolean;
   /**
    * Jetons (estimés) du PRÉFIXE STABLE poussé — ce que le cache de prompt
    * aurait dû relire : couche Produit, couche Compte, couche Domaine (05

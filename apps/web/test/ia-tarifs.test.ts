@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   estimerCout,
+  FACTEUR_LOT,
   modeleDuTier,
   normaliserUsage,
   TARIFS,
@@ -97,5 +98,25 @@ describe("table de tarifs", () => {
       sortie: 600,
       raisonnement: 300,
     });
+  });
+});
+
+// UN APPEL EN LOT VAUT SA REMISE (M7.19, tranche 9) : le compteur en euros doit
+// suivre la facture, et la facture d'un appel « flex » est à moitié prix.
+describe("tarifs — appel en lot", () => {
+  it("applique la remise du niveau flex sur toute la consommation", () => {
+    const conso = {
+      entree: 700,
+      cacheLecture: 2_132,
+      cacheEcriture: 0,
+      sortie: 90,
+      raisonnement: 0,
+    };
+    const plein = estimerCout("gpt-5.6-luna", conso);
+    const lot = estimerCout("gpt-5.6-luna", conso, { lot: true });
+    expect(FACTEUR_LOT).toBe(0.5);
+    expect(lot.usd).toBeCloseTo(plein.usd * FACTEUR_LOT, 12);
+    expect(lot.eur).toBeCloseTo(plein.eur * FACTEUR_LOT, 12);
+    expect(lot.version).toBe(TARIFS_VERSION);
   });
 });

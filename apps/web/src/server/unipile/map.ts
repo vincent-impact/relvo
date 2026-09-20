@@ -2,7 +2,11 @@ import type {
   IngestInboundEmailInput,
   IngestInboundWhatsAppInput,
 } from "@relvo/db";
-import type { UnipileMailWebhook, UnipileMessagingWebhook } from "./types";
+import type {
+  UnipileMailApi,
+  UnipileMailWebhook,
+  UnipileMessagingWebhook,
+} from "./types";
 
 // Mapper PUR : payload webhook Unipile → entrée normalisée du domaine (M5.3).
 // Isolé et sans effet de bord pour être testable sans base ni réseau.
@@ -140,6 +144,31 @@ function htmlContent(mail: UnipileMailWebhook): string | null {
  * (adresse email ou numéro) »). `channelId` provient de la résolution du tenant
  * (ChannelConfig.externalAccountId → Channel), pas du payload.
  */
+/**
+ * Un e-mail lu par l'API (rattrapage, M7.19) prend la forme du webhook pour
+ * passer par la même conversion : même hygiène, mêmes destinataires, même
+ * idempotence sur `email_id`. Le corps HTML vit dans `body`, le texte dans
+ * `body_plain` — comme dans le webhook.
+ */
+export function apiMailToWebhook(mail: UnipileMailApi): UnipileMailWebhook {
+  return {
+    event: "mail_received",
+    account_id: mail.account_id,
+    email_id: mail.id,
+    provider_id: mail.provider_id ?? null,
+    in_reply_to: mail.in_reply_to ?? null,
+    from_attendee: mail.from_attendee ?? null,
+    to_attendees: mail.to_attendees ?? null,
+    cc_attendees: mail.cc_attendees ?? null,
+    subject: mail.subject ?? null,
+    body: mail.body ?? null,
+    body_plain: mail.body_plain ?? null,
+    date: mail.date ?? null,
+    has_attachments: mail.has_attachments ?? null,
+    attachments: mail.attachments ?? null,
+  };
+}
+
 export function toInboundEmail(
   mail: UnipileMailWebhook,
   channelId: string,

@@ -9,7 +9,10 @@
 // Usage :
 //   node --env-file=.env.local --import tsx scripts/evaluation/lancer.ts \
 //     --jeu demo [--configs gpt-5.6-luna:none,gpt-5.6-luna:low,gpt-5.6-terra:low] \
-//     [--parallele 4] [--sortie /chemin/rapport.json] [--limite 5] [--cache <cle>]
+//     [--parallele 4] [--sortie /chemin/rapport.json] [--limite 5] [--cache <cle>] [--flex]
+//
+// `--flex` passe les appels EN LOT (niveau de service « flex » du fournisseur,
+// tranche 9) : le prix du rattrapage nocturne, et sa latence.
 //
 // `--cache <cle>` adresse le cache du fournisseur comme en production — une
 // clé par compte, la rétention de la configuration — et le rapport confronte
@@ -32,7 +35,12 @@ function arg(nom: string, defaut: string): string {
   return i >= 0 ? (process.argv[i + 1] ?? defaut) : defaut;
 }
 
-type Config = { modele: string; niveau: NiveauRaisonnement; cache?: string };
+type Config = {
+  modele: string;
+  niveau: NiveauRaisonnement;
+  cache?: string;
+  lot?: boolean;
+};
 type Resultat = {
   cas: string;
   sortie: SortieTri | null;
@@ -93,6 +101,7 @@ async function trier(
       modele: config.modele,
       cacheCle: config.cache,
       prefixeStable: prefixeStable(contexte),
+      lot: config.lot,
     });
     // « a_considerer » n'est ni juste ni faux : c'est un renvoi au dirigeant.
     // On le compte à part, jamais comme un accord.
@@ -144,11 +153,12 @@ async function main() {
   const limite = Number(arg("limite", "0"));
   const parallele = Number(arg("parallele", "4"));
   const cache = arg("cache", "") || undefined;
+  const lot = process.argv.includes("--flex");
   const configs: Config[] = arg("configs", "gpt-5.6-luna:none,gpt-5.6-luna:low")
     .split(",")
     .map((c) => {
       const [modele, niveau] = c.split(":");
-      return { modele, niveau: niveau as NiveauRaisonnement, cache };
+      return { modele, niveau: niveau as NiveauRaisonnement, cache, lot };
     });
   const dossier = resolve(import.meta.dirname, "jeu", jeu);
   const compte = JSON.parse(
@@ -169,7 +179,7 @@ async function main() {
   );
 
   for (const config of configs) {
-    const nom = `${config.modele}:${config.niveau}`;
+    const nom = `${config.modele}:${config.niveau}${config.lot ? " · flex" : ""}`;
     const t0 = Date.now();
     const resultats = await enParallele(cas, parallele, (c) =>
       trier(compte, c, config),

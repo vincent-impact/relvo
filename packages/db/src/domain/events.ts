@@ -98,6 +98,11 @@ export const EVENT_TYPES = {
   // Compte — l'assistant activé ou coupé (réglage de l'utilisateur, backoffice demain).
   assistantEnabled: "assistant_enabled",
   assistantDisabled: "assistant_disabled",
+  // Rattrapage du courrier récent d'un canal (M7.19) — demandé à la connexion,
+  // commencé la nuit, clos avec ses compteurs en métadonnée.
+  catchupRequested: "catchup_requested",
+  catchupStarted: "catchup_started",
+  catchupFinished: "catchup_finished",
 } as const;
 
 export type EventInput = {

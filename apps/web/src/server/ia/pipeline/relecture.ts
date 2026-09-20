@@ -64,6 +64,8 @@ export type ResultatRelecture = {
   detail?: string;
   /** Tâches ajoutées, pour la ligne de journal serveur. */
   taches?: number;
+  /** Coût de l'appel, en euros (0 sans appel). */
+  coutEur: number;
 };
 
 /** Le cadre de retenue, depuis la projection : ce que le modèle a eu sous les yeux, et l'état du sujet. */
@@ -91,14 +93,18 @@ export async function relireSujet(args: {
   subjectId: string;
   /** Le message — reçu ou envoyé — qui déclenche la relecture ; clé de l'idempotence. */
   messageId: string;
+  /** En LOT (rattrapage, M7.19) : niveau de service « flex ». */
+  lot?: boolean;
 }): Promise<ResultatRelecture> {
   const { accountId, subjectId, messageId } = args;
   const db = tenantDb(accountId);
 
-  if (!inferenceDisponible()) return { issue: "inference-indisponible" };
-  if (!(await isAssistantEnabled(db, accountId))) return { issue: "desactive" };
+  if (!inferenceDisponible())
+    return { issue: "inference-indisponible", coutEur: 0 };
+  if (!(await isAssistantEnabled(db, accountId)))
+    return { issue: "desactive", coutEur: 0 };
   if (await hasAiSolicitationForMessage(db, messageId, "relecture")) {
-    return { issue: "deja-relu" };
+    return { issue: "deja-relu", coutEur: 0 };
   }
 
   try {
@@ -107,7 +113,11 @@ export async function relireSujet(args: {
       messageId,
     });
     if (projection.sujet.statut !== "ouvert") {
-      return { issue: "sujet-non-ouvert", detail: projection.sujet.statut };
+      return {
+        issue: "sujet-non-ouvert",
+        detail: projection.sujet.statut,
+        coutEur: 0,
+      };
     }
     const entrees = entreesDuContexte(projection);
     const contexte = contexteRelecture({
@@ -128,6 +138,7 @@ export async function relireSujet(args: {
       reasoning: NIVEAU_RETENU.extraction,
       cacheCle: accountId,
       prefixeStable: prefixeStable(contexte),
+      lot: args.lot ?? false,
     });
     await logAiSolicitation(db, { ...mesure, subjectId, messageId });
 
@@ -180,6 +191,7 @@ export async function relireSujet(args: {
       issue: "relu",
       detail: `${projection.sujet.reference} · ${applied.resolution}${applied.waitingForReplySet ? " · en attente" : ""}${applied.priorityChanged ? " · priorité" : ""}${applied.completedTaskIds.length ? ` · ${applied.completedTaskIds.length} cochée(s)` : ""}${applied.retiredTaskIds.length ? ` · ${applied.retiredTaskIds.length} retirée(s)` : ""}`,
       taches: applied.taskIds.length,
+      coutEur: mesure.cout.eur,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -203,6 +215,11 @@ export async function relireSujet(args: {
       console.error("[ia] échec non journalisé", e);
     }
     expireTenantData();
-    return { issue: "echec", detail: message };
+    return {
+      issue: "echec",
+      detail: message,
+      coutEur:
+        err instanceof EchecSollicitation ? (err.mesure?.cout.eur ?? 0) : 0,
+    };
   }
 }

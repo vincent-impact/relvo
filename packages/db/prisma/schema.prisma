@@ -75,6 +75,16 @@ enum ChannelConfigStatus {
   disabled
 }
 
+/// Le rattrapage du courrier récent d'un canal (M7.19) : demandé à la
+/// connexion, exécuté la nuit, arrêté par le plafond ou par la fin du courrier.
+enum CatchupStatus {
+  pending
+  running
+  done
+  capped
+  failed
+}
+
 /// Cycle de vie d'un Subject — exclusif, 3 valeurs (M6bis, 2026-07-20).
 /// Un sujet est une FENÊTRE DE TRAVAIL temporaire ouverte sur des conversations :
 /// `open` (ouverte, défaut) → `validated` (travail fait) ou `closed` (écarté).
@@ -337,6 +347,7 @@ model Account {
   contacts             Contact[]
   channels             Channel[]
   channelConfigs       ChannelConfig[]
+  channelCatchups ChannelCatchup[]
   conversations        Conversation[]
   subjectConversations SubjectConversation[]
   subjects             Subject[]
@@ -441,6 +452,7 @@ model Channel {
 
   account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
   config        ChannelConfig?
+  catchups      ChannelCatchup[]
   conversations Conversation[]
   subjects      Subject[]
   messages      Message[]
@@ -475,6 +487,48 @@ model ChannelConfig {
 
   @@index([accountId])
   @@map("channel_configs")
+}
+
+// ─────────────────────────────────────────────────────────────
+// 5 bis. ChannelCatchup — le rattrapage du courrier récent (M7.19)
+// ─────────────────────────────────────────────────────────────
+// Une ligne par rattrapage demandé : la fenêtre lue, l'avancement, ce que
+// Relvo en a fait, ce que ça a coûté, et pourquoi ça s'est arrêté. C'est ce
+// que l'écran des canaux montre au matin, et ce que le cron reprend la nuit
+// suivante tant que la ligne n'est pas close.
+
+model ChannelCatchup {
+  id        String        @id @default(uuid()) @db.Uuid
+  accountId String        @map("account_id") @db.Uuid
+  channelId String        @map("channel_id") @db.Uuid
+  status    CatchupStatus @default(pending)
+  /// Début de la fenêtre lue : les messages reçus depuis cette date.
+  since     DateTime
+  requestedAt DateTime  @default(now()) @map("requested_at")
+  startedAt   DateTime? @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+  /// Nombre de nuits déjà passées dessus : borne la reprise d'un import incomplet.
+  runs        Int       @default(0)
+  /// L'import du courrier est terminé (le fournisseur n'a plus rien dans la fenêtre).
+  importDone  Boolean   @default(false) @map("import_done")
+  messagesImported      Int   @default(0) @map("messages_imported")
+  messagesTriaged       Int   @default(0) @map("messages_triaged")
+  subjectsOpened        Int   @default(0) @map("subjects_opened")
+  conversationsIgnored  Int   @default(0) @map("conversations_ignored")
+  costEur               Float @default(0) @map("cost_eur")
+  /// Pourquoi le rattrapage s'est arrêté : plafond de messages, plafond d'euros, courrier épuisé, erreur.
+  stopReason String? @map("stop_reason")
+  lastError  String? @map("last_error")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@index([channelId, requestedAt])
+  @@index([status])
+  @@map("channel_catchups")
 }
 
 // ─────────────────────────────────────────────────────────────

@@ -53,6 +53,9 @@ import {
 //      compte route les appels d'un même compte vers le même cache, et la
 //      rétention est celle de la configuration. Le site d'appel dit ce qu'il
 //      attend du cache (`prefixeStable`) ; la mesure le rend.
+//   5. Un appel EN LOT (`lot`, tranche 9) passe au niveau de service « flex »
+//      du fournisseur : moitié prix, latence libre. Réservé à ce qui n'attend
+//      personne — le rattrapage du courrier récent.
 //
 // Comme le client Unipile, c'est une intégration de l'APPLICATION : rien ici
 // n'appartient à `packages/`. La garde `server-only` est posée sur `./index`,
@@ -104,6 +107,13 @@ type OptionsCommunes = Entree & {
    * relire. Rendu tel quel dans la mesure, pour le journal (M7.13).
    */
   prefixeStable?: number;
+  /**
+   * Appel EN LOT (`05 §10.5`) : sans latence exigée, le niveau de service
+   * « flex » du fournisseur — moitié prix, file d'attente possible. Le
+   * rattrapage du courrier récent (M7.19) passe par là ; jamais un appel qui
+   * fait attendre l'utilisateur.
+   */
+  lot?: boolean;
   /**
    * Jeu d'évaluation (M7.17) et tests uniquement : impose un modèle —
    * identifiant OpenAI pour comparer plusieurs modèles, ou modèle simulé de
@@ -265,11 +275,16 @@ function verifierEntree(tier: Tier, options: OptionsCommunes): void {
  * de compte.
  */
 function optionsFournisseur(options: OptionsCommunes) {
-  if (!options.cacheCle) return undefined;
+  if (!options.cacheCle && !options.lot) return undefined;
   return {
     openai: {
-      promptCacheKey: options.cacheCle,
-      promptCacheRetention: retentionCache(),
+      ...(options.cacheCle
+        ? {
+            promptCacheKey: options.cacheCle,
+            promptCacheRetention: retentionCache(),
+          }
+        : {}),
+      ...(options.lot ? { serviceTier: "flex" as const } : {}),
     },
   };
 }
@@ -300,6 +315,7 @@ type Appel = {
   niveau: NiveauRaisonnement;
   debut: number;
   prefixeStable: number | null;
+  lot: boolean;
 };
 
 function mesurer(
@@ -315,10 +331,11 @@ function mesurer(
     niveau: appel.niveau,
     jetons,
     cout: appel.tarife
-      ? estimerCout(appel.id, jetons)
+      ? estimerCout(appel.id, jetons, { lot: appel.lot })
       : { eur: 0, usd: 0, version: TARIFS_VERSION },
     dureeMs: Date.now() - appel.debut,
     reponseId,
+    lot: appel.lot,
     prefixeStable: appel.prefixeStable,
   };
 }
@@ -336,6 +353,7 @@ function preparer(tier: Tier, options: OptionsCommunes) {
     niveau,
     debut: Date.now(),
     prefixeStable: options.prefixeStable ?? null,
+    lot: options.lot ?? false,
   };
   return { modele, niveau, appel };
 }

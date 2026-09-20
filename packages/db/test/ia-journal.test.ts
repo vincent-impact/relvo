@@ -53,6 +53,7 @@ function ligne(
     coutEur: 0.0002,
     dureeMs: 1_000,
     prefixeStable,
+    lot: false,
     reponseId: null,
     subjectId: null,
     messageId: null,

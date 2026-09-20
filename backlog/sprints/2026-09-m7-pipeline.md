@@ -11,7 +11,10 @@ sortie tronquée ou non conforme = échec nommé qui porte sa mesure), **le cach
 mesuré** (clé par compte, rétention longue, préfixe stable consigné, rapport des silencieux —
 mesuré au banc : tout le préfixe relu sur un message jamais vu, `benchmark-iag.md` §6.10), et
 **le brouillon cite ses sources** (schéma de sortie, résolues, stockées dans l'Action, « Basé
-sur » sous la barre du composer). **La prochaine tranche est la 9, le rattrapage en lot.**
+sur » sous la barre du composer). La **tranche 9, le rattrapage en lot, est livrée le même jour** : trente jours, en lot au
+niveau « flex », sous plafond (trois cents messages, deux euros), demandée à la connexion,
+exécutée la nuit par un cron, bilan sous le canal dans Réglages. **M7 est complet en code** ;
+l'épique se clôt quand les tranches 8 et 9 auront été vérifiées en production.
 Le plafond de dépense sur la clé OpenAI est posé (100 € par mois) ; le cadre économique des
 bêta-testeurs est arrêté (voir `ecarts`, « Un disjoncteur de consommation par compte ») et
 M14.5 le traduira en seuils par compte. Restent ouverts en arrière-plan : essayer `none` sur la
@@ -474,12 +477,38 @@ métadonnées du journal, les sources dans le payload de l'Action.
 ## Tranche 9 — Le rattrapage en lot (M7.19)
 
 **« Relvo lit le courrier récent la nuit de la connexion. »** La démonstration que les clients
-réclament.
+réclament. **Livrée le 2026-09-20**, à vérifier en production sur une vraie connexion. Décision
+dans `ecarts` (« Le rattrapage du courrier récent : trente jours, en lot, sous plafond »). Table
+`channel_catchups` (migration `20260920120000`), domaine `packages/db/src/domain/catchup.ts`,
+pipeline `apps/web/src/server/ia/pipeline/rattrapage.ts` (règles pures dans
+`rattrapage-regles.ts`), cron `/api/cron/catch-up` (chaque nuit, appelable à la main avec le
+secret du cron).
 
-- [ ] Mode « rattrapage » du pipeline : les messages récents d'un canal, soumis en **lot** à
-      moitié prix, sans latence exigée.
-- [ ] Résultat au matin : sujets ouverts, domaines proposés, expéditeurs à ignorer.
-- [ ] C'est ce que M13.2 déclenche à la connexion d'un canal.
+- [x] **L'historique est synchronisé à la connexion** d'un canal e-mail (l'option « nouveau
+      courrier seulement » est levée) ; la connexion **demande** un rattrapage sur trente jours ;
+      un message d'historique qui arrive par le webhook est rangé mais laissé à la nuit
+      (`estHistorique`).
+- [x] **Mode « rattrapage » du pipeline** : import du courrier de la fenêtre depuis l'agrégateur
+      (idempotent, pièces jointes stockées par le même code que le webhook), puis tri des
+      conversations orphelines **en lot** — `lot: true` sur `trierConversationEmail`, niveau de
+      service « flex », moitié prix, propagé à la structuration et à la relecture ; le compteur
+      applique la remise (`FACTEUR_LOT`, `benchmark-iag.md` §6.11). Plafonds : trois cents
+      messages, deux euros, trois nuits (`RATTRAPAGE` dans `config.ts`) ; budget de temps de la
+      fonction, reprise la nuit suivante.
+- [x] **Résultat au matin** : sujets ouverts, domaines proposés (par la structuration), sources
+      mises en sourdine — les pastilles des Conversations les montrent ; une ligne sous le canal
+      dans Réglages › Canaux dit ce que Relvo va lire, lit, ou a lu, et pourquoi il s'est arrêté ;
+      journal `catchup_requested` / `catchup_started` / `catchup_finished` avec le bilan.
+- [x] C'est ce que M13.2 déclenchera à la connexion d'un canal : la demande est déjà posée par
+      la finalisation de la connexion (webhook), M13.2 n'aura qu'à l'expliquer à l'écran.
+- [x] Tests : `catchup.test.ts` (domaine, contre la base), `ia-rattrapage.test.ts` (règles pures,
+      option « flex » au fournisseur), `ia-tarifs` (remise du lot).
+- [ ] Vérifier en production : connecter une boîte, constater la ligne « Relvo lira le courrier
+      des dernières semaines cette nuit », déclencher le cron à la main
+      (`curl -H "Authorization: Bearer $CRON_SECRET" https://<app>/api/cron/catch-up`), relire
+      le bilan et `ia:journal` (appels marqués en lot, coût remisé). ⚠️ La profondeur
+      d'historique que l'agrégateur synchronise par défaut n'est pas documentée : si la liste
+      revient vide la première nuit, le rattrapage reprend la suivante (trois au plus).
 
 ## Ce qui attend
 
@@ -502,4 +531,4 @@ réclament.
 - [x] Tranche 6 — livrée le 2026-09-16, close le 2026-09-18 après quatre essais réels ; banc d'essai en `benchmark-iag.md` §6.9 ; jeu à douze suites
 - [x] Tranche 7 — livrée le 2026-09-15, avant la 6 ; banc d'essai en `benchmark-iag.md` §6.8
 - [x] Tranche 8 — livrée le 2026-09-20 ; à vérifier en production ; banc d'essai en `benchmark-iag.md` §6.10
-- [ ] Tranche 9
+- [x] Tranche 9 — livrée le 2026-09-20 ; à vérifier en production sur une vraie connexion ; banc d'essai en `benchmark-iag.md` §6.11

@@ -467,6 +467,33 @@ deviennent un formulaire ».
   rien à voir avec l'attente, « pas encore » retire la suggestion d'un tap. Relvo qui coche en
   relecture ne déclenche pas la mécanique, sa relecture décide.
 
+### Le rattrapage du courrier récent : trente jours, en lot, sous plafond
+
+**`tranché`** · Tranche 9 du sprint M7 (M7.19), avec le dirigeant.
+
+- **L'historique est synchronisé à la connexion d'un canal e-mail.** L'arbitrage antérieur
+  « nouveau courrier seulement » — une option passée à l'agrégateur, jamais consignée ici —
+  est levé : sans historique, il n'y a rien à rattraper, et le rattrapage est la démonstration
+  que les clients réclament. Le rattrapage borne lui-même sa fenêtre : **trente jours**, assez
+  pour voir les affaires en cours et proposer des domaines.
+- **Un plafond dur par rattrapage : trois cents messages et deux euros**, au-delà desquels Relvo
+  s'arrête et le dit. Tient dans les vingt euros mensuels d'un compte même à plusieurs canaux ;
+  c'est le cas « import massif » du disjoncteur, borné avant qu'il n'existe (M14.5). Trois nuits
+  au plus sur un même rattrapage ; ce qui reste ensuite se trie à la main ou au fil de l'eau.
+- **Le niveau de service « flex » plutôt que la file de lots du fournisseur.** Même remise de
+  moitié, mais zéro mécanisme nouveau : un message rattrapé suit exactement le chemin d'un
+  message reçu, tri puis structuration, avec une seule option de plus sur l'appel. Le compteur
+  applique la remise (`benchmark-iag.md` §6.11).
+- **Exécuté la nuit par un cron**, pas à la volée : la connexion demande, la nuit exécute, le
+  matin montre — une ligne sous le canal dans Réglages. Un message d'historique qui arrive par
+  le webhook pendant la synchronisation est rangé mais laissé à la nuit : jamais trié plein
+  tarif à contretemps.
+- **E-mail seulement.** Le tri de WhatsApp message par message n'existe pas encore (A8) ; le
+  rattrapage de la messagerie viendra avec lui.
+- **Ce que la tranche ne fait pas** : la suggestion de créer un domaine quand plusieurs sujets
+  partagent la même proposition (M17.10) — les propositions existent dès le matin, l'encart qui
+  les regroupe est M17.
+
 ### Le durcissement : un appel raté coûte, un cache s'adresse, un brouillon cite
 
 **`tranché`** · Tranche 8 du sprint M7.

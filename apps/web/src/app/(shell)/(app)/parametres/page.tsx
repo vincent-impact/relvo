@@ -68,6 +68,9 @@ async function ParametresTabs({ initialTab }: { initialTab: ParamTab }) {
         config: {
           select: { status: true, lastSyncAt: true, externalAccountId: true },
         },
+        // Le dernier rattrapage du courrier récent (M7.19) : ce que Relvo a lu
+        // la nuit de la connexion, ou ce qu'il s'apprête à lire.
+        catchups: { orderBy: { requestedAt: "desc" }, take: 1 },
       },
     }),
     // Domaines de la Mémoire (liste seule) — mêmes lignes que l'ex-page Mémoire.
@@ -175,6 +178,11 @@ async function ParametresTabs({ initialTab }: { initialTab: ParamTab }) {
                         <div className="truncate text-[12.5px] text-(--text-tertiary)">
                           {ch.identifier}
                         </div>
+                        {ch.catchups[0] ? (
+                          <div className="truncate text-[12px] text-relvo">
+                            {libelleRattrapage(ch.catchups[0])}
+                          </div>
+                        ) : null}
                       </div>
                       <span
                         className={`flex-none rounded-full px-2.5 py-1 text-[11px] font-bold ${st.cls}`}
@@ -259,4 +267,31 @@ export default async function ParametresPage({
       </Suspense>
     </Screen>
   );
+}
+
+/**
+ * Le rattrapage du courrier récent, en une ligne sous le canal (M7.19) : ce
+ * que Relvo va lire, lit, ou a lu — et pourquoi il s'est arrêté. Le
+ * vocabulaire est celui de l'utilisateur, jamais celui du pipeline.
+ */
+function libelleRattrapage(c: {
+  status: string;
+  messagesImported: number;
+  subjectsOpened: number;
+  conversationsIgnored: number;
+  stopReason: string | null;
+}): string {
+  const bilan = `${c.messagesImported} message${c.messagesImported > 1 ? "s" : ""} lu${c.messagesImported > 1 ? "s" : ""}, ${c.subjectsOpened} sujet${c.subjectsOpened > 1 ? "s" : ""} ouvert${c.subjectsOpened > 1 ? "s" : ""}, ${c.conversationsIgnored} mis${c.conversationsIgnored > 1 ? "es" : "e"} en sourdine`;
+  switch (c.status) {
+    case "pending":
+      return "Relvo lira le courrier des dernières semaines cette nuit.";
+    case "running":
+      return `Relvo lit le courrier des dernières semaines — ${bilan}.`;
+    case "done":
+      return `Courrier récent lu : ${bilan}.`;
+    case "capped":
+      return `Courrier récent lu jusqu'au plafond : ${bilan}. Le reste se trie au fil de l'eau.`;
+    default:
+      return `La lecture du courrier récent a été interrompue — ${bilan}.`;
+  }
 }

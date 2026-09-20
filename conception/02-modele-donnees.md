@@ -152,6 +152,13 @@ l'agrégateur. Elle est séparée pour ne pas alourdir `Channel` de secrets et d
 **Un seul canal connecté par type.** Le domaine refuse un second canal du même type. Motif :
 simplicité d'usage, et facturation à l'usage chez l'agrégateur.
 
+**`ChannelCatchup`** porte le **rattrapage du courrier récent** d'un canal (cf. `05-ia.md`
+§9.6) : la fenêtre lue, l'état — demandé, en cours, terminé, arrêté au plafond, en échec —,
+l'avancement de l'import et du tri, ce que Relvo en a fait (messages lus, sujets ouverts,
+conversations mises en sourdine), le coût en euros, et la raison de l'arrêt. Une ligne par
+rattrapage demandé ; la demande naît à la connexion d'un canal, l'exécution est nocturne et
+reprend tant que la ligne n'est pas close. C'est ce que l'écran des canaux montre au matin.
+
 ## Conversation
 
 Couche de **transport et d'identité** : le regroupement déterministe des messages, calculé à la

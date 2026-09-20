@@ -5,6 +5,10 @@
     {
       "path": "/api/cron/drain-file-deletions",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/catch-up",
+      "schedule": "0 2 * * *"
     }
   ]
 }

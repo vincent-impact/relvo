@@ -183,3 +183,27 @@ export function isHostedAuthNotify(p: unknown): p is UnipileHostedAuthNotify {
     typeof (p as { name?: unknown }).name === "string"
   );
 }
+
+/**
+ * Un e-mail tel que le LIT l'API d'Unipile (par opposition au webhook) : les
+ * champs que le rattrapage consomme, alignés sur `UnipileMailWebhook` pour
+ * passer par la même conversion (`toInboundEmail`). `body` peut être vide sur
+ * une ligne de liste (« meta ») : le corps se relit alors à l'unité.
+ */
+export type UnipileMailApi = {
+  id: string;
+  account_id: string;
+  provider_id?: string | null;
+  in_reply_to?: string | Record<string, unknown> | null;
+  from_attendee?: { display_name?: string; identifier: string } | null;
+  to_attendees?: { display_name?: string; identifier: string }[] | null;
+  cc_attendees?: { display_name?: string; identifier: string }[] | null;
+  subject?: string | null;
+  body?: string | null;
+  body_plain?: string | null;
+  date?: string | null;
+  has_attachments?: boolean | null;
+  attachments?: { id: string; name?: string; mime?: string }[] | null;
+  /** « 0_ref » / « 1_meta » / « 2_full » : seul le dernier porte le corps. */
+  kind?: string | null;
+};

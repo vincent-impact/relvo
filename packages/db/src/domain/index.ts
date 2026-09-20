@@ -32,3 +32,4 @@ export * from "./brouillon";
 export * from "./reply-match";
 export * from "./decisions";
 export * from "./accounts";
+export * from "./catchup";

@@ -61,6 +61,8 @@ export type ResultatStructuration = {
   detail?: string;
   /** Tâches créées, pour la ligne de journal serveur. */
   taches?: number;
+  /** Coût de l'appel, en euros (0 sans appel). */
+  coutEur: number;
 };
 
 /** Le cadre de retenue, depuis la projection : ce que le modèle a eu sous les yeux. */
@@ -151,14 +153,18 @@ export async function structurerSujet(args: {
   subjectId: string;
   /** Le message dont le tri a ouvert le sujet — rattaché aux tâches et au journal. */
   messageId: string | null;
+  /** En LOT (rattrapage, M7.19) : niveau de service « flex ». */
+  lot?: boolean;
 }): Promise<ResultatStructuration> {
   const { accountId, subjectId, messageId } = args;
   const db = tenantDb(accountId);
 
-  if (!inferenceDisponible()) return { issue: "inference-indisponible" };
-  if (!(await isAssistantEnabled(db, accountId))) return { issue: "desactive" };
+  if (!inferenceDisponible())
+    return { issue: "inference-indisponible", coutEur: 0 };
+  if (!(await isAssistantEnabled(db, accountId)))
+    return { issue: "desactive", coutEur: 0 };
   if (await hasAiSolicitationForSubject(db, subjectId, "structuration")) {
-    return { issue: "deja-structure" };
+    return { issue: "deja-structure", coutEur: 0 };
   }
 
   try {
@@ -177,6 +183,7 @@ export async function structurerSujet(args: {
       reasoning: NIVEAU_RETENU.extraction,
       cacheCle: accountId,
       prefixeStable: prefixeStable(contexte),
+      lot: args.lot ?? false,
     });
     await logAiSolicitation(db, { ...mesure, subjectId, messageId });
 
@@ -228,6 +235,7 @@ export async function structurerSujet(args: {
       issue: "structure",
       detail: projection.sujet.reference,
       taches: applied.taskIds.length,
+      coutEur: mesure.cout.eur,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -251,6 +259,11 @@ export async function structurerSujet(args: {
       console.error("[ia] échec non journalisé", e);
     }
     expireTenantData();
-    return { issue: "echec", detail: message };
+    return {
+      issue: "echec",
+      detail: message,
+      coutEur:
+        err instanceof EchecSollicitation ? (err.mesure?.cout.eur ?? 0) : 0,
+    };
   }
 }

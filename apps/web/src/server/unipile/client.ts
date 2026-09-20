@@ -1,6 +1,7 @@
 import "server-only";
 import { UnipileClient } from "unipile-node-sdk";
 import { DomainError } from "@relvo/db";
+import type { UnipileMailApi } from "./types";
 
 /**
  * Traduit une erreur du SDK Unipile en `DomainError` (provider-agnostique) pour
@@ -182,13 +183,51 @@ export async function createEmailHostedAuthLink(
     providers: input.provider
       ? [input.provider]
       : ["GOOGLE", "OUTLOOK", "MAIL"],
-    // `sync_limit.MAILING = NO_HISTORY_SYNC` : ne PAS importer l'historique à la
-    // connexion (arbitrage « nouveau courrier seulement »). Le champ existe dans
-    // le schéma wire d'Unipile mais le type TS exporté par le SDK est en retard
-    // dessus — le tronc commun le passe tel quel (le SDK valide en interne contre
-    // le schéma complet, qui l'accepte).
-    extra: { sync_limit: { MAILING: "NO_HISTORY_SYNC" } },
+    // L'HISTORIQUE EST SYNCHRONISÉ à la connexion (M7.19, tranche 9) : c'est ce
+    // qui rend possible le rattrapage du courrier récent — Relvo lit les
+    // dernières semaines la nuit de la connexion (`ecarts`, « Le rattrapage du
+    // courrier récent »). L'arbitrage antérieur « nouveau courrier seulement »
+    // (`sync_limit.MAILING = NO_HISTORY_SYNC`) est levé ; le rattrapage borne
+    // lui-même sa fenêtre et ses plafonds. ⚠️ Un message d'historique qui
+    // arriverait par le webhook est rangé mais laissé au rattrapage : jamais
+    // trié plein tarif à la volée (`RATTRAPAGE.delaiWebhookMs`).
   });
+}
+
+/**
+ * Les e-mails REÇUS d'un compte depuis une date, page par page (M7.19). La
+ * liste est bornée à la boîte de réception : les envoyés, les brouillons, la
+ * corbeille et le courrier indésirable ne sont pas du courrier à trier.
+ */
+export async function listInboxEmails(input: {
+  accountId: string;
+  after: Date;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<{ items: UnipileMailApi[]; cursor: string | null }> {
+  const ctx = getClient();
+  if (!ctx) return { items: [], cursor: null };
+  const res = await ctx.client.email.getAll({
+    account_id: input.accountId,
+    role: "inbox",
+    after: input.after.toISOString(),
+    limit: input.limit ?? 50,
+    ...(input.cursor ? { cursor: input.cursor } : {}),
+  });
+  const items = ((res as { items?: unknown[] }).items ??
+    []) as UnipileMailApi[];
+  const cursor = (res as { cursor?: string | null }).cursor ?? null;
+  return { items, cursor };
+}
+
+/** Un e-mail entier — le corps, les pièces jointes — quand la liste n'en portait que l'en-tête. */
+export async function getEmail(
+  emailId: string,
+): Promise<UnipileMailApi | null> {
+  const ctx = getClient();
+  if (!ctx) return null;
+  const res = await ctx.client.email.getOne(emailId);
+  return res as unknown as UnipileMailApi;
 }
 
 /**

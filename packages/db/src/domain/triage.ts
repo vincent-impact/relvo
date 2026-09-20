@@ -780,6 +780,8 @@ export const logAiSolicitationSchema = z.object({
    * relire (M7.13). Null quand le site d'appel ne l'a pas mesuré.
    */
   prefixeStable: z.number().int().nonnegative().optional().nullable(),
+  /** Appel en lot (rattrapage, M7.19) : niveau de service « flex », coût remisé. */
+  lot: z.boolean().optional(),
   /** Le message qui a déclenché l'appel — clé de l'idempotence. */
   messageId: z.uuid().optional().nullable(),
   conversationId: z.uuid().optional().nullable(),
@@ -819,6 +821,7 @@ export async function logAiSolicitation(
       dureeMs: data.dureeMs,
       reponseId: data.reponseId ?? null,
       prefixeStable: data.prefixeStable ?? null,
+      lot: data.lot ?? false,
       conversationId: data.conversationId ?? null,
     },
   });
@@ -857,6 +860,7 @@ export type AiSolicitationRow = {
   coutEur: number;
   dureeMs: number;
   prefixeStable: number | null;
+  lot: boolean;
   reponseId: string | null;
   subjectId: string | null;
   messageId: string | null;
@@ -908,6 +912,7 @@ function lireLigne(e: {
     coutEur: n(cout.eur),
     dureeMs: n(m.dureeMs),
     prefixeStable: typeof m.prefixeStable === "number" ? m.prefixeStable : null,
+    lot: m.lot === true,
     reponseId: typeof m.reponseId === "string" ? m.reponseId : null,
     subjectId: e.subjectId,
     messageId: e.messageId,

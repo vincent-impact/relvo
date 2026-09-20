@@ -424,6 +424,24 @@ Sollicitation mesurée : le **tri**, Luna `none`, neuf cas en trois passages sur
 
 **Ce que le passage ne mesure pas** : la structuration et la relecture sous clé (même mécanique, même préfixe — à lire dans le journal de production avec `pnpm --filter web ia:journal`), et la tenue du cache d'une heure à l'autre, qui est la raison d'être de la rétention longue.
 
+### 6.11 Le tri en lot, niveau « flex » — 20/09/2026, jeu de DÉMONSTRATION
+
+Tranche 9. Le rattrapage du courrier récent trie **en lot** : mêmes appels, niveau de service « flex » du fournisseur — moitié prix, latence libre. Reproductible : `pnpm --filter web eval:tri --cache <cle> --flex --parallele 1`. Trois cas jamais vus, sur la clé de cache de la §6.10.
+
+| Configuration | Relus en cache | Écrits en cache | €/1 000 messages (facturé) | Latence moy. |
+| --- | --- | --- | --- | --- |
+| Luna `none`, niveau standard (§6.10) | 2 132 | ~695 | 0,26 | 2,0 s |
+| Luna `none`, **niveau flex** | 2 132 | ~710 | **0,13** | 3,9 s |
+
+**Ce que le passage a appris.**
+
+1. **Le fournisseur accepte « flex » avec la clé et la rétention de cache**, sans avertissement ni refus sur trois appels séquentiels ; le préfixe est relu comme au niveau standard.
+2. **Le compteur devait apprendre la remise.** La table de tarifs ne connaissait que le prix standard : un appel en lot y valait plein tarif. Un facteur de lot (`FACTEUR_LOT`, version de table datée du jour) s'applique à toute la consommation quand l'appel est marqué en lot, et le journal porte la marque. Sans cela, le plafond en euros du rattrapage se serait déclenché deux fois trop tôt.
+3. **La latence double** — le fournisseur file ces appels — et c'est sans conséquence la nuit : trois cents messages à quatre secondes tiennent dans quatre passes de la fonction, soit bien moins que les nuits permises.
+4. **La file de lots du fournisseur n'a pas été retenue** : même remise, mais un aller-retour asynchrone et un stockage de résultats à construire, alors que « flex » passe par le pipeline existant sans une ligne de plus dans le domaine.
+
+**Ce que le passage ne mesure pas** : la structuration et la relecture en flex (même mécanique), et le comportement de « flex » sous charge — le fournisseur annonce des refus temporaires quand sa capacité manque ; le rattrapage y répond en laissant la conversation au lendemain.
+
 ---
 
 ## 7. Disjoncteur de consommation

@@ -1,4 +1,8 @@
-import { ingestInboundEmail, ingestInboundWhatsApp } from "@relvo/db";
+import {
+  ingestInboundEmail,
+  ingestInboundWhatsApp,
+  requestChannelCatchup,
+} from "@relvo/db";
 import {
   buildObjectKey,
   MAX_FILE_SIZE_BYTES,
@@ -9,8 +13,14 @@ import { prisma } from "@/lib/db";
 import { tenantDb } from "@/lib/tenant-db";
 import { expireTenantData } from "@/server/cached";
 import { createAttachment } from "@relvo/db";
+import { RATTRAPAGE } from "@/server/ia/config";
+import {
+  estHistorique,
+  fenetreDeRattrapage,
+} from "@/server/ia/pipeline/rattrapage-regles";
 import { relireSujet } from "@/server/ia/pipeline/relecture";
 import { trierConversationEmail } from "@/server/ia/pipeline/tri";
+import { stockerPiecesJointes } from "@/server/unipile/attachments";
 import {
   toEmailHeaders,
   toInboundEmail,
@@ -21,7 +31,6 @@ import {
   verifyWebhookAuth,
 } from "@/server/unipile/signature";
 import {
-  fetchAttachment,
   fetchMessageAttachment,
   getAccount,
   type UnipileAccountStatusWebhook,
@@ -117,7 +126,7 @@ async function handleHostedAuthNotify(notify: UnipileHostedAuthNotify) {
   // Lookup hors tenant : le channelId (uuid) est globalement unique.
   const channel = await prisma.channel.findUnique({
     where: { id: channelId },
-    select: { id: true, accountId: true },
+    select: { id: true, accountId: true, type: true },
   });
   if (!channel) return ok({ ok: true, ignored: "unknown_channel" });
 
@@ -141,6 +150,20 @@ async function handleHostedAuthNotify(notify: UnipileHostedAuthNotify) {
       where: { id: channelId },
       data: { identifier, name: identifier },
     });
+  }
+
+  // Le rattrapage du courrier récent (M7.19) : demandé à la connexion d'un
+  // canal e-mail, exécuté la nuit par le cron. Idempotent côté domaine — une
+  // reconnexion ne redemande rien tant qu'un rattrapage est ouvert.
+  if (channel.type === "email") {
+    try {
+      await requestChannelCatchup(tenantDb(channel.accountId), {
+        channelId,
+        since: fenetreDeRattrapage(),
+      });
+    } catch (err) {
+      console.error("[unipile] rattrapage non demandé", { channelId }, err);
+    }
   }
 
   return ok({ ok: true, channelId, status: "connected", identifier });
@@ -191,44 +214,25 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
 
   // Pièces jointes (M5.4) : seulement au premier passage (idempotence). Le
   // fichier vit dans R2 (source de vérité) ; Unipile n'est qu'un transport.
-  let stored = 0;
-  if (created && mail.attachments?.length) {
-    const storage = getStorage();
-    for (const att of mail.attachments) {
-      try {
-        const { bytes, contentType } = await fetchAttachment({
-          accountId: mail.account_id,
-          emailId: mail.email_id,
-          attachmentId: att.id,
-        });
-        if (bytes.byteLength > MAX_FILE_SIZE_BYTES.attachments) continue; // garde-fou taille
-        const key = buildObjectKey({
+  // Si le message a été rattaché à un sujet au rangement, la PJ en hérite.
+  const stored =
+    created && mail.attachments?.length
+      ? await stockerPiecesJointes(db, {
           accountId: config.accountId,
-          scope: "attachments",
-        });
-        const mime = contentType ?? att.mime ?? att.content_type ?? null;
-        await storage.put({
-          key,
-          body: bytes,
-          contentType: mime ?? "application/octet-stream",
-        });
-        await createAttachment(db, {
+          unipileAccountId: mail.account_id,
+          emailId: mail.email_id,
           messageId: message.id,
-          // Si le message a été rattaché à un sujet (règle interlocuteur+objet),
-          // la PJ hérite du subjectId → elle apparaît dans la box « Pièces
-          // jointes » de la fiche (qui liste par subjectId).
           subjectId: message.subjectId,
-          name: att.name ?? "piece-jointe",
-          mimeType: mime,
-          storageKey: key,
-          fileSize: bytes.byteLength,
-        });
-        stored += 1;
-      } catch (err) {
-        // Une PJ ratée ne doit pas faire échouer l'ingestion du message.
-        console.error("[unipile] pièce jointe non stockée", att.id, err);
-      }
-    }
+          attachments: mail.attachments,
+        })
+      : 0;
+
+  // Un message d'HISTORIQUE — synchronisé à la connexion, bien plus vieux que
+  // l'instant — est rangé mais laissé au rattrapage nocturne (M7.19) : il ne
+  // se trie pas plein tarif à la volée, ni ne relit un sujet à contretemps.
+  if (created && estHistorique(mail.date, RATTRAPAGE.delaiWebhookMs)) {
+    expireTenantData();
+    return ok({ ok: true, messageId: message.id, historique: true, stored });
   }
 
   // Nouveau message → purge le Data Cache du tenant, sinon les KPI/fil (servis
