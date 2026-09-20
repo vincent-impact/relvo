@@ -63,8 +63,8 @@ export async function connectWhatsAppChannelAction(): Promise<
     const url = await createWhatsAppHostedAuthLink({
       channelId: created.data.id,
       notifyUrl,
-      successRedirectUrl: `${base}/parametres?tab=canaux&connected=1`,
-      failureRedirectUrl: `${base}/parametres?tab=canaux&error=1`,
+      successRedirectUrl: `${base}/canaux?connected=1`,
+      failureRedirectUrl: `${base}/canaux?error=1`,
     });
     if (!url) {
       return err(
@@ -72,7 +72,7 @@ export async function connectWhatsAppChannelAction(): Promise<
         "Intégration WhatsApp non configurée (UNIPILE_DSN / UNIPILE_API_KEY).",
       );
     }
-    revalidatePath("/parametres");
+    revalidatePath("/canaux");
     return ok({ url });
   } catch (error) {
     if (isDomainError(error)) return err(error.code, error.message);

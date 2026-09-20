@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { deleteChannelAction } from "@/server/actions/channels";
 
-// Suppression d'un canal (Réglages → Canaux). HARD-DELETE assumé : on prévient
+// Suppression d'un canal (page Canaux). HARD-DELETE assumé : on prévient
 // explicitement que messages + pièces jointes reçus via ce canal seront perdus,
 // et le compte connecté chez le fournisseur est déconnecté (action serveur).
 

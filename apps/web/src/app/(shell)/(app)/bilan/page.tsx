@@ -90,7 +90,6 @@ export default async function BilanPage({
   return (
     <Screen>
       <RelvoHeader
-        back="/"
         title="Bilan"
         subtitle={
           periode === "mois"

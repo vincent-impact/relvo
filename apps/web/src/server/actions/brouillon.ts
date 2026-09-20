@@ -31,7 +31,7 @@ export async function prepareDraftAction(
   if (r.issue === "desactive") {
     return err(
       "INVALID_STATE",
-      "L'assistant Relvo est coupé sur ce compte (Réglages › Préférences).",
+      "L'assistant Relvo est coupé sur ce compte (page Préférences du menu).",
     );
   }
   if (r.issue === "inference-indisponible") {

@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 // Direction « Instrument » (2026-09) : plus de pilule — les rayons sont
 // plafonnés, et l'onglet actif a une épaisseur au lieu d'être un aplat. Variante `overlap` pour chevaucher le
 // bas du hero violet. Présentationnel et contrôlé (l'état vit dans le parent).
-// Sert aux filtres Mon fil, aux onglets Sujet et aux onglets Réglages.
+// Sert aux filtres Mon fil, aux onglets Sujet et de domaine.
 //
 // Mode `iconOnly` (fiche Sujet, 2026-07-23) : on n'affiche QUE l'icône de chaque
 // onglet pour tenir 4 entrées sur mobile sans rogner l'espace horizontal. Le

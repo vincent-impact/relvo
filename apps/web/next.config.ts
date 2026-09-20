@@ -14,10 +14,10 @@ const nextConfig: NextConfig = {
   // n'embarque pas les fichiers. En local ça marche (le monorepo est sur le
   // disque) ; sur Vercel, `readFile` lève ENOENT et le reset démo renvoie 500.
   //
-  // Le bouton « Réinitialiser » vit sur /parametres → c'est cette route qui doit
+  // Le bouton « Réinitialiser » vit sur /profil → c'est cette route qui doit
   // porter les fixtures dans son bundle.
   outputFileTracingIncludes: {
-    "/parametres": ["../../packages/db/prisma/fixtures/**"],
+    "/profil": ["../../packages/db/prisma/fixtures/**"],
   },
   // @relvo/db et @relvo/storage exposent du TypeScript brut : Next doit les
   // transpiler comme du code applicatif.
@@ -57,6 +57,15 @@ const nextConfig: NextConfig = {
       },
       { source: "/dossiers", destination: "/memoire", permanent: true },
       { source: "/dossiers/:id", destination: "/memoire/:id", permanent: true },
+      // Les Réglages à onglets ont éclaté en quatre pages du menu (M18) ; les
+      // liens profonds `?tab=` retombent sur la bonne page, le reste sur Profil.
+      ...(["canaux", "preferences", "usage"] as const).map((tab) => ({
+        source: "/parametres",
+        has: [{ type: "query" as const, key: "tab", value: tab }],
+        destination: `/${tab}`,
+        permanent: true,
+      })),
+      { source: "/parametres", destination: "/profil", permanent: true },
     ];
   },
 

@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { resetDemoAction } from "@/server/actions/demo";
 
-// Bouton de reset du compte démo (Réglages → Session), visible uniquement pour
+// Bouton de reset du compte démo (page Profil → Session), visible uniquement pour
 // le compte de démonstration. Confirme via AlertDialog, puis rejoue le seed
 // (mêmes données neuves que `pnpm db:seed`) en gardant la session valide.
 

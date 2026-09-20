@@ -25,7 +25,7 @@ import {
 // Server Actions Channels (M3.6) — onglet Paramètres → Canaux (M5/M6).
 
 function revalidateChannels() {
-  revalidatePath("/parametres");
+  revalidatePath("/canaux");
 }
 
 export async function createChannelAction(input: CreateChannelInput) {
@@ -96,8 +96,8 @@ export async function reconnectChannelAction(
       channelId,
       accountId: found.data.externalAccountId,
       notifyUrl,
-      successRedirectUrl: `${base}/parametres?tab=canaux&connected=1`,
-      failureRedirectUrl: `${base}/parametres?tab=canaux&error=1`,
+      successRedirectUrl: `${base}/canaux?connected=1`,
+      failureRedirectUrl: `${base}/canaux?error=1`,
     });
     if (!url) {
       return err(

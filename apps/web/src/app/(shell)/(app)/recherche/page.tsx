@@ -76,7 +76,7 @@ export default async function RecherchePage({
 
   return (
     <Screen>
-      <RelvoHeader back="/fil" title="Recherche" className="pb-9">
+      <RelvoHeader title="Recherche" className="pb-9">
         <SearchBar initial={query} />
       </RelvoHeader>
 

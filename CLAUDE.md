@@ -127,7 +127,7 @@ relvo/
 | `/bilan` | **Bilan** — deux familles de chiffres, séparées | menu |
 | `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Mémoire** — instructions du compte, puis les domaines (Instructions / Documents / Sujets) | menu |
 | `/contacts` · `/contacts/[id]` · `/contacts/nouveau` | **Contacts** — annuaire et fiche | menu |
-| `/parametres` | **Réglages** — Profil · Canaux · Préférences · **Usage** (en %, jamais en euros) | menu |
+| `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros. Il n'y a **pas** de page Réglages | menu |
 | `/recherche` | Recherche transverse | menu, en dernier |
 | `/sujets/[id]` · `/sujets/nouveau` | Fiche d'un sujet | hors-nav |
 | `/(auth)/*` | Tunnel d'authentification | — |
@@ -135,10 +135,11 @@ relvo/
 **Navigation** : barre d'onglets basse, fixe, violette, **cinq places** : Accueil · Calendrier ·
 **Relvo** (bouton central, en relief, badge quand une question attend) · Sujets · Conversations.
 Le **menu latéral** (burger, à gauche du header) porte Bilan, Mémoire, Contacts, Canaux, Profil,
-Préférences, Usage, Rechercher. Les boutons de page se posent **à droite** du header.
+Préférences, Usage, Rechercher. **Toute page du menu porte le burger** ; la flèche retour est
+réservée aux écrans poussés (fiches, création). Les boutons de page se posent **à droite**.
 
-⚠️ **`/messages`, `/planning` et `/dossiers` sont redirigées** (M18) — vers Conversations,
-Calendrier et Mémoire (`next.config.ts`).
+⚠️ **`/messages`, `/planning`, `/dossiers` et `/parametres` sont redirigées** (M18) — vers
+Conversations, Calendrier, Mémoire et les quatre pages du menu (`next.config.ts`).
 
 ## Invariants produit
 

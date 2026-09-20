@@ -35,7 +35,7 @@ export function MetricsCardSkeleton() {
   );
 }
 
-/** Barre d'onglets (SegTabs) + lignes — pages Mémoire/dossier, Contacts, Réglages. */
+/** Barre d'onglets (SegTabs) + lignes — pages Mémoire, Contacts. */
 export function TabsSkeleton({ rows = 4 }: { rows?: number }) {
   return (
     <>

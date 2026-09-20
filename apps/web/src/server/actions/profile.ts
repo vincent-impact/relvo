@@ -58,7 +58,7 @@ export async function updateProfileAction(
     await sendVerificationEmail(email, token);
   }
 
-  revalidatePath("/parametres");
+  revalidatePath("/profil");
   return {
     status: "success",
     message: emailChanged

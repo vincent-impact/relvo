@@ -335,7 +335,7 @@ de temps en temps.
 
 ## Cas Y — Il connecte sa boîte e-mail
 
-Il vient d'installer Relvo. Depuis Réglages, il connecte sa boîte e-mail chez son fournisseur,
+Il vient d'installer Relvo. Depuis la page Canaux du menu, il connecte sa boîte e-mail chez son fournisseur,
 et revient dans l'application.
 
 **Ce que voit l'utilisateur.** Relvo lui parle, dans l'échange : « Je lis votre courrier des

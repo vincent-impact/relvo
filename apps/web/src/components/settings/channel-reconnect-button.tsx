@@ -5,7 +5,7 @@ import { RotateCw } from "lucide-react";
 import { toast } from "sonner";
 import { reconnectChannelAction } from "@/server/actions/channels";
 
-// Reconnexion d'un canal (Réglages → Canaux, M6quater). Ré-authentifie le MÊME
+// Reconnexion d'un canal (page Canaux, M6quater). Ré-authentifie le MÊME
 // compte Unipile (hosted auth mode « reconnect ») : aucune donnée perdue,
 // contrairement à la suppression. À utiliser quand un canal tombe en « Erreur »
 // (identifiants expirés / révoqués, ou envoi refusé par le fournisseur).

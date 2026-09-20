@@ -72,10 +72,13 @@ la notification). **M7 tranche 10 passe après**, et M10 se construit sur le ré
       retard) et l'accueil en brief : nouvelles calculées depuis le dernier passage
       (`Account.homeSeenAt`, migration `m18_home_seen_at`), suggestions par règles
       (`domain/brief.ts`, testé), activité, aujourd'hui, en attente de vous
-- [x] Tranche 3 — le Bilan (`/bilan`) et l'Usage (onglet des Réglages) — **en maquette
+- [x] Tranche 3 — le Bilan (`/bilan`) et l'Usage (`/usage`) — **en maquette
       annoncée** : chiffres de démonstration dans `lib/demo-bilan.ts`, bandeau en tête de page.
       Le branchement sur le journal et sur le plafond M14.5 reste à faire
 - [x] Tranche 4 — la Mémoire (`/memoire`, `/memoire/[id]`, `/memoire/nouveau`) : instructions
       du compte (domaine Général) en tête, domaines en lignes avec leur rail, zone « Ce que
       Relvo a appris » réservée à M17 ; l'onglet Domaines des Réglages a disparu
+- [x] Retours du dirigeant sur le téléphone (2026-09-20) : toute page du menu porte le burger
+      (plus de flèche sur Bilan et Mémoire) ; les Réglages à onglets n'existent plus — Canaux,
+      Profil, Préférences et Usage sont quatre pages (`/parametres` redirigée)
 - [ ] Tranche 5 — Relvo parle en premier (badge du dock, `RelvoQuestion` élargie, notification)

@@ -33,8 +33,8 @@ import { cn } from "@/lib/utils";
 //
 // Une feuille (`sheet` du registre) ouverte depuis la GAUCHE du header, rendue
 // UNE fois par le layout de l'application ; le bouton burger du header ne fait
-// que l'ouvrir, via ce contexte. Canaux, Profil, Préférences et Usage sont les
-// onglets des Réglages, atteints par lien profond.
+// que l'ouvrir, via ce contexte. Chaque entrée est une page à part entière ;
+// il n'y a plus de page « Réglages » à onglets.
 //
 // Thème (PITFALLS #51) : la feuille est peinte avec NOS jetons (blanc, pierre,
 // violet encre), jamais d'après le thème de l'appareil — l'app est claire
@@ -86,14 +86,10 @@ const MAIN: Entry[] = [
 ];
 
 const SETTINGS: Entry[] = [
-  { href: "/parametres?tab=canaux", label: "Canaux", icon: Plug },
-  { href: "/parametres?tab=profil", label: "Profil", icon: User },
-  {
-    href: "/parametres?tab=preferences",
-    label: "Préférences",
-    icon: SlidersHorizontal,
-  },
-  { href: "/parametres?tab=usage", label: "Usage", icon: Gauge },
+  { href: "/canaux", label: "Canaux", icon: Plug },
+  { href: "/profil", label: "Profil", icon: User },
+  { href: "/preferences", label: "Préférences", icon: SlidersHorizontal },
+  { href: "/usage", label: "Usage", icon: Gauge },
 ];
 
 const ITEM =

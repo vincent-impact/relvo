@@ -74,8 +74,8 @@ export async function connectEmailChannelAction(
     const url = await createEmailHostedAuthLink({
       channelId: created.data.id,
       notifyUrl,
-      successRedirectUrl: `${base}/parametres?tab=canaux&connected=1`,
-      failureRedirectUrl: `${base}/parametres?tab=canaux&error=1`,
+      successRedirectUrl: `${base}/canaux?connected=1`,
+      failureRedirectUrl: `${base}/canaux?error=1`,
       provider,
     });
     if (!url) {
@@ -84,7 +84,7 @@ export async function connectEmailChannelAction(
         "Intégration email non configurée (UNIPILE_DSN / UNIPILE_API_KEY).",
       );
     }
-    revalidatePath("/parametres");
+    revalidatePath("/canaux");
     return ok({ url });
   } catch (error) {
     if (isDomainError(error)) return err(error.code, error.message);

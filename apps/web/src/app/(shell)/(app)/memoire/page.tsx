@@ -127,7 +127,6 @@ export default async function MemoirePage() {
   return (
     <Screen>
       <RelvoHeader
-        back="/"
         title="Mémoire"
         subtitle="Ce que Relvo sait de votre entreprise"
         className="pb-5"

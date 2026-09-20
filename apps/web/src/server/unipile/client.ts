@@ -21,7 +21,7 @@ function toSendError(
   return invalidCreds
     ? new DomainError(
         "INVALID_STATE",
-        `Le canal ${canal} n'est plus connecté à Relvo (identifiants invalides). Reconnecte-le dans Réglages › Canaux.`,
+        `Le canal ${canal} n'est plus connecté à Relvo (identifiants invalides). Reconnecte-le depuis la page Canaux du menu.`,
         // Marqueur pour que le domaine bascule le canal en « erreur » (la
         // pastille cesse d'afficher « Connecté » et le bouton Reconnecter sort).
         { details: { channelUnhealthy: true } },

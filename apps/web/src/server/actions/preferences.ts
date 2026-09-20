@@ -5,7 +5,7 @@ import { setAssistantEnabled } from "@relvo/db";
 import { domainAction } from "@/lib/action-result";
 import { requireAccountId } from "@/server/auth-context";
 
-// Préférences du compte (Réglages › Préférences). L'identifiant du compte
+// Préférences du compte (page Préférences du menu). L'identifiant du compte
 // vient de la session, jamais du client : un utilisateur ne règle que le sien.
 
 /** Active ou coupe l'assistant Relvo sur le compte connecté. */
@@ -15,6 +15,6 @@ export async function setAssistantEnabledAction(enabled: boolean) {
     setAssistantEnabled(db, accountId, Boolean(enabled)),
   );
   console.info("[compte] assistant", { accountId, enabled, ok: result.ok });
-  if (result.ok) revalidatePath("/parametres");
+  if (result.ok) revalidatePath("/preferences");
   return result;
 }

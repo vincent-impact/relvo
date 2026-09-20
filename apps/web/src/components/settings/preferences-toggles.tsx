@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { setAssistantEnabledAction } from "@/server/actions/preferences";
 
-// Préférences (Réglages). Le premier réglage PERSISTÉ est l'assistant : il
+// Préférences (page du menu). Le premier réglage PERSISTÉ est l'assistant : il
 // gouverne tout ce que Relvo fait de lui-même sur le compte (M7) — le tri à
 // l'arrivée aujourd'hui, la structuration, la relecture et l'échange demain.
 // Les autres toggles restent la coquille M9 : état local, non persisté.
