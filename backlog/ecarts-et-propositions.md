@@ -246,6 +246,15 @@ déjà traitable à la main. **Le mode dégradé du disjoncteur est le mode nomi
 
 **Conséquence commerciale** : suppose un forfait de messages inclus par siège, annoncé au client.
 
+**Cadre arrêté pour la bêta** (dirigeant, 2026-09-20) : abonnement à 59 € TTC par mois et par
+siège (49 € HT) ; l'agrégateur coûte environ 5 € par compte connecté (e-mail et messagerie) —
+poste à remplacer un jour pour la marge, facile pour l'e-mail, bien plus difficile pour
+WhatsApp ; **l'inférence est plafonnée à 20 € par mois et par compte**. C'est la valeur que
+M14.5 posera en seuil de coupure, avec l'alerte et la dégradation en deçà. Le plafond de
+dépense sur la clé du fournisseur est posé à 100 € par mois pour toute l'organisation. À
+l'usage mesuré (`benchmark-iag.md` §6), un compte ordinaire reste très loin des 20 € : le
+seuil protège contre l'anormal, pas contre l'usage.
+
 ### Pile IAG : un seul fournisseur, son entrée de gamme
 
 **`tranché`** · GPT-5.6 Luna sur la classification, l'extraction structurée et la rédaction ;

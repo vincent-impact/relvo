@@ -12,8 +12,10 @@ mesuré** (clé par compte, rétention longue, préfixe stable consigné, rappor
 mesuré au banc : tout le préfixe relu sur un message jamais vu, `benchmark-iag.md` §6.10), et
 **le brouillon cite ses sources** (schéma de sortie, résolues, stockées dans l'Action, « Basé
 sur » sous la barre du composer). **La prochaine tranche est la 9, le rattrapage en lot.**
-Restent ouverts en arrière-plan : le plafond de dépense sur la clé OpenAI (tranche 0, geste de
-l'organisation), essayer `none` sur la relecture avec le jeu réel, reprogrammer une tâche
+Le plafond de dépense sur la clé OpenAI est posé (100 € par mois) ; le cadre économique des
+bêta-testeurs est arrêté (voir `ecarts`, « Un disjoncteur de consommation par compte ») et
+M14.5 le traduira en seuils par compte. Restent ouverts en arrière-plan : essayer `none` sur la
+relecture avec le jeu réel, reprogrammer une tâche
 d'événement dont la date change, relire les structurations réelles dans le journal, confirmer
 les deux décisions par défaut de la tranche 4 (frontière de confiance à « moyenne »,
 « incertain » traité comme une confiance basse).
@@ -55,9 +57,9 @@ l'API OpenAI est appelée en direct, et le seul coût d'inférence est la factur
       §6.3). Le projet est « Global », conforme à la décision « la conformité n'est pas un
       critère ». Si l'éligibilité est demandée un jour, le projet se recrée avec la région et
       `OPENAI_BASE_URL` change — aucun code.
-- [ ] **Clé d'API dédiée à Relvo** (`relvo-prod`), et **plafond de dépense mensuel posé sur le
-      projet le jour même** : c'est la seule garde qui tient si le compteur applicatif est
-      lui-même en cause.
+- [x] **Clé d'API dédiée à Relvo** (`relvo-prod`), et **plafond de dépense mensuel posé sur le
+      projet** (100 € par mois, posé le 2026-09-20) : c'est la seule garde qui tient si le
+      compteur applicatif est lui-même en cause.
 - [x] **Variables d'environnement.** `OPENAI_API_KEY` posée dans Vercel, production et aperçu,
       et dans `.env.local`. ⚠️ Piège rencontré : `OPENAI_API_KEY =` avec un espace avant le
       signe égal n'est pas lu — la clé est « vide » sans autre message. Bloc documenté dans
@@ -464,8 +466,7 @@ métadonnées du journal, les sources dans le payload de l'Action.
       `ia-proposition`, `brouillon` et `ia-journal` côté domaine.
 - [x] Le disjoncteur complet — seuils par compte, garde en vitesse — est **M14.5**, pas M7.
       Ce que M7 livre, c'est le compteur en euros qui le rend possible — désormais **sans trou**
-      sur les appels ratés — et sa lecture ; le plafond sur la clé reste le geste de la
-      tranche 0.
+      sur les appels ratés — et sa lecture ; le plafond sur la clé est posé (tranche 0).
 - [ ] Vérifier en production : un brouillon avec une instruction de domaine montre « Basé sur » ;
       `ia:journal` sur la base de production après quelques messages (cache relu, aucun
       silencieux, aucun échec avec coût perdu).
