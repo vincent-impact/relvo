@@ -33,7 +33,7 @@ function revalidateSubjects() {
   revalidatePath("/");
   revalidatePath("/fil");
   revalidatePath("/sujets/[id]", "page");
-  revalidatePath("/dossiers/[id]", "page");
+  revalidatePath("/memoire/[id]", "page");
   revalidatePath("/recherche");
   revalidateTenantData();
 }

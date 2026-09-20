@@ -188,7 +188,7 @@ visibles dans la maquette, cf. §8) :
   de statut/marqueurs, drapeau urgent, badge « ✦ N suggérées », barre de progression).
   **Le composant le plus important du produit.**
 - **KpiTile** — tuiles de la barre KPI, **contextuelle par page** : KPI **Tâches** sur
-  Actions (RDV · Aujourd'hui · En retard · À trier), KPI **Sujets** sur la page Sujets
+  Calendrier (Aujourd'hui · Rendez-vous · En retard), KPI **Sujets** sur la page Sujets
   (Urgents · Nouveaux · Ouverts · **Sans sujet ↗**). Jamais les deux lentilles sur un
   même écran.
 - **TaskItem** — présentation **unique** d'une tâche partout : case à cocher, titre,
@@ -206,7 +206,7 @@ visibles dans la maquette, cf. §8) :
   sur la conversation**, pas sur le sujet.
 - **AgendaCard / semainier** — rail de jours slidable (Accueil) + vue mois (Planning),
   tâches colorées par dossier, drag-and-drop sur les deux surfaces.
-- **SegmentedControl** — onglets (Ouverts / Validés / Fermés ; Agenda / À trier ;
+- **SegmentedControl** — onglets (Ouverts / Validés / Fermés ; Semaine / Mois ;
   Instructions / Documents / Sujets).
 
 **Surfaces conversationnelles**

@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { FolderLogoPicker } from "@/components/dossiers/folder-logo-picker";
+import { FolderLogoPicker } from "@/components/memoire/folder-logo-picker";
 import { FOLDER_COLORS, FOLDER_ICONS } from "@/lib/folders";
 import { createFolderAction } from "@/server/actions/folders";
 
@@ -27,7 +27,7 @@ export function NewFolderForm() {
       const res = await createFolderAction({ name: trimmed, color, icon });
       if (res.ok) {
         toast.success("Domaine créé");
-        router.replace(`/dossiers/${res.data.id}`);
+        router.replace(`/memoire/${res.data.id}`);
       } else {
         toast.error(res.message);
       }

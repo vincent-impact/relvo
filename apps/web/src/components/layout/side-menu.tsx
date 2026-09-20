@@ -4,6 +4,8 @@ import { createContext, useContext, useState } from "react";
 import Link from "next/link";
 import {
   Brain,
+  ChartColumn,
+  Gauge,
   LogOut,
   Menu,
   Plug,
@@ -31,10 +33,8 @@ import { cn } from "@/lib/utils";
 //
 // Une feuille (`sheet` du registre) ouverte depuis la GAUCHE du header, rendue
 // UNE fois par le layout de l'application ; le bouton burger du header ne fait
-// que l'ouvrir, via ce contexte. Les entrées dont la page n'existe pas encore
-// (Bilan, Usage) n'apparaissent pas : une entrée qui mène nulle part est pire
-// qu'une entrée absente — elles arrivent avec leur tranche de M18. Mémoire
-// ouvre, en attendant sa page, la liste des domaines des Réglages.
+// que l'ouvrir, via ce contexte. Canaux, Profil, Préférences et Usage sont les
+// onglets des Réglages, atteints par lien profond.
 //
 // Thème (PITFALLS #51) : la feuille est peinte avec NOS jetons (blanc, pierre,
 // violet encre), jamais d'après le thème de l'appareil — l'app est claire
@@ -80,7 +80,8 @@ export function MenuButton({
 type Entry = { href: string; label: string; icon: typeof Users };
 
 const MAIN: Entry[] = [
-  { href: "/parametres?tab=domaines", label: "Mémoire", icon: Brain },
+  { href: "/bilan", label: "Bilan", icon: ChartColumn },
+  { href: "/memoire", label: "Mémoire", icon: Brain },
   { href: "/contacts", label: "Contacts", icon: Users },
 ];
 
@@ -92,6 +93,7 @@ const SETTINGS: Entry[] = [
     label: "Préférences",
     icon: SlidersHorizontal,
   },
+  { href: "/parametres?tab=usage", label: "Usage", icon: Gauge },
 ];
 
 const ITEM =

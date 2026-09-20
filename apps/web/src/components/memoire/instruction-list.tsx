@@ -36,14 +36,16 @@ type Editing = Instruction | "new" | null;
 export function InstructionList({
   folderId,
   notes,
+  className,
 }: {
   folderId: string;
   notes: Instruction[];
+  className?: string;
 }) {
   const [editing, setEditing] = useState<Editing>(null);
 
   return (
-    <div className="px-4 pt-4">
+    <div className={cn("px-4 pt-4", className)}>
       {notes.length === 0 ? (
         <p className="py-6 text-center text-[13.5px] text-(--text-tertiary)">
           Aucune instruction. Ajoutez des consignes que Relvo suivra.

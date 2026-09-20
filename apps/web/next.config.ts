@@ -45,9 +45,7 @@ const nextConfig: NextConfig = {
   },
 
   // Routes mortes de la disposition M18 (M18.10) : un signet ou une relance
-  // d'ancienne page atterrit sur la vue qui l'a remplacée. `/dossiers` pointe
-  // sur la liste des domaines des Réglages tant que la page Mémoire n'existe pas
-  // (tranche 4) ; les fiches `/dossiers/[id]` restent des routes à part entière.
+  // d'ancienne page atterrit sur la vue qui l'a remplacée.
   async redirects() {
     return [
       { source: "/planning", destination: "/calendrier", permanent: true },
@@ -57,11 +55,8 @@ const nextConfig: NextConfig = {
         destination: "/conversations",
         permanent: true,
       },
-      {
-        source: "/dossiers",
-        destination: "/parametres?tab=domaines",
-        permanent: false,
-      },
+      { source: "/dossiers", destination: "/memoire", permanent: true },
+      { source: "/dossiers/:id", destination: "/memoire/:id", permanent: true },
     ];
   },
 

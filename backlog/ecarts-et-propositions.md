@@ -1080,6 +1080,20 @@ planches de référence sont citées dans le sprint qui les met en œuvre.
 
 ---
 
+### Le Bilan et l'Usage naissent en maquette annoncée
+
+**`tranché`** · Les pages Bilan et Usage sont livrées avec M18 sans être reliées au journal ni
+au compteur d'inférence : leurs chiffres sont de démonstration, tenus dans un seul module
+(`lib/demo-bilan.ts`), et **chaque page le dit en tête**. Ce qui est fixé, c'est la disposition
+et le vocabulaire — deux familles de chiffres séparées, jamais de « temps gagné », un
+pourcentage et jamais d'euros (invariants 37 et 38). **Retenu contre** attendre le branchement
+pour livrer les pages : le dirigeant voit la forme, la critique, et le Bilan a une place dans le
+menu dès maintenant. **Retenu contre** des chiffres réels partiels : un Bilan à moitié vrai
+serait lu comme vrai. Le branchement suit le plafond par compte (M14.5) et la lecture du
+journal ; le module de démonstration disparaît à ce moment-là.
+
+---
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté

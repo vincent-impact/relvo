@@ -2,22 +2,24 @@
 
 import { cn } from "@/lib/utils";
 
-// Barre KPI-ONGLETS de l'Accueil (2026-07-24) — fusion de l'ancienne carte KPI
+// Barre KPI-ONGLETS du Calendrier (ex-Accueil, 2026-07-24) — fusion de l'ancienne carte KPI
 // et de la barre de tri en UNE SEULE barre (même principe que la page Sujets) :
 // trois menus, chacun affichant son compteur ET agissant comme onglet.
-//   • Agenda   → nombre de tâches AUJOURD'HUI
-//   • En retard → nombre de tâches en retard (chiffre rouge dès qu'il est > 0)
-//   • À trier   → nombre de tâches sans date
+//   • Aujourd'hui  → nombre de tâches du jour (sans heure)
+//   • Rendez-vous → nombre de rendez-vous du jour (tâches à l'heure)
+//   • En retard   → nombre de tâches en retard (chiffre rouge dès qu'il est > 0)
+// « À trier » a quitté cette barre avec M18 : c'est un filtre de Sujets et de
+// Conversations, pas une lentille des tâches.
 // La cellule active est violet PLEIN, blanc dessus — le même idiome que les
 // segmented et les chips (un seul vocabulaire de sélection dans l'app). Les
 // chiffres sont en Geist tabulaire : alignés, sans le zéro barré de la mono.
 
-export type TaskTab = "agenda" | "retard" | "afaire";
+export type TaskTab = "agenda" | "rdv" | "retard";
 
 const TABS: { key: TaskTab; label: string }[] = [
   { key: "agenda", label: "Aujourd'hui" },
+  { key: "rdv", label: "Rendez-vous" },
   { key: "retard", label: "En retard" },
-  { key: "afaire", label: "À trier" },
 ];
 
 export function TaskKpiTabs({

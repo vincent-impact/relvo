@@ -15,8 +15,8 @@ import { revalidateTenantData } from "@/server/cached";
 // Server Actions Knowledge — instructions (notes) d'un domaine de la Mémoire.
 
 function revalidateKnowledge() {
-  revalidatePath("/parametres");
-  revalidatePath("/dossiers/[id]", "page");
+  revalidatePath("/memoire");
+  revalidatePath("/memoire/[id]", "page");
   revalidateTenantData();
 }
 

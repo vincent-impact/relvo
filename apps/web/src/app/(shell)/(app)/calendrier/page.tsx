@@ -4,24 +4,34 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import {
+  VueSwitch,
+  type CalendrierVue,
+} from "@/components/calendrier/vue-switch";
+import { WeekView } from "@/components/calendrier/week-view";
+import {
   PlanningMonth,
   type PlanningCell,
   type PlanningTask,
 } from "@/components/planning/planning-month";
+import { CreateTaskButton } from "@/components/subject/create-task-button";
+import { MetricsCardSkeleton } from "@/components/shared/screen-skeletons";
 import { folderColor, formatTime } from "@/lib/display";
-import { getTenantDb } from "@/server/auth-context";
+import {
+  cachedAgendaTasks,
+  cachedTaskFeed,
+  cachedTaskKpis,
+} from "@/server/cached";
+import { getTenantDb, requireAccountId } from "@/server/auth-context";
 
-// Calendrier — la page des TÂCHES dans le temps (invariant 34). Aujourd'hui :
-// la vue mois seule ; la semaine et les indicateurs des tâches (l'ex-accueil)
-// la rejoignent sous un segmented Semaine / Mois avec la tranche 2 de M18.
+// Calendrier — LA page des tâches (invariant 34), sous un segmented Semaine /
+// Mois posé dans le header. La vue vit dans l'URL (`?vue=mois`, `?m=AAAA-MM`).
+//  • Semaine : la barre d'indicateurs des tâches (Aujourd'hui · Rendez-vous ·
+//    En retard) et le semainier slidable avec drag-and-drop (ex-accueil).
+//  • Mois : la grille pleine largeur, tâches datées colorées par domaine,
+//    drag-and-drop d'un jour à l'autre (ex-/planning).
 //
-// Vue mois (M9.8 + M9.17, Direction B) — pleine largeur, tâches datées
-// colorées par Dossier, navigation mois précédent / aujourd'hui / suivant, et
-// drag-and-drop des tâches d'un jour à l'autre (dnd-kit, dans PlanningMonth).
-//
-// PERF (M9.19, point 2) : le hero (mois) + la barre de navigation (calculs purs)
-// s'affichent instantanément ; la grille (tâches en base) stream dans un
-// <Suspense>.
+// PERF : le hero s'affiche instantanément ; le contenu (tâches en base) stream
+// dans un <Suspense>, servi depuis le cache serveur en formes plates.
 
 const MONTHS = [
   "Janvier",
@@ -41,6 +51,83 @@ const MONTHS = [
 function ymKey(y: number, m0: number) {
   return `${y}-${String(m0 + 1).padStart(2, "0")}`;
 }
+
+// ── Semaine ──────────────────────────────────────────────────────────────────
+
+// Fenêtre du rail (jours), centrée sur aujourd'hui. Bornée : au-delà, on passe
+// par la vue mois.
+const RAIL_BACK = 21;
+const RAIL_FWD = 21;
+
+async function WeekTabs({ accountId }: { accountId: string }) {
+  const now = new Date();
+  const todayKey = now.toISOString().slice(0, 10);
+  const rangeStart = new Date(
+    Date.UTC(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate() - RAIL_BACK,
+    ),
+  );
+  const rangeDays = RAIL_BACK + 1 + RAIL_FWD;
+  const rangeEnd = new Date(rangeStart);
+  rangeEnd.setUTCDate(rangeEnd.getUTCDate() + rangeDays);
+
+  const [kpis, tasksByDay, feed] = await Promise.all([
+    cachedTaskKpis(accountId, todayKey),
+    cachedAgendaTasks(
+      accountId,
+      rangeStart.toISOString(),
+      rangeEnd.toISOString(),
+      todayKey,
+    ),
+    cachedTaskFeed(accountId, todayKey),
+  ]);
+
+  return (
+    <WeekView
+      kpis={kpis}
+      tasksByDay={tasksByDay}
+      rangeStartKey={rangeStart.toISOString().slice(0, 10)}
+      rangeDays={rangeDays}
+      todayKey={todayKey}
+      overdue={feed.overdue}
+      appointments={feed.appointments}
+    />
+  );
+}
+
+function WeekSkeleton() {
+  return (
+    <>
+      <MetricsCardSkeleton />
+      <div className="space-y-2 px-4 pt-6">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="h-[68px] animate-pulse rounded-2xl bg-white"
+            style={{ boxShadow: "var(--shadow-card)" }}
+          />
+        ))}
+      </div>
+    </>
+  );
+}
+
+/** « Semaine du 15 septembre » — le lundi de la semaine courante. */
+function weekLabel(now: Date): string {
+  const monday = new Date(now);
+  const offset = (now.getUTCDay() + 6) % 7;
+  monday.setUTCDate(now.getUTCDate() - offset);
+  const label = monday.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+  });
+  return `Semaine du ${label}`;
+}
+
+// ── Mois ─────────────────────────────────────────────────────────────────────
 
 async function PlanningGrid({
   year,
@@ -114,12 +201,16 @@ function GridSkeleton() {
   );
 }
 
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default async function CalendrierPage({
   searchParams,
 }: {
-  searchParams: Promise<{ m?: string }>;
+  searchParams: Promise<{ vue?: string; m?: string }>;
 }) {
-  const { m } = await searchParams;
+  const accountId = await requireAccountId();
+  const { vue: vueParam, m } = await searchParams;
+  const vue: CalendrierVue = vueParam === "mois" ? "mois" : "semaine";
   const now = new Date();
 
   // Mois affiché (UTC, cohérent avec le seed). Défaut : mois courant.
@@ -130,7 +221,6 @@ export default async function CalendrierPage({
     year = yy;
     month0 = mm - 1;
   }
-
   const prevYear = month0 - 1 < 0 ? year - 1 : year;
   const nextYear = month0 + 1 > 11 ? year + 1 : year;
 
@@ -138,36 +228,48 @@ export default async function CalendrierPage({
     <Screen>
       <RelvoHeader
         title="Calendrier"
-        subtitle={`${MONTHS[month0]} ${year}`}
-        className="pb-9"
-      />
+        subtitle={vue === "mois" ? `${MONTHS[month0]} ${year}` : weekLabel(now)}
+        className={vue === "mois" ? "pb-6" : "pb-[46px]"}
+        action={<CreateTaskButton />}
+      >
+        <div className="px-[18px] pt-3.5">
+          <VueSwitch vue={vue} />
+        </div>
+      </RelvoHeader>
 
-      <div className="flex items-center justify-between px-4 pt-4">
-        <Link
-          href={`/calendrier?m=${ymKey(prevYear, (month0 - 1 + 12) % 12)}`}
-          aria-label="Mois précédent"
-          className="grid size-9 place-items-center rounded-full bg-(--surface) text-(--text-secondary)"
-        >
-          <ChevronLeft className="size-5" strokeWidth={2} />
-        </Link>
-        <Link
-          href="/calendrier"
-          className="rounded-full bg-relvo-bg px-3.5 py-1.5 text-[13px] font-bold text-relvo"
-        >
-          Aujourd’hui
-        </Link>
-        <Link
-          href={`/calendrier?m=${ymKey(nextYear, (month0 + 1) % 12)}`}
-          aria-label="Mois suivant"
-          className="grid size-9 place-items-center rounded-full bg-(--surface) text-(--text-secondary)"
-        >
-          <ChevronRight className="size-5" strokeWidth={2} />
-        </Link>
-      </div>
-
-      <Suspense key={`${year}-${month0}`} fallback={<GridSkeleton />}>
-        <PlanningGrid year={year} month0={month0} />
-      </Suspense>
+      {vue === "mois" ? (
+        <>
+          <div className="flex items-center justify-between px-4 pt-4">
+            <Link
+              href={`/calendrier?vue=mois&m=${ymKey(prevYear, (month0 - 1 + 12) % 12)}`}
+              aria-label="Mois précédent"
+              className="grid size-9 place-items-center rounded-full bg-(--surface) text-(--text-secondary)"
+            >
+              <ChevronLeft className="size-5" strokeWidth={2} />
+            </Link>
+            <Link
+              href="/calendrier?vue=mois"
+              className="rounded-full bg-relvo-bg px-3.5 py-1.5 text-[13px] font-bold text-relvo"
+            >
+              Aujourd’hui
+            </Link>
+            <Link
+              href={`/calendrier?vue=mois&m=${ymKey(nextYear, (month0 + 1) % 12)}`}
+              aria-label="Mois suivant"
+              className="grid size-9 place-items-center rounded-full bg-(--surface) text-(--text-secondary)"
+            >
+              <ChevronRight className="size-5" strokeWidth={2} />
+            </Link>
+          </div>
+          <Suspense key={`${year}-${month0}`} fallback={<GridSkeleton />}>
+            <PlanningGrid year={year} month0={month0} />
+          </Suspense>
+        </>
+      ) : (
+        <Suspense fallback={<WeekSkeleton />}>
+          <WeekTabs accountId={accountId} />
+        </Suspense>
+      )}
     </Screen>
   );
 }

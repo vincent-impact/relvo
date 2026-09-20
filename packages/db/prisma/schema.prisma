@@ -338,6 +338,10 @@ model Account {
   /// regardant. Null = jamais passé : tout ce que Relvo a rangé est nouveau.
   followedSeenAt        DateTime?   @map("followed_seen_at")
   ignoredSeenAt         DateTime?   @map("ignored_seen_at")
+  /// Dernier passage sur l'accueil : borne « depuis votre dernière visite » des
+  /// dernières nouvelles (05 §11.12). Avance quand l'accueil est vu ; une visite
+  /// n'est pas une décision, elle n'est pas journalisée.
+  homeSeenAt            DateTime?   @map("home_seen_at")
   createdAt             DateTime    @default(now()) @map("created_at")
   updatedAt             DateTime    @updatedAt @map("updated_at")
 
@@ -347,7 +351,7 @@ model Account {
   contacts             Contact[]
   channels             Channel[]
   channelConfigs       ChannelConfig[]
-  channelCatchups ChannelCatchup[]
+  channelCatchups      ChannelCatchup[]
   conversations        Conversation[]
   subjectConversations SubjectConversation[]
   subjects             Subject[]
@@ -450,7 +454,7 @@ model Channel {
   createdAt  DateTime    @default(now()) @map("created_at")
   updatedAt  DateTime    @updatedAt @map("updated_at")
 
-  account       Account        @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  account       Account          @relation(fields: [accountId], references: [id], onDelete: Cascade)
   config        ChannelConfig?
   catchups      ChannelCatchup[]
   conversations Conversation[]
@@ -498,29 +502,29 @@ model ChannelConfig {
 // suivante tant que la ligne n'est pas close.
 
 model ChannelCatchup {
-  id        String        @id @default(uuid()) @db.Uuid
-  accountId String        @map("account_id") @db.Uuid
-  channelId String        @map("channel_id") @db.Uuid
-  status    CatchupStatus @default(pending)
+  id                   String        @id @default(uuid()) @db.Uuid
+  accountId            String        @map("account_id") @db.Uuid
+  channelId            String        @map("channel_id") @db.Uuid
+  status               CatchupStatus @default(pending)
   /// Début de la fenêtre lue : les messages reçus depuis cette date.
-  since     DateTime
-  requestedAt DateTime  @default(now()) @map("requested_at")
-  startedAt   DateTime? @map("started_at")
-  finishedAt  DateTime? @map("finished_at")
+  since                DateTime
+  requestedAt          DateTime      @default(now()) @map("requested_at")
+  startedAt            DateTime?     @map("started_at")
+  finishedAt           DateTime?     @map("finished_at")
   /// Nombre de nuits déjà passées dessus : borne la reprise d'un import incomplet.
-  runs        Int       @default(0)
+  runs                 Int           @default(0)
   /// L'import du courrier est terminé (le fournisseur n'a plus rien dans la fenêtre).
-  importDone  Boolean   @default(false) @map("import_done")
-  messagesImported      Int   @default(0) @map("messages_imported")
-  messagesTriaged       Int   @default(0) @map("messages_triaged")
-  subjectsOpened        Int   @default(0) @map("subjects_opened")
-  conversationsIgnored  Int   @default(0) @map("conversations_ignored")
-  costEur               Float @default(0) @map("cost_eur")
+  importDone           Boolean       @default(false) @map("import_done")
+  messagesImported     Int           @default(0) @map("messages_imported")
+  messagesTriaged      Int           @default(0) @map("messages_triaged")
+  subjectsOpened       Int           @default(0) @map("subjects_opened")
+  conversationsIgnored Int           @default(0) @map("conversations_ignored")
+  costEur              Float         @default(0) @map("cost_eur")
   /// Pourquoi le rattrapage s'est arrêté : plafond de messages, plafond d'euros, courrier épuisé, erreur.
-  stopReason String? @map("stop_reason")
-  lastError  String? @map("last_error")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
+  stopReason           String?       @map("stop_reason")
+  lastError            String?       @map("last_error")
+  createdAt            DateTime      @default(now()) @map("created_at")
+  updatedAt            DateTime      @updatedAt @map("updated_at")
 
   account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
   channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)

@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
 import { toast } from "sonner";
-import { FolderLogoPicker } from "@/components/dossiers/folder-logo-picker";
+import { FolderLogoPicker } from "@/components/memoire/folder-logo-picker";
 import {
   Dialog,
   DialogContent,

@@ -27,9 +27,11 @@ const PROMPTS = {
 export default async function ConversationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string }>;
+  searchParams: Promise<{ from?: string; q?: string }>;
 }) {
-  const { from } = await searchParams;
+  // `q` : une suggestion de l'accueil, posée comme premier tour (05 §11.12) —
+  // le texte arrive dans le composer, l'utilisateur l'envoie ou le corrige.
+  const { from, q } = await searchParams;
   const backHref = from && from !== "/relvo" ? from : "/";
 
   let contextLabel: string | null = null;
@@ -49,6 +51,8 @@ export default async function ConversationPage({
   } else if (from?.startsWith("/fil")) {
     contextLabel = "Sujets";
     prompts = PROMPTS.fil;
+  } else if (from === "/") {
+    contextLabel = "Accueil";
   }
 
   return (
@@ -56,6 +60,7 @@ export default async function ConversationPage({
       backHref={backHref}
       contextLabel={contextLabel}
       prompts={prompts}
+      initialText={q?.trim() || ""}
     />
   );
 }

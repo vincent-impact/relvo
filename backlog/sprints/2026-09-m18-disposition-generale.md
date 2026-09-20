@@ -46,7 +46,12 @@ la notification). **M7 tranche 10 passe après**, et M10 se construit sur le ré
 ### Ce qui reste ouvert, à trancher en cours de sprint
 
 - **Le plafond de l'Usage** avant M14.5 : une configuration par compte, avec une valeur par
-  défaut, pour que le pourcentage existe dès maintenant.
+  défaut, pour que le pourcentage existe dès maintenant. D'ici là, l'Usage et le Bilan sont
+  des maquettes annoncées (`ecarts`, « Le Bilan et l'Usage naissent en maquette annoncée »).
+- **« En attente de vous »** retient les sujets ouverts qui portent une tâche ouverte de
+  nature réponse ou décision ; « Rendez-vous » du Calendrier = les tâches à l'heure des
+  quatorze prochains jours. Deux règles écrites dans `domain/brief.ts` et `server/cached.ts`,
+  à ajuster à l'usage.
 - **Le socle push** (M18.11) : s'il n'existe pas, la tranche 5 livre le badge et la ligne de
   l'accueil, et la notification glisse vers M12.
 - **La place de Conversations dans le dock** ne se rouvre pas ici : c'est l'usage après M7 qui
@@ -61,11 +66,16 @@ la notification). **M7 tranche 10 passe après**, et M10 se construit sur le ré
 
 ## Où on en est
 
-- [x] Tranche 1 — la navigation, avec les pages d'aujourd'hui — code livré, à vérifier sur
-      l'iPhone en mode sombre. `/` reste la page des tâches et `/calendrier` porte la vue mois
-      seule jusqu'à la tranche 2 ; Bilan et Usage n'apparaissent pas encore dans le menu, et
-      Mémoire y ouvre l'onglet Domaines des Réglages jusqu'aux tranches 3 et 4
-- [ ] Tranche 2 — le Calendrier et l'accueil en brief
-- [ ] Tranche 3 — le Bilan et l'Usage
-- [ ] Tranche 4 — la Mémoire
-- [ ] Tranche 5 — Relvo parle en premier
+- [x] Tranche 1 — la navigation, avec les pages d'aujourd'hui — livrée, à vérifier sur
+      l'iPhone en mode sombre
+- [x] Tranche 2 — le Calendrier (Semaine / Mois, indicateurs Aujourd'hui · Rendez-vous · En
+      retard) et l'accueil en brief : nouvelles calculées depuis le dernier passage
+      (`Account.homeSeenAt`, migration `m18_home_seen_at`), suggestions par règles
+      (`domain/brief.ts`, testé), activité, aujourd'hui, en attente de vous
+- [x] Tranche 3 — le Bilan (`/bilan`) et l'Usage (onglet des Réglages) — **en maquette
+      annoncée** : chiffres de démonstration dans `lib/demo-bilan.ts`, bandeau en tête de page.
+      Le branchement sur le journal et sur le plafond M14.5 reste à faire
+- [x] Tranche 4 — la Mémoire (`/memoire`, `/memoire/[id]`, `/memoire/nouveau`) : instructions
+      du compte (domaine Général) en tête, domaines en lignes avec leur rail, zone « Ce que
+      Relvo a appris » réservée à M17 ; l'onglet Domaines des Réglages a disparu
+- [ ] Tranche 5 — Relvo parle en premier (badge du dock, `RelvoQuestion` élargie, notification)

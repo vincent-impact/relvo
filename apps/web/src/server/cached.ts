@@ -1,18 +1,23 @@
 import "server-only";
 import { revalidateTag, unstable_cache, updateTag } from "next/cache";
 import {
+  type BriefActivity,
+  type BriefNews,
+  type BriefSuggestion,
   type Kpis,
   countUnsortedConversations,
   enrichSubjects,
   enrichTasks,
   getKpis,
   getOpenFeed,
+  getBriefActivity,
+  getBriefNews,
+  getBriefSuggestions,
   getOverdueTasks,
+  getSubjectsAwaitingUser,
   getTaskKpis,
-  getUntriagedTasks,
   tenantDb,
 } from "@relvo/db";
-import type { Metric } from "@/components/shared/metrics-card";
 import {
   type SubjectRowData,
   toSubjectRowData,
@@ -53,9 +58,12 @@ export const TENANT_DATA_TAG = "tenant-data";
 // (open/validated/closed) → CachedFeed { ouverts, valides, fermes } ; v10 =
 // SubjectRowData (+ folderColor/folderIcon → icône de domaine fidèle au logo) ;
 // v11 = TaskItemData (+ relvo : raison et provenance d'une tâche de Relvo) ;
-// v12 = TaskItemData (+ replyConversationId : le bouton « Répondre »).
-// Suivant = "v13".
-const CACHE_V = "v12";
+// v12 = TaskItemData (+ replyConversationId : le bouton « Répondre ») ; v13 =
+// M18 : brief de l'accueil (nouvelles, activité, suggestions, en attente),
+// rendez-vous du Calendrier, CachedFolderRow (+ instructions/documents/
+// openSubjects, − sub).
+// Suivant = "v14".
+const CACHE_V = "v13";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
@@ -151,24 +159,35 @@ export const cachedTaskKpis = unstable_cache(
 
 export type CachedTaskFeed = {
   overdue: TaskItemData[];
-  untriaged: TaskItemData[];
+  /** Les rendez-vous (tâches à l'heure) d'aujourd'hui et des quatorze prochains jours. */
+  appointments: TaskItemData[];
 };
 
 export const cachedTaskFeed = unstable_cache(
   async (accountId: string, dayISO: string): Promise<CachedTaskFeed> => {
     const db = tenantDb(accountId);
     const now = new Date(dayISO);
-    const [overdueTasks, untriagedTasks] = await Promise.all([
+    const horizon = new Date(now);
+    horizon.setUTCDate(horizon.getUTCDate() + 14);
+    const [overdueTasks, rdvTasks] = await Promise.all([
       getOverdueTasks(db, { now, limit: 50 }),
-      getUntriagedTasks(db, { limit: 50 }),
+      db.task.findMany({
+        where: {
+          status: "open",
+          startDate: { gte: now, lt: horizon },
+          startTime: { not: null },
+        },
+        orderBy: [{ startDate: "asc" }, { startTime: "asc" }],
+        take: 50,
+      }),
     ]);
-    const [overdue, untriaged] = await Promise.all([
+    const [overdue, appointments] = await Promise.all([
       enrichTasks(db, overdueTasks, now),
-      enrichTasks(db, untriagedTasks, now),
+      enrichTasks(db, rdvTasks, now),
     ]);
     return {
       overdue: overdue.map(toTaskItemData),
-      untriaged: untriaged.map(toTaskItemData),
+      appointments: appointments.map(toTaskItemData),
     };
   },
   ["task-feed", CACHE_V],
@@ -234,84 +253,71 @@ export const cachedFilFeed = unstable_cache(
   CACHE,
 );
 
-// ── Mémoire (Dossiers) — stats + lignes de dossiers (formes plates) ──────────
+// ── Mémoire — les domaines en lignes, avec ce qu'ils portent (formes plates) ──
 export type CachedFolderRow = {
   id: string;
   name: string;
   slug: string;
   color: string | null;
   icon: string | null;
-  sub: string;
+  isDefault: boolean;
+  instructions: number;
+  documents: number;
+  openSubjects: number;
 };
 
-export const cachedDossiers = unstable_cache(
-  async (
-    accountId: string,
-  ): Promise<{ metrics: Metric[]; folders: CachedFolderRow[] }> => {
-    const db = tenantDb(accountId);
-    const [folders, subjectsTotal, subjGroups, docGroups, filesRead] =
-      await Promise.all([
-        db.folder.findMany({
-          orderBy: [{ isDefault: "desc" }, { name: "asc" }],
-        }),
-        db.subject.count(),
-        db.subject.groupBy({ by: ["folderId"], _count: { _all: true } }),
-        db.knowledgeDocument.groupBy({
-          by: ["folderId", "kind"],
-          _count: { _all: true },
-        }),
-        db.knowledgeDocument.count({
-          where: { kind: "file", absorptionStatus: "read" },
-        }),
-      ]);
+export type CachedMemoire = {
+  /** Le domaine « Général » (transversal) : ses instructions sont celles du compte. */
+  defaultFolderId: string | null;
+  folders: CachedFolderRow[];
+};
 
-    const subjByFolder = new Map(
+export const cachedMemoire = unstable_cache(
+  async (accountId: string): Promise<CachedMemoire> => {
+    const db = tenantDb(accountId);
+    const [folders, subjGroups, docGroups] = await Promise.all([
+      db.folder.findMany({
+        orderBy: [{ isDefault: "asc" }, { name: "asc" }],
+      }),
+      db.subject.groupBy({
+        by: ["folderId"],
+        where: { status: "open" },
+        _count: { _all: true },
+      }),
+      db.knowledgeDocument.groupBy({
+        by: ["folderId", "kind"],
+        _count: { _all: true },
+      }),
+    ]);
+
+    const openByFolder = new Map(
       subjGroups.map((g) => [g.folderId, g._count._all]),
     );
     const filesByFolder = new Map<string, number>();
     const notesByFolder = new Map<string, number>();
-    let notesTotal = 0;
-    let filesTotal = 0;
     for (const g of docGroups) {
-      const n = g._count._all;
-      if (g.kind === "file") {
-        filesByFolder.set(g.folderId, n);
-        filesTotal += n;
-      } else {
-        notesByFolder.set(g.folderId, n);
-        notesTotal += n;
-      }
+      (g.kind === "file" ? filesByFolder : notesByFolder).set(
+        g.folderId,
+        g._count._all,
+      );
     }
-    const saturation =
-      filesTotal === 0 ? 0 : Math.round((filesRead / filesTotal) * 100);
 
-    const metrics: Metric[] = [
-      { value: subjectsTotal, label: "Sujets suivis" },
-      { value: notesTotal, label: "Instructions" },
-      { value: filesTotal, label: "Documents" },
-      { type: "gauge", percent: saturation, label: "Saturation" },
-    ];
-
-    const folderRows: CachedFolderRow[] = folders.map((f) => {
-      const docs =
-        (filesByFolder.get(f.id) ?? 0) + (notesByFolder.get(f.id) ?? 0);
-      const docLabel = `${docs} document${docs > 1 ? "s" : ""}`;
-      const sub = f.isDefault
-        ? `Transversal · ${docLabel}`
-        : `${subjByFolder.get(f.id) ?? 0} sujet${(subjByFolder.get(f.id) ?? 0) > 1 ? "s" : ""} · ${docLabel}`;
-      return {
+    return {
+      defaultFolderId: folders.find((f) => f.isDefault)?.id ?? null,
+      folders: folders.map((f) => ({
         id: f.id,
         name: f.name,
         slug: f.slug,
         color: f.color,
         icon: f.icon,
-        sub,
-      };
-    });
-
-    return { metrics, folders: folderRows };
+        isDefault: f.isDefault,
+        instructions: notesByFolder.get(f.id) ?? 0,
+        documents: filesByFolder.get(f.id) ?? 0,
+        openSubjects: openByFolder.get(f.id) ?? 0,
+      })),
+    };
   },
-  ["dossiers", CACHE_V],
+  ["memoire", CACHE_V],
   CACHE,
 );
 
@@ -378,5 +384,65 @@ export const cachedFolders = unstable_cache(
     });
   },
   ["folders-chips", CACHE_V],
+  CACHE,
+);
+
+// ── Le brief de l'accueil (M18, invariant 34) — un calcul, jamais une génération ──
+// Les nouvelles sont bornées par le dernier passage (`sinceISO` dans la clé) ;
+// l'activité et les suggestions par le jour (`dayISO`), comme les tâches.
+
+export type CachedNews = Omit<BriefNews, "since"> & { since: string | null };
+
+export const cachedBriefNews = unstable_cache(
+  async (accountId: string, sinceISO: string | null): Promise<CachedNews> => {
+    const news = await getBriefNews(
+      tenantDb(accountId),
+      sinceISO ? new Date(sinceISO) : null,
+    );
+    return { ...news, since: sinceISO };
+  },
+  ["brief-news", CACHE_V],
+  CACHE,
+);
+
+export const cachedBriefActivity = unstable_cache(
+  (accountId: string, dayISO: string): Promise<BriefActivity> =>
+    getBriefActivity(tenantDb(accountId), new Date(dayISO)),
+  ["brief-activity", CACHE_V],
+  CACHE,
+);
+
+export const cachedBriefSuggestions = unstable_cache(
+  (accountId: string, dayISO: string): Promise<BriefSuggestion[]> =>
+    getBriefSuggestions(tenantDb(accountId), new Date(dayISO)),
+  ["brief-suggestions", CACHE_V],
+  CACHE,
+);
+
+export type CachedAwaitingSubject = {
+  id: string;
+  reference: string;
+  title: string;
+  urgent: boolean;
+  awaiting: "reply" | "decision";
+  /** « YYYY-MM-DD » ou null. */
+  dueDate: string | null;
+  /** ISO. */
+  since: string;
+  contactName: string | null;
+};
+
+export const cachedAwaitingSubjects = unstable_cache(
+  async (accountId: string): Promise<CachedAwaitingSubject[]> => {
+    const rows = await getSubjectsAwaitingUser(tenantDb(accountId), {
+      limit: 5,
+    });
+    return rows.map((r) => ({
+      ...r,
+      dueDate: r.dueDate ? r.dueDate.toISOString().slice(0, 10) : null,
+      since: r.since.toISOString(),
+    }));
+  },
+  ["brief-awaiting", CACHE_V],
   CACHE,
 );

@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Link from "next/link";
-import { LogOut, MessageCircle, Mail, Plus } from "lucide-react";
+import { LogOut, MessageCircle, Mail } from "lucide-react";
 import { DEMO_EMAIL } from "@relvo/db";
 import { ConnectEmailButton } from "@/components/settings/connect-email-button";
 import { ChannelDeleteButton } from "@/components/settings/channel-delete-button";
 import { ChannelReconnectButton } from "@/components/settings/channel-reconnect-button";
 import { FeedTabs } from "@/components/feed/feed-tabs";
-import { FolderRow } from "@/components/shared/folder-row";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { TabsSkeleton } from "@/components/shared/screen-skeletons";
@@ -15,6 +13,7 @@ import { PasswordForm } from "@/components/settings/password-form";
 import { PreferencesToggles } from "@/components/settings/preferences-toggles";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { ResetDemoButton } from "@/components/settings/reset-demo-button";
+import { UsagePane } from "@/components/settings/usage-pane";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -24,13 +23,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { logoutAction } from "@/server/actions/auth";
-import { cachedDossiers } from "@/server/cached";
 import { getTenantDb, requireAccount } from "@/server/auth-context";
 
-// Onglets valides (deep-link via ?tab=). « domaines » a remplacé « contacts »
-// (2026-07-28) : l'annuaire est passé nav de premier rang, la Mémoire est
-// devenue cet onglet « Domaines » (liste des domaines seule, sans KPI).
-const TABS = ["profil", "canaux", "domaines", "preferences"] as const;
+// Onglets valides (deep-link via ?tab=, c'est ainsi que le menu latéral y
+// entre). Les domaines ont rejoint la page Mémoire (M18) ; « usage » montre la
+// part du plafond mensuel consommée, en pourcentage (invariant 38).
+const TABS = ["profil", "canaux", "preferences", "usage"] as const;
 type ParamTab = (typeof TABS)[number];
 
 export const metadata: Metadata = { title: "Paramètres — Relvo" };
@@ -61,21 +59,17 @@ const CHANNEL_STATUS: Record<string, { label: string; cls: string }> = {
 async function ParametresTabs({ initialTab }: { initialTab: ParamTab }) {
   const account = await requireAccount();
   const db = await getTenantDb();
-  const [channels, { folders }] = await Promise.all([
-    db.channel.findMany({
-      orderBy: { createdAt: "asc" },
-      include: {
-        config: {
-          select: { status: true, lastSyncAt: true, externalAccountId: true },
-        },
-        // Le dernier rattrapage du courrier récent (M7.19) : ce que Relvo a lu
-        // la nuit de la connexion, ou ce qu'il s'apprête à lire.
-        catchups: { orderBy: { requestedAt: "desc" }, take: 1 },
+  const channels = await db.channel.findMany({
+    orderBy: { createdAt: "asc" },
+    include: {
+      config: {
+        select: { status: true, lastSyncAt: true, externalAccountId: true },
       },
-    }),
-    // Domaines de la Mémoire (liste seule) — mêmes lignes que l'ex-page Mémoire.
-    cachedDossiers(account.id),
-  ]);
+      // Le dernier rattrapage du courrier récent (M7.19) : ce que Relvo a lu
+      // la nuit de la connexion, ou ce qu'il s'apprête à lire.
+      catchups: { orderBy: { requestedAt: "desc" }, take: 1 },
+    },
+  });
 
   // Un seul canal par type (email / WhatsApp) : on masque la tuile de connexion
   // correspondante quand un canal du type existe déjà (2026-07-28). Évite de
@@ -89,8 +83,8 @@ async function ParametresTabs({ initialTab }: { initialTab: ParamTab }) {
       options={[
         { value: "profil", label: "Profil" },
         { value: "canaux", label: "Canaux" },
-        { value: "domaines", label: "Domaines" },
         { value: "preferences", label: "Préférences" },
+        { value: "usage", label: "Usage" },
       ]}
       panes={{
         profil: (
@@ -209,37 +203,12 @@ async function ParametresTabs({ initialTab }: { initialTab: ParamTab }) {
             <ConnectEmailButton hasEmail={hasEmail} hasWhatsApp={hasWhatsApp} />
           </div>
         ),
-        domaines: (
-          // Mémoire → « Domaines » (2026-07-28) : la liste des domaines seule,
-          // SANS la carte de KPI ni la note d'agent de l'ex-page Mémoire.
-          <div className="pt-2">
-            {folders.map((f) => (
-              <FolderRow
-                key={f.id}
-                name={f.name}
-                slug={f.slug}
-                color={f.color}
-                icon={f.icon}
-                sub={f.sub}
-                href={`/dossiers/${f.id}`}
-              />
-            ))}
-            <Link
-              href="/dossiers/nouveau"
-              className="mx-[14px] flex items-center gap-[13px] px-[18px] py-3.5 text-[15px] font-semibold text-relvo active:opacity-80"
-            >
-              <span className="grid size-[42px] flex-none place-items-center rounded-[13px] border border-dashed border-(--purple-100) text-relvo">
-                <Plus className="size-5" strokeWidth={2.2} />
-              </span>
-              Nouveau domaine
-            </Link>
-          </div>
-        ),
         preferences: (
           <div className="px-4 pt-5">
             <PreferencesToggles assistantEnabled={account.assistantEnabled} />
           </div>
         ),
+        usage: <UsagePane />,
       }}
     />
   );
@@ -259,7 +228,7 @@ export default async function ParametresPage({
     <Screen>
       <RelvoHeader
         title="Réglages"
-        subtitle="Compte, canaux, domaines, préférences"
+        subtitle="Compte, canaux, préférences, usage"
         className="pb-[34px]"
       />
       <Suspense fallback={<TabsSkeleton rows={3} />}>

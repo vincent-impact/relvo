@@ -16,13 +16,16 @@ export function RelvoChatShell({
   backHref,
   contextLabel,
   prompts,
+  initialText = "",
 }: {
   backHref: string;
   /** Libellé du chip page-aware, ou null pour une discussion générale. */
   contextLabel: string | null;
   prompts: string[];
+  /** Premier tour proposé (une suggestion de l'accueil) : pré-rempli, jamais envoyé seul. */
+  initialText?: string;
 }) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState(initialText);
   const ref = useRef<HTMLTextAreaElement>(null);
   const typing = value.trim().length > 0;
 

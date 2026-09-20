@@ -6,8 +6,8 @@ import { enrichSubjects } from "@relvo/db";
 import { FeedTabs } from "@/components/feed/feed-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
-import { EditDomainButton } from "@/components/dossiers/edit-domain-dialog";
-import { InstructionList } from "@/components/dossiers/instruction-list";
+import { EditDomainButton } from "@/components/memoire/edit-domain-dialog";
+import { InstructionList } from "@/components/memoire/instruction-list";
 import { TabsSkeleton } from "@/components/shared/screen-skeletons";
 import { SubjectRow, toSubjectRowData } from "@/components/shared/subject-row";
 import { type SegTabOption } from "@/components/shared/seg-tabs";
@@ -147,7 +147,7 @@ export default async function DossierPage({
   return (
     <Screen>
       <RelvoHeader
-        back="/parametres?tab=domaines"
+        back="/memoire"
         title={folder.name}
         subtitle="Un domaine de la mémoire de Relvo"
         className="pb-9"

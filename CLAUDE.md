@@ -111,11 +111,11 @@ relvo/
 ### Routes → écrans
 
 > ⚠️ **Cette table décrit la cible** tranchée le 2026-09-20 (`ecarts`, « La disposition
-> générale »), livrée par l'épique **M18**, tranche par tranche. **Livré** (tranche 1) : le dock
-> à cinq places avec Relvo au centre, le menu latéral, le header sans bouton Relvo, les
-> redirections. **Pas encore** : `/` reste la page des tâches et `/calendrier` la seule vue
-> mois (tranche 2) ; `/bilan`, `/memoire` et l'Usage n'existent pas (tranches 3 et 4) — le menu
-> ne les affiche pas, et Mémoire ouvre `/parametres?tab=domaines` en attendant.
+> générale »), livrée par l'épique **M18**. **En place** : le dock, le menu, le header, l'accueil
+> en brief, le Calendrier, le Bilan, la Mémoire, l'Usage, les redirections. **Pas encore** : le
+> badge du bouton Relvo, la `RelvoQuestion` élargie et la notification (tranche 5). ⚠️ Le
+> **Bilan** et l'**Usage** affichent des **chiffres de démonstration** (`lib/demo-bilan.ts`) et
+> le disent en tête : ils ne sont pas reliés au journal ni au compteur d'inférence.
 
 | Route | Écran | Nav |
 |---|---|---|
@@ -137,8 +137,8 @@ relvo/
 Le **menu latéral** (burger, à gauche du header) porte Bilan, Mémoire, Contacts, Canaux, Profil,
 Préférences, Usage, Rechercher. Les boutons de page se posent **à droite** du header.
 
-⚠️ **`/messages`, `/planning` et `/dossiers` sont redirigées** (M18, tranche 1) — vers
-Conversations, Calendrier et, en attendant la page Mémoire, l'onglet Domaines des Réglages.
+⚠️ **`/messages`, `/planning` et `/dossiers` sont redirigées** (M18) — vers Conversations,
+Calendrier et Mémoire (`next.config.ts`).
 
 ## Invariants produit
 

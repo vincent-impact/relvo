@@ -1,103 +1,145 @@
 import { Suspense } from "react";
-import { HomeTabs } from "@/components/home/home-tabs";
+import { after } from "next/server";
+import { markHomeSeen, shouldAdvanceHomeSeen } from "@relvo/db";
+import {
+  ActivityPanel,
+  AwaitingPanel,
+  TodayPanel,
+} from "@/components/home/brief-panels";
+import { NewsPanel } from "@/components/home/news-panel";
 import { RelvoHeader } from "@/components/layout/relvo-header";
-import { CreateTaskButton } from "@/components/subject/create-task-button";
 import { Screen } from "@/components/layout/screen";
-import { MetricsCardSkeleton } from "@/components/shared/screen-skeletons";
+import { PollRefresh } from "@/components/shared/poll-refresh";
 import {
   cachedAgendaTasks,
-  cachedTaskFeed,
-  cachedTaskKpis,
+  cachedAwaitingSubjects,
+  cachedBriefActivity,
+  cachedBriefNews,
+  cachedBriefSuggestions,
 } from "@/server/cached";
-import { requireAccount } from "@/server/auth-context";
+import { getTenantDb, requireAccount } from "@/server/auth-context";
 
-// Accueil (Direction B) — « Actions du jour » : hero violet « Bonjour … » puis
-// barre KPI Tâches et 2 onglets (Agenda / À trier). La page est dédiée aux TÂCHES
-// (les actions extraites) ; l'état des SUJETS vit sur Sujets. Chaque ligne porte
-// le titre du sujet en clair.
+// Accueil — un BRIEF en quatre zones (01 §11, invariant 34), le premier tour de
+// parole de Relvo rendu en cartes : les dernières nouvelles (dans le header),
+// l'activité sur sept jours, les tâches du jour, les sujets en attente de
+// l'utilisateur. Chaque zone est une porte vers une vue ; l'accueil ne duplique
+// aucune vue et ne porte pas de barre d'indicateurs. La page des tâches est le
+// Calendrier.
 //
-// PERF (M9.19) : shell instantané + zones streamées (<Suspense>), données servies
-// depuis le cache serveur (cf. @/server/cached) en formes plates.
+// ⚠️ Le brief est un CALCUL, jamais une génération (05 §11.12) : tout se compte
+// dans le journal ou se déduit de règles écrites dans le domaine (`brief.ts`).
+// Le modèle ne travaille qu'une fois l'échange ouvert.
+//
+// Le dernier passage sur l'accueil borne les nouvelles ; il n'avance qu'après
+// une vraie absence (pas à chaque rechargement) et s'écrit APRÈS la réponse.
 
-// Fenêtre du rail (jours), centrée sur aujourd'hui. Bornée : au-delà, on passe
-// par la vue mois du Calendrier (/calendrier).
-const RAIL_BACK = 21;
-const RAIL_FWD = 21;
+function cap(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
 
-async function HomeTaskTabs({ accountId }: { accountId: string }) {
-  const now = new Date();
-  const todayKey = now.toISOString().slice(0, 10);
-  const rangeStart = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() - RAIL_BACK,
-    ),
-  );
-  const rangeDays = RAIL_BACK + 1 + RAIL_FWD;
-  const rangeEnd = new Date(rangeStart);
-  rangeEnd.setUTCDate(rangeEnd.getUTCDate() + rangeDays);
-
-  const [kpis, tasksByDay, feed] = await Promise.all([
-    cachedTaskKpis(accountId, todayKey),
-    cachedAgendaTasks(
-      accountId,
-      rangeStart.toISOString(),
-      rangeEnd.toISOString(),
-      todayKey,
-    ),
-    cachedTaskFeed(accountId, todayKey),
+async function News({
+  accountId,
+  sinceISO,
+  todayKey,
+}: {
+  accountId: string;
+  sinceISO: string | null;
+  todayKey: string;
+}) {
+  const [news, suggestions] = await Promise.all([
+    cachedBriefNews(accountId, sinceISO),
+    cachedBriefSuggestions(accountId, todayKey),
   ]);
+  return <NewsPanel news={news} suggestions={suggestions} />;
+}
 
+async function Brief({
+  accountId,
+  todayKey,
+}: {
+  accountId: string;
+  todayKey: string;
+}) {
+  const dayStart = `${todayKey}T00:00:00.000Z`;
+  const next = new Date(dayStart);
+  next.setUTCDate(next.getUTCDate() + 1);
+  const [activity, byDay, awaiting] = await Promise.all([
+    cachedBriefActivity(accountId, todayKey),
+    cachedAgendaTasks(accountId, dayStart, next.toISOString(), todayKey),
+    cachedAwaitingSubjects(accountId),
+  ]);
   return (
-    <HomeTabs
-      kpis={kpis}
-      tasksByDay={tasksByDay}
-      rangeStartKey={rangeStart.toISOString().slice(0, 10)}
-      rangeDays={rangeDays}
-      todayKey={todayKey}
-      overdue={feed.overdue}
-      untriaged={feed.untriaged}
-    />
+    <div className="space-y-5 pt-4">
+      <ActivityPanel activity={activity} />
+      <TodayPanel tasks={byDay[todayKey] ?? []} />
+      <AwaitingPanel subjects={awaiting} todayKey={todayKey} />
+    </div>
   );
 }
 
-// ── Squelette de chargement (KPI + onglets) ──────────────────────────────────
-
-function TabsSkeleton() {
+function NewsSkeleton() {
   return (
-    <>
-      <MetricsCardSkeleton />
-      <div className="space-y-2 px-4 pt-6">
-        {[0, 1, 2].map((i) => (
-          <div
-            key={i}
-            className="h-[68px] animate-pulse rounded-2xl bg-white"
-            style={{ boxShadow: "var(--shadow-card)" }}
-          />
-        ))}
-      </div>
-    </>
+    <div className="mx-3 mt-3.5 h-[92px] animate-pulse rounded-[14px] bg-white/12" />
   );
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
+function BriefSkeleton() {
+  return (
+    <div className="space-y-5 px-4 pt-4">
+      {[76, 140, 110].map((h, i) => (
+        <div
+          key={i}
+          className="animate-pulse rounded-[14px] bg-white"
+          style={{ height: h, boxShadow: "var(--shadow-card)" }}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default async function AccueilPage() {
   const account = await requireAccount();
-  const accountId = account.id;
+  const now = new Date();
+  const todayKey = now.toISOString().slice(0, 10);
+
+  // La borne des nouvelles = le passage PRÉCÉDENT ; l'avance se fait après la
+  // réponse, seulement si l'absence a été assez longue.
+  const since = account.homeSeenAt;
+  if (shouldAdvanceHomeSeen(since, now)) {
+    after(async () => {
+      const db = await getTenantDb();
+      await markHomeSeen(db, account.id, now);
+    });
+  }
+
+  const dateLabel = cap(
+    now.toLocaleDateString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      timeZone: "Europe/Paris",
+    }),
+  );
 
   return (
     <Screen>
+      <PollRefresh />
       <RelvoHeader
         title={`Bonjour ${account.firstName}`}
-        subtitle="Actions du jour"
-        className="pb-[46px]"
-        action={<CreateTaskButton />}
-      />
+        subtitle={dateLabel}
+        className="pb-4"
+      >
+        <Suspense fallback={<NewsSkeleton />}>
+          <News
+            accountId={account.id}
+            sinceISO={since ? since.toISOString() : null}
+            todayKey={todayKey}
+          />
+        </Suspense>
+      </RelvoHeader>
 
-      <Suspense fallback={<TabsSkeleton />}>
-        <HomeTaskTabs accountId={accountId} />
+      <Suspense fallback={<BriefSkeleton />}>
+        <Brief accountId={account.id} todayKey={todayKey} />
       </Suspense>
     </Screen>
   );
