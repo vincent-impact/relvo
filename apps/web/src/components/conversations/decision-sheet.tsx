@@ -153,7 +153,11 @@ export function DecisionSheet({
 }: {
   task: SheetTask;
   /** Le brouillon rédigé une fois tout répondu — à poser dans le composer. */
-  onDraft: (draft: { actionId: string; contenu: string }) => void;
+  onDraft: (draft: {
+    actionId: string;
+    contenu: string;
+    sources: string[];
+  }) => void;
   className?: string;
 }) {
   const [decisions, setDecisions] = useState(task.decisions);
@@ -188,7 +192,11 @@ export function DecisionSheet({
     try {
       const res = await prepareDraftAction(task.id);
       if (res.ok) {
-        onDraft({ actionId: res.data.actionId, contenu: res.data.contenu });
+        onDraft({
+          actionId: res.data.actionId,
+          contenu: res.data.contenu,
+          sources: res.data.sources,
+        });
         setDrafted(true);
         setCollapsed(true);
       } else {

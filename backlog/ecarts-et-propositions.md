@@ -458,6 +458,37 @@ deviennent un formulaire ».
   rien à voir avec l'attente, « pas encore » retire la suggestion d'un tap. Relvo qui coche en
   relecture ne déclenche pas la mécanique, sa relecture décide.
 
+### Le durcissement : un appel raté coûte, un cache s'adresse, un brouillon cite
+
+**`tranché`** · Tranche 8 du sprint M7.
+
+- **Le coût d'un appel raté était perdu.** Une sortie tronquée au plafond ou non conforme au
+  schéma faisait échouer le pipeline sans que le journal en garde la mesure : le compteur mentait
+  par omission, précisément dans le cas qui coûte. L'échec est désormais une erreur nommée —
+  entrée trop longue, plafond de sortie, sortie non conforme — qui porte la mesure de l'appel ;
+  le pipeline la consigne comme une sollicitation ordinaire, puis l'échec avec son motif. Une
+  sortie tronquée n'est **jamais** exploitée : une structuration coupée n'écrit rien, un
+  brouillon coupé n'est pas posé.
+- **L'entrée est bornée avant l'appel.** Les budgets par couche sont tenus par un test sur une
+  fixture, pas au runtime ; un compte aux instructions démesurées les déborderait en silence. Un
+  plafond d'entrée par tier, vérifié avant l'appel, refuse à zéro jeton ; les instructions et
+  les documents poussés sont plafonnés avec un marqueur, dans un ordre stable pour que le cache
+  tienne.
+- **Le cache est adressé et mesuré.** Une clé de cache par compte et la rétention longue du
+  fournisseur, au lieu d'un routage au hasard et d'un cache qui expire entre deux e-mails ;
+  chaque mesure consigne le préfixe stable attendu, et `ia:journal` nomme les silencieux.
+  Mesuré (`benchmark-iag.md` §6.10) : sur un message jamais vu, tout le préfixe partagé est
+  relu, le tri coûte un quart de moins qu'au premier banc. La rétention se surcharge par
+  l'environnement si le fournisseur venait à la refuser.
+- **Le brouillon cite ses sources par le schéma de sortie** (M7.12), comme une tâche cite sa
+  provenance : texte et sources dans la même sortie structurée, résolues contre ce que le modèle
+  a lu — une source inconnue n'est pas une citation —, stockées dans le payload de l'Action,
+  affichées en une ligne « Basé sur : … » sous la barre du brouillon. Le tier de rédaction rend
+  donc un objet quand on lui donne un schéma ; le texte seul reste possible.
+- **Ce que la tranche ne fait pas** : le disjoncteur (seuils par compte, garde en vitesse) est
+  M14.5 ; le plafond de dépense sur la clé du fournisseur reste un geste de la tranche 0, à la
+  main de l'organisation.
+
 ### Quatre retours du second essai du formulaire de décisions
 
 **`tranché`** · Le même jour, sur le scénario du devis de friteuse joué jusqu'à la livraison.

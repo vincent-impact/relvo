@@ -15,7 +15,9 @@ import { revalidateTenantData } from "@/server/cached";
 export async function prepareDraftAction(
   taskId: string,
   options: { regenerer?: boolean } = {},
-): Promise<ActionResult<{ actionId: string; contenu: string }>> {
+): Promise<
+  ActionResult<{ actionId: string; contenu: string; sources: string[] }>
+> {
   const accountId = await getCurrentAccountId();
   if (!accountId) return err("UNAUTHORIZED", "Session requise.");
   const r = await preparerBrouillon({
@@ -24,7 +26,7 @@ export async function prepareDraftAction(
     regenerer: options.regenerer,
   });
   if (r.issue === "redige" || r.issue === "reutilise") {
-    return ok({ actionId: r.actionId, contenu: r.contenu });
+    return ok({ actionId: r.actionId, contenu: r.contenu, sources: r.sources });
   }
   if (r.issue === "desactive") {
     return err(

@@ -210,7 +210,9 @@ export function ConversationDetail({
     loading: boolean;
     text: string | null;
     actionId: string | null;
-  }>({ loading: redigerALArrivee, text: null, actionId: null });
+    /** « Basé sur : … » — les sources citées par Relvo (05 §10.4). */
+    sources: string[];
+  }>({ loading: redigerALArrivee, text: null, actionId: null, sources: [] });
   // La tâche dont le brouillon est dans le composer — celle de l'URL, ou celle
   // du formulaire qui vient de rédiger.
   const [draftFor, setDraftFor] = useState<string | null>(draftTaskId);
@@ -224,9 +226,10 @@ export function ConversationDetail({
           loading: false,
           text: res.data.contenu,
           actionId: res.data.actionId,
+          sources: res.data.sources,
         });
       } else {
-        setDraft({ loading: false, text: null, actionId: null });
+        setDraft({ loading: false, text: null, actionId: null, sources: [] });
         toast.error(res.message);
       }
     });
@@ -240,6 +243,7 @@ export function ConversationDetail({
           loading: false,
           text: res.data.contenu,
           actionId: res.data.actionId,
+          sources: res.data.sources,
         });
       } else {
         setDraft((d) => ({ ...d, loading: false }));
@@ -249,7 +253,7 @@ export function ConversationDetail({
   }
   function clearDraft() {
     const id = draft.actionId;
-    setDraft({ loading: false, text: null, actionId: null });
+    setDraft({ loading: false, text: null, actionId: null, sources: [] });
     if (id) void clearDraftAction(id);
   }
   const composerPlaceholder = isGroup
@@ -496,9 +500,9 @@ export function ConversationDetail({
             key={t.id}
             task={t}
             className={relvoInset}
-            onDraft={({ actionId, contenu }) => {
+            onDraft={({ actionId, contenu, sources }) => {
               setDraftFor(t.id);
-              setDraft({ loading: false, text: contenu, actionId });
+              setDraft({ loading: false, text: contenu, actionId, sources });
             }}
           />
         );
@@ -714,6 +718,7 @@ export function ConversationDetail({
                 ? {
                     loading: draft.loading,
                     text: draft.text,
+                    sources: draft.sources,
                     onRegenerate: regenerateDraft,
                     onClear: clearDraft,
                   }

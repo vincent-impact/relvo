@@ -8,7 +8,9 @@ import {
   createTask,
   getDraftProjection,
   ingestInboundEmail,
+  logTriageFailure,
   prisma,
+  readDraftSources,
   resolveReplyTargets,
   sendEmailReply,
   tenantDb,
@@ -162,6 +164,7 @@ describe("projection du brouillon", () => {
     expect(p2.brouillonOuvert).toEqual({
       id: draft.id,
       contenu: "Bonjour Laurent, le créneau me convient.",
+      sources: [],
     });
 
     await expect(getDraftProjection(db, verifier.id)).rejects.toMatchObject({
@@ -292,5 +295,92 @@ describe("l'objet de la réponse", () => {
         body: "…",
       }),
     ).rejects.toThrow();
+  });
+});
+
+// LES CITATIONS DU BROUILLON (M7.12, tranche 8 — 05 §10.4) : les sources sur
+// lesquelles Relvo s'est appuyé vivent dans le payload de l'Action, sont
+// journalisées avec le brouillon, et reviennent avec le brouillon réutilisé.
+describe("les sources du brouillon", () => {
+  it("sont stockées dans le payload, journalisées, et relues par la projection", async () => {
+    const { db, channel } = await makeAccount("sources@test.fr");
+    const { message, subjectId, repondre } = await sujetAvecTaches(
+      db,
+      channel.id,
+    );
+    const sources = [
+      {
+        type: "instruction" as const,
+        reference: null,
+        libelle: "Procédure fournisseurs v3",
+      },
+      {
+        type: "precedent" as const,
+        reference: "SUB-0042",
+        libelle: "Ouverture magasin Béziers",
+      },
+    ];
+    const action = await createDraftReply(db, {
+      subjectId,
+      taskId: repondre.id,
+      to: "laurent@froid.fr",
+      channel: "email",
+      content: "Bonjour, nous confirmons le rendez-vous.",
+      conversationId: message.conversationId,
+      sources,
+    });
+    expect(readDraftSources(action.payload)).toEqual(sources);
+
+    const journal = await db.eventLog.findFirst({
+      where: {
+        actionId: action.id,
+        eventType: EVENT_TYPES.actionDraftPrepared,
+      },
+    });
+    expect(journal?.description).toBe(
+      "D'après Procédure fournisseurs v3, Ouverture magasin Béziers",
+    );
+    expect((journal?.metadata as { sources: unknown }).sources).toEqual(
+      sources,
+    );
+
+    const p = await getDraftProjection(db, repondre.id);
+    expect(p.brouillonOuvert?.id).toBe(action.id);
+    expect(p.brouillonOuvert?.sources).toEqual(sources);
+  });
+
+  it("un brouillon sans source — ou d'avant la tranche 8 — en a zéro, jamais une erreur", async () => {
+    const { db, channel } = await makeAccount("sans-sources@test.fr");
+    const { message, subjectId, repondre } = await sujetAvecTaches(
+      db,
+      channel.id,
+    );
+    const action = await createDraftReply(db, {
+      subjectId,
+      taskId: repondre.id,
+      to: "laurent@froid.fr",
+      content: "Bonjour.",
+      conversationId: message.conversationId,
+    });
+    expect(readDraftSources(action.payload)).toEqual([]);
+    expect(readDraftSources({ content: "ancien brouillon" })).toEqual([]);
+    expect(readDraftSources(null)).toEqual([]);
+    const p = await getDraftProjection(db, repondre.id);
+    expect(p.brouillonOuvert?.sources).toEqual([]);
+  });
+
+  it("un échec prévu du pipeline dit son motif dans le journal (tranche 8)", async () => {
+    const { db, channel } = await makeAccount("motif@test.fr");
+    const { message } = await sujetAvecTaches(db, channel.id);
+    await logTriageFailure(db, {
+      conversationId: message.conversationId,
+      messageId: message.id,
+      error: "plafond atteint",
+      cause: "plafond-sortie",
+    });
+    const echec = await db.eventLog.findFirst({
+      where: { eventType: EVENT_TYPES.triageFailed, messageId: message.id },
+    });
+    expect((echec?.metadata as { cause: string }).cause).toBe("plafond-sortie");
   });
 });

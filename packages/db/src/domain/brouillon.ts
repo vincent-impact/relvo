@@ -5,6 +5,8 @@ import {
   TaskKind,
   TaskStatus,
 } from "../generated/prisma/enums";
+import { readDraftSources } from "./actions";
+import type { TaskProvenance } from "./tasks";
 import type { TenantDb } from "../tenant";
 import { assertFound, DomainError } from "./errors";
 import {
@@ -110,8 +112,12 @@ export type DraftProjection = SubjectSheetProjection & {
     /** Destinataires (e-mail : le set ; messagerie : l'interlocuteur), pour l'affichage. */
     destinataires: string[];
   };
-  /** Un brouillon déjà préparé pour cette tâche, encore ouvert — réutilisé plutôt que payé deux fois. */
-  brouillonOuvert: { id: string; contenu: string } | null;
+  /** Un brouillon déjà préparé pour cette tâche, encore ouvert — réutilisé plutôt que payé deux fois —, avec ses sources (05 §10.4). */
+  brouillonOuvert: {
+    id: string;
+    contenu: string;
+    sources: TaskProvenance[];
+  } | null;
 };
 
 /** Derniers messages du fil poussés dans la fiche pour rédiger (05 §3.1). */
@@ -197,7 +203,11 @@ export async function getDraftProjection(
     },
     brouillonOuvert:
       brouillon && typeof contenu === "string"
-        ? { id: brouillon.id, contenu }
+        ? {
+            id: brouillon.id,
+            contenu,
+            sources: readDraftSources(brouillon.payload),
+          }
         : null,
   };
 }

@@ -4,9 +4,11 @@ import {
   PLAFOND_OPTIONS,
   PLAFOND_QUESTIONS,
   PLAFOND_TACHES,
+  PLAFOND_SOURCES,
   resoudreProvenance,
   retenirDates,
   retenirProposition,
+  retenirSources,
   type CadreRetenue,
 } from "@/server/ia/pipeline/proposition";
 import type { SortieStructuration } from "@/server/ia/schemas";
@@ -367,5 +369,65 @@ describe("la retenue", () => {
     const rien = retenirProposition({ ...sortie, taches: [] }, cadre);
     expect(rien.taches).toEqual([]);
     expect(rien.ecarts).not.toContain("tâche sans titre");
+  });
+});
+
+// LES CITATIONS D'UN BROUILLON (M7.12, 05 §10.4) : résolues contre ce que le
+// modèle a lu, et rien d'autre — une source que le cadre ne connaît pas n'est
+// pas une citation, c'est une invention.
+describe("retenirSources — les citations d'un brouillon", () => {
+  const cadre = {
+    precedents: [{ reference: "SUB-0042", titre: "Ouverture magasin Béziers" }],
+    instructions: ["Procédure fournisseurs v3", "Délais de paiement"],
+    documents: ["Tarifs SoGood 2026.pdf"],
+  };
+
+  it("résout instruction, document et précédent, sans doublon, à la casse et aux accents près", () => {
+    const ecarts: string[] = [];
+    const sources = retenirSources(
+      [
+        "procedure fournisseurs V3",
+        "Tarifs SoGood 2026.pdf",
+        "Procédure fournisseurs v3",
+        "d'après SUB-0042",
+      ],
+      cadre,
+      ecarts,
+    );
+    expect(sources.map((s) => s.type)).toEqual([
+      "instruction",
+      "document",
+      "precedent",
+    ]);
+    expect(sources[0].libelle).toBe("Procédure fournisseurs v3");
+    expect(sources[2]).toEqual({
+      type: "precedent",
+      reference: "SUB-0042",
+      libelle: "Ouverture magasin Béziers",
+    });
+    expect(ecarts).toEqual([]);
+  });
+
+  it("écarte une source inconnue du cadre, et le dit", () => {
+    const ecarts: string[] = [];
+    const sources = retenirSources(
+      ["Le message du fournisseur", "SUB-9999", ""],
+      cadre,
+      ecarts,
+    );
+    expect(sources).toEqual([]);
+    expect(ecarts).toHaveLength(2);
+    expect(ecarts[0]).toContain("source inconnue du cadre");
+  });
+
+  it("plafonne le nombre de sources", () => {
+    const ecarts: string[] = [];
+    const large = {
+      ...cadre,
+      instructions: Array.from({ length: 6 }, (_, i) => `Instruction ${i}`),
+    };
+    const sources = retenirSources(large.instructions, large, ecarts);
+    expect(sources).toHaveLength(PLAFOND_SOURCES);
+    expect(ecarts.some((e) => e.includes("plafond"))).toBe(true);
   });
 });

@@ -217,6 +217,45 @@ export function resoudreProvenance(
   return { type: "autre", reference: null, libelle: texte.slice(0, 300) };
 }
 
+/** Sources citées par un brouillon, au plus : un « Basé sur » se lit d'un coup d'œil. */
+export const PLAFOND_SOURCES = 3;
+
+/**
+ * Les SOURCES d'un brouillon (05 §10.4) : chaque citation du modèle est
+ * résolue contre le cadre — précédent, instruction, document — et rien
+ * d'autre n'est retenu. Une source « libre », que le cadre ne connaît pas,
+ * n'est PAS une citation : on ne cite que ce qu'on a lu. Sans doublon,
+ * plafonnées ; ce qui est écarté est dit.
+ */
+export function retenirSources(
+  proposees: readonly string[],
+  cadre: Pick<CadreRetenue, "precedents" | "instructions" | "documents">,
+  ecarts: string[],
+): Provenance[] {
+  const sources: Provenance[] = [];
+  for (const brut of proposees) {
+    const p = resoudreProvenance(brut, cadre);
+    if (!p) continue;
+    if (p.type === "autre") {
+      ecarts.push(`source inconnue du cadre : ${p.libelle}`);
+      continue;
+    }
+    if (
+      sources.some(
+        (x) => x.type === p.type && cle(x.libelle) === cle(p.libelle),
+      )
+    ) {
+      continue;
+    }
+    if (sources.length >= PLAFOND_SOURCES) {
+      ecarts.push(`plafond de ${PLAFOND_SOURCES} sources : ${p.libelle}`);
+      continue;
+    }
+    sources.push(p);
+  }
+  return sources;
+}
+
 /** Les dates d'une tâche, mises en conformité avec 02 (Task) ; dit ce qui a été retiré. */
 export function retenirDates(
   t: Pick<TacheProposee, "date" | "heure" | "date_fin" | "heure_fin">,

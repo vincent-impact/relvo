@@ -15,6 +15,7 @@ import { resolve } from "node:path";
 import { draft, type Sollicitation } from "../../src/server/ia/client";
 import type { NiveauRaisonnement } from "../../src/server/ia/config";
 import { contexteBrouillon } from "../../src/server/ia/contexte";
+import { SortieBrouillon } from "../../src/server/ia/schemas";
 import type { MesureSollicitation } from "../../src/server/ia/tarifs";
 import type { Cas, CompteEvaluation } from "./types";
 
@@ -28,6 +29,8 @@ type Resultat = {
   cas: string;
   tache: string;
   texte: string | null;
+  /** Ce que le modèle cite — vide sur la démonstration, qui n'a ni instruction ni document. */
+  sources: string[];
   erreur: string | null;
   mesure: MesureSollicitation | null;
 };
@@ -88,6 +91,8 @@ async function brouillonner(
   try {
     const { sortie, mesure } = await draft({
       sollicitation: "banc-essai" satisfies Sollicitation,
+      schema: SortieBrouillon,
+      nomSchema: "brouillon_de_reponse",
       system,
       prompt,
       reasoning: config.niveau,
@@ -96,7 +101,8 @@ async function brouillonner(
     return {
       cas: cas.id,
       tache: tache.titre,
-      texte: sortie,
+      texte: sortie.texte,
+      sources: sortie.sources,
       erreur: null,
       mesure,
     };
@@ -105,6 +111,7 @@ async function brouillonner(
       cas: cas.id,
       tache: tache.titre,
       texte: null,
+      sources: [],
       erreur: e instanceof Error ? e.message.slice(0, 200) : String(e),
       mesure: null,
     };
@@ -174,6 +181,9 @@ async function main() {
         `\n  · ${r.cas} — ${r.tache}${r.erreur ? ` — ERREUR ${r.erreur}` : ""}`,
       );
       if (r.texte) console.log(r.texte.replace(/^/gm, "      "));
+      if (r.sources.length) {
+        console.log(`      Basé sur : ${r.sources.join(", ")}`);
+      }
     }
     console.log();
   }

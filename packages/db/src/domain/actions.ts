@@ -5,6 +5,7 @@ import type { TenantDb, Tx } from "../tenant";
 import { assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { ensureAffected } from "./helpers";
+import { taskProvenanceSchema } from "./tasks";
 
 // Domaine Actions (M3.11). Une Action trace une opération concrète (typiquement
 // l'envoi d'un message). Le brouillon préparé par Relvo vit dans `payload`
@@ -30,6 +31,13 @@ export const draftReplySchema = z.object({
   title: z.string().trim().max(300).optional(),
   /** La conversation dans laquelle le brouillon se répond (M7.7). */
   conversationId: z.uuid().optional().nullable(),
+  /**
+   * Les CITATIONS du brouillon (05 §10.4) : les instructions, documents ou
+   * précédents sur lesquels Relvo s'est appuyé — même forme que la provenance
+   * d'une tâche, résolue par le pipeline contre ce que le modèle a lu. Vide
+   * quand le texte ne s'appuie sur rien de connu.
+   */
+  sources: z.array(taskProvenanceSchema).max(5).optional(),
 });
 
 export type CreateActionInput = z.infer<typeof createActionSchema>;
@@ -97,6 +105,7 @@ export async function createDraftReply(db: TenantDb, input: DraftReplyInput) {
           channel: data.channel ?? null,
           content: data.content,
           conversationId: data.conversationId ?? null,
+          sources: data.sources ?? [],
         } as Prisma.InputJsonValue,
       } as Prisma.ActionUncheckedCreateInput,
     });
@@ -108,7 +117,11 @@ export async function createDraftReply(db: TenantDb, input: DraftReplyInput) {
       taskId: action.taskId,
       eventType: EVENT_TYPES.actionDraftPrepared,
       title: "Brouillon de réponse préparé",
+      description: data.sources?.length
+        ? `D'après ${data.sources.map((x) => x.libelle).join(", ")}`
+        : undefined,
       actor: "ai",
+      metadata: { sources: data.sources ?? [] },
     });
     return action;
   });
@@ -191,4 +204,12 @@ export async function cancelAction(db: TenantDb, id: string) {
     });
     return action;
   });
+}
+
+/** Les sources d'un brouillon, lues depuis son payload sans lui faire confiance (un brouillon d'avant la tranche 8 n'en a pas). */
+export function readDraftSources(payload: unknown) {
+  const parsed = z
+    .object({ sources: z.array(taskProvenanceSchema) })
+    .safeParse(payload);
+  return parsed.success ? parsed.data.sources : [];
 }

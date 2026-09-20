@@ -2,22 +2,21 @@
 
 ## Démarrage à froid — à lire en premier
 
-**Où on en est (2026-09-18)** : les tranches 0 à 7 sont livrées **et vérifiées en production**.
-La tranche 6, la relecture, est close : quatre essais réels sur le scénario complet du devis de
-friteuse (e-mail → devis → décision → envoi → livraison → clôture), une vingtaine de retours du
-dirigeant, tous livrés le jour même. Ce que ces essais ont fait naître, au-delà de la
-relecture : **le formulaire de décisions** (les questions qu'un message pose, portées par la
-tâche de réponse, répondues dans le fil, la carte figée reste dans la conversation), **un envoi
-relit le sujet** (gardé malgré le coût), **la relecture règle les tâches** — elle coche celles
-qu'un message montre accomplies, retire celles qu'il rend sans objet — et **la dernière tâche
-cochée à la main règle le sujet sans IA** (attente levée, clôture proposée). La fiche du sujet a
-été réorganisée trois fois pour finir en un panneau « Résumé » (Description, Où on en est,
-Prochaine étape) et la conversation a un hero compact, fixe, aux membres repliés. Jeu
-d'évaluation à douze suites. **La prochaine tranche est la 8, le durcissement** (citations,
-cache mesuré, plafonds). Restent ouverts en arrière-plan : essayer `none` sur la relecture avec
-le jeu réel, reprogrammer une tâche d'événement dont la date change, relire les structurations
-réelles dans le journal, confirmer les deux décisions par défaut de la tranche 4 (frontière de
-confiance à « moyenne », « incertain » traité comme une confiance basse).
+**Où on en est (2026-09-20)** : les tranches 0 à 8 sont livrées ; les tranches 0 à 7 sont
+**vérifiées en production**, la tranche 8 est **livrée en code, à vérifier en production** (un
+brouillon réel avec une instruction de domaine → « Basé sur » ; le journal relu par
+`pnpm --filter web ia:journal` sur la base de production). La tranche 8, le durcissement, a
+livré : **un appel raté coûte et se journalise** (entrée trop longue refusée avant l'appel,
+sortie tronquée ou non conforme = échec nommé qui porte sa mesure), **le cache adressé et
+mesuré** (clé par compte, rétention longue, préfixe stable consigné, rapport des silencieux —
+mesuré au banc : tout le préfixe relu sur un message jamais vu, `benchmark-iag.md` §6.10), et
+**le brouillon cite ses sources** (schéma de sortie, résolues, stockées dans l'Action, « Basé
+sur » sous la barre du composer). **La prochaine tranche est la 9, le rattrapage en lot.**
+Restent ouverts en arrière-plan : le plafond de dépense sur la clé OpenAI (tranche 0, geste de
+l'organisation), essayer `none` sur la relecture avec le jeu réel, reprogrammer une tâche
+d'événement dont la date change, relire les structurations réelles dans le journal, confirmer
+les deux décisions par défaut de la tranche 4 (frontière de confiance à « moyenne »,
+« incertain » traité comme une confiance basse).
 
 **Tout le socle fonctionne, sauf le cœur.** Ce sprint ouvre M7 : le pipeline qui transforme un
 message entrant en sujet. La conception est à jour et fait foi : les cinq couches de contexte et
@@ -438,12 +437,38 @@ tranche 6 à la demande du dirigeant : c'est le passage à l'action. Domaine
 
 ## Tranche 8 — Durcissement (M7.12, M7.13, M7.15, M7.16)
 
-- [ ] Citations portées par le schéma de sortie, stockées en métadonnée.
-- [ ] Cache de prompt mesuré et ordonné ; les silencieux traqués.
-- [ ] Plafonds par appel : jetons de sortie bornés, taille de message bornée.
-- [ ] Le disjoncteur complet — seuils par compte, garde en vitesse — est **M14.5**, pas M7.
-      Ce que M7 livre, c'est le compteur en euros qui le rend possible, et le plafond sur la clé
-      posé en tranche 0.
+**Livrée le 2026-09-20.** Rien de nouveau à l'écran hors une ligne « Basé sur » ; tout est dans
+ce qui ne se voit pas — et qui coûte. Décision dans `ecarts` (« Le durcissement : un appel raté
+coûte, un cache s'adresse, un brouillon cite »). Client (`client.ts`), contexte, pipelines et
+domaine touchés ; **aucune migration** — le préfixe stable et le motif d'échec vivent dans les
+métadonnées du journal, les sources dans le payload de l'Action.
+
+- [x] **Citations portées par le schéma de sortie** (M7.12) : le brouillon rend `texte` et
+      `sources` (`SortieBrouillon`), résolues contre ce que le modèle a lu (`retenirSources`,
+      jamais une source inconnue, plafond de trois), stockées dans le payload de l'Action et
+      journalisées avec le brouillon, rendues au composer qui affiche « Basé sur : … » sous la
+      barre. Les tâches citaient déjà (tranche 5). Le tier de rédaction rend un objet quand on
+      lui donne un schéma.
+- [x] **Cache de prompt mesuré et adressé** (M7.13) : clé de cache = identifiant du compte,
+      rétention longue (`RELVO_IA_CACHE_RETENTION`, `24h` par défaut) ; chaque mesure consigne
+      `prefixeStable` ; `pnpm --filter web ia:journal` relit le compteur par sollicitation et
+      nomme les **silencieux** (préfixe chaud non relu, jamais le premier appel d'une fenêtre).
+      Test d'invariant : structuration, relecture et brouillon partagent leur préfixe **octet
+      pour octet**, le tri partage la tête. Banc : `eval:tri --cache`, `benchmark-iag.md` §6.10.
+- [x] **Plafonds par appel** (M7.15, M7.16) : entrée bornée par tier et vérifiée AVANT l'appel
+      (zéro jeton) ; instructions plafonnées par note et par bloc avec marqueur, résumés de
+      documents bornés ; sortie tronquée (`length`) ou non conforme = `EchecSollicitation`
+      nommée qui **porte la mesure** — les quatre pipelines la journalisent comme une
+      sollicitation, puis l'échec avec son motif. Plafond de sortie de l'extraction relevé pour
+      que six tâches à décisions ne le heurtent pas. Tests : `ia-plafonds`, `ia-contexte`,
+      `ia-proposition`, `brouillon` et `ia-journal` côté domaine.
+- [x] Le disjoncteur complet — seuils par compte, garde en vitesse — est **M14.5**, pas M7.
+      Ce que M7 livre, c'est le compteur en euros qui le rend possible — désormais **sans trou**
+      sur les appels ratés — et sa lecture ; le plafond sur la clé reste le geste de la
+      tranche 0.
+- [ ] Vérifier en production : un brouillon avec une instruction de domaine montre « Basé sur » ;
+      `ia:journal` sur la base de production après quelques messages (cache relu, aucun
+      silencieux, aucun échec avec coût perdu).
 
 ## Tranche 9 — Le rattrapage en lot (M7.19)
 
@@ -475,5 +500,5 @@ réclament.
 - [x] Tranche 5 — livrée le 2026-09-15 ; banc d'essai en `benchmark-iag.md` §6.7
 - [x] Tranche 6 — livrée le 2026-09-16, close le 2026-09-18 après quatre essais réels ; banc d'essai en `benchmark-iag.md` §6.9 ; jeu à douze suites
 - [x] Tranche 7 — livrée le 2026-09-15, avant la 6 ; banc d'essai en `benchmark-iag.md` §6.8
-- [ ] Tranche 8
+- [x] Tranche 8 — livrée le 2026-09-20 ; à vérifier en production ; banc d'essai en `benchmark-iag.md` §6.10
 - [ ] Tranche 9

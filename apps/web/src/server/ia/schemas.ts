@@ -227,3 +227,23 @@ export const SortieRelecture = z.object({
   raison: z.string(),
 });
 export type SortieRelecture = z.infer<typeof SortieRelecture>;
+
+/**
+ * Sortie du BROUILLON (`05 §3.1`, §10.4) — la réponse rédigée, et les
+ * CITATIONS : ce sur quoi elle s'appuie, parmi ce que le modèle a eu sous les
+ * yeux. Portées par le schéma de sortie, jamais par une fonctionnalité
+ * propriétaire — même chemin, même garantie de conformité que l'extraction.
+ * Résolues ensuite contre le cadre (`pipeline/proposition.ts`,
+ * `retenirSources`) : une source inconnue n'est jamais une citation.
+ */
+export const SortieBrouillon = z.object({
+  /** La réponse seule : texte prêt à envoyer, sans objet ni signature. */
+  texte: z.string(),
+  /** Titres EXACTS des instructions ou documents lus, ou références de précédents, sur lesquels le texte s'appuie. Vide sinon. */
+  sources: z
+    .array(z.string())
+    .describe(
+      "Les titres EXACTS des instructions ou des documents du compte ou du domaine, ou la référence d'un précédent, dont ce texte tire une information ou une règle — rien d'autre, et vide si le texte ne s'appuie sur aucun.",
+    ),
+});
+export type SortieBrouillon = z.infer<typeof SortieBrouillon>;

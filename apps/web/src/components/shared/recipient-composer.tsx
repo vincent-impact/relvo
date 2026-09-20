@@ -35,6 +35,8 @@ export type ComposerDraft = {
   loading: boolean;
   /** Le texte à poser dans le champ quand il arrive (une fois par valeur). */
   text: string | null;
+  /** « Basé sur : … » — les instructions, documents ou précédents cités par Relvo (05 §10.4). */
+  sources?: string[];
   onRegenerate?: () => void;
   onClear?: () => void;
 };
@@ -175,6 +177,9 @@ export function RecipientComposer({
   ) : (
     "Brouillon de Relvo — modifiez librement avant d'envoyer"
   );
+  // Les citations du brouillon (05 §10.4) : un encart minimal, une ligne,
+  // sous l'étiquette — l'utilisateur sait d'où vient ce qu'il va envoyer.
+  const sources = !loading && posed ? (draft?.sources ?? []) : [];
 
   const attachButton = attach ? (
     <button
@@ -233,8 +238,16 @@ export function RecipientComposer({
             fill="currentColor"
             strokeWidth={0}
           />
-          <span className="flex min-w-0 flex-1 items-center truncate">
-            {barLabel}
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="flex items-center truncate">{barLabel}</span>
+            {sources.length ? (
+              <span
+                className="truncate text-[11.5px] font-medium text-white/75"
+                title={`Basé sur : ${sources.join(", ")}`}
+              >
+                Basé sur : {sources.join(", ")}
+              </span>
+            ) : null}
           </span>
           {!loading && draft?.onRegenerate ? (
             <button
