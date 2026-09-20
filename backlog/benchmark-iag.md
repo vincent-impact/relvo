@@ -403,6 +403,27 @@ Sollicitation mesurée : la **relecture** (`05 §5.2`–§5.5), l'appel unique s
 
 **Décision** (`ecarts-et-propositions.md`, « La relecture suit l'affaire sans piloter le statut ») : Luna sur la relecture, effort `low`, `none` à essayer sur le jeu réel.
 
+### 6.10 Le cache adressé et mesuré — 20/09/2026, jeu de DÉMONSTRATION
+
+Tranche 8 du sprint M7. Chaque appel porte désormais une **clé de cache** (l'identifiant du compte) et demande la **rétention longue** du fournisseur (24 h) ; chaque mesure consigne le **préfixe stable** estimé — Produit, Compte, Domaine — pour être confrontée aux jetons relus. Reproductible : `pnpm --filter web eval:tri --cache <cle> --parallele 1`.
+
+Sollicitation mesurée : le **tri**, Luna `none`, neuf cas en trois passages sur la même clé.
+
+| Passage | Cas | Entrée moy. | Relus en cache | Écrits en cache | €/1 000 messages | Latence moy. |
+| --- | --- | --- | --- | --- | --- | --- |
+| Cache froid, trois cas en parallèle | 1–3 | 2 872 | 1 421 | — | 0,37 | 3,3 s |
+| Mêmes trois cas, en séquence | 1–3 | 2 872 | **2 869** | 0 | 0,15 | 2,0 s |
+| **Trois cas jamais vus, en séquence** | 7–9 | 2 830 | **2 132** | ~695 | **0,18** | 2,0 s |
+
+**Ce que le passage a appris.**
+
+1. **Le fournisseur accepte la clé et la rétention de 24 h** sur le modèle retenu, sans avertissement. Avec la rétention longue, il rend aussi les jetons **écrits** en cache — le compteur les distingue déjà, au tarif d'entrée, sans surcoût.
+2. **Le préfixe partagé est relu en entier sur un message jamais vu** : 2 132 jetons — la couche Produit et la tête de la couche Compte —, et seuls les ~700 jetons du fil sont payés plein tarif. C'est la ligne qui compte : 0,18 € les mille tris contre 0,24 au premier passage (§6.6) et 0,37 à froid.
+3. **L'estimation du préfixe surestime d'un tiers** sur ce contenu (2 775 estimés pour 2 132 réels ; l'estimateur, ~3,5 caractères par jeton, sous-estime au contraire un texte répétitif). Le rapport `ia:journal` lit donc « relu / attendu » autour de 75 % quand le cache est parfait ; un silencieux est sous 50 %. La marge est voulue : l'estimation sert à détecter un cache mort, pas à facturer.
+4. **Un prompt strictement identique est relu en entier** (2 869 sur 2 872) : le banc d'essai rejoué ne mesure plus le coût réel, seul un cas nouveau le fait — d'où le passage sur les cas 7 à 9.
+
+**Ce que le passage ne mesure pas** : la structuration et la relecture sous clé (même mécanique, même préfixe — à lire dans le journal de production avec `pnpm --filter web ia:journal`), et la tenue du cache d'une heure à l'autre, qui est la raison d'être de la rétention longue.
+
 ---
 
 ## 7. Disjoncteur de consommation

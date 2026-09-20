@@ -61,6 +61,7 @@ pnpm test           # tests d'intégration (base relvo_test, créée au besoin)
 | `OPENAI_API_KEY` | Clé du projet OpenAI de l'organisation, une par environnement. Sans clé, aucun appel : conversations orphelines |
 | `OPENAI_BASE_URL` | Vide = point d'entrée standard. À passer sur `eu.api.openai.com` le jour où la résidence européenne est accordée au projet |
 | `RELVO_IA_MODELE_*` | Affectation modèle ↔ tier (classification, extraction, rédaction, raisonnement). Vides = défauts du code. Tout modèle affecté doit figurer dans la table de tarifs |
+| `RELVO_IA_CACHE_RETENTION` | Rétention du cache de prompt : `24h` (défaut) ou `in_memory`. Le journal de l'inférence se lit avec `pnpm --filter web ia:journal` |
 | `UNIPILE_DSN` · `UNIPILE_API_KEY` | Instance et clé Unipile (ingestion e-mail + WhatsApp) |
 | `UNIPILE_WEBHOOK_SECRET` | Secret du header `Unipile-Auth`, vérifié sur `/api/webhooks/unipile`. `openssl rand -base64 32` |
 | `R2_ACCOUNT_ID` | Cloudflare R2 — identifiant de compte |

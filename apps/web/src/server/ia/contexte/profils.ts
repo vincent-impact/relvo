@@ -89,6 +89,22 @@ export const BUDGETS: Record<Profil, Record<Couche, number>> = {
   },
 };
 
+/**
+ * Jetons (estimés) du PRÉFIXE STABLE d'un contexte — ce que le cache de prompt
+ * du fournisseur doit relire d'un appel au suivant sur le même compte : la
+ * couche Produit (message système), puis les couches Compte et Domaine, en
+ * tête du message utilisateur. Rendu au client (`prefixeStable`) et consigné
+ * avec la mesure : confronté aux jetons lus en cache, c'est ce qui rend un
+ * cache silencieusement cassé visible (M7.13).
+ */
+export function prefixeStable(c: Contexte): number {
+  return estimerJetons(
+    [c.couches.produit, c.couches.compte, c.couches.domaine]
+      .filter(Boolean)
+      .join("\n\n"),
+  );
+}
+
 export function mesurerCouches(c: Contexte): Record<Couche, number> {
   return {
     produit: estimerJetons(c.couches.produit),
@@ -270,6 +286,7 @@ export function contexteBrouillon(args: {
         ? `Le dirigeant a DÉCIDÉ :\n${decisions.map((d) => `- ${d.question} → ${d.reponse}`).join("\n")}\nLa réponse le dit clairement, sans revenir dessus.`
         : null,
       `JAMAIS de crochets, d'alternative ni de blanc à compléter dans le texte : tu ne décides jamais à la place du dirigeant, mais tu n'écris pas non plus « [8 m³ / 12 m³] ». Si une information manque, la phrase la plus simple qui reste vraie suffit (« nous revenons vers vous sur ce point »). Tu ne refuses jamais de rédiger.`,
+      `« texte » porte la réponse seule. « sources » cite ce sur quoi elle s'appuie : les titres EXACTS des instructions ou des documents lus ci-dessus dont tu tires une règle ou une information (un tarif, un délai, une procédure), rien d'autre — et vide si la réponse n'en utilise aucun.`,
     ]
       .filter(Boolean)
       .join("\n"),

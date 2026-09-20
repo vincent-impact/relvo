@@ -10,9 +10,9 @@ import {
   type RelectureProjection,
 } from "@relvo/db";
 import { expireTenantData } from "@/server/cached";
-import { extract } from "../client";
+import { EchecSollicitation, extract } from "../client";
 import { inferenceDisponible, NIVEAU_RETENU } from "../config";
-import { contexteRelecture } from "../contexte";
+import { contexteRelecture, prefixeStable } from "../contexte";
 import { SortieRelecture } from "../schemas";
 import { retenirRelecture, type CadreRelecture } from "./proposition";
 import { entreesDuContexte } from "./structuration";
@@ -110,7 +110,7 @@ export async function relireSujet(args: {
       return { issue: "sujet-non-ouvert", detail: projection.sujet.statut };
     }
     const entrees = entreesDuContexte(projection);
-    const { system, prompt } = contexteRelecture({
+    const contexte = contexteRelecture({
       compte: projection.compte,
       domaine: entrees.domaine,
       sujet: entrees.sujet,
@@ -123,9 +123,11 @@ export async function relireSujet(args: {
       sollicitation: "relecture",
       schema: SortieRelecture,
       nomSchema: "relecture_du_sujet",
-      system,
-      prompt,
+      system: contexte.system,
+      prompt: contexte.prompt,
       reasoning: NIVEAU_RETENU.extraction,
+      cacheCle: accountId,
+      prefixeStable: prefixeStable(contexte),
     });
     await logAiSolicitation(db, { ...mesure, subjectId, messageId });
 
@@ -187,7 +189,16 @@ export async function relireSujet(args: {
       message,
     );
     try {
-      await logRelectureFailure(db, { subjectId, messageId, error: message });
+      const echec = err instanceof EchecSollicitation ? err : null;
+      if (echec?.mesure) {
+        await logAiSolicitation(db, { ...echec.mesure, subjectId, messageId });
+      }
+      await logRelectureFailure(db, {
+        subjectId,
+        messageId,
+        error: message,
+        cause: echec?.motif ?? null,
+      });
     } catch (e) {
       console.error("[ia] échec non journalisé", e);
     }

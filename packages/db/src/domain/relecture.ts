@@ -462,7 +462,13 @@ export async function applyRelecture(
  */
 export async function logRelectureFailure(
   db: TenantDb,
-  input: { subjectId: string; messageId: string; error: string },
+  input: {
+    subjectId: string;
+    messageId: string;
+    error: string;
+    /** Le motif quand l'échec est prévu (tranche 8). */
+    cause?: string | null;
+  },
 ) {
   return logEvent(db as Tx, {
     entityType: "subject",
@@ -473,5 +479,6 @@ export async function logRelectureFailure(
     title: "Relecture interrompue — le sujet reste tel quel",
     description: input.error.slice(0, 500),
     actor: Actor.system,
+    metadata: { cause: input.cause ?? null },
   });
 }

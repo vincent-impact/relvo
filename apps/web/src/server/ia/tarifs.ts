@@ -120,4 +120,12 @@ export type MesureSollicitation = {
   dureeMs: number;
   /** Identifiant de réponse OpenAI, pour retrouver l'appel dans les journaux du fournisseur. */
   reponseId?: string;
+  /**
+   * Jetons (estimés) du PRÉFIXE STABLE poussé — ce que le cache de prompt
+   * aurait dû relire : couche Produit, couche Compte, couche Domaine (05
+   * §10.1). Confronté à `jetons.cacheLecture`, c'est ce qui rend un cache
+   * silencieusement cassé visible dans le journal (M7.13). Null quand le site
+   * d'appel ne l'a pas mesuré.
+   */
+  prefixeStable?: number | null;
 };

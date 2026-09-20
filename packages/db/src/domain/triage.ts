@@ -775,6 +775,11 @@ export const logAiSolicitationSchema = z.object({
   }),
   dureeMs: z.number().int().nonnegative(),
   reponseId: z.string().optional().nullable(),
+  /**
+   * Jetons estimés du préfixe stable poussé — ce que le cache aurait dû
+   * relire (M7.13). Null quand le site d'appel ne l'a pas mesuré.
+   */
+  prefixeStable: z.number().int().nonnegative().optional().nullable(),
   /** Le message qui a déclenché l'appel — clé de l'idempotence. */
   messageId: z.uuid().optional().nullable(),
   conversationId: z.uuid().optional().nullable(),
@@ -813,9 +818,183 @@ export async function logAiSolicitation(
       cout: data.cout,
       dureeMs: data.dureeMs,
       reponseId: data.reponseId ?? null,
+      prefixeStable: data.prefixeStable ?? null,
       conversationId: data.conversationId ?? null,
     },
   });
+}
+
+// ─────────────────────────────────────────────────────────────
+// La synthèse des sollicitations — le compteur relu (M7.13, M7.16)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Fenêtre pendant laquelle un appel du même compte est censé retrouver son
+ * préfixe en cache : au-delà, un cache vide est normal, pas un silence.
+ */
+export const AI_CACHE_WINDOW_MS = 60 * 60 * 1000;
+/**
+ * Part du préfixe stable en deçà de laquelle un appel est un « silencieux » :
+ * le cache aurait dû jouer, il n'a pas joué — ou pas assez. La moitié tolère
+ * l'estimation grossière (~3,5 caractères par jeton) et la granularité du
+ * cache du fournisseur.
+ */
+export const AI_CACHE_SILENT_RATIO = 0.5;
+
+export type AiSolicitationRow = {
+  at: Date;
+  sollicitation: string;
+  tier: string;
+  modele: string;
+  niveau: string;
+  jetons: {
+    entree: number;
+    cacheLecture: number;
+    cacheEcriture: number;
+    sortie: number;
+    raisonnement: number;
+  };
+  coutEur: number;
+  dureeMs: number;
+  prefixeStable: number | null;
+  reponseId: string | null;
+  subjectId: string | null;
+  messageId: string | null;
+};
+
+export type AiSolicitationSummary = {
+  sollicitation: string;
+  appels: number;
+  coutEur: number;
+  entree: number;
+  cacheLecture: number;
+  sortie: number;
+  raisonnement: number;
+  dureeMsMoyenne: number;
+  /** Appels qui portaient un préfixe stable mesuré. */
+  mesures: number;
+  /** Somme des préfixes stables attendus, sur les appels mesurés. */
+  prefixeStable: number;
+  /** Cache lu sur les appels mesurés. */
+  cacheLectureMesuree: number;
+  /** Appels dont le cache aurait dû jouer et n'a pas joué. */
+  silencieux: AiSolicitationRow[];
+};
+
+function lireLigne(e: {
+  createdAt: Date;
+  metadata: unknown;
+  subjectId: string | null;
+  messageId: string | null;
+}): AiSolicitationRow | null {
+  const m = e.metadata as Record<string, unknown> | null;
+  if (!m || typeof m.sollicitation !== "string") return null;
+  const jetons = (m.jetons ?? {}) as Record<string, unknown>;
+  const n = (v: unknown) => (typeof v === "number" ? v : 0);
+  const cout = (m.cout ?? {}) as Record<string, unknown>;
+  return {
+    at: e.createdAt,
+    sollicitation: m.sollicitation,
+    tier: typeof m.tier === "string" ? m.tier : "",
+    modele: typeof m.modele === "string" ? m.modele : "",
+    niveau: typeof m.niveau === "string" ? m.niveau : "",
+    jetons: {
+      entree: n(jetons.entree),
+      cacheLecture: n(jetons.cacheLecture),
+      cacheEcriture: n(jetons.cacheEcriture),
+      sortie: n(jetons.sortie),
+      raisonnement: n(jetons.raisonnement),
+    },
+    coutEur: n(cout.eur),
+    dureeMs: n(m.dureeMs),
+    prefixeStable: typeof m.prefixeStable === "number" ? m.prefixeStable : null,
+    reponseId: typeof m.reponseId === "string" ? m.reponseId : null,
+    subjectId: e.subjectId,
+    messageId: e.messageId,
+  };
+}
+
+/** Les sollicitations d'un compte depuis une date, dans l'ordre chronologique. */
+export async function listAiSolicitations(
+  db: TenantDb,
+  opts: { since: Date },
+): Promise<AiSolicitationRow[]> {
+  const rows = await db.eventLog.findMany({
+    where: {
+      eventType: EVENT_TYPES.iaSollicitation,
+      createdAt: { gte: opts.since },
+    },
+    orderBy: { createdAt: "asc" },
+    select: {
+      createdAt: true,
+      metadata: true,
+      subjectId: true,
+      messageId: true,
+    },
+  });
+  return rows.map(lireLigne).filter((r): r is AiSolicitationRow => r !== null);
+}
+
+/**
+ * Le compteur relu, par sollicitation (M7.16), et le cache confronté à ce qu'il
+ * aurait dû relire (M7.13) : un appel est « silencieux » quand il porte un
+ * préfixe stable, qu'un appel du même compte l'a précédé dans la fenêtre du
+ * cache, et que les jetons relus n'atteignent pas la part attendue du préfixe.
+ * Le premier appel d'une fenêtre paie plein tarif : c'est normal, pas compté.
+ * Lecture seule ; c'est le rapport `ia:journal` et, plus tard, le disjoncteur
+ * (M14.5) qui consomment cette synthèse.
+ */
+export function summarizeAiSolicitations(
+  rows: readonly AiSolicitationRow[],
+): AiSolicitationSummary[] {
+  const parSollicitation = new Map<string, AiSolicitationSummary>();
+  let precedent: Date | null = null;
+  for (const r of rows) {
+    const s = parSollicitation.get(r.sollicitation) ?? {
+      sollicitation: r.sollicitation,
+      appels: 0,
+      coutEur: 0,
+      entree: 0,
+      cacheLecture: 0,
+      sortie: 0,
+      raisonnement: 0,
+      dureeMsMoyenne: 0,
+      mesures: 0,
+      prefixeStable: 0,
+      cacheLectureMesuree: 0,
+      silencieux: [],
+    };
+    s.appels += 1;
+    s.coutEur += r.coutEur;
+    s.entree +=
+      r.jetons.entree + r.jetons.cacheLecture + r.jetons.cacheEcriture;
+    s.cacheLecture += r.jetons.cacheLecture;
+    s.sortie += r.jetons.sortie;
+    s.raisonnement += r.jetons.raisonnement;
+    s.dureeMsMoyenne += r.dureeMs;
+    if (r.prefixeStable !== null && r.prefixeStable > 0) {
+      s.mesures += 1;
+      s.prefixeStable += r.prefixeStable;
+      s.cacheLectureMesuree += r.jetons.cacheLecture;
+      const chaud =
+        precedent !== null &&
+        r.at.getTime() - precedent.getTime() <= AI_CACHE_WINDOW_MS;
+      if (
+        chaud &&
+        r.jetons.cacheLecture < r.prefixeStable * AI_CACHE_SILENT_RATIO
+      ) {
+        s.silencieux.push(r);
+      }
+    }
+    parSollicitation.set(r.sollicitation, s);
+    precedent = r.at;
+  }
+  return [...parSollicitation.values()]
+    .map((s) => ({
+      ...s,
+      dureeMsMoyenne: s.appels ? Math.round(s.dureeMsMoyenne / s.appels) : 0,
+    }))
+    .sort((a, b) => b.coutEur - a.coutEur);
 }
 
 /**
@@ -866,7 +1045,13 @@ export async function hasAiSolicitationForSubject(
  */
 export async function logTriageFailure(
   db: TenantDb,
-  input: { conversationId: string; messageId: string; error: string },
+  input: {
+    conversationId: string;
+    messageId: string;
+    error: string;
+    /** Le motif quand l'échec est prévu — plafond de sortie, entrée trop longue, sortie non conforme (tranche 8). */
+    cause?: string | null;
+  },
 ) {
   return logEvent(db as Tx, {
     entityType: "message",
@@ -876,7 +1061,10 @@ export async function logTriageFailure(
     title: "Tri interrompu — la conversation reste à trier",
     description: input.error.slice(0, 500),
     actor: Actor.system,
-    metadata: { conversationId: input.conversationId },
+    metadata: {
+      conversationId: input.conversationId,
+      cause: input.cause ?? null,
+    },
   });
 }
 

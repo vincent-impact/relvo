@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BUDGETS,
+  blocInstructions,
   contexteBrouillon,
   contexteEtiquettePieceJointe,
   contexteRelecture,
@@ -12,6 +13,9 @@ import {
   ficheSujet,
   mesurerCouches,
   nettoyerMessage,
+  PLAFOND_BLOC_INSTRUCTIONS,
+  PLAFOND_INSTRUCTION,
+  prefixeStable,
   retirerCitations,
   retirerSignature,
   semaineIso,
@@ -477,6 +481,76 @@ describe("profils et budgets", () => {
     expect(p.indexOf("# Domaine")).toBeLessThan(p.indexOf("# Aujourd'hui"));
     expect(p.indexOf("# Aujourd'hui")).toBeLessThan(
       p.indexOf("# Sujet SUB-0142"),
+    );
+  });
+
+  // LE CACHE SE GAGNE SUR UN PRÉFIXE PARTAGÉ (M7.13, 05 §10.1) : la
+  // structuration, la relecture et le brouillon d'un même compte sur un même
+  // domaine poussent, octet pour octet, le même message système et la même
+  // tête de message utilisateur — Compte puis Domaine. Un profil qui
+  // divergerait d'un mot casserait le cache des trois en silence.
+  it("les profils complets d'un même compte et d'un même domaine partagent leur préfixe stable, octet pour octet", () => {
+    const { structuration, relecture, brouillon } = contextes;
+    const prefixe = `${structuration.couches.compte}\n\n${structuration.couches.domaine}`;
+    expect(prefixe.length).toBeGreaterThan(1_000);
+    for (const c of [structuration, relecture, brouillon]) {
+      expect(c.system).toBe(structuration.system);
+      expect(c.prompt.startsWith(prefixe)).toBe(true);
+    }
+    // Le tri partage le système et la tête de la couche Compte — identité et
+    // domaines — avant la liste des sujets ouverts, qui varie par expéditeur.
+    expect(contextes.tri.system).toBe(structuration.system);
+    const tete = structuration.couches.compte.slice(
+      0,
+      structuration.couches.compte.indexOf("## Instructions générales"),
+    );
+    expect(tete).toContain("## Domaines du compte");
+    expect(contextes.tri.prompt.startsWith(tete)).toBe(true);
+  });
+
+  it("le préfixe stable mesure Produit + Compte + Domaine, et rien du volatil", () => {
+    const c = contextes.structuration;
+    const m = mesurerCouches(c);
+    const p = prefixeStable(c);
+    expect(p).toBeGreaterThanOrEqual(m.produit + m.compte + m.domaine - 2);
+    expect(p).toBeLessThan(m.produit + m.compte + m.domaine + m.situation);
+    expect(prefixeStable(contextes.tri)).toBeLessThan(p);
+  });
+
+  it("les instructions sont plafonnées : par note avec un marqueur, par bloc en comptant les omises", () => {
+    const longue = "x".repeat(PLAFOND_INSTRUCTION + 500);
+    const bloc = blocInstructions([{ titre: "Longue", contenu: longue }]);
+    expect(bloc).toContain("### Longue");
+    expect(bloc).toContain("[… instruction tronquée à");
+    expect(bloc.length).toBeLessThan(PLAFOND_INSTRUCTION + 100);
+
+    const beaucoup = Array.from({ length: 10 }, (_, i) => ({
+      titre: `Note ${i}`,
+      contenu: "y".repeat(PLAFOND_BLOC_INSTRUCTIONS / 4),
+    }));
+    const b = blocInstructions(beaucoup);
+    expect(b).toContain("### Note 3");
+    expect(b).not.toContain("### Note 4");
+    expect(b).toContain("(6 instructions non montrées : Note 4, Note 5");
+    expect(blocInstructions([])).toBe("Aucune.");
+    // Une seule note démesurée passe quand même, plafonnée : la première n'est jamais omise.
+    expect(
+      blocInstructions([
+        { titre: "Seule", contenu: "z".repeat(PLAFOND_BLOC_INSTRUCTIONS * 2) },
+      ]),
+    ).toContain("### Seule");
+    // Et le contexte réel les porte : le domaine passe par le même bloc.
+    const c = contexteStructuration({
+      compte,
+      domaine: { ...domaine, instructions: beaucoup },
+      sujet,
+      contact,
+      precedents,
+      instant,
+    });
+    expect(c.couches.domaine).toContain("instructions non montrées");
+    expect(mesurerCouches(c).domaine).toBeLessThanOrEqual(
+      BUDGETS.structuration.domaine,
     );
   });
 });

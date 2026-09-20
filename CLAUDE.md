@@ -189,6 +189,7 @@ pnpm db:start        # Postgres local
 pnpm db:migrate      # nouvelle migration
 pnpm db:generate     # ⚠️ après TOUTE migration (#33)
 pnpm db:seed         # jeu de démonstration
+pnpm --filter web ia:journal   # le compteur de l'inférence relu : coût, cache, silencieux
 ```
 
 Déploiement : pousser sur la branche de production. **Un seul déployable.**

@@ -101,13 +101,17 @@ export function normaliserBlancs(texte: string): string {
     .trim();
 }
 
-/** Plafonne, en coupant sur une fin de ligne quand c'est possible, avec un marqueur explicite. */
-export function plafonner(texte: string, plafond = PLAFOND_MESSAGE): string {
+/** Plafonne, en coupant sur une fin de ligne quand c'est possible, avec un marqueur explicite qui nomme ce qui est coupé. */
+export function plafonner(
+  texte: string,
+  plafond = PLAFOND_MESSAGE,
+  quoi = "message",
+): string {
   if (texte.length <= plafond) return texte;
   const tete = texte.slice(0, plafond);
   const derniereLigne = tete.lastIndexOf("\n");
   const coupe = derniereLigne > plafond * 0.7 ? derniereLigne : plafond;
-  return `${texte.slice(0, coupe).trimEnd()}\n[… message tronqué à ${plafond} caractères]`;
+  return `${texte.slice(0, coupe).trimEnd()}\n[… ${quoi} tronqué${quoi.endsWith("n") ? "e" : ""} à ${plafond} caractères]`;
 }
 
 /** Les trois opérations, dans l'ordre. Idempotente. */

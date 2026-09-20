@@ -1,4 +1,4 @@
-import { nettoyerMessage } from "./hygiene";
+import { nettoyerMessage, plafonner } from "./hygiene";
 import type {
   CompteContexte,
   ConversationContexte,
@@ -16,6 +16,53 @@ import type {
 
 const DEBUT = "<<<MESSAGE";
 const FIN = "MESSAGE>>>";
+
+/**
+ * Plafonds des CONNAISSANCES poussées (`05 §10.6`, « taille bornée ») — par
+ * instruction, en caractères, et par bloc d'instructions. Une note démesurée
+ * est coupée avec un marqueur ; au-delà du bloc, les instructions suivantes ne
+ * sont pas montrées et le modèle le sait. La règle est écrite, pas laissée à
+ * la chance : c'est ce qui tient le budget de la couche quand un compte écrit
+ * beaucoup. Les instructions sont poussées dans l'ordre reçu — celui de la
+ * base, stable —, donc ce qui est coupé l'est toujours au même endroit, et le
+ * cache tient.
+ */
+export const PLAFOND_INSTRUCTION = 2_500;
+export const PLAFOND_BLOC_INSTRUCTIONS = 8_000;
+/** Résumé d'un document, en caractères : une ligne, pas une page. */
+export const PLAFOND_RESUME_DOCUMENT = 300;
+
+/**
+ * Le bloc des instructions d'une couche, borné : chaque contenu plafonné, le
+ * bloc plafonné en cumul, les omises comptées.
+ */
+export function blocInstructions(
+  instructions: readonly { titre: string; contenu: string }[],
+): string {
+  if (instructions.length === 0) return `Aucune.`;
+  const gardees: string[] = [];
+  let cumul = 0;
+  for (const i of instructions) {
+    const contenu = plafonner(i.contenu, PLAFOND_INSTRUCTION, "instruction");
+    if (cumul + contenu.length > PLAFOND_BLOC_INSTRUCTIONS && gardees.length) {
+      break;
+    }
+    cumul += contenu.length;
+    gardees.push(`### ${i.titre}\n${contenu}`);
+  }
+  const omises = instructions.length - gardees.length;
+  return [
+    ...gardees,
+    omises > 0
+      ? `(${omises} instruction${omises > 1 ? "s" : ""} non montrée${omises > 1 ? "s" : ""} : ${instructions
+          .slice(gardees.length)
+          .map((i) => i.titre)
+          .join(", ")})`
+      : null,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
 
 export function trierParNom<T extends { nom: string }>(xs: readonly T[]): T[] {
   return [...xs].sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
@@ -169,9 +216,6 @@ export function coucheCompteTri(
 
 /** Couche Compte, profil COMPLET (structuration, relecture, brouillon, échange) : + instructions générales, registre d'étiquettes. */
 export function coucheCompteComplete(compte: CompteContexte): string {
-  const instructions = compte.instructionsGenerales.map(
-    (i) => `### ${i.titre}\n${i.contenu}`,
-  );
   const etiquettes = [...compte.etiquettes].sort((a, b) =>
     a.localeCompare(b, "fr"),
   );
@@ -179,7 +223,7 @@ export function coucheCompteComplete(compte: CompteContexte): string {
     coucheCompteTri(compte, { sujetsOuverts: false }),
     ``,
     `## Instructions générales`,
-    instructions.length ? instructions.join("\n\n") : `Aucune.`,
+    blocInstructions(compte.instructionsGenerales),
     ``,
     `## Étiquettes du compte`,
     etiquettes.length
@@ -192,21 +236,18 @@ export function coucheCompteComplete(compte: CompteContexte): string {
 export function coucheDomaine(domaine: DomaineContexte | null): string {
   if (!domaine)
     return `# Domaine\nAucun domaine : ce sujet n'est pas encore classé.`;
-  const instructions = domaine.instructions.map(
-    (i) => `### ${i.titre}\n${i.contenu}`,
-  );
   const documents = [...domaine.documents]
     .sort((a, b) => a.nom.localeCompare(b.nom, "fr"))
     .map(
       (d) =>
-        `- ${d.nom}${d.etiquette ? ` (${d.etiquette})` : ""}${d.resume ? ` — ${d.resume}` : ""}`,
+        `- ${d.nom}${d.etiquette ? ` (${d.etiquette})` : ""}${d.resume ? ` — ${d.resume.slice(0, PLAFOND_RESUME_DOCUMENT)}` : ""}`,
     );
   return [
     `# Domaine : ${domaine.nom}`,
     domaine.description ?? "",
     ``,
     `## Instructions du domaine`,
-    instructions.length ? instructions.join("\n\n") : `Aucune.`,
+    blocInstructions(domaine.instructions),
     ``,
     `## Documents du domaine`,
     documents.length ? documents.join("\n") : `Aucun.`,

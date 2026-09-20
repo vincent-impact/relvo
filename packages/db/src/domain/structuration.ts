@@ -976,7 +976,13 @@ async function completeContactByRelvo(
  */
 export async function logStructurationFailure(
   db: TenantDb,
-  input: { subjectId: string; messageId: string | null; error: string },
+  input: {
+    subjectId: string;
+    messageId: string | null;
+    error: string;
+    /** Le motif quand l'échec est prévu (tranche 8). */
+    cause?: string | null;
+  },
 ) {
   return logEvent(db as Tx, {
     entityType: "subject",
@@ -987,5 +993,6 @@ export async function logStructurationFailure(
     title: "Structuration interrompue — le sujet reste sans tâche",
     description: input.error.slice(0, 500),
     actor: Actor.system,
+    metadata: { cause: input.cause ?? null },
   });
 }

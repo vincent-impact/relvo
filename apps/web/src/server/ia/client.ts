@@ -1,9 +1,11 @@
 import { createOpenAI, type OpenAIProvider } from "@ai-sdk/openai";
 import {
   generateText,
+  NoObjectGeneratedError,
   Output,
   stepCountIs,
   streamText,
+  type FinishReason,
   type FlexibleSchema,
   type LanguageModel,
   type LanguageModelUsage,
@@ -15,9 +17,11 @@ import {
   NIVEAUX_RAISONNEMENT,
   openaiBaseUrl,
   PLAFONDS,
+  retentionCache,
   type NiveauRaisonnement,
   type Tier,
 } from "./config";
+import { estimerJetons } from "./produit";
 import {
   estimerCout,
   tarifDuModele,
@@ -40,7 +44,15 @@ import {
 //      d'ailleurs ne doit pas pouvoir passer.
 //   2. Chaque appel revient avec sa consommation normalisée (raisonnement
 //      compté séparément) et son coût en euros, table de tarifs versionnée.
-//   3. Les jetons de sortie sont bornés par défaut (`05 §10.6`).
+//   3. Les plafonds par appel (`05 §10.6`, tranche 8) : l'ENTRÉE est bornée
+//      AVANT l'appel — un contexte qui déborde est refusé à zéro jeton — et la
+//      SORTIE est bornée par tier ; une sortie tronquée ou non conforme est un
+//      ÉCHEC EXPLICITE (`EchecSollicitation`) qui porte la mesure de l'appel,
+//      pour que le coût d'un appel raté soit journalisé comme les autres.
+//   4. Le cache de prompt est ADRESSÉ (`05 §10.5`, tranche 8) : une clé par
+//      compte route les appels d'un même compte vers le même cache, et la
+//      rétention est celle de la configuration. Le site d'appel dit ce qu'il
+//      attend du cache (`prefixeStable`) ; la mesure le rend.
 //
 // Comme le client Unipile, c'est une intégration de l'APPLICATION : rien ici
 // n'appartient à `packages/`. La garde `server-only` est posée sur `./index`,
@@ -81,11 +93,28 @@ type OptionsCommunes = Entree & {
   maxOutputTokens?: number;
   abortSignal?: AbortSignal;
   /**
+   * Clé de cache du fournisseur (`05 §10.5`) : l'identifiant du compte. Les
+   * appels d'un même compte partagent leur préfixe — Produit, Compte,
+   * Domaine — et la clé les route vers le même cache. Sans clé, le
+   * fournisseur route au hasard et le cache se gagne moins.
+   */
+  cacheCle?: string;
+  /**
+   * Jetons (estimés) du préfixe stable poussé — ce que le cache aurait dû
+   * relire. Rendu tel quel dans la mesure, pour le journal (M7.13).
+   */
+  prefixeStable?: number;
+  /**
    * Jeu d'évaluation (M7.17) et tests uniquement : impose un modèle —
    * identifiant OpenAI pour comparer plusieurs modèles, ou modèle simulé de
    * `ai/test`. En production, le modèle vient du tier.
    */
   modele?: LanguageModel;
+};
+
+type OptionsObjet<T> = OptionsCommunes & {
+  schema: FlexibleSchema<T>;
+  nomSchema?: string;
 };
 
 export type ResultatIa<T> = {
@@ -106,6 +135,47 @@ export class NiveauRaisonnementManquant extends Error {
         `Passer reasoning: ${NIVEAUX_RAISONNEMENT.map((n) => `"${n}"`).join(" | ")}.`,
     );
     this.name = "NiveauRaisonnementManquant";
+  }
+}
+
+/**
+ * Pourquoi une sollicitation a échoué SANS rien produire d'exploitable :
+ *   • `entree-trop-longue` — refusée avant l'appel, zéro jeton ;
+ *   • `plafond-sortie` — le modèle a atteint le plafond de jetons de sortie :
+ *     la sortie est tronquée, on ne l'exploite pas ;
+ *   • `sortie-non-conforme` — la sortie ne respecte pas le schéma (ce que le
+ *     mode strict du fournisseur est censé empêcher : à surveiller).
+ */
+export type MotifEchec =
+  | "entree-trop-longue"
+  | "plafond-sortie"
+  | "sortie-non-conforme";
+
+/**
+ * Un appel qui a échoué de façon PRÉVUE (M7.15, tranche 8). Porte la MESURE
+ * de l'appel quand il a eu lieu — un appel dont la sortie est tronquée a coûté
+ * ses jetons, et ce coût doit être journalisé comme les autres —, et null
+ * quand il a été refusé avant de partir.
+ */
+export class EchecSollicitation extends Error {
+  readonly motif: MotifEchec;
+  readonly sollicitation: Sollicitation;
+  readonly mesure: MesureSollicitation | null;
+  constructor(args: {
+    motif: MotifEchec;
+    sollicitation: Sollicitation;
+    detail: string;
+    mesure: MesureSollicitation | null;
+    cause?: unknown;
+  }) {
+    super(
+      `[ia] Sollicitation « ${args.sollicitation} » : ${args.motif} — ${args.detail}`,
+      args.cause instanceof Error ? { cause: args.cause } : undefined,
+    );
+    this.name = "EchecSollicitation";
+    this.motif = args.motif;
+    this.sollicitation = args.sollicitation;
+    this.mesure = args.mesure;
   }
 }
 
@@ -148,6 +218,62 @@ function resoudreModele(
   return { modele, id: modele.modelId, tarife: false };
 }
 
+/** Le texte poussé au modèle — système et message(s) —, pour estimer l'entrée. */
+function texteDeLEntree(options: Entree): string {
+  const parts: string[] = [options.system ?? ""];
+  if (options.messages !== undefined) {
+    for (const m of options.messages) {
+      if (typeof m.content === "string") parts.push(m.content);
+      else {
+        for (const p of m.content) {
+          if (p.type === "text") parts.push(p.text);
+        }
+      }
+    }
+  } else {
+    parts.push(options.prompt);
+  }
+  return parts.join("\n");
+}
+
+/** Jetons d'entrée estimés d'un appel — la même estimation que les budgets par couche. */
+export function estimerEntree(options: Entree): number {
+  return estimerJetons(texteDeLEntree(options));
+}
+
+/**
+ * Le plafond d'ENTRÉE (`05 §10.6`), vérifié avant l'appel : refuser coûte zéro
+ * jeton, appeler coûterait le contexte entier — et, au-delà du seuil de long
+ * contexte du fournisseur, le double.
+ */
+function verifierEntree(tier: Tier, options: OptionsCommunes): void {
+  const estime = estimerEntree(options);
+  const plafond = PLAFONDS.jetonsEntree[tier];
+  if (estime > plafond) {
+    throw new EchecSollicitation({
+      motif: "entree-trop-longue",
+      sollicitation: options.sollicitation,
+      detail: `${estime} jetons estimés pour un plafond de ${plafond} (tier ${tier})`,
+      mesure: null,
+    });
+  }
+}
+
+/**
+ * Les options fournisseur de l'appel : la clé de cache et sa rétention
+ * (`05 §10.5`). Rien sans clé — un appel du banc d'essai ou d'un test n'a pas
+ * de compte.
+ */
+function optionsFournisseur(options: OptionsCommunes) {
+  if (!options.cacheCle) return undefined;
+  return {
+    openai: {
+      promptCacheKey: options.cacheCle,
+      promptCacheRetention: retentionCache(),
+    },
+  };
+}
+
 /** Normalise l'usage du SDK en `Consommation` — les `undefined` deviennent 0. */
 export function normaliserUsage(usage: LanguageModelUsage): Consommation {
   const inD = usage.inputTokenDetails;
@@ -166,59 +292,111 @@ export function normaliserUsage(usage: LanguageModelUsage): Consommation {
   };
 }
 
-function mesurer(args: {
+type Appel = {
   sollicitation: Sollicitation;
   tier: Tier;
   id: string;
   tarife: boolean;
   niveau: NiveauRaisonnement;
-  usage: LanguageModelUsage;
   debut: number;
-  reponseId: string | undefined;
-}): MesureSollicitation {
-  const jetons = normaliserUsage(args.usage);
+  prefixeStable: number | null;
+};
+
+function mesurer(
+  appel: Appel,
+  usage: LanguageModelUsage,
+  reponseId: string | undefined,
+): MesureSollicitation {
+  const jetons = normaliserUsage(usage);
   return {
-    sollicitation: args.sollicitation,
-    tier: args.tier,
-    modele: args.id,
-    niveau: args.niveau,
+    sollicitation: appel.sollicitation,
+    tier: appel.tier,
+    modele: appel.id,
+    niveau: appel.niveau,
     jetons,
-    cout: args.tarife
-      ? estimerCout(args.id, jetons)
+    cout: appel.tarife
+      ? estimerCout(appel.id, jetons)
       : { eur: 0, usd: 0, version: TARIFS_VERSION },
-    dureeMs: Date.now() - args.debut,
-    reponseId: args.reponseId,
+    dureeMs: Date.now() - appel.debut,
+    reponseId,
+    prefixeStable: appel.prefixeStable,
   };
+}
+
+/** Prépare un appel : niveau exigé, modèle résolu et tarifé, entrée bornée. */
+function preparer(tier: Tier, options: OptionsCommunes) {
+  const niveau = exigerNiveau(options.sollicitation, options.reasoning);
+  const { modele, id, tarife } = resoudreModele(tier, options.modele);
+  verifierEntree(tier, options);
+  const appel: Appel = {
+    sollicitation: options.sollicitation,
+    tier,
+    id,
+    tarife,
+    niveau,
+    debut: Date.now(),
+    prefixeStable: options.prefixeStable ?? null,
+  };
+  return { modele, niveau, appel };
+}
+
+/** Une sortie tronquée n'est pas exploitée : c'est un échec, avec son coût. */
+function exigerSortieComplete(
+  appel: Appel,
+  finishReason: FinishReason,
+  mesure: MesureSollicitation,
+): void {
+  if (finishReason === "length") {
+    throw new EchecSollicitation({
+      motif: "plafond-sortie",
+      sollicitation: appel.sollicitation,
+      detail: `${mesure.jetons.sortie} jetons de sortie (dont ${mesure.jetons.raisonnement} de raisonnement), plafond du tier ${appel.tier} atteint`,
+      mesure,
+    });
+  }
 }
 
 async function genererObjet<T>(
   tier: Tier,
-  options: OptionsCommunes & { schema: FlexibleSchema<T>; nomSchema?: string },
+  options: OptionsObjet<T>,
 ): Promise<ResultatIa<T>> {
-  const niveau = exigerNiveau(options.sollicitation, options.reasoning);
-  const { modele, id, tarife } = resoudreModele(tier, options.modele);
-  const debut = Date.now();
-  const { output, usage, response } = await generateText({
-    model: modele,
-    reasoning: niveau,
-    maxOutputTokens: options.maxOutputTokens ?? PLAFONDS.jetonsSortie[tier],
-    abortSignal: options.abortSignal,
-    output: Output.object({ schema: options.schema, name: options.nomSchema }),
-    ...entree(options),
-  });
-  return {
-    sortie: output,
-    mesure: mesurer({
-      sollicitation: options.sollicitation,
-      tier,
-      id,
-      tarife,
-      niveau,
-      usage,
-      debut,
-      reponseId: response.id,
-    }),
-  };
+  const { modele, niveau, appel } = preparer(tier, options);
+  try {
+    const { output, usage, response, finishReason } = await generateText({
+      model: modele,
+      reasoning: niveau,
+      maxOutputTokens: options.maxOutputTokens ?? PLAFONDS.jetonsSortie[tier],
+      abortSignal: options.abortSignal,
+      providerOptions: optionsFournisseur(options),
+      output: Output.object({
+        schema: options.schema,
+        name: options.nomSchema,
+      }),
+      ...entree(options),
+    });
+    const mesure = mesurer(appel, usage, response.id);
+    exigerSortieComplete(appel, finishReason, mesure);
+    return { sortie: output, mesure };
+  } catch (err) {
+    // Le SDK a bien reçu une réponse, mais pas un objet conforme : l'appel a
+    // coûté ses jetons, la mesure voyage avec l'échec.
+    if (NoObjectGeneratedError.isInstance(err)) {
+      const mesure = err.usage
+        ? mesurer(appel, err.usage, err.response?.id)
+        : null;
+      throw new EchecSollicitation({
+        motif:
+          err.finishReason === "length"
+            ? "plafond-sortie"
+            : "sortie-non-conforme",
+        sollicitation: appel.sollicitation,
+        detail: err.message.slice(0, 300),
+        mesure,
+        cause: err,
+      });
+    }
+    throw err;
+  }
 }
 
 function entree(options: Entree) {
@@ -231,9 +409,7 @@ function entree(options: Entree) {
  * Tier CLASSIFICATION — étiquette, titre, domaine : rapide, bon marché, sans
  * raisonnement. La sortie est structurée parce qu'une étiquette se stocke.
  */
-export function classify<T>(
-  options: OptionsCommunes & { schema: FlexibleSchema<T>; nomSchema?: string },
-): Promise<ResultatIa<T>> {
+export function classify<T>(options: OptionsObjet<T>): Promise<ResultatIa<T>> {
   return genererObjet("classification", options);
 }
 
@@ -243,39 +419,36 @@ export function classify<T>(
  * écrivent en base sans revue humaine (`05 §10.5`). Ce tier n'est JAMAIS
  * dégradé par le disjoncteur (`05 §10.6`).
  */
-export function extract<T>(
-  options: OptionsCommunes & { schema: FlexibleSchema<T>; nomSchema?: string },
-): Promise<ResultatIa<T>> {
+export function extract<T>(options: OptionsObjet<T>): Promise<ResultatIa<T>> {
   return genererObjet("extraction", options);
 }
 
-/** Tier RÉDACTION — brouillon, résumé : du texte, jamais envoyé seul (`05 §7.4`). */
-export async function draft(
-  options: OptionsCommunes,
-): Promise<ResultatIa<string>> {
-  const niveau = exigerNiveau(options.sollicitation, options.reasoning);
-  const { modele, id, tarife } = resoudreModele("redaction", options.modele);
-  const debut = Date.now();
-  const { text, usage, response } = await generateText({
+/**
+ * Tier RÉDACTION — brouillon, résumé : du texte, jamais envoyé seul (`05 §7.4`).
+ * Avec un schéma, la rédaction rend un objet — c'est ainsi que le brouillon
+ * porte ses CITATIONS (`05 §10.4`) : le texte et les sources dans la même
+ * sortie, avec la même garantie de conformité que l'extraction.
+ */
+export function draft<T>(options: OptionsObjet<T>): Promise<ResultatIa<T>>;
+export function draft(options: OptionsCommunes): Promise<ResultatIa<string>>;
+export async function draft<T>(
+  options: OptionsCommunes | OptionsObjet<T>,
+): Promise<ResultatIa<T> | ResultatIa<string>> {
+  if ("schema" in options && options.schema) {
+    return genererObjet("redaction", options);
+  }
+  const { modele, niveau, appel } = preparer("redaction", options);
+  const { text, usage, response, finishReason } = await generateText({
     model: modele,
     reasoning: niveau,
     maxOutputTokens: options.maxOutputTokens ?? PLAFONDS.jetonsSortie.redaction,
     abortSignal: options.abortSignal,
+    providerOptions: optionsFournisseur(options),
     ...entree(options),
   });
-  return {
-    sortie: text,
-    mesure: mesurer({
-      sollicitation: options.sollicitation,
-      tier: "redaction",
-      id,
-      tarife,
-      niveau,
-      usage,
-      debut,
-      reponseId: response.id,
-    }),
-  };
+  const mesure = mesurer(appel, usage, response.id);
+  exigerSortieComplete(appel, finishReason, mesure);
+  return { sortie: text, mesure };
 }
 
 /**
@@ -294,9 +467,7 @@ export function chat<TOOLS extends ToolSet>(
   },
 ) {
   const tier = options.tier ?? "raisonnement";
-  const niveau = exigerNiveau(options.sollicitation, options.reasoning);
-  const { modele, id, tarife } = resoudreModele(tier, options.modele);
-  const debut = Date.now();
+  const { modele, niveau, appel } = preparer(tier, options);
   const flux = streamText({
     model: modele,
     reasoning: niveau,
@@ -304,22 +475,12 @@ export function chat<TOOLS extends ToolSet>(
     stopWhen: stepCountIs(options.maxEtapes ?? PLAFONDS.etapesParTour),
     maxOutputTokens: options.maxOutputTokens ?? PLAFONDS.jetonsSortie[tier],
     abortSignal: options.abortSignal,
+    providerOptions: optionsFournisseur(options),
     ...entree(options),
   });
   const mesure: Promise<MesureSollicitation> = Promise.all([
     flux.totalUsage,
     flux.response,
-  ]).then(([usage, response]) =>
-    mesurer({
-      sollicitation: options.sollicitation,
-      tier,
-      id,
-      tarife,
-      niveau,
-      usage,
-      debut,
-      reponseId: response.id,
-    }),
-  );
+  ]).then(([usage, response]) => mesurer(appel, usage, response.id));
   return { flux, mesure };
 }

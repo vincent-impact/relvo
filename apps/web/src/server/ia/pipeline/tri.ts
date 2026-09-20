@@ -12,9 +12,9 @@ import {
   tenantDb,
 } from "@relvo/db";
 import { expireTenantData } from "@/server/cached";
-import { extract } from "../client";
+import { EchecSollicitation, extract } from "../client";
 import { inferenceDisponible, NIVEAU_RETENU } from "../config";
-import { contexteTri } from "../contexte";
+import { contexteTri, prefixeStable } from "../contexte";
 import { SortieTri } from "../schemas";
 import { detecterBruitDeterministe, signauxAutomatiques } from "./bruit";
 import { NATURE_DE_LA_RAISON, deciderParExpediteur } from "./expediteur";
@@ -196,7 +196,7 @@ export async function trierConversationEmail(args: {
       };
     }
 
-    const { system, prompt } = contexteTri({
+    const contexte = contexteTri({
       compte: projection.compte,
       conversation: {
         ...projection.conversation,
@@ -209,9 +209,11 @@ export async function trierConversationEmail(args: {
       sollicitation: "tri",
       schema: SortieTri,
       nomSchema: "verdict_de_tri",
-      system,
-      prompt,
+      system: contexte.system,
+      prompt: contexte.prompt,
       reasoning: NIVEAU_RETENU.extraction,
+      cacheCle: accountId,
+      prefixeStable: prefixeStable(contexte),
     });
     await logAiSolicitation(db, { ...mesure, messageId, conversationId });
 
@@ -281,7 +283,22 @@ export async function trierConversationEmail(args: {
       message,
     );
     try {
-      await logTriageFailure(db, { conversationId, messageId, error: message });
+      // Un appel qui a échoué a coûté ses jetons : consigné comme les autres
+      // (tranche 8), avant l'échec lui-même, qui dit son motif.
+      const echec = err instanceof EchecSollicitation ? err : null;
+      if (echec?.mesure) {
+        await logAiSolicitation(db, {
+          ...echec.mesure,
+          messageId,
+          conversationId,
+        });
+      }
+      await logTriageFailure(db, {
+        conversationId,
+        messageId,
+        error: message,
+        cause: echec?.motif ?? null,
+      });
     } catch (e) {
       console.error("[ia] échec non journalisé", e);
     }

@@ -10,12 +10,13 @@ import {
   type StructurationProjection,
 } from "@relvo/db";
 import { expireTenantData } from "@/server/cached";
-import { extract } from "../client";
+import { EchecSollicitation, extract } from "../client";
 import { inferenceDisponible, NIVEAU_RETENU } from "../config";
 import {
   contexteStructuration,
   extraireSignature,
   ficheCloture,
+  prefixeStable,
   type ContactContexte,
   type DomaineContexte,
   type Precedent,
@@ -162,7 +163,7 @@ export async function structurerSujet(args: {
 
   try {
     const projection = await getStructurationProjection(db, subjectId);
-    const { system, prompt } = contexteStructuration({
+    const contexte = contexteStructuration({
       compte: projection.compte,
       ...entreesDuContexte(projection),
       instant: { maintenant: new Date().toISOString() },
@@ -171,9 +172,11 @@ export async function structurerSujet(args: {
       sollicitation: "structuration",
       schema: SortieStructuration,
       nomSchema: "structuration_du_sujet",
-      system,
-      prompt,
+      system: contexte.system,
+      prompt: contexte.prompt,
       reasoning: NIVEAU_RETENU.extraction,
+      cacheCle: accountId,
+      prefixeStable: prefixeStable(contexte),
     });
     await logAiSolicitation(db, { ...mesure, subjectId, messageId });
 
@@ -234,10 +237,15 @@ export async function structurerSujet(args: {
       message,
     );
     try {
+      const echec = err instanceof EchecSollicitation ? err : null;
+      if (echec?.mesure) {
+        await logAiSolicitation(db, { ...echec.mesure, subjectId, messageId });
+      }
       await logStructurationFailure(db, {
         subjectId,
         messageId,
         error: message,
+        cause: echec?.motif ?? null,
       });
     } catch (e) {
       console.error("[ia] échec non journalisé", e);

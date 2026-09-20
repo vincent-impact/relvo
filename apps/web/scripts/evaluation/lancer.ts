@@ -9,7 +9,12 @@
 // Usage :
 //   node --env-file=.env.local --import tsx scripts/evaluation/lancer.ts \
 //     --jeu demo [--configs gpt-5.6-luna:none,gpt-5.6-luna:low,gpt-5.6-terra:low] \
-//     [--parallele 4] [--sortie /chemin/rapport.json] [--limite 5]
+//     [--parallele 4] [--sortie /chemin/rapport.json] [--limite 5] [--cache <cle>]
+//
+// `--cache <cle>` adresse le cache du fournisseur comme en production — une
+// clé par compte, la rétention de la configuration — et le rapport confronte
+// les jetons relus au préfixe stable poussé (tranche 8, M7.13). Sans clé, le
+// fournisseur route au hasard : c'est la mesure d'avant.
 //
 // Les modèles nommés ici doivent avoir un tarif (`src/server/ia/tarifs.ts`).
 
@@ -17,7 +22,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { extract, type Sollicitation } from "../../src/server/ia/client";
 import type { NiveauRaisonnement } from "../../src/server/ia/config";
-import { contexteTri } from "../../src/server/ia/contexte";
+import { contexteTri, prefixeStable } from "../../src/server/ia/contexte";
 import { SortieTri } from "../../src/server/ia/schemas";
 import type { MesureSollicitation } from "../../src/server/ia/tarifs";
 import type { Cas, CompteEvaluation } from "./types";
@@ -27,7 +32,7 @@ function arg(nom: string, defaut: string): string {
   return i >= 0 ? (process.argv[i + 1] ?? defaut) : defaut;
 }
 
-type Config = { modele: string; niveau: NiveauRaisonnement };
+type Config = { modele: string; niveau: NiveauRaisonnement; cache?: string };
 type Resultat = {
   cas: string;
   sortie: SortieTri | null;
@@ -65,7 +70,7 @@ async function trier(
   config: Config,
 ): Promise<Resultat> {
   const dernier = cas.messages[cas.messages.length - 1];
-  const { system, prompt } = contexteTri({
+  const contexte = contexteTri({
     // Le sujet né de ce fil n'existait pas au moment du tri : on ne le montre pas.
     compte: {
       ...compte,
@@ -82,10 +87,12 @@ async function trier(
       sollicitation: "banc-essai" satisfies Sollicitation,
       schema: SortieTri,
       nomSchema: "verdict_de_tri",
-      system,
-      prompt,
+      system: contexte.system,
+      prompt: contexte.prompt,
       reasoning: config.niveau,
       modele: config.modele,
+      cacheCle: config.cache,
+      prefixeStable: prefixeStable(contexte),
     });
     // « a_considerer » n'est ni juste ni faux : c'est un renvoi au dirigeant.
     // On le compte à part, jamais comme un accord.
@@ -136,11 +143,12 @@ async function main() {
   const jeu = arg("jeu", "demo");
   const limite = Number(arg("limite", "0"));
   const parallele = Number(arg("parallele", "4"));
+  const cache = arg("cache", "") || undefined;
   const configs: Config[] = arg("configs", "gpt-5.6-luna:none,gpt-5.6-luna:low")
     .split(",")
     .map((c) => {
       const [modele, niveau] = c.split(":");
-      return { modele, niveau: niveau as NiveauRaisonnement };
+      return { modele, niveau: niveau as NiveauRaisonnement, cache };
     });
   const dossier = resolve(import.meta.dirname, "jeu", jeu);
   const compte = JSON.parse(
@@ -207,6 +215,7 @@ async function main() {
       "latence moyenne": `${Math.round(moy(ok.map((r) => r.mesure!.dureeMs)))} ms`,
       "jetons entrée moy.": `${Math.round(moy(ok.map((r) => r.mesure!.jetons.entree + r.mesure!.jetons.cacheLecture + r.mesure!.jetons.cacheEcriture)))}`,
       "dont lus en cache moy.": `${Math.round(moy(ok.map((r) => r.mesure!.jetons.cacheLecture)))}`,
+      "préfixe stable moy. (attendu en cache)": `${Math.round(moy(ok.map((r) => r.mesure!.prefixeStable ?? 0)))}${cache ? ` · clé « ${cache} »` : " · sans clé"}`,
       "jetons sortie moy.": `${Math.round(moy(ok.map((r) => r.mesure!.jetons.sortie)))}`,
       "dont raisonnement moy.": `${Math.round(moy(ok.map((r) => r.mesure!.jetons.raisonnement)))}`,
       "durée du lot": `${Math.round((Date.now() - t0) / 1000)} s`,

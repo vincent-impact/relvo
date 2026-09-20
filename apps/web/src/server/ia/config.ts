@@ -89,15 +89,52 @@ export const TIERS: readonly Tier[] = [
  * d'outils borné par tour d'échange.
  */
 export const PLAFONDS = {
+  /**
+   * Jetons de SORTIE, raisonnement compris — c'est ainsi que le fournisseur
+   * compte. Atteindre le plafond est un ÉCHEC explicite (`EchecSollicitation`,
+   * motif « plafond-sortie »), jamais une sortie tronquée exploitée : une
+   * structuration coupée en plein JSON n'écrit rien, un brouillon coupé en
+   * pleine phrase n'est pas posé dans le composer.
+   */
   jetonsSortie: {
     classification: 200,
-    extraction: 2_000,
+    extraction: 3_000,
     redaction: 1_500,
     raisonnement: 4_000,
+  } satisfies Record<Tier, number>,
+  /**
+   * Jetons d'ENTRÉE (estimés, `estimerJetons`) — vérifiés AVANT l'appel, donc
+   * à zéro jeton : un contexte qui déborde est refusé et journalisé, pas payé.
+   * Ces plafonds sont larges par rapport aux budgets par couche (`BUDGETS`,
+   * tenus par un test sur une fixture pire que la réalité) : ils attrapent ce
+   * que les budgets ne voient pas — un compte aux instructions démesurées, un
+   * fil hors norme —, pas le cas nominal.
+   */
+  jetonsEntree: {
+    classification: 8_000,
+    extraction: 24_000,
+    redaction: 24_000,
+    raisonnement: 60_000,
   } satisfies Record<Tier, number>,
   /** Allers-retours au modèle par tour d'échange (`05 §11.8`). */
   etapesParTour: 6,
 } as const;
+
+/**
+ * Rétention du cache de prompt chez le fournisseur (`05 §10.5`). « in_memory »
+ * est le défaut du fournisseur, quelques minutes d'inactivité ; « 24h » garde
+ * le préfixe stable d'un compte — couche Produit, couche Compte, couche
+ * Domaine — d'un message au suivant, ce qui est le rythme réel d'une boîte
+ * e-mail. Surchargeable par `RELVO_IA_CACHE_RETENTION` ; vide = « 24h ».
+ */
+export type RetentionCache = "in_memory" | "24h";
+
+export function retentionCache(
+  env: Record<string, string | undefined> = process.env,
+): RetentionCache {
+  const v = env.RELVO_IA_CACHE_RETENTION?.trim();
+  return v === "in_memory" ? "in_memory" : "24h";
+}
 
 /**
  * Point d'entrée de l'API. Par défaut le point d'entrée standard : le projet
