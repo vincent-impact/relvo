@@ -16,7 +16,10 @@ import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 // ici) : on clique une ligne pour ouvrir la conversation dans son écran dédié
 // (`/conversations/[id]`), seule surface d'affichage. On répond LÀ-BAS.
 //
-// ⚠️ AUCUN dock d'action ici (2026-09-07, retour bêta). Valider / Fermer /
+// Le padding-bas réserve la barre d'onglets (le dock du layout) et le débord
+// du bouton Relvo.
+//
+// ⚠️ AUCUN dock d'ACTION ici (2026-09-07, retour bêta). Valider / Fermer /
 // Remettre / Supprimer se font TOUS au swipe sur la page Sujets : les boutons de
 // la fiche doublonnaient ces gestes et, affichés en grand sous le contenu,
 // déroutaient plus qu'ils ne servaient.
@@ -87,7 +90,7 @@ export function SubjectBody({
 
   return (
     <>
-      <main className="min-h-0 flex-1 overflow-y-auto bg-background">
+      <main className="min-h-0 flex-1 overflow-y-auto bg-background pb-[calc(92px+env(safe-area-inset-bottom))]">
         {header}
         <SegTabs
           options={options}

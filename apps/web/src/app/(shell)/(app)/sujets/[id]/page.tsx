@@ -7,7 +7,6 @@ import {
   listSubjectConversationRows,
   resolveReplyTargets,
 } from "@relvo/db";
-import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { AcknowledgeOnOpen } from "@/components/subject/acknowledge-on-open";
 import { PollRefresh } from "@/components/shared/poll-refresh";
@@ -96,7 +95,7 @@ export default async function SujetPage({
   const rows = conversationRows.map(toConversationRowData);
 
   return (
-    <MobileFrame>
+    <>
       <AcknowledgeOnOpen subjectId={subject.id} />
       <PollRefresh />
 
@@ -267,7 +266,7 @@ export default async function SujetPage({
         journalCount={events.length}
         journalPane={<JournalPane events={events} />}
       />
-    </MobileFrame>
+    </>
   );
 }
 

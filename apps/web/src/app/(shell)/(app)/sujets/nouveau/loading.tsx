@@ -1,11 +1,9 @@
-import { MobileFrame } from "@/components/layout/mobile-frame";
-
 // Squelette de chargement « Nouveau sujet » (M9.19) — hero violet + champs de
 // formulaire. Affiché le temps que folders + contacts chargent.
 
 export default function Loading() {
   return (
-    <MobileFrame>
+    <>
       <div
         className="rounded-b-(--hero-round) bg-relvo px-[22px] pb-9"
         style={{ paddingTop: "max(env(safe-area-inset-top), 14px)" }}
@@ -21,6 +19,6 @@ export default function Loading() {
           </div>
         ))}
       </div>
-    </MobileFrame>
+    </>
   );
 }

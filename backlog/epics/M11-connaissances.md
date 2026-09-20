@@ -1,7 +1,7 @@
 ---
 id: M11
 public: true
-ordre_public: 11
+ordre_public: 12
 titre_client: Connaissances métier
 resume_client: >
   Vous déposez vos documents de référence et vos consignes — organigramme, procédures, ton de

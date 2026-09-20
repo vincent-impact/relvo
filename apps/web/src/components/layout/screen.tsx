@@ -36,7 +36,7 @@ export function Screen({
           paddingBottom:
             bottomInset != null
               ? `${bottomInset + 12}px`
-              : "calc(72px + env(safe-area-inset-bottom))",
+              : "calc(92px + env(safe-area-inset-bottom))",
         }}
       >
         {children}

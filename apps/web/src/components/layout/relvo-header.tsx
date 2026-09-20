@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
-import { RelvoHeaderButton } from "@/components/layout/relvo-header-button";
+import { MenuButton } from "@/components/layout/side-menu";
 import { cn } from "@/lib/utils";
 
 // RelvoHeader — la « zone agent » violette en tête de chaque écran (Direction B).
-// Deux modes : page principale (grand titre) ou écran poussé (flèche retour +
-// titre). À DROITE : le bouton d'accès à Relvo (toujours présent, sauf `relvo=
-// false`), précédé du slot `action` qui sert le CONTEXTE de la page (ex. « + »
-// Nouveau sujet sur Mon fil). `children` loge le brief, la carte métriques, un
+// Deux modes : page principale (bouton MENU à gauche, grand titre) ou écran
+// poussé (flèche retour + titre). À DROITE : le slot `action`, qui sert le
+// CONTEXTE de la page (ex. « + » Nouveau sujet sur Sujets). L'accès à Relvo
+// n'est PLUS dans le header : il est au centre de la barre d'onglets, sous le
+// pouce (invariant 35). `children` loge le brief, la carte métriques, un
 // segmented… Le header SCROLLE avec le contenu.
 //
 // Direction « Instrument » (2026-09) : violet ENCRE, rayon bas plafonné
@@ -15,12 +16,21 @@ import { cn } from "@/lib/utils";
 // ce qui fait « matière » plutôt qu'aplat plastique — et des titres en Geist 600
 // interlettrage -0.02em (plus d'extrabold : le sérieux vient de la retenue).
 
+// Bouton de verre du header (retour, menu) : 38px, blanc translucide, filet.
+const GLASS_BTN =
+  "pressable grid size-[38px] flex-none place-items-center rounded-full text-white";
+const GLASS_BTN_STYLE = {
+  background: "rgb(255 255 255 / 0.14)",
+  border: "1px solid rgb(255 255 255 / 0.28)",
+  boxShadow:
+    "inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(0 0 0 / 0.18)",
+};
+
 export function RelvoHeader({
   title,
   subtitle,
   back,
   action,
-  relvo = true,
   rounded = true,
   wrapTitle = false,
   titleFull = false,
@@ -29,12 +39,10 @@ export function RelvoHeader({
 }: {
   title: React.ReactNode;
   subtitle?: React.ReactNode;
-  /** href du bouton retour (mode « écran poussé »). */
+  /** href du bouton retour (mode « écran poussé »). Sans lui : bouton menu. */
   back?: string;
-  /** Action(s) de page, posée(s) à GAUCHE du bouton Relvo (optionnel). */
+  /** Action(s) de page, posée(s) à DROITE (optionnel). */
   action?: React.ReactNode;
-  /** Affiche le bouton d'accès à Relvo (défaut true ; false dans la conversation). */
-  relvo?: boolean;
   rounded?: boolean;
   /** Titre sur 2 lignes (lisible en entier) au lieu de tronqué — mode détail. */
   wrapTitle?: boolean;
@@ -45,14 +53,9 @@ export function RelvoHeader({
   className?: string;
 }) {
   const detail = Boolean(back);
-  // Cluster droit : action(s) de page puis bouton Relvo (extrême droite).
-  const right =
-    action || relvo ? (
-      <div className="flex flex-none items-center gap-2">
-        {action}
-        {relvo ? <RelvoHeaderButton /> : null}
-      </div>
-    ) : null;
+  const right = action ? (
+    <div className="flex flex-none items-center gap-2">{action}</div>
+  ) : null;
   return (
     <header
       className={cn(
@@ -67,13 +70,8 @@ export function RelvoHeader({
           <Link
             href={back!}
             aria-label="Retour"
-            className="pressable grid size-[38px] flex-none place-items-center rounded-full"
-            style={{
-              background: "rgb(255 255 255 / 0.14)",
-              border: "1px solid rgb(255 255 255 / 0.28)",
-              boxShadow:
-                "inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(0 0 0 / 0.18)",
-            }}
+            className={GLASS_BTN}
+            style={GLASS_BTN_STYLE}
           >
             <ChevronLeft className="size-5" strokeWidth={2.2} />
           </Link>
@@ -100,13 +98,14 @@ export function RelvoHeader({
           {right}
         </div>
       ) : (
-        <div className="relative z-[1] flex items-center justify-between gap-3 px-[22px] pt-1">
-          <div className="min-w-0">
-            <h1 className="font-heading text-[26px] leading-[1.15] font-semibold tracking-[-0.02em]">
+        <div className="relative z-[1] flex items-center gap-3 px-3.5 pt-1">
+          <MenuButton className={GLASS_BTN} style={GLASS_BTN_STYLE} />
+          <div className="min-w-0 flex-1">
+            <h1 className="truncate font-heading text-[24px] leading-[1.15] font-semibold tracking-[-0.02em]">
               {title}
             </h1>
             {subtitle ? (
-              <div className="mt-0.5 text-[13.5px] text-(--on-violet)">
+              <div className="mt-0.5 truncate text-[13px] text-(--on-violet)">
                 {subtitle}
               </div>
             ) : null}

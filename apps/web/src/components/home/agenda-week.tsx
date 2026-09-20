@@ -26,7 +26,7 @@ import { ListPanel } from "@/components/shared/list-panel";
 // Semainier (Accueil, onglet « Agenda ») — RAIL de jours qui glisse librement de
 // gauche à droite (scroll horizontal natif, sans chevrons), AUJOURD'HUI centré au
 // chargement. Le rail couvre une fenêtre bornée autour d'aujourd'hui ; au-delà,
-// l'utilisateur passe par le calendrier mensuel (/planning). Chaque jour porte un
+// l'utilisateur passe par la vue mois du Calendrier (/calendrier). Chaque jour porte un
 // badge (ROUGE = nb en retard pour les jours passés, BLEU = nb à faire pour
 // aujourd'hui/futur) et est une ZONE DE DÉPÔT. Sous le rail, les tâches du jour
 // SÉLECTIONNÉ (mêmes lignes que partout, TaskItem). On DÉPLACE une tâche d'un jour

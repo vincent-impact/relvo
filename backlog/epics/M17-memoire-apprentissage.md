@@ -1,7 +1,7 @@
 ---
 id: M17
 public: true
-ordre_public: 15
+ordre_public: 16
 titre_client: Relvo apprend de vos gestes
 resume_client: >
   Ce que vous ignorez, ce que vous corrigez, ce que vous gardez : Relvo s'en souvient et trie

@@ -111,9 +111,11 @@ relvo/
 ### Routes → écrans
 
 > ⚠️ **Cette table décrit la cible** tranchée le 2026-09-20 (`ecarts`, « La disposition
-> générale »), livrée par l'épique **M18**. Tant que M18 n'est pas livrée, le code porte
-> l'ancienne disposition : `/` est la page des tâches, `/planning` la vue mois, `/dossiers` les
-> domaines, cinq onglets dont Contacts et Réglages, et le bouton Relvo dans le header.
+> générale »), livrée par l'épique **M18**, tranche par tranche. **Livré** (tranche 1) : le dock
+> à cinq places avec Relvo au centre, le menu latéral, le header sans bouton Relvo, les
+> redirections. **Pas encore** : `/` reste la page des tâches et `/calendrier` la seule vue
+> mois (tranche 2) ; `/bilan`, `/memoire` et l'Usage n'existent pas (tranches 3 et 4) — le menu
+> ne les affiche pas, et Mémoire ouvre `/parametres?tab=domaines` en attendant.
 
 | Route | Écran | Nav |
 |---|---|---|
@@ -135,8 +137,8 @@ relvo/
 Le **menu latéral** (burger, à gauche du header) porte Bilan, Mémoire, Contacts, Canaux, Profil,
 Préférences, Usage, Rechercher. Les boutons de page se posent **à droite** du header.
 
-⚠️ **`/messages`, `/planning` et `/dossiers` disparaissent avec M18** (redirections) ;
-`/messages` est mort depuis la conception de `/conversations`.
+⚠️ **`/messages`, `/planning` et `/dossiers` sont redirigées** (M18, tranche 1) — vers
+Conversations, Calendrier et, en attendant la page Mémoire, l'onglet Domaines des Réglages.
 
 ## Invariants produit
 

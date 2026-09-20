@@ -5,7 +5,7 @@ import { markConversationReadAction } from "@/server/actions/conversations";
 
 // Ouvrir une conversation vaut lecture de ses messages entrants (acquittement
 // implicite, invariant n°10) : on pose `readAt` une seule fois au montage —
-// effet de bord, pas de rendu. Pendant du MarkReadOnOpen de /messages/[id],
+// effet de bord, pas de rendu. Comme une fiche qu'on ouvre,
 // mais à la maille de la SOURCE : c'est là que le non-lu vit désormais, et
 // c'est ce qui fait qu'aucun message ne reste non-lu faute de sujet.
 

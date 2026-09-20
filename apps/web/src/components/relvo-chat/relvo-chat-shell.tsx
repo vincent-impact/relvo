@@ -47,7 +47,6 @@ export function RelvoChatShell({
         back={backHref}
         title="Relvo"
         subtitle="Nouvelle conversation"
-        relvo={false}
         action={
           <Link
             href="/relvo/historique"

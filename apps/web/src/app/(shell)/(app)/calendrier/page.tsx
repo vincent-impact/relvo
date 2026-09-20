@@ -11,7 +11,11 @@ import {
 import { folderColor, formatTime } from "@/lib/display";
 import { getTenantDb } from "@/server/auth-context";
 
-// Planning (M9.8 + M9.17, Direction B) — vue mois pleine largeur, tâches datées
+// Calendrier — la page des TÂCHES dans le temps (invariant 34). Aujourd'hui :
+// la vue mois seule ; la semaine et les indicateurs des tâches (l'ex-accueil)
+// la rejoignent sous un segmented Semaine / Mois avec la tranche 2 de M18.
+//
+// Vue mois (M9.8 + M9.17, Direction B) — pleine largeur, tâches datées
 // colorées par Dossier, navigation mois précédent / aujourd'hui / suivant, et
 // drag-and-drop des tâches d'un jour à l'autre (dnd-kit, dans PlanningMonth).
 //
@@ -110,7 +114,7 @@ function GridSkeleton() {
   );
 }
 
-export default async function PlanningPage({
+export default async function CalendrierPage({
   searchParams,
 }: {
   searchParams: Promise<{ m?: string }>;
@@ -133,28 +137,27 @@ export default async function PlanningPage({
   return (
     <Screen>
       <RelvoHeader
-        back="/"
-        title="Planning"
+        title="Calendrier"
         subtitle={`${MONTHS[month0]} ${year}`}
         className="pb-9"
       />
 
       <div className="flex items-center justify-between px-4 pt-4">
         <Link
-          href={`/planning?m=${ymKey(prevYear, (month0 - 1 + 12) % 12)}`}
+          href={`/calendrier?m=${ymKey(prevYear, (month0 - 1 + 12) % 12)}`}
           aria-label="Mois précédent"
           className="grid size-9 place-items-center rounded-full bg-(--surface) text-(--text-secondary)"
         >
           <ChevronLeft className="size-5" strokeWidth={2} />
         </Link>
         <Link
-          href="/planning"
+          href="/calendrier"
           className="rounded-full bg-relvo-bg px-3.5 py-1.5 text-[13px] font-bold text-relvo"
         >
           Aujourd’hui
         </Link>
         <Link
-          href={`/planning?m=${ymKey(nextYear, (month0 + 1) % 12)}`}
+          href={`/calendrier?m=${ymKey(nextYear, (month0 + 1) % 12)}`}
           aria-label="Mois suivant"
           className="grid size-9 place-items-center rounded-full bg-(--surface) text-(--text-secondary)"
         >

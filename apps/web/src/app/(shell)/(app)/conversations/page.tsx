@@ -30,9 +30,9 @@ const SEEN_FILTERS: Partial<
 > = { suivies: "followed", ignorees: "ignored" };
 
 // Conversations (M6bis.8) — la surface de TRI, hors navigation : on y arrive par
-// le KPI « Sans sujet » de la page Sujets. Elle remplace à terme `/messages`,
-// qui raisonnait en MESSAGES orphelins alors que le tri se décide désormais par
-// CONVERSATION (déterministe, calculé à la réception).
+// le KPI « Sans sujet » de la page Sujets et par l'onglet du dock. Elle a
+// remplacé `/messages` (redirigée), qui raisonnait en MESSAGES orphelins alors
+// que le tri se décide par CONVERSATION (déterministe, calculé à la réception).
 //
 // Le filtre vit dans l'URL (`?filtre=…`) : la page est linkable, et c'est la
 // BASE qui filtre — jamais un tri côté navigateur sur une liste tronquée par la

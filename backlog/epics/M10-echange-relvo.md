@@ -1,7 +1,7 @@
 ---
 id: M10
 public: true
-ordre_public: 12
+ordre_public: 13
 titre_client: Échange avec Relvo
 resume_client: >
   Demander à Relvo d'agir plutôt que de naviguer dans les écrans : « où en est la commande de

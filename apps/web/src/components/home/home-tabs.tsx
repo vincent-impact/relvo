@@ -65,7 +65,7 @@ export function HomeTabs({
           />
           <div className="px-5 pt-1 pb-2">
             <Link
-              href="/planning"
+              href="/calendrier"
               className="text-[13px] font-bold text-relvo active:opacity-70"
             >
               Voir le mois →

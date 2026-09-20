@@ -44,6 +44,27 @@ const nextConfig: NextConfig = {
     // rendu. C'est précisément pour ça qu'on passe par une URL stable.
   },
 
+  // Routes mortes de la disposition M18 (M18.10) : un signet ou une relance
+  // d'ancienne page atterrit sur la vue qui l'a remplacée. `/dossiers` pointe
+  // sur la liste des domaines des Réglages tant que la page Mémoire n'existe pas
+  // (tranche 4) ; les fiches `/dossiers/[id]` restent des routes à part entière.
+  async redirects() {
+    return [
+      { source: "/planning", destination: "/calendrier", permanent: true },
+      { source: "/messages", destination: "/conversations", permanent: true },
+      {
+        source: "/messages/:id",
+        destination: "/conversations",
+        permanent: true,
+      },
+      {
+        source: "/dossiers",
+        destination: "/parametres?tab=domaines",
+        permanent: false,
+      },
+    ];
+  },
+
   experimental: {
     // Cache client (Router Cache) : durée pendant laquelle un payload de route
     // déjà visité est réutilisé SANS aller-retour serveur (navigation/retour

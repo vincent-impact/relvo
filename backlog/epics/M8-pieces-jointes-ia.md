@@ -1,7 +1,7 @@
 ---
 id: M8
 public: true
-ordre_public: 13
+ordre_public: 14
 titre_client: Lecture des pièces jointes
 resume_client: >
   Relvo reconnaît chaque document reçu — facture, devis, bon de livraison — et l'étiquette

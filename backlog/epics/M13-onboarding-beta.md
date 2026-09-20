@@ -1,7 +1,7 @@
 ---
 id: M13
 public: true
-ordre_public: 14
+ordre_public: 15
 titre_client: Ouverture de la bêta
 resume_client: >
   Préparer l'arrivée des autres utilisateurs : parcours de première connexion, guide d'usage

@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
 // Cadre mobile commun (colonne unique pleine hauteur, centrée et bordée sur
-// grand écran). Partagé par le chrome (app) à onglets ET les surfaces plein
-// écran (Sujet, conversation) qui composent leur propre bas de page.
+// grand écran). Partagé par le chrome (app) à onglets ET la surface plein
+// écran de l'échange avec Relvo, qui compose son propre bas de page.
 
 export function MobileFrame({
   children,

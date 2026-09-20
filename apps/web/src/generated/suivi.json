@@ -97,9 +97,16 @@
     {
       "titre": "Tri automatique des messages",
       "resume": "Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent, ouvre le sujet correspondant, propose les tâches à faire et prépare un brouillon de réponse. C'est la fin du tri à la main.",
-      "statut": "en-cours",
+      "statut": "partiel",
       "gauche": 57.92,
       "largeur": 10.93
+    },
+    {
+      "titre": "Nouvel accueil et navigation simplifiée",
+      "resume": "Une page d'accueil qui dit ce que Relvo a fait depuis votre dernière visite, ce qui vous attend aujourd'hui et ce qui attend votre réponse. Relvo au centre de la barre du bas, un menu pour le reste, et une page Bilan pour voir ce que Relvo fait pour vous.",
+      "statut": "en-cours",
+      "gauche": 61.75,
+      "largeur": 6.01
     },
     {
       "titre": "Connaissances métier",
@@ -141,7 +148,7 @@
     "date": "2026-11-20",
     "gauche": 93.99
   },
-  "en_cours": "Tri automatique des messages",
+  "en_cours": "Nouvel accueil et navigation simplifiée",
   "journal": [
     {
       "date": "2026-09-07",

@@ -234,6 +234,23 @@ un thème `system` reçoit **toujours** le thème de l'application, jamais celui
 
 ---
 
+### #52 — La CLI du registre ajoute un paquet `cn` fantôme et importe `cn` depuis lui
+
+**Symptôme** : après `shadcn add`, le composant généré commence par `import { cn } from "cn"`
+et `package.json` a gagné une dépendance `"cn"` — un paquet npm sans rapport avec notre
+`cn()` de `lib/utils`. Tout compile, le lint passe, la page rend : seules les classes
+conditionnelles se comportent autrement.
+
+**Cause** : le style `base-maia` du registre déclare l'alias `cn` d'une façon que la CLI ne
+résout pas contre `components.json` ; elle prend le nom pour un paquet et l'installe. La même
+commande propose au passage d'**écraser** `button.tsx`.
+
+**Règle** : après chaque `shadcn add`, relire le diff de `package.json` et la ligne d'import
+du fichier généré ; retirer le paquet (`pnpm remove cn`), pointer l'import sur `@/lib/utils`,
+refuser l'écrasement des primitives déjà adaptées au thème.
+
+---
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -244,7 +261,7 @@ un thème `system` reçoit **toujours** le thème de l'application, jamais celui
 | **Tailwind** | #15 |
 | **AWS SDK** | #8, #9, #10, #11 |
 | **pnpm** | #29, #46 |
-| **Registre de composants** | #16, #40, #51 |
+| **Registre de composants** | #16, #40, #51, #52 |
 | **Vitest / Vite** | #22, #34 |
 | **Base UI** | #40 |
 | **Zod** | #42 |

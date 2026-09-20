@@ -20,7 +20,7 @@ import { requireAccount } from "@/server/auth-context";
 // depuis le cache serveur (cf. @/server/cached) en formes plates.
 
 // Fenêtre du rail (jours), centrée sur aujourd'hui. Bornée : au-delà, on passe
-// par le calendrier mensuel (/planning).
+// par la vue mois du Calendrier (/calendrier).
 const RAIL_BACK = 21;
 const RAIL_FWD = 21;
 

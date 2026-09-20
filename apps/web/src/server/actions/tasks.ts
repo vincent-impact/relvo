@@ -20,7 +20,7 @@ import { revalidateTenantData } from "@/server/cached";
 function revalidateTasks() {
   revalidatePath("/");
   revalidatePath("/fil");
-  revalidatePath("/planning");
+  revalidatePath("/calendrier");
   revalidatePath("/sujets/[id]", "page"); // onglet Tâches de la fiche Sujet
   revalidateTenantData();
 }

@@ -1,12 +1,10 @@
-import { MobileFrame } from "@/components/layout/mobile-frame";
-
 // Squelette de chargement de la fiche Sujet (M9.19). Affiché par Next dès le clic,
 // le temps que getSubjectDetail réponde — supprime la latence perçue (cold start
 // Neon). Reproduit la silhouette : hero violet (status-strip + résumé) + bulles.
 
 export default function Loading() {
   return (
-    <MobileFrame>
+    <>
       <div
         className="rounded-b-(--hero-round) bg-relvo px-[22px] pb-9"
         style={{ paddingTop: "max(env(safe-area-inset-top), 14px)" }}
@@ -25,6 +23,6 @@ export default function Loading() {
           />
         ))}
       </div>
-    </MobileFrame>
+    </>
   );
 }

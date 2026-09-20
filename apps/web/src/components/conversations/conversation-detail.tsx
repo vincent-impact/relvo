@@ -519,13 +519,7 @@ export function ConversationDetail({
       {/* Le hero reste VISIBLE : hors du défilement (retour du 2026-09-18), le
           retour et les sujets suivis sont toujours à portée. */}
       <div className="relative z-20 flex-none">
-        <RelvoHeader
-          back={backTo}
-          relvo={false}
-          titleFull
-          title={title}
-          className="pb-3.5"
-        >
+        <RelvoHeader back={backTo} titleFull title={title} className="pb-3.5">
           {/* Le hero d'une conversation tient sur PEU (retour du 2026-09-18 :
               fixé, il couvrait un tiers de l'écran). Plus de libellés de
               section : le canal et les interlocuteurs en puces sur une ligne,

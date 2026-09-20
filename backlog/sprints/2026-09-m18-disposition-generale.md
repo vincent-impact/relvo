@@ -24,13 +24,13 @@ la notification). **M7 tranche 10 passe après**, et M10 se construit sur le ré
 
 ### Avant la première ligne de code
 
-- [ ] Relire `PITFALLS.md` #40 (Base UI, pas Radix), #48 (deux layouts racine, `(shell)` /
+- [x] Relire `PITFALLS.md` #40 (Base UI, pas Radix), #48 (deux layouts racine, `(shell)` /
       `(public)`), #51 (thème sombre : l'app est claire seulement, l'iPhone du dirigeant est en
       mode sombre).
-- [ ] **Registre de composants d'abord** (`CLAUDE.md`, « Réflexe registre ») : le menu latéral
+- [x] **Registre de composants d'abord** (`CLAUDE.md`, « Réflexe registre ») : le menu latéral
       est une feuille (`sheet`), le segmented Semaine / Mois existe, la jauge de l'Usage est un
       `progress`. Rien ne se réécrit à la main.
-- [ ] Le bouton Relvo en relief est le **seul** objet en relief : sa matière vit dans un
+- [x] Le bouton Relvo en relief est le **seul** objet en relief : sa matière vit dans un
       composant unique, jamais recopiée.
 
 ### Trois règles pour toute la durée du sprint
@@ -51,12 +51,20 @@ la notification). **M7 tranche 10 passe après**, et M10 se construit sur le ré
   l'accueil, et la notification glisse vers M12.
 - **La place de Conversations dans le dock** ne se rouvre pas ici : c'est l'usage après M7 qui
   tranche (`ecarts`, « Rouvrir la place des conversations »).
+- **Le dock sur les écrans qui ont leur propre barre d'action** — le détail d'une conversation
+  (« Ignorer » / « Ouvrir un sujet », composer) et la fiche d'un contact (« Modifier » /
+  « Supprimer ») remplacent la barre d'onglets, donc le bouton Relvo n'y est pas. Sortir de
+  l'exception demande de repenser ces barres ; à trancher avec la tranche 5, quand le badge
+  donnera au bouton une raison d'être partout.
 
 ---
 
 ## Où on en est
 
-- [ ] Tranche 1 — la navigation, avec les pages d'aujourd'hui
+- [x] Tranche 1 — la navigation, avec les pages d'aujourd'hui — code livré, à vérifier sur
+      l'iPhone en mode sombre. `/` reste la page des tâches et `/calendrier` porte la vue mois
+      seule jusqu'à la tranche 2 ; Bilan et Usage n'apparaissent pas encore dans le menu, et
+      Mémoire y ouvre l'onglet Domaines des Réglages jusqu'aux tranches 3 et 4
 - [ ] Tranche 2 — le Calendrier et l'accueil en brief
 - [ ] Tranche 3 — le Bilan et l'Usage
 - [ ] Tranche 4 — la Mémoire

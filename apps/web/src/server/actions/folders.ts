@@ -14,10 +14,9 @@ import { revalidateTenantData } from "@/server/cached";
 // Server Actions Folders (M3.4).
 
 function revalidateFolders() {
-  // La liste des domaines vit désormais dans l'onglet « Domaines » des Réglages
-  // (2026-07-28) ; l'index /dossiers y redirige mais on revalide les deux.
+  // La liste des domaines vit dans l'onglet « Domaines » des Réglages, en
+  // attendant la page Mémoire (M18, tranche 4).
   revalidatePath("/parametres");
-  revalidatePath("/dossiers");
   revalidatePath("/dossiers/[id]", "page");
   revalidateTenantData();
 }
