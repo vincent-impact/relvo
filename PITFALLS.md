@@ -276,6 +276,28 @@ qui n'est pas connecté** : sur un canal qui marche, il n'a pas de sens et il in
 
 ---
 
+### #54 — Sur Android, la barre de navigation système d'une PWA installée n'obéit PAS à la page
+
+**Symptôme** : sous le dock violet, une bande gris clair (`#f6f6f6`) qui porte le trait d'accueil
+d'Android. Rien de tel sur iPhone. Remonté par un bêta-testeur, sur une app installée.
+
+**Cause** : ce n'est pas notre pixel. La bande est la **barre de navigation système**, hors du
+viewport, peinte par le navigateur. Le manifest n'a pas de champ pour elle, et jusqu'à Chrome
+**152**, une app installée (WebAPK) la laissait à la couleur par défaut de la plateforme — la
+barre d'état prenait `theme_color`, la barre de navigation non. Chrome **153** (août 2026)
+réutilise `theme_color` pour les deux (`WebappIntentDataProvider.getNavigationBarColor`,
+drapeau `WebAppNavigationBarThemeColor`, actif par défaut). Le mode bord à bord des apps
+installées (`WebAppShortEdgesCutoutMode`), qui rendrait la barre transparente sur notre dock,
+reste désactivé par défaut.
+
+**Règle** : ne **rien** changer côté page — `theme_color` violet, `viewport-fit=cover` et le
+dock qui respecte `safe-area-inset-bottom` sont déjà ce qu'attend Chrome, aujourd'hui et le
+jour du bord à bord. Une bande claire sous le dock sur Android = **Chrome à mettre à jour**
+(≥ 153), pas un bug à chercher dans le CSS. Vérifier la version de Chrome du téléphone avant
+toute autre hypothèse.
+
+---
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -294,7 +316,8 @@ qui n'est pas connecté** : sur un canal qui marche, il n'a pas de sens et il in
 
 Les pièges **#3, #12, #13, #17, #24, #25, #26** relèvent de la **plateforme de déploiement**, pas
 d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revérifier dans la
-documentation de la plateforme, jamais de mémoire.
+documentation de la plateforme, jamais de mémoire. Le piège **#54** relève du **navigateur du
+téléphone** : il se périme avec la version de Chrome, dans le bon sens.
 
 Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
