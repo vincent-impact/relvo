@@ -298,6 +298,39 @@ toute autre hypothèse.
 
 ---
 
+### #55 — Le serveur est à Greenwich, le dirigeant est en France — et le modèle lit l'horloge qu'on lui donne
+
+**Symptôme** : un interlocuteur écrit « j'arrive dans 1h » à 19h31. Relvo pose le rendez-vous à
+**18h**. Remonté par un bêta-testeur.
+
+**Cause** : deux manques qui se cumulent. Le modèle n'avait **aucune horloge** — la couche
+Instant lui donnait la date, jamais l'heure — et le seul repère horaire qu'il voyait était
+l'horodatage du message, rendu **en UTC** (`recuLe.slice(0, 16)`). À 19h31 à Paris, il lisait
+17h31, ajoutait une heure, et écrivait 18h. Deux heures d'écart l'été, une l'hiver. La même
+racine décalait le jour civil : jusqu'à deux heures après minuit, `toISOString().slice(0, 10)`
+rend encore **la veille** — « aujourd'hui », « en retard », le rail du Calendrier et le mois
+affiché basculaient tous à minuit UTC.
+
+**Règle** : **l'heure de Relvo est l'heure française**, et elle a un domicile unique —
+`packages/db/src/domain/temps.ts`, importé dans l'application par `@relvo/db/temps` (le barrel
+instancie Prisma : inutilisable côté client et sous vitest). Trois lignes à tenir :
+
+1. **Un instant ne se lit jamais avec `getUTC*` ni `toISOString()`.** Un jour civil, une heure,
+   un horodatage passent par ce module — qui passe lui-même par `Intl`, seul moyen correct :
+   l'heure d'été n'est pas un décalage constant, et la coder à la main est le bug qu'on croit
+   avoir évité.
+2. **Le modèle reçoit une horloge et le nom de son fuseau**, et l'horodatage de chaque message
+   est dans ce même fuseau. La même heure entre et sort.
+3. **Une heure de calendrier reste nue.** `start_date` et `start_time` sont ce que le dirigeant
+   écrirait sur son agenda, stockés sans fuseau et affichés tels quels (`timeZone: "UTC"` sur
+   une valeur nue = la rendre inchangée). Ne jamais « convertir » une heure nue : elle EST déjà
+   l'heure française.
+
+Les bascules d'heure et le créneau d'après minuit sont tenus par un test
+(`packages/db/test/temps.test.ts`) — ils ne se vérifient pas à la lecture.
+
+---
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -319,7 +352,7 @@ d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revér
 documentation de la plateforme, jamais de mémoire. Le piège **#54** relève du **navigateur du
 téléphone** : il se périme avec la version de Chrome, dans le bon sens.
 
-Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53** sont des **règles de conception ou d'hygiène** :
+Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
 
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et

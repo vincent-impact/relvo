@@ -1,3 +1,5 @@
+import { debutDuJourParis, jourDecale } from "@relvo/db/temps";
+
 // Helpers d'affichage (locale FR) — formatage des dates relatives et code
 // couleur par Dossier. Concerns UI : restent côté web, hors couche domaine.
 
@@ -80,22 +82,26 @@ export function formatTime(time: Date | null | undefined): string | null {
   });
 }
 
-/** Libellé de date d'une tâche : « aujourd'hui », « demain », sinon « 18 juin ». */
+/**
+ * Libellé de date d'une tâche : « aujourd'hui », « demain », sinon « 18 juin ».
+ *
+ * « Aujourd'hui » se juge sur le jour CIVIL FRANÇAIS. L'échéance est une date
+ * NUE ; la comparer aux composantes UTC de l'instant courant faisait dire
+ * « demain » à une tâche du jour, entre minuit et deux heures du matin
+ * (`@relvo/db/temps`, PITFALLS #55).
+ */
 export function formatTaskDate(
   date: Date | null | undefined,
   time?: Date | null,
 ): string | null {
   if (!date) return null;
   const now = new Date();
-  const sameDay = (a: Date, b: Date) =>
-    a.getUTCFullYear() === b.getUTCFullYear() &&
-    a.getUTCMonth() === b.getUTCMonth() &&
-    a.getUTCDate() === b.getUTCDate();
-  const tomorrow = new Date(now);
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
+  const sameDay = (a: Date, b: Date) => a.getTime() === b.getTime();
+  const today = debutDuJourParis(now);
+  const tomorrow = jourDecale(now, 1);
 
   let label: string;
-  if (sameDay(date, now)) label = "aujourd'hui";
+  if (sameDay(date, today)) label = "aujourd'hui";
   else if (sameDay(date, tomorrow)) label = "demain";
   else
     label = date.toLocaleDateString("fr-FR", {

@@ -85,4 +85,9 @@ la notification). **M7 tranche 10 passe après**, et M10 se construit sur le ré
       livrait son courrier. Le statut se répare désormais par les faits — recevoir prouve la
       connexion, la page Canaux réconcilie avec le fournisseur, Reconnecter ne bascule plus
       « en attente » et n'apparaît que sur un canal non connecté (`PITFALLS.md` #53)
+- [x] Retour bêta (2026-09-21) : « j'arrive dans 1h » à 19h31 posait le rendez-vous à 18h. Le
+      modèle n'avait pas d'horloge et lisait les horodatages en UTC. L'heure française a
+      désormais un domicile unique (`temps.ts`, `@relvo/db/temps`) : horloge et fuseau donnés au
+      modèle, horodatages traduits, jour civil français pour « aujourd'hui », « en retard », le
+      Calendrier et l'accueil (`PITFALLS.md` #55)
 - [ ] Tranche 5 — Relvo parle en premier (badge du dock, `RelvoQuestion` élargie, notification)

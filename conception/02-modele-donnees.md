@@ -402,6 +402,13 @@ Elle est **simple et asymétrique**, et c'est cette asymétrie qu'il faut reteni
 | début + heures de début et de fin, même jour | créneau dans la journée                           |
 | les quatre                                   | plage multi-jours avec horaires                   |
 
+⚠️ **Ces quatre champs portent une heure de CALENDRIER, pas un instant.** Ils disent ce que le
+dirigeant écrirait sur son agenda — « le 21 à 20:00 » — et sont stockés **nus**, sans fuseau.
+Cette heure nue est, par convention, **l'heure française** : c'est celle que le dirigeant lit,
+celle qu'il dicte, et celle que Relvo reçoit et rend. Un instant, lui — un message reçu, une
+tâche terminée — est un point sur la ligne du temps, stocké en UTC, et ne se lit qu'à travers
+le fuseau du produit.
+
 ⚠️ **« Date de fin seule » n'est pas une configuration valide.** La deadline vit dans le début.
 
 ⚠️ **La taxonomie des tâches — rendez-vous, tâche datée, flottante — est DÉRIVÉE de ces champs.**

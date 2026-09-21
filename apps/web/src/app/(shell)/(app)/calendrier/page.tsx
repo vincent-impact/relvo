@@ -19,6 +19,12 @@ import {
   cachedTaskKpis,
 } from "@/server/cached";
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
+import {
+  calendrierParis,
+  debutDuJourParis,
+  jourDecale,
+  jourParis,
+} from "@relvo/db/temps";
 
 // Calendrier — LA page des tâches (invariant 34), sous un segmented Semaine /
 // Mois posé dans le header, sur la ligne du titre. La vue vit dans l'URL (`?vue=mois`, `?m=AAAA-MM`).
@@ -60,14 +66,10 @@ const RAIL_FWD = 21;
 
 async function WeekTabs({ accountId }: { accountId: string }) {
   const now = new Date();
-  const todayKey = now.toISOString().slice(0, 10);
-  const rangeStart = new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate() - RAIL_BACK,
-    ),
-  );
+  // Jour CIVIL FRANÇAIS (`temps.ts`, PITFALLS #55) : le rail et le marqueur
+  // « aujourd'hui » doivent basculer à minuit à Paris, pas à minuit UTC.
+  const todayKey = jourParis(now);
+  const rangeStart = jourDecale(now, -RAIL_BACK);
   const rangeDays = RAIL_BACK + 1 + RAIL_FWD;
   const rangeEnd = new Date(rangeStart);
   rangeEnd.setUTCDate(rangeEnd.getUTCDate() + rangeDays);
@@ -113,11 +115,11 @@ function WeekSkeleton() {
   );
 }
 
-/** « Semaine du 15 septembre » — le lundi de la semaine courante. */
+/** « Semaine du 15 septembre » — le lundi de la semaine courante (jour FR). */
 function weekLabel(now: Date): string {
-  const monday = new Date(now);
-  const offset = (now.getUTCDay() + 6) % 7;
-  monday.setUTCDate(now.getUTCDate() - offset);
+  const today = debutDuJourParis(now);
+  const offset = (today.getUTCDay() + 6) % 7;
+  const monday = jourDecale(now, -offset);
   // Mois court : la ligne du titre porte aussi le segmented et le « + ».
   const label = monday.toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -179,7 +181,7 @@ async function PlanningGrid({
       key,
       day: d.getUTCDate(),
       inMonth: d.getUTCMonth() === month0,
-      isToday: key === now.toISOString().slice(0, 10),
+      isToday: key === jourParis(now),
     };
   });
 
@@ -213,9 +215,11 @@ export default async function CalendrierPage({
   const vue: CalendrierVue = vueParam === "mois" ? "mois" : "semaine";
   const now = new Date();
 
-  // Mois affiché (UTC, cohérent avec le seed). Défaut : mois courant.
-  let year = now.getUTCFullYear();
-  let month0 = now.getUTCMonth();
+  // Mois affiché. Défaut : le mois courant du calendrier FRANÇAIS — le 1er du
+  // mois à 00h30, le mois UTC est encore le précédent (PITFALLS #55).
+  const moisFr = calendrierParis(now);
+  let year = moisFr.annee;
+  let month0 = moisFr.mois - 1;
   if (m && /^\d{4}-\d{2}$/.test(m)) {
     const [yy, mm] = m.split("-").map(Number);
     year = yy;

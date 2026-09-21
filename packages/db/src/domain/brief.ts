@@ -1,3 +1,4 @@
+import { debutDuJourParis } from "./temps";
 import {
   Actor,
   QuestionStatus,
@@ -203,12 +204,9 @@ export async function getBriefSuggestions(
   return out.slice(0, MAX_SUGGESTIONS);
 }
 
+/** Le début du jour CIVIL FRANÇAIS, en date nue (`temps.ts`, PITFALLS #55). */
 function dayStart(now: Date): { start: Date } {
-  return {
-    start: new Date(
-      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-    ),
-  };
+  return { start: debutDuJourParis(now) };
 }
 
 /**

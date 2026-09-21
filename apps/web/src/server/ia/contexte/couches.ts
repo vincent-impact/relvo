@@ -1,3 +1,4 @@
+import { horodatageParis } from "@relvo/db/temps";
 import { nettoyerMessage, plafonner } from "./hygiene";
 import type {
   CompteContexte,
@@ -89,7 +90,9 @@ export function blocMessage(
     .replaceAll(FIN, "MESSAGE>>");
   const entete = [
     `${m.sens === "sortant" ? "Envoyé par moi à" : "De"} : ${m.expediteur}`,
-    `Le : ${m.recuLe.slice(0, 16).replace("T", " ")}`,
+    // EN HEURE FRANÇAISE, jamais en UTC : c'est l'horloge que le modèle lit
+    // pour résoudre « dans 1h », « ce soir », « demain matin » (PITFALLS #55).
+    `Le : ${horodatageParis(m.recuLe)}`,
     m.objet ? `Objet : ${m.objet}` : null,
     m.piecesJointes?.length
       ? `Pièces jointes : ${m.piecesJointes.map((p) => (p.etiquette ? `${p.nom} (${p.etiquette})` : p.nom)).join(", ")}`

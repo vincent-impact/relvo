@@ -18,6 +18,7 @@ import {
   cachedBriefSuggestions,
 } from "@/server/cached";
 import { getTenantDb, requireAccount } from "@/server/auth-context";
+import { FUSEAU, jourParis } from "@relvo/db/temps";
 
 // Accueil — un BRIEF en quatre zones (01 §11, invariant 34), le premier tour de
 // parole de Relvo rendu en cartes : les dernières nouvelles (dans le header),
@@ -100,7 +101,10 @@ function BriefSkeleton() {
 export default async function AccueilPage() {
   const account = await requireAccount();
   const now = new Date();
-  const todayKey = now.toISOString().slice(0, 10);
+  // Le jour CIVIL FRANÇAIS, pas le jour UTC : entre minuit et deux heures du
+  // matin, les deux diffèrent et l'accueil daterait tout de la veille
+  // (`temps.ts`, PITFALLS #55). C'est aussi la clé de cache du jour.
+  const todayKey = jourParis(now);
 
   // La borne des nouvelles = le passage PRÉCÉDENT ; l'avance se fait après la
   // réponse, seulement si l'absence a été assez longue.
@@ -117,7 +121,7 @@ export default async function AccueilPage() {
       weekday: "long",
       day: "numeric",
       month: "long",
-      timeZone: "Europe/Paris",
+      timeZone: FUSEAU,
     }),
   );
 

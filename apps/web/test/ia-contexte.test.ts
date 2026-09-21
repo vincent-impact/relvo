@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   BUDGETS,
   blocInstructions,
+  blocMessage,
+  coucheInstant,
   contexteBrouillon,
   contexteEtiquettePieceJointe,
   contexteRelecture,
@@ -571,5 +573,48 @@ describe("fiches", () => {
       f.indexOf("2. Vérifier l'avoir"),
     );
     expect(f).toContain("Appeler le magasin");
+  });
+});
+
+// L'HEURE QUE LIT LE MODÈLE EST L'HEURE FRANÇAISE (PITFALLS #55). Le bug fondateur :
+// un message reçu à 19h31 à Paris, « j'arrive dans 1h », un rendez-vous posé à
+// 18h. Le modèle n'avait aucune horloge et lisait l'horodatage du message en
+// heure de Greenwich — 17h31 — d'où deux heures d'écart. Ce test tient les deux
+// bouts : l'horloge donnée, et l'horodatage des messages.
+describe("l'heure donnée au modèle", () => {
+  // 21 septembre 2026, 17h31 UTC = 19h31 à Paris (heure d'été).
+  const SOIR = "2026-09-21T17:31:00.000Z";
+
+  it("la couche Aujourd'hui donne l'heure française et nomme le fuseau", () => {
+    const c = coucheInstant(SOIR);
+    expect(c).toContain("Il est 19:31, heure française");
+    expect(c).not.toContain("17:31");
+    expect(c).toContain("lundi 21 septembre 2026");
+  });
+
+  it("l'horodatage d'un message est en heure française, jamais en UTC", () => {
+    const bloc = blocMessage(
+      {
+        expediteur: "karim@sogood.fr",
+        sens: "entrant",
+        recuLe: SOIR,
+        objet: "En route",
+        contenu: "J'arrive dans 1h.",
+      },
+      0,
+    );
+    expect(bloc).toContain("Le : 2026-09-21 19:31");
+    expect(bloc).not.toContain("17:31");
+  });
+
+  it("l'hiver, le décalage suit — une heure, pas deux", () => {
+    expect(coucheInstant("2026-12-21T17:31:00.000Z")).toContain("Il est 18:31");
+  });
+
+  it("après minuit à Paris, le jour du modèle a changé, même si le jour UTC n'a pas bougé", () => {
+    // 22h30 UTC le 21 = 00h30 le 22 à Paris.
+    const c = coucheInstant("2026-09-21T22:30:00.000Z");
+    expect(c).toContain("mardi 22 septembre 2026");
+    expect(c).toContain("Il est 00:30");
   });
 });

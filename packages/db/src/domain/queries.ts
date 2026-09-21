@@ -1,3 +1,4 @@
+import { debutDuJourParis, jourDecale } from "./temps";
 import type { Subject, Task } from "../generated/prisma/client";
 import {
   ActionStatus,
@@ -20,13 +21,14 @@ import { cursorArgs, paginationSchema, toPage } from "./pagination";
 // fait) ou fermée (sujet écarté). Seul `open` alimente le fil et la mémoire.
 const CLOSED_STATUSES = [SubjectStatus.validated, SubjectStatus.closed];
 
+/**
+ * Les bornes du jour — le jour CIVIL FRANÇAIS, en dates nues, comme les
+ * `start_date` auxquelles on les compare (`temps.ts`). Calculé sur le fuseau de
+ * Paris : à minuit et demie, « aujourd'hui » est déjà le nouveau jour, alors
+ * que le jour UTC est encore la veille (PITFALLS #55).
+ */
 function dayBounds(now: Date): { start: Date; next: Date } {
-  const start = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
-  );
-  const next = new Date(start);
-  next.setUTCDate(next.getUTCDate() + 1);
-  return { start, next };
+  return { start: debutDuJourParis(now), next: jourDecale(now, 1) };
 }
 
 export type Kpis = {

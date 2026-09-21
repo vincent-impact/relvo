@@ -1,5 +1,14 @@
-// Couche INSTANT (`05 §10.1`) : date, jour, semaine, jours fériés proches.
-// Ce qui permet de lire « jeudi », « avant lundi », « après le pont ».
+import { debutDuJourParis, heureParis } from "@relvo/db/temps";
+
+// Couche INSTANT (`05 §10.1`) : date, HEURE, jour, semaine, jours fériés
+// proches. Ce qui permet de lire « jeudi », « avant lundi », « après le pont »
+// — et « dans 1h », « ce soir », « demain matin », qui demandent une horloge.
+//
+// ⚠️ TOUT ICI EST À L'HEURE FRANÇAISE (`@relvo/db`, `temps.ts`). Le serveur
+// tourne en UTC : sans traduction, le modèle voyait 17h31 quand il était 19h31
+// à Paris et posait le rendez-vous deux heures trop tôt (PITFALLS #55). Le
+// calendrier civil aussi est français : entre minuit et deux heures du matin,
+// le jour UTC est encore la veille.
 
 const JOURS = [
   "dimanche",
@@ -85,8 +94,11 @@ export function dateIso(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
 
+/** « lundi 21 septembre 2026 (2026-09-21) » — le jour CIVIL FRANÇAIS. */
 export function dateLisible(iso: string): string {
-  const d = new Date(iso);
+  // On raisonne sur la date nue du jour français : `getUTC*` sur cette
+  // valeur-là redonne exactement les composantes du calendrier de Paris.
+  const d = debutDuJourParis(new Date(iso));
   return `${JOURS[d.getUTCDay()]} ${d.getUTCDate()} ${MOIS[d.getUTCMonth()]} ${d.getUTCFullYear()} (${dateIso(d)})`;
 }
 
@@ -95,8 +107,8 @@ export function feriesProches(
   maintenant: string,
   horizonJours = 21,
 ): { date: string; libelle: string }[] {
-  const d = new Date(maintenant);
-  const debut = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const d = debutDuJourParis(new Date(maintenant));
+  const debut = d.getTime();
   const fin = debut + horizonJours * 86_400_000;
   const annee = d.getUTCFullYear();
   return [...feriesFrance(annee), ...feriesFrance(annee + 1)]
@@ -109,11 +121,16 @@ export function coucheInstant(
   maintenant: string,
   page?: string | null,
 ): string {
-  const d = new Date(maintenant);
+  const instant = new Date(maintenant);
+  const d = debutDuJourParis(instant);
   const feries = feriesProches(maintenant);
   const lignes = [
     `# Aujourd'hui`,
     `${dateLisible(maintenant)} — semaine ${semaineIso(d)}`,
+    // L'HEURE, sans quoi « dans 1h » ou « ce soir » ne se calcule pas. Le
+    // fuseau est NOMMÉ : le modèle doit savoir que l'horloge qu'on lui donne
+    // et celle qu'il rend sont la même — l'heure française (PITFALLS #55).
+    `Il est ${heureParis(instant)}, heure française. Toutes les dates et heures, celles des messages comme celles que tu renvoies, sont à cette heure-là.`,
   ];
   if (feries.length) {
     lignes.push(
