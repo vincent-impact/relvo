@@ -1,6 +1,7 @@
 import "server-only";
 import { UnipileClient } from "unipile-node-sdk";
-import { DomainError } from "@relvo/db";
+import { type ChannelConfigStatus, DomainError } from "@relvo/db";
+import { statutDepuisSources } from "./status";
 import type { UnipileMailApi } from "./types";
 
 /**
@@ -474,6 +475,8 @@ export async function getAccount(accountId: string): Promise<{
   name: string | null;
   email: string | null;
   identifier: string | null;
+  /** L'état du compte d'après ses sources — `null` si Unipile ne le dit pas. */
+  status: ChannelConfigStatus | null;
 } | null> {
   const ctx = getClient();
   if (!ctx) return null;
@@ -482,6 +485,7 @@ export async function getAccount(accountId: string): Promise<{
     // endroits selon le canal. On lit de façon défensive.
     const acc = (await ctx.client.account.getOne(accountId)) as unknown as {
       name?: string;
+      sources?: { status?: string | null }[];
       connection_params?: {
         mail?: { username?: string; imap_user?: string };
         im?: { phone_number?: string };
@@ -503,6 +507,7 @@ export async function getAccount(accountId: string): Promise<{
       name: acc.name ?? null,
       email,
       identifier: email ?? phone ?? acc.name ?? null,
+      status: statutDepuisSources(acc.sources),
     };
   } catch {
     return null;

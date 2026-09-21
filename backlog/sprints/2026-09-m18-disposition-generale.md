@@ -81,4 +81,8 @@ la notification). **M7 tranche 10 passe après**, et M10 se construit sur le ré
 - [x] Retours du dirigeant sur le téléphone (2026-09-20) : toute page du menu porte le burger
       (plus de flèche sur Bilan et Mémoire) ; les Réglages à onglets n'existent plus — Canaux,
       Profil, Préférences et Usage sont quatre pages (`/parametres` redirigée)
+- [x] Retour bêta (2026-09-21) : le badge d'un canal disait « En attente » sur une boîte qui
+      livrait son courrier. Le statut se répare désormais par les faits — recevoir prouve la
+      connexion, la page Canaux réconcilie avec le fournisseur, Reconnecter ne bascule plus
+      « en attente » et n'apparaît que sur un canal non connecté (`PITFALLS.md` #53)
 - [ ] Tranche 5 — Relvo parle en premier (badge du dock, `RelvoQuestion` élargie, notification)

@@ -40,8 +40,10 @@ import {
   isHostedAuthNotify,
   isMailWebhook,
   isMessagingWebhook,
+  statutDepuisUnipile,
   unipileChatDirectory,
 } from "@/server/unipile";
+import { setChannelConfigStatus } from "@relvo/db";
 
 // Webhook unique du fournisseur d'intégration Unipile (M5.2/M5.3/M5.4/M5.8).
 //
@@ -110,13 +112,9 @@ export async function POST(request: Request) {
   }
 
   // 4) Changement d'état d'un compte connecté (déconnexion, reauth requise).
-  if (
-    typeof payload === "object" &&
-    payload !== null &&
-    typeof (payload as UnipileAccountStatusWebhook).account_id === "string"
-  ) {
-    return handleAccountStatus(payload as UnipileAccountStatusWebhook);
-  }
+  //    Unipile l'enveloppe sous `AccountStatus` ; on accepte aussi la forme nue.
+  const accountStatus = unwrapAccountStatus(payload);
+  if (accountStatus) return handleAccountStatus(accountStatus);
 
   return ok({ ok: true, ignored: "unknown_event" });
 }
@@ -169,30 +167,45 @@ async function handleHostedAuthNotify(notify: UnipileHostedAuthNotify) {
   return ok({ ok: true, channelId, status: "connected", identifier });
 }
 
+function unwrapAccountStatus(
+  payload: unknown,
+): UnipileAccountStatusWebhook | null {
+  if (typeof payload !== "object" || payload === null) return null;
+  const inner =
+    (payload as { AccountStatus?: unknown }).AccountStatus ?? payload;
+  if (typeof inner !== "object" || inner === null) return null;
+  return typeof (inner as UnipileAccountStatusWebhook).account_id === "string"
+    ? (inner as UnipileAccountStatusWebhook)
+    : null;
+}
+
 async function handleAccountStatus(evt: UnipileAccountStatusWebhook) {
   const config = await prisma.channelConfig.findUnique({
     where: { externalAccountId: evt.account_id },
-    select: { channelId: true },
+    select: { accountId: true, channelId: true },
   });
   if (!config) return ok({ ok: true, ignored: "unknown_account" });
 
   // Unipile ne type pas fortement ce payload : le libellé d'état peut arriver
-  // sous `status` ou `message` (OK / CREDENTIALS / DISCONNECTED / SYNC_SUCCESS…).
-  const raw = (evt.status ?? evt.message ?? "").toUpperCase();
-  const connected =
-    raw === "OK" ||
-    raw === "CONNECTED" ||
-    raw === "CREATION_SUCCESS" ||
-    raw === "SYNC_SUCCESS" ||
-    raw === "RECONNECTED";
-  await prisma.channelConfig.updateMany({
-    where: { channelId: config.channelId },
-    data: {
-      status: connected ? "connected" : "error",
-      lastSyncAt: new Date(),
-    },
-  });
-  return ok({ ok: true, status: connected ? "connected" : "error" });
+  // sous `status` ou `message`. La traduction est la table partagée avec la
+  // page Canaux (`statutDepuisUnipile`) ; un libellé inconnu ne change RIEN —
+  // un statut deviné est pire qu'un statut inchangé (PITFALLS #53).
+  const status = statutDepuisUnipile(evt.status ?? evt.message);
+  if (!status) {
+    console.warn("[unipile] état de compte inconnu", {
+      accountId: evt.account_id,
+      status: evt.status,
+      message: evt.message,
+    });
+    return ok({ ok: true, ignored: "unknown_status" });
+  }
+  await setChannelConfigStatus(
+    tenantDb(config.accountId),
+    config.channelId,
+    status,
+    new Date(),
+  );
+  return ok({ ok: true, status });
 }
 
 async function handleMailReceived(mail: UnipileMailWebhook) {

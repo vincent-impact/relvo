@@ -58,10 +58,17 @@ export async function deleteChannelAction(id: string) {
 
 /**
  * Reconnecte un canal EXISTANT (M6quater) — ré-authentifie le même compte Unipile
- * sans rien supprimer. Résout l'`externalAccountId`, repasse le canal en attente,
- * puis renvoie le lien de hosted auth (mode reconnect). Le client redirige ; le
- * webhook `notify` finalise (statut connected). Fonctionne pour email ET WhatsApp
- * (le mode reconnect infère le provider du compte).
+ * sans rien supprimer. Résout l'`externalAccountId`, puis renvoie le lien de
+ * hosted auth (mode reconnect). Le client redirige ; le webhook `notify`
+ * finalise (statut connected). Fonctionne pour email ET WhatsApp (le mode
+ * reconnect infère le provider du compte).
+ *
+ * ⚠️ Le statut stocké n'est PAS touché ici. Il l'était (« en attente ») avant
+ * même que l'utilisateur ait vu la page Unipile : un bêta-testeur qui prenait
+ * l'icône pour un « rafraîchir » et refermait la page laissait son canal
+ * « En attente » pour toujours, courrier livré ou pas (PITFALLS #53). Seul le
+ * fournisseur — notify, webhook d'état, ou la réconciliation de la page — dit
+ * l'état d'un compte.
  */
 export async function reconnectChannelAction(
   channelId: string,
@@ -79,11 +86,6 @@ export async function reconnectChannelAction(
         "Ce canal n'a jamais été connecté — utilisez « Connecter ».",
       );
     }
-    // Le temps de la reconnexion, le canal repasse « en attente ».
-    await db.channelConfig.updateMany({
-      where: { channelId },
-      data: { status: "pending" },
-    });
     return { externalAccountId };
   });
   if (!found.ok) return found;

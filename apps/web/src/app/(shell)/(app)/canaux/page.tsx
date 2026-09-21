@@ -8,6 +8,9 @@ import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
 import { getTenantDb } from "@/server/auth-context";
+import { getAccount } from "@/server/unipile";
+import { type ChannelConfigStatus, setChannelConfigStatus } from "@relvo/db";
+import type { TenantDb } from "@relvo/db";
 
 export const metadata: Metadata = { title: "Canaux — Relvo" };
 
@@ -41,6 +44,18 @@ async function ChannelList() {
     },
   });
 
+  // Le badge dit ce que le fournisseur dit du compte, pas ce qu'on en a retenu
+  // (PITFALLS #53) : une lecture par canal, en parallèle, best-effort.
+  const statuts = await Promise.all(
+    channels.map((ch) =>
+      statutReconcilie(db, {
+        channelId: ch.id,
+        stored: ch.config?.status ?? "pending",
+        externalAccountId: ch.config?.externalAccountId ?? null,
+      }),
+    ),
+  );
+
   // Un seul canal par type (email / WhatsApp) : on masque la tuile de connexion
   // correspondante quand un canal du type existe déjà (2026-07-28). Évite de
   // complexifier l'usage et de multiplier les comptes Unipile.
@@ -56,9 +71,7 @@ async function ChannelList() {
           </p>
         ) : (
           channels.map((ch, i) => {
-            const st =
-              CHANNEL_STATUS[ch.config?.status ?? "pending"] ??
-              CHANNEL_STATUS.pending;
+            const st = CHANNEL_STATUS[statuts[i]] ?? CHANNEL_STATUS.pending;
             const Icon = ch.type === "whatsapp" ? MessageCircle : Mail;
             return (
               <div
@@ -86,9 +99,11 @@ async function ChannelList() {
                 >
                   {st.label}
                 </span>
-                {/* Reconnecter (ré-auth du même compte, sans perte) — proposé
-                    dès qu'un compte fournisseur existe. */}
-                {ch.config?.externalAccountId ? (
+                {/* Reconnecter (ré-auth du même compte, sans perte) — seulement
+                    quand le compte existe chez le fournisseur ET que le canal
+                    n'est pas connecté : sur un canal qui marche, l'icône se
+                    lisait comme un « rafraîchir » (PITFALLS #53). */}
+                {ch.config?.externalAccountId && statuts[i] !== "connected" ? (
                   <ChannelReconnectButton
                     channelId={ch.id}
                     channelName={ch.name}
@@ -117,6 +132,54 @@ export default function CanauxPage() {
         <ChannelList />
       </Suspense>
     </Screen>
+  );
+}
+
+/** Au-delà, la page n'attend plus le fournisseur : elle affiche ce qu'elle sait. */
+const DELAI_FOURNISSEUR_MS = 3000;
+
+/**
+ * Le statut à afficher pour un canal, réconcilié avec le fournisseur (M5.8,
+ * PITFALLS #53). Le statut stocké n'est qu'un souvenir : une reconnexion
+ * abandonnée ou un webhook d'état perdu le laissent faux — « En attente » sur
+ * une boîte qui livre son courrier. Quand le compte existe chez le fournisseur,
+ * on lui demande l'état de ses sources ; s'il diffère de ce qu'on a en base, on
+ * corrige la base par le domaine et on affiche la vérité. Sans réponse (délai,
+ * fournisseur non configuré, libellé inconnu), on garde ce qu'on savait. Un
+ * canal désactivé par l'utilisateur n'est jamais réconcilié.
+ */
+async function statutReconcilie(
+  db: TenantDb,
+  ch: {
+    channelId: string;
+    stored: ChannelConfigStatus;
+    externalAccountId: string | null;
+  },
+): Promise<ChannelConfigStatus> {
+  if (!ch.externalAccountId || ch.stored === "disabled") return ch.stored;
+  const live = await avecDelai(getAccount(ch.externalAccountId));
+  const status = live?.status ?? null;
+  if (!status || status === ch.stored) return ch.stored;
+  try {
+    await setChannelConfigStatus(db, ch.channelId, status, new Date());
+  } catch (err) {
+    console.error(
+      "[canaux] statut non réconcilié",
+      { channelId: ch.channelId },
+      err,
+    );
+  }
+  return status;
+}
+
+/** `null` si la promesse n'a pas répondu dans le délai — jamais une erreur. */
+function avecDelai<T>(promise: Promise<T>): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const delai = new Promise<null>((resolve) => {
+    timer = setTimeout(() => resolve(null), DELAI_FOURNISSEUR_MS);
+  });
+  return Promise.race([promise.catch(() => null), delai]).finally(() =>
+    clearTimeout(timer),
   );
 }
 

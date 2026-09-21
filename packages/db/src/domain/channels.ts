@@ -204,6 +204,30 @@ export async function upsertChannelConfig(
   });
 }
 
+/**
+ * Un message reçu PROUVE que le canal est connecté (M5.8). Le statut stocké
+ * n'est qu'un souvenir de ce que le fournisseur a dit — une reconnexion
+ * abandonnée, un webhook d'état perdu, et il ment. Appelée par l'ingestion :
+ * un canal « en attente » ou « en erreur » qui livre un message repasse
+ * « connecté » (`last_sync_at` daté du message). Un canal désactivé par
+ * l'utilisateur, lui, ne se rallume pas tout seul. Une seule requête, sans
+ * lecture préalable : à coût constant sur le chemin d'un webhook.
+ */
+export async function confirmChannelConnected(
+  db: TenantDb,
+  channelId: string,
+  at: Date = new Date(),
+): Promise<{ healed: boolean }> {
+  const { count } = await db.channelConfig.updateMany({
+    where: {
+      channelId,
+      status: { in: [ChannelConfigStatus.pending, ChannelConfigStatus.error] },
+    },
+    data: { status: ChannelConfigStatus.connected, lastSyncAt: at },
+  });
+  return { healed: count > 0 };
+}
+
 /** Met à jour le statut de connexion d'un canal (last_sync_at, erreurs). */
 export async function setChannelConfigStatus(
   db: TenantDb,

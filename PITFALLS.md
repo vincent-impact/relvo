@@ -251,6 +251,31 @@ refuser l'écrasement des primitives déjà adaptées au thème.
 
 ---
 
+### #53 — Le statut de connexion stocké n'est PAS la vérité — un message reçu la prouve, le fournisseur la dit
+
+**Symptôme** : la page Canaux affiche « En attente » sur une boîte e-mail qui livre tout son
+courrier. Remonté par un bêta-testeur, sur un compte connecté depuis des jours.
+
+**Cause** : le badge ne lisait que `ChannelConfig.status`, un **souvenir** de ce que le
+fournisseur avait dit un jour. Or l'action Reconnecter passait le canal « en attente » **avant**
+même que l'utilisateur ait vu la page du fournisseur ; l'icône ⟳ ressemble à un « rafraîchir »,
+on la touche, on referme — et le canal reste « En attente » pour toujours, courrier livré ou
+pas. Rien ne le corrigeait : ni les messages qui arrivaient, ni l'affichage.
+
+**Règle** : un statut stocké se **répare par les faits**, il ne se croit jamais sur parole.
+(1) **Recevoir prouve la connexion** : l'ingestion passe un canal « en attente » ou « en
+erreur » à « connecté » (`confirmChannelConnected`, testé dans
+`packages/db/test/channel-status.test.ts`) ; un canal désactivé ne se rallume pas. (2) **Seul
+le fournisseur dit l'état d'un compte** : l'action Reconnecter ne touche plus au statut, c'est
+le `notify`, le webhook d'état ou la page qui l'écrivent. (3) La page Canaux **réconcilie** le
+badge avec l'état des sources du compte, à chaque affichage, best-effort et bornée dans le
+temps. (4) Une **seule table** traduit le vocabulaire du fournisseur
+(`server/unipile/status.ts`, testée) — et un libellé inconnu **ne change rien** : un statut
+deviné est pire qu'un statut inchangé. (5) Le bouton Reconnecter **n'apparaît que sur un canal
+qui n'est pas connecté** : sur un canal qui marche, il n'a pas de sens et il invite au faux pas.
+
+---
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -271,7 +296,7 @@ Les pièges **#3, #12, #13, #17, #24, #25, #26** relèvent de la **plateforme de
 d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revérifier dans la
 documentation de la plateforme, jamais de mémoire.
 
-Les pièges **#18, #20, #23, #27, #28, #30, #45, #50** sont des **règles de conception ou d'hygiène** :
+Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
 
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et

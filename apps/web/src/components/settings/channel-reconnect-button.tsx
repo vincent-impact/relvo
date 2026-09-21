@@ -7,8 +7,9 @@ import { reconnectChannelAction } from "@/server/actions/channels";
 
 // Reconnexion d'un canal (page Canaux, M6quater). Ré-authentifie le MÊME
 // compte Unipile (hosted auth mode « reconnect ») : aucune donnée perdue,
-// contrairement à la suppression. À utiliser quand un canal tombe en « Erreur »
-// (identifiants expirés / révoqués, ou envoi refusé par le fournisseur).
+// contrairement à la suppression. N'apparaît que sur un canal qui n'est PAS
+// connecté (« Erreur », « En attente » avec un compte) : sur un canal qui
+// marche, l'icône se lisait comme un « rafraîchir » (PITFALLS #53).
 
 export function ChannelReconnectButton({
   channelId,

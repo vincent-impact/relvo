@@ -11,6 +11,7 @@ import { getChatIdentity, sendEmail, sendWhatsAppMessage } from "./client";
 
 export * from "./client";
 export * from "./signature";
+export * from "./status";
 export * from "./types";
 export { toInboundEmail, toInboundWhatsApp } from "./map";
 

@@ -26,6 +26,7 @@ import {
   resolveConversation,
   resolveWhatsAppChatIdentity,
 } from "./conversations";
+import { confirmChannelConnected } from "./channels";
 import type { EmailSenderPort } from "./email-port";
 import type {
   WhatsAppChatDirectoryPort,
@@ -409,6 +410,9 @@ export async function ingestInboundEmail(
         data: { lastActivityAt: new Date() },
       });
     }
+    // Recevoir prouve la connexion : un statut « en attente » ou « en erreur »
+    // resté en base à tort ne survit pas au premier message (PITFALLS #53).
+    await confirmChannelConnected(db, data.channelId);
     return { message, created: true };
   } catch (err) {
     // Course entre deux livraisons concurrentes : la contrainte unique a rejeté
@@ -536,6 +540,8 @@ export async function ingestInboundWhatsApp(
         data: { lastActivityAt: new Date() },
       });
     }
+    // Même règle que l'e-mail : recevoir prouve la connexion (PITFALLS #53).
+    await confirmChannelConnected(db, data.channelId);
     return { message, created: true };
   } catch (err) {
     if (
