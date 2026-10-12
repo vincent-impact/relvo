@@ -3,130 +3,145 @@
 > **Domicile des valeurs : [`apps/web/src/app/globals.css`](../../apps/web/src/app/globals.css).**
 > Ce fichier ne recopie pas la liste des variables — il dit **ce que chaque famille signifie** et
 > **ce qu'elle interdit**. Un token créé sans intention écrite ici est un token qui sera
-> réinventé ailleurs.
+> réinventé ailleurs. La direction en place est « Lettrage d'artisan »
+> ([`00-brief-da.md`](00-brief-da.md) §5) ; les tokens sont tenus par un test, pas par la
+> vigilance.
 
-## Le principe : la couleur est un signal, pas une décoration
+## Le principe : la couleur est un signal, et la livrée est violette
 
 Relvo s'adresse à des dirigeants qui ouvrent l'app entre deux services, en pleine lumière, à une
-main. Une interface bariolée y devient illisible. **La couleur est donc réservée à l'information
-qui doit sauter aux yeux** ; tout le reste vit en neutres chauds.
+main, et qui la retrouvent posés au bureau. Une interface bariolée y devient illisible ; une
+interface grise à un accent y devient un aplat sans repère. **La couleur a donc toujours un
+rôle** : la livrée dit « vous êtes dans Relvo », les acteurs disent qui parle, les domaines
+disent de quoi il s'agit, les états disent ce qui presse. Tout le reste est blanc, noir, ou gris.
 
-Corollaire tenu partout : une surface neutre par défaut, un accent par écran au plus, et **la
-rareté comme signal** — un drapeau urgent sur un ou deux sujets sur vingt-quatre vaut plus que
-vingt badges colorés.
+Corollaire tenu partout : **la rareté comme signal** — une pastille urgente sur un ou deux sujets
+sur vingt-quatre vaut plus que vingt badges colorés.
+
+## La livrée — trois violets, un ciel
+
+Le violet est la couleur de Relvo, produit et assistant. Il vient en trois valeurs, toujours du
+plus sombre au plus clair, de haut en bas :
+
+| Token | Rôle |
+|---|---|
+| `--nuit` | le haut du ciel, violet nuit profond : jamais ailleurs que dans un dégradé |
+| `--relvo` | le violet de Relvo : texte signé, liens de Relvo, cercle d'un indicateur actif |
+| `--relvo-clair` | le bas du ciel, le haut d'un dégradé de bouton |
+| `--relvo-pale` et `--relvo-filet` | le fond et le bord du **bloc de Relvo** |
+
+**Le ciel** (`--ciel`) est le dégradé du header : `--nuit` en haut, `--relvo` au tiers,
+`--relvo-clair`, puis le blanc de l'écran de travail. Il ne s'arrête jamais net : il fond. Il
+porte un **champ d'étoiles** (`--etoiles`) : une quinzaine de points fins et trois étoiles à
+quatre branches, celles du signe, posés en dégradés radiaux et masqués vers le bas. C'est du
+CSS ; aucune image. Sur la connexion, le ciel prend près de la moitié de l'écran.
+
+**Les dégradés de violet sont permis** sur ce qui est de Relvo ou de la livrée — le bouton
+central, l'action principale, une jauge, un interrupteur activé — et sur rien d'autre. Un
+dégradé va du clair au sombre, dans le sens de la lumière.
+
+⚠️ **Un bloc violet pâle signé des étoiles, c'est Relvo qui parle.** Comme le chrome est violet,
+la teinte seule ne dit plus l'acteur ; le bloc le dit. Un bouton de l'utilisateur n'est jamais
+sur `--relvo-pale`.
 
 ## Le triptyque d'acteurs — le seul code couleur que l'utilisateur doit apprendre
 
 Chaque chose affichée vient de quelqu'un, et ce quelqu'un a une couleur, la même partout :
-bulles, pastilles de journal, badges de source d'une tâche, avatars.
+bulles, pastilles de journal, avatars.
 
 | Acteur | UI | Couleur | Token |
 |---|---|---|---|
-| L'utilisateur | **Moi** | bleu | `--actor-me` → `--brand` |
-| L'agent | **Relvo** | violet | `--actor-relvo` → `--relvo` |
-| Un tiers | **Externe** | ambre | `--actor-ext` → `--amber-600` |
+| L'utilisateur | **Moi** | bleu | `--actor-me` |
+| L'agent | **Relvo** | violet, en bloc pâle signé | `--actor-relvo` → `--relvo` |
+| Un tiers | **Externe** | ambre, en fond pâle et texte foncé | `--actor-ext`, `--actor-ext-fond` |
 
-⚠️ **Le violet est la voix de l'agent, et rien d'autre.** Le header, la barre d'onglets et tout
-bloc émanant de Relvo sont violets ; un élément violet qui ne vient pas de Relvo casse la seule
-convention que l'utilisateur a apprise sans qu'on la lui explique.
+Une bulle de l'utilisateur est bleue, à droite ; une bulle d'un tiers est ambre pâle, à gauche ;
+Relvo n'a pas de bulle, il a un bloc.
 
-Le header violet est aussi **structurel** : c'est lui qui donne à l'œil une zone de départ et
-fait lire le reste comme « le contenu ». Un chrome neutre gagne en clarté locale et perd la carte
-de la page — sur téléphone, à une main, la carte prime.
-
-Le violet est un violet **encre** (profond, peu saturé) et le logo est **vectorisé** : il prend
-la couleur du token (`RelvoLogo`, `currentColor`), et les icônes PWA se régénèrent depuis lui
-(`pnpm icons`).
-
-## Les domaines (Folder) — une couleur par domaine, héritée par tout ce qui en dépend
+## Les domaines — une bande, et le texte qui va avec
 
 Un domaine porte une couleur ; le sujet qui lui appartient l'hérite, et la tâche qui appartient
 au sujet l'hérite à son tour. C'est ce qui rend une liste à plat lisible sans lire les titres.
 
-La couleur se manifeste par un **rail** — un filet vertical de quelques pixels **à l'intérieur**
-de la ligne, jamais au bord de l'écran, où il devient invisible. Tokens : `--folder-*`.
+Chaque domaine a **deux tokens** : la **bande** (`--domaine-<nom>`), pleine et vive, posée sur la
+tranche gauche d'une carte ou d'une ligne — à l'intérieur de la surface, jamais au bord de
+l'écran — et le **texte** (`--domaine-<nom>-texte`), plus sombre, qui tient le contraste sur
+blanc pour le nom du domaine en capitales condensées. On ne prend jamais la couleur de bande
+pour du texte.
+
+La palette de domaines est distincte de la livrée : aucun domaine n'est violet.
 
 ## Les états
 
-`--danger` (rouge) pour ce qui écarte ou détruit · `--success` (vert) pour ce qui est fait ·
-`--warning` (ambre) pour ce qui attend. Ces trois-là ne servent qu'à ça : ils ne sont jamais
-empruntés pour de la mise en forme.
+`--urgent` (rouge) pour ce qui presse et ce qui est en retard · `--fait` (vert) pour ce qui est
+fait ou connecté · `--attente` (ambre) pour ce qui attend un tiers. Ces trois-là ne servent qu'à
+ça : ils ne sont jamais empruntés pour de la mise en forme.
 
-## Le verre — réservé au chrome
+**L'état se lit à la forme avant la couleur** : urgent est une pastille **pleine**, en attente
+une pastille **cerclée**, en retard un horaire **barré**, fait une coche sur disque violet et un
+titre barré. Un daltonien lit l'écran.
 
-La barre d'onglets et le composer Relvo sont des surfaces **translucides** (`.glass-relvo`,
-`--glass-*`, `--blur-glass`, `--sat-glass`) : le contenu défile visiblement dessous. C'est ce qui
-fait que l'écran paraît plus grand qu'il n'est, sur un appareil tenu à une main.
+## La sélection — un cerclage
 
-Le verre reste **réservé au chrome** (barres, feuilles) et ne touche jamais le contenu : un texte
-sur verre est le premier à devenir illisible en plein soleil, et `backdrop-filter` coûte cher au
-défilement sur un téléphone d'entrée de gamme. Sans `backdrop-filter`, `.glass-relvo` se replie
-sur un aplat opaque.
+Un indicateur actif (Sujets, Calendrier, Conversations, Contacts) est un chiffre **cerclé** d'un
+trait `--relvo`, à distance de son libellé ; jamais un remplissage, qui effacerait la couleur.
+Dans le dock, l'onglet actif se lit au blanc plein et à la graisse du libellé ; il n'est jamais
+cerclé. Une puce de filtre active est noire sur blanc.
 
-## Le relief — réservé au bouton Relvo
+## Le noir — le dock et le texte
 
-Le produit est plat : une surface posée a une ombre, jamais un volume. **Une seule exception** :
-le bouton Relvo au centre de la barre d'onglets est un **objet** — disque nacré en dégradé
-radial, reflet en demi-lune, anneau violet et filet blanc, étoiles en dégradé avec ombre portée
-et éclat. C'est ce qui le désigne comme la chose qu'on presse, et comme la voix de l'agent. Le
-relief ne s'étend à rien d'autre : étendu aux tuiles ou aux panneaux, il ferait perdre la seule
-lecture qu'il apporte, « ce qui brille, c'est Relvo ». Les étoiles sont légèrement réduites dans
-le disque, et le badge est repoussé hors du bord : si les deux petites étoiles sont masquées, la
-grande seule se lit comme un trou.
-
-⚠️ Une surface de verre **exige du contenu derrière elle** pour exister. Posée sur un fond plat,
-elle ne se distingue pas d'un aplat — et le lecteur perd le repère de profondeur.
+`--noir` est le texte courant et le **dock** : une pilule noire flottante, décollée du bas et
+des bords, à cinq places, dont les icônes pleines sont blanches. Le noir ne sert à rien d'autre
+de grand : pas de header noir, pas de carte noire.
 
 ## La typographie
 
-Deux familles, chargées via `next/font` :
+Une seule famille en deux dessins, chargée via `next/font` :
 
 | Rôle | Famille | Pourquoi |
 |---|---|---|
-| Titres, interface et texte courant | **Geist** (`--font-sans`, `--font-heading`) | Une seule famille : le caractère d'un titre vient de sa graisse (600) et de son interlettrage serré (−0.02em), pas du dessin des lettres. Une typo « à personnalité » en titres donne un ton ludique que le produit ne veut pas |
-| Chiffres et références | **Geist Mono** (`--font-numeric`) | Chiffres tabulaires pour les KPI, et les références `SUB-xxxx` qui doivent s'aligner |
+| Texte courant, libellés, interface | **Barlow** 300 / 400 / 500 (`--font-sans`) | Dérivée du lettrage routier : fine, large, lisible en plein soleil. La graisse 300 est le texte, 400 le titre d'une ligne, 500 un libellé qui porte |
+| Chiffres, horaires, délais, titres | **Barlow Semi Condensed** 600 (`--font-condensed`) | Les gros chiffres du camion : un indicateur, un horaire, un titre de sujet sont condensés et gras, le reste fin. Chiffres tabulaires |
 
-Les titres ne dépassent pas la graisse 600 : le sérieux vient de la retenue.
+Les titres ne dépassent pas la graisse 600 ; le nom d'un domaine est en 600 condensé, 11 px,
+interlettré. Aucun texte fonctionnel sous 11 px, hors libellé du dock.
 
-L'échelle de corps est **mobile d'abord** : elle est calibrée pour un écran d'environ 390 px, et
-le desktop en hérite sans la remonter.
+L'échelle de corps est **mobile d'abord** : calibrée pour un écran d'environ 390 px, le desktop
+en hérite sans la remonter.
 
-## La matière : fond pierre, surfaces posées, trois niveaux
+## La matière : blanc, cartes, une ombre portée
 
-Le fond de page n'est pas blanc mais **pierre** (`--stone`, légèrement teinté) : c'est ce qui
-permet au blanc d'une surface de devenir une **élévation**. Sur un fond blanc pur, rien ne peut
-être posé.
+Le fond de l'écran de travail est **blanc** ; le ciel fond dedans. Une zone est une **carte**
+(`--surface`) : blanche, coins de `--rayon-carte` (18 px), un filet à peine visible, et une
+**ombre portée douce** (`--ombre-carte`) avec un décalage et un flou — jamais un halo sans
+décalage, jamais une ombre dure. Une sous-carte dans un bloc de Relvo (un sujet cité) prend un
+rayon plus petit (`--rayon-sous-carte`, 14 px) et un filet, pas d'ombre : **pas de carte dans
+une carte** avec deux ombres.
 
-Une surface posée porte trois choses, toujours ensemble (`--elev-*`, utilitaires
-`shadow-surface-1/2/3`) : un **filet de lumière** de 1px en haut (ce qui rend le bord
-« touchable »), une **ombre de contact** courte et nette, une **ombre ambiante** large et floue.
+**Une liste = une carte** : les lignes vivent dans une carte unique, séparées par un filet
+(`--filet`), jamais nues sur le fond et jamais une carte par ligne. Exception voulue : « En
+attente de vous » est une suite de cartes à feuilleter, une par sujet.
 
-| Niveau | Ce que c'est | Exemples |
-|---|---|---|
-| 0 | le fond pierre | l'écran |
-| 1 | un panneau posé | une liste, une carte de la fiche Sujet |
-| 2 | un objet flottant | barre KPI, segmented, menu |
-| 3 | une feuille | dialogue, sheet |
+Le **bloc de Relvo** est une carte sur `--relvo-pale` bordée de `--relvo-filet`, avec le signe
+et un libellé en capitales `--relvo`.
 
-**Une liste = un panneau** (`ListPanel`) : les lignes vivent dans un panneau blanc unique, séparées
-par un filet, jamais nues sur la pierre et jamais une carte par ligne. Une ligne « en retrait »
-(lue, faite) s'enfonce dans le panneau (`--surface`) au lieu de changer de couleur.
+Le **dock** porte `--rayon-dock` (32 px, pilule) et une ombre portée vers le bas, puisqu'il
+flotte ; le **composer** d'une conversation, lui, est ancré et projette son ombre vers le haut.
+Le **bouton Relvo** est un disque `--rayon-rond` en dégradé de violet, une ombre neutre, qui
+déborde du dock de quelques pixels ; le badge rouge est repoussé hors du bord.
 
-**Ce qui se presse s'enfonce** (`.pressable`) : 1px de translation, l'ombre portée disparaît, une
-ombre interne apparaît. C'est le retour tactile que le flat design n'a pas. Un aplat de couleur
-n'est jamais le seul signal d'un état.
+Il n'y a **ni verre, ni grain, ni relief** : le produit est plat, et c'est la couleur qui fait
+la hiérarchie. Les **rayons sont comptés** : pilule (`--rayon-pilule`) pour une puce, un bouton
+et le dock ; 18 pour une carte ; 14 pour une sous-carte ; 12 pour une option de formulaire ;
+8 pour un petit bouton d'icône sur le ciel. Au-delà, l'objet redevient un jouet. Seul ce qui est
+rond par nature (pastilles, avatars, disque Relvo, case à cocher) est rond.
 
-Le **grain** (`.grain`) casse l'effet plastique des grands aplats — le header violet le porte ;
-un panneau blanc ne le porte pas.
-
-Les **rayons sont plafonnés** : 8–10 sur un contrôle, 12–14 sur un panneau, 20 sur une feuille
-ou le bas du header. Au-delà, l'objet redevient un jouet. Seul ce qui est rond par nature
-(pastilles, avatars) est rond.
-
-**Une barre ancrée en bas projette son ombre vers le haut**, jamais l'inverse.
+**Ce qui se presse s'enfonce** (`.pressable`) : 1 px de translation et l'ombre portée qui se
+raccourcit. Un aplat de couleur n'est jamais le seul signal d'un état.
 
 Le mouvement est court et sort vite (`--dur-*`, `--ease-*`) : une transition qu'on remarque est
-une transition trop longue sur une app qu'on ouvre trente fois par jour.
+une transition trop longue sur une app qu'on ouvre trente fois par jour. Les étoiles ne
+scintillent pas.
 
 > ⚠️ **Piège Tailwind v4.** Il n'y a pas de `tailwind.config.js`. Un rayon lu depuis une variable
 > s'écrit `rounded-b-(--ma-var)` — **parenthèses**. `rounded-b-[--ma-var]` ne produit rien,

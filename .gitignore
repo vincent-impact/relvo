@@ -40,3 +40,11 @@ test-results/
 
 # Claude Code (réglages personnels, non partagés)
 .claude/settings.local.json
+
+# impeccable (outillage de design) — seuls PRODUCT.md, DESIGN.md et les briefs de surface sont suivis
+**/.impeccable/mocks/
+**/.impeccable/questions/
+**/.impeccable/build/
+**/.impeccable/review/
+**/.impeccable/hook.cache.json
+**/.impeccable/decision-payload.json

@@ -161,27 +161,58 @@ couples typographiques (Cormorant + Montserrat, Poppins + Open Sans, Fredoka + N
 ont tous été écartés. **Conclusion : cette skill ne sert pas M19.3.** L'épique lui confie
 « produire les quatre directions » : la ligne est à corriger.
 
-**Prochaine tentative, à valider par le dirigeant.** La seconde skill, **impeccable**, a une
-méthode de direction artistique que la première n'a pas : un entretien de cadrage (`shape`), un
-tirage de directions avec des **challengers de catalogue illustrés** (`concept-seed`, cartes
-« quality bar » rendues), une page de décision servie dans le navigateur où le dirigeant
-verrouille une carte, puis un contrat de direction en six blocs avant tout code. Son mode
-« Operate » dit exactement ce qui a manqué : une direction fournit la typo, la palette, la
-densité et **un geste signature** ; la navigation et les contrôles restent ceux de la plateforme ;
-un écran doit se lire comme un produit de sa catégorie avec « un espace distinct par tâche ».
-Son plancher de qualité bannit la soupe de cartes identiques **et** le « gros chiffre + petit
-libellé » des KPI. Elle attend `PRODUCT.md` à la racine (prévu en M19.11) et le dirigeant présent
-devant la page de décision.
+**Troisième tentative, avec impeccable : la direction est retenue.** La méthode de la skill a
+été suivie telle quelle : `PRODUCT.md` écrit à la racine après trois questions au dirigeant
+(scène d'usage : debout **et** posé ; les quatre références qu'il a envoyées deviennent un
+**socle verrouillé** ; le signe de Relvo et son bouton restent ouverts) ; sept mondes listés
+depuis l'univers food et bâtiment (code couleur HACCP, bordereau carbone, planning mural
+magnétique, signalétique de chantier, faïence métro, camion lettré, devis d'artisan) ; tirage
+`concept-seed --scope direction --mode operate` (clé `9d6ada01`) qui assigne le **camion lettré**
+et oppose six challengers de catalogue ; page de décision servie dans le navigateur, quatre cartes
+pleines avec esquisse de l'Accueil (la direction assignée, le choix de l'outil « Code couleur de
+cuisine », le challenger compétitif « Tableau des départs », le standard de la catégorie), cinq
+challengers écartés rangés en bas avec ce qu'ils ont cédé. Le dirigeant a retenu la direction
+assignée avec trois corrections (violet en livrée à la place du bleu de travail, bouton Relvo
+abaissé, onglet actif du dock sans cerclage), puis deux autres après la déclinaison (cercle des
+indicateurs aéré, **ciel étoilé** à la place du ruban). Une relance du tirage a été cliquée puis
+annulée par la confirmation du choix : elle n'a pas été servie. Le contrat de direction en six
+blocs vit dans `apps/web/.impeccable/surfaces/` ; la décision et ce qu'elle a retenu contre quoi
+dans `ecarts` (« Une direction artistique : “Lettrage d'artisan” »).
+
+**Les dix-neuf écrans sur le canevas**, en première ligne, au-dessus des directions écartées :
+les trois héros, puis menu, Calendrier, fiche sujet, Conversations, conversation WhatsApp,
+e-mail, historique, Recherche, Bilan, Mémoire, Contacts, Canaux, Profil, Préférences, Usage,
+Connexion. Chaque planche est rendue en navigateur et relue avant publication (règle désormais
+écrite dans le brief) ; les rendus vivent dans le scratchpad (`planches-png/`). Le détecteur
+d'impeccable signale sur ces planches la bande de domaine (« side-tab ») et des textes à 10 px :
+la bande est le geste signature, exception à écrire dans `DESIGN.md` en tranche 2 ; les tailles
+se traitent à la construction.
+
+**Ce que ui-ux-pro-max a réellement donné : rien d'une direction.** Un dictionnaire (styles,
+palettes, couples de polices, règles UX en une phrase) interrogé par recherche plein texte, sans
+exemple d'écran ; ses requêtes `--design-system` rendent un pattern de page de vente (#56).
+La ligne de l'épique est corrigée.
+
+## La décision écrite (M19.4)
+
+Récrits en place, au présent : `00-brief-da.md` (le socle, la direction en place et ce qu'elle
+refuse, le violet livrée et voix, le bouton qui déborde, le burger à droite, « rendue en
+navigateur avant d'être montrée ») et `01-tokens.md` (livrée en trois violets et ciel, bloc de
+Relvo, bande + texte par domaine, états par la forme, sélection par cerclage, Barlow en deux
+dessins, blanc et cartes, plus de verre ni de grain ni de relief). `CLAUDE.md` et
+`01-principes.md` ont suivi sur le bouton et le burger. **Pas encore récrits, pour la tranche
+2** : `02-composants.md` et `03-patterns.md` (fond pierre, panneaux, niveaux d'élévation) et
+`globals.css` — jusque-là, le code et ces deux fichiers décrivent l'ancienne matière.
 
 ## Où on en est
 
-- [ ] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ❌ M19.3 deux
-      séries de planches écartées (ui-ux-pro-max ne produit pas de direction) — **à refaire avec
-      impeccable, si le dirigeant le décide** · ⏳ M19.4 décision écrite — **le choix de la
-      direction appartient au dirigeant** ; ensuite `ecarts`, `00-brief-da.md` et `01-tokens.md`
-      récrits en place
-- [ ] Tranche 2 — « Habiller » : M19.11 outillage · M19.5 tokens, tenus par un test · M19.7
-      composants signature
+- [x] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 la
+      direction « Lettrage d'artisan » retenue par le dirigeant sur la page de décision
+      d'impeccable, dix-neuf écrans sur le canevas (deux séries avec ui-ux-pro-max écartées
+      avant) · ✅ M19.4 décision écrite dans `ecarts`, brief et tokens récrits en place
+- [ ] Tranche 2 — « Habiller » : M19.11 outillage (`PRODUCT.md` est posé ; `DESIGN.md` et les
+      exceptions du détecteur restent) · M19.5 tokens, tenus par un test · M19.7 composants
+      signature · `02-composants.md` et `03-patterns.md` récrits dans la matière retenue
 - [ ] Tranche 3 — « Alléger » : M19.6 écran par écran · M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas
 - [ ] Tranche 5 — « Clore » : M19.12

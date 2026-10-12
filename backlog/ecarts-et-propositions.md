@@ -1123,6 +1123,76 @@ du domaine, et M10 en est le consommateur — elle se livre avec M10, M18 passe 
 
 ---
 
+### Une direction artistique : « Lettrage d'artisan », violet en livrée, ciel étoilé
+
+**`tranché`** · Réponse à « Une direction artistique choisie parmi quatre ». Trois tentatives
+ont été nécessaires, et les deux premières sont instructives. Avec ui-ux-pro-max, la première
+série de planches ne faisait varier que couleur et typographie ; la seconde, « structurelle »,
+donnait quatre aplats d'informations sans zones ni hiérarchie. **Cet outil est un dictionnaire
+(styles, palettes, polices, règles en une phrase) interrogé en plein texte ; il ne contient aucun
+exemple d'écran et ne produit aucune direction.** La troisième tentative, avec impeccable, a
+suivi sa méthode : sept mondes tirés de l'univers du public (jamais des outils qu'il manie), un
+tirage qui assigne la direction à construire et oppose des challengers de catalogue illustrés,
+une page de décision dans le navigateur, un contrat de direction en six blocs. Les planches de
+référence sont citées dans le sprint qui les met en œuvre ; le contrat vit dans le dossier
+d'impeccable de l'application.
+
+Avant le tirage, le dirigeant a verrouillé un **socle** à partir de quatre applications qu'il
+apprécie : header en dégradé qui fond vers le blanc de l'écran de travail, zones en cartes
+délimitées, dock noir flottant à bouton central, police fine, icônes pleines, couleur assumée,
+l'assistant dans des blocs à part. Toutes les directions le portaient ; elles ne variaient que
+la typographie, la palette, la densité et un geste signature.
+
+- **Retenue : « Lettrage d'artisan »**, le monde du camion lettré et de la vitrine de l'artisan,
+  assignée par le tirage. L'entreprise se reconnaît à sa **bande de couleur** et à ses **gros
+  chiffres**. Chaque carte et chaque ligne porte sur sa tranche la bande de son domaine ; les
+  chiffres et les titres sont en condensé (Barlow Semi Condensed), le texte en Barlow fine.
+  **Retenu contre** « Code couleur de cuisine » (l'étiquette de jour HACCP sur chaque échéance :
+  parlant pour la moitié food du public, muet pour le bâtiment), « Tableau des départs »
+  (challenger de catalogue, les attentes classées par échéance et la ligne changée qui reste
+  allumée : juste sur le brief, mais le dirigeant food ou bâtiment ne se reconnaît pas dans un
+  aéroport) et le standard de la catégorie (ce que les quatre références font, exécuté sans
+  idée propre). Cinq autres challengers de catalogue ont été écartés ; chacun a cédé une
+  discipline à la direction retenue : l'état se lit à la forme et pas seulement à la couleur
+  (plein, cerclé, barré) ; chaque phrase de Relvo pointe sa preuve ; une palette comptée ; une
+  seule famille de caractères ; la sélection se montre par un cerclage, jamais par un
+  remplissage.
+- **Le violet devient la livrée, et reste la voix.** La direction proposait une livrée bleu de
+  travail ; le dirigeant l'a écartée : la livrée est violette, en plusieurs dégradés. Le violet
+  habille donc le chrome (le ciel du header, le bouton central, l'action principale, les jauges)
+  **et** marque ce qui émane de Relvo par un **bloc violet pâle signé des étoiles**. La
+  convention « un élément violet vient de Relvo » n'est plus vraie telle quelle ; ce qui la
+  remplace : **un bloc violet pâle avec le signe, c'est Relvo qui parle.** Moi bleu et Externe
+  ambre ne bougent pas. `01-tokens.md` est récrit en conséquence.
+- **Le header est un ciel étoilé à la tombée de la nuit**, demandé par le dirigeant à la place
+  d'un ruban oblique : violet nuit en haut, violet de Relvo, puis le blanc. Quelques points et
+  trois étoiles à quatre branches, celles du signe, qui s'effacent vers le bas. C'est du CSS,
+  jamais une image. Sur la connexion, le ciel prend près de la moitié de l'écran.
+- **Le bouton Relvo n'est plus un objet en relief** : c'est un disque en dégradé de violet qui
+  **déborde** du dock noir, sans nacre, sans reflet, sans anneau. Le dirigeant a jugé le relief
+  nacré sans rapport avec le reste. Ce qui le désigne, c'est la couleur et le débordement : il
+  reste le seul objet coloré du dock. **Retenu contre** le disque gardé tel quel. Les icônes du
+  dock sont pleines et gardées, l'onglet actif se lit au blanc plein et à la graisse, jamais à
+  un cerclage.
+- **Le burger passe à droite du header**, discret, à la place prévue à gauche : c'est ce que les
+  références du dirigeant font, et ce qui laisse la gauche à l'avatar sur l'accueil et à la
+  flèche retour sur les écrans poussés. Les boutons de page restent à droite, avant lui.
+- **Le fond est blanc, les surfaces sont des cartes** à coins de 18 px et ombre portée douce, et
+  non plus des panneaux sur pierre à trois niveaux d'élévation ; il n'y a plus de verre, plus de
+  grain. Une liste reste une suite de lignes dans **une** carte, jamais une carte par ligne.
+  « En attente de vous » est la seule exception, voulue : des cartes à faire défiler, une par
+  sujet, parce qu'elles portent le contact, l'enjeu et le geste.
+- **Les indicateurs sélectionnent par cerclage** : sur Sujets, Calendrier, Conversations et
+  Contacts, l'indicateur actif est un chiffre cerclé, à distance de son libellé.
+- **Pas de relance.** Le dirigeant a demandé une relance du tirage puis a confirmé la direction
+  retenue ; la relance n'a pas été servie.
+
+**Ce que la direction laisse au chantier qui l'habille** : les tokens dans le code, tenus par un
+test ; les règles de composition et les patterns récrits dans la même matière ; le fichier de
+design d'impeccable, avec ses exceptions assumées (la bande de domaine sur la tranche des cartes
+est le geste signature, pas un tic d'interface générée) ; les captures du point zéro rejouées
+dans la direction.
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté

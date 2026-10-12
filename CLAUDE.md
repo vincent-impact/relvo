@@ -133,8 +133,8 @@ relvo/
 | `/(auth)/*` | Tunnel d'authentification | — |
 
 **Navigation** : barre d'onglets basse, fixe, violette, **cinq places** : Accueil · Calendrier ·
-**Relvo** (bouton central, en relief, badge quand une question attend) · Sujets · Conversations.
-Le **menu latéral** (burger, à gauche du header) porte Bilan, Mémoire, Contacts, Canaux, Profil,
+**Relvo** (bouton central, disque violet qui déborde du dock, badge quand une question attend) ·
+Sujets · Conversations. Le **menu latéral** (burger, discret, à droite du header) porte Bilan, Mémoire, Contacts, Canaux, Profil,
 Préférences, Usage, Rechercher. **Toute page du menu porte le burger** ; la flèche retour est
 réservée aux écrans poussés (fiches, création). Les boutons de page se posent **à droite**.
 
