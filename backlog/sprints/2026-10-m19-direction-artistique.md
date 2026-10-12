@@ -112,10 +112,35 @@ Le bouton à cibler est celui du formulaire mot de passe, pas le premier `submit
   de développement sur l'accueil (attributs serveur/client différents), à regarder avant la
   tranche 2.
 
+## Les quatre directions sur planches (M19.3)
+
+**Le canevas** — douze planches au format téléphone, trois écrans héros (Accueil, Sujets, Échange)
+par direction, mêmes données partout, une note par direction (parti-pris, palette mappée sur les
+rôles, couple typographique, matière, mouvement, ce qu'elle refuse) :
+<https://claude.ai/artifact/JfcxaQEyouWXJEH6vvKAtf>. ⚠️ Ce sont des planches, pas la maquette :
+elles disent la matière, pas les flux. Les directions écartées ne survivent que là.
+
+| | Parti-pris | Ce qu'elle conteste, et le dit |
+|---|---|---|
+| **A · Instrument** | La direction en place poussée au bout : la matière fait la hiérarchie, la couleur n'est qu'un signal. Le violet quitte les sélecteurs, les badges pleins deviennent un signe et un mot, la tuile de domaine redevient un rail, aucun zéro affiché | Rien — c'est le témoin |
+| **B · Papier** | Chrome en papier, filets sans ombre ; le violet n'apparaît que là où Relvo parle | « Le header violet est structurel » (`01-tokens.md`) |
+| **C · Atelier** | La chaleur du métier : crème, ombres douces, Fraunces en titres, Externe en terre cuite | « Une seule famille, le caractère vient de la graisse » et la pierre froide |
+| **D · Nuit** | L'app suit le téléphone : encre en fond, violet lumineux, le bouton Relvo seule chose claire | « Relvo est clair seulement » (`PITFALLS.md` #51) — risque plein soleil assumé |
+
+**Ce que ui-ux-pro-max a donné, et ce qu'on en a gardé.** Ses requêtes `--design-system`
+rendent un pattern de page de vente quelle que soit la formulation (#56) : inutilisables. Ses
+catalogues par domaine ont servi de contrepoint : *E-Ink / Paper* et *Notes & Writing* (encre
+chaude + ambre sur crème) ont nourri B et C ; *Night indigo + dream violet* a confirmé la gamme
+de D ; les couples typographiques proposés (Cormorant + Montserrat, Poppins + Open Sans,
+Fredoka + Nunito, Inter seul) ont tous été écartés — trop luxe, trop corporate, trop ludique, ou
+un trope d'interface générée. Fraunces vient d'ailleurs.
+
 ## Où on en est
 
-- [ ] Tranche 1 — « Voir » : M19.1 brief au présent · M19.2 point zéro · M19.3 quatre
-      directions sur planches (Accueil, Sujets, Échange) · M19.4 décision écrite
+- [ ] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 quatre
+      directions sur planches (Accueil, Sujets, Échange) · ⏳ M19.4 décision écrite — **le choix
+      de la direction appartient au dirigeant** ; ensuite `ecarts`, `00-brief-da.md` et
+      `01-tokens.md` récrits en place
 - [ ] Tranche 2 — « Habiller » : M19.11 outillage · M19.5 tokens, tenus par un test · M19.7
       composants signature
 - [ ] Tranche 3 — « Alléger » : M19.6 écran par écran · M19.10 robustesse
