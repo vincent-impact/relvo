@@ -108,9 +108,10 @@ Le bouton à cibler est celui du formulaire mot de passe, pas le premier `submit
   retard », chaque attente « en retard », un rail de jours sans tâche. Une direction se juge sur
   des volumes plausibles : rafraîchir le jeu de démo avant la tranche 3.
 - **Mode sombre émulé** : aucune dérive sur ces dix-huit écrans, l'application reste claire ;
-  les toasts (#51) n'ont pas été déclenchés. Un avertissement d'hydratation s'affiche en console
-  de développement sur l'accueil (attributs serveur/client différents), à regarder avant la
-  tranche 2.
+  les toasts (#51) n'ont pas été déclenchés. Un avertissement d'hydratation (attributs serveur/client différents) s'est affiché une
+  fois en console de développement sur l'accueil, serveur fraîchement démarré ; rejoué ensuite
+  après connexion, après rechargement et en navigation directe : **non reproduit**. À surveiller
+  quand le header sera reconstruit, rien à corriger aujourd'hui.
 
 ## Les quatre directions sur planches (M19.3)
 
