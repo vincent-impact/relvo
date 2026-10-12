@@ -120,12 +120,26 @@ rôles, couple typographique, matière, mouvement, ce qu'elle refuse) :
 <https://claude.ai/artifact/JfcxaQEyouWXJEH6vvKAtf>. ⚠️ Ce sont des planches, pas la maquette :
 elles disent la matière, pas les flux. Les directions écartées ne survivent que là.
 
-| | Parti-pris | Ce qu'elle conteste, et le dit |
+**Première série, écartée le jour même.** Quatre directions qui ne faisaient varier que la
+couleur et la typographie, la structure des écrans étant gardée à l'identique : le dirigeant les
+a trouvées quasi identiques. La leçon : « la disposition ne rouvre pas » vaut pour les cinq
+invariants (dock, quatre zones et leur ordre, Relvo parle en premier, deux familles de chiffres,
+usage en pourcentage), **pas** pour la hauteur du header, la forme des chiffres, la barre
+d'onglets de Sujets, l'anatomie d'une ligne ni ce qu'une zone montre en premier. Une direction
+artistique qui ne touche pas à ça n'est qu'un thème.
+
+**Seconde série, en place sur le canevas** — quatre **thèses structurelles**, chacune avec sa
+matière. Aucune ne garde le cadre violet : le violet est partout ramené à la voix de Relvo.
+
+| | Thèse | Ce qu'elle conteste, et le dit |
 |---|---|---|
-| **A · Instrument** | La direction en place poussée au bout : la matière fait la hiérarchie, la couleur n'est qu'un signal. Le violet quitte les sélecteurs, les badges pleins deviennent un signe et un mot, la tuile de domaine redevient un rail, aucun zéro affiché | Rien — c'est le témoin |
-| **B · Papier** | Chrome en papier, filets sans ombre ; le violet n'apparaît que là où Relvo parle | « Le header violet est structurel » (`01-tokens.md`) |
-| **C · Atelier** | La chaleur du métier : crème, ombres douces, Fraunces en titres, Externe en terre cuite | « Une seule famille, le caractère vient de la graisse » et la pierre froide |
-| **D · Nuit** | L'app suit le téléphone : encre en fond, violet lumineux, le bouton Relvo seule chose claire | « Relvo est clair seulement » (`PITFALLS.md` #51) — risque plein soleil assumé |
+| **A · Ligne** | Tout en lignes, aucune tuile : les chiffres sont une phrase, le header tient sur une ligne, la liste commence au premier tiers ; Sujets sans barre d'onglets, neuf sujets visibles | Le header violet structurel et la tuile KPI (design system) ; respecte les quatre zones |
+| **B · Journal** | La page se lit comme un quotidien : manchette, article de une dans la voix de Relvo, titres avec chapeau, filtres en texte courant, échange en interview numérotée | Le header violet, les panneaux, la tuile KPI, « une seule famille » (Newsreader en titres) |
+| **C · Cartes** | Les gens d'abord : ce qui attend votre réponse domine en grandes cartes avec le contact et le geste à faire ; chiffres relégués en bas ; Sujets groupé par attente | L'ordre des quatre zones (invariant 34), « une ligne, pas une carte », Bricolage Grotesque en titres |
+| **D · Flux** | Un seul fil chronologique : nouvelles, tâches et attentes sont des événements sur un rail de temps, acteur en couleur ; Sujets par dernière activité ; l'échange est le même fil ; fond sombre | L'accueil en quatre zones (invariant 34), « clair seulement » (#51), les chiffres en tuiles |
+
+⚠️ Une thèse retenue qui conteste un invariant (C ou D) se tranche par une entrée du registre des
+écarts **avant** la tranche 2, jamais par la planche seule.
 
 **Ce que ui-ux-pro-max a donné, et ce qu'on en a gardé.** Ses requêtes `--design-system`
 rendent un pattern de page de vente quelle que soit la formulation (#56) : inutilisables. Ses
