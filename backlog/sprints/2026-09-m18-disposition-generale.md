@@ -90,4 +90,6 @@ la notification). **M7 tranche 10 passe après**, et M10 se construit sur le ré
       désormais un domicile unique (`temps.ts`, `@relvo/db/temps`) : horloge et fuseau donnés au
       modèle, horodatages traduits, jour civil français pour « aujourd'hui », « en retard », le
       Calendrier et l'accueil (`PITFALLS.md` #55)
-- [ ] Tranche 5 — Relvo parle en premier (badge du dock, `RelvoQuestion` élargie, notification)
+- [~] Tranche 5 — Relvo parle en premier (badge du dock, `RelvoQuestion` élargie, notification) :
+      **confiée à M10**, qui en est le consommateur. M18 est fermée en `partiel` ; le sprint
+      suivant est la direction artistique (M19), voir le fichier de sprint suivant

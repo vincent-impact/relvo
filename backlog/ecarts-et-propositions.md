@@ -1092,6 +1092,35 @@ menu dès maintenant. **Retenu contre** des chiffres réels partiels : un Bilan 
 serait lu comme vrai. Le branchement suit le plafond par compte (M14.5) et la lecture du
 journal ; le module de démonstration disparaît à ce moment-là.
 
+### Une direction artistique choisie parmi quatre, avant de construire l'échange
+
+**`tranché`** · La disposition générale est tranchée et livrée ; ce qui reste perçu comme
+« lourd » n'est pas la place des choses mais leur **matière** — densité, contrastes, ce que
+chaque écran porte en trop — et l'absence d'**accompagnement** : un dirigeant qui arrive sur un
+produit vide n'est pris par la main nulle part.
+
+La proposition : **habiller et alléger avant M10**, pour la raison qui a placé M18 avant M10 —
+la surface de l'échange est celle qui compte, on ne la construit pas dans une apparence qu'on
+sait vouloir changer. Quatre directions visuelles comparées sur planches (Accueil, Sujets,
+Échange), dont la DA actuelle poussée au bout comme témoin ; une seule survit dans
+`conception/`. Puis un allègement écran par écran, et un langage de mouvement réservé à ce qui
+guide — le mouvement courant reste court. Trois outils d'assistance au design sont mobilisés,
+chacun sur une tranche ; leurs fichiers de travail ne deviennent pas un second domicile de
+conception.
+
+**Ce qui n'est pas rouvert** : la disposition (invariants 34–38), les rôles sémantiques de
+couleur, le relief réservé au bouton Relvo. Une direction peut les contester, mais par une entrée
+ici, jamais par une planche qui les contourne.
+
+**Retenu contre** reprendre l'UX et l'UI d'un seul tenant : la disposition venait d'être tranchée
+sur planches, et M9 a montré ce que coûte un écran dessiné deux fois. **Retenu contre** animer la
+prise en main maintenant : elle dépend de l'échange scripté (M10.16), pas construit ; on livre le
+langage de mouvement et les surfaces de premiers pas qui existent, la prise en main les
+consommera. **Retenu contre** fermer la tranche 5 de M18 avant d'ouvrir ce chantier : elle est
+du domaine, et M10 en est le consommateur — elle se livre avec M10, M18 passe `partiel`.
+
+**Mis en œuvre par** l'épique M19, entre M18 et la tranche 10 de M7.
+
 ---
 
 ## Écarts constatés

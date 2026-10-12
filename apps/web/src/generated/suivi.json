@@ -2,7 +2,7 @@
   "genere_par": "scripts/generate-suivi.mjs",
   "axe": {
     "debut": "2026-06-01",
-    "fin": "2026-12-01",
+    "fin": "2027-01-01",
     "libelles": [
       {
         "mois": "jun",
@@ -27,6 +27,10 @@
       {
         "mois": "nov",
         "annee": 2026
+      },
+      {
+        "mois": "déc",
+        "annee": 2026
       }
     ]
   },
@@ -35,120 +39,127 @@
       "titre": "Fondations techniques",
       "resume": "Mettre en place le socle sur lequel tout le reste repose : l'hébergement, la base de données, les outils de qualité et le déploiement automatique. Rien de visible à l'écran, mais tout en dépend.",
       "statut": "termine",
-      "gauche": 3.28,
-      "largeur": 1.64
+      "gauche": 2.8,
+      "largeur": 1.41
     },
     {
       "titre": "Comptes et connexion",
       "resume": "Vous donner un compte protégé, et garantir que vos données ne sont accessibles qu'à vous. Chaque information dans Relvo appartient à un compte et un seul.",
       "statut": "termine",
-      "gauche": 4.37,
-      "largeur": 1.09
+      "gauche": 3.74,
+      "largeur": 0.93
     },
     {
       "titre": "Sujets, tâches et domaines",
       "resume": "Poser la structure de votre espace de travail : un sujet regroupe une affaire en cours, ses échanges, ses tâches et l'historique des décisions prises. C'est l'unité autour de laquelle tourne tout le produit.",
       "statut": "termine",
-      "gauche": 4.92,
-      "largeur": 3.82
+      "gauche": 4.21,
+      "largeur": 3.27
     },
     {
       "titre": "Écrans de l'application",
       "resume": "Construire les écrans du quotidien, pensés d'abord pour le téléphone et l'usage à une main : vos actions du jour, vos sujets, vos conversations, vos contacts, votre planning.",
       "statut": "termine",
-      "gauche": 8.74,
-      "largeur": 7.11
+      "gauche": 7.48,
+      "largeur": 6.07
     },
     {
       "titre": "Fichiers et pièces jointes",
       "resume": "Conserver durablement les documents reçus — factures, bons de livraison, devis — et les rendre consultables depuis le sujet, y compris après sa clôture. Ils sont stockés en Europe.",
       "statut": "termine",
-      "gauche": 16.39,
-      "largeur": 7.65
+      "gauche": 14.02,
+      "largeur": 6.54
     },
     {
       "titre": "Réception des e-mails",
       "resume": "Faire entrer votre boîte mail dans Relvo, et vous permettre d'y répondre depuis votre vraie adresse. Vos interlocuteurs ne voient aucune différence, et vos réponses se retrouvent dans vos messages envoyés.",
       "statut": "termine",
-      "gauche": 24.04,
-      "largeur": 1.64
+      "gauche": 20.56,
+      "largeur": 1.4
     },
     {
       "titre": "Réception WhatsApp",
       "resume": "Faire entrer WhatsApp par le même chemin que l'e-mail : vos messages, vos photos et vos documents arrivent dans Relvo, et vous répondez sans changer d'application.",
       "statut": "partiel",
-      "gauche": 25.68,
-      "largeur": 1.1
+      "gauche": 21.96,
+      "largeur": 0.94
     },
     {
       "titre": "Regroupement en conversations",
       "resume": "Ranger chaque message dans le bon fil dès sa réception, sans jamais se tromper — par objet pour un e-mail, par interlocuteur pour WhatsApp. C'est ce rangement qui permet ensuite d'ouvrir un sujet d'un seul geste.",
       "statut": "termine",
-      "gauche": 26.78,
-      "largeur": 4.91
+      "gauche": 22.9,
+      "largeur": 4.2
     },
     {
       "titre": "Consolidation",
       "resume": "Reprendre l'application après les premiers retours d'usage : simplification des gestes, corrections d'affichage, et mise en place de contrôles automatiques qui vérifient la qualité à chaque mise en ligne.",
       "statut": "termine",
-      "gauche": 50.27,
-      "largeur": 6.01
+      "gauche": 42.99,
+      "largeur": 5.14
     },
     {
       "titre": "Tri automatique des messages",
       "resume": "Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent, ouvre le sujet correspondant, propose les tâches à faire et prépare un brouillon de réponse. C'est la fin du tri à la main.",
       "statut": "partiel",
-      "gauche": 57.92,
-      "largeur": 10.93
+      "gauche": 49.53,
+      "largeur": 9.35
     },
     {
       "titre": "Nouvel accueil et navigation simplifiée",
       "resume": "Une page d'accueil qui dit ce que Relvo a fait depuis votre dernière visite, ce qui vous attend aujourd'hui et ce qui attend votre réponse. Relvo au centre de la barre du bas, un menu pour le reste, et une page Bilan pour voir ce que Relvo fait pour vous.",
+      "statut": "partiel",
+      "gauche": 52.8,
+      "largeur": 9.35
+    },
+    {
+      "titre": "Nouvelle apparence et premiers pas guidés",
+      "resume": "Une interface plus légère et plus lisible, choisie parmi plusieurs directions visuelles comparées sur de vrais écrans. Et des premiers pas accompagnés : Relvo vous guide à travers l'application au lieu de vous laisser devant des écrans vides.",
       "statut": "en-cours",
-      "gauche": 61.75,
-      "largeur": 6.01
+      "gauche": 62.15,
+      "largeur": 8.88
     },
     {
       "titre": "Connaissances métier",
       "resume": "Vous déposez vos documents de référence et vos consignes — organigramme, procédures, ton de réponse, particularités d'un fournisseur. Relvo s'en sert pour proposer des réponses justes plutôt que génériques.",
       "statut": "a-faire",
-      "gauche": 69.4,
-      "largeur": 6.01
+      "gauche": 71.96,
+      "largeur": 5.14
     },
     {
       "titre": "Échange avec Relvo",
       "resume": "Demander à Relvo d'agir plutôt que de naviguer dans les écrans : « où en est la commande de sauce ? », « crée-moi une tâche pour lundi », « prépare une réponse à Karim ». Chaque action reste visible et annulable.",
       "statut": "a-faire",
-      "gauche": 75.41,
-      "largeur": 6.01
+      "gauche": 78.5,
+      "largeur": 5.14
     },
     {
       "titre": "Lecture des pièces jointes",
       "resume": "Relvo reconnaît chaque document reçu — facture, devis, bon de livraison — et l'étiquette automatiquement, pour que vous le retrouviez sans avoir à l'ouvrir.",
       "statut": "a-faire",
-      "gauche": 78.14,
-      "largeur": 3.28
+      "gauche": 85.05,
+      "largeur": 1.87
     },
     {
       "titre": "Ouverture de la bêta",
       "resume": "Préparer l'arrivée des autres utilisateurs : parcours de première connexion, guide d'usage court, et mise en service élargie au sein de Tasty Crousty.",
       "statut": "a-faire",
-      "gauche": 81.42,
-      "largeur": 4.37
+      "gauche": 85.05,
+      "largeur": 3.74
     },
     {
       "titre": "Relvo apprend de vos gestes",
       "resume": "Ce que vous ignorez, ce que vous corrigez, ce que vous gardez : Relvo s'en souvient et trie mieux la semaine suivante. Il retrouve les affaires passées qui ressemblent à celle du jour, et vous pose ses questions là où vous pouvez y répondre en un geste.",
       "statut": "a-faire",
-      "gauche": 85.79,
-      "largeur": 8.2
+      "gauche": 89.25,
+      "largeur": 6.54
     }
   ],
   "livraison": {
-    "date": "2026-11-20",
-    "gauche": 93.99
+    "date": "2026-12-23",
+    "gauche": 95.79
   },
-  "en_cours": "Nouvel accueil et navigation simplifiée",
+  "en_cours": "Nouvelle apparence et premiers pas guidés",
   "journal": [
     {
       "date": "2026-09-07",

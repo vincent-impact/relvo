@@ -1,15 +1,15 @@
 ---
 id: M11
 public: true
-ordre_public: 12
+ordre_public: 13
 titre_client: Connaissances métier
 resume_client: >
   Vous déposez vos documents de référence et vos consignes — organigramme, procédures, ton de
   réponse, particularités d'un fournisseur. Relvo s'en sert pour proposer des réponses justes
   plutôt que génériques.
 statut: a-faire
-debut: 2026-10-06
-fin: 2026-10-17
+debut: 2026-11-02
+fin: 2026-11-13
 ---
 
 # M11 — Connaissances

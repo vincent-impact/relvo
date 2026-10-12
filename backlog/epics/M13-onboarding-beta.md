@@ -1,14 +1,14 @@
 ---
 id: M13
 public: true
-ordre_public: 15
+ordre_public: 16
 titre_client: Ouverture de la bêta
 resume_client: >
   Préparer l'arrivée des autres utilisateurs : parcours de première connexion, guide d'usage
   court, et mise en service élargie au sein de Tasty Crousty.
 statut: a-faire
-debut: 2026-10-28
-fin: 2026-11-05
+debut: 2026-11-30
+fin: 2026-12-08
 ---
 
 # M13 — Onboarding et bêta

@@ -1,15 +1,15 @@
 ---
 id: M10
 public: true
-ordre_public: 13
+ordre_public: 14
 titre_client: Échange avec Relvo
 resume_client: >
   Demander à Relvo d'agir plutôt que de naviguer dans les écrans : « où en est la commande de
   sauce ? », « crée-moi une tâche pour lundi », « prépare une réponse à Karim ». Chaque action
   reste visible et annulable.
 statut: a-faire
-debut: 2026-10-17
-fin: 2026-10-28
+debut: 2026-11-16
+fin: 2026-11-27
 ---
 
 # M10 — L'échange avec Relvo
@@ -17,7 +17,12 @@ fin: 2026-10-28
 **Objectif** — la **surface d'action principale du produit** : un échange conscient de la page,
 capable d'agir, accessible partout, avec une palette d'outils **symétrique à l'interface**.
 
-**Dépendances** : M3, M7, M11.
+**Dépendances** : M3, M7, M11, M19 (l'échange se construit dans la direction artistique
+retenue, avec le langage de mouvement et les composants de premiers pas qu'elle livre).
+
+**Porte aussi la tranche 5 de M18** — **M18.9** (`RelvoQuestion` élargie, badge du bouton Relvo,
+ligne de l'accueil) et **M18.11** (notification push, ou M12 si le socle n'existe pas) — parce
+que M10 en est le consommateur. Les identifiants ne changent pas.
 
 > **C'est ici que se joue la posture produit.** « L'UI sert à accéder à l'info, Relvo sert à
 > agir » n'est vrai que si cette épique est livrée. Tant qu'elle ne l'est pas, Relvo est un outil
@@ -51,7 +56,7 @@ bouge pas : un envoi à tort engage la parole de l'utilisateur auprès d'un tier
 annulation ne rattrape ça.
 
 ⚠️ **La disposition est tranchée** (`ecarts`, « La disposition générale : quatre vues, Relvo au
-centre ») et livrée par **M18** : M10 construit l'échange sur le bouton central du dock, et les
+centre ») et livrée par **M18**, habillée par **M19** : M10 construit l'échange sur le bouton central du dock, et les
 questions de Relvo (M18.9, `RelvoQuestion` élargie) y sont posées en formulaires. La surface reste
 plein écran ; ce que la prise en main montre « se remplir », ce sont les composants du produit
 rendus dans le fil (`01 §11`).

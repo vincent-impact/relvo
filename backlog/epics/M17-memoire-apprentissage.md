@@ -1,15 +1,15 @@
 ---
 id: M17
 public: true
-ordre_public: 16
+ordre_public: 17
 titre_client: Relvo apprend de vos gestes
 resume_client: >
   Ce que vous ignorez, ce que vous corrigez, ce que vous gardez : Relvo s'en souvient et trie
   mieux la semaine suivante. Il retrouve les affaires passées qui ressemblent à celle du jour,
   et vous pose ses questions là où vous pouvez y répondre en un geste.
 statut: a-faire
-debut: 2026-11-05
-fin: 2026-11-20
+debut: 2026-12-09
+fin: 2026-12-23
 ---
 
 # M17 — Mémoire et apprentissage

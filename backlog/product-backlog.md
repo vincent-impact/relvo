@@ -37,9 +37,10 @@ frontmatter l'est.
 | [M9 — Pages applicatives](epics/M9-pages-applicatives.md)                  | ✅                                               | démo client                     |
 | [M16 — Consolidation](epics/M16-consolidation.md)                          | ✅                                               | —                               |
 | **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en pause** — reste la tranche 10, après M18   | M8, M10                         |
-| **[M18 — Disposition générale](epics/M18-disposition-generale.md)**       | 🟡 **en cours** — tranche 1 livrée                 | M10, M13                        |
+| **[M18 — Disposition générale](epics/M18-disposition-generale.md)**       | 🟡 **partiel** — tranches 1 à 4 livrées ; la 5 (M18.9, M18.11) se livre avec M10 | M19, M10, M13 |
+| **[M19 — Direction artistique, allègement et prise en main](epics/M19-direction-artistique.md)** | 🟡 **en cours** — tranche 1 « Voir »            | M10, M13.2                      |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
-| [M10 — Échange avec Relvo](epics/M10-echange-relvo.md)                     | ⬜                                               | —                               |
+| [M10 — Échange avec Relvo](epics/M10-echange-relvo.md)                     | ⬜ porte aussi la tranche 5 de M18               | M13                             |
 | [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md)                    | ⬜                                               | —                               |
 | [M17 — Mémoire et apprentissage](epics/M17-memoire-apprentissage.md)       | ⬜                                               | la qualité du tri dans la durée |
 | [M12 — Mécanismes transverses](epics/M12-transverses.md)                   | 🟡 partiellement livré au fil de l'eau           | —                               |
@@ -61,7 +62,13 @@ qui fera tomber les échafaudages documentés dans `04 §13`.
 
 **M18 s'intercale entre M7 et M10** : l'échange se construit sur la nouvelle disposition — le
 bouton central du dock, les questions de Relvo, l'accueil en brief — et la prise en main de M13
-se joue dans cette surface. La tranche 10 de M7 passe après M18.
+se joue dans cette surface. La tranche 10 de M7 passe après M19.
+
+**M19 suit M18, pour la même raison** : on habille et on allège **avant** de construire la
+surface de l'échange, pas après. La disposition ne rouvre pas ; c'est l'apparence, la densité et
+le mouvement qui changent. La tranche 10 de M7 et M10 passent après M19 ; M10 porte la tranche
+5 de M18 (`RelvoQuestion` élargie, badge, notification), qui est du domaine et dont il est le
+consommateur.
 
 ## Ce qui reste manuel jusqu'à M7
 

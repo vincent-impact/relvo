@@ -7,9 +7,9 @@ resume_client: >
   Une page d'accueil qui dit ce que Relvo a fait depuis votre dernière visite, ce qui vous attend
   aujourd'hui et ce qui attend votre réponse. Relvo au centre de la barre du bas, un menu pour le
   reste, et une page Bilan pour voir ce que Relvo fait pour vous.
-statut: en-cours
+statut: partiel
 debut: 2026-09-22
-fin: 2026-10-03
+fin: 2026-10-12
 ---
 
 # M18 — Disposition générale
@@ -20,8 +20,9 @@ vivent dans [`../ecarts-et-propositions.md`](../ecarts-et-propositions.md), « L
 générale : quatre vues, Relvo au centre, un menu pour le reste » ; l'état cible dans
 [`../../conception/01-principes.md`](../../conception/01-principes.md) §11 et invariants 34–38.
 
-**Dépendances** : M9, M7 (le journal alimente les nouvelles et le Bilan). **Débloque** M10 (la
-surface de l'échange se construit sur le bouton central et les questions de Relvo) et M13.2.
+**Dépendances** : M9, M7 (le journal alimente les nouvelles et le Bilan). **Débloque** M19 (qui
+habille cette disposition), puis M10 (la surface de l'échange se construit sur le bouton central
+et les questions de Relvo) et M13.2.
 
 > **Pourquoi avant M10 et avant la tranche 10 de M7.** L'échange est la surface la plus
 > importante du produit et la prise en main s'y joue ; les construire sur une disposition qu'on
@@ -51,7 +52,9 @@ surface de l'échange se construit sur le bouton central et les questions de Rel
    les suggestions par règles.
 3. **« Le Bilan et l'Usage »** — M18.6, M18.8.
 4. **« La Mémoire »** — M18.7.
-5. **« Relvo parle en premier »** — M18.9, M18.11. C'est la tranche que M10 attend.
+5. **« Relvo parle en premier »** — M18.9, M18.11. **Livrée par M10**, qui en est le
+   consommateur : c'est du domaine, pas de l'apparence, et M19 (l'apparence) passe avant. Les
+   identifiants restent M18.9 et M18.11.
 
 ⚠️ **Aucune suggestion n'est générée par le modèle sur l'accueil.** Le brief est un calcul ; le
 modèle ne travaille qu'une fois l'échange ouvert. Une suggestion générée à chaque ouverture de

@@ -331,6 +331,26 @@ Les bascules d'heure et le créneau d'après minuit sont tenus par un test
 
 ---
 
+### #56 — Les installeurs de skills de design n'installent PAS ce qu'ils annoncent, ni là où ils le disent
+
+**Symptôme** : après `uipro init --ai claude --global`, **six** skills apparaissent dans
+`~/.claude/skills` au lieu d'une — dont `ui-styling`, qui enseigne shadcn **sur Radix**
+(`asChild`), exactement le piège #40 que ce projet a payé. Après `impeccable install --global`,
+le hook (`SessionStart`, `PostToolUse`, `Stop`) est écrit dans `.claude/settings.local.json`
+**du dossier courant**, pas au niveau utilisateur : lancé depuis un dossier temporaire, il
+n'existe nulle part. Et `skills add … -s a,b,c` ne retient qu'un nom : il faut **un `-s` par
+skill**.
+
+**Règle** : après toute installation de skill, **lister** `~/.claude/skills` et `git status`,
+et vérifier le hook dans le fichier qu'on croit. Les extras de ui-ux-pro-max vivent dans
+`~/.claude/skills/.trash/` ; seuls `ui-ux-pro-max` et `design-system` restent. Le hook
+d'impeccable vit dans `.claude/settings.local.json` **du projet** (ignoré par git), avec les
+réglages locaux existants fusionnés — jamais remplacés. Son moteur de recherche a un biais
+« page de vente » : une requête non dirigée rend un pattern de storytelling au défilement ; les
+directions de M19.3 se demandent avec le vocabulaire du brief, jamais en une phrase.
+
+---
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
