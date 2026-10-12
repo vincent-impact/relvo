@@ -128,8 +128,9 @@ usage en pourcentage), **pas** pour la hauteur du header, la forme des chiffres,
 d'onglets de Sujets, l'anatomie d'une ligne ni ce qu'une zone montre en premier. Une direction
 artistique qui ne touche pas à ça n'est qu'un thème.
 
-**Seconde série, en place sur le canevas** — quatre **thèses structurelles**, chacune avec sa
-matière. Aucune ne garde le cadre violet : le violet est partout ramené à la voix de Relvo.
+**Seconde série, écartée elle aussi** — quatre **thèses structurelles**, chacune avec sa
+matière, restées sur le canevas. Aucune ne garde le cadre violet : le violet est partout ramené à
+la voix de Relvo.
 
 | | Thèse | Ce qu'elle conteste, et le dit |
 |---|---|---|
@@ -141,20 +142,44 @@ matière. Aucune ne garde le cadre violet : le violet est partout ramené à la 
 ⚠️ Une thèse retenue qui conteste un invariant (C ou D) se tranche par une entrée du registre des
 écarts **avant** la tranche 2, jamais par la planche seule.
 
-**Ce que ui-ux-pro-max a donné, et ce qu'on en a gardé.** Ses requêtes `--design-system`
-rendent un pattern de page de vente quelle que soit la formulation (#56) : inutilisables. Ses
-catalogues par domaine ont servi de contrepoint : *E-Ink / Paper* et *Notes & Writing* (encre
-chaude + ambre sur crème) ont nourri B et C ; *Night indigo + dream violet* a confirmé la gamme
-de D ; les couples typographiques proposés (Cormorant + Montserrat, Poppins + Open Sans,
-Fredoka + Nunito, Inter seul) ont tous été écartés — trop luxe, trop corporate, trop ludique, ou
-un trope d'interface générée. Fraunces vient d'ailleurs.
+**Le verdict du dirigeant sur la seconde série.** Les quatre planches sont un **aplat
+d'informations** : aucune zone délimitée, aucune consistance, aucune image, tout est plat et
+homogène, sans hiérarchie — l'utilisateur est perdu. Le bouton Relvo nacré, gardé tel quel de
+l'application, n'a aucun sens posé sur ces écrans. **Une seule chose retenue** : les cartes à
+faire défiler horizontalement dans « En attente de vous » (planche C, Accueil). Le diagnostic,
+une fois les planches rendues en navigateur (ce qui n'avait pas été fait avant de les montrer) :
+une direction faite de texte et de filets n'a ni surfaces ni matière ; « alléger » a été lu comme
+« aplatir » ; et le bouton nacré a été traité comme un verrou alors que le brief ne fige que
+**l'existence** d'un relief unique, pas sa matière. Les planches rendues sont dans le scratchpad
+(`planches-png/`), jamais dans le dépôt.
+
+**Ce que ui-ux-pro-max a réellement donné : rien d'une direction.** C'est un dictionnaire
+(styles, palettes, couples de polices, règles UX en une phrase) interrogé par recherche plein
+texte ; il ne contient aucun exemple d'écran et ne produit aucune disposition. Ses requêtes
+`--design-system` rendent un pattern de page de vente quelle que soit la formulation (#56). Ses
+couples typographiques (Cormorant + Montserrat, Poppins + Open Sans, Fredoka + Nunito, Inter seul)
+ont tous été écartés. **Conclusion : cette skill ne sert pas M19.3.** L'épique lui confie
+« produire les quatre directions » : la ligne est à corriger.
+
+**Prochaine tentative, à valider par le dirigeant.** La seconde skill, **impeccable**, a une
+méthode de direction artistique que la première n'a pas : un entretien de cadrage (`shape`), un
+tirage de directions avec des **challengers de catalogue illustrés** (`concept-seed`, cartes
+« quality bar » rendues), une page de décision servie dans le navigateur où le dirigeant
+verrouille une carte, puis un contrat de direction en six blocs avant tout code. Son mode
+« Operate » dit exactement ce qui a manqué : une direction fournit la typo, la palette, la
+densité et **un geste signature** ; la navigation et les contrôles restent ceux de la plateforme ;
+un écran doit se lire comme un produit de sa catégorie avec « un espace distinct par tâche ».
+Son plancher de qualité bannit la soupe de cartes identiques **et** le « gros chiffre + petit
+libellé » des KPI. Elle attend `PRODUCT.md` à la racine (prévu en M19.11) et le dirigeant présent
+devant la page de décision.
 
 ## Où on en est
 
-- [ ] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 quatre
-      directions sur planches (Accueil, Sujets, Échange) · ⏳ M19.4 décision écrite — **le choix
-      de la direction appartient au dirigeant** ; ensuite `ecarts`, `00-brief-da.md` et
-      `01-tokens.md` récrits en place
+- [ ] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ❌ M19.3 deux
+      séries de planches écartées (ui-ux-pro-max ne produit pas de direction) — **à refaire avec
+      impeccable, si le dirigeant le décide** · ⏳ M19.4 décision écrite — **le choix de la
+      direction appartient au dirigeant** ; ensuite `ecarts`, `00-brief-da.md` et `01-tokens.md`
+      récrits en place
 - [ ] Tranche 2 — « Habiller » : M19.11 outillage · M19.5 tokens, tenus par un test · M19.7
       composants signature
 - [ ] Tranche 3 — « Alléger » : M19.6 écran par écran · M19.10 robustesse
