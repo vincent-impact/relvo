@@ -22,6 +22,7 @@ import { updateTaskAction } from "@/server/actions/tasks";
 import { folderColor } from "@/lib/display";
 import { cn } from "@/lib/utils";
 import { ListPanel } from "@/components/shared/list-panel";
+import { ZoneHeading } from "@/components/shared/zone-heading";
 
 // Semainier (Accueil, onglet « Agenda ») — RAIL de jours qui glisse librement de
 // gauche à droite (scroll horizontal natif, sans chevrons), AUJOURD'HUI centré au
@@ -252,7 +253,7 @@ export function AgendaWeek({
             centré. Chaque jour = zone de dépôt. */}
         <div
           ref={railRef}
-          className="flex [scrollbar-width:none] gap-[10px] overflow-x-auto px-[18px] pt-1.5 pb-3 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+          className="flex [scrollbar-width:none] gap-1 overflow-x-auto px-3 pt-1 pb-2 [&::-webkit-scrollbar]:hidden"
         >
           {days.map((d) => (
             <DayCell
@@ -276,11 +277,20 @@ export function AgendaWeek({
           ))}
         </div>
 
-        <div className="mb-1.5 px-5 pt-3.5 text-[12.5px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase">
-          {selectedDesc.isToday ? "Aujourd'hui" : selectedDesc.longLabel}
+        <div className="pt-3">
+          <ZoneHeading
+            label={
+              selectedDesc.isToday ? "Aujourd'hui" : selectedDesc.longLabel
+            }
+            hint={
+              dayTasks.length > 0
+                ? `${dayTasks.filter((t) => t.status !== "done").length} restante${dayTasks.filter((t) => t.status !== "done").length > 1 ? "s" : ""}`
+                : undefined
+            }
+          />
         </div>
         {dayTasks.length === 0 ? (
-          <p className="px-5 py-2 text-[13.5px] text-(--text-tertiary)">
+          <p className="px-5 py-2 text-[13.5px] font-light text-gris">
             {selectedDesc.isToday
               ? "Rien de prévu aujourd'hui."
               : "Rien de prévu ce jour-là."}
@@ -299,17 +309,17 @@ export function AgendaWeek({
           liste, sans couleur de domaine). */}
       <DragOverlay modifiers={[snapCenterToCursor]}>
         {active ? (
-          <div className="flex w-[210px] items-center gap-2 rounded-xl bg-white px-3 py-2.5 shadow-lg ring-1 ring-(--border)">
+          <div className="flex w-[210px] items-center gap-2 rounded-(--rayon-sous-carte) border border-(--filet) bg-white px-3 py-2.5 shadow-carte">
             <span
               aria-hidden
               className="size-2.5 flex-none rounded-full"
               style={{ background: folderColor(active.folderSlug) }}
             />
-            <span className="min-w-0 flex-1 truncate text-[14px] font-semibold text-(--text-primary)">
+            <span className="min-w-0 flex-1 truncate text-[14px] font-normal text-noir">
               {active.title}
             </span>
             {active.startTime ? (
-              <span className="flex-none font-numeric text-[13px] font-bold text-(--text-secondary)">
+              <span className="chiffre flex-none text-[13px] text-gris">
                 {active.startTime}
               </span>
             ) : null}
@@ -337,6 +347,9 @@ function DayCell({
   registerRef?: (node: HTMLElement | null) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: desc.key });
+  // Le jour : la lettre au-dessus, le chiffre condensé, un point dessous quand
+  // il porte des tâches (rouge si elles sont passées et ouvertes). Aujourd'hui
+  // est un disque violet ; le jour sélectionné est cerclé — jamais rempli.
   return (
     <button
       ref={(node) => {
@@ -346,41 +359,44 @@ function DayCell({
       type="button"
       onClick={onSelect}
       aria-pressed={isSelected}
-      className={cn(
-        "relative w-[58px] flex-none rounded-[12px] pt-[13px] pb-3 text-center transition-shadow",
-        desc.isToday
-          ? "bg-relvo"
-          : "border border-(--hairline) bg-white shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(20_18_40/0.05)]",
-        isSelected && "ring-2 ring-relvo ring-offset-2 ring-offset-(--stone)",
-        isOver && "ring-2 ring-relvo ring-offset-2 ring-offset-(--stone)",
-      )}
+      className="flex w-12 flex-none flex-col items-center gap-1 pt-1 pb-1"
     >
-      {openCount > 0 ? (
-        <span
-          className={cn(
-            "absolute -top-1.5 -right-1.5 grid size-[18px] place-items-center rounded-full font-numeric text-[10.5px] font-bold text-white ring-2 ring-(--stone)",
-            isPast ? "bg-(--red-600)" : "bg-relvo",
-          )}
-        >
-          {openCount}
-        </span>
-      ) : null}
-      <div
+      <span
         className={cn(
-          "text-[11px] font-bold tracking-[0.3px] uppercase",
-          desc.isToday ? "text-white/80" : "text-(--text-tertiary)",
+          "text-[11px] leading-3 font-medium tracking-[0.06em] uppercase",
+          desc.isToday ? "text-relvo" : "text-gris",
         )}
       >
         {desc.weekday}
-      </div>
-      <div
+      </span>
+      <span
         className={cn(
-          "mt-[3px] font-heading text-[20px] font-semibold tracking-[-0.02em]",
-          desc.isToday ? "text-white" : "text-(--text-primary)",
+          "chiffre grid size-9 place-items-center rounded-full text-[18px] leading-none transition-shadow",
+          desc.isToday ? "bg-relvo text-white" : "text-noir",
+          isPast && !desc.isToday && "text-gris",
+          (isSelected || isOver) && !desc.isToday && "cercle-actif",
+          (isSelected || isOver) &&
+            desc.isToday &&
+            "ring-2 ring-relvo ring-offset-2 ring-offset-white",
         )}
       >
         {desc.day}
-      </div>
+      </span>
+      <span
+        aria-label={
+          openCount > 0
+            ? `${openCount} tâche${openCount > 1 ? "s" : ""}`
+            : undefined
+        }
+        className={cn(
+          "size-1.5 rounded-full",
+          openCount === 0
+            ? "bg-transparent"
+            : isPast
+              ? "bg-urgent"
+              : "bg-relvo",
+        )}
+      />
     </button>
   );
 }

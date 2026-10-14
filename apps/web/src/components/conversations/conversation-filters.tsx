@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Mail, MessageCircle } from "lucide-react";
 import type { ConversationBadges } from "@relvo/db";
-import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
+import { IndicatorTabs } from "@/components/shared/indicator-tabs";
 import type {
   ConversationChannelSlug,
   ConversationFilterSlug,
@@ -11,32 +11,22 @@ import type {
 import { cn } from "@/lib/utils";
 
 // Filtres de /conversations. DEUX niveaux, tous deux portés par l'URL :
-//   1. « qu'est-ce que je regarde » — Sans sujet / Ignorées / Toutes (SegTabs, à
-//      cheval sur le hero).
-//   2. le CANAL — Tous / E-mail / WhatsApp (rangée de chips légères, 2026-07-24) :
-//      isoler un tuyau quand il sature le flux. « tous » ne contraint rien.
+//   1. « qu'est-ce que je regarde » — À trier / Suivies / Ignorées : la carte
+//      d'INDICATEURS qui chevauche le ciel, l'actif cerclé (IndicatorTabs).
+//   2. le CANAL — Tous / E-mail / WhatsApp : une rangée de puces, l'active
+//      noire pleine, comme les domaines de Sujets.
 //
-// L'URL est la source de vérité : la page reste linkable (le KPI « Sans sujet »
-// pointe droit sur `?filtre=sans-sujet`) et c'est la base qui filtre. Les deux
-// contrôles se PRÉSERVENT l'un l'autre dans le lien construit. Rendu HORS du
-// <Suspense> de la liste → ils s'affichent immédiatement.
+// L'URL est la source de vérité : la page reste linkable et c'est la base qui
+// filtre. Les deux contrôles se PRÉSERVENT l'un l'autre dans le lien construit.
+// Rendu HORS du <Suspense> de la liste → ils s'affichent immédiatement.
 //
-// LES PASTILLES (M7, tranche 4) — « ce qui t'attend ici », une seule règle de
+// LES COMPTEURS (M7, tranche 4) — « ce qui t'attend ici », une seule règle de
 // lecture pour trois chiffres de nature différente :
-//   · Sans sujet : un STOCK, le résidu de Relvo — toutes les conversations à
-//     trier, lues ou non. Le chiffre ne tombe qu'en triant à la main.
+//   · À trier : un STOCK, le résidu de Relvo — toutes les conversations à trier,
+//     lues ou non. Le chiffre ne tombe qu'en triant à la main.
 //   · Suivies, Ignorées : un FLUX — ce que Relvo y a rangé depuis le dernier
 //     passage. Le chiffre tombe quand l'onglet est vu ; sur l'onglet actif il
 //     n'est donc jamais affiché (la page marque le passage en rendant).
-// Volontairement hétérogène : c'est ce qui dit à l'utilisateur que le premier
-// chiffre réclame un geste et que les deux autres ne réclament qu'un regard.
-// Une seule couleur, la violette de Relvo : l'onglet porte déjà le sens.
-
-const FILTER_OPTIONS: { value: ConversationFilterSlug; label: string }[] = [
-  { value: "sans-sujet", label: "Sans sujet" },
-  { value: "suivies", label: "Suivies" },
-  { value: "ignorees", label: "Ignorées" },
-];
 
 const CHANNEL_OPTIONS: {
   value: ConversationChannelSlug;
@@ -47,26 +37,6 @@ const CHANNEL_OPTIONS: {
   { value: "email", label: "E-mail", icon: Mail },
   { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
 ];
-
-function withBadges(
-  badges: ConversationBadges,
-  active: ConversationFilterSlug,
-): SegTabOption[] {
-  const count = (slug: ConversationFilterSlug, n: number) =>
-    n > 0 && (slug === "sans-sujet" || slug !== active) ? n : undefined;
-  return FILTER_OPTIONS.map((opt) => ({
-    ...opt,
-    count: count(
-      opt.value,
-      opt.value === "sans-sujet"
-        ? badges.unsorted
-        : opt.value === "suivies"
-          ? badges.followed
-          : badges.ignored,
-    ),
-    countTone: "relvo",
-  }));
-}
 
 export function ConversationFilters({
   filter,
@@ -90,17 +60,35 @@ export function ConversationFilters({
     router.push(`/conversations?${params.toString()}`);
   }
 
+  // Un flux déjà vu (onglet actif) n'affiche pas de chiffre ; le stock, toujours.
+  const flux = (slug: ConversationFilterSlug, n: number) =>
+    slug === filter ? undefined : n;
+
   return (
     <>
-      <SegTabs
-        options={withBadges(badges, filter)}
+      <IndicatorTabs<ConversationFilterSlug>
         value={filter}
-        onValueChange={(v) => go({ filter: v as ConversationFilterSlug })}
-        overlap
+        onChange={(v) => go({ filter: v })}
+        tabs={[
+          { key: "sans-sujet", label: "à trier", count: badges.unsorted },
+          {
+            key: "suivies",
+            label: "suivies",
+            count: flux("suivies", badges.followed),
+          },
+          {
+            key: "ignorees",
+            label: "ignorées",
+            count: flux("ignorees", badges.ignored),
+          },
+        ]}
       />
 
-      {/* Filtre canal — chips discrètes, sous les onglets. */}
-      <div className="flex gap-1.5 px-4 pt-3">
+      <div
+        role="group"
+        aria-label="Canal"
+        className="flex gap-2 px-4 pt-3 pb-0.5"
+      >
         {CHANNEL_OPTIONS.map((opt) => {
           const active = opt.value === channel;
           const Icon = opt.icon;
@@ -109,15 +97,21 @@ export function ConversationFilters({
               key={opt.value}
               type="button"
               onClick={() => go({ channel: opt.value })}
+              aria-pressed={active}
               className={cn(
-                "pressable inline-flex h-9 items-center gap-1.5 rounded-[10px] border px-3.5 text-[13px] font-semibold transition-colors",
+                "pressable inline-flex h-7 items-center gap-1.5 rounded-(--rayon-pilule) border px-3 text-[12px] whitespace-nowrap transition-colors",
                 active
-                  ? "border-transparent bg-relvo text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.18),0_1px_2px_rgb(20_18_40/0.18)]"
-                  : "border-(--hairline) bg-white text-(--text-secondary) shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(20_18_40/0.05)]",
+                  ? "border-noir bg-noir font-medium text-white"
+                  : "border-(--filet) bg-white font-normal text-noir",
               )}
             >
               {Icon ? (
-                <Icon className="size-[14px] flex-none" strokeWidth={2.2} />
+                <Icon
+                  className="size-3.5 flex-none"
+                  strokeWidth={2.2}
+                  fill={active ? "currentColor" : "none"}
+                  fillOpacity={active ? 0.25 : 0}
+                />
               ) : null}
               {opt.label}
             </button>

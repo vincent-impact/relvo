@@ -69,8 +69,8 @@ function ChannelTag({ type }: { type: string }) {
   const c = CHANNEL[type] ?? { label: "Canal", icon: Mail };
   const Icon = c.icon;
   return (
-    <span className="inline-flex flex-none items-center gap-1 text-[11.5px] font-semibold text-(--text-tertiary)">
-      <Icon className="size-[14px]" strokeWidth={2} />
+    <span className="inline-flex flex-none items-center gap-1 text-[12px] font-light text-gris">
+      <Icon className="size-3.5" strokeWidth={2} />
       {c.label}
     </span>
   );
@@ -222,22 +222,24 @@ function ConversationRow({
       <div
         data-list-row
         className={cn(
-          "flex gap-3 border-b border-(--border-light) px-4 py-3.5",
-          unread ? "bg-white" : "bg-(--surface)",
+          "flex items-center gap-3 border-b border-(--filet) px-3.5 py-2.5",
+          unread ? "bg-white" : "bg-(--fond-enfonce)",
         )}
       >
         {(() => {
           const avatarClass = cn(
-            "grid size-[42px] flex-none place-items-center self-start rounded-full text-[14px] font-extrabold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_1px_2px_rgb(20_18_40/0.15)]",
-            unread ? "bg-(--amber-600)" : "bg-[#c7c5bd]",
+            "chiffre grid size-10 flex-none place-items-center rounded-full text-[14px]",
+            unread
+              ? "bg-actor-ext-fond text-actor-ext"
+              : "bg-(--fond-puce) text-gris",
           );
           const inner = registered ? (
             (initialsFor(data.interlocutorName) ?? "?")
           ) : (
             <ContactAvatarIcon
               kind={avatarKind}
-              className="size-[20px]"
-              strokeWidth={2.1}
+              className="size-[18px]"
+              strokeWidth={2}
             />
           );
           // Un groupe n'est pas un contact : son avatar n'ouvre pas de fiche, le
@@ -270,26 +272,29 @@ function ConversationRow({
           <div className="flex items-start gap-2">
             <span
               className={cn(
-                "line-clamp-2 min-w-0 flex-1 text-[15px] leading-[1.3]",
-                unread
-                  ? "font-bold text-(--text-primary)"
-                  : "font-semibold text-(--text-tertiary)",
+                "min-w-0 flex-1 truncate text-[14.5px] leading-[18px]",
+                unread ? "font-medium text-noir" : "font-normal text-noir",
               )}
             >
               {data.title}
             </span>
-            <span className="mt-px flex-none text-[11.5px] text-(--text-tertiary)">
+            <span
+              className={cn(
+                "chiffre flex-none text-[13px] leading-[18px]",
+                unread ? "text-relvo" : "text-gris",
+              )}
+            >
               {data.time}
             </span>
           </div>
 
           {/* Ligne méta : canal (icône + nom) + aperçu (une ligne) + pastille. */}
-          <div className="mt-1 flex items-center gap-2">
+          <div className="mt-0.5 flex items-center gap-2">
             <ChannelTag type={data.channelType} />
             <p
               className={cn(
-                "line-clamp-1 min-w-0 flex-1 text-[13px] leading-[1.4]",
-                unread ? "text-(--text-secondary)" : "text-(--text-tertiary)",
+                "line-clamp-1 min-w-0 flex-1 text-[12px] leading-4",
+                unread ? "font-normal text-gris" : "font-light text-gris",
               )}
             >
               {data.preview}
@@ -298,7 +303,7 @@ function ConversationRow({
                 sur une SOURCE, savoir « 14 » plutôt que « des messages » change
                 la décision de l'ouvrir ou de l'ignorer. */}
             {unread ? (
-              <span className="inline-flex h-[19px] min-w-[19px] flex-none items-center justify-center rounded-full bg-brand px-1.5 text-[11px] font-extrabold text-white">
+              <span className="chiffre inline-flex h-5 min-w-5 flex-none items-center justify-center rounded-full bg-relvo px-1.5 text-[11px] text-white">
                 {data.unreadCount}
               </span>
             ) : null}

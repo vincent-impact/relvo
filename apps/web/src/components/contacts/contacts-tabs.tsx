@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SegTabs } from "@/components/shared/seg-tabs";
+import { IndicatorTabs } from "@/components/shared/indicator-tabs";
 import {
   ContactsDirectory,
   type DirectoryContact,
@@ -33,14 +33,13 @@ export function ContactsTabs({
 
   return (
     <>
-      <SegTabs
-        options={[
-          { value: "contacts", label: "Contacts", count: contacts.length },
-          { value: "groupes", label: "Groupes", count: groups.length },
-        ]}
+      <IndicatorTabs<Tab>
         value={tab}
-        onValueChange={(v) => setTab(v as Tab)}
-        overlap
+        onChange={setTab}
+        tabs={[
+          { key: "contacts", label: "contacts", count: contacts.length },
+          { key: "groupes", label: "groupes", count: groups.length },
+        ]}
       />
 
       {tab === "contacts" ? (

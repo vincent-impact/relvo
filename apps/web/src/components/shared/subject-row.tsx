@@ -1,14 +1,17 @@
 import Link from "next/link";
-import { Flag, Hourglass, Sparkles, SquareCheck } from "lucide-react";
 import type { EnrichedSubject } from "@relvo/db";
+import { RELVO_LOGO_PATHS } from "@/components/layout/relvo-logo";
 import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 
-// SubjectRow — un Sujet rendu comme une LIGNE de liste façon e-mail (Direction
-// B simplifiée) : icône teintée par domaine, référence + badges (Urgent / Nouveau),
-// titre, résumé, progression des tâches. Pas de rail latéral ni de carte arrondie.
-// Les BADGES distinguent l'état (« Urgent » rouge, « Nouveau » bleu) — plus
-// d'aplat de fond depuis la Direction « Instrument » (2026-09).
+// SubjectRow — LA ligne de sujet, le composant le plus important du produit
+// (design-system/00-brief-da §7). Son anatomie, direction « Lettrage
+// d'artisan » : la BANDE de son domaine sur la tranche gauche, le nom du
+// domaine en capitales condensées de la même couleur, le titre (précédé de
+// « Urgent · » en rouge quand la priorité l'est — l'état se lit au mot et à la
+// couleur), une ligne fine qui dit où en est le sujet, et à droite un chiffre
+// condensé (non-lus ou tâches) avec ce qu'on attend dessous. Pas de résumé :
+// la ligne doit laisser neuf sujets visibles, le résumé vit sur la fiche.
 
 export type SubjectRowData = {
   id: string;
@@ -16,22 +19,32 @@ export type SubjectRowData = {
   title: string;
   summary?: string | null;
   folderSlug?: string | null;
+  folderName?: string | null;
   /** Clés STOCKÉES sur le dossier (logo personnalisé) — priment sur le slug. */
   folderColor?: string | null;
   folderIcon?: string | null;
   urgent: boolean;
-  /** Marqueur DÉRIVÉ « Nouveau » (jamais ouvert) → fond bleu + badge « Nouveau ». */
+  /** Marqueur DÉRIVÉ « Nouveau » (jamais ouvert). */
   isNew: boolean;
-  /** Tâches terminées / total → progression (barre x/y). */
+  /** Tâches terminées / total → progression. */
   taskDone: number;
   taskTotal: number;
-  /** Suggestions Relvo en attente — utilisé par le brief de l'Accueil (pas la card). */
+  /** Suggestions Relvo en attente — utilisé par le brief de l'Accueil (pas la ligne). */
   suggestionCount: number;
   unreadCount: number;
   waitingForReply: boolean;
   /** Relvo suggère de valider le sujet ; le geste reste au swipe (05 §5.5). */
   resolutionSuggested: boolean;
 };
+
+function statusLine(d: SubjectRowData, done: boolean): string {
+  if (done) return d.summary?.trim() || d.reference;
+  const parts: string[] = [];
+  if (d.waitingForReply) parts.push("en attente d'une réponse");
+  if (d.taskTotal > 0) parts.push(`${d.taskDone}/${d.taskTotal} tâches`);
+  if (parts.length === 0) return d.summary?.trim() || "aucune tâche";
+  return parts.join(" · ");
+}
 
 export function SubjectRow({
   data,
@@ -43,68 +56,57 @@ export function SubjectRow({
   /** false : le parent gère le tap/swipe (feed swipable) — pas de lien étiré. */
   linkable?: boolean;
 }) {
-  const { color, icon: Icon } = folderVisual({
+  const { color, text } = folderVisual({
     slug: data.folderSlug,
     color: data.folderColor,
     icon: data.folderIcon,
   });
-  const urgent = data.urgent && tone !== "done";
-  const isNew = data.isNew && tone !== "done";
   const done = tone === "done";
-  const pct =
-    data.taskTotal > 0 ? Math.round((data.taskDone / data.taskTotal) * 100) : 0;
-  const allDone = data.taskTotal > 0 && data.taskDone >= data.taskTotal;
+  const urgent = data.urgent && !done;
+  const isNew = data.isNew && !done;
+  // Ce que la colonne droite attend : Relvo (violet) ou un tiers.
+  const right: { kind: "relvo" | "neutre"; label: string } | null = done
+    ? null
+    : data.resolutionSuggested
+      ? { kind: "relvo", label: "à valider" }
+      : isNew
+        ? { kind: "relvo", label: "nouveau" }
+        : data.waitingForReply
+          ? { kind: "neutre", label: "attend" }
+          : data.taskTotal > 0 && data.taskDone < data.taskTotal
+            ? { kind: "neutre", label: "à vous" }
+            : null;
 
   return (
     <article
       data-list-row
       className={cn(
-        // Direction « Instrument » : plus d'aplat rouge/bleu sur la ligne — les
-        // badges « Urgent » / « Nouveau » portent seuls le signal, dans un panneau
-        // blanc. Le sujet fait s'affiche « enfoncé » (--surface).
-        "relative flex gap-3 border-b border-(--border-light) px-4 py-3.5",
-        done && "bg-(--surface) opacity-60",
+        "relative flex h-[58px] items-center gap-2.5 border-b border-(--filet) pr-3.5 pl-3.5",
+        done && "bg-(--fond-enfonce)",
       )}
     >
-      {data.unreadCount > 0 ? (
-        <span className="absolute top-3.5 right-4 inline-flex h-[22px] min-w-[22px] items-center justify-center rounded-full bg-brand px-1.5 text-[12px] font-bold text-white">
-          {data.unreadCount}
-        </span>
-      ) : null}
-
-      {/* Icône du domaine à gauche (tuile colorée, légèrement réduite). */}
       <span
-        className="grid size-9 flex-none place-items-center self-start rounded-[10px] text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_1px_2px_rgb(20_18_40/0.15)]"
+        aria-hidden
+        className={cn("bande-ligne", done && "opacity-40")}
         style={{ background: color }}
-        title={data.folderSlug ?? undefined}
-      >
-        <Icon className="size-[17px]" strokeWidth={2} />
-      </span>
+      />
 
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="font-numeric text-[11.5px] font-semibold tracking-[0.3px] text-[#b3b1ab]">
-            {data.reference}
-          </span>
-          {urgent ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-(--red-600) px-[9px] py-[3px] text-[11px] font-bold text-white">
-              <Flag className="size-3" fill="currentColor" strokeWidth={0} />
-              Urgent
-            </span>
-          ) : null}
-          {isNew ? (
-            <span className="inline-flex items-center rounded-full bg-brand px-[9px] py-[3px] text-[11px] font-bold text-white">
-              Nouveau
-            </span>
-          ) : null}
+        <div
+          className={cn("domaine truncate", done && "opacity-60")}
+          style={{ color: text }}
+        >
+          {data.folderName ?? data.folderSlug ?? "Sans domaine"}
         </div>
-
         <h3
           className={cn(
-            "mt-1 text-[16px] leading-[1.25] font-semibold tracking-[-0.01em]",
-            done && "line-through",
+            "truncate text-[14.5px] leading-[18px] font-normal text-noir",
+            done && "text-gris line-through",
           )}
         >
+          {urgent ? (
+            <span className="font-medium text-urgent">Urgent · </span>
+          ) : null}
           {linkable ? (
             <Link
               href={`/sujets/${data.id}`}
@@ -116,47 +118,43 @@ export function SubjectRow({
             data.title
           )}
         </h3>
+        <p className="truncate text-[12px] leading-[14px] font-light text-gris">
+          {statusLine(data, done)}
+        </p>
+      </div>
 
-        {data.summary ? (
-          <p className="mt-1 text-[13.5px] leading-[1.4] text-(--text-secondary)">
-            {data.summary}
-          </p>
+      <div className="flex flex-none flex-col items-end gap-0.5 text-right">
+        {data.unreadCount > 0 ? (
+          <span className="chiffre grid h-[22px] min-w-[22px] place-items-center rounded-full bg-relvo px-1.5 text-[12px] text-white">
+            {data.unreadCount}
+          </span>
+        ) : data.taskTotal > 0 && !done ? (
+          <span className="chiffre text-[16px] leading-[18px] text-noir">
+            {data.taskDone}/{data.taskTotal}
+          </span>
         ) : null}
-
-        {!done ? (
-          <div className="mt-[9px] flex flex-wrap items-center gap-x-3 gap-y-1.5">
-            {data.taskTotal > 0 ? (
-              <div className="inline-flex items-center gap-1.5">
-                <SquareCheck
-                  className={cn(
-                    "size-[15px] flex-none",
-                    allDone ? "text-(--green-600)" : "text-(--text-tertiary)",
-                  )}
-                  strokeWidth={2.2}
-                />
-                <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-[#e7e5e0] shadow-[inset_0_1px_1px_rgb(20_18_40/0.08)]">
-                  <span
-                    className="absolute inset-y-0 left-0 rounded-full bg-(--green-600) transition-[width]"
-                    style={{ width: `${pct}%` }}
-                  />
-                </span>
-                <span className="font-numeric text-[11.5px] font-bold text-(--text-secondary)">
-                  {data.taskDone}/{data.taskTotal}
-                </span>
-              </div>
+        {right ? (
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 text-[10.5px] leading-3",
+              right.kind === "relvo"
+                ? "font-medium text-relvo"
+                : "font-light text-gris",
+            )}
+          >
+            {right.kind === "relvo" ? (
+              <svg
+                viewBox="116 104 296 296"
+                width="10"
+                height="10"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d={RELVO_LOGO_PATHS.stars[0]} />
+              </svg>
             ) : null}
-            {data.waitingForReply ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-(--surface-2) px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap text-(--text-secondary)">
-                <Hourglass className="size-3" strokeWidth={2.2} />
-                En attente
-              </span>
-            ) : null}
-            {data.resolutionSuggested && !done ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-relvo-bg px-[9px] py-[3px] text-[11.5px] font-bold whitespace-nowrap text-relvo">
-                <Sparkles className="size-3" strokeWidth={2.2} />À valider ?
-              </span>
-            ) : null}
-          </div>
+            {right.label}
+          </span>
         ) : null}
       </div>
     </article>
@@ -171,6 +169,7 @@ export function toSubjectRowData(e: EnrichedSubject): SubjectRowData {
     title: e.subject.title,
     summary: e.subject.summary,
     folderSlug: e.folderSlug,
+    folderName: e.folderName,
     folderColor: e.folderColor,
     folderIcon: e.folderIcon,
     urgent: e.subject.priority === "urgent",

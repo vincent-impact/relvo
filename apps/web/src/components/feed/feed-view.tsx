@@ -15,6 +15,7 @@ import {
 } from "@/components/shared/subject-row";
 import type { FolderChip } from "@/server/cached";
 import { ListPanel } from "@/components/shared/list-panel";
+import { ZoneHeading } from "@/components/shared/zone-heading";
 
 // Vue complète de Sujets (client) — la carte KPI est une BARRE D'ONGLETS chiffrée
 // par STATUT (Ouverts · Validés · Fermés), et la barre de filtres ne propose que
@@ -27,6 +28,12 @@ import { ListPanel } from "@/components/shared/list-panel";
 // (Fermés = soft delete, réouvrable).
 
 type Tagged = { row: SubjectRowData; basket: "ouvert" | "done" };
+
+const TAB_LABEL: Record<SubjectTab, string> = {
+  ouverts: "Ouverts",
+  valides: "Validés",
+  fermes: "Fermés",
+};
 
 // Onglet initial déduit de l'URL. `?urgent=1` / `?nouveau=1` (anciens liens)
 // retombent sur « Ouverts » : ces sujets y vivent, distingués visuellement.
@@ -103,19 +110,22 @@ export function FeedView({
 
       <FeedDomainBar domain={domain} onDomain={setDomain} folders={folders} />
 
-      {/* Compteur total de la sélection courante. */}
-      <p className="px-4 pt-2 pb-1 text-[12.5px] font-semibold text-(--text-tertiary)">
-        {filtered.length} sujet{filtered.length > 1 ? "s" : ""}
-      </p>
+      {/* La zone est nommée par l'onglet, et qualifiée par son compte. */}
+      <div className="pt-3">
+        <ZoneHeading
+          label={TAB_LABEL[tab]}
+          hint={`${filtered.length} sujet${filtered.length > 1 ? "s" : ""}`}
+        />
+      </div>
 
       {filtered.length === 0 ? (
-        <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
+        <p className="px-[22px] py-10 text-center text-[13.5px] font-light text-gris">
           {domain != null
             ? "Aucun sujet ne correspond à ce domaine."
             : "Rien ici pour le moment."}
         </p>
       ) : (
-        <ListPanel className="mt-1">{filtered.map(renderRow)}</ListPanel>
+        <ListPanel>{filtered.map(renderRow)}</ListPanel>
       )}
     </>
   );

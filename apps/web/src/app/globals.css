@@ -430,7 +430,8 @@
 
 /* Le ciel : à poser sur le header, `position: relative` et rogné. Le dégradé
    couvre l'élément ; les étoiles et les trois étoiles du signe sont deux
-   calques sous le contenu (`.ciel > * { position: relative }`). */
+   calques sous le contenu (`.ciel > * { position: relative }`). Les étoiles du
+   signe évitent le coin haut droit, où vivent les boutons de page. */
 .ciel {
   position: relative;
   background: var(--ciel);
@@ -457,7 +458,7 @@
 .ciel::after {
   opacity: 0.75;
   background:
-    var(--etoile-signe) no-repeat 84% 16% / 13px 13px,
+    var(--etoile-signe) no-repeat 80% 44% / 13px 13px,
     var(--etoile-signe) no-repeat 23% 38% / 9px 9px,
     var(--etoile-signe) no-repeat 57% 6% / 7px 7px;
 }
