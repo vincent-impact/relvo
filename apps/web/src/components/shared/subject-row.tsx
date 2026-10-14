@@ -136,7 +136,7 @@ export function SubjectRow({
         {right ? (
           <span
             className={cn(
-              "inline-flex items-center gap-1 text-[10.5px] leading-3",
+              "inline-flex items-center gap-1 text-[11px] leading-3.5",
               right.kind === "relvo"
                 ? "font-medium text-relvo"
                 : "font-light text-gris",

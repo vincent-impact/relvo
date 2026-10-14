@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
+import { ZoneHeading } from "@/components/shared/zone-heading";
 import { requireAccount } from "@/server/auth-context";
 
 // Historique des ÉCHANGES avec Relvo (coquille M9, Direction B). Ils sont
@@ -21,30 +22,32 @@ export default async function RelvoHistoryPage() {
       <main className="min-h-0 flex-1 overflow-y-auto bg-background">
         <RelvoHeader back="/" title="Mes échanges avec Relvo" />
 
-        <div className="px-4 pt-5">
+        <div className="pt-5">
+          {/* Une action de l'utilisateur : carte blanche, jamais le violet pâle
+              signé, réservé à la voix de Relvo (01-tokens). */}
           <Link
             href="/relvo"
-            className="flex items-center gap-3 rounded-2xl border border-(--purple-100) bg-relvo-bg px-3.5 py-3.5"
+            className="mx-4 flex items-center gap-3 rounded-(--rayon-carte) border border-(--filet) bg-white px-3.5 py-3.5 shadow-carte active:bg-(--fond-enfonce)"
           >
             <span className="grid size-9 flex-none place-items-center rounded-full bg-relvo text-white">
               <Plus className="size-[18px]" strokeWidth={2.5} />
             </span>
             <span>
-              <span className="block text-[14.5px] font-bold text-brand-dark">
+              <span className="block text-[14.5px] font-medium text-noir">
                 Nouvel échange
               </span>
-              <span className="block text-[12px] text-relvo">
+              <span className="block text-[12px] font-light text-gris">
                 Demander à Relvo…
               </span>
             </span>
           </Link>
 
-          <div className="mt-7 mb-2 px-1 text-[12px] font-bold tracking-[0.5px] text-(--text-tertiary) uppercase">
-            Récentes
+          <div className="mt-7">
+            <ZoneHeading label="Récentes" />
+            <p className="px-4 text-[13.5px] font-light text-gris">
+              Vos échanges récents avec Relvo apparaîtront ici.
+            </p>
           </div>
-          <p className="px-1 text-[13.5px] text-(--text-tertiary)">
-            Vos échanges récents avec Relvo apparaîtront ici.
-          </p>
         </div>
       </main>
     </MobileFrame>

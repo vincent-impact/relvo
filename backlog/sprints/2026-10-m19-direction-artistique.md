@@ -255,20 +255,88 @@ plus claire et agréable », et six retours, tous appliqués dans le même commi
   et `--dock-etire`), l'ombre en drop-shadow pour qu'elle la suive. Le brief, les tokens, les
   patterns, les principes et la carte du projet le disent ; `--dock-deborde` disparaît.
 
+## L'outillage — M19.11
+
+- **`DESIGN.md` est écrit depuis le code livré**, à la racine, en suivant la méthode
+  `document` d'impeccable en mode relevé : le frontmatter recopie les valeurs de `globals.css`
+  (couleurs, deux dessins typographiques, rayons comptés, espacements, variantes de
+  composants) pour les outils qui le lisent ; le texte pointe vers `conception/design-system/`
+  et ne redit pas les règles — il nomme les **exceptions assumées aux détecteurs** : la bande
+  de domaine (« side-tab »), le violet sémantique (livrée et voix), le débordement du disque
+  Relvo (le relief unique), et les deux textes à 10 px du dock. Son sidecar
+  `apps/web/.impeccable/design.json` (rampes tonales, ombres, paliers, neuf composants en
+  extraits autonomes) se régénère depuis `DESIGN.md` par un script du scratchpad. Les questions
+  de langage de la méthode (étoile polaire, caractère des couleurs, philosophie d'élévation)
+  n'ont pas été reposées : les réponses sont dans `00-brief-da.md` et `01-tokens.md`.
+  **Les tokens de mouvement n'existent pas encore** (`--dur-*`, `--ease-*` cités par
+  `01-tokens.md`) : `DESIGN.md` le dit, ils arrivent avec M19.8.
+- **Le contrat de direction** du brief de surface est tenu au présent : il disait encore le
+  bleu de travail, le ruban et le disque bleu ; il dit le violet livrée, le ciel étoilé et le
+  disque réaxé — une revue qui juge contre un contrat périmé rend de faux écarts.
+- **Le détecteur ne lève rien sur l'application** : la bande est un fond, pas une bordure. Sa
+  seule alerte vit dans la feuille de la page publique de suivi (`.why`, `border-left`), hors
+  tranche ; un avis sur `animate-bounce` dans le composeur de destinataires, pour M19.8.
+- **`/design-system/` est ignoré par git, motif ancré** : ui-ux-pro-max écrit à la racine, et
+  un motif sans barre initiale aurait aussi avalé `conception/design-system/`. Il n'a rien
+  écrit à ce jour. Le docteur d'impeccable ne signale plus que `buildPath`, un réglage qu'il
+  demande de taire sans outil de génération d'images.
+- **La revue de finition** (le relecteur d'impeccable, lancé à part avec les dix-huit captures,
+  le contrat, `DESIGN.md` et l'esquisse de la page de décision comme référence) rend **fix** :
+  typographie, matière, fond, ciel, bloc de Relvo, cartes d'attente, dock, indicateurs sont
+  conformes ; aucune dérive sombre sur dix-neuf écrans ; huit corrections matérielles. **Cinq
+  sont appliquées dans ce lot** : les lignes de Sujets se rendaient en cartes arrondies séparées
+  dans leur `ListPanel`, les fonds de swipe transparaissant aux jonctions (prop `rounded` de
+  `SwipeableSubject` supprimée) ; les zéros d'Activité étaient en noir plein (gris clair) ; le
+  bandeau de résolution portait un bouton à reflet nacré et des couleurs en dur (il est devenu
+  un bloc de Relvo, bouton plat, sorti du cliquet du test) ; « Nouvel échange » de l'historique
+  posait une action de l'utilisateur sur le violet pâle de Relvo (carte blanche) ; les textes
+  à 10,5 px de la ligne de sujet et des compteurs d'onglets passent à 11 px. **Trois sont
+  confiées à la tranche 3**, qui travaille écran par écran et commence par cette liste :
+  l'annuaire des Contacts hors `ListPanel` ; les en-têtes RÉSUMÉ / TÂCHES de la fiche en
+  petites capitales de l'ancienne matière (`ZoneHeading`, puis `section-label.tsx` à
+  supprimer) ; les textes sous 11 px et les couleurs en dur restantes (fiche sujet, e-mail,
+  bulles, pastille d'acteur à 9 px, agenda, instructions, mois du planning ; le cliquet
+  `RESTE_A_MIGRER`, et `MetricsCardSkeleton` à remplacer par un squelette d'`IndicatorTabs`).
+  **Une est à trancher par le dirigeant** : le socle dit « icônes pleines », et seul le dock
+  l'est — le menu latéral, les avatars de canal, les onglets de la fiche et les corbeilles de
+  Canaux sont en trait ; de même le pointillé violet des suggestions de l'échange, que le
+  produit emploie ailleurs pour « vide / à compléter ». Deux lectures non matérielles à garder
+  en tête pour la tranche 3 : l'état vide « rien de prévu » diffère entre l'accueil (carte) et
+  le Calendrier (texte nu) ; la bande de domaine de la fiche est un losange dans le ciel, faute
+  de carte pour porter la tranche — adaptation acceptée.
+- **Verdict après recapture** : les lignes de Sujets, les zéros d'Activité, l'action de
+  l'historique et le bandeau de résolution sont **résolus**, sans régression sur les quatre
+  écrans recapturés ; les textes sous 11 px, les couleurs en dur et les en-têtes de la fiche
+  sont **partiels** (la part reportée), Contacts et les icônes **ouverts**. Un résidu à
+  surveiller sur téléphone : aux deux coins hauts du `ListPanel` de Sujets, l'anticrénelage
+  de l'arrondi laisse une pointe de vert du fond de swipe de la première ligne ; s'il se
+  voit, poser le fond de swipe sous le rognage du panneau. La disposition reste « fix » tant
+  que des items sont ouverts : c'est la liste de départ de la tranche 3, pas un défaut du
+  chrome, propre à l'exception de la question des icônes.
+- **Depuis que `DESIGN.md` existe, le détecteur lit sa gamme typographique** et émet des avis
+  (non bloquants) sur chaque taille littérale hors des six rôles du frontmatter. La gamme
+  réelle se fixe à la tranche 3, quand les écrans allégés auront dit quelles tailles restent.
+- Le serveur local et les captures : `PORT=3100 AUTH_URL=http://localhost:3100 pnpm dev`, le
+  script `shoot.mjs` du scratchpad (copié de session en session, `playwright-core` sur le Chrome
+  du poste) ; l'avertissement d'hydratation s'est montré une fois encore sur `/usage`, jamais
+  ailleurs — toujours pour la tranche 3.
+
 ## Où on en est
 
 - [x] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 la
       direction « Lettrage d'artisan » retenue par le dirigeant sur la page de décision
       d'impeccable, dix-neuf écrans sur le canevas (deux séries avec ui-ux-pro-max écartées
       avant) · ✅ M19.4 décision écrite dans `ecarts`, brief et tokens récrits en place
-- [ ] Tranche 2 — « Habiller » : ✅ `02-composants.md` et `03-patterns.md` récrits dans la
+- [x] Tranche 2 — « Habiller » : ✅ `02-composants.md` et `03-patterns.md` récrits dans la
       matière retenue · ✅ M19.5 tokens dans `globals.css`, tenus par `test/design-tokens.test.ts`
       (inventaire, matière écartée, cliquet des couleurs en dur) · ✅ M19.7 composants signature
       et déclinaison sur tous les écrans, en cinq lots (chrome et accueil ; Sujets, Calendrier,
       Conversations, Contacts ; menu, fiche sujet, échange ; conversations et fiche contact ;
-      pages du menu et connexion) · ⏳ M19.11 outillage : `PRODUCT.md` est posé ; reste
-      `DESIGN.md` écrit depuis le code livré (documenter d'impeccable) avec l'exception assumée
-      pour la bande de domaine, et la revue de finition
-- [ ] Tranche 3 — « Alléger » : M19.6 écran par écran · M19.10 robustesse
+      pages du menu et connexion) · ✅ M19.11 outillage : `PRODUCT.md`, `DESIGN.md` écrit
+      depuis le code livré avec ses exceptions aux détecteurs, sidecar, contrat de direction au
+      présent, revue de finition rendue et son lot de corrections appliqué
+- [ ] Tranche 3 — « Alléger » : M19.6 écran par écran, **en commençant par les reports de la
+      revue de finition** (Contacts, en-têtes de la fiche, textes sous 11 px, couleurs en dur) et
+      par la question des icônes pleines à poser au dirigeant · M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas
 - [ ] Tranche 5 — « Clore » : M19.12

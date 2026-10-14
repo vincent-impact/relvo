@@ -38,7 +38,10 @@ export function ActivityPanel({ activity }: { activity: BriefActivity }) {
                 i > 0 ? "flex-1 border-l border-(--filet) pl-3" : "flex-1"
               }
             >
-              <div className="chiffre text-[34px] leading-9 text-noir">
+              {/* Un indicateur à zéro écrit « 0 », en gris clair (02-composants). */}
+              <div
+                className={`chiffre text-[34px] leading-9 ${c.value === 0 ? "text-(--gris-clair)" : "text-noir"}`}
+              >
                 {c.value}
               </div>
               <div className="mt-px text-[12px] font-light text-gris">

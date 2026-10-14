@@ -37,15 +37,12 @@ export function SwipeableSubject({
   subjectId,
   canClose,
   openTasks = 0,
-  rounded = true,
   children,
 }: {
   subjectId: string;
   canClose: boolean;
   /** Tâches encore à faire — > 0 déclenche la confirmation avant de terminer. */
   openTasks?: number;
-  /** false : ligne pleine largeur (SubjectRow) sans coins arrondis. */
-  rounded?: boolean;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -235,7 +232,10 @@ export function SwipeableSubject({
         leaving ? "max-h-0 opacity-0" : "max-h-[600px]",
       )}
     >
-      <div className={cn("relative overflow-hidden", rounded && "rounded-xl")}>
+      {/* Pas de coins arrondis : la ligne vit dans UNE carte (ListPanel), qui
+          rogne les fonds de swipe — une ligne arrondie ferait une carte par
+          ligne et laisserait le vert et le rouge transparaître aux jonctions. */}
+      <div className="relative overflow-hidden">
         {/* Fond Valider (vert) : révélé en glissant à droite, libellé à gauche. */}
         <div
           className={cn(

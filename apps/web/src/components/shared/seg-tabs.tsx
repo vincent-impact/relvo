@@ -100,7 +100,7 @@ export function SegTabs({
             {typeof opt.count === "number" && opt.count > 0 ? (
               <span
                 className={cn(
-                  "chiffre inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[10.5px]",
+                  "chiffre inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1.5 text-[11px]",
                   opt.countTone === "relvo"
                     ? "bg-relvo text-white"
                     : active

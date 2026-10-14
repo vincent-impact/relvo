@@ -41,6 +41,10 @@ test-results/
 # Claude Code (réglages personnels, non partagés)
 .claude/settings.local.json
 
+# ui-ux-pro-max (outillage de design) — sa sortie `design-system/<slug>/` à la RACINE n'est
+# pas un domicile de conception. Motif ancré : `conception/design-system/` est la conception.
+/design-system/
+
 # impeccable (outillage de design) — seuls PRODUCT.md, DESIGN.md et les briefs de surface sont suivis
 **/.impeccable/mocks/
 **/.impeccable/questions/

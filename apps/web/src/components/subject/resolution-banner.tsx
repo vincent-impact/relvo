@@ -59,24 +59,23 @@ export function ResolutionBanner({
   return (
     <section
       aria-label="Suggestion de Relvo"
-      className="flex gap-3 rounded-[14px] border border-l-[3px] border-(--purple-100) border-l-relvo bg-white px-4 py-3.5 shadow-surface-1"
+      className="flex gap-3 rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-4 py-3.5 shadow-carte"
     >
       <span className="grid size-[30px] flex-none place-items-center self-start rounded-full bg-relvo text-white">
         <Sparkles className="size-[15px]" fill="currentColor" strokeWidth={0} />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
-        <p className="text-[14px] leading-[1.4] text-(--text-primary)">
+        <p className="text-[14px] leading-5 font-light text-noir">
           Les tâches sont faites et rien n’est arrivé depuis.{" "}
-          <span className="text-(--text-secondary)">
-            Ce sujet est-il réglé ?
-          </span>
+          <span className="text-gris">Ce sujet est-il réglé ?</span>
         </p>
         <div className="flex gap-2">
           <button
             type="button"
             disabled={pending}
             onClick={validate}
-            className="pressable inline-flex h-[34px] items-center rounded-[9px] border border-[#3d3399] bg-linear-to-b from-[#5a4fc9] to-relvo px-3.5 text-[13.5px] font-semibold text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.28),0_1px_2px_rgb(74_63_181/0.35)] disabled:opacity-60"
+            className="pressable inline-flex h-[34px] items-center rounded-(--rayon-pilule) px-4 text-[13px] font-medium text-white disabled:opacity-60"
+            style={{ background: "var(--degrade-relvo)" }}
           >
             Valider le sujet
           </button>
@@ -84,7 +83,7 @@ export function ResolutionBanner({
             type="button"
             disabled={pending}
             onClick={dismiss}
-            className="pressable inline-flex h-[34px] items-center rounded-[9px] border border-(--hairline) bg-white px-3.5 text-[13.5px] font-semibold text-(--text-secondary) shadow-surface-1 disabled:opacity-60"
+            className="pressable inline-flex h-[34px] items-center rounded-(--rayon-pilule) border border-(--filet) bg-white px-4 text-[13px] font-medium text-gris disabled:opacity-60"
           >
             Pas encore
           </button>

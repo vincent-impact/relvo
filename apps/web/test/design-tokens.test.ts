@@ -159,7 +159,6 @@ const RESTE_A_MIGRER = [
   "src/components/subject/informations-pane.tsx",
   "src/components/subject/journal-pane.tsx",
   "src/components/subject/relvo-draft-block.tsx",
-  "src/components/subject/resolution-banner.tsx",
   "src/components/subject/subject-conversations-list.tsx",
 ];
 
