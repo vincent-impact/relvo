@@ -217,9 +217,11 @@ forme, le cadre ciel et dock). **Jusqu'à M19.5 et M19.7, le code décrit l'anci
   Calendrier, Conversations, Contacts), le chiffre actif cerclé. `SegTabs` reste pour les onglets
   d'une fiche, actif souligné. Le dock a ses quatre icônes pleines dans `dock-icons.tsx`, celles
   des planches que le dirigeant a validées.
-- **Le ciel** est un utilitaire CSS (`.ciel`, `--ciel`, `--ciel-haut`, `--etoiles`), ses arrêts
-  en pixels depuis le haut du header pour que la première carte le chevauche quelle que soit la
-  hauteur du header ; les trois étoiles du signe évitent le coin haut droit où vivent les boutons
+- **Le ciel** est un utilitaire CSS (`.ciel`, `--ciel`, `--ciel-haut`, `--etoiles`), son fondu
+  vers le blanc ancré au **bas** du header (les 44 derniers pixels) pour que la première carte le
+  chevauche quelle que soit la hauteur du header et qu'un texte blanc reste sur le violet de
+  Relvo — des arrêts depuis le haut éclaircissaient la fiche là où elle porte encore du texte,
+  retour du dirigeant après les icônes ; les trois étoiles du signe évitent le coin haut droit où vivent les boutons
   de page.
 - **Le sujet en attente** (`getSubjectsAwaitingUser`) porte désormais son domaine et
   l'entreprise du contact : la carte d'attente les affiche. Version de cache `v14`.

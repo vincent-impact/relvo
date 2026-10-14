@@ -442,9 +442,10 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
   un trait (chevron, croix, plus, coche, flèches, loader). Le remplissage ne dit jamais un état.
 
 ### Le ciel (signature)
-`.ciel` sur le header : `--ciel` (nuit en haut, violet de Relvo à 48px, violet clair à 96px,
-blanc à 262px, en pixels depuis le haut pour que la première carte chevauche quelle que soit la
-hauteur), un champ d'une quinzaine d'étoiles en dégradés radiaux masqué vers le bas, et trois
+`.ciel` sur le header : `--ciel` (nuit en haut, violet de Relvo dès 40 % et tenu jusqu'à 44px
+du bas, violet clair à 18px du bas, blanc au bord — le fondu est ancré au bas du header pour
+qu'un texte blanc reste sur le violet de Relvo et que la première carte chevauche le fondu quelle
+que soit la hauteur), un champ d'une quinzaine d'étoiles en dégradés radiaux masqué vers le bas, et trois
 étoiles à quatre branches — celles du signe — qui évitent le coin haut droit où vivent les
 boutons. Sur la connexion, `--ciel-haut` prend près de la moitié de l'écran. Les étoiles ne
 scintillent pas.

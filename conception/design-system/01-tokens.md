@@ -30,8 +30,11 @@ plus sombre au plus clair, de haut en bas :
 | `--relvo-clair` | le bas du ciel, le haut d'un dégradé de bouton |
 | `--relvo-pale` et `--relvo-filet` | le fond et le bord du **bloc de Relvo** |
 
-**Le ciel** (`--ciel`) est le dégradé du header : `--nuit` en haut, `--relvo` au tiers,
-`--relvo-clair`, puis le blanc de l'écran de travail. Il ne s'arrête jamais net : il fond. Il
+**Le ciel** (`--ciel`) est le dégradé du header : `--nuit` en haut, `--relvo` tenu sur presque
+toute la hauteur, puis `--relvo-clair` et le blanc de l'écran de travail dans les derniers
+pixels seulement, **ancrés au bas du header** quelle que soit sa hauteur : un texte blanc posé
+dans le ciel est toujours sur le violet de Relvo, et seule la carte qui chevauche le bas voit
+le ciel fondre derrière elle. Il ne s'arrête jamais net : il fond. Il
 porte un **champ d'étoiles** (`--etoiles`) : une quinzaine de points fins et trois étoiles à
 quatre branches, celles du signe, posés en dégradés radiaux et masqués vers le bas. C'est du
 CSS ; aucune image. Sur la connexion, le ciel prend près de la moitié de l'écran.
