@@ -205,15 +205,49 @@ dessins, blanc et cartes, plus de verre ni de grain ni de relief). `CLAUDE.md` e
 ouverture de la tranche 2 (quatre matières, bande de domaine, chiffres condensés, état par la
 forme, le cadre ciel et dock). **Jusqu'à M19.5 et M19.7, le code décrit l'ancienne matière.**
 
+## La tranche 2 en pratique — ce qui a été tranché en construisant
+
+- **Les anciens noms de tokens vivent en alias** (`--stone`, `--surface`, `--text-tertiary`,
+  `--elev-*`, `--glass-*`…) pointés sur la matière retenue : l'application a rendu dans la
+  direction dès M19.5, et chaque lot a remplacé les alias par les vrais noms sur les écrans qu'il
+  touchait. Les alias restants se retirent quand plus aucun fichier ne les cite — c'est le test
+  des tokens qui le dira, pas la vigilance. Les utilitaires `.grain` et `.glass-relvo` sont
+  rendus inertes.
+- **Un composant partagé est né** d'une duplication constatée : `IndicatorTabs` (Sujets,
+  Calendrier, Conversations, Contacts), le chiffre actif cerclé. `SegTabs` reste pour les onglets
+  d'une fiche, actif souligné. Le dock a ses quatre icônes pleines dans `dock-icons.tsx`, celles
+  des planches que le dirigeant a validées.
+- **Le ciel** est un utilitaire CSS (`.ciel`, `--ciel`, `--ciel-haut`, `--etoiles`), ses arrêts
+  en pixels depuis le haut du header pour que la première carte le chevauche quelle que soit la
+  hauteur du header ; les trois étoiles du signe évitent le coin haut droit où vivent les boutons
+  de page.
+- **Le sujet en attente** (`getSubjectsAwaitingUser`) porte désormais son domaine et
+  l'entreprise du contact : la carte d'attente les affiche. Version de cache `v14`.
+- **Le burger est à droite** dans `RelvoHeader`, après les actions de page ; la flèche retour à
+  gauche sur un écran poussé ; `eyebrow` au-dessus du titre (la date sur l'accueil, le domaine sur
+  une fiche).
+- **Vérification** : typage, lint et les 127 tests passent ; chaque lot a été capturé en
+  navigateur (scratchpad `shots-m197/`) et relu avant commit. L'avertissement d'hydratation
+  s'est montré une fois sur `/usage` pendant ces captures, jamais sur l'accueil : à regarder en
+  tranche 3 avec les écrans un par un.
+- **`pnpm build` passe**, le proxy apparaît (#5b). **Pas encore fait** : les
+  détecteurs d'impeccable signalent la bande de domaine comme tic d'interface générée tant que
+  `DESIGN.md` n'écrit pas l'exception ; la page publique de suivi garde sa feuille à part.
+
 ## Où on en est
 
 - [x] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 la
       direction « Lettrage d'artisan » retenue par le dirigeant sur la page de décision
       d'impeccable, dix-neuf écrans sur le canevas (deux séries avec ui-ux-pro-max écartées
       avant) · ✅ M19.4 décision écrite dans `ecarts`, brief et tokens récrits en place
-- [ ] Tranche 2 — « Habiller » : M19.11 outillage (`PRODUCT.md` est posé ; `DESIGN.md` et les
-      exceptions du détecteur restent) · M19.5 tokens, tenus par un test · M19.7 composants
-      signature · ✅ `02-composants.md` et `03-patterns.md` récrits dans la matière retenue
+- [ ] Tranche 2 — « Habiller » : ✅ `02-composants.md` et `03-patterns.md` récrits dans la
+      matière retenue · ✅ M19.5 tokens dans `globals.css`, tenus par `test/design-tokens.test.ts`
+      (inventaire, matière écartée, cliquet des couleurs en dur) · ✅ M19.7 composants signature
+      et déclinaison sur tous les écrans, en cinq lots (chrome et accueil ; Sujets, Calendrier,
+      Conversations, Contacts ; menu, fiche sujet, échange ; conversations et fiche contact ;
+      pages du menu et connexion) · ⏳ M19.11 outillage : `PRODUCT.md` est posé ; reste
+      `DESIGN.md` écrit depuis le code livré (documenter d'impeccable) avec l'exception assumée
+      pour la bande de domaine, et la revue de finition
 - [ ] Tranche 3 — « Alléger » : M19.6 écran par écran · M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas
 - [ ] Tranche 5 — « Clore » : M19.12
