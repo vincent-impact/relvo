@@ -145,22 +145,10 @@ const EXCEPTIONS_DURABLES = new Set([
   "src/app/manifest.ts", // le manifeste PWA est lu hors CSS
   "src/app/(shell)/layout.tsx", // themeColor, lu hors CSS
   "src/lib/email.ts", // HTML d'e-mail sortant : aucune feuille de style de l'app n'y est chargée
+  "src/components/conversations/email-html-frame.tsx", // feuille injectée dans l'iframe isolée d'un e-mail reçu : les variables de l'app n'y existent pas
   "src/app/(public)/suivi/[token]/suivi.module.css", // la page de suivi se lit HORS de l'application, avec sa propre feuille
 ]);
-const RESTE_A_MIGRER = [
-  "src/app/(shell)/(app)/memoire/[id]/page.tsx",
-  "src/app/(shell)/(app)/sujets/[id]/page.tsx",
-  "src/components/contacts/contacts-groups.tsx",
-  "src/components/conversations/decision-sheet.tsx",
-  "src/components/conversations/email-html-frame.tsx",
-  "src/components/conversations/email-message.tsx",
-  "src/components/shared/attachment-preview.tsx",
-  "src/components/shared/metrics-card.tsx",
-  "src/components/subject/informations-pane.tsx",
-  "src/components/subject/journal-pane.tsx",
-  "src/components/subject/relvo-draft-block.tsx",
-  "src/components/subject/subject-conversations-list.tsx",
-];
+const RESTE_A_MIGRER: string[] = [];
 
 function* fichiersSource(dir: string): Generator<string> {
   for (const nom of readdirSync(dir)) {

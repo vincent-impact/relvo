@@ -79,7 +79,7 @@ export function InstructionList({
                     {n.name}
                   </span>
                   {!n.active ? (
-                    <span className="flex-none rounded-(--rayon-pilule) bg-(--fond-puce) px-2 py-0.5 text-[10.5px] font-medium text-gris">
+                    <span className="flex-none rounded-(--rayon-pilule) bg-(--fond-puce) px-2 py-0.5 text-[11px] font-medium text-gris">
                       Désactivée
                     </span>
                   ) : null}

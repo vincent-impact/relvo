@@ -329,6 +329,33 @@ plus claire et agréable », et six retours, tous appliqués dans le même commi
   du poste) ; l'avertissement d'hydratation s'est montré une fois encore sur `/usage`, jamais
   ailleurs — toujours pour la tranche 3.
 
+## La tranche 3 commence par les reports de la revue (M19.6)
+
+Un commit par écran, capture avant (celles de la revue) et après (scratchpad `shots-t3/`) :
+
+- **Contacts** : l'annuaire vit dans **un** `ListPanel`, les lettres sont des lignes d'en-tête
+  enfoncées (`fond-enfonce`) dans la même carte ; elles ne sont plus collantes (le panneau rogne
+  ses coins, vingt contacts n'ont pas besoin d'index). Les groupes perdent leurs couleurs en dur.
+- **Fiche d'un sujet** : « Résumé » et « Tâches » passent à `ZoneHeading`, qui gagne `badge`
+  (qui parle, la pastille Relvo à côté du titre) et `className` (la fiche impose sa gouttière) ;
+  `section-label.tsx`, orphelin, est supprimé. Le brouillon de Relvo devient un **bloc de
+  Relvo** (violet pâle signé, boutons plats) au lieu d'un liseré ; le journal, la liste des
+  conversations, la puce Urgent, la jauge des tâches, les documents et le marqueur d'état du
+  ciel (11 px) passent aux tokens.
+- **Conversations** : avatars d'e-mail et de bulle à 11 px, pastille d'acteur à 16 px / 11 px,
+  feuille de décision et aperçus de pièces jointes aux tokens. La feuille injectée dans
+  l'iframe d'un e-mail reçu (`email-html-frame.tsx`) rejoint les exceptions durables du test :
+  les variables de l'application n'y existent pas.
+- **Calendrier** : agenda et mois à 11 px ; `metrics-card.tsx`, orphelin depuis M18, est
+  supprimé, et le squelette du Calendrier devient celui d'`IndicatorTabs`.
+- **Mémoire** : « Désactivée » à 11 px, documents d'un domaine aux tokens.
+
+**Le cliquet `RESTE_A_MIGRER` est vide** : plus aucune couleur en dur hors des six exceptions
+nommées. Il reste à la tranche 3 ce que la revue n'a pas ouvert : l'allègement proprement dit
+de chaque écran (`critique → distill → polish → audit`), l'état vide « rien de prévu » à
+unifier entre l'accueil et le Calendrier, le rafraîchissement du jeu de démonstration, et
+l'avertissement d'hydratation sur `/usage`.
+
 ## Où on en est
 
 - [x] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 la
@@ -344,8 +371,8 @@ plus claire et agréable », et six retours, tous appliqués dans le même commi
       depuis le code livré avec ses exceptions aux détecteurs, sidecar, contrat de direction au
       présent, revue de finition rendue, son lot de corrections appliqué, icônes pleines
       partout
-- [ ] Tranche 3 — « Alléger » : M19.6 écran par écran, **en commençant par les reports de la
-      revue de finition** (Contacts, en-têtes de la fiche, textes sous 11 px, couleurs en dur) ·
-      M19.10 robustesse
+- [ ] Tranche 3 — « Alléger » : ✅ les reports de la revue de finition (Contacts, en-têtes de
+      la fiche, textes sous 11 px, couleurs en dur — cliquet vide) · ⏳ M19.6 l'allègement écran
+      par écran · M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas
 - [ ] Tranche 5 — « Clore » : M19.12

@@ -81,7 +81,7 @@ async function DossierTabs({ folder }: { folder: Folder }) {
                     key={f.id}
                     className="flex items-center gap-3 rounded-2xl border border-(--border-light) bg-white px-3 py-3 shadow-(--shadow-card)"
                   >
-                    <span className="grid size-[38px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
+                    <span className="grid size-[38px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-gris">
                       <FileText className="size-[18px]" />
                     </span>
                     <div className="min-w-0 flex-1">
