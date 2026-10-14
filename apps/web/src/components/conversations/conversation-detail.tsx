@@ -722,18 +722,13 @@ export function ConversationDetail({
         </div>
       ) : inSelection ? (
         <div
-          className="absolute inset-x-0 bottom-0 z-30 px-4 pt-3"
+          className="absolute inset-x-0 bottom-0 z-30 bg-white px-4 pt-3 shadow-haut"
           style={{
-            paddingBottom: "max(calc(env(safe-area-inset-bottom) - 12px), 8px)",
-            background:
-              "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
-            backdropFilter: "blur(28px) saturate(170%)",
-            WebkitBackdropFilter: "blur(28px) saturate(170%)",
-            boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.22)",
+            paddingBottom: "max(env(safe-area-inset-bottom), 14px)",
           }}
         >
           <div className="flex items-center gap-2">
-            <span className="flex-1 text-[13px] font-semibold text-white">
+            <span className="flex-1 text-[13px] font-normal text-noir">
               {selectedMessageId
                 ? "Toute la suite sera écoutée."
                 : "Choisissez le message de départ"}
@@ -741,7 +736,7 @@ export function ConversationDetail({
             <button
               type="button"
               onClick={resetSelection}
-              className="inline-flex items-center gap-1 rounded-full border border-white/35 px-3 py-2 text-[12.5px] font-bold text-white active:bg-white/10"
+              className="inline-flex items-center gap-1 rounded-(--rayon-pilule) border border-(--filet) px-3 py-2 text-[12.5px] font-medium text-noir active:bg-(--fond-puce)"
             >
               <X className="size-4" strokeWidth={2.4} />
               Annuler
@@ -750,7 +745,8 @@ export function ConversationDetail({
               type="button"
               disabled={!selectedMessageId || pending}
               onClick={validateSelection}
-              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-[13px] font-bold text-relvo active:opacity-90 disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-(--rayon-pilule) px-4 py-2 text-[13px] font-medium text-white active:opacity-90 disabled:opacity-40"
+              style={{ background: "var(--degrade-relvo)" }}
             >
               <Check className="size-[17px]" strokeWidth={2.6} />
               Valider

@@ -38,26 +38,26 @@ export function EmailMessage({ data }: { data: EmailMessageData }) {
       className={cn(
         // Padding resserré : sur mobile l'espace horizontal est rare, la bulle
         // e-mail ne doit pas le gaspiller (item 2026-07-23).
-        "rounded-[13px] border px-2.5 py-2.5",
+        "rounded-(--rayon-carte) border px-3 py-3",
         // Repli assumé de l'invariant : teinte très légère au SORTANT seulement,
         // pour distinguer « Moi » sans jamais teinter du texte long.
         outgoing
           ? "border-(--blue-100) bg-(--blue-50)"
-          : "border-[#ececea] bg-white shadow-(--shadow-card)",
+          : "border-(--filet) bg-white shadow-carte",
       )}
     >
       <header className="mb-2 flex items-center gap-2">
         <span
           className={cn(
-            "grid size-[26px] flex-none place-items-center rounded-full text-[10.5px] font-extrabold text-white",
-            outgoing ? "bg-brand" : "bg-(--amber-600)",
+            "chiffre grid size-[26px] flex-none place-items-center rounded-full text-[10.5px]",
+            outgoing
+              ? "bg-actor-me text-white"
+              : "bg-actor-ext-fond text-actor-ext",
           )}
         >
           {initials}
         </span>
-        <span className="text-[13px] font-bold text-(--text-primary)">
-          {senderName}
-        </span>
+        <span className="text-[13px] font-medium text-noir">{senderName}</span>
         {data.time ? (
           <span className="ml-auto text-[11.5px] whitespace-nowrap text-[#a8a69d]">
             {data.time}

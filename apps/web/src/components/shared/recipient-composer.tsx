@@ -185,7 +185,7 @@ export function RecipientComposer({
     <button
       type="button"
       aria-label="Joindre un fichier"
-      className="grid flex-none place-items-center py-1.5 text-white/85"
+      className="grid flex-none place-items-center py-1.5 text-gris"
     >
       <Paperclip className="size-5" strokeWidth={2} />
     </button>
@@ -198,10 +198,10 @@ export function RecipientComposer({
       disabled={blocked}
       aria-label={typing ? "Envoyer" : "Dicter"}
       className={cn(
-        "grid flex-none place-items-center rounded-full bg-white text-relvo active:scale-95 disabled:opacity-60",
-        expanded ? "size-[36px]" : "size-[42px]",
+        "grid flex-none place-items-center rounded-full text-white shadow-disque active:scale-95 disabled:opacity-60",
+        expanded ? "size-9" : "size-11",
       )}
-      style={{ boxShadow: "0 5px 16px rgb(0 0 0 / 0.22)" }}
+      style={{ background: "var(--degrade-disque)" }}
     >
       {typing ? (
         <Send
@@ -216,21 +216,16 @@ export function RecipientComposer({
 
   return (
     <div
-      className="relative flex flex-col gap-2 px-3.5 pt-[11px]"
+      className="relative flex flex-col gap-2 bg-white px-4 pt-2.5 shadow-haut"
       style={{
         paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
-        background:
-          "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
-        backdropFilter: "blur(28px) saturate(170%)",
-        WebkitBackdropFilter: "blur(28px) saturate(170%)",
-        boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.34)",
       }}
     >
       {/* Brouillon de Relvo (M7.7) — étiqueté comme une suggestion modifiable,
           régénérable, effaçable ; jamais envoyé seul (05 §3.1). */}
       {showDraftBar ? (
         <div
-          className="flex items-center gap-2 px-1 text-[12.5px] font-semibold text-white/90"
+          className="flex items-center gap-2 rounded-(--rayon-option) bg-relvo-pale px-3 py-1.5 text-[12.5px] font-medium text-relvo"
           aria-live="polite"
         >
           <Sparkles
@@ -242,7 +237,7 @@ export function RecipientComposer({
             <span className="flex items-center truncate">{barLabel}</span>
             {sources.length ? (
               <span
-                className="truncate text-[11.5px] font-medium text-white/75"
+                className="truncate text-[11.5px] font-light text-gris"
                 title={`Basé sur : ${sources.join(", ")}`}
               >
                 Basé sur : {sources.join(", ")}
@@ -254,7 +249,7 @@ export function RecipientComposer({
               type="button"
               onClick={draft.onRegenerate}
               aria-label="Régénérer le brouillon"
-              className="grid size-7 flex-none place-items-center rounded-full text-white/85 active:bg-white/15"
+              className="grid size-7 flex-none place-items-center rounded-full text-relvo active:bg-relvo-filet"
             >
               <RefreshCw className="size-[15px]" strokeWidth={2.2} />
             </button>
@@ -269,7 +264,7 @@ export function RecipientComposer({
                 draft.onClear?.();
               }}
               aria-label="Effacer le brouillon"
-              className="grid size-7 flex-none place-items-center rounded-full text-white/85 active:bg-white/15"
+              className="grid size-7 flex-none place-items-center rounded-full text-relvo active:bg-relvo-filet"
             >
               <X className="size-[16px]" strokeWidth={2.4} />
             </button>
@@ -285,12 +280,7 @@ export function RecipientComposer({
               ? "flex-col px-[15px] pt-[5px] pb-[7px]"
               : "items-end gap-[7px] py-[5px] pr-1.5 pl-[15px]",
           )}
-          style={{
-            background: "rgb(255 255 255 / 0.06)",
-            border: "1px solid rgb(255 255 255 / 0.28)",
-            boxShadow:
-              "inset 0 1px 0 rgb(255 255 255 / 0.3), inset 0 -1px 0 rgb(0 0 0 / 0.04)",
-          }}
+          style={{ background: "var(--fond-puce)" }}
         >
           {loading ? (
             // Relvo rédige : le champ montre des lignes qui respirent, pas un
@@ -303,7 +293,7 @@ export function RecipientComposer({
               {["88%", "72%", "52%"].map((w) => (
                 <span
                   key={w}
-                  className="block h-[11px] animate-pulse rounded-full bg-white/30"
+                  className="block h-[11px] animate-pulse rounded-full bg-(--gris-clair)/50"
                   style={{ width: w }}
                 />
               ))}
@@ -324,7 +314,7 @@ export function RecipientComposer({
                 }}
                 placeholder={ph}
                 className={cn(
-                  "relative block w-full min-w-0 resize-none border-none bg-transparent text-white outline-none placeholder:text-white/70",
+                  "relative block w-full min-w-0 resize-none border-none bg-transparent font-light text-noir outline-none placeholder:text-gris",
                   FIELD_METRICS,
                 )}
                 style={{ maxHeight }}

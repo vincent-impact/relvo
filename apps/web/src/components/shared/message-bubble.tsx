@@ -6,9 +6,9 @@ import { AttachmentPreview } from "@/components/shared/attachment-preview";
 import { LinkifiedText } from "@/components/shared/linkified-text";
 
 // Bulle de message partagée (fil d'un sujet, fil de conversation par contact),
-// style « Direction B ». Sortant (Moi) = bulle bleue à droite. Entrant = en-tête
-// avatar acteur + nom + canal·heure, bulle blanche (ou violet pâle si Relvo) à
-// gauche. Pièce jointe optionnelle (carte fichier + étiquette IA).
+// aux couleurs des ACTEURS (design-system/01-tokens) : Moi = bulle bleue à
+// droite ; un tiers = en-tête avatar + nom + canal·heure, bulle ambre pâle à
+// gauche ; Relvo n'a pas de bulle, il a un bloc violet pâle. Pièce jointe optionnelle (carte fichier + étiquette IA).
 
 export type MessageBubbleData = {
   id: string;
@@ -38,10 +38,10 @@ export type MessageBubbleData = {
 };
 
 const AVATAR: Record<Actor, { letter: string; bg: string }> = {
-  user: { letter: "M", bg: "bg-brand" },
-  ai: { letter: "R", bg: "bg-relvo" },
-  contact: { letter: "E", bg: "bg-(--amber-600)" },
-  system: { letter: "R", bg: "bg-relvo" },
+  user: { letter: "M", bg: "bg-actor-me text-white" },
+  ai: { letter: "R", bg: "bg-relvo text-white" },
+  contact: { letter: "E", bg: "bg-actor-ext-fond text-actor-ext" },
+  system: { letter: "R", bg: "bg-relvo text-white" },
 };
 
 export function MessageBubble({ data }: { data: MessageBubbleData }) {
@@ -64,17 +64,22 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
         <div className="mb-1.5 flex items-center gap-[7px]">
           <span
             className={cn(
-              "grid size-[22px] flex-none place-items-center rounded-full text-[10px] font-extrabold text-white",
+              "chiffre grid size-[22px] flex-none place-items-center rounded-full text-[10px]",
               av.bg,
             )}
           >
             {avatarText}
           </span>
-          <span className="text-[12.5px] font-bold">
+          <span
+            className={cn(
+              "text-[12.5px] font-medium",
+              relvo ? "text-relvo" : "text-actor-ext",
+            )}
+          >
             {data.senderName ?? "Externe"}
           </span>
           {data.channel || data.time ? (
-            <span className="text-[11.5px] whitespace-nowrap text-[#a8a69d]">
+            <span className="text-[11.5px] font-light whitespace-nowrap text-gris">
               {[data.channel, data.time].filter(Boolean).join(" · ")}
             </span>
           ) : null}
@@ -90,12 +95,12 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
               // ne pas saturer la conversation ; la page détail donne le texte
               // complet. `overflow-wrap:anywhere` : une URL interminable se coupe
               // au lieu d'élargir l'écran (jamais de scroll horizontal).
-              "line-clamp-[12] px-3.5 py-[11px] text-[15px] leading-[1.45] whitespace-pre-wrap [overflow-wrap:anywhere]",
+              "line-clamp-[12] px-3.5 py-[11px] text-[14.5px] leading-[1.45] font-light whitespace-pre-wrap [overflow-wrap:anywhere]",
               outgoing
-                ? "rounded-[18px_18px_5px_18px] bg-brand text-white"
+                ? "rounded-[18px_18px_5px_18px] bg-actor-me text-white"
                 : relvo
-                  ? "rounded-[5px_18px_18px_18px] border border-(--purple-100) bg-relvo-bg text-(--text-primary)"
-                  : "rounded-[5px_18px_18px_18px] border border-[#ececea] bg-white text-(--text-primary) shadow-(--shadow-card)",
+                  ? "rounded-[5px_18px_18px_18px] border border-relvo-filet bg-relvo-pale text-noir"
+                  : "rounded-[5px_18px_18px_18px] bg-actor-ext-fond text-noir",
             );
             // Bulle cliquable (→ page détail) : pas de lien imbriqué, on garde le
             // texte brut. Sinon on rend les URLs cliquables directement.

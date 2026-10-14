@@ -189,14 +189,9 @@ export function ContactDetail({
 
       {/* Dock violet — remplace la barre d'onglets sur cette page. */}
       <div
-        className="absolute inset-x-0 bottom-0 z-30 px-4 pt-3"
+        className="absolute inset-x-0 bottom-0 z-30 bg-white px-4 pt-3 shadow-haut"
         style={{
-          paddingBottom: "max(calc(env(safe-area-inset-bottom) - 12px), 8px)",
-          background:
-            "linear-gradient(180deg, var(--glass-relvo-1), var(--glass-relvo-2))",
-          backdropFilter: "blur(28px) saturate(170%)",
-          WebkitBackdropFilter: "blur(28px) saturate(170%)",
-          boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.22)",
+          paddingBottom: "max(env(safe-area-inset-bottom), 14px)",
         }}
       >
         {editing ? (
@@ -348,13 +343,13 @@ function ReadCard({ contact, auto }: { contact: Contact; auto: boolean }) {
 }
 
 const inputCls =
-  "w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo";
+  "w-full rounded-(--rayon-option) border border-(--filet) bg-(--fond-puce) px-3 py-2.5 text-[14px] font-light text-noir outline-none focus:border-relvo focus:bg-white";
 
 const dockGhost =
-  "inline-flex flex-1 items-center justify-center gap-1.5 rounded-full border border-white/35 py-2.5 text-[13.5px] font-bold text-white active:bg-white/10 disabled:opacity-50";
+  "inline-flex flex-1 items-center justify-center gap-1.5 rounded-(--rayon-pilule) border border-(--filet) py-2.5 text-[13.5px] font-medium text-noir active:bg-(--fond-puce) disabled:opacity-50";
 
 const dockPrimary =
-  "inline-flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white py-2.5 text-[13.5px] font-bold text-relvo active:opacity-90 disabled:opacity-50";
+  "inline-flex flex-1 items-center justify-center gap-1.5 rounded-(--rayon-pilule) bg-relvo py-2.5 text-[13.5px] font-medium text-white active:opacity-90 disabled:opacity-50";
 
 function Field({
   label,
@@ -365,9 +360,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[12.5px] font-semibold text-(--text-secondary)">
-        {label}
-      </span>
+      <span className="libelle mb-1 block">{label}</span>
       {children}
     </label>
   );
