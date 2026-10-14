@@ -63,7 +63,7 @@ export const TENANT_DATA_TAG = "tenant-data";
 // rendez-vous du Calendrier, CachedFolderRow (+ instructions/documents/
 // openSubjects, − sub).
 // Suivant = "v14".
-const CACHE_V = "v13";
+const CACHE_V = "v14";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
@@ -430,6 +430,10 @@ export type CachedAwaitingSubject = {
   /** ISO. */
   since: string;
   contactName: string | null;
+  contactCompany: string | null;
+  folderName: string | null;
+  folderSlug: string | null;
+  folderColor: string | null;
 };
 
 export const cachedAwaitingSubjects = unstable_cache(

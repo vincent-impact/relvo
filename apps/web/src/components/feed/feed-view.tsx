@@ -83,7 +83,6 @@ export function FeedView({
           subjectId={row.id}
           canClose
           openTasks={Math.max(row.taskTotal - row.taskDone, 0)}
-          rounded={false}
         >
           <SubjectRow data={row} linkable={false} />
         </SwipeableSubject>

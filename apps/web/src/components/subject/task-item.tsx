@@ -8,11 +8,12 @@ import { toast } from "sonner";
 import { type TaskItemData } from "@/lib/task-item-data";
 import { TaskModal } from "@/components/subject/task-modal";
 import { completeTaskAction, reopenTaskAction } from "@/server/actions/tasks";
-import { folderColor } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
 // TaskItem — présentation UNIQUE d'une tâche, partout. Gauche : CASE À COCHER
-// (distingue une tâche d'un sujet). Centre : titre + sujet/interlocuteur (si « à
+// ronde (distingue une tâche d'un sujet). Pas de bande de domaine : le sujet
+// est écrit sous le titre, et une tâche n'en porte pas deux fois la couleur
+// (design-system/02-composants, « une bande par carte ou par ligne »). Centre : titre + sujet/interlocuteur (si « à
 // plat »). DROITE : colonne ~22 % réservée à l'HEURE (RDV) et, selon le contexte
 // (`meta`), à la DATE — pour repérer un RDV / une échéance en un coup d'œil :
 //   meta="none"  → pas de colonne (ex. « À trier », sans date)
@@ -111,8 +112,8 @@ export function TaskItem({
         data-list-row
         onClick={() => setOpen(true)}
         className={cn(
-          "flex cursor-pointer items-start gap-2.5 border-b border-(--border-light) px-4 py-3.5 active:bg-(--surface-2)",
-          done && "bg-(--surface)",
+          "flex cursor-pointer items-start gap-3 border-b border-(--filet) px-3.5 py-3 active:bg-(--fond-puce)",
+          done && "bg-(--fond-enfonce)",
         )}
       >
         {/* Case à cocher (gauche) — terminer / remettre à faire. */}
@@ -125,33 +126,22 @@ export function TaskItem({
             toggle();
           }}
           className={cn(
-            "mt-px grid size-[22px] flex-none place-items-center rounded-md border-2 transition-colors",
+            "mt-px grid size-[22px] flex-none place-items-center rounded-full border-2 transition-colors",
             done
-              ? "border-(--green-600) bg-(--green-600) text-white"
-              : "border-[#d9d7d1] bg-white text-transparent shadow-pressed hover:border-(--green-600)",
+              ? "border-relvo bg-relvo text-white"
+              : "border-(--gris-clair) bg-white text-transparent hover:border-relvo",
             pending && "opacity-60",
           )}
         >
           <Check className="size-3.5" strokeWidth={3} />
         </button>
 
-        {/* Rail de couleur — domaine (Folder) hérité du sujet, entre la case et
-            le texte (visible, contrairement au bord d'écran). */}
-        <span
-          aria-hidden
-          className={cn(
-            "my-0.5 w-[3px] flex-none self-stretch rounded-full",
-            done && "opacity-40",
-          )}
-          style={{ background: folderColor(task.folderSlug) }}
-        />
-
         {/* Centre — titre + sujet/interlocuteur. */}
         <div className="min-w-0 flex-1">
           <div
             className={cn(
-              "text-[15px] font-semibold",
-              done && "text-[#a8a69d] line-through",
+              "text-[14.5px] leading-[18px] font-normal",
+              done && "text-gris line-through",
             )}
           >
             {/* Retard : le signal est un POINT rouge + la date en rouge, plus un
@@ -159,19 +149,19 @@ export function TaskItem({
             {late ? (
               <span
                 aria-hidden
-                className="mr-1.5 inline-block size-1.5 rounded-full bg-(--red-600) align-middle"
+                className="mr-1.5 inline-block size-2 rounded-full bg-urgent align-middle"
               />
             ) : null}
             {task.title}
           </div>
           {showSubjectLine ? (
-            <p className="mt-0.5 truncate text-[13px] text-(--text-secondary)">
+            <p className="mt-0.5 truncate text-[12px] font-light text-gris">
               {task.subjectTitle ? (
                 subjectHref ? (
                   <Link
                     href={subjectHref}
                     onClick={(e) => e.stopPropagation()}
-                    className="underline decoration-[#c9c7c0] underline-offset-2 hover:text-relvo hover:decoration-relvo"
+                    className="underline decoration-(--gris-clair) underline-offset-2 hover:text-relvo hover:decoration-relvo"
                   >
                     {task.subjectTitle}
                   </Link>
@@ -188,8 +178,8 @@ export function TaskItem({
           {decisionsLine ? (
             <p
               className={cn(
-                "mt-1 text-[12.5px] font-semibold",
-                aDecider ? "text-relvo" : "text-(--text-secondary)",
+                "mt-1 text-[12.5px] font-medium",
+                aDecider ? "text-relvo" : "text-gris",
               )}
             >
               {decisionsLine}
@@ -199,7 +189,7 @@ export function TaskItem({
             <Link
               href={replyHref}
               onClick={(e) => e.stopPropagation()}
-              className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-relvo-bg px-2.5 py-1 text-[12.5px] font-bold text-relvo active:opacity-80"
+              className="mt-1.5 inline-flex items-center gap-1.5 rounded-(--rayon-pilule) bg-relvo-pale px-2.5 py-1 text-[12px] font-medium text-relvo active:opacity-80"
             >
               <Reply className="size-[14px]" strokeWidth={2.4} />
               {aDecider ? "Décider et répondre" : "Répondre"}
@@ -211,14 +201,16 @@ export function TaskItem({
         {meta !== "none" ? (
           <div className="flex w-[78px] flex-none flex-col items-end self-center text-right leading-tight">
             {colEmpty ? (
-              <span className="text-[14px] text-[#cfcdc6]">—</span>
+              <span className="text-[14px] text-(--gris-clair)">—</span>
             ) : (
               <>
                 {dateLine ? (
                   <span
                     className={cn(
-                      "text-[12px] font-semibold",
-                      late ? "text-(--red-600)" : "text-(--text-secondary)",
+                      "chiffre text-[13px]",
+                      late
+                        ? "text-urgent line-through decoration-2"
+                        : "text-gris",
                     )}
                   >
                     {dateLine}
@@ -227,8 +219,10 @@ export function TaskItem({
                 {timeLine ? (
                   <span
                     className={cn(
-                      "font-numeric text-[14px] font-bold",
-                      late ? "text-(--red-600)" : "text-(--text-primary)",
+                      "chiffre text-[19px] leading-[22px]",
+                      late
+                        ? "text-urgent line-through decoration-2"
+                        : "text-noir",
                     )}
                   >
                     {timeLine}

@@ -112,13 +112,22 @@
   --relvo-pale: #f2f0ff; /* le fond du bloc de Relvo */
   --relvo-filet: #e3dffb; /* le bord du bloc de Relvo */
   /* Le ciel : nuit, violet au tiers, violet clair, puis le blanc de l'écran.
-     Les arrêts sont en % de la hauteur de l'élément qui le porte. */
+     Les arrêts sont en pixels depuis le haut de l'élément qui le porte : la
+     première carte chevauche le bas du ciel, qui fond derrière elle. */
   --ciel: linear-gradient(
     180deg,
-    var(--nuit) 0%,
-    var(--relvo) 36%,
-    var(--relvo-clair) 62%,
-    #ffffff 100%
+    var(--nuit) 0,
+    var(--relvo) 48px,
+    var(--relvo-clair) 96px,
+    #ffffff 262px
+  );
+  /* Le ciel haut de la connexion : près de la moitié de l'écran. */
+  --ciel-haut: linear-gradient(
+    180deg,
+    var(--nuit) 0,
+    var(--relvo) 150px,
+    var(--relvo-clair) 300px,
+    #8b80ea 380px
   );
   /* Le champ d'étoiles : points en dégradés radiaux, masqués vers le bas. Les
      trois étoiles à quatre branches (celles du signe) sont posées par `.ciel`. */

@@ -3,118 +3,107 @@ import { ChevronLeft } from "lucide-react";
 import { MenuButton } from "@/components/layout/side-menu";
 import { cn } from "@/lib/utils";
 
-// RelvoHeader — la « zone agent » violette en tête de chaque écran (Direction B).
-// Deux modes : page principale (bouton MENU à gauche, grand titre) ou écran
-// poussé (flèche retour + titre). À DROITE : le slot `action`, qui sert le
-// CONTEXTE de la page (ex. « + » Nouveau sujet sur Sujets). L'accès à Relvo
-// n'est PLUS dans le header : il est au centre de la barre d'onglets, sous le
-// pouce (invariant 35). `children` loge le brief, la carte métriques, un
-// segmented… Le header SCROLLE avec le contenu.
+// RelvoHeader — le CIEL en tête de chaque écran (design-system/03-patterns,
+// « Le cadre : le ciel en haut, le dock en bas ») : violet nuit, violet de
+// Relvo, puis le blanc de l'écran de travail, avec son champ d'étoiles (`.ciel`,
+// globals.css). Il ne s'arrête jamais net : la première carte le chevauche et
+// il fond derrière elle — d'où le rembourrage bas, que `children` consomme.
 //
-// Direction « Instrument » (2026-09) : violet ENCRE, rayon bas plafonné
-// (--hero-round = 20px), un GRAIN discret (`.grain`) à la place du halo — c'est
-// ce qui fait « matière » plutôt qu'aplat plastique — et des titres en Geist 600
-// interlettrage -0.02em (plus d'extrabold : le sérieux vient de la retenue).
+// Deux modes. Page : à gauche `leading` (l'avatar sur l'accueil) ou rien, à
+// droite les actions de la page puis le BURGER, discret. Écran poussé (`back`) :
+// la flèche retour à gauche, les actions à droite, pas de burger. Le titre est
+// gros et condensé (`font-heading`) ; `eyebrow` est la ligne au-dessus (la date
+// sur l'accueil), `subtitle` la ligne en dessous, en petites capitales.
+// `children` loge ce qui vit dans le ciel : le bloc des nouvelles, une carte
+// d'indicateurs, un segmented, les onglets d'une fiche. Le header SCROLLE avec
+// le contenu.
 
-// Bouton de verre du header (retour, menu) : 38px, blanc translucide, filet.
-const GLASS_BTN =
-  "pressable grid size-[38px] flex-none place-items-center rounded-full text-white";
-const GLASS_BTN_STYLE = {
-  background: "rgb(255 255 255 / 0.14)",
-  border: "1px solid rgb(255 255 255 / 0.28)",
-  boxShadow:
-    "inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(0 0 0 / 0.18)",
-};
+// Bouton d'icône posé sur le ciel : 30 px, blanc translucide, rayon 8.
+export const SKY_BTN =
+  "pressable grid size-[30px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-white/14 text-white";
 
 export function RelvoHeader({
   title,
+  eyebrow,
   subtitle,
   back,
+  leading,
   action,
-  rounded = true,
   wrapTitle = false,
   titleFull = false,
   children,
   className,
 }: {
   title: React.ReactNode;
+  /** Ligne au-dessus du titre (la date sur l'accueil). */
+  eyebrow?: React.ReactNode;
+  /** Ligne sous le titre, en petites capitales. */
   subtitle?: React.ReactNode;
-  /** href du bouton retour (mode « écran poussé »). Sans lui : bouton menu. */
+  /** href du bouton retour (mode « écran poussé »). Sans lui : page, avec le burger. */
   back?: string;
-  /** Action(s) de page, posée(s) à DROITE (optionnel). */
+  /** Élément à GAUCHE de la rangée des boutons (l'avatar sur l'accueil). */
+  leading?: React.ReactNode;
+  /** Action(s) de page, posée(s) à DROITE, avant le burger. */
   action?: React.ReactNode;
-  rounded?: boolean;
   /** Titre sur 2 lignes (lisible en entier) au lieu de tronqué — mode détail. */
   wrapTitle?: boolean;
   /** Titre affiché EN ENTIER, sans aucune troncature (conversation). */
   titleFull?: boolean;
-  /** Brief, MetricsCard, SegTabs, status-strip… logés dans la zone violette. */
+  /** Ce qui vit dans le ciel : nouvelles, indicateurs, segmented, onglets. */
   children?: React.ReactNode;
   className?: string;
 }) {
-  const detail = Boolean(back);
-  const right = action ? (
-    <div className="flex flex-none items-center gap-2">{action}</div>
-  ) : null;
+  const pushed = Boolean(back);
   return (
     <header
-      className={cn(
-        "grain relative overflow-hidden bg-relvo pb-5 text-white",
-        rounded && "rounded-b-(--hero-round)",
-        className,
-      )}
-      style={{ paddingTop: "max(env(safe-area-inset-top), 14px)" }}
+      className={cn("ciel overflow-hidden px-4 pb-4", className)}
+      style={{ paddingTop: "max(env(safe-area-inset-top), 12px)" }}
     >
-      {detail ? (
-        <div className="relative z-[1] flex items-center gap-3 px-3.5 pt-0.5 pb-1">
-          <Link
-            href={back!}
-            aria-label="Retour"
-            className={GLASS_BTN}
-            style={GLASS_BTN_STYLE}
-          >
-            <ChevronLeft className="size-5" strokeWidth={2.2} />
+      {/* La rangée des boutons : 34 px de haut, quoi qu'elle porte. */}
+      <div className="flex h-[34px] items-center gap-2">
+        {pushed ? (
+          <Link href={back!} aria-label="Retour" className={SKY_BTN}>
+            <ChevronLeft className="size-[18px]" strokeWidth={2.6} />
           </Link>
-          <div className="min-w-0 flex-1">
-            <h1
-              className={cn(
-                "font-heading text-[19px] font-semibold tracking-[-0.01em]",
-                titleFull
-                  ? "leading-[1.2]"
-                  : wrapTitle
-                    ? "line-clamp-2 leading-[1.15]"
-                    : "truncate",
-              )}
-            >
-              {title}
-            </h1>
-            {subtitle ? (
-              // Un titre sur deux lignes colle son sous-titre sans cet air.
-              <div className="mt-1.5 truncate text-[12.5px] text-(--on-violet)">
-                {subtitle}
-              </div>
-            ) : null}
-          </div>
-          {right}
-        </div>
-      ) : (
-        <div className="relative z-[1] flex items-center gap-3 px-3.5 pt-1">
-          <MenuButton className={GLASS_BTN} style={GLASS_BTN_STYLE} />
-          <div className="min-w-0 flex-1">
-            <h1 className="truncate font-heading text-[24px] leading-[1.15] font-semibold tracking-[-0.02em]">
-              {title}
-            </h1>
-            {subtitle ? (
-              <div className="mt-0.5 truncate text-[13px] text-(--on-violet)">
-                {subtitle}
-              </div>
-            ) : null}
-          </div>
-          {right}
-        </div>
-      )}
+        ) : (
+          leading
+        )}
+        <div className="flex-1" />
+        {action ? (
+          <div className="flex flex-none items-center gap-2">{action}</div>
+        ) : null}
+        {pushed ? null : <MenuButton className={SKY_BTN} />}
+      </div>
 
-      {children ? <div className="relative z-[1]">{children}</div> : null}
+      <div className={cn("min-w-0", pushed ? "mt-2" : "mt-2.5")}>
+        {eyebrow ? (
+          <div className="truncate text-[12px] tracking-[0.08em] text-white/90 uppercase">
+            {eyebrow}
+          </div>
+        ) : null}
+        <h1
+          className={cn(
+            "font-heading font-semibold tracking-[-0.01em] text-white",
+            pushed
+              ? "text-[28px] leading-[32px]"
+              : "text-[30px] leading-[34px]",
+            titleFull
+              ? "text-[26px] leading-[30px]"
+              : wrapTitle
+                ? "line-clamp-2"
+                : "truncate",
+          )}
+        >
+          {title}
+        </h1>
+        {subtitle ? (
+          <div className="mt-1 truncate text-[12px] tracking-[0.08em] text-white/90 uppercase">
+            {subtitle}
+          </div>
+        ) : null}
+      </div>
+
+      {children ? <div className="mt-3">{children}</div> : null}
     </header>
   );
 }

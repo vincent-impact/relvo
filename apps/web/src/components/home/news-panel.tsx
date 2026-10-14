@@ -1,16 +1,17 @@
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
 import { RelvoLogo } from "@/components/layout/relvo-logo";
 import { formatRelative } from "@/lib/display";
 import type { CachedNews } from "@/server/cached";
 import type { BriefSuggestion } from "@relvo/db";
 
-// « Dernières nouvelles » — la première zone du brief (01 §11, invariant 34),
-// dans le header, dans la voix de Relvo, sur un panneau translucide. Un résumé
-// CALCULÉ depuis le dernier passage et AU PLUS DEUX suggestions par règles, qui
-// ouvrent l'échange avec leur phrase comme premier tour. Jamais de raccourcis
-// vers les sujets : ils finiraient par saturer. Le titre est « Dernières
-// nouvelles », jamais « Relvo vous parle ».
+// « Dernières nouvelles » — la première zone du brief (01 §11, invariant 34) :
+// le BLOC DE RELVO (design-system/01-tokens, « un bloc violet pâle signé des
+// étoiles, c'est Relvo qui parle »), posé dans le ciel qui fond derrière lui.
+// Un résumé CALCULÉ depuis le dernier passage et AU PLUS DEUX suggestions par
+// règles. Une question de Relvo est une ligne avec son bouton « Répondre » ;
+// une autre suggestion est un lien fléché. Chaque phrase pointe sa preuve :
+// c'est le lien qui ouvre l'échange avec elle comme premier tour. Jamais de
+// raccourcis vers les sujets : ils finiraient par saturer.
 
 function plural(n: number, one: string, many: string): string {
   return `${n} ${n > 1 ? many : one}`;
@@ -49,6 +50,10 @@ export function newsSentence(news: CachedNews): string {
   return `${origin}, j'ai ${list}.`;
 }
 
+function suggestionHref(s: BriefSuggestion): string {
+  return `/relvo?from=%2F&q=${encodeURIComponent(s.text)}`;
+}
+
 export function NewsPanel({
   news,
   suggestions,
@@ -57,50 +62,53 @@ export function NewsPanel({
   suggestions: BriefSuggestion[];
 }) {
   const stamp = news.since ? formatRelative(new Date(news.since)) : null;
+  const questions = suggestions.filter((s) => s.kind === "question");
+  const others = suggestions.filter((s) => s.kind !== "question");
   return (
-    <div
-      className="mx-3 mt-3.5 rounded-[14px] px-3.5 pt-3 pb-1"
-      style={{
-        background: "rgb(255 255 255 / 0.12)",
-        border: "1px solid rgb(255 255 255 / 0.24)",
-        boxShadow: "inset 0 1px 0 rgb(255 255 255 / 0.18)",
-      }}
+    <section
+      aria-label="Dernières nouvelles"
+      className="rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-3.5 pt-3 pb-3 text-noir shadow-carte"
     >
-      <div className="mb-2 flex items-center justify-between">
-        <span className="inline-flex items-center gap-[7px] text-[11px] font-semibold tracking-[0.06em] text-white uppercase">
-          <RelvoLogo
-            size={18}
-            variant="inverted"
-            className="text-relvo"
-            title=""
-          />
-          Dernières nouvelles
+      <div className="flex items-center gap-2">
+        <RelvoLogo
+          size={22}
+          variant="full"
+          className="text-relvo-clair"
+          title=""
+        />
+        <span className="libelle text-relvo!">
+          Relvo{stamp ? ` · ${stamp}` : ""}
         </span>
-        {stamp ? (
-          <span className="text-[11.5px] text-(--on-violet)">{stamp}</span>
-        ) : null}
       </div>
-      <p className="mb-1.5 text-[14.5px] leading-[1.4] text-white">
+      <p className="mt-1.5 text-[14px] leading-5 font-light">
         {newsSentence(news)}
       </p>
-      {suggestions.map((s) => (
+      {others.map((s) => (
         <Link
           key={s.text}
-          href={`/relvo?from=%2F&q=${encodeURIComponent(s.text)}`}
-          className="flex items-center gap-2.5 border-t border-white/18 py-2.5 text-[14px] leading-[1.3] text-white active:opacity-80"
+          href={suggestionHref(s)}
+          className="mt-1 inline-block text-[13px] font-medium text-relvo active:opacity-80"
         >
-          {s.kind === "question" ? (
-            <span className="flex-none rounded-full bg-[#fafafa] px-[7px] py-[3px] text-[10.5px] font-semibold tracking-[0.04em] text-relvo uppercase">
-              Question
-            </span>
-          ) : null}
-          <span className="min-w-0 flex-1">{s.text}</span>
-          <ChevronRight
-            className="size-4 flex-none text-white/70"
-            strokeWidth={2}
-          />
+          → {s.text}
         </Link>
       ))}
-    </div>
+      {questions.map((s) => (
+        <div
+          key={s.text}
+          className="mt-2 flex items-center justify-between gap-2.5 border-t border-relvo-filet pt-2"
+        >
+          <span className="min-w-0 flex-1 text-[13px] leading-[17px]">
+            {s.text}
+          </span>
+          <Link
+            href={suggestionHref(s)}
+            className="pressable h-[30px] flex-none rounded-(--rayon-pilule) px-3.5 text-[12px] leading-[30px] font-medium text-white"
+            style={{ background: "var(--degrade-relvo)" }}
+          >
+            Répondre
+          </Link>
+        </div>
+      ))}
+    </section>
   );
 }

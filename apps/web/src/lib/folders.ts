@@ -23,8 +23,10 @@ import {
 // repli sur le mapping par slug (domaines du seed), puis sur un neutre.
 
 export type FolderVisual = {
-  /** Couleur du rail + fond d'icône (CSS). */
+  /** La BANDE du domaine (CSS, vive) : sur la tranche d'une carte ou d'une ligne. */
   color: string;
+  /** Le TEXTE du domaine (CSS, foncé, ≥ 4.5:1 sur blanc) : son nom en capitales condensées. */
+  text: string;
   icon: LucideIcon;
 };
 
@@ -66,18 +68,25 @@ const ICON_BY_KEY: Record<string, LucideIcon> = Object.fromEntries(
   FOLDER_ICONS.map((i) => [i.key, i.icon]),
 );
 
-// Repli par slug (domaines du seed sans logo explicite).
-const BY_SLUG: Record<string, FolderVisual> = {
-  fournisseurs: { color: COLOR_BY_KEY.blue, icon: Boxes },
-  rh: { color: COLOR_BY_KEY.purple, icon: Users },
-  juridique: { color: COLOR_BY_KEY.amber, icon: Gavel },
-  business: { color: "var(--brand-accent)", icon: Building2 },
+// Repli par slug (domaines du seed sans logo explicite) — les couleurs de la
+// direction : Fournisseurs orange, Équipe vert, Administration bleu, Clients
+// rouge, Production sarcelle, Communication rose.
+const BY_SLUG: Record<string, { color: string; icon: LucideIcon }> = {
+  fournisseurs: { color: "var(--domaine-orange)", icon: Boxes },
+  rh: { color: COLOR_BY_KEY.green, icon: Users },
+  juridique: { color: COLOR_BY_KEY.blue, icon: Gavel },
+  business: { color: COLOR_BY_KEY.red, icon: Building2 },
   production: { color: COLOR_BY_KEY.teal, icon: Snowflake },
   communication: { color: COLOR_BY_KEY.pink, icon: Megaphone },
-  general: { color: "var(--text-tertiary)", icon: Folder },
+  general: { color: "var(--domaine-neutre)", icon: Folder },
 };
 
-const FALLBACK: FolderVisual = { color: "var(--text-tertiary)", icon: Folder };
+const FALLBACK = { color: "var(--domaine-neutre)", icon: Folder };
+
+/** La variante TEXTE d'une couleur de bande : `var(--domaine-x)` → `var(--domaine-x-texte)`. */
+export function folderTextColor(color: string): string {
+  return color.replace(/^var\((--domaine-[a-z]+)\)$/, "var($1-texte)");
+}
 
 /** Couleur résolue depuis une clé de palette (ou null si inconnue/absente). */
 export function folderColorFromKey(key?: string | null): string | null {
@@ -105,5 +114,5 @@ export function folderVisual(arg?: string | null | FolderLike): FolderVisual {
     (f.icon ? ICON_BY_KEY[f.icon] : undefined) ??
     (f.slug ? BY_SLUG[f.slug]?.icon : undefined) ??
     FALLBACK.icon;
-  return { color, icon };
+  return { color, text: folderTextColor(color), icon };
 }

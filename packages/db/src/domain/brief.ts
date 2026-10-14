@@ -62,6 +62,12 @@ export type AwaitingSubject = {
   since: Date;
   /** Interlocuteur principal du sujet (premier contact), pour l'avatar. */
   contactName: string | null;
+  /** Son entreprise, quand il en a une. */
+  contactCompany: string | null;
+  /** Le domaine du sujet : nom, slug et clé de couleur (lib/folders) — la bande de la carte. */
+  folderName: string | null;
+  folderSlug: string | null;
+  folderColor: string | null;
 };
 
 /** Au plus deux suggestions sur l'accueil, la question en attente comprise. */
@@ -241,6 +247,7 @@ export async function getSubjectsAwaitingUser(
           title: true,
           priority: true,
           contactIds: true,
+          folder: { select: { name: true, slug: true, color: true } },
         },
       },
     },
@@ -278,6 +285,7 @@ export async function getSubjectsAwaitingUser(
       [c.firstName, c.lastName].filter(Boolean).join(" ") || c.company || null,
     ]),
   );
+  const companyOf = new Map(contacts.map((c) => [c.id, c.company ?? null]));
 
   return picked.map((t) => ({
     id: t.subject!.id,
@@ -288,6 +296,10 @@ export async function getSubjectsAwaitingUser(
     dueDate: t.startDate,
     since: t.createdAt,
     contactName: nameOf.get(t.subject!.contactIds[0] ?? "") ?? null,
+    contactCompany: companyOf.get(t.subject!.contactIds[0] ?? "") ?? null,
+    folderName: t.subject!.folder?.name ?? null,
+    folderSlug: t.subject!.folder?.slug ?? null,
+    folderColor: t.subject!.folder?.color ?? null,
   }));
 }
 

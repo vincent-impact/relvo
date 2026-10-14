@@ -10,6 +10,7 @@ import { NewsPanel } from "@/components/home/news-panel";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { PollRefresh } from "@/components/shared/poll-refresh";
+import { initialsFor } from "@/lib/display";
 import {
   cachedAgendaTasks,
   cachedAwaitingSubjects,
@@ -70,7 +71,7 @@ async function Brief({
     cachedAwaitingSubjects(accountId),
   ]);
   return (
-    <div className="space-y-5 pt-4">
+    <div className="space-y-4 pt-3">
       <ActivityPanel activity={activity} />
       <TodayPanel tasks={byDay[todayKey] ?? []} />
       <AwaitingPanel subjects={awaiting} todayKey={todayKey} />
@@ -80,7 +81,7 @@ async function Brief({
 
 function NewsSkeleton() {
   return (
-    <div className="mx-3 mt-3.5 h-[92px] animate-pulse rounded-[14px] bg-white/12" />
+    <div className="h-[118px] animate-pulse rounded-(--rayon-carte) bg-white/60" />
   );
 }
 
@@ -90,8 +91,8 @@ function BriefSkeleton() {
       {[76, 140, 110].map((h, i) => (
         <div
           key={i}
-          className="animate-pulse rounded-[14px] bg-white"
-          style={{ height: h, boxShadow: "var(--shadow-card)" }}
+          className="animate-pulse rounded-(--rayon-carte) bg-white shadow-carte"
+          style={{ height: h }}
         />
       ))}
     </div>
@@ -130,8 +131,16 @@ export default async function AccueilPage() {
       <PollRefresh />
       <RelvoHeader
         title={`Bonjour ${account.firstName}`}
-        subtitle={dateLabel}
-        className="pb-4"
+        eyebrow={dateLabel}
+        leading={
+          <span
+            aria-hidden
+            className="chiffre grid size-[34px] place-items-center rounded-full bg-white text-[14px] text-relvo"
+          >
+            {initialsFor(`${account.firstName} ${account.lastName ?? ""}`) ??
+              account.firstName.charAt(0).toUpperCase()}
+          </span>
+        }
       >
         <Suspense fallback={<NewsSkeleton />}>
           <News

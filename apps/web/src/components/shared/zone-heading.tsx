@@ -1,7 +1,10 @@
 // ZoneHeading — l'intitulé d'une zone de page (accueil, calendrier, bilan,
-// mémoire) : un libellé en capitales à gauche, un complément discret à droite
-// (« 7 derniers jours », « 3 restantes · 1 en retard »). Toujours au-dessus
-// d'un panneau, jamais d'une ligne nue.
+// mémoire), en texte nu sur le fond blanc (design-system/02-composants, « toute
+// zone est NOMMÉE, et les en-têtes sont symétriques ») : le titre à gauche, et
+// à droite ce qui la qualifie (« 7 derniers jours », « 3 restantes · 1 en
+// retard »). Toujours au-dessus d'une carte, jamais d'une ligne nue. Un
+// qualificatif qui porte une alerte passe `hintTone="urgent"` sur sa partie
+// rouge, via `hint` en ReactNode.
 
 export function ZoneHeading({
   label,
@@ -11,12 +14,12 @@ export function ZoneHeading({
   hint?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-baseline justify-between px-[18px] pb-1.5">
-      <span className="text-[11px] font-semibold tracking-[0.06em] text-(--text-secondary) uppercase">
-        {label}
-      </span>
+    <div className="flex items-baseline justify-between px-4 pb-[7px]">
+      <h2 className="text-[16px] leading-5 font-medium text-noir">{label}</h2>
       {hint ? (
-        <span className="text-[12px] text-(--text-secondary)">{hint}</span>
+        <span className="text-[12px] leading-4 font-light text-gris">
+          {hint}
+        </span>
       ) : null}
     </div>
   );
