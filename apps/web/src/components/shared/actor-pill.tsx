@@ -56,7 +56,7 @@ export function ActorPill({
     >
       <span
         className={cn(
-          "grid size-[15px] place-items-center rounded-full text-[9px] font-extrabold text-white",
+          "chiffre grid size-4 place-items-center rounded-full text-[11px] text-white",
           cfg.avatar,
         )}
       >

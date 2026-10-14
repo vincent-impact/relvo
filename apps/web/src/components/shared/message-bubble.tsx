@@ -64,7 +64,7 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
         <div className="mb-1.5 flex items-center gap-[7px]">
           <span
             className={cn(
-              "chiffre grid size-[22px] flex-none place-items-center rounded-full text-[10px]",
+              "chiffre grid size-[22px] flex-none place-items-center rounded-full text-[11px]",
               av.bg,
             )}
           >

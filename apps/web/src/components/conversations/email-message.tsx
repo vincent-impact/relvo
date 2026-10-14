@@ -49,7 +49,7 @@ export function EmailMessage({ data }: { data: EmailMessageData }) {
       <header className="mb-2 flex items-center gap-2">
         <span
           className={cn(
-            "chiffre grid size-[26px] flex-none place-items-center rounded-full text-[10.5px]",
+            "chiffre grid size-[26px] flex-none place-items-center rounded-full text-[11px]",
             outgoing
               ? "bg-actor-me text-white"
               : "bg-actor-ext-fond text-actor-ext",
@@ -59,7 +59,7 @@ export function EmailMessage({ data }: { data: EmailMessageData }) {
         </span>
         <span className="text-[13px] font-medium text-noir">{senderName}</span>
         {data.time ? (
-          <span className="ml-auto text-[11.5px] whitespace-nowrap text-[#a8a69d]">
+          <span className="ml-auto text-[11.5px] font-light whitespace-nowrap text-gris">
             {data.time}
           </span>
         ) : null}

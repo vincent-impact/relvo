@@ -83,8 +83,8 @@ function DecisionFigee({ decision }: { decision: SheetDecision }) {
                 retenue
                   ? "border-transparent bg-relvo text-white"
                   : autre
-                    ? "border-dashed border-[#d4d2cc] text-(--text-tertiary)"
-                    : "border-[#d9d7d1] bg-white/60 text-(--text-tertiary)",
+                    ? "border-dashed border-(--gris-clair) text-gris"
+                    : "border-(--filet) bg-white/60 text-gris",
               )}
             >
               {retenue ? <Check className="size-3.5" strokeWidth={3} /> : null}
@@ -261,7 +261,7 @@ export function DecisionSheet({
           type="button"
           disabled={!complete || drafting || pending}
           onClick={rediger}
-          className="flex-none rounded-full bg-relvo px-4 py-1.5 text-[13px] font-bold text-white active:opacity-90 disabled:bg-[#d4d2cc]"
+          className="flex-none rounded-(--rayon-pilule) bg-relvo px-4 py-1.5 text-[13px] font-medium text-white active:opacity-90 disabled:bg-(--gris-clair)"
         >
           {drafting ? "Relvo rédige…" : "Rédiger la réponse"}
         </button>
@@ -320,7 +320,7 @@ function DecisionLine({
                 "pressable min-h-[38px] rounded-full border px-3.5 py-1.5 text-[14px] font-semibold",
                 on
                   ? "border-transparent bg-relvo text-white"
-                  : "border-[#d9d7d1] bg-white text-(--text-primary) shadow-surface-1",
+                  : "border-(--filet) bg-white text-noir shadow-carte",
               )}
             >
               {opt}
@@ -336,7 +336,7 @@ function DecisionLine({
             "min-h-[38px] rounded-full border border-dashed px-3.5 py-1.5 text-[14px] font-semibold",
             freeChosen
               ? "border-relvo bg-relvo-bg text-relvo"
-              : "border-[#d4d2cc] bg-transparent text-(--text-tertiary)",
+              : "border-(--gris-clair) bg-transparent text-gris",
           )}
         >
           {freeChosen && !freeOpen ? decision.reponse : "Autre…"}

@@ -36,7 +36,7 @@ export function AttachmentPreview({
         name={name}
         mimeType={mimeType}
         className={cn(
-          "block w-fit max-w-full cursor-pointer overflow-hidden rounded-2xl border border-[#ececea] shadow-(--shadow-card)",
+          "block w-fit max-w-full cursor-pointer overflow-hidden rounded-(--rayon-carte) border border-(--filet) shadow-carte",
           className,
         )}
       >
@@ -52,7 +52,7 @@ export function AttachmentPreview({
 
   const card = (
     <>
-      <span className="grid size-[30px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
+      <span className="grid size-[30px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-gris">
         <FileText className="size-4" />
       </span>
       <span className="min-w-0">
@@ -66,7 +66,7 @@ export function AttachmentPreview({
     </>
   );
   const cardClass = cn(
-    "inline-flex items-center gap-2.5 rounded-xl border border-[#ececea] bg-white px-[11px] py-2 shadow-(--shadow-card)",
+    "inline-flex items-center gap-2.5 rounded-(--rayon-sous-carte) border border-(--filet) bg-white px-[11px] py-2 shadow-carte",
     className,
   );
 
