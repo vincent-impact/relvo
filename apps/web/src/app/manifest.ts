@@ -14,8 +14,8 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#f4f3f0",
-    theme_color: "#4a3fb5",
+    background_color: "#ffffff",
+    theme_color: "#231b63",
     lang: "fr",
     icons: [
       { src: "/relvo-icon-192.png", sizes: "192x192", type: "image/png" },

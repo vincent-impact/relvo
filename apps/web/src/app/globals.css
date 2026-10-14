@@ -4,23 +4,52 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ─────────────────────────────────────────────────────────────────────────────
+   DOMICILE DES VALEURS du design system — direction « Lettrage d'artisan ».
+   Ce que chaque famille SIGNIFIE est écrit dans conception/design-system/01-tokens.md ;
+   ici, les valeurs. L'inventaire est tenu par apps/web/test/design-tokens.test.ts :
+   un token ajouté sans intention écrite est un token qui sera réinventé ailleurs.
+   ───────────────────────────────────────────────────────────────────────────── */
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  /* Direction « Instrument » (2026-09) : UNE seule famille. Les titres sont en
-     Geist, le caractère vient de la graisse (600) et de l'interlettrage serré
-     (-0.02em), pas du dessin — Bricolage Grotesque donnait le ton « ludique ». */
-  --font-heading: var(--font-geist-sans);
-  --font-numeric: var(--font-geist-mono);
-  /* Couleurs de marque Relvo (cf. mockup/css/styles.css) */
-  --color-brand: var(--brand);
-  --color-brand-dark: var(--brand-dark);
-  --color-brand-accent: var(--brand-accent);
-  /* Violet Relvo (agent) — utilisable en bg-relvo / text-relvo / border-relvo */
+
+  /* Une famille, deux dessins : Barlow (texte) et Barlow Semi Condensed 600
+     (chiffres, horaires, délais, titres). `font-heading` et `font-numeric` sont
+     le MÊME dessin condensé : un titre et un chiffre se lisent de la même voix. */
+  --font-sans: var(--font-barlow);
+  --font-heading: var(--font-barlow-condensed);
+  --font-numeric: var(--font-barlow-condensed);
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* La livrée — bg-relvo / text-relvo / border-relvo ; -clair, -pale, -filet, -nuit */
   --color-relvo: var(--relvo);
-  --color-relvo-bg: var(--relvo-bg);
+  --color-relvo-nuit: var(--nuit);
+  --color-relvo-clair: var(--relvo-clair);
+  --color-relvo-pale: var(--relvo-pale);
+  --color-relvo-filet: var(--relvo-filet);
+  /* Ancien nom, même rôle : le fond du bloc de Relvo. */
+  --color-relvo-bg: var(--relvo-pale);
+
+  /* Les acteurs — Moi (bleu), Externe (ambre pâle + texte foncé). */
+  --color-brand: var(--actor-me);
+  --color-brand-dark: var(--nuit);
+  --color-brand-accent: var(--urgent);
+  --color-actor-me: var(--actor-me);
+  --color-actor-ext: var(--actor-ext);
+  --color-actor-ext-fond: var(--actor-ext-fond);
+
+  /* Les états */
+  --color-urgent: var(--urgent);
+  --color-fait: var(--fait);
+  --color-attente: var(--attente);
+  --color-attente-texte: var(--attente-texte);
+
+  /* Le noir et les gris */
+  --color-noir: var(--noir);
+  --color-gris: var(--gris);
+
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -50,196 +79,307 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  /* Rayons PLAFONNÉS (Direction « Instrument ») : un contrôle 8-10, un panneau
-     12-14, une feuille 20. Au-delà, l'objet redevient un jouet. */
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 10px;
-  --radius-xl: 12px;
-  --radius-2xl: 14px;
-  --radius-3xl: 16px;
-  --radius-4xl: 20px;
-  /* Ombres exposées en utilitaires : shadow-surface-1 / -2 / -3, shadow-pressed */
-  --shadow-surface-1: var(--elev-1);
-  --shadow-surface-2: var(--elev-2);
-  --shadow-surface-3: var(--elev-3);
-  --shadow-pressed: var(--elev-pressed);
+
+  /* Rayons COMPTÉS : 6 petit contrôle · 8 bouton d'icône sur le ciel · 12 option
+     de formulaire · 14 sous-carte · 18 carte · 20 feuille · 32 dock (pilule).
+     Au-delà, l'objet redevient un jouet ; seul ce qui est rond par nature est rond. */
+  --radius-sm: var(--rayon-petit);
+  --radius-md: var(--rayon-bouton-ciel);
+  --radius-lg: var(--rayon-option);
+  --radius-xl: var(--rayon-sous-carte);
+  --radius-2xl: var(--rayon-carte);
+  --radius-3xl: var(--rayon-carte);
+  --radius-4xl: var(--rayon-feuille);
+
+  /* Ombres exposées en utilitaires : shadow-carte, shadow-dock, shadow-disque,
+     shadow-haut (une barre ancrée en bas projette vers le haut), shadow-pressed. */
+  --shadow-carte: var(--ombre-carte);
+  --shadow-dock: var(--ombre-dock);
+  --shadow-disque: var(--ombre-disque);
+  --shadow-haut: var(--ombre-haut);
+  --shadow-pressed: var(--ombre-pressed);
+  /* Anciens noms (migration des composants en cours) : une seule ombre de carte. */
+  --shadow-surface-1: var(--ombre-carte);
+  --shadow-surface-2: var(--ombre-carte);
+  --shadow-surface-3: var(--ombre-feuille);
 }
 
 :root {
-  /* Marque Relvo : navy / blue / red */
-  --brand: #2b6fe0;
-  --brand-dark: #0a1128;
-  --brand-accent: #e63150;
+  /* ── La livrée : trois violets, un ciel ─────────────────────────────────── */
+  --nuit: #231b63; /* le haut du ciel : jamais ailleurs que dans un dégradé */
+  --relvo: #4a3fb5; /* le violet de Relvo : texte signé, liens, cercle actif */
+  --relvo-clair: #6d5df5; /* le bas du ciel, le haut d'un dégradé de bouton */
+  --relvo-pale: #f2f0ff; /* le fond du bloc de Relvo */
+  --relvo-filet: #e3dffb; /* le bord du bloc de Relvo */
+  /* Le ciel : nuit, violet au tiers, violet clair, puis le blanc de l'écran.
+     Les arrêts sont en % de la hauteur de l'élément qui le porte. */
+  --ciel: linear-gradient(
+    180deg,
+    var(--nuit) 0%,
+    var(--relvo) 36%,
+    var(--relvo-clair) 62%,
+    #ffffff 100%
+  );
+  /* Le champ d'étoiles : points en dégradés radiaux, masqués vers le bas. Les
+     trois étoiles à quatre branches (celles du signe) sont posées par `.ciel`. */
+  --etoiles:
+    radial-gradient(
+      circle at 8% 22%,
+      rgb(255 255 255 / 0.95) 0 1.1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 19% 9%,
+      rgb(255 255 255 / 0.7) 0 0.8px,
+      transparent 1.7px
+    ),
+    radial-gradient(
+      circle at 27% 31%,
+      rgb(255 255 255 / 0.55) 0 0.7px,
+      transparent 1.6px
+    ),
+    radial-gradient(
+      circle at 36% 14%,
+      rgb(255 255 255 / 0.85) 0 1px,
+      transparent 1.9px
+    ),
+    radial-gradient(
+      circle at 47% 5%,
+      rgb(255 255 255 / 0.6) 0 0.8px,
+      transparent 1.7px
+    ),
+    radial-gradient(
+      circle at 55% 24%,
+      rgb(255 255 255 / 0.9) 0 1.2px,
+      transparent 2.1px
+    ),
+    radial-gradient(
+      circle at 63% 11%,
+      rgb(255 255 255 / 0.5) 0 0.7px,
+      transparent 1.6px
+    ),
+    radial-gradient(
+      circle at 71% 33%,
+      rgb(255 255 255 / 0.7) 0 0.9px,
+      transparent 1.8px
+    ),
+    radial-gradient(
+      circle at 78% 7%,
+      rgb(255 255 255 / 0.95) 0 1.1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 86% 19%,
+      rgb(255 255 255 / 0.6) 0 0.8px,
+      transparent 1.7px
+    ),
+    radial-gradient(
+      circle at 93% 36%,
+      rgb(255 255 255 / 0.5) 0 0.7px,
+      transparent 1.6px
+    ),
+    radial-gradient(
+      circle at 42% 40%,
+      rgb(255 255 255 / 0.45) 0 0.7px,
+      transparent 1.6px
+    ),
+    radial-gradient(
+      circle at 15% 44%,
+      rgb(255 255 255 / 0.4) 0 0.6px,
+      transparent 1.5px
+    ),
+    radial-gradient(
+      circle at 60% 48%,
+      rgb(255 255 255 / 0.35) 0 0.6px,
+      transparent 1.5px
+    ),
+    radial-gradient(
+      circle at 33% 3%,
+      rgb(255 255 255 / 0.5) 0 0.7px,
+      transparent 1.6px
+    ),
+    radial-gradient(
+      circle at 90% 2%,
+      rgb(255 255 255 / 0.6) 0 0.8px,
+      transparent 1.7px
+    );
+  --etoile-signe: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M12 0c.6 7.4 2.6 9.4 12 12-9.4 2.6-11.4 4.6-12 12-.6-7.4-2.6-9.4-12-12 9.4-2.6 11.4-4.6 12-12z'/%3E%3C/svg%3E");
+  /* Un dégradé de violet, du clair au sombre, dans le sens de la lumière :
+     bouton central, action principale, jauge, interrupteur activé. */
+  --degrade-relvo: linear-gradient(135deg, var(--relvo-clair), var(--relvo));
+  --degrade-disque: radial-gradient(
+    circle at 35% 28%,
+    #8b80ea,
+    var(--relvo-clair) 45%,
+    var(--relvo) 100%
+  );
 
-  /* Violet Relvo (voix de l'agent) — cf. mockup/mobile/css/app.css */
-  --relvo: #4a3fb5; /* violet ENCRE (ex #6b5bd6) — plus profond, moins saturé */
-  --relvo-bg: #eceaf7; /* violet-gris (ex lavande #f1effc) */
+  /* ── Les acteurs ────────────────────────────────────────────────────────── */
+  --actor-me: #2b6fe0; /* Moi : la bulle bleue, à droite */
+  --actor-relvo: var(--relvo); /* Relvo n'a pas de bulle, il a un bloc */
+  --actor-ext: #8a5410; /* Externe : le nom, sur fond ambre pâle */
+  --actor-ext-fond: #f6ead8;
 
-  /* Palette de badges/marqueurs (échelles fixes du mockup mobile). Référencées
-     via var() dans les composants partagés — ne PAS écraser la palette Tailwind. */
-  --blue-50: #e6f1fb;
-  --blue-100: #b5d4f4;
-  --blue-600: #185fa5;
-  --blue-800: #0c447c;
-  --red-50: #fcebeb;
-  --red-200: #f09595;
-  --red-600: #a32d2d;
-  --red-800: #791f1f;
-  --amber-50: #faeeda;
-  --amber-100: #fac775;
-  --amber-600: #854f0b;
-  --amber-800: #633806;
-  --purple-50: #eeedfe;
-  --purple-100: #cecbf6;
-  --purple-600: #534ab7;
-  --purple-800: #3c3489;
-  --green-50: #e7f4ec;
-  --green-600: #1f7a45;
-  --green-800: #155c33;
+  /* ── Les domaines : la BANDE (vive, sur la tranche) et le TEXTE (foncé, ≥ 4.5:1
+     sur blanc). Les clés sont celles stockées sur le Folder (lib/folders.ts).
+     Aucun domaine n'est violet : la clé « purple » rend une prune. ─────────── */
+  --domaine-blue: #2b6fe0;
+  --domaine-blue-texte: #1d5bd0;
+  --domaine-teal: #0f9f8f;
+  --domaine-teal-texte: #0b6f64;
+  --domaine-green: #1f9d55;
+  --domaine-green-texte: #15733d;
+  --domaine-lime: #7cb518;
+  --domaine-lime-texte: #4f7a05;
+  --domaine-amber: #f5b400;
+  --domaine-amber-texte: #8a6200;
+  --domaine-orange: #ff6a13;
+  --domaine-orange-texte: #c24d00;
+  --domaine-red: #e03131;
+  --domaine-red-texte: #b02020;
+  --domaine-purple: #b0268f;
+  --domaine-purple-texte: #8a1c70;
+  --domaine-pink: #e0457b;
+  --domaine-pink-texte: #a8305a;
+  --domaine-neutre: #9ca3af;
+  --domaine-neutre-texte: #6b7280;
 
-  /* Neutres « pierre » (Direction « Instrument »). Le fond de page est teinté
-     (--background) pour que le BLANC des panneaux devienne une élévation : sur un
-     fond blanc pur, aucune surface ne peut être « posée ». */
-  --stone: #f4f3f0;
-  --surface: #faf9f7; /* surface enfoncée DANS un panneau blanc (ligne lue, fait) */
-  --surface-2: #eeecea; /* état pressé, puce neutre */
-  --hairline: #e6e4df; /* bord d'un panneau posé sur la pierre */
-  --border-light: #edebe7; /* filet ENTRE deux lignes d'un même panneau */
-  --text-primary: #1c1b20;
-  --text-secondary: #7a786f;
-  --text-tertiary: #8a887f;
+  /* ── Les états : la forme d'abord, la couleur confirme ──────────────────── */
+  --urgent: #e03131; /* pastille pleine ; en retard : l'horaire barré */
+  --fait: #1f9d55; /* coche sur disque, titre barré ; « connecté » */
+  --attente: #f5b400; /* pastille cerclée */
+  --attente-texte: #9a6f00;
 
-  /* Chrome mobile : hauteurs barre d'onglets / composer Relvo */
-  --tab-h: 58px;
-  --bar-h: 56px;
-  /* PROFONDEUR (Direction « Instrument ») — trois niveaux, tous BICOUCHES :
-     un filet de lumière 1px en haut (ce qui rend le bord « touchable »), une
-     ombre de CONTACT courte et nette, une ombre AMBIANTE large et floue.
-       1 = panneau posé sur la pierre (liste, carte)
-       2 = objet flottant (barre KPI, segmented, menu)
-       3 = feuille / dialogue
-     --elev-pressed = l'état enfoncé : l'ombre portée disparaît, une ombre
-     interne apparaît (à combiner avec translateY(1px)). */
-  --highlight: inset 0 1px 0 rgb(255 255 255 / 0.9);
-  --elev-1:
-    var(--highlight), 0 1px 2px rgb(20 18 40 / 0.05),
-    0 6px 18px rgb(20 18 40 / 0.05);
-  --elev-2:
-    var(--highlight), 0 1px 2px rgb(20 18 40 / 0.06),
-    0 8px 24px rgb(20 18 40 / 0.1);
-  --elev-3:
-    var(--highlight), 0 1px 2px rgb(20 18 40 / 0.06),
-    0 12px 32px rgb(20 18 40 / 0.14);
-  --elev-pressed: inset 0 1px 2px rgb(20 18 40 / 0.1);
-  /* Anciens noms — désormais des ALIAS des trois niveaux, pour ne rien casser
-     en attendant la migration des composants. */
-  --shadow-card: var(--elev-1);
-  --shadow-metrics: var(--elev-2);
-  --shadow-menu: var(--elev-3);
-  --shadow-up: 0 -1px 0 var(--hairline), 0 -8px 24px rgb(20 18 40 / 0.06);
-  --shadow-dock:
-    inset 0 1px 0 rgb(255 255 255 / 0.22), 0 -8px 24px rgb(20 18 40 / 0.1);
-  --shadow-relvo:
-    inset 0 1px 0 rgb(255 255 255 / 0.28), 0 1px 2px rgb(74 63 181 / 0.35),
-    0 6px 16px rgb(74 63 181 / 0.28);
-  /* Grain : bruit monochrome à poser en overlay (opacité ~7 %) sur les grands
-     aplats — le header violet d'abord — pour casser l'effet plastique. */
-  --grain: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  /* ── Le noir, les gris, le blanc ────────────────────────────────────────── */
+  --noir: #111111; /* le texte courant et le dock */
+  --gris: #6b7280; /* texte secondaire, ≥ 4.5:1 sur blanc */
+  --gris-clair: #b8bcc8; /* chevrons, filets d'icône — jamais du texte */
+  --filet: rgb(17 17 17 / 0.07); /* entre deux lignes, autour d'une carte */
+  --fond-enfonce: #f7f7fa; /* une ligne lue ou faite, enfoncée dans sa carte */
+  --fond-puce: #f1f2f6; /* puce neutre, champ de saisie */
+  --blanc: #ffffff;
 
-  /* Surfaces « Liquid Glass » (Direction B) : tab bar givrée + composer violet.
-     Opacités relevées vs le mockup : par-dessus le fond blanc de l'app, le seul
-     backdrop-filter laissait le dock quasi invisible — on garde le flou (frost)
-     mais on densifie pour une tab bar nettement blanche et un composer violet. */
-  --glass-tab: rgb(244 243 240 / 0.78);
-  --glass-relvo-1: rgb(80 68 190 / 0.86);
-  --glass-relvo-2: rgb(66 56 168 / 0.92);
-  --glass-human-1: rgb(53 123 232 / 0.95);
-  --glass-human-2: rgb(33 99 205 / 0.97);
-  --glass-stroke: rgb(255 255 255 / 0.55);
-  --on-violet: rgb(255 255 255 / 0.68);
-  --blur-glass: 22px;
-  --sat-glass: 160%;
-  --hero-round: 20px; /* ex 34px — plafonné avec les rayons */
+  /* ── Rayons comptés ─────────────────────────────────────────────────────── */
+  --rayon-petit: 6px;
+  --rayon-bouton-ciel: 8px;
+  --rayon-option: 12px;
+  --rayon-sous-carte: 14px;
+  --rayon-carte: 18px;
+  --rayon-feuille: 20px;
+  --rayon-dock: 32px;
+  --rayon-pilule: 999px;
 
-  /* Couleurs de dossier (« mémoire de Relvo » — rails colorés par domaine) */
-  --folder-suppliers: var(--blue-600);
-  --folder-hr: var(--purple-600);
-  --folder-legal: var(--amber-800);
-  --folder-ops: var(--green-600);
-  --folder-clients: var(--brand-accent);
+  /* ── Ombres : une ombre portée douce a un décalage ET un flou ───────────── */
+  --ombre-carte: 0 6px 16px rgb(17 17 17 / 0.08);
+  --ombre-feuille: 0 12px 32px rgb(17 17 17 / 0.14);
+  --ombre-dock: 0 10px 24px rgb(17 17 17 / 0.28);
+  --ombre-disque: 0 6px 14px rgb(17 17 17 / 0.35);
+  --ombre-haut: 0 -1px 0 var(--filet), 0 -8px 24px rgb(17 17 17 / 0.06);
+  --ombre-pressed: 0 2px 6px rgb(17 17 17 / 0.08);
 
-  --background: var(
-    --stone
-  ); /* fond de page PIERRE — les panneaux blancs se posent dessus */
-  --foreground: var(--text-primary);
-  --card: #ffffff;
-  --card-foreground: var(--text-primary);
-  --popover: #ffffff;
-  --popover-foreground: var(--text-primary);
-  /* primary = blue Relvo */
-  --primary: #2b6fe0;
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: var(--surface);
-  --muted-foreground: var(--text-secondary);
-  --accent: var(--surface);
-  --accent-foreground: oklch(0.205 0 0);
-  /* destructive = red Relvo (drapeau urgent, actions destructrices) */
-  --destructive: #e63150;
-  --border: var(--hairline);
-  --input: var(--hairline);
-  --ring: #2b6fe0;
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 10px;
-  /* Sidebar = navy Relvo */
-  --sidebar: #0a1128;
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: #2b6fe0;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.279 0.041 260 / 40%);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: #2b6fe0;
+  /* ── Le chrome mobile ───────────────────────────────────────────────────── */
+  --dock-h: 64px; /* la pilule */
+  --dock-marge: 14px; /* son décollement du bas et des bords */
+  --dock-deborde: 8px; /* ce que le disque Relvo dépasse */
+  --disque-relvo: 56px;
+  --bar-h: 64px; /* le composer, ancré, qui remplace le dock */
+  --tab-h: calc(
+    var(--dock-h) + var(--dock-marge)
+  ); /* réservation sous une page */
+
+  /* ── Anciens noms, migration des composants en cours : ALIAS vers la matière
+     retenue, pour que l'application rende déjà dans la direction. Un alias ne
+     se réintroduit pas dans un composant neuf. ──────────────────────────────── */
+  --brand: var(--actor-me);
+  --brand-dark: var(--nuit);
+  --brand-accent: var(--urgent);
+  --relvo-bg: var(--relvo-pale);
+  --stone: var(--blanc);
+  --surface: var(--fond-enfonce);
+  --surface-2: var(--fond-puce);
+  --hairline: var(--filet);
+  --border-light: var(--filet);
+  --text-primary: var(--noir);
+  --text-secondary: var(--gris);
+  --text-tertiary: #707582; /* ≥ 4.5:1 sur blanc, à la limite : du secondaire en plus clair */
+  --elev-1: var(--ombre-carte);
+  --elev-2: var(--ombre-carte);
+  --elev-3: var(--ombre-feuille);
+  --elev-pressed: var(--ombre-pressed);
+  --shadow-card: var(--ombre-carte);
+  --shadow-metrics: var(--ombre-carte);
+  --shadow-menu: var(--ombre-feuille);
+  --shadow-up: var(--ombre-haut);
+  --shadow-relvo: var(--ombre-disque);
+  --hero-round: 0px; /* le ciel fond, il n'a pas de bord */
+  --on-violet: rgb(255 255 255 / 0.78);
+  --blue-50: #e9f1fd;
+  --blue-100: #bfd4f7;
+  --blue-600: var(--domaine-blue-texte);
+  --blue-800: #163f8f;
+  --red-50: #fdecec;
+  --red-200: #f3a3a3;
+  --red-600: var(--urgent);
+  --red-800: #8e1a1a;
+  --amber-50: var(--actor-ext-fond);
+  --amber-100: #f9d98a;
+  --amber-600: var(--attente-texte);
+  --amber-800: var(--actor-ext);
+  --purple-50: var(--relvo-pale);
+  --purple-100: var(--relvo-filet);
+  --purple-600: var(--relvo);
+  --purple-800: var(--nuit);
+  --green-50: #e6f5ec;
+  --green-600: var(--fait);
+  --green-800: #145a34;
+  --folder-suppliers: var(--domaine-orange);
+  --folder-hr: var(--domaine-green);
+  --folder-legal: var(--domaine-blue);
+  --folder-ops: var(--domaine-teal);
+  --folder-clients: var(--domaine-red);
+
+  /* ── shadcn : les rôles sémantiques du registre, mappés sur la matière ───── */
+  --background: var(--blanc); /* le fond de l'écran de travail est BLANC */
+  --foreground: var(--noir);
+  --card: var(--blanc);
+  --card-foreground: var(--noir);
+  --popover: var(--blanc);
+  --popover-foreground: var(--noir);
+  /* primary = la livrée : un bouton principal est violet (dégradé dans les
+     composants signature, aplat dans les primitives du registre) */
+  --primary: var(--relvo);
+  --primary-foreground: var(--blanc);
+  --secondary: var(--fond-puce);
+  --secondary-foreground: var(--noir);
+  --muted: var(--fond-enfonce);
+  --muted-foreground: var(--gris);
+  --accent: var(--fond-puce);
+  --accent-foreground: var(--noir);
+  --destructive: var(--urgent);
+  --border: var(--filet);
+  --input: var(--filet);
+  --ring: var(--relvo);
+  --chart-1: var(--relvo-clair);
+  --chart-2: var(--relvo);
+  --chart-3: var(--nuit);
+  --chart-4: var(--gris);
+  --chart-5: var(--gris-clair);
+  --radius: var(--rayon-option);
+  --sidebar: var(--nuit);
+  --sidebar-foreground: var(--blanc);
+  --sidebar-primary: var(--relvo);
+  --sidebar-primary-foreground: var(--blanc);
+  --sidebar-accent: rgb(255 255 255 / 0.1);
+  --sidebar-accent-foreground: var(--blanc);
+  --sidebar-border: rgb(255 255 255 / 0.1);
+  --sidebar-ring: var(--relvo);
 }
 
+/* L'application est CLAIRE SEULEMENT (PITFALLS.md #51) : le bloc `.dark` n'est
+   jamais activé, il n'existe que pour les primitives du registre qui le citent. */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --background: var(--blanc);
+  --foreground: var(--noir);
 }
 
 @layer base {
@@ -248,9 +388,19 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-weight: 300;
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3 {
+    font-weight: 600;
+  }
+  strong,
+  b {
+    font-weight: 500;
   }
 }
 
@@ -266,39 +416,111 @@
   }
 }
 
-/* Direction « Instrument » — utilitaires de matière. Règles NON-layered pour
-   passer devant les utilitaires Tailwind quand elles sont combinées. */
+/* ── Utilitaires de matière (règles NON-layered : elles passent devant les
+   utilitaires Tailwind quand elles sont combinées) ───────────────────────── */
 
-/* Grain sur un grand aplat : l'élément doit être `position: relative` et rogné. */
-.grain::after {
+/* Le ciel : à poser sur le header, `position: relative` et rogné. Le dégradé
+   couvre l'élément ; les étoiles et les trois étoiles du signe sont deux
+   calques sous le contenu (`.ciel > * { position: relative }`). */
+.ciel {
+  position: relative;
+  background: var(--ciel);
+  color: var(--blanc);
+}
+.ciel::before,
+.ciel::after {
   content: "";
   position: absolute;
   inset: 0;
-  background-image: var(--grain);
-  opacity: 0.07;
-  mix-blend-mode: overlay;
+  z-index: 0;
   pointer-events: none;
 }
-
-/* Verre de chrome (tab bar, composer, feuilles) avec REPLI OPAQUE : sans
-   backdrop-filter, le verre n'est qu'un aplat transparent — illisible. */
-.glass-relvo {
-  background: linear-gradient(
-    180deg,
-    var(--glass-relvo-1),
-    var(--glass-relvo-2)
+.ciel::before {
+  background: var(--etoiles);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0,
+    #000 40%,
+    transparent 96%
   );
-  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(var(--sat-glass));
-  backdrop-filter: blur(var(--blur-glass)) saturate(var(--sat-glass));
+  mask-image: linear-gradient(to bottom, #000 0, #000 40%, transparent 96%);
 }
-@supports not (backdrop-filter: blur(1px)) {
-  .glass-relvo {
-    background: linear-gradient(180deg, #5044be, #4238a8);
-  }
+.ciel::after {
+  opacity: 0.75;
+  background:
+    var(--etoile-signe) no-repeat 84% 16% / 13px 13px,
+    var(--etoile-signe) no-repeat 23% 38% / 9px 9px,
+    var(--etoile-signe) no-repeat 57% 6% / 7px 7px;
+}
+.ciel > * {
+  position: relative;
+  z-index: 1;
 }
 
-/* État enfoncé : +1px et l'ombre s'écrase. À poser sur un bouton `shadow-surface-*`. */
+/* Le chiffre : condensé, gras, tabulaire. À poser sur un indicateur, un
+   horaire, un délai, un compte. */
+.chiffre {
+  font-family: var(--font-numeric);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* Le nom d'un domaine : condensé, capitales, interlettré, dans la couleur
+   TEXTE du domaine. */
+.domaine {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  font-size: 11px;
+  line-height: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* Un libellé dans une carte : petites capitales interlettrées, gris. */
+.libelle {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gris);
+}
+
+/* La bande de domaine : sur la tranche gauche d'une carte (10px) ou d'une
+   ligne (6px, arrondie, dans la hauteur de la ligne). La surface qui la porte
+   est `overflow: hidden`. C'est le geste signature de la direction, assumé
+   contre le détecteur « side-tab » d'impeccable. */
+.bande-carte {
+  flex: none;
+  width: 10px;
+  align-self: stretch;
+}
+.bande-ligne {
+  flex: none;
+  width: 6px;
+  height: 36px;
+  border-radius: 3px;
+}
+
+/* Le cerclage : un indicateur actif est un chiffre cerclé, à distance. */
+.cercle-actif {
+  outline: 2px solid var(--relvo);
+  outline-offset: 4px;
+  border-radius: 999px;
+  color: var(--relvo);
+}
+
+/* État enfoncé : +1px et l'ombre se raccourcit. */
 .pressable:active {
   transform: translateY(1px);
-  box-shadow: var(--elev-pressed);
+  box-shadow: var(--ombre-pressed);
+}
+
+/* Anciens utilitaires de la matière précédente, rendus INERTES le temps de la
+   migration : plus de grain, plus de verre. Un composant neuf ne les pose pas. */
+.grain::after {
+  content: none;
+}
+.glass-relvo {
+  background: var(--noir);
 }

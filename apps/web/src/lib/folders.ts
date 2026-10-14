@@ -29,18 +29,19 @@ export type FolderVisual = {
 };
 
 // ── Palette curée (8 teintes) — clés stockées en base ────────────────────────
-// Le VIOLET (#4a3fb5) est RÉSERVÉ à Relvo (chrome de l'app) : volontairement
-// absent de cette palette pour ne pas confondre un domaine avec l'agent. À sa
-// place, un vert anis (« lime ») qui comble le trou jaune-vert de la palette.
+// Les VALEURS vivent dans globals.css (`--domaine-<clé>`, et `--domaine-<clé>-texte`
+// pour le nom du domaine sur blanc) : ici, seules les clés stockées en base.
+// Aucun domaine n'est violet — la livrée est violette, la clé « purple » rend
+// une prune — pour ne pas confondre un domaine avec Relvo.
 export const FOLDER_COLORS: { key: string; value: string }[] = [
-  { key: "blue", value: "#2b6fe0" },
-  { key: "teal", value: "#0d9488" },
-  { key: "green", value: "#16a34a" },
-  { key: "lime", value: "#65a30d" },
-  { key: "amber", value: "#d97706" },
-  { key: "red", value: "#e63150" },
-  { key: "purple", value: "#7c3aed" },
-  { key: "pink", value: "#db2777" },
+  { key: "blue", value: "var(--domaine-blue)" },
+  { key: "teal", value: "var(--domaine-teal)" },
+  { key: "green", value: "var(--domaine-green)" },
+  { key: "lime", value: "var(--domaine-lime)" },
+  { key: "amber", value: "var(--domaine-amber)" },
+  { key: "red", value: "var(--domaine-red)" },
+  { key: "purple", value: "var(--domaine-purple)" },
+  { key: "pink", value: "var(--domaine-pink)" },
 ];
 const COLOR_BY_KEY: Record<string, string> = Object.fromEntries(
   FOLDER_COLORS.map((c) => [c.key, c.value]),

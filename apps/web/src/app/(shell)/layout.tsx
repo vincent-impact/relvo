@@ -47,7 +47,7 @@ export const metadata: Metadata = {
 // themeColor + viewport-fit=cover : couleur de la barre de statut alignée sur le
 // hero violet, et activation des env(safe-area-inset-*) déjà utilisés par Screen.
 export const viewport: Viewport = {
-  themeColor: "#4a3fb5",
+  themeColor: "#231b63",
   width: "device-width",
   initialScale: 1,
   // Zoom BLOQUÉ : le pinch-zoom et le zoom au focus d'un input changent la taille
@@ -80,7 +80,7 @@ export default function ShellLayout({
             safe-area-inset-top → 0 hors standalone (invisible en navigateur). */}
         <div
           aria-hidden
-          className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-relvo"
+          className="pointer-events-none fixed inset-x-0 top-0 z-50 bg-relvo-nuit"
           style={{ height: "env(safe-area-inset-top)" }}
         />
         <ViewportHeight />
