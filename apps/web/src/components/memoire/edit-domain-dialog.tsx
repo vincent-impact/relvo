@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil } from "lucide-react";
+import { PencilSimple } from "@/components/shared/picto";
 import { SKY_BTN } from "@/components/layout/relvo-header";
 import { toast } from "sonner";
 import { FolderLogoPicker } from "@/components/memoire/folder-logo-picker";
@@ -64,7 +64,7 @@ export function EditDomainButton({
         aria-label="Modifier le domaine"
         className={SKY_BTN}
       >
-        <Pencil className="size-4" strokeWidth={2.2} />
+        <PencilSimple className="size-4" />
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

@@ -29,7 +29,7 @@ export function FolderLogoPicker({
           className="grid size-16 flex-none place-items-center rounded-2xl text-white"
           style={{ background: visual.color }}
         >
-          <PreviewIcon className="size-7" strokeWidth={1.9} />
+          <PreviewIcon className="size-7" />
         </span>
         <div className="min-w-0">
           <div className="text-[17px] font-bold">
@@ -82,7 +82,7 @@ export function FolderLogoPicker({
                   : "border-(--border-light) text-(--text-secondary)",
               )}
             >
-              <Icon className="size-[22px]" strokeWidth={2} />
+              <Icon className="size-[22px]" />
             </button>
           );
         })}

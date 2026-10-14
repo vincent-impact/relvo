@@ -436,7 +436,10 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
 - **Onglets d'une fiche** (`SegTabs`) : même carte, l'actif **souligné** d'un trait violet ; un
   compteur à zéro ne s'affiche pas.
 - **Menu latéral :** feuille blanche depuis la gauche, lignes de 52px en texte 17px, séparées par
-  le filet, Rechercher en dernier, déconnexion en pied.
+  le filet, Rechercher en dernier, déconnexion en pied. Icônes pleines en violet de Relvo.
+- **Icônes :** tout pictogramme est **plein** (Phosphor en graisse « fill », via
+  `shared/picto.tsx`, qui pose la graisse une fois) ; lucide ne fournit que les glyphes qui *sont*
+  un trait (chevron, croix, plus, coche, flèches, loader). Le remplissage ne dit jamais un état.
 
 ### Le ciel (signature)
 `.ciel` sur le header : `--ciel` (nuit en haut, violet de Relvo à 48px, violet clair à 96px,
@@ -483,6 +486,8 @@ comme un tic d'interface générée est ici une décision de direction.
   manifeste, e-mail sortant, page publique de suivi).
 - **Do** interroger le registre shadcn avant d'écrire une primitive, et composer sur Base UI
   (`render`, jamais `asChild`).
+- **Do** prendre tout pictogramme dans `shared/picto.tsx` (plein) et ne demander à lucide qu'un
+  glyphe ; le test des tokens refuse un pictogramme lucide.
 
 ### Don't:
 - **Don't** réintroduire la matière écartée : verre, grain, fond pierre, relief nacré, ruban
@@ -502,5 +507,7 @@ comme un tic d'interface générée est ici une décision de direction.
 - **Don't** faire scintiller les étoiles ni allonger une transition : le mouvement est court et
   sort vite. Les tokens de durée et de courbe n'existent pas encore (ils arrivent avec le langage
   de mouvement) ; en attendant, aucune durée littérale dans un composant.
+- **Don't** rendre une suggestion ou une puce en pointillé : le pointillé est réservé à « vide / à
+  compléter » (une puce Urgent inactive, un domaine sans logo, un canal à connecter).
 - **Don't** afficher un thème sombre : l'application est claire seulement ; le bloc `.dark`
   n'existe que pour les primitives du registre qui le citent.

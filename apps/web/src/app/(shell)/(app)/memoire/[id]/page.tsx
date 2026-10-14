@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { FileText, Plus, Sparkles } from "lucide-react";
+import { Plus } from "lucide-react";
+import { FileText, Sparkle } from "@/components/shared/picto";
 import type { Folder } from "@relvo/db";
 import { enrichSubjects } from "@relvo/db";
 import { FeedTabs } from "@/components/feed/feed-tabs";
@@ -81,7 +82,7 @@ async function DossierTabs({ folder }: { folder: Folder }) {
                     className="flex items-center gap-3 rounded-2xl border border-(--border-light) bg-white px-3 py-3 shadow-(--shadow-card)"
                   >
                     <span className="grid size-[38px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
-                      <FileText className="size-[18px]" strokeWidth={2} />
+                      <FileText className="size-[18px]" />
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[14px] font-semibold">
@@ -94,11 +95,7 @@ async function DossierTabs({ folder }: { folder: Folder }) {
                     </div>
                     {f.absorptionStatus === "read" ? (
                       <span className="inline-flex flex-none items-center gap-1 rounded-full bg-relvo-bg px-2 py-0.5 text-[11px] font-bold text-relvo">
-                        <Sparkles
-                          className="size-3"
-                          fill="currentColor"
-                          strokeWidth={0}
-                        />
+                        <Sparkle className="size-3" />
                         Lu
                       </span>
                     ) : (

@@ -1,4 +1,4 @@
-import { Building2, User, Users } from "lucide-react";
+import { Buildings, User, Users } from "@/components/shared/picto";
 import type { AvatarKind } from "@/lib/contact-avatar";
 
 // Icône d'avatar d'un interlocuteur NON enregistré, rendue par TYPE deviné.
@@ -17,15 +17,11 @@ import type { AvatarKind } from "@/lib/contact-avatar";
 export function ContactAvatarIcon({
   kind,
   className,
-  strokeWidth,
 }: {
   kind: AvatarKind;
   className?: string;
-  strokeWidth?: number;
 }) {
-  if (kind === "group")
-    return <Users className={className} strokeWidth={strokeWidth} />;
-  if (kind === "company")
-    return <Building2 className={className} strokeWidth={strokeWidth} />;
-  return <User className={className} strokeWidth={strokeWidth} />;
+  if (kind === "group") return <Users className={className} />;
+  if (kind === "company") return <Buildings className={className} />;
+  return <User className={className} />;
 }

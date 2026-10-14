@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { LucideIcon } from "lucide-react";
+import type { Picto } from "@/components/shared/picto";
 import { cn } from "@/lib/utils";
 
 // Swipe BIDIRECTIONNEL (M6ter) — glisser à GAUCHE révèle l'action « left »,
@@ -17,7 +17,7 @@ const THRESHOLD = 80;
 type SwipeAction = {
   onAct: () => void;
   label: string;
-  icon: LucideIcon;
+  icon: Picto;
   tone: "danger" | "success" | "warning" | "brand";
   /** Ne PAS replier la ligne au déclenchement — elle revient en place et `onAct`
    *  prend le relais (ex. ouvrir une confirmation avant d'écarter). */
@@ -151,7 +151,7 @@ export function SwipeRow({
             <span className="text-[11px] font-bold tracking-[0.3px]">
               {left.label}
             </span>
-            <left.icon className="size-[22px]" strokeWidth={2} />
+            <left.icon className="size-[22px]" />
           </div>
         ) : null}
         {/* Fond DROIT (révélé en glissant à droite) : libellé à gauche. */}
@@ -163,7 +163,7 @@ export function SwipeRow({
               dir < 0 && "hidden",
             )}
           >
-            <right.icon className="size-[22px]" strokeWidth={2} />
+            <right.icon className="size-[22px]" />
             <span className="text-[11px] font-bold tracking-[0.3px]">
               {right.label}
             </span>

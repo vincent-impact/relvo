@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Check, Sparkles } from "lucide-react";
+import { Check } from "lucide-react";
+import { Sparkle } from "@/components/shared/picto";
 import type React from "react";
 import { toast } from "sonner";
 import { ListPanel } from "@/components/shared/list-panel";
@@ -116,7 +117,7 @@ function FormulaireFige({
   return (
     <ListPanel className={cn(RELVO_PANEL, className)}>
       <div className="flex items-center gap-2 border-b border-(--purple-100) px-3.5 py-2 text-[12px] font-bold text-relvo">
-        <Sparkles className="size-3.5" fill="currentColor" strokeWidth={0} />
+        <Sparkle className="size-3.5" />
         <span className="min-w-0 flex-1 truncate">{titre}</span>
         {action}
       </div>
@@ -230,7 +231,7 @@ export function DecisionSheet({
   return (
     <ListPanel className={cn(RELVO_PANEL, className)}>
       <div className="flex items-center gap-2 border-b border-(--purple-100) px-3.5 py-2.5 text-[12px] font-bold text-relvo">
-        <Sparkles className="size-3.5" fill="currentColor" strokeWidth={0} />
+        <Sparkle className="size-3.5" />
         <span className="min-w-0 flex-1 truncate">
           Relvo · ce message attend {total} décision{total > 1 ? "s" : ""}
         </span>

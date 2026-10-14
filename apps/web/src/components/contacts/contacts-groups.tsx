@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
-import { Users } from "lucide-react";
+import { Users } from "@/components/shared/picto";
 import { useContactsSearch } from "@/components/contacts/contacts-search-context";
 
 // Onglet « Groupes » de l'annuaire (2026-07-24). Un groupe n'est PAS un Contact :
@@ -62,7 +62,7 @@ export function ContactsGroups({ groups }: { groups: DirectoryGroup[] }) {
           className="flex items-center gap-3 border-b border-[#f1efeb] px-[18px] py-3.5 active:bg-(--surface-2)"
         >
           <span className="grid size-[42px] flex-none place-items-center rounded-full bg-(--green-600) text-white">
-            <Users className="size-[20px]" strokeWidth={2.2} />
+            <Users className="size-[20px]" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[15.5px] font-bold">{g.title}</div>

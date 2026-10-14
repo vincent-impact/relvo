@@ -2,7 +2,13 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { History, Mic, Paperclip, Send, X } from "lucide-react";
+import { X } from "lucide-react";
+import {
+  ClockCounterClockwise,
+  Microphone,
+  PaperPlaneRight,
+  Paperclip,
+} from "@/components/shared/picto";
 import { toast } from "sonner";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
@@ -59,7 +65,7 @@ export function RelvoChatShell({
             aria-label="Historique des conversations"
             className={SKY_BTN}
           >
-            <History className="size-[17px]" strokeWidth={2.4} />
+            <ClockCounterClockwise className="size-[17px]" />
           </Link>
         }
       />
@@ -110,7 +116,7 @@ export function RelvoChatShell({
               key={p}
               type="button"
               onClick={() => fill(p)}
-              className="flex h-11 items-center gap-2.5 rounded-(--rayon-option) border border-dashed border-relvo bg-white px-3.5 text-left text-[14px] font-normal text-noir active:bg-relvo-pale"
+              className="pressable flex h-11 items-center gap-2.5 rounded-(--rayon-pilule) border border-(--filet) bg-white px-4 text-left text-[14px] font-normal text-noir shadow-carte active:bg-(--fond-puce)"
             >
               {p}
             </button>
@@ -130,7 +136,7 @@ export function RelvoChatShell({
             aria-label="Joindre un fichier"
             className="order-last grid flex-none place-items-center text-gris"
           >
-            <Paperclip className="size-5" strokeWidth={2} />
+            <Paperclip className="size-5" />
           </button>
           <textarea
             ref={ref}
@@ -154,9 +160,9 @@ export function RelvoChatShell({
           style={{ background: "var(--degrade-disque)" }}
         >
           {typing ? (
-            <Send className="size-[19px]" strokeWidth={2} />
+            <PaperPlaneRight className="size-[19px]" />
           ) : (
-            <Mic className="size-5" strokeWidth={2} />
+            <Microphone className="size-5" />
           )}
         </button>
       </div>

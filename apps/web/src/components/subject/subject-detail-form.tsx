@@ -2,7 +2,8 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Plus, Search, Trash2, X } from "lucide-react";
+import { Check, Plus, Search, X } from "lucide-react";
+import { Trash } from "@/components/shared/picto";
 import { toast } from "sonner";
 import type { Priority, SubjectStatus } from "@relvo/db";
 import {
@@ -241,7 +242,6 @@ export function SubjectDetailForm({
               >
                 <Icon
                   className="size-[17px] flex-none"
-                  strokeWidth={2}
                   style={{ color: active ? "#fff" : color }}
                 />
                 {fo.name}
@@ -388,7 +388,7 @@ export function SubjectDangerZone({ subjectId }: { subjectId: string }) {
         onClick={() => setOpen(true)}
         className="flex w-full items-center justify-center gap-2 rounded-xl border border-(--red-200) py-3 text-[14px] font-semibold text-(--red-600)"
       >
-        <Trash2 className="size-[18px]" strokeWidth={2} />
+        <Trash className="size-[18px]" />
         Supprimer le sujet
       </button>
 
@@ -396,7 +396,7 @@ export function SubjectDangerZone({ subjectId }: { subjectId: string }) {
         open={open}
         onOpenChange={setOpen}
         tone="destructive"
-        icon={Trash2}
+        icon={Trash}
         title="Supprimer ce sujet ?"
         description="Ses tâches et tout son journal seront définitivement effacés. Cette action est irréversible."
         confirmLabel="Supprimer"

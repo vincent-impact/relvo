@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Mic, Paperclip, RefreshCw, Send, Sparkles, X } from "lucide-react";
+import { RefreshCw, X } from "lucide-react";
+import {
+  Microphone,
+  PaperPlaneRight,
+  Paperclip,
+  Sparkle,
+} from "@/components/shared/picto";
 import { cn } from "@/lib/utils";
 
 // RecipientComposer — le composer signature de la Direction B, VIOLET (cohérence
@@ -187,7 +193,7 @@ export function RecipientComposer({
       aria-label="Joindre un fichier"
       className="grid flex-none place-items-center py-1.5 text-gris"
     >
-      <Paperclip className="size-5" strokeWidth={2} />
+      <Paperclip className="size-5" />
     </button>
   ) : null;
 
@@ -204,12 +210,9 @@ export function RecipientComposer({
       style={{ background: "var(--degrade-disque)" }}
     >
       {typing ? (
-        <Send
-          className={expanded ? "size-[17px]" : "size-[19px]"}
-          strokeWidth={2}
-        />
+        <PaperPlaneRight className={expanded ? "size-[17px]" : "size-[19px]"} />
       ) : (
-        <Mic className={expanded ? "size-[18px]" : "size-5"} strokeWidth={2} />
+        <Microphone className={expanded ? "size-[18px]" : "size-5"} />
       )}
     </button>
   );
@@ -228,10 +231,8 @@ export function RecipientComposer({
           className="flex items-center gap-2 rounded-(--rayon-option) bg-relvo-pale px-3 py-1.5 text-[12.5px] font-medium text-relvo"
           aria-live="polite"
         >
-          <Sparkles
+          <Sparkle
             className={cn("size-3.5 flex-none", loading && "animate-pulse")}
-            fill="currentColor"
-            strokeWidth={0}
           />
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="flex items-center truncate">{barLabel}</span>

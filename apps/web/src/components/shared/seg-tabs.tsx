@@ -1,6 +1,6 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
+import { type Picto } from "@/components/shared/picto";
 import { cn } from "@/lib/utils";
 
 // SegTabs — les ONGLETS d'une fiche (Sujet, Mémoire) : une carte blanche qui
@@ -32,7 +32,7 @@ export type SegTabOption = {
    */
   dot?: boolean;
   /** Icône de l'onglet — requise en mode `iconOnly`. */
-  icon?: LucideIcon;
+  icon?: Picto;
 };
 
 export function SegTabs({
@@ -83,7 +83,7 @@ export function SegTabs({
           >
             {iconOnly && Icon ? (
               <span className="relative">
-                <Icon className="size-[19px]" strokeWidth={2.2} />
+                <Icon className="size-[19px]" />
                 {opt.dot ? (
                   <span
                     className={cn(

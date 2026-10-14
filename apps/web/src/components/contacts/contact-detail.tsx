@@ -2,7 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Pencil, Save, Trash2, User, X } from "lucide-react";
+import { X } from "lucide-react";
+import {
+  FloppyDisk,
+  PencilSimple,
+  Trash,
+  User,
+} from "@/components/shared/picto";
 import { toast } from "sonner";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
@@ -211,7 +217,7 @@ export function ContactDetail({
               onClick={save}
               className={dockPrimary}
             >
-              <Save className="size-[16px]" strokeWidth={2.2} />
+              <FloppyDisk className="size-[16px]" />
               Enregistrer
             </button>
           </div>
@@ -223,7 +229,7 @@ export function ContactDetail({
               onClick={() => setConfirmDelete(true)}
               className={dockGhost}
             >
-              <Trash2 className="size-[16px]" strokeWidth={2.2} />
+              <Trash className="size-[16px]" />
               Supprimer
             </button>
             <button
@@ -232,7 +238,7 @@ export function ContactDetail({
               onClick={startEdit}
               className={dockPrimary}
             >
-              <Pencil className="size-[16px]" strokeWidth={2.2} />
+              <PencilSimple className="size-[16px]" />
               Modifier
             </button>
           </div>
@@ -243,7 +249,7 @@ export function ContactDetail({
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         tone="destructive"
-        icon={Trash2}
+        icon={Trash}
         title={`Supprimer « ${fullName} » ?`}
         description="Le contact est retiré de l'annuaire. Ses messages sont conservés (l'expéditeur redevient brut). Action irréversible."
         confirmLabel={pending ? "Suppression…" : "Supprimer"}
@@ -299,7 +305,7 @@ function ReadCard({ contact, auto }: { contact: Contact; auto: boolean }) {
           {initials ? (
             <span className="text-[34px] font-bold">{initials}</span>
           ) : (
-            <User className="size-14" strokeWidth={1.8} />
+            <User className="size-14" />
           )}
         </span>
         <div className="text-center">

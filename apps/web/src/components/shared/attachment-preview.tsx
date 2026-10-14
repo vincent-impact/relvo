@@ -1,4 +1,4 @@
-import { FileText } from "lucide-react";
+import { FileText } from "@/components/shared/picto";
 import { AttachmentViewer } from "@/components/shared/attachment-viewer";
 import { cn } from "@/lib/utils";
 
@@ -53,7 +53,7 @@ export function AttachmentPreview({
   const card = (
     <>
       <span className="grid size-[30px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
-        <FileText className="size-4" strokeWidth={2} />
+        <FileText className="size-4" />
       </span>
       <span className="min-w-0">
         <span className="block truncate text-[13px] font-semibold">{name}</span>

@@ -1,4 +1,4 @@
-import type { LucideIcon } from "lucide-react";
+import { type Picto } from "@/components/shared/picto";
 import { cn } from "@/lib/utils";
 
 // Tuile KPI de l'Accueil (« Vue du jour »). Grille 2×2 sur mobile.
@@ -14,7 +14,7 @@ export function KpiTile({
   value: number;
   label: string;
   meta?: string;
-  icon: LucideIcon;
+  icon: Picto;
   tone?: "default" | "urgent";
 }) {
   const urgent = tone === "urgent" && value > 0;
@@ -35,7 +35,7 @@ export function KpiTile({
         >
           {value}
         </span>
-        <Icon className="size-[26px] text-(--text-secondary)" strokeWidth={2} />
+        <Icon className="size-[26px] text-(--text-secondary)" />
       </div>
       <div className="mt-1.5 text-[13px] text-(--text-secondary)">{label}</div>
       {meta ? (

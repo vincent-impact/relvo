@@ -1,19 +1,19 @@
 import {
-  Banknote,
-  Boxes,
-  Building2,
-  CalendarDays,
-  type LucideIcon,
+  type Picto,
+  Buildings,
+  CalendarDots,
   Folder,
+  ForkKnife,
   Gavel,
   Megaphone,
-  Scale,
+  Money,
+  Package,
+  Scales,
   Snowflake,
   Truck,
   Users,
-  Utensils,
   Wrench,
-} from "lucide-react";
+} from "@/components/shared/picto";
 
 // Présentation des domaines (« domaines de la mémoire de Relvo ») : couleur de
 // rail/icône et glyphe (Direction B, règle « colour = domain »).
@@ -27,7 +27,7 @@ export type FolderVisual = {
   color: string;
   /** Le TEXTE du domaine (CSS, foncé, ≥ 4.5:1 sur blanc) : son nom en capitales condensées. */
   text: string;
-  icon: LucideIcon;
+  icon: Picto;
 };
 
 // ── Palette curée (8 teintes) — clés stockées en base ────────────────────────
@@ -50,32 +50,32 @@ const COLOR_BY_KEY: Record<string, string> = Object.fromEntries(
 );
 
 // ── Jeu d'icônes curé (12) — clés stockées en base ───────────────────────────
-export const FOLDER_ICONS: { key: string; icon: LucideIcon }[] = [
-  { key: "boxes", icon: Boxes },
+export const FOLDER_ICONS: { key: string; icon: Picto }[] = [
+  { key: "boxes", icon: Package },
   { key: "users", icon: Users },
-  { key: "scale", icon: Scale },
+  { key: "scale", icon: Scales },
   { key: "gavel", icon: Gavel },
   { key: "snowflake", icon: Snowflake },
-  { key: "building", icon: Building2 },
+  { key: "building", icon: Buildings },
   { key: "megaphone", icon: Megaphone },
   { key: "truck", icon: Truck },
-  { key: "utensils", icon: Utensils },
-  { key: "banknote", icon: Banknote },
+  { key: "utensils", icon: ForkKnife },
+  { key: "banknote", icon: Money },
   { key: "wrench", icon: Wrench },
-  { key: "calendar", icon: CalendarDays },
+  { key: "calendar", icon: CalendarDots },
 ];
-const ICON_BY_KEY: Record<string, LucideIcon> = Object.fromEntries(
+const ICON_BY_KEY: Record<string, Picto> = Object.fromEntries(
   FOLDER_ICONS.map((i) => [i.key, i.icon]),
 );
 
 // Repli par slug (domaines du seed sans logo explicite) — les couleurs de la
 // direction : Fournisseurs orange, Équipe vert, Administration bleu, Clients
 // rouge, Production sarcelle, Communication rose.
-const BY_SLUG: Record<string, { color: string; icon: LucideIcon }> = {
-  fournisseurs: { color: "var(--domaine-orange)", icon: Boxes },
+const BY_SLUG: Record<string, { color: string; icon: Picto }> = {
+  fournisseurs: { color: "var(--domaine-orange)", icon: Package },
   rh: { color: COLOR_BY_KEY.green, icon: Users },
   juridique: { color: COLOR_BY_KEY.blue, icon: Gavel },
-  business: { color: COLOR_BY_KEY.red, icon: Building2 },
+  business: { color: COLOR_BY_KEY.red, icon: Buildings },
   production: { color: COLOR_BY_KEY.teal, icon: Snowflake },
   communication: { color: COLOR_BY_KEY.pink, icon: Megaphone },
   general: { color: "var(--domaine-neutre)", icon: Folder },

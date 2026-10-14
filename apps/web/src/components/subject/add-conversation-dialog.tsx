@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Mail, MessageCircle, Search, Users } from "lucide-react";
+import { Search } from "lucide-react";
+import { Envelope, Users, WhatsappLogo } from "@/components/shared/picto";
 import {
   Dialog,
   DialogContent,
@@ -151,7 +152,7 @@ export function AddConversationDialog({
               .filter((c) => availableChannels.includes(c))
               .map((c) => {
                 const active = channel === c;
-                const Icon = c === "email" ? Mail : MessageCircle;
+                const Icon = c === "email" ? Envelope : WhatsappLogo;
                 return (
                   <button
                     key={c}
@@ -169,7 +170,7 @@ export function AddConversationDialog({
                         : "text-(--text-secondary)",
                     )}
                   >
-                    <Icon className="size-4" strokeWidth={2.2} />
+                    <Icon className="size-4" />
                     {c === "email" ? "E-mail" : "WhatsApp"}
                   </button>
                 );
@@ -244,7 +245,7 @@ export function AddConversationDialog({
                     )}
                   >
                     <span className="grid size-8 flex-none place-items-center rounded-full bg-(--green-600) text-white">
-                      <Users className="size-[17px]" strokeWidth={2.2} />
+                      <Users className="size-[17px]" />
                     </span>
                     <span className="truncate text-[14px] font-semibold">
                       {g.title}

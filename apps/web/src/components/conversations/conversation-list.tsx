@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Loader2, RotateCcw } from "lucide-react";
 import {
-  EyeOff,
-  FolderInput,
-  Loader2,
-  Mail,
-  MessageCircle,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
+  type Picto,
+  Envelope,
+  EyeSlash,
+  FolderOpen,
+  Trash,
+  WhatsappLogo,
+} from "@/components/shared/picto";
 import { toast } from "sonner";
 import {
   ignoreConversationAction,
@@ -59,18 +59,18 @@ import { RelvoVerdictLine } from "@/components/conversations/relvo-verdict-line"
 // filtre « Ignorées », le même geste devient Réactiver (vert) : se dédire doit
 // coûter exactement le même effort que faire taire.
 
-const CHANNEL: Record<string, { label: string; icon: typeof Mail }> = {
-  email: { label: "Email", icon: Mail },
-  whatsapp: { label: "WhatsApp", icon: MessageCircle },
+const CHANNEL: Record<string, { label: string; icon: Picto }> = {
+  email: { label: "Email", icon: Envelope },
+  whatsapp: { label: "WhatsApp", icon: WhatsappLogo },
 };
 
 // Canal en tête de la ligne méta (icône + nom), suivi de l'aperçu du message.
 function ChannelTag({ type }: { type: string }) {
-  const c = CHANNEL[type] ?? { label: "Canal", icon: Mail };
+  const c = CHANNEL[type] ?? { label: "Canal", icon: Envelope };
   const Icon = c.icon;
   return (
     <span className="inline-flex flex-none items-center gap-1 text-[12px] font-light text-gris">
-      <Icon className="size-3.5" strokeWidth={2} />
+      <Icon className="size-3.5" />
       {c.label}
     </span>
   );
@@ -190,14 +190,14 @@ function ConversationRow({
       ? {
           onAct: onLeft,
           label: "Supprimer",
-          icon: Trash2,
+          icon: Trash,
           tone: "danger" as const,
           keepOnAct: listened,
         }
       : {
           onAct: onLeft,
           label: "Ignorer",
-          icon: EyeOff,
+          icon: EyeSlash,
           tone: "warning" as const,
           keepOnAct: listened,
         };
@@ -214,7 +214,7 @@ function ConversationRow({
           : {
               onAct: () => setTriageOpen(true),
               label: "Classer",
-              icon: FolderInput,
+              icon: FolderOpen,
               tone: "brand" as const,
             }
       }
@@ -236,11 +236,7 @@ function ConversationRow({
           const inner = registered ? (
             (initialsFor(data.interlocutorName) ?? "?")
           ) : (
-            <ContactAvatarIcon
-              kind={avatarKind}
-              className="size-[18px]"
-              strokeWidth={2}
-            />
+            <ContactAvatarIcon kind={avatarKind} className="size-[18px]" />
           );
           // Un groupe n'est pas un contact : son avatar n'ouvre pas de fiche, le
           // tap retombe sur la ligne (ouverture de la conversation).

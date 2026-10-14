@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import { MessageCircle, Mail } from "lucide-react";
+import { Envelope, WhatsappLogo } from "@/components/shared/picto";
 import { ConnectEmailButton } from "@/components/settings/connect-email-button";
 import { ChannelDeleteButton } from "@/components/settings/channel-delete-button";
 import { ChannelReconnectButton } from "@/components/settings/channel-reconnect-button";
@@ -83,14 +83,14 @@ async function ChannelList() {
         ) : (
           channels.map((ch, i) => {
             const st = CHANNEL_STATUS[statuts[i]] ?? CHANNEL_STATUS.pending;
-            const Icon = ch.type === "whatsapp" ? MessageCircle : Mail;
+            const Icon = ch.type === "whatsapp" ? WhatsappLogo : Envelope;
             return (
               <div
                 key={ch.id}
                 className={`flex items-center gap-3 px-3.5 py-3 ${i > 0 ? "border-t border-(--filet)" : ""}`}
               >
                 <span className="grid size-9 flex-none place-items-center rounded-full bg-relvo-pale text-relvo">
-                  <Icon className="size-[18px]" strokeWidth={2} />
+                  <Icon className="size-[18px]" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[14.5px] leading-[18px] font-normal text-noir">

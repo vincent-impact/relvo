@@ -1,6 +1,6 @@
 "use client";
 
-import type { LucideIcon } from "lucide-react";
+import { type Picto } from "@/components/shared/picto";
 import {
   AlertDialog,
   AlertDialogCancel,
@@ -37,7 +37,7 @@ export function ConfirmDialog({
   cancelLabel?: string;
   /** `destructive` : média + bouton rouges. `default` : violet Relvo. */
   tone?: "default" | "destructive";
-  icon?: LucideIcon;
+  icon?: Picto;
   pending?: boolean;
   onConfirm: () => void;
 }) {
@@ -56,7 +56,7 @@ export function ConfirmDialog({
                   : "bg-relvo-bg text-relvo",
               )}
             >
-              <Icon strokeWidth={2} />
+              <Icon />
             </AlertDialogMedia>
           ) : null}
           <AlertDialogTitle className="text-(--text-primary)">
@@ -86,9 +86,7 @@ export function ConfirmDialog({
                 : "bg-relvo hover:bg-relvo/90",
             )}
           >
-            {Icon && destructive ? (
-              <Icon className="size-4" strokeWidth={2.2} />
-            ) : null}
+            {Icon && destructive ? <Icon className="size-4" /> : null}
             {confirmLabel}
           </button>
         </AlertDialogFooter>

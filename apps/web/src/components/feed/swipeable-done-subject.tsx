@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { RotateCcw, Trash2 } from "lucide-react";
+import { RotateCcw } from "lucide-react";
+import { Trash } from "@/components/shared/picto";
 import { toast } from "sonner";
 import { SwipeRow } from "@/components/shared/swipe-row";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -76,7 +77,7 @@ export function SwipeableDoneSubject({
           // relais — on ne fait jamais disparaître ce qu'on n'a pas encore détruit.
           onAct: () => setConfirmDelete(true),
           label: "Supprimer",
-          icon: Trash2,
+          icon: Trash,
           tone: "danger",
           keepOnAct: true,
         }}
@@ -94,7 +95,7 @@ export function SwipeableDoneSubject({
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
         tone="destructive"
-        icon={Trash2}
+        icon={Trash}
         title="Supprimer ce sujet ?"
         description="Ses tâches et tout son journal seront définitivement effacés. Cette action est irréversible."
         confirmLabel="Supprimer"

@@ -1,4 +1,9 @@
-import { Flag, Hourglass, Sparkles, SquareCheck } from "lucide-react";
+import {
+  CheckSquare,
+  Flag,
+  Hourglass,
+  Sparkle,
+} from "@/components/shared/picto";
 import type { SubjectStatus } from "@relvo/db";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -39,7 +44,7 @@ export function UrgentFlag({ className }: { className?: string }) {
       aria-label="Urgent"
       className={cn("inline-flex items-center text-(--red-600)", className)}
     >
-      <Flag className="size-[15px] fill-current" strokeWidth={0} />
+      <Flag className="size-[15px] fill-current" />
     </span>
   );
 }
@@ -48,7 +53,7 @@ export function UrgentFlag({ className }: { className?: string }) {
 export function TodoBadge() {
   return (
     <Badge className="border-transparent bg-(--amber-50) font-semibold text-(--amber-800)">
-      <SquareCheck className="size-3" strokeWidth={2.4} />À faire
+      <CheckSquare className="size-3" />À faire
     </Badge>
   );
 }
@@ -57,7 +62,7 @@ export function TodoBadge() {
 export function WaitingBadge() {
   return (
     <Badge className="border-transparent bg-(--surface-2) font-semibold text-(--text-secondary)">
-      <Hourglass className="size-3" strokeWidth={2} />
+      <Hourglass className="size-3" />
       En attente
     </Badge>
   );
@@ -68,7 +73,7 @@ export function SuggestBadge({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
     <Badge className="border-transparent bg-relvo-bg font-semibold text-relvo">
-      <Sparkles className="size-3" strokeWidth={2} />
+      <Sparkle className="size-3" />
       {count} suggérée{count > 1 ? "s" : ""}
     </Badge>
   );

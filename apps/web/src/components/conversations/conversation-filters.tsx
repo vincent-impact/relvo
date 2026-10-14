@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Mail, MessageCircle } from "lucide-react";
+import { type Picto, Envelope, WhatsappLogo } from "@/components/shared/picto";
 import type { ConversationBadges } from "@relvo/db";
 import { IndicatorTabs } from "@/components/shared/indicator-tabs";
 import type {
@@ -31,11 +31,11 @@ import { cn } from "@/lib/utils";
 const CHANNEL_OPTIONS: {
   value: ConversationChannelSlug;
   label: string;
-  icon: typeof Mail | null;
+  icon: Picto | null;
 }[] = [
   { value: "tous", label: "Tous", icon: null },
-  { value: "email", label: "E-mail", icon: Mail },
-  { value: "whatsapp", label: "WhatsApp", icon: MessageCircle },
+  { value: "email", label: "E-mail", icon: Envelope },
+  { value: "whatsapp", label: "WhatsApp", icon: WhatsappLogo },
 ];
 
 export function ConversationFilters({
@@ -105,14 +105,7 @@ export function ConversationFilters({
                   : "border-(--filet) bg-white font-normal text-noir",
               )}
             >
-              {Icon ? (
-                <Icon
-                  className="size-3.5 flex-none"
-                  strokeWidth={2.2}
-                  fill={active ? "currentColor" : "none"}
-                  fillOpacity={active ? 0.25 : 0}
-                />
-              ) : null}
+              {Icon ? <Icon className="size-3.5 flex-none" /> : null}
               {opt.label}
             </button>
           );

@@ -1,6 +1,6 @@
 "use client";
 
-import { Mail, MessageCircle } from "lucide-react";
+import { Envelope, WhatsappLogo } from "@/components/shared/picto";
 import { useState, useTransition } from "react";
 import type { MailProvider } from "@/server/unipile/client";
 import { connectEmailChannelAction } from "@/server/actions/email";
@@ -84,7 +84,7 @@ export function ConnectEmailButton({
                   disabled={pending}
                   className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-(--border) py-4 text-[12.5px] font-semibold text-(--text-secondary) disabled:opacity-60"
                 >
-                  <Mail className="size-[18px]" strokeWidth={2} />
+                  <Envelope className="size-[18px]" />
                   {busy === c.provider ? "Ouverture…" : c.label}
                 </button>
               ))
@@ -97,7 +97,7 @@ export function ConnectEmailButton({
               disabled={pending}
               className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-(--border) py-4 text-[12.5px] font-semibold text-(--text-secondary) disabled:opacity-60"
             >
-              <MessageCircle className="size-[18px]" strokeWidth={2} />
+              <WhatsappLogo className="size-[18px]" />
               {busy === "WHATSAPP" ? "Ouverture…" : "WhatsApp"}
             </button>
           ) : null}

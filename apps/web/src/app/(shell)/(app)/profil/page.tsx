@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { LogOut } from "lucide-react";
+import { SignOut } from "@/components/shared/picto";
 import { DEMO_EMAIL } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
@@ -82,7 +82,7 @@ export default async function ProfilPage() {
                 variant="outline"
                 className="w-full border-(--red-200) text-(--red-600) hover:bg-(--red-50) hover:text-(--red-600)"
               >
-                <LogOut className="size-4" />
+                <SignOut className="size-4" />
                 Se déconnecter
               </Button>
             </form>

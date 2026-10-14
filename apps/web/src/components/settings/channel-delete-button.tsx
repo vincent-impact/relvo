@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash } from "@/components/shared/picto";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -54,7 +54,7 @@ export function ChannelDeleteButton({
             aria-label={`Supprimer le canal ${channelName}`}
             className="grid size-8 flex-none place-items-center rounded-lg text-(--text-tertiary) transition-colors hover:bg-(--red-50) hover:text-(--red-600)"
           >
-            <Trash2 className="size-[17px]" strokeWidth={2} />
+            <Trash className="size-[17px]" />
           </button>
         }
       />

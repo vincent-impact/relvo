@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, Reply } from "lucide-react";
+import { Check } from "lucide-react";
+import { ArrowBendUpLeft } from "@/components/shared/picto";
 import { toast } from "sonner";
 import { type TaskItemData } from "@/lib/task-item-data";
 import { TaskModal } from "@/components/subject/task-modal";
@@ -191,7 +192,7 @@ export function TaskItem({
               onClick={(e) => e.stopPropagation()}
               className="mt-1.5 inline-flex items-center gap-1.5 rounded-(--rayon-pilule) bg-relvo-pale px-2.5 py-1 text-[12px] font-medium text-relvo active:opacity-80"
             >
-              <Reply className="size-[14px]" strokeWidth={2.4} />
+              <ArrowBendUpLeft className="size-[14px]" />
               {aDecider ? "Décider et répondre" : "Répondre"}
             </Link>
           ) : null}

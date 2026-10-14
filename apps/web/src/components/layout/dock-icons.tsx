@@ -1,8 +1,9 @@
 // Les icônes PLEINES du dock — Accueil, Calendrier, Sujets, Conversations — telles
 // que les planches de la direction « Lettrage d'artisan » les dessinent et que
 // le dirigeant les a validées (« en accord avec les icônes des menus »). Elles
-// sont les quatre seules icônes pleines du chrome ; partout ailleurs, lucide.
-// Un seul trait, une seule graisse : `fill="currentColor"`, 22 px.
+// sont dessinées ici ; tous les autres pictogrammes viennent de
+// `shared/picto.tsx` (Phosphor, graisse « fill »), et lucide ne sert qu'aux
+// glyphes. Une seule graisse : `fill="currentColor"`, 22 px.
 
 type IconProps = { className?: string };
 

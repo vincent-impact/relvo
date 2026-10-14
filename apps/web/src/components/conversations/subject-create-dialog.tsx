@@ -147,7 +147,6 @@ export function SubjectCreateDialog({
                   >
                     <Icon
                       className="size-[14px] flex-none"
-                      strokeWidth={2.2}
                       style={active ? undefined : { color: viz.color }}
                     />
                     {f.name}

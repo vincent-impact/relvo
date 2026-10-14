@@ -297,11 +297,17 @@ plus claire et agréable », et six retours, tous appliqués dans le même commi
   supprimer) ; les textes sous 11 px et les couleurs en dur restantes (fiche sujet, e-mail,
   bulles, pastille d'acteur à 9 px, agenda, instructions, mois du planning ; le cliquet
   `RESTE_A_MIGRER`, et `MetricsCardSkeleton` à remplacer par un squelette d'`IndicatorTabs`).
-  **Une est à trancher par le dirigeant** : le socle dit « icônes pleines », et seul le dock
-  l'est — le menu latéral, les avatars de canal, les onglets de la fiche et les corbeilles de
-  Canaux sont en trait ; de même le pointillé violet des suggestions de l'échange, que le
-  produit emploie ailleurs pour « vide / à compléter ». Deux lectures non matérielles à garder
-  en tête pour la tranche 3 : l'état vide « rien de prévu » diffère entre l'accueil (carte) et
+  **La dernière a été tranchée par le dirigeant le jour même** : le socle dit « icônes
+  pleines », et seul le dock l'était (le menu latéral, les avatars de canal, les onglets de la
+  fiche et les corbeilles de Canaux étaient en trait). Tout pictogramme vient désormais de
+  `shared/picto.tsx` — Phosphor en graisse « fill », depuis l'entrée SSR pour servir les
+  composants serveur comme client, la graisse posée une fois pour que personne ne l'oublie ;
+  lucide ne fournit plus que les glyphes qui sont un trait, et le test des tokens tient la
+  ligne. Un remplissage ne dit plus un état (le drapeau Urgent, les puces de canal) : la
+  couleur et la puce le portent. Les suggestions de l'échange quittent le pointillé violet,
+  réservé à « vide / à compléter », pour la puce blanche à filet. Le résidu d'anticrénelage
+  aux coins de Sujets a été regardé sur le téléphone : rien à corriger.
+  Deux lectures non matérielles à garder en tête pour la tranche 3 : l'état vide « rien de prévu » diffère entre l'accueil (carte) et
   le Calendrier (texte nu) ; la bande de domaine de la fiche est un losange dans le ciel, faute
   de carte pour porter la tranche — adaptation acceptée.
 - **Verdict après recapture** : les lignes de Sujets, les zéros d'Activité, l'action de
@@ -334,9 +340,10 @@ plus claire et agréable », et six retours, tous appliqués dans le même commi
       Conversations, Contacts ; menu, fiche sujet, échange ; conversations et fiche contact ;
       pages du menu et connexion) · ✅ M19.11 outillage : `PRODUCT.md`, `DESIGN.md` écrit
       depuis le code livré avec ses exceptions aux détecteurs, sidecar, contrat de direction au
-      présent, revue de finition rendue et son lot de corrections appliqué
+      présent, revue de finition rendue, son lot de corrections appliqué, icônes pleines
+      partout
 - [ ] Tranche 3 — « Alléger » : M19.6 écran par écran, **en commençant par les reports de la
-      revue de finition** (Contacts, en-têtes de la fiche, textes sous 11 px, couleurs en dur) et
-      par la question des icônes pleines à poser au dirigeant · M19.10 robustesse
+      revue de finition** (Contacts, en-têtes de la fiche, textes sous 11 px, couleurs en dur) ·
+      M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas
 - [ ] Tranche 5 — « Clore » : M19.12

@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, History, ListChecks, MessagesSquare } from "lucide-react";
+import {
+  ChatsCircle,
+  ClockCounterClockwise,
+  FileText,
+  ListChecks,
+} from "@/components/shared/picto";
 import { SegTabs, type SegTabOption } from "@/components/shared/seg-tabs";
 
 // Orchestrateur de la fiche Sujet (corps interactif). QUATRE onglets
@@ -74,7 +79,7 @@ export function SubjectBody({
     {
       value: "conversations",
       label: "Conversations",
-      icon: MessagesSquare,
+      icon: ChatsCircle,
       count: conversationsCount,
       // Point rouge = du non-lu quelque part ; le compteur reste neutre.
       dot: conversationsHasNew,
@@ -85,7 +90,12 @@ export function SubjectBody({
       icon: FileText,
       count: documentsCount,
     },
-    { value: "journal", label: "Journal", icon: History, count: journalCount },
+    {
+      value: "journal",
+      label: "Journal",
+      icon: ClockCounterClockwise,
+      count: journalCount,
+    },
   ];
 
   return (

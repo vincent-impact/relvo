@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { CalendarDays, Clock, Search, Trash2, X } from "lucide-react";
+import { Search, X } from "lucide-react";
+import { CalendarDots, Clock, Trash } from "@/components/shared/picto";
 import { toast } from "sonner";
 import type { Actor } from "@relvo/db";
 import { ActorPill } from "@/components/shared/actor-pill";
@@ -283,10 +284,7 @@ export function TaskModal({
         {/* Date + heure. */}
         <div className="flex min-w-0 gap-2">
           <label className="flex min-w-0 flex-1 items-center gap-2 rounded-xl border border-(--border) px-3 py-2.5">
-            <CalendarDays
-              className="size-4 flex-none text-(--text-tertiary)"
-              strokeWidth={2}
-            />
+            <CalendarDots className="size-4 flex-none text-(--text-tertiary)" />
             <input
               type="date"
               value={date}
@@ -300,10 +298,7 @@ export function TaskModal({
               !date && "opacity-50",
             )}
           >
-            <Clock
-              className="size-4 flex-none text-(--text-tertiary)"
-              strokeWidth={2}
-            />
+            <Clock className="size-4 flex-none text-(--text-tertiary)" />
             <input
               type="time"
               value={time}
@@ -373,7 +368,7 @@ export function TaskModal({
               aria-label="Supprimer la tâche"
               className="grid size-[42px] flex-none place-items-center rounded-xl border border-(--red-200) text-(--red-600) disabled:opacity-60"
             >
-              <Trash2 className="size-[18px]" strokeWidth={2} />
+              <Trash className="size-[18px]" />
             </button>
           ) : null}
         </div>

@@ -1,4 +1,4 @@
-import { FlaskConical } from "lucide-react";
+import { Flask } from "@/components/shared/picto";
 
 // DemoNotice — dit à l'utilisateur qu'un écran montre des chiffres de
 // démonstration, pas encore reliés à ses données. Une page qui pourrait mentir
@@ -10,7 +10,7 @@ export function DemoNotice({ children }: { children: React.ReactNode }) {
       role="note"
       className="mx-4 flex items-start gap-2.5 rounded-[12px] border border-(--amber-800)/20 bg-(--amber-50) px-3.5 py-2.5 text-[12.5px] leading-[1.4] text-(--amber-800)"
     >
-      <FlaskConical className="mt-px size-4 flex-none" strokeWidth={2} />
+      <Flask className="mt-px size-4 flex-none" />
       <span>{children}</span>
     </div>
   );

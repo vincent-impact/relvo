@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { EyeOff, type LucideIcon } from "lucide-react";
+import { type Picto, EyeSlash } from "@/components/shared/picto";
 import { cn } from "@/lib/utils";
 
 // Swipe-left générique « Retirer » (Direction B) — glisser vers la GAUCHE révèle
@@ -19,14 +19,14 @@ export function SwipeToRemove({
   onRemove,
   onTap,
   label = "Retirer",
-  icon: Icon = EyeOff,
+  icon: Icon = EyeSlash,
   tone = "danger",
   children,
 }: {
   onRemove: () => void;
   onTap?: () => void;
   label?: string;
-  icon?: LucideIcon;
+  icon?: Picto;
   /** Couleur du fond révélé. `success` (vert) pour un geste qui REND quelque
    *  chose plutôt qu'il ne l'écarte — ex. « Réactiver » une conversation
    *  ignorée : même geste, sens inverse, donc couleur inverse. */
@@ -115,7 +115,7 @@ export function SwipeToRemove({
           <span className="text-[11px] font-bold tracking-[0.3px]">
             {label}
           </span>
-          <Icon className="size-[22px]" strokeWidth={2} />
+          <Icon className="size-[22px]" />
         </div>
         <div
           ref={cardRef}

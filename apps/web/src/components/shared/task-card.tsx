@@ -1,4 +1,5 @@
-import { Calendar, Check } from "lucide-react";
+import { Check } from "lucide-react";
+import { CalendarBlank } from "@/components/shared/picto";
 import type { Actor, TaskStatus } from "@relvo/db";
 import { cn } from "@/lib/utils";
 import { ActorPill } from "./actor-pill";
@@ -52,7 +53,7 @@ export function TaskCard({
           <ActorPill actor={data.sourceActor} />
           {data.dateLabel ? (
             <span className="inline-flex items-center gap-1">
-              <Calendar className="size-3.5" strokeWidth={2} />
+              <CalendarBlank className="size-3.5" />
               {data.dateLabel}
             </span>
           ) : null}

@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles } from "lucide-react";
+import { Sparkle } from "@/components/shared/picto";
 import { toast } from "sonner";
 import {
   dismissResolutionAction,
@@ -62,7 +62,7 @@ export function ResolutionBanner({
       className="flex gap-3 rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-4 py-3.5 shadow-carte"
     >
       <span className="grid size-[30px] flex-none place-items-center self-start rounded-full bg-relvo text-white">
-        <Sparkles className="size-[15px]" fill="currentColor" strokeWidth={0} />
+        <Sparkle className="size-[15px]" />
       </span>
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
         <p className="text-[14px] leading-5 font-light text-noir">

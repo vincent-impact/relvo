@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Paperclip, Send } from "lucide-react";
+import { PaperPlaneRight, Paperclip } from "@/components/shared/picto";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -92,7 +92,7 @@ export function SubjectReplyComposer({
             typing && "hidden",
           )}
         >
-          <Paperclip className="size-[18px]" strokeWidth={2} />
+          <Paperclip className="size-[18px]" />
         </button>
         <button
           type="button"
@@ -103,7 +103,7 @@ export function SubjectReplyComposer({
             !typing && "hidden",
           )}
         >
-          <Send className="size-[18px]" strokeWidth={2} />
+          <PaperPlaneRight className="size-[18px]" />
         </button>
       </div>
     </div>

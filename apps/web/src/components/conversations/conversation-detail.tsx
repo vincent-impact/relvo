@@ -3,16 +3,14 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Check, ChevronDown, ChevronRight, X } from "lucide-react";
 import {
-  Check,
-  ChevronDown,
-  ChevronRight,
-  Mail,
-  MessageCircle,
-  Unlink,
+  type Picto,
+  Envelope,
+  LinkBreak,
   Users,
-  X,
-} from "lucide-react";
+  WhatsappLogo,
+} from "@/components/shared/picto";
 import { toast } from "sonner";
 import type { ConversationListening, ConversationParticipant } from "@relvo/db";
 import { ConversationThread } from "@/components/conversations/conversation-thread";
@@ -87,9 +85,9 @@ import { cn } from "@/lib/utils";
 // C'est ce relais qui permet à la liste d'offrir le geste sans jamais avoir à
 // deviner une ancre en messagerie : elle délègue ici, où le fil est lisible.
 
-const CHANNEL_ICON: Record<string, typeof Mail> = {
-  email: Mail,
-  whatsapp: MessageCircle,
+const CHANNEL_ICON: Record<string, Picto> = {
+  email: Envelope,
+  whatsapp: WhatsappLogo,
 };
 const CHANNEL_LABEL: Record<string, string> = {
   email: "E-mail",
@@ -177,7 +175,7 @@ export function ConversationDetail({
   );
 
   const isEmail = channelType === "email";
-  const ChannelIcon = CHANNEL_ICON[channelType] ?? Mail;
+  const ChannelIcon = CHANNEL_ICON[channelType] ?? Envelope;
   const channelLabel = CHANNEL_LABEL[channelType] ?? "Canal";
 
   // Écoute ACTIVE = ce fil alimente en ce moment un sujet ouvert. On arrive alors
@@ -559,7 +557,7 @@ export function ConversationDetail({
                     membersOpen ? "bg-white/25" : "bg-white/12",
                   )}
                 >
-                  <Users className="size-[13px]" strokeWidth={2.4} />
+                  <Users className="size-[13px]" />
                   {`${channelLabel} · ${participants.length} membre${participants.length > 1 ? "s" : ""}`}
                   <ChevronDown
                     className={cn(
@@ -572,7 +570,7 @@ export function ConversationDetail({
                 </button>
               ) : (
                 <span className="inline-flex h-7 flex-none items-center gap-1 rounded-full bg-white/12 px-2 text-[12px] font-semibold text-(--on-violet)">
-                  <ChannelIcon className="size-[13px]" strokeWidth={2.2} />
+                  <ChannelIcon className="size-[13px]" />
                   {channelLabel}
                 </span>
               )}
@@ -605,7 +603,6 @@ export function ConversationDetail({
                             <ContactAvatarIcon
                               kind={pKind}
                               className="size-[12px]"
-                              strokeWidth={2.2}
                             />
                           )}
                         </span>
@@ -673,7 +670,7 @@ export function ConversationDetail({
                           }
                           className="grid size-7 flex-none place-items-center rounded-full text-white active:bg-white/15 disabled:opacity-50"
                         >
-                          <Unlink className="size-[15px]" strokeWidth={2.2} />
+                          <LinkBreak className="size-[15px]" />
                         </button>
                       ) : null}
                     </div>

@@ -2,7 +2,8 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, EyeOff, ListTodo } from "lucide-react";
+import { Check } from "lucide-react";
+import { EyeSlash, ListChecks } from "@/components/shared/picto";
 import { toast } from "sonner";
 import {
   closeSubjectAction,
@@ -259,7 +260,7 @@ export function SwipeableSubject({
             <span className="text-[11px] font-bold tracking-[0.3px]">
               Fermer
             </span>
-            <EyeOff className="size-[22px]" strokeWidth={2} />
+            <EyeSlash className="size-[22px]" />
           </div>
         ) : null}
 
@@ -281,7 +282,7 @@ export function SwipeableSubject({
         onOpenChange={(o) => {
           if (!o) setConfirm(null);
         }}
-        icon={ListTodo}
+        icon={ListChecks}
         title={
           confirm === "close"
             ? "Fermer malgré les tâches en cours ?"

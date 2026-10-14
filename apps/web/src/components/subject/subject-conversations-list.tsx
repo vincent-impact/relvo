@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Mail, MessageCircle, Plus, Users } from "lucide-react";
+import { Plus } from "lucide-react";
+import {
+  type Picto,
+  Envelope,
+  Users,
+  WhatsappLogo,
+} from "@/components/shared/picto";
 import { toast } from "sonner";
 import type { ConversationRowData } from "@/lib/conversation-row";
 import {
@@ -26,9 +32,9 @@ import { ListPanel } from "@/components/shared/list-panel";
 // La ligne porte assez d'infos — objet, extrait du dernier message, non-lus — pour
 // donner envie de cliquer sans imposer le clic pour savoir où en est le fil.
 
-const CHANNEL_ICON: Record<string, typeof Mail> = {
-  email: Mail,
-  whatsapp: MessageCircle,
+const CHANNEL_ICON: Record<string, Picto> = {
+  email: Envelope,
+  whatsapp: WhatsappLogo,
 };
 
 function ConversationRow({
@@ -40,7 +46,7 @@ function ConversationRow({
 }) {
   const unread = row.unreadCount > 0;
   const isGroup = row.type === "whatsapp_group";
-  const Icon = isGroup ? Users : (CHANNEL_ICON[row.channelType] ?? Mail);
+  const Icon = isGroup ? Users : (CHANNEL_ICON[row.channelType] ?? Envelope);
 
   return (
     <Link
@@ -58,7 +64,7 @@ function ConversationRow({
           unread ? "bg-(--amber-600)" : "bg-[#c7c5bd]",
         )}
       >
-        <Icon className="size-[20px]" strokeWidth={2.1} />
+        <Icon className="size-[20px]" />
       </span>
 
       <div className="min-w-0 flex-1">

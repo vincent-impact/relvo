@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { FileText, Hourglass } from "lucide-react";
+import { FileText, Hourglass } from "@/components/shared/picto";
 import {
   getSubjectDetail,
   listChannels,
@@ -234,7 +234,7 @@ export default async function SujetPage({
                 ) : null}
                 {subject.waitingForReply ? (
                   <HeroChip>
-                    <Hourglass className="size-[11px]" strokeWidth={2.4} />
+                    <Hourglass className="size-[11px]" />
                     En attente
                   </HeroChip>
                 ) : null}
@@ -264,7 +264,7 @@ export default async function SujetPage({
                     className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#ececea] bg-white px-3 py-2.5 text-left shadow-(--shadow-card) transition-colors hover:bg-(--surface-2)"
                   >
                     <span className="grid size-[34px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
-                      <FileText className="size-[18px]" strokeWidth={2} />
+                      <FileText className="size-[18px]" />
                     </span>
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-[14px] font-semibold">

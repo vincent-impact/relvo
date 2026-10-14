@@ -1,6 +1,12 @@
 "use client";
 
-import { EyeOff, Link2, Plus, Trash2, type LucideIcon } from "lucide-react";
+import { Plus } from "lucide-react";
+import {
+  type Picto,
+  EyeSlash,
+  LinkSimple,
+  Trash,
+} from "@/components/shared/picto";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +40,7 @@ function Choice({
   tone = "default",
   onSelect,
 }: {
-  icon: LucideIcon;
+  icon: Picto;
   label: string;
   hint: string;
   tone?: "default" | "danger";
@@ -58,7 +64,7 @@ function Choice({
           danger ? "bg-(--red-50) text-(--red-600)" : "bg-relvo-bg text-relvo",
         )}
       >
-        <Icon className="size-[18px]" strokeWidth={2.1} />
+        <Icon className="size-[18px]" />
       </span>
       <span className="min-w-0">
         <span
@@ -123,7 +129,7 @@ export function ConversationTriageDialog({
             onSelect={() => pick(onCreate)}
           />
           <Choice
-            icon={Link2}
+            icon={LinkSimple}
             label="Lier à un sujet existant"
             hint={
               hasSubjects
@@ -134,7 +140,7 @@ export function ConversationTriageDialog({
           />
           {onIgnore ? (
             <Choice
-              icon={isEmail ? Trash2 : EyeOff}
+              icon={isEmail ? Trash : EyeSlash}
               label={isEmail ? "Supprimer" : "Ignorer"}
               tone="danger"
               hint="Faire taire cette source. Aucune donnée n'est supprimée."

@@ -1,4 +1,4 @@
-import { Smartphone } from "lucide-react";
+import { DeviceMobile } from "@/components/shared/picto";
 
 // Verrou portrait — iOS standalone IGNORE `orientation: "portrait"` du manifest
 // (et il n'y a pas d'API de lock JS sur Safari). On masque donc l'app derrière un
@@ -14,7 +14,7 @@ export function LandscapeGuard() {
       aria-label="Tournez votre appareil en portrait"
     >
       <div className="grid size-16 place-items-center rounded-2xl bg-white/15">
-        <Smartphone className="size-8" strokeWidth={2} />
+        <DeviceMobile className="size-8" />
       </div>
       <p className="font-heading text-[19px] font-semibold tracking-[-0.01em]">
         Relvo s’utilise en portrait

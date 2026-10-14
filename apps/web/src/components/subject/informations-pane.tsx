@@ -3,14 +3,13 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChevronDown, Plus } from "lucide-react";
 import {
-  ChevronDown,
+  CheckSquare,
   Flag,
-  Pencil,
-  Plus,
-  SquareCheck,
-  UserRound,
-} from "lucide-react";
+  PencilSimple,
+  User,
+} from "@/components/shared/picto";
 import { toast } from "sonner";
 import type { Priority } from "@relvo/db";
 import {
@@ -242,7 +241,7 @@ export function InformationsPane({
             className="grid size-5 flex-none place-items-center rounded-full text-white"
             style={{ background: folderViz.color }}
           >
-            <FolderIcon className="size-[12px]" strokeWidth={2.2} />
+            <FolderIcon className="size-[12px]" />
           </span>
           <span className="max-w-[44vw] truncate">
             {folder?.name ?? "Non classé"}
@@ -259,7 +258,7 @@ export function InformationsPane({
             className="pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-full border border-(--hairline) bg-white pr-2.5 pl-1 text-[12.5px] font-semibold text-(--text-primary) shadow-surface-1"
           >
             <span className="grid size-5 flex-none place-items-center rounded-full bg-(--surface-2) text-(--text-secondary)">
-              <UserRound className="size-[12px]" strokeWidth={2.2} />
+              <User className="size-[12px]" />
             </span>
             <span className="max-w-[60vw] truncate">
               {c.name}
@@ -288,11 +287,7 @@ export function InformationsPane({
               : "border-dashed border-[#d4d2cc] bg-transparent text-(--text-tertiary)",
           )}
         >
-          <Flag
-            className="size-[13px]"
-            strokeWidth={priority === "urgent" ? 0 : 2.2}
-            fill={priority === "urgent" ? "currentColor" : "none"}
-          />
+          <Flag className="size-[13px]" />
           Urgent
         </button>
       </section>
@@ -324,7 +319,7 @@ export function InformationsPane({
                   aria-label="Modifier la description"
                   className="grid size-6 place-items-center rounded-full text-(--text-tertiary) active:bg-(--surface-2)"
                 >
-                  <Pencil className="size-[13px]" strokeWidth={2.2} />
+                  <PencilSimple className="size-[13px]" />
                 </button>
               }
             >
@@ -374,14 +369,13 @@ export function InformationsPane({
           right={
             taskTotal > 0 ? (
               <div className="flex items-center gap-2">
-                <SquareCheck
+                <CheckSquare
                   className={cn(
                     "size-[15px] flex-none",
                     taskDone >= taskTotal
                       ? "text-(--green-600)"
                       : "text-(--text-tertiary)",
                   )}
-                  strokeWidth={2.2}
                 />
                 <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-[#e7e5e0] shadow-[inset_0_1px_1px_rgb(20_18_40/0.08)]">
                   <span
@@ -462,7 +456,6 @@ export function InformationsPane({
                 >
                   <Icon
                     className="size-[15px] flex-none"
-                    strokeWidth={2.2}
                     style={active ? undefined : { color: viz.color }}
                   />
                   {f.name}

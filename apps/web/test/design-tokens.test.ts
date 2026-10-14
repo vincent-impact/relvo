@@ -170,6 +170,59 @@ function* fichiersSource(dir: string): Generator<string> {
   }
 }
 
+// Les GLYPHES que lucide a le droit de fournir : ce qui EST un trait (chevron,
+// croix, plus, coche, flèches, loader). Tout pictogramme vient de
+// components/shared/picto.tsx (Phosphor, graisse « fill ») — « icônes pleines »,
+// socle verrouillé par le dirigeant (00-brief-da §5). Les primitives du
+// registre (components/ui) gardent leurs icônes.
+const GLYPHES_LUCIDE = new Set([
+  "Check",
+  "ChevronDown",
+  "ChevronLeft",
+  "ChevronRight",
+  "ChevronUp",
+  "Loader2",
+  "Loader2Icon",
+  "Menu",
+  "Plus",
+  "RefreshCw",
+  "RotateCcw",
+  "RotateCw",
+  "Search",
+  "X",
+]);
+
+describe("design tokens — icônes pleines", () => {
+  it("lucide ne fournit que des glyphes, les pictogrammes viennent de picto.tsx", () => {
+    const fautifs: string[] = [];
+    for (const p of fichiersSource(join(ROOT, "src"))) {
+      if (p.includes("/components/ui/")) continue;
+      const src = readFileSync(p, "utf8");
+      for (const m of src.matchAll(
+        /import (?:type )?\{([^}]*)\} from "lucide-react"/g,
+      )) {
+        for (const raw of m[1].split(",")) {
+          const nom = raw.replace(/^\s*type\s+/, "").trim();
+          if (nom && !GLYPHES_LUCIDE.has(nom))
+            fautifs.push(`${relative(ROOT, p)} : ${nom}`);
+        }
+      }
+    }
+    expect(fautifs, "pictogramme lucide — passer par shared/picto.tsx").toEqual(
+      [],
+    );
+  });
+
+  it("chaque pictogramme est rendu en graisse pleine", () => {
+    const picto = readFileSync(
+      join(ROOT, "src/components/shared/picto.tsx"),
+      "utf8",
+    );
+    expect(picto).toMatch(/weight="fill"/);
+    expect(picto).toMatch(/@phosphor-icons\/react\/dist\/ssr/);
+  });
+});
+
 describe("design tokens — aucune couleur en dur dans un composant", () => {
   it("le cliquet des fichiers à migrer ne s'allonge pas", () => {
     const hex = /#[0-9a-fA-F]{6}\b/;

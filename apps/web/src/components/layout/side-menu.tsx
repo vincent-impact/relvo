@@ -2,19 +2,19 @@
 
 import { createContext, useContext, useState } from "react";
 import Link from "next/link";
+import { Menu, X } from "lucide-react";
 import {
+  type Picto,
   Brain,
-  ChartColumn,
+  ChartBar,
   Gauge,
-  LogOut,
-  Menu,
+  MagnifyingGlass,
   Plug,
-  Search,
+  SignOut,
   SlidersHorizontal,
   User,
   Users,
-  X,
-} from "lucide-react";
+} from "@/components/shared/picto";
 import {
   Sheet,
   SheetClose,
@@ -77,10 +77,10 @@ export function MenuButton({
   );
 }
 
-type Entry = { href: string; label: string; icon: typeof Users };
+type Entry = { href: string; label: string; icon: Picto };
 
 const MAIN: Entry[] = [
-  { href: "/bilan", label: "Bilan", icon: ChartColumn },
+  { href: "/bilan", label: "Bilan", icon: ChartBar },
   { href: "/memoire", label: "Mémoire", icon: Brain },
   { href: "/contacts", label: "Contacts", icon: Users },
 ];
@@ -120,12 +120,7 @@ export function SideMenu({
         onClick={close}
         className={cn(ITEM, className)}
       >
-        <Icon
-          className="size-[22px] flex-none text-relvo"
-          strokeWidth={2.2}
-          fill="currentColor"
-          fillOpacity={0.14}
-        />
+        <Icon className="size-[22px] flex-none text-relvo" />
         {e.label}
       </Link>
     );
@@ -174,7 +169,11 @@ export function SideMenu({
           <Separator />
           {SETTINGS.map((e) => item(e))}
           <Separator />
-          {item({ href: "/recherche", label: "Rechercher", icon: Search })}
+          {item({
+            href: "/recherche",
+            label: "Rechercher",
+            icon: MagnifyingGlass,
+          })}
         </nav>
 
         <form
@@ -186,7 +185,7 @@ export function SideMenu({
             type="submit"
             className="flex items-center gap-3.5 text-[16px] font-light text-gris active:opacity-70"
           >
-            <LogOut className="size-[22px]" strokeWidth={2} />
+            <SignOut className="size-[22px]" />
             Se déconnecter
           </button>
         </form>

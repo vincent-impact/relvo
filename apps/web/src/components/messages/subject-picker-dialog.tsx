@@ -88,7 +88,7 @@ export function SubjectPickerDialog({
                       className="grid size-9 flex-none place-items-center rounded-lg text-white"
                       style={{ background: color }}
                     >
-                      <Icon className="size-[18px]" strokeWidth={2} />
+                      <Icon className="size-[18px]" />
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-[14.5px] font-semibold">

@@ -109,6 +109,17 @@ interlettré. Aucun texte fonctionnel sous 11 px, hors libellé du dock.
 L'échelle de corps est **mobile d'abord** : calibrée pour un écran d'environ 390 px, le desktop
 en hérite sans la remonter.
 
+## Les icônes — des pictogrammes pleins, des glyphes en trait
+
+Un **pictogramme** (un cerveau, une enveloppe, une prise, un dossier) est **plein** : c'est le socle
+que le dirigeant a verrouillé, et un trait de deux pixels au milieu d'icônes pleines se voit.
+Tous viennent de `components/shared/picto.tsx`, qui pose la graisse une fois pour toutes ; les
+quatre icônes du dock sont dessinées à part, telles qu'elles ont été validées. Un **glyphe**
+(chevron, croix, plus, coche, flèche de rotation, loader) n'a pas de version pleine parce qu'il
+*est* un trait : lucide les fournit, et rien d'autre. Un état ne se dit jamais par le
+remplissage d'une icône (plein = actif, vide = inactif) : c'est la couleur et la forme de la
+puce qui le portent. La ligne de partage est tenue par le test des tokens.
+
 ## La matière : blanc, cartes, une ombre portée
 
 Le fond de l'écran de travail est **blanc** ; le ciel fond dedans. Une zone est une **carte**

@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Sparkles, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
+import { Sparkle, Trash } from "@/components/shared/picto";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -61,13 +62,11 @@ export function InstructionList({
               onClick={() => setEditing(n)}
               className="flex w-full items-start gap-2.5 border-b border-(--filet) px-3.5 py-3 text-left active:bg-(--fond-enfonce)"
             >
-              <Sparkles
+              <Sparkle
                 className={cn(
                   "mt-1 size-3.5 flex-none",
                   n.active ? "text-relvo" : "text-(--gris-clair)",
                 )}
-                fill="currentColor"
-                strokeWidth={0}
               />
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
@@ -246,7 +245,7 @@ function InstructionEditor({
               aria-label="Supprimer l'instruction"
               className="grid size-[42px] flex-none place-items-center rounded-xl border border-(--red-200) text-(--red-600) disabled:opacity-60"
             >
-              <Trash2 className="size-[18px]" strokeWidth={2} />
+              <Trash className="size-[18px]" />
             </button>
           ) : null}
         </div>

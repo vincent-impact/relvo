@@ -1196,6 +1196,12 @@ la typographie, la palette, la densité et un geste signature.
   de l'accueil est retiré, il ne menait nulle part ; un indicateur à zéro écrit « 0 », pas un
   tiret. « Un compteur à zéro ne s'affiche pas » reste vrai pour les badges et les pastilles,
   pas pour une cellule fixe.
+- **Les icônes pleines, partout.** La revue de finition a relevé que seul le dock tenait le socle
+  « icônes pleines » : le menu, les avatars de canal, les onglets de la fiche et les corbeilles
+  restaient en trait. Le dirigeant a tranché pour le socle : tout pictogramme est plein
+  (Phosphor, graisse « fill », par un module unique), lucide ne garde que les glyphes qui sont
+  un trait. **Retenu contre** l'exception écrite dans `DESIGN.md`. Les suggestions de l'échange
+  quittent le pointillé violet, réservé à « vide / à compléter », pour la puce blanche à filet.
 
 **Ce que la direction laisse au chantier qui l'habille** : les tokens dans le code, tenus par un
 test ; les règles de composition et les patterns récrits dans la même matière ; le fichier de
