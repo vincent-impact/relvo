@@ -201,9 +201,9 @@ refuse, le violet livrée et voix, le bouton qui déborde, le burger à droite, 
 navigateur avant d'être montrée ») et `01-tokens.md` (livrée en trois violets et ciel, bloc de
 Relvo, bande + texte par domaine, états par la forme, sélection par cerclage, Barlow en deux
 dessins, blanc et cartes, plus de verre ni de grain ni de relief). `CLAUDE.md` et
-`01-principes.md` ont suivi sur le bouton et le burger. **Pas encore récrits, pour la tranche
-2** : `02-composants.md` et `03-patterns.md` (fond pierre, panneaux, niveaux d'élévation) et
-`globals.css` — jusque-là, le code et ces deux fichiers décrivent l'ancienne matière.
+`01-principes.md` ont suivi sur le bouton et le burger. `02-composants.md` et `03-patterns.md` ont suivi en
+ouverture de la tranche 2 (quatre matières, bande de domaine, chiffres condensés, état par la
+forme, le cadre ciel et dock). **Jusqu'à M19.5 et M19.7, le code décrit l'ancienne matière.**
 
 ## Où on en est
 
@@ -213,7 +213,7 @@ dessins, blanc et cartes, plus de verre ni de grain ni de relief). `CLAUDE.md` e
       avant) · ✅ M19.4 décision écrite dans `ecarts`, brief et tokens récrits en place
 - [ ] Tranche 2 — « Habiller » : M19.11 outillage (`PRODUCT.md` est posé ; `DESIGN.md` et les
       exceptions du détecteur restent) · M19.5 tokens, tenus par un test · M19.7 composants
-      signature · `02-composants.md` et `03-patterns.md` récrits dans la matière retenue
+      signature · ✅ `02-composants.md` et `03-patterns.md` récrits dans la matière retenue
 - [ ] Tranche 3 — « Alléger » : M19.6 écran par écran · M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas
 - [ ] Tranche 5 — « Clore » : M19.12

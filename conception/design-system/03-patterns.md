@@ -21,24 +21,34 @@ lignes ou en grille multi-colonnes a un repli en colonne au palier de base.
 
 Aucun comportement desktop n'est requis pour qu'une vue soit fonctionnelle. C'est du bonus.
 
-## Le cadre : violet en haut, violet en bas
+## Le cadre : le ciel en haut, le dock en bas
 
-Chaque écran est encadré par la **zone agent** — un header violet en haut, la barre d'onglets
-violette en bas. Ce qui se trouve entre les deux appartient à l'utilisateur.
+Chaque écran est encadré par la **livrée** — le ciel en haut, qui fond vers le blanc de l'écran
+de travail, et le dock noir flottant en bas. Ce qui se trouve entre les deux appartient à
+l'utilisateur, sur fond blanc, en cartes.
 
-L'accès à Relvo vit **au centre de la barre d'onglets**, à la même place sur toutes les pages,
-plus gros que les onglets et sans libellé ; il porte un badge quand Relvo attend une réponse.
-Le **menu latéral** s'ouvre depuis la gauche du header ; les boutons propres à la page se posent
-**à droite**. La barre d'onglets est **fixe** : elle ne se masque pas au défilement — un élément
-de navigation qui disparaît est un élément qu'on cherche.
+Le **ciel** porte, de haut en bas : la rangée des boutons (à gauche l'avatar sur l'accueil ou la
+flèche retour sur un écran poussé ; à droite les boutons propres à la page, puis le burger,
+discret), puis le titre de la page, gros et condensé, et son qualificatif. Il est court sur une
+page de liste, un peu plus haut sur l'accueil et sur une fiche dont il porte la bande de domaine
+et les onglets, et prend près de la moitié de l'écran sur la connexion. **La première carte
+chevauche toujours le bas du ciel** : c'est elle qui lie les deux zones, et le ciel réserve la
+place par son dégradé, jamais par une bordure.
 
-Une carte peut **chevaucher le bas du header** pour lier les deux zones ; le header réserve
-alors la place par un rembourrage bas.
+Le **dock** est une pilule noire décollée du bas et des bords, à cinq places, **fixe** : il ne
+se masque pas au défilement — un élément de navigation qui disparaît est un élément qu'on
+cherche. L'accès à Relvo vit **en son centre**, à la même place sur toutes les pages, un disque
+violet qui déborde du dock, sans libellé ; il porte un badge quand Relvo attend une réponse. Le
+dock est présent sur les pages à onglet et les pages du menu, et sur la fiche d'un sujet ; il
+**cède la place au composer** dans une conversation et dans l'échange, où l'on écrit.
+
+Le **menu latéral** s'ouvre depuis le burger, à droite du header, et glisse depuis la gauche
+par-dessus la page assombrie.
 
 ## Cibles tactiles et zones sûres
 
 Cible tactile minimale : **44 px**. Les zones sûres iOS (`env(safe-area-inset-*)`) sont
-respectées sous la barre d'onglets et au-dessus de la status bar.
+respectées : le dock flotte au-dessus de l'inset bas, et le ciel passe derrière la status bar.
 
 ## PWA — installable, plein écran, sans store
 
@@ -54,8 +64,9 @@ seconde base de code.
   Chrome iOS (tous deux WebKit). La seule friction réelle est l'absence d'invite automatique :
   le geste est manuel, et il s'accompagne.
 - **Status bar** : en `black-translucent`, la vue occupe tout l'écran, status bar comprise. Un
-  bandeau violet fixe de la hauteur de l'inset haut remplit la zone derrière elle — invisible
-  hors mode installé, où l'inset vaut zéro. `viewport-fit: cover` active les insets.
+  bandeau fixe, de la couleur du haut du ciel, de la hauteur de l'inset haut remplit la zone
+  derrière elle — invisible hors mode installé, où l'inset vaut zéro. `viewport-fit: cover`
+  active les insets.
 - ⚠️ **L'icône PWA exige un fond opaque.** Avec de la transparence, iOS compose l'icône sur du
   noir au lieu de la respecter.
 

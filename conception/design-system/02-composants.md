@@ -30,26 +30,57 @@ que le registre fournit est une **erreur de process**, pas un choix esthétique.
 
 ## Les règles de composition qui ne se devinent pas
 
-**Une entité de liste est une LIGNE dans UN panneau, pas une carte flottante.** Un sujet, une
-tâche, une conversation se rendent en ligne, séparées par un filet, dans un panneau blanc unique
-(`ListPanel`) posé sur le fond pierre. Des cartes empilées avec leurs marges et leurs ombres
-divisent par deux le nombre d'éléments visibles à l'écran — sur un produit dont le travail est de
-*trier*, c'est le mauvais arbitrage. Une ligne pose `data-list-row` sur sa racine : c'est ce qui
-retire le filet de la dernière.
+**Une entité de liste est une LIGNE dans UNE carte, pas une carte par ligne.** Un sujet, une
+tâche, une conversation, un contact se rendent en ligne, séparées par un filet, dans une carte
+blanche unique (`ListPanel`) posée sur le fond blanc de l'écran. Des cartes empilées avec leurs
+marges et leurs ombres divisent par deux le nombre d'éléments visibles à l'écran — sur un produit
+dont le travail est de *trier*, c'est le mauvais arbitrage. Une ligne pose `data-list-row` sur
+sa racine : c'est ce qui retire le filet de la dernière. **Une seule exception, voulue** : « En
+attente de vous », sur l'accueil, est une suite de cartes à feuilleter horizontalement, une par
+sujet, parce que chacune porte le contact, l'enjeu, depuis quand, et le geste — ce qu'une ligne
+ne peut pas porter.
 
-**Le BLANC est réservé à ce sur quoi on agit.** Sur une fiche, le fond pierre porte ce qui se
-lit (un résumé, une métadonnée), et le panneau blanc porte ce qui se manipule (les tâches, une
-décision à prendre). C'est la MATIÈRE qui dit l'importance, pas le libellé : deux panneaux blancs
-de même matière font deux zones d'égale importance — donc aucune. Corollaire : un texte n'a pas
-besoin d'un panneau.
+**La MATIÈRE dit l'importance, et il y a quatre matières.** Le **ciel** (le header en livrée,
+qui fond vers le blanc) porte l'identité et le titre de la page ; le **bloc de Relvo** (violet
+pâle, signé des étoiles) porte tout ce que l'agent dit ; la **carte blanche** porte ce qui se
+lit ou se manipule, chiffres, lignes, formulaires ; le **texte nu** sur le fond blanc porte les
+titres de zone et leurs qualificatifs. Deux cartes blanches de même matière font deux zones
+d'égale importance — donc aucune ; c'est la couleur qui hiérarchise, jamais une ombre plus
+forte. Corollaire : un texte n'a pas besoin d'une carte, et une carte ne contient jamais une
+autre carte avec sa propre ombre — un sujet cité dans un bloc de Relvo est une sous-carte à
+filet, sans ombre.
 
 **Mais toute zone est NOMMÉE, et les en-têtes sont symétriques.** Sans libellé, un écran encore
 vide n'est qu'une suite d'éléments flottants dont le lecteur ne sait pas à quoi ils servent —
-c'est le même patchwork, en plus plat. Chaque zone porte donc le même en-tête : le libellé en
-petites capitales à gauche, et à droite ce qui la qualifie (la source d'un texte, la progression
-d'une liste). La hiérarchie vient de la matière, la lisibilité vient du libellé ; les deux ne
-s'opposent pas. Un libellé ne disparaît jamais parce que sa zone est vide : c'est là qu'il sert
-le plus, au-dessus de l'invite qui amorce le remplissage.
+c'est le même patchwork, en plus plat. Chaque zone porte donc le même en-tête : le titre à
+gauche, et à droite ce qui la qualifie (le compte, la progression, la période). À l'intérieur
+d'une carte, le libellé est en petites capitales interlettrées. La hiérarchie vient de la
+matière, la lisibilité vient du libellé ; les deux ne s'opposent pas. Un libellé ne disparaît
+jamais parce que sa zone est vide : c'est là qu'il sert le plus, au-dessus de l'invite qui
+amorce le remplissage.
+
+**Le domaine se lit à sa bande, une par carte ou par ligne.** Une carte de sujet, une ligne de
+sujet, un sujet cité par Relvo, le bandeau « Suivi dans » d'une conversation portent sur leur
+tranche gauche la bande pleine de leur domaine et son nom en capitales condensées de la même
+couleur. Une seule bande par surface, sur la tranche : deux bandes sur un même objet, ou une
+bande sur une tâche qui a déjà son sujet écrit, font un camion de foire. Les icônes du dock, les
+pastilles d'état et les avatars ne portent jamais la couleur d'un domaine.
+
+**Les chiffres sont gros et condensés, le texte est fin.** Un indicateur, un horaire, un délai,
+un compte à droite d'une ligne sont en condensé gras ; un titre de ligne est en graisse normale,
+une explication en graisse fine. C'est ce qui permet de lire un écran debout : l'œil attrape
+les chiffres d'abord. Un même chiffre n'est jamais rendu deux fois sur un écran.
+
+**L'état se lit à la forme avant la couleur.** Urgent est une pastille pleine, en attente une
+pastille cerclée, en retard un horaire barré, fait une coche sur disque et un titre barré. La
+couleur confirme, la forme suffit. **La sélection est un cerclage** : l'indicateur actif d'une
+page est un chiffre cerclé, à distance de son libellé ; une puce de filtre active est pleine et
+noire ; l'onglet actif du dock se lit au blanc plein et à la graisse, jamais à un cerclage.
+
+**Chaque phrase de Relvo pointe sa preuve.** Un bloc de Relvo qui parle d'un sujet, d'une tâche
+ou d'un message porte sous la phrase le lien vers cet objet, ou l'objet lui-même en sous-carte ;
+une affirmation de l'agent sans porte vers ce qu'elle décrit est une affirmation que le
+dirigeant ne peut pas vérifier.
 
 **Un compteur à zéro ne s'affiche pas.** Un badge « 0 » n'informe de rien et encombre la barre
 qui le porte. La règle vaut partout : onglets, pastilles, puces.
@@ -78,9 +109,11 @@ rien n'est détruit.
 
 ## Rendu et fond
 
-**Un fond teinté sur du texte long l'étrangle.** Un e-mail se rend pleine largeur, sur fond
-blanc dans les deux sens : c'est l'**en-tête** (avatar, expéditeur, date) qui porte
-l'information de provenance. Les bulles restent réservées aux messages courts de messagerie.
+**Un fond teinté sur du texte long l'étrangle.** Un e-mail se rend pleine largeur, dans une
+carte blanche, dans les deux sens : c'est l'**en-tête** (expéditeur, destinataire, date) qui
+porte l'information de provenance. Les bulles restent réservées aux messages courts de
+messagerie, aux couleurs des acteurs : la mienne bleue à droite, celle d'un tiers ambre pâle à
+gauche. Relvo n'a pas de bulle, il a un bloc.
 
 **Un composant rendu par Relvo est le même que celui de l'écran.** Une carte de sujet affichée
 dans un échange avec l'agent est identique à celle de la liste — c'est ce qui rend l'agent
