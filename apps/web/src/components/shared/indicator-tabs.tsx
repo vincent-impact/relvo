@@ -9,9 +9,10 @@ import { cn } from "@/lib/utils";
 // un remplissage, qui ferait un aplat et effacerait un chiffre rouge. La carte
 // chevauche le bas du ciel, qui fond derrière elle (`overlap`).
 //
-// Un compteur à zéro ne s'affiche pas (02-composants) : la cellule reste, son
-// chiffre devient un tiret. `tone: "urgent"` rend le chiffre rouge dès qu'il
-// est supérieur à zéro, actif ou non — le retard se voit toujours.
+// Un indicateur à zéro s'écrit « 0 », en gris clair (02-composants) : la
+// cellule est fixe, un tiret y laisserait croire à une absence de donnée.
+// `tone: "urgent"` rend le chiffre rouge dès qu'il est supérieur à zéro, actif
+// ou non — le retard se voit toujours.
 // `count: undefined` = pas de chiffre à montrer sur cette cellule (un flux
 // déjà vu), le libellé seul.
 
@@ -67,7 +68,7 @@ export function IndicatorTabs<K extends string>({
                 n === 0 && !isActive && !urgent && "text-(--gris-clair)",
               )}
             >
-              {n === undefined ? "" : n === 0 ? "–" : n}
+              {n === undefined ? "" : n}
             </span>
             <span
               className={cn(

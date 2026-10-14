@@ -1186,6 +1186,13 @@ la typographie, la palette, la densité et un geste signature.
   Contacts, l'indicateur actif est un chiffre cerclé, à distance de son libellé.
 - **Pas de relance.** Le dirigeant a demandé une relance du tirage puis a confirmé la direction
   retenue ; la relance n'a pas été servie.
+- **Le retour du téléphone, une fois la direction posée dans l'application.** Le dirigeant l'a
+  regardée sur son compte et a tranché : le bouton Relvo **ne déborde plus**, il est posé dans
+  l'axe du dock, lui-même abaissé ; le ciel tient sur **une seule rangée** — titre, actions,
+  burger — et respire sous la barre d'état du téléphone, où les boutons se collaient ; l'avatar
+  de l'accueil est retiré, il ne menait nulle part ; un indicateur à zéro écrit « 0 », pas un
+  tiret. « Un compteur à zéro ne s'affiche pas » reste vrai pour les badges et les pastilles,
+  pas pour une cellule fixe.
 
 **Ce que la direction laisse au chantier qui l'habille** : les tokens dans le code, tenus par un
 test ; les règles de composition et les patterns récrits dans la même matière ; le fichier de

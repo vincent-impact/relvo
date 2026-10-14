@@ -77,7 +77,6 @@ const tokensAttendus = [
   // le chrome mobile
   "--dock-h",
   "--dock-marge",
-  "--dock-deborde",
   "--disque-relvo",
   "--bar-h",
   "--tab-h",

@@ -10,7 +10,6 @@ import { NewsPanel } from "@/components/home/news-panel";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { PollRefresh } from "@/components/shared/poll-refresh";
-import { initialsFor } from "@/lib/display";
 import {
   cachedAgendaTasks,
   cachedAwaitingSubjects,
@@ -129,19 +128,7 @@ export default async function AccueilPage() {
   return (
     <Screen>
       <PollRefresh />
-      <RelvoHeader
-        title={`Bonjour ${account.firstName}`}
-        eyebrow={dateLabel}
-        leading={
-          <span
-            aria-hidden
-            className="chiffre grid size-[34px] place-items-center rounded-full bg-white text-[14px] text-relvo"
-          >
-            {initialsFor(`${account.firstName} ${account.lastName ?? ""}`) ??
-              account.firstName.charAt(0).toUpperCase()}
-          </span>
-        }
-      >
+      <RelvoHeader title={`Bonjour ${account.firstName}`} eyebrow={dateLabel}>
         <Suspense fallback={<NewsSkeleton />}>
           <News
             accountId={account.id}

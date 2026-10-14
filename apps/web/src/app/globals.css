@@ -287,10 +287,9 @@
   --ombre-pressed: 0 2px 6px rgb(17 17 17 / 0.08);
 
   /* ── Le chrome mobile ───────────────────────────────────────────────────── */
-  --dock-h: 64px; /* la pilule */
+  --dock-h: 54px; /* la pilule */
   --dock-marge: 14px; /* son décollement du bas et des bords */
-  --dock-deborde: 8px; /* ce que le disque Relvo dépasse */
-  --disque-relvo: 56px;
+  --disque-relvo: 46px; /* au centre de la pilule, à 4 px de ses bords */
   --bar-h: 64px; /* le composer, ancré, qui remplace le dock */
   --tab-h: calc(
     var(--dock-h) + var(--dock-marge)

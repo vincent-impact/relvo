@@ -234,6 +234,23 @@ forme, le cadre ciel et dock). **Jusqu'à M19.5 et M19.7, le code décrit l'anci
   détecteurs d'impeccable signalent la bande de domaine comme tic d'interface générée tant que
   `DESIGN.md` n'écrit pas l'exception ; la page publique de suivi garde sa feuille à part.
 
+## Le retour du téléphone
+
+La tranche 2 poussée en production, le dirigeant a regardé l'application sur son compte : « beaucoup
+plus claire et agréable », et six retours, tous appliqués dans le même commit :
+
+- **Le ciel étouffait sous la barre d'état** : les boutons se collaient à l'heure et à la
+  batterie. Le header prend une marge sous la zone sûre.
+- **Une seule rangée dans le ciel** : le titre de la page, puis les actions et le burger à sa
+  droite, sur toutes les pages — la rangée des boutons seule disparaît. Un titre long (fiche,
+  conversation) descend sous la flèche. La rangée économisée paie la marge.
+- **L'avatar de l'accueil est retiré** : il ne menait nulle part.
+- **Un indicateur à zéro écrit « 0 »**, en gris clair, pas un tiret. `02-composants.md` distingue
+  désormais le badge (absent à zéro) de l'indicateur (cellule fixe).
+- **Le dock est abaissé** de dix pixels.
+- **Le bouton Relvo est réaxé** dans la pilule, il ne déborde plus : le brief, les tokens, les
+  patterns, les principes et la carte du projet sont corrigés ; `--dock-deborde` disparaît.
+
 ## Où on en est
 
 - [x] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 la

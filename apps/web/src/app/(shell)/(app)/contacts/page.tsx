@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { listConversationGroups } from "@relvo/db";
-import { RelvoHeader } from "@/components/layout/relvo-header";
+import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { ContactsSearchField } from "@/components/contacts/contacts-search-field";
@@ -66,13 +66,9 @@ export default async function ContactsPage({
             <Link
               href="/contacts/nouveau"
               aria-label="Nouveau contact"
-              className="grid size-[42px] flex-none place-items-center rounded-full text-white active:scale-95"
-              style={{
-                background: "rgb(255 255 255 / 0.15)",
-                boxShadow: "inset 0 0 0 1px rgb(255 255 255 / 0.3)",
-              }}
+              className={SKY_BTN}
             >
-              <Plus className="size-[22px]" strokeWidth={2.2} />
+              <Plus className="size-[18px]" strokeWidth={2.4} />
             </Link>
           }
         >

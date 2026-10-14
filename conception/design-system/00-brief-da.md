@@ -82,8 +82,8 @@ Deux invariants gouvernent chaque écran. Ils ne sont pas négociables, ils orie
 **La disposition est tranchée** et ne se rouvre pas dans une direction artistique :
 
 - **Cinq places dans le dock** : Accueil · Calendrier · **Relvo** · Sujets · Conversations. Relvo
-  au centre, plus gros, sans libellé, **le seul objet coloré du dock, et le seul qui en
-  déborde** ; il porte un badge quand Relvo attend une réponse.
+  au centre, sans libellé, **le seul objet coloré du dock**, posé dans son axe ; il porte un
+  badge quand Relvo attend une réponse.
 - **Un menu latéral**, ouvert par le burger, discret, à droite du header, pour tout ce qu'on
   ouvre moins d'une fois par jour : Bilan, Mémoire, Contacts, Canaux, Profil, Préférences, Usage,
   et Rechercher en dernier. Toute page du menu porte le burger ; la flèche retour, à gauche, est
@@ -178,9 +178,9 @@ signification de chaque famille de tokens vit dans [`01-tokens.md`](01-tokens.md
 
 ### Le bouton Relvo
 
-Le produit est plat ; le **bouton Relvo** est le seul objet coloré du dock et le seul qui en
-déborde. Ce qui le désigne, c'est la couleur et le débordement, pas un relief : si une tuile ou
-un panneau se met à briller, ou si un second objet déborde du dock, on perd « ce qui se détache,
+Le produit est plat ; le **bouton Relvo** est le seul objet coloré du dock, posé dans son axe.
+Ce qui le désigne, c'est la couleur, pas un relief ni un débordement : si une tuile ou un
+panneau se met à briller, ou si un second objet du dock se colore, on perd « ce qui se détache,
 c'est Relvo ».
 
 ### Le système d'état des sujets — à rendre visuellement, sans le complexifier
@@ -263,7 +263,7 @@ voici les pièces **signature**, celles qui portent l'identité :
 | La disposition : cinq places, Relvo au centre, menu latéral, accueil en brief, Calendrier | Hauteur du header, forme des chiffres, anatomie d'une ligne, ce qu'une zone montre en premier |
 | Le socle : dégradé vers le blanc, cartes, dock noir flottant, police fine, icônes pleines, couleur assumée, Relvo en bloc à part | Typographie, palette, densité, et **un** geste signature |
 | Les rôles sémantiques de couleur (Moi / Relvo / Externe, urgent, validé, en attente) et le violet livrée et voix | Température et saturation des teintes, la palette de domaines |
-| Le bouton Relvo, seul objet coloré du dock, seul à en déborder | Sa matière, tant qu'elle reste plate |
+| Le bouton Relvo, seul objet coloré du dock, dans son axe | Sa matière, tant qu'elle reste plate |
 | Le statut à trois valeurs, les marqueurs dérivés, la rareté de l'urgent | La forme des pastilles |
 | La divergence de rendu par canal | Le détail de cette divergence |
 | Mobile-first, colonne unique, cible tactile généreuse, thème clair | Densité, espacements |

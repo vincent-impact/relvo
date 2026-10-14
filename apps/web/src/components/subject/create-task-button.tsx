@@ -2,10 +2,11 @@
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
+import { SKY_BTN } from "@/components/layout/relvo-header";
 import { TaskModal } from "@/components/subject/task-modal";
 
-// Bouton « + » du header de l'Accueil (« Actions ») → crée une tâche via la
-// modale partagée, sujet OPTIONNEL (une tâche peut ne pas avoir de sujet).
+// Bouton « + » posé sur le ciel du Calendrier → crée une tâche via la modale
+// partagée, sujet OPTIONNEL (une tâche peut ne pas avoir de sujet).
 
 export function CreateTaskButton() {
   const [open, setOpen] = useState(false);
@@ -15,13 +16,9 @@ export function CreateTaskButton() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Nouvelle tâche"
-        className="grid size-[42px] flex-none place-items-center rounded-full text-white active:scale-95"
-        style={{
-          background: "rgb(255 255 255 / 0.15)",
-          boxShadow: "inset 0 0 0 1px rgb(255 255 255 / 0.3)",
-        }}
+        className={SKY_BTN}
       >
-        <Plus className="size-[22px]" strokeWidth={2.2} />
+        <Plus className="size-[18px]" strokeWidth={2.4} />
       </button>
 
       {open ? (

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Pencil } from "lucide-react";
+import { SKY_BTN } from "@/components/layout/relvo-header";
 import { toast } from "sonner";
 import { FolderLogoPicker } from "@/components/memoire/folder-logo-picker";
 import {
@@ -61,10 +62,9 @@ export function EditDomainButton({
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Modifier le domaine"
-        className="grid size-[38px] flex-none place-items-center rounded-full text-white active:scale-95"
-        style={{ background: "rgb(255 255 255 / 0.16)" }}
+        className={SKY_BTN}
       >
-        <Pencil className="size-[17px]" strokeWidth={2} />
+        <Pencil className="size-4" strokeWidth={2.2} />
       </button>
 
       <Dialog open={open} onOpenChange={setOpen}>

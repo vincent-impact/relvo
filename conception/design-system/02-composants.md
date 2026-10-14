@@ -82,8 +82,9 @@ ou d'un message porte sous la phrase le lien vers cet objet, ou l'objet lui-mêm
 une affirmation de l'agent sans porte vers ce qu'elle décrit est une affirmation que le
 dirigeant ne peut pas vérifier.
 
-**Un compteur à zéro ne s'affiche pas.** Un badge « 0 » n'informe de rien et encombre la barre
-qui le porte. La règle vaut partout : onglets, pastilles, puces.
+**Un badge à zéro ne s'affiche pas.** Une pastille ou une puce « 0 » n'informe de rien et
+encombre la barre qui la porte. Un **indicateur**, lui, est une cellule fixe : à zéro, il écrit
+« 0 », en gris clair — un tiret ou un vide y laisserait croire à une donnée manquante.
 
 **Une présentation unique par entité, partout.** Une tâche se rend de la même façon dans la
 liste d'un sujet et dans une liste à plat ; seul le contexte affiché varie (le titre du sujet
