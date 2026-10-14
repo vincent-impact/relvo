@@ -41,8 +41,8 @@ place par son dégradé, jamais par une bordure.
 Le **dock** est une pilule noire décollée du bas et des bords, à cinq places, **fixe** : il ne
 se masque pas au défilement — un élément de navigation qui disparaît est un élément qu'on
 cherche. L'accès à Relvo vit **en son centre**, à la même place sur toutes les pages, un disque
-violet cerclé de noir qui déborde du dock en haut et en bas, sans libellé ; il porte un badge
-quand Relvo attend une réponse. Le
+violet qui déborde du dock en haut et en bas, la pilule se soulevant autour de lui en courbe
+douce, sans libellé ; il porte un badge quand Relvo attend une réponse. Le
 dock est présent sur les pages à onglet et les pages du menu, et sur la fiche d'un sujet ; il
 **cède la place au composer** dans une conversation et dans l'échange, où l'on écrit.
 

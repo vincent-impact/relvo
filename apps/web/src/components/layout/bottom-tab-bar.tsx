@@ -14,9 +14,10 @@ import { cn } from "@/lib/utils";
 // Le dock — CINQ places, et rien de plus (invariant 35) : Accueil · Calendrier ·
 // Relvo · Sujets · Conversations. Une pilule NOIRE, flottante, décollée du bas
 // et des bords (design-system/03-patterns, « Le cadre : le ciel en haut, le dock
-// en bas »). Relvo au centre, sans libellé, un disque violet cerclé de noir qui
-// déborde de la pilule en haut et en bas (RelvoDockButton) : c'est l'accès à
-// l'échange, au même endroit sur toutes les pages, sous le pouce. Une entrée ne s'ajoute pas au dock, elle en
+// en bas »). Relvo au centre, sans libellé, un disque violet qui déborde de la
+// pilule en haut et en bas, et autour duquel la pilule se soulève en courbe
+// douce, comme un tissu tendu (DockFabric) : c'est l'accès à l'échange, au même
+// endroit sur toutes les pages, sous le pouce. Une entrée ne s'ajoute pas au dock, elle en
 // remplace une. Tout ce qu'on ouvre moins d'une fois par jour vit dans le
 // menu latéral (SideMenu).
 //
@@ -64,7 +65,7 @@ function TabLink({ tab, pathname }: { tab: Tab; pathname: string }) {
       href={tab.href}
       aria-current={active ? "page" : undefined}
       className={cn(
-        "flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 text-white transition-opacity",
+        "relative flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-0.5 text-white transition-opacity",
         active ? "opacity-100" : "opacity-60",
       )}
     >
@@ -83,20 +84,75 @@ function TabLink({ tab, pathname }: { tab: Tab; pathname: string }) {
   );
 }
 
+// La silhouette du dock : la pilule noire, soulevée autour du disque central.
+// Trois pièces de la même couleur, qui se recouvrent d'un pixel pour ne laisser
+// aucun filet : la moitié gauche et la moitié droite de la pilule, et au centre
+// une pièce SVG de largeur fixe qui porte la courbe — un plat, une montée douce
+// (cubique), un sommet qui épouse le disque, et la descente symétrique ; la
+// même chose en bas. L'ombre du dock est une drop-shadow sur l'ensemble, pour
+// qu'elle suive la silhouette et non le rectangle.
+//
+// Le dessin est calé sur `--dock-h` (54) et `--dock-etire` (10) : HAUTEUR et
+// ETIRE ici doivent valoir la même chose que les tokens.
+const LARGEUR = 132; // la pièce centrale
+const HAUTEUR = 54; // = --dock-h
+const ETIRE = 10; // = --dock-etire
+const PLAT = 10; // le plat avant la montée, de chaque côté
+
+function cheminTissu() {
+  const h = HAUTEUR + 2 * ETIRE;
+  const m = LARGEUR / 2;
+  const x1 = PLAT;
+  const x2 = LARGEUR - PLAT;
+  // Montée douce de (x1, ETIRE) au sommet (m, 0), tangente horizontale aux deux
+  // bouts ; les points de contrôle tirent la courbe vers le disque.
+  const haut = `M 0 ${ETIRE} L ${x1} ${ETIRE} C ${x1 + 30} ${ETIRE} ${m - 22} 0 ${m} 0 C ${m + 22} 0 ${x2 - 30} ${ETIRE} ${x2} ${ETIRE} L ${LARGEUR} ${ETIRE}`;
+  const bas = `L ${LARGEUR} ${h - ETIRE} L ${x2} ${h - ETIRE} C ${x2 - 30} ${h - ETIRE} ${m + 22} ${h} ${m} ${h} C ${m - 22} ${h} ${x1 + 30} ${h - ETIRE} ${x1} ${h - ETIRE} L 0 ${h - ETIRE} Z`;
+  return `${haut} ${bas}`;
+}
+
+function DockFabric() {
+  const h = HAUTEUR + 2 * ETIRE;
+  const demi = LARGEUR / 2 - 1; // recouvrement d'un pixel de chaque côté
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0">
+      <div
+        className="absolute inset-y-0 left-0 rounded-l-(--rayon-dock) bg-noir"
+        style={{ right: `calc(50% + ${demi}px)` }}
+      />
+      <div
+        className="absolute inset-y-0 right-0 rounded-r-(--rayon-dock) bg-noir"
+        style={{ left: `calc(50% + ${demi}px)` }}
+      />
+      <svg
+        className="absolute left-1/2 -translate-x-1/2 fill-noir"
+        style={{ top: `calc(-1 * var(--dock-etire))` }}
+        width={LARGEUR}
+        height={h}
+        viewBox={`0 0 ${LARGEUR} ${h}`}
+      >
+        <path d={cheminTissu()} />
+      </svg>
+    </div>
+  );
+}
+
 export function BottomTabBar() {
   const pathname = usePathname();
 
   return (
     <nav
       aria-label="Navigation principale"
-      className="flex h-(--dock-h) items-stretch rounded-(--rayon-dock) bg-noir shadow-dock"
+      className="relative flex h-(--dock-h) items-stretch"
+      style={{ filter: "drop-shadow(var(--ombre-dock))" }}
     >
+      <DockFabric />
       {LEFT.map((tab) => (
         <TabLink key={tab.href} tab={tab} pathname={pathname} />
       ))}
       {/* La place centrale : le disque dans l'axe de la pilule, plus grand
-          qu'elle ; son anneau noir est le dock qui s'étire autour de lui. */}
-      <div className="flex flex-1 items-center justify-center">
+          qu'elle ; la pilule se soulève autour de lui (DockFabric). */}
+      <div className="relative flex flex-1 items-center justify-center">
         <RelvoDockButton />
       </div>
       {RIGHT.map((tab) => (

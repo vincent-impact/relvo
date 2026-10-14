@@ -211,7 +211,7 @@ compteurs du jour — « deux réponses attendues, une urgence ». Un calcul, au
 
 La barre d'onglets porte cinq places, et rien de plus : **Accueil · Calendrier · Relvo · Sujets
 · Conversations**. Relvo est au centre, plus gros, sans libellé : c'est le seul objet coloré du
-dock, cerclé de noir et plus haut que lui, et il est sous le pouce. L'échange proprement dit est une **surface plein écran**,
+dock, plus haut que lui et autour duquel le dock se soulève, et il est sous le pouce. L'échange proprement dit est une **surface plein écran**,
 atteinte depuis ce bouton, présent au même endroit sur toutes les pages, et qui transmet le
 contexte de la page d'origine. Quand Relvo attend une réponse, le bouton porte un badge.
 

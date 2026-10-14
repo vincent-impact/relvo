@@ -249,10 +249,11 @@ plus claire et agréable », et six retours, tous appliqués dans le même commi
   désormais le badge (absent à zéro) de l'indicateur (cellule fixe).
 - **Le dock est abaissé** de dix pixels.
 - **Le bouton Relvo est réaxé** dans la pilule. Un premier essai sans débord semblait posé sur
-  la barre ; le dirigeant a demandé un disque plus grand, qui déborde en haut et en bas, cerclé
-  d'un **anneau noir** qui prolonge le dock autour de lui (`--disque-anneau`). Le brief, les
-  tokens, les patterns, les principes et la carte du projet le disent ; `--dock-deborde`
-  disparaît.
+  la barre ; un anneau noir autour d'un disque plus grand était trop circulaire ; le dirigeant a
+  montré sa référence : la pilule se **soulève autour du disque** en courbe douce, comme un
+  tissu tendu. C'est une silhouette SVG derrière la pilule (`DockFabric`, calée sur `--dock-h`
+  et `--dock-etire`), l'ombre en drop-shadow pour qu'elle la suive. Le brief, les tokens, les
+  patterns, les principes et la carte du projet le disent ; `--dock-deborde` disparaît.
 
 ## Où on en est
 

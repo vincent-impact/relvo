@@ -128,9 +128,9 @@ et un libellé en capitales `--relvo`.
 Le **dock** porte `--rayon-dock` (32 px, pilule) et une ombre portée vers le bas, puisqu'il
 flotte ; le **composer** d'une conversation, lui, est ancré et projette son ombre vers le haut.
 Le **bouton Relvo** est un disque `--rayon-rond` en dégradé de violet, plus haut que le dock,
-qui en déborde en haut et en bas dans son axe ; un **anneau noir** (`--disque-anneau`), de la
-couleur du dock et portant son ombre, l'entoure : le dock s'étire en rond autour du disque, qui
-est dans la barre, pas posé dessus. Le badge rouge est repoussé hors du bord.
+qui en déborde en haut et en bas dans son axe ; la pilule **se soulève autour de lui**
+(`--dock-etire`) en courbe douce, comme un tissu tendu, et son ombre suit cette silhouette : le
+disque est dans la barre, pas posé dessus. Le badge rouge est repoussé hors du bord.
 
 Il n'y a **ni verre, ni grain, ni relief** : le produit est plat, et c'est la couleur qui fait
 la hiérarchie. Les **rayons sont comptés** : pilule (`--rayon-pilule`) pour une puce, un bouton
