@@ -150,27 +150,17 @@ const EXCEPTIONS_DURABLES = new Set([
 const RESTE_A_MIGRER = [
   "src/app/(shell)/(app)/memoire/[id]/page.tsx",
   "src/app/(shell)/(app)/sujets/[id]/page.tsx",
-  "src/components/contacts/contacts-directory.tsx",
   "src/components/contacts/contacts-groups.tsx",
-  "src/components/conversations/conversation-list.tsx",
   "src/components/conversations/decision-sheet.tsx",
   "src/components/conversations/email-html-frame.tsx",
   "src/components/conversations/email-message.tsx",
-  "src/components/home/news-panel.tsx",
-  "src/components/layout/header-switch.tsx",
-  "src/components/layout/relvo-dock-button.tsx",
-  "src/components/layout/side-menu.tsx",
-  "src/components/relvo-chat/relvo-chat-shell.tsx",
   "src/components/shared/attachment-preview.tsx",
-  "src/components/shared/message-bubble.tsx",
   "src/components/shared/metrics-card.tsx",
-  "src/components/shared/subject-row.tsx",
   "src/components/subject/informations-pane.tsx",
   "src/components/subject/journal-pane.tsx",
   "src/components/subject/relvo-draft-block.tsx",
   "src/components/subject/resolution-banner.tsx",
   "src/components/subject/subject-conversations-list.tsx",
-  "src/components/subject/task-item.tsx",
 ];
 
 function* fichiersSource(dir: string): Generator<string> {

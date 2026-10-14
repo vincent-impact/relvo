@@ -46,68 +46,69 @@ export function InstructionList({
 
   return (
     <div className={cn("px-4 pt-4", className)}>
-      {notes.length === 0 ? (
-        <p className="py-6 text-center text-[13.5px] text-(--text-tertiary)">
-          Aucune instruction. Ajoutez des consignes que Relvo suivra.
-        </p>
-      ) : (
-        <div className="space-y-2.5">
-          {notes.map((n) => (
+      {/* Une liste = UNE carte : les instructions en lignes, la ligne « Ajouter »
+          en dernier (design-system/02-composants). */}
+      <div className="overflow-hidden rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte">
+        {notes.length === 0 ? (
+          <p className="px-4 py-5 text-[13.5px] font-light text-gris">
+            Aucune instruction. Ajoutez des consignes que Relvo suivra.
+          </p>
+        ) : (
+          notes.map((n) => (
             <button
               key={n.id}
               type="button"
               onClick={() => setEditing(n)}
-              className="block w-full rounded-2xl border border-(--border-light) bg-white p-3.5 text-left shadow-(--shadow-card) transition active:scale-[0.99]"
+              className="flex w-full items-start gap-2.5 border-b border-(--filet) px-3.5 py-3 text-left active:bg-(--fond-enfonce)"
             >
-              <div className="mb-1.5 flex items-center gap-2">
-                <Sparkles
-                  className={cn(
-                    "size-3.5 flex-none",
-                    n.active ? "text-relvo" : "text-(--text-tertiary)",
-                  )}
-                  fill="currentColor"
-                  strokeWidth={0}
-                />
-                <span className="flex-1 truncate text-[14.5px] font-bold">
-                  {n.name}
-                </span>
-                {!n.active ? (
-                  <span className="flex-none rounded-full bg-(--surface-2) px-2 py-0.5 text-[10.5px] font-bold text-(--text-tertiary)">
-                    Désactivée
+              <Sparkles
+                className={cn(
+                  "mt-1 size-3.5 flex-none",
+                  n.active ? "text-relvo" : "text-(--gris-clair)",
+                )}
+                fill="currentColor"
+                strokeWidth={0}
+              />
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span
+                    className={cn(
+                      "flex-1 truncate text-[14.5px] leading-[18px] font-normal",
+                      n.active ? "text-noir" : "text-gris",
+                    )}
+                  >
+                    {n.name}
                   </span>
-                ) : null}
-              </div>
-              {n.content ? (
-                <p
-                  className={cn(
-                    "line-clamp-3 text-[13.5px] leading-[1.45] whitespace-pre-wrap",
-                    n.active
-                      ? "text-(--text-secondary)"
-                      : "text-(--text-tertiary)",
-                  )}
-                >
-                  {n.content}
-                </p>
-              ) : (
-                <p className="text-[13px] text-(--text-tertiary) italic">
-                  (Vide)
-                </p>
-              )}
+                  {!n.active ? (
+                    <span className="flex-none rounded-(--rayon-pilule) bg-(--fond-puce) px-2 py-0.5 text-[10.5px] font-medium text-gris">
+                      Désactivée
+                    </span>
+                  ) : null}
+                </span>
+                {n.content ? (
+                  <span className="mt-0.5 line-clamp-2 text-[12.5px] leading-[16px] font-light whitespace-pre-wrap text-gris">
+                    {n.content}
+                  </span>
+                ) : (
+                  <span className="mt-0.5 block text-[12.5px] font-light text-gris italic">
+                    (Vide)
+                  </span>
+                )}
+              </span>
             </button>
-          ))}
-        </div>
-      )}
-
-      <button
-        type="button"
-        onClick={() => setEditing("new")}
-        className="mt-3 flex w-full items-center gap-2.5 rounded-2xl border border-dashed border-(--border) px-3.5 py-3.5 text-[13.5px] font-semibold text-(--text-secondary)"
-      >
-        <span className="grid size-6 flex-none place-items-center rounded-full bg-(--surface-2)">
-          <Plus className="size-[15px]" strokeWidth={2.4} />
-        </span>
-        Ajouter une instruction
-      </button>
+          ))
+        )}
+        <button
+          type="button"
+          onClick={() => setEditing("new")}
+          className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left text-[14px] font-medium text-relvo active:bg-relvo-pale"
+        >
+          <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-pale">
+            <Plus className="size-[15px]" strokeWidth={2.4} />
+          </span>
+          Ajouter une instruction
+        </button>
+      </div>
 
       <InstructionEditor
         key={editing === "new" ? "new" : (editing?.id ?? "none")}

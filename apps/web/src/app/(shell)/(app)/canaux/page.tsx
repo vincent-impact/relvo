@@ -20,13 +20,24 @@ export const metadata: Metadata = { title: "Canaux — Relvo" };
 // PERF : le hero s'affiche instantanément ; la liste (canaux en base) stream
 // dans un <Suspense>.
 
-const CHANNEL_STATUS: Record<string, { label: string; cls: string }> = {
-  connected: { label: "Connecté", cls: "bg-(--green-50) text-(--green-600)" },
-  pending: { label: "En attente", cls: "bg-(--amber-50) text-(--amber-800)" },
-  error: { label: "Erreur", cls: "bg-(--red-50) text-(--red-600)" },
+// L'état se lit à la forme avant la couleur (01-tokens) : connecté = pastille
+// pleine verte, en attente = pastille cerclée ambre, erreur = pleine rouge,
+// désactivé = cerclée grise.
+const CHANNEL_STATUS: Record<
+  string,
+  { label: string; cls: string; dot: string }
+> = {
+  connected: { label: "Connecté", cls: "text-fait", dot: "bg-fait" },
+  pending: {
+    label: "En attente",
+    cls: "text-attente-texte",
+    dot: "border-2 border-(--attente)",
+  },
+  error: { label: "Erreur", cls: "text-urgent", dot: "bg-urgent" },
   disabled: {
     label: "Désactivé",
-    cls: "bg-(--surface-2) text-(--text-tertiary)",
+    cls: "text-gris",
+    dot: "border-2 border-(--gris-clair)",
   },
 };
 
@@ -64,9 +75,9 @@ async function ChannelList() {
 
   return (
     <div className="px-4 pt-5">
-      <div className="overflow-hidden rounded-2xl border border-(--border-light) bg-white shadow-(--shadow-card)">
+      <div className="overflow-hidden rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte">
         {channels.length === 0 ? (
-          <p className="p-5 text-center text-[13.5px] text-(--text-tertiary)">
+          <p className="p-5 text-center text-[13.5px] font-light text-gris">
             Aucun canal connecté.
           </p>
         ) : (
@@ -76,16 +87,16 @@ async function ChannelList() {
             return (
               <div
                 key={ch.id}
-                className={`flex items-center gap-3 px-4 py-3.5 ${i > 0 ? "border-t border-(--border-light)" : ""}`}
+                className={`flex items-center gap-3 px-3.5 py-3 ${i > 0 ? "border-t border-(--filet)" : ""}`}
               >
-                <span className="grid size-9 flex-none place-items-center rounded-xl bg-(--surface-2) text-(--text-secondary)">
+                <span className="grid size-9 flex-none place-items-center rounded-full bg-relvo-pale text-relvo">
                   <Icon className="size-[18px]" strokeWidth={2} />
                 </span>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14.5px] font-semibold">
+                  <div className="truncate text-[14.5px] leading-[18px] font-normal text-noir">
                     {ch.name}
                   </div>
-                  <div className="truncate text-[12.5px] text-(--text-tertiary)">
+                  <div className="truncate text-[12px] font-light text-gris">
                     {ch.identifier}
                   </div>
                   {ch.catchups[0] ? (
@@ -95,8 +106,9 @@ async function ChannelList() {
                   ) : null}
                 </div>
                 <span
-                  className={`flex-none rounded-full px-2.5 py-1 text-[11px] font-bold ${st.cls}`}
+                  className={`inline-flex flex-none items-center gap-1.5 text-[11px] font-medium tracking-[0.06em] uppercase ${st.cls}`}
                 >
+                  <i aria-hidden className={`size-2 rounded-full ${st.dot}`} />
                   {st.label}
                 </span>
                 {/* Reconnecter (ré-auth du même compte, sans perte) — seulement

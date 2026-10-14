@@ -84,46 +84,42 @@ export default async function BilanPage({
           <ZoneHeading
             label="Ce que Relvo a fait pour vous"
             hint={
-              <span className="inline-flex items-center gap-1.5 font-semibold text-relvo">
+              <span className="inline-flex items-center gap-1.5 font-medium text-relvo">
                 <RelvoLogo size={14} title="" />
                 Relvo
               </span>
             }
           />
-          <div className="mx-4 grid grid-cols-2 overflow-hidden rounded-[14px] border border-(--hairline) bg-white shadow-surface-1">
+          <div className="mx-4 grid grid-cols-3 overflow-hidden rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte">
             {tiles.map((t, i) => (
               <div
                 key={t.label}
                 className={cn(
                   "px-3.5 py-3",
-                  i % 2 === 0 && "border-r border-(--border-light)",
-                  i < tiles.length - 2 && "border-b border-(--border-light)",
+                  i % 3 !== 0 && "border-l border-(--filet)",
+                  i < tiles.length - 3 && "border-b border-(--filet)",
                 )}
               >
-                <div className="font-numeric text-[26px] leading-none font-semibold tabular-nums">
+                <div className="chiffre text-[30px] leading-8 text-noir">
                   {t.value}
                 </div>
-                <div className="mt-[5px] text-[12px] text-(--text-secondary)">
+                <div className="mt-px text-[12px] font-light text-gris">
                   {t.label}
                 </div>
               </div>
             ))}
           </div>
-          <p className="mx-[18px] mt-2 text-[12px] leading-[1.4] text-(--text-secondary)">
+          <p className="mx-4 mt-2 text-[12px] leading-[1.4] font-light text-gris">
             Chaque chiffre viendra du journal. Un tap ouvrira la liste derrière.
           </p>
         </section>
 
         <section>
           <ZoneHeading label="Où en êtes-vous" hint="7 derniers jours" />
-          <div className="mx-4 rounded-[14px] border border-(--hairline) bg-white px-3.5 pt-3 pb-2.5 shadow-surface-1">
+          <div className="mx-4 rounded-(--rayon-carte) border border-(--filet) bg-white px-3.5 pt-3 pb-2.5 shadow-carte">
             <div className="mb-2 flex items-baseline justify-between">
-              <span className="text-[14.5px] font-medium">
-                Messages reçus par jour
-              </span>
-              <span className="font-numeric text-[12.5px] text-(--text-secondary) tabular-nums">
-                {total} au total
-              </span>
+              <span className="libelle">Messages reçus par jour</span>
+              <span className="libelle">{total} au total</span>
             </div>
             <div
               className="flex h-24 items-end gap-1.5"
@@ -136,9 +132,7 @@ export default async function BilanPage({
                   className="flex h-full flex-1 flex-col items-center justify-end gap-1"
                 >
                   {d.n === max ? (
-                    <span className="font-numeric text-[11px] text-(--text-secondary)">
-                      {d.n}
-                    </span>
+                    <span className="chiffre text-[11px] text-gris">{d.n}</span>
                   ) : null}
                   <span
                     className="w-full rounded-t-[4px] bg-(--purple-600)"

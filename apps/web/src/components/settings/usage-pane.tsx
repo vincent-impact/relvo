@@ -15,10 +15,10 @@ export function UsagePane() {
         Valeur de démonstration : le compteur réel arrivera avec le plafond par
         compte.
       </DemoNotice>
-      <div className="mx-4 rounded-[14px] border border-(--hairline) bg-white px-4 py-4 shadow-surface-1">
+      <div className="mx-4 rounded-(--rayon-carte) border border-(--filet) bg-white px-4 py-4 shadow-carte">
         <div className="flex items-baseline justify-between">
-          <span className="text-[14.5px] font-medium">Ce mois-ci</span>
-          <span className="font-numeric text-[22px] font-semibold text-relvo tabular-nums">
+          <span className="libelle">Ce mois-ci</span>
+          <span className="chiffre text-[44px] leading-none text-relvo">
             {percent} %
           </span>
         </div>
@@ -27,7 +27,7 @@ export function UsagePane() {
           aria-label="Part du plafond mensuel consommée"
           className="mt-3"
         />
-        <p className="mt-3 text-[12.5px] leading-[1.4] text-(--text-secondary)">
+        <p className="mt-3 text-[13px] leading-[1.45] font-light text-noir">
           La part de votre plafond mensuel que Relvo a consommée pour lire,
           trier et rédiger. Au plafond, Relvo ne s&apos;arrête pas de ranger :
           il cesse seulement de solliciter le modèle jusqu&apos;au mois suivant.

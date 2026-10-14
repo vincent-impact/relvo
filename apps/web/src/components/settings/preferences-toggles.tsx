@@ -63,11 +63,13 @@ export function PreferencesToggles({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-(--border-light) bg-white shadow-(--shadow-card)">
+    <div className="overflow-hidden rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte">
       <div className={ROW}>
         <div className="min-w-0 flex-1">
-          <div className="text-[14.5px] font-semibold">Assistant Relvo</div>
-          <div className="mt-0.5 text-[12.5px] text-(--text-tertiary)">
+          <div className="text-[14.5px] font-normal text-noir">
+            Assistant Relvo
+          </div>
+          <div className="mt-0.5 text-[12.5px] font-light text-gris">
             Relvo lit les messages reçus, ouvre les sujets qui le méritent et
             prépare le travail. Coupé, les messages arrivent quand même et vous
             triez à la main.
@@ -81,10 +83,10 @@ export function PreferencesToggles({
         />
       </div>
       {PREFS.map((p) => (
-        <div key={p.key} className={`${ROW} border-t border-(--border-light)`}>
+        <div key={p.key} className={`${ROW} border-t border-(--filet)`}>
           <div className="min-w-0 flex-1">
-            <div className="text-[14.5px] font-semibold">{p.label}</div>
-            <div className="mt-0.5 text-[12.5px] text-(--text-tertiary)">
+            <div className="text-[14.5px] font-normal text-noir">{p.label}</div>
+            <div className="mt-0.5 text-[12.5px] font-light text-gris">
               {p.desc}
             </div>
           </div>

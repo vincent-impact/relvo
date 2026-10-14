@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { enrichSubjects } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
+import { ListPanel } from "@/components/shared/list-panel";
 import { Screen } from "@/components/layout/screen";
 import { SearchBar } from "@/components/search/search-bar";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
@@ -58,11 +59,11 @@ async function SearchResults({ query }: { query: string }) {
   }
 
   return (
-    <div className="pt-2">
+    <ListPanel className="mt-3">
       {rows.map((row) => (
         <SubjectRow key={row.id} data={row} />
       ))}
-    </div>
+    </ListPanel>
   );
 }
 
@@ -81,7 +82,7 @@ export default async function RecherchePage({
       </RelvoHeader>
 
       {!query ? (
-        <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
+        <p className="px-[22px] py-10 text-center text-[13.5px] font-light text-gris">
           Cherchez un sujet par son titre, sa référence ou un contact rattaché.
         </p>
       ) : (

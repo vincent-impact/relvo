@@ -37,23 +37,23 @@ function ContactRow({ contact }: { contact: DirectoryContact }) {
   return (
     <Link
       href={`/contacts/${contact.id}`}
-      className="flex items-center gap-3 border-b border-[#f1efeb] px-[18px] py-3.5 active:bg-(--surface-2)"
+      className="flex items-center gap-3 border-b border-(--filet) px-3.5 py-2.5 active:bg-(--fond-enfonce)"
     >
-      <span className="grid size-[42px] flex-none place-items-center rounded-full bg-(--amber-600) text-[14px] font-extrabold text-white">
+      <span className="chiffre grid size-10 flex-none place-items-center rounded-full bg-actor-ext-fond text-[14px] text-actor-ext">
         {contactInitials(contact)}
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-[15.5px] font-bold">
+        <div className="text-[14.5px] leading-[18px] font-normal text-noir">
           {contactFullName(contact)}
         </div>
         {sub ? (
-          <div className="mt-0.5 truncate text-[13px] text-[#86857d]">
+          <div className="mt-0.5 truncate text-[12px] font-light text-gris">
             {sub}
           </div>
         ) : null}
       </div>
       {contact.status === "auto" ? (
-        <span className="flex-none rounded-full bg-(--amber-50) px-2.5 py-1 text-[11px] font-bold text-(--amber-800)">
+        <span className="flex-none rounded-(--rayon-pilule) border border-(--attente) px-2.5 py-0.5 text-[11px] font-medium text-attente-texte">
           À compléter
         </span>
       ) : null}
@@ -114,7 +114,7 @@ export function ContactsDirectory({
     <div className="pt-1">
       {sections.map((section) => (
         <section key={section.letter}>
-          <h2 className="sticky top-0 z-[1] bg-white px-[22px] pt-3 pb-1 text-[12.5px] font-extrabold text-relvo">
+          <h2 className="domaine sticky top-0 z-1 bg-white px-3.5 pt-3 pb-1 text-gris">
             {section.letter}
           </h2>
           {section.items.map((c) => (

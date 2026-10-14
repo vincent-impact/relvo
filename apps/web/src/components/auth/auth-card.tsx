@@ -18,16 +18,16 @@ export function AuthCard({
   return (
     <div
       className={cn(
-        "rounded-[20px] border border-(--hairline) bg-white p-6 shadow-surface-2",
+        "rounded-(--rayon-carte) border border-(--filet) bg-white p-6 shadow-carte",
         className,
       )}
     >
       <div className="mb-5">
-        <h1 className="font-heading text-[22px] leading-tight font-semibold tracking-[-0.02em] text-(--text-primary)">
+        <h1 className="text-[20px] leading-tight font-medium tracking-[-0.01em] text-noir">
           {title}
         </h1>
         {description ? (
-          <p className="mt-1.5 text-[13.5px] leading-[1.45] text-(--text-secondary)">
+          <p className="mt-1 text-[13.5px] leading-[1.45] font-light text-gris">
             {description}
           </p>
         ) : null}

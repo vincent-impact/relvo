@@ -85,23 +85,23 @@ async function MemoireBody({ accountId }: { accountId: string }) {
                 key={f.id}
                 data-list-row
                 href={`/memoire/${f.id}`}
-                className="flex items-center gap-3 border-b border-(--border-light) px-3.5 py-3 active:bg-(--surface)"
+                className="flex h-[58px] items-center gap-2.5 border-b border-(--filet) px-3.5 active:bg-(--fond-enfonce)"
               >
                 <span
                   aria-hidden
-                  className="h-[34px] w-[3px] flex-none rounded-[2px]"
+                  className="bande-ligne"
                   style={{ background: color }}
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="truncate text-[14.5px] leading-[1.25] font-medium">
+                  <div className="truncate text-[14.5px] leading-[18px] font-normal text-noir">
                     {f.name}
                   </div>
-                  <div className="mt-0.5 text-[12px] text-(--text-secondary)">
+                  <div className="truncate text-[12px] leading-[14px] font-light text-gris">
                     {folderSub(f)}
                   </div>
                 </div>
                 <ChevronRight
-                  className="size-4 flex-none text-(--text-tertiary)"
+                  className="size-4 flex-none text-(--gris-clair)"
                   strokeWidth={2}
                 />
               </Link>
@@ -112,7 +112,7 @@ async function MemoireBody({ accountId }: { accountId: string }) {
 
       <section>
         <ZoneHeading label="Ce que Relvo a appris" hint="bientôt" />
-        <p className="mx-[18px] text-[13.5px] leading-[1.45] text-(--text-secondary)">
+        <p className="mx-4 text-[13.5px] leading-[1.45] font-light text-gris">
           Relvo notera ici ce qu&apos;il a compris de vos habitudes en vous
           regardant trier, et vous pourrez le corriger d&apos;un geste. Rien de
           ce qu&apos;il apprend ici n&apos;est partagé avec un autre compte.
