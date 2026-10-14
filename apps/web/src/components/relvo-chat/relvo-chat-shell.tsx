@@ -2,15 +2,18 @@
 
 import { useRef, useState } from "react";
 import Link from "next/link";
-import { History, Mic, Paperclip, Send, Sparkles, X } from "lucide-react";
+import { History, Mic, Paperclip, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { MobileFrame } from "@/components/layout/mobile-frame";
-import { RelvoHeader } from "@/components/layout/relvo-header";
+import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
+import { RELVO_LOGO_PATHS } from "@/components/layout/relvo-logo";
 
-// Coquille de conversation plein écran (M9 / ux-mobile-first §5), Direction B :
-// hero violet (logo = historique) + empty-state (orb + prompts cliquables qui
-// pré-remplissent) + composer violet « Liquid Glass ». SANS IA : le streaming,
-// les tools et le stockage IndexedDB arrivent en M10.
+// Coquille de conversation plein écran (M9 / ux-mobile-first §5) : le ciel
+// court (retour, historique), le chip de contexte, l'état vide (le disque de
+// Relvo et des invites en options pointillées qui pré-remplissent), et le
+// composer BLANC ancré en bas — champ gris, disque violet pour dicter ou
+// envoyer — qui prend la place du dock. SANS IA : le streaming, les tools et le
+// stockage IndexedDB arrivent en M10.
 
 export function RelvoChatShell({
   backHref,
@@ -54,28 +57,22 @@ export function RelvoChatShell({
           <Link
             href="/relvo/historique"
             aria-label="Historique des conversations"
-            className="pressable grid size-[38px] flex-none place-items-center rounded-full"
-            style={{
-              background: "rgb(255 255 255 / 0.14)",
-              border: "1px solid rgb(255 255 255 / 0.28)",
-              boxShadow:
-                "inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(0 0 0 / 0.18)",
-            }}
+            className={SKY_BTN}
           >
-            <History className="size-5" strokeWidth={2} />
+            <History className="size-[17px]" strokeWidth={2.4} />
           </Link>
         }
       />
 
       {contextLabel ? (
-        <div className="flex flex-none items-center gap-2 border-b border-(--border-light) px-4 py-2 text-[12.5px] text-(--text-secondary)">
-          <span className="inline-flex min-w-0 items-center gap-1.5 truncate rounded-full border border-(--hairline) bg-white px-2.5 py-1 font-semibold text-(--text-primary) shadow-[inset_0_1px_0_rgb(255_255_255/0.9),0_1px_2px_rgb(20_18_40/0.05)]">
+        <div className="flex flex-none items-center gap-2 px-4 pt-3 pb-1 text-[12px] text-gris">
+          <span className="inline-flex h-7 min-w-0 items-center gap-1.5 truncate rounded-(--rayon-pilule) border border-(--filet) bg-white px-3 font-normal text-noir">
             Contexte : {contextLabel}
           </span>
           <Link
             href="/relvo"
             aria-label="Discussion générale"
-            className="ml-auto grid size-6 place-items-center rounded-full bg-(--surface-2) text-(--text-tertiary)"
+            className="ml-auto grid size-7 place-items-center rounded-full bg-(--fond-puce) text-gris"
           >
             <X className="size-3.5" strokeWidth={2.4} />
           </Link>
@@ -84,13 +81,26 @@ export function RelvoChatShell({
 
       <main className="min-h-0 flex-1 overflow-y-auto bg-background px-[18px] py-7">
         <div className="mb-5 flex flex-col items-center gap-2.5 text-center">
-          <div className="grid size-[52px] place-items-center rounded-full border border-[#3d3399] bg-linear-to-b from-[#5a4fc9] to-relvo text-white shadow-(--shadow-relvo)">
-            <Sparkles className="size-6" fill="currentColor" strokeWidth={0} />
+          <div
+            className="grid size-14 place-items-center rounded-full text-white shadow-disque"
+            style={{ background: "var(--degrade-disque)" }}
+          >
+            <svg
+              viewBox="116 104 296 296"
+              width="30"
+              height="30"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              {RELVO_LOGO_PATHS.stars.map((d) => (
+                <path key={d} d={d} />
+              ))}
+            </svg>
           </div>
-          <h3 className="font-heading text-[19px] font-semibold tracking-[-0.01em]">
+          <h3 className="font-heading text-[22px] leading-7 font-semibold tracking-[-0.01em] text-noir">
             Comment puis-je vous aider ?
           </h3>
-          <p className="text-[13.5px] text-(--text-secondary)">
+          <p className="text-[14px] font-light text-gris">
             Posez votre question ou demandez-moi une action.
           </p>
         </div>
@@ -100,7 +110,7 @@ export function RelvoChatShell({
               key={p}
               type="button"
               onClick={() => fill(p)}
-              className="rounded-xl border border-dashed border-[#d4d2cc] bg-white/50 px-3.5 py-3 text-left text-[13.5px] text-(--text-tertiary) italic active:bg-white"
+              className="flex h-11 items-center gap-2.5 rounded-(--rayon-option) border border-dashed border-relvo bg-white px-3.5 text-left text-[14px] font-normal text-noir active:bg-relvo-pale"
             >
               {p}
             </button>
@@ -109,28 +119,18 @@ export function RelvoChatShell({
       </main>
 
       <div
-        className="glass-relvo relative flex flex-none items-center gap-2.5 px-3.5 pt-[11px]"
+        className="relative flex flex-none items-center gap-2.5 bg-white px-4 pt-2.5 shadow-haut"
         style={{
           paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
-          boxShadow:
-            "inset 0 1px 0 rgb(255 255 255 / 0.34), 0 -8px 24px rgb(20 18 40 / 0.1)",
         }}
       >
-        <div
-          className="flex min-w-0 flex-1 items-center gap-[7px] rounded-[16px] py-[5px] pr-2 pl-[13px]"
-          style={{
-            background: "rgb(255 255 255 / 0.08)",
-            border: "1px solid rgb(255 255 255 / 0.28)",
-            boxShadow:
-              "inset 0 1px 0 rgb(255 255 255 / 0.3), inset 0 -1px 0 rgb(0 0 0 / 0.04)",
-          }}
-        >
+        <div className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-[22px] bg-(--fond-puce) py-1 pr-2.5 pl-4">
           <button
             type="button"
             aria-label="Joindre un fichier"
-            className="grid flex-none place-items-center text-white/85"
+            className="order-last grid flex-none place-items-center text-gris"
           >
-            <Paperclip className="size-[21px]" strokeWidth={2} />
+            <Paperclip className="size-5" strokeWidth={2} />
           </button>
           <textarea
             ref={ref}
@@ -141,7 +141,7 @@ export function RelvoChatShell({
               autoGrow();
             }}
             placeholder="Écrire à Relvo…"
-            className="max-h-[120px] min-h-[24px] flex-1 resize-none border-none bg-transparent py-1.5 text-[14.5px] leading-snug text-white outline-none placeholder:text-white/70"
+            className="max-h-[120px] min-h-[24px] flex-1 resize-none border-none bg-transparent py-1.5 text-[14.5px] leading-snug font-light text-noir outline-none placeholder:text-gris"
           />
         </div>
         <button
@@ -150,11 +150,8 @@ export function RelvoChatShell({
           onClick={() =>
             typing && toast.info("La conversation avec Relvo arrive en M10.")
           }
-          className="pressable grid size-[45px] flex-none place-items-center rounded-full bg-white text-relvo"
-          style={{
-            boxShadow:
-              "inset 0 -1px 0 rgb(20 18 40 / 0.08), 0 5px 16px rgb(0 0 0 / 0.22)",
-          }}
+          className="pressable grid size-11 flex-none place-items-center rounded-full text-white shadow-disque"
+          style={{ background: "var(--degrade-disque)" }}
         >
           {typing ? (
             <Send className="size-[19px]" strokeWidth={2} />

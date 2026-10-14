@@ -8,6 +8,7 @@ import {
   resolveReplyTargets,
 } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
+import { folderVisual } from "@/lib/folders";
 import { AcknowledgeOnOpen } from "@/components/subject/acknowledge-on-open";
 import { PollRefresh } from "@/components/shared/poll-refresh";
 import { AttachmentViewer } from "@/components/shared/attachment-viewer";
@@ -93,6 +94,9 @@ export default async function SujetPage({
   }));
 
   const rows = conversationRows.map(toConversationRowData);
+
+  const folderOfSubject =
+    folders.find((f) => f.id === subject.folderId) ?? null;
 
   return (
     <>
@@ -189,6 +193,24 @@ export default async function SujetPage({
         header={
           <RelvoHeader
             back={backHref}
+            // Le domaine du sujet en tête, comme sur sa ligne : la bande et le nom.
+            eyebrow={
+              folderOfSubject ? (
+                <span className="inline-flex items-center gap-2">
+                  <i
+                    aria-hidden
+                    className="h-2 w-5 rounded-full"
+                    style={{
+                      background: folderVisual({
+                        slug: folderOfSubject.slug,
+                        color: folderOfSubject.color,
+                      }).color,
+                    }}
+                  />
+                  {folderOfSubject.name}
+                </span>
+              ) : undefined
+            }
             // Titre ÉDITABLE sur place, LISIBLE EN ENTIER (2 lignes) : renommer
             // un sujet est le geste de correction le plus fréquent (Relvo devine
             // l'intitulé), il ne doit pas coûter un détour par l'onglet Détails.
@@ -279,13 +301,7 @@ export default async function SujetPage({
  */
 function HeroChip({ children }: { children: React.ReactNode }) {
   return (
-    <span
-      className="inline-flex items-center gap-1 rounded-full px-[7px] py-px text-[10.5px] font-bold whitespace-nowrap text-white"
-      style={{
-        background: "rgb(255 255 255 / 0.14)",
-        border: "1px solid rgb(255 255 255 / 0.28)",
-      }}
-    >
+    <span className="inline-flex items-center gap-1 rounded-(--rayon-pilule) bg-white/14 px-2 py-px text-[10.5px] font-medium tracking-[0.06em] whitespace-nowrap text-white">
       {children}
     </span>
   );

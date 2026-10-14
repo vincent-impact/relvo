@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
-import { RelvoHeader } from "@/components/layout/relvo-header";
+import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { InstructionList } from "@/components/memoire/instruction-list";
 import { ListPanel } from "@/components/shared/list-panel";
@@ -134,15 +134,9 @@ export default async function MemoirePage() {
           <Link
             href="/memoire/nouveau"
             aria-label="Nouveau domaine"
-            className="pressable grid size-[38px] flex-none place-items-center rounded-full text-white"
-            style={{
-              background: "rgb(255 255 255 / 0.14)",
-              border: "1px solid rgb(255 255 255 / 0.28)",
-              boxShadow:
-                "inset 0 1px 0 rgb(255 255 255 / 0.25), 0 1px 2px rgb(0 0 0 / 0.18)",
-            }}
+            className={SKY_BTN}
           >
-            <Plus className="size-5" strokeWidth={2.2} />
+            <Plus className="size-4" strokeWidth={2.6} />
           </Link>
         }
       />
