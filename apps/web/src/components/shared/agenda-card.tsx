@@ -43,7 +43,7 @@ export function AgendaCard({ days }: { days: AgendaDay[] }) {
             >
               {d.day}
             </div>
-            <div className="text-[10.5px] tracking-[0.5px] text-(--text-tertiary) uppercase">
+            <div className="text-[11px] tracking-[0.5px] text-gris uppercase">
               {d.weekday}
             </div>
           </div>

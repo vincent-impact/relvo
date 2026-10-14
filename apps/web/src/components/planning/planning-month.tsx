@@ -44,7 +44,7 @@ function Chip({ task, dragging }: { task: PlanningTask; dragging?: boolean }) {
   return (
     <span
       className={cn(
-        "block truncate rounded-[5px] px-1 py-0.5 text-[10px] font-semibold text-white",
+        "block truncate rounded-(--rayon-petit) px-1 py-0.5 text-[11px] font-medium text-white",
         dragging && "shadow-lg",
       )}
       style={{ background: task.color }}
@@ -115,7 +115,7 @@ function DayCell({
           <DraggableChip key={t.id} task={t} onOpen={onOpen} />
         ))}
         {tasks.length > 3 ? (
-          <div className="px-1 text-[10px] font-semibold text-(--text-tertiary)">
+          <div className="px-1 text-[11px] font-medium text-gris">
             +{tasks.length - 3}
           </div>
         ) : null}

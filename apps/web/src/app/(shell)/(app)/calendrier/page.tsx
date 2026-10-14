@@ -11,7 +11,7 @@ import {
   type PlanningTask,
 } from "@/components/planning/planning-month";
 import { CreateTaskButton } from "@/components/subject/create-task-button";
-import { MetricsCardSkeleton } from "@/components/shared/screen-skeletons";
+import { IndicatorTabsSkeleton } from "@/components/shared/screen-skeletons";
 import { folderColor, formatTime } from "@/lib/display";
 import {
   cachedAgendaTasks,
@@ -101,13 +101,12 @@ async function WeekTabs({ accountId }: { accountId: string }) {
 function WeekSkeleton() {
   return (
     <>
-      <MetricsCardSkeleton />
+      <IndicatorTabsSkeleton />
       <div className="space-y-2 px-4 pt-6">
         {[0, 1, 2].map((i) => (
           <div
             key={i}
-            className="h-[68px] animate-pulse rounded-2xl bg-white"
-            style={{ boxShadow: "var(--shadow-card)" }}
+            className="h-[68px] animate-pulse rounded-(--rayon-carte) bg-white shadow-carte"
           />
         ))}
       </div>
