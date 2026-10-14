@@ -60,8 +60,8 @@ function ConversationRow({
       {/* Avatar = canal du fil (objectif : rendre le canal évident d'un coup). */}
       <span
         className={cn(
-          "grid size-[42px] flex-none place-items-center self-start rounded-full text-white shadow-[inset_0_1px_0_rgb(255_255_255/0.25),0_1px_2px_rgb(20_18_40/0.15)]",
-          unread ? "bg-(--amber-600)" : "bg-[#c7c5bd]",
+          "grid size-[42px] flex-none place-items-center self-start rounded-full text-white",
+          unread ? "bg-(--attente-texte)" : "bg-(--gris-clair)",
         )}
       >
         <Icon className="size-[20px]" />

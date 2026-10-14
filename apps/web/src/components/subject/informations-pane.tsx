@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { ActorPill } from "@/components/shared/actor-pill";
 import { ListPanel } from "@/components/shared/list-panel";
+import { ZoneHeading } from "@/components/shared/zone-heading";
 import { AddTask } from "@/components/subject/add-task";
 import { ResolutionBanner } from "@/components/subject/resolution-banner";
 import { TaskItem } from "@/components/subject/task-item";
@@ -284,7 +285,7 @@ export function InformationsPane({
             "pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] font-semibold",
             priority === "urgent"
               ? "border-transparent bg-(--red-600) text-white shadow-surface-1"
-              : "border-dashed border-[#d4d2cc] bg-transparent text-(--text-tertiary)",
+              : "border-dashed border-(--gris-clair) bg-transparent text-gris",
           )}
         >
           <Flag className="size-[13px]" />
@@ -377,7 +378,7 @@ export function InformationsPane({
                       : "text-(--text-tertiary)",
                   )}
                 />
-                <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-[#e7e5e0] shadow-[inset_0_1px_1px_rgb(20_18_40/0.08)]">
+                <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-(--fond-puce)">
                   <span
                     className="absolute inset-y-0 left-0 rounded-full bg-(--green-600) transition-[width]"
                     style={{
@@ -385,7 +386,7 @@ export function InformationsPane({
                     }}
                   />
                 </span>
-                <span className="font-numeric text-[11.5px] font-bold text-(--text-secondary)">
+                <span className="chiffre text-[12px] text-gris">
                   {taskDone}/{taskTotal}
                 </span>
               </div>
@@ -518,9 +519,7 @@ function DescriptionLine({
   return (
     <div className="py-3 first:pt-3.5 last:pb-3.5">
       <div className="mb-1 flex min-h-6 items-center justify-between gap-2">
-        <span className="text-[10.5px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase">
-          {label}
-        </span>
+        <span className="libelle">{label}</span>
         {action}
       </div>
       <div className="text-[14.5px] leading-[1.5] text-(--text-primary)">
@@ -531,18 +530,11 @@ function DescriptionLine({
 }
 
 /**
- * En-tête de zone de la fiche — le MÊME pour « Résumé » et « Tâches ».
- *
- * C'est lui qui délimite les zones : sans libellé, un sujet neuf n'est qu'une
- * suite d'éléments flottants dont on ne sait pas à quoi ils servent. Les deux
- * en-têtes sont volontairement symétriques — libellé à gauche, ce qui qualifie
- * la zone à droite (la source du résumé, la progression des tâches) — et c'est
- * la MATIÈRE qui porte la hiérarchie : le résumé se lit à même la pierre, les
- * tâches se manipulent dans un panneau blanc.
- *
- * Il ne réutilise pas `shared/section-label.tsx`, qui porte sa propre gouttière
- * et n'accepte qu'un lien : ici la fiche impose sa marge, et la droite reçoit
- * un contenu libre.
+ * En-tête de zone de la fiche — le MÊME pour « Résumé » et « Tâches », et le
+ * même que sur toutes les pages : `ZoneHeading`, en texte nu (02-composants,
+ * « toute zone est nommée, et les en-têtes sont symétriques »). Le libellé à
+ * gauche avec qui parle, ce qui qualifie la zone à droite (la progression des
+ * tâches). La fiche impose sa propre gouttière.
  */
 function SectionHead({
   title,
@@ -555,12 +547,6 @@ function SectionHead({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="mb-2 flex min-h-7 items-center justify-between gap-3 px-1">
-      <h2 className="flex min-w-0 items-center gap-2 text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
-        {title}
-        {badge}
-      </h2>
-      {right}
-    </div>
+    <ZoneHeading label={title} badge={badge} hint={right} className="px-1" />
   );
 }

@@ -38,13 +38,13 @@ export function JournalPane({ events }: { events: JournalEvent[] }) {
                 )}
               />
               {i < events.length - 1 ? (
-                <span className="absolute top-[13px] -bottom-1 left-[5px] w-0.5 bg-[#ece9e3]" />
+                <span className="absolute top-[13px] -bottom-1 left-[5px] w-0.5 bg-(--filet)" />
               ) : null}
               <div className="min-w-0 flex-1">
-                <div className="text-[13.5px] leading-[1.4] text-[#3a3833]">
+                <div className="text-[13.5px] leading-[1.4] text-noir">
                   {ev.title}
                 </div>
-                <div className="mt-[3px] text-[11.5px] text-[#a8a69d]">
+                <div className="mt-[3px] text-[11.5px] font-light text-gris">
                   {formatRelative(ev.createdAt)}
                 </div>
               </div>

@@ -261,9 +261,9 @@ export default async function SujetPage({
                     id={a.id}
                     name={a.name}
                     mimeType={a.mimeType}
-                    className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#ececea] bg-white px-3 py-2.5 text-left shadow-(--shadow-card) transition-colors hover:bg-(--surface-2)"
+                    className="flex cursor-pointer items-center gap-3 rounded-(--rayon-sous-carte) border border-(--filet) bg-white px-3 py-2.5 text-left shadow-carte transition-colors active:bg-(--fond-enfonce)"
                   >
-                    <span className="grid size-[34px] flex-none place-items-center rounded-lg bg-[#f0eeea] text-[#86857d]">
+                    <span className="grid size-[34px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-gris">
                       <FileText className="size-[18px]" />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -301,7 +301,7 @@ export default async function SujetPage({
  */
 function HeroChip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-(--rayon-pilule) bg-white/14 px-2 py-px text-[10.5px] font-medium tracking-[0.06em] whitespace-nowrap text-white">
+    <span className="inline-flex items-center gap-1 rounded-(--rayon-pilule) bg-white/14 px-2 py-px text-[11px] font-medium tracking-[0.06em] whitespace-nowrap text-white">
       {children}
     </span>
   );
