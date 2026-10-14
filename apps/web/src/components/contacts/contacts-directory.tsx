@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import { useContactsSearch } from "@/components/contacts/contacts-search-context";
+import { ListPanel } from "@/components/shared/list-panel";
 import { contactFullName, contactInitials } from "@/lib/display";
 
 export type DirectoryContact = {
@@ -17,6 +18,11 @@ export type DirectoryContact = {
 // Annuaire Contacts (M9.22) — façon répertoire téléphonique : sections par 1ʳᵉ
 // lettre du NOM DE FAMILLE, lettres vides masquées, tri fr insensible aux
 // accents. Filtré en direct par la recherche du hero (contexte partagé).
+//
+// Une liste = UNE carte (design-system/02-composants) : les lettres sont des
+// lignes d'en-tête enfoncées dans le même `ListPanel` que les contacts, pas des
+// titres posés sur le fond. Elles ne sont pas collantes : le panneau rogne ses
+// coins (`overflow: hidden`), et vingt contacts n'ont pas besoin d'un index.
 
 /** Normalise pour comparaison/tri : sans accents, en capitales. */
 function fold(s: string): string {
@@ -37,6 +43,7 @@ function ContactRow({ contact }: { contact: DirectoryContact }) {
   return (
     <Link
       href={`/contacts/${contact.id}`}
+      data-list-row
       className="flex items-center gap-3 border-b border-(--filet) px-3.5 py-2.5 active:bg-(--fond-enfonce)"
     >
       <span className="chiffre grid size-10 flex-none place-items-center rounded-full bg-actor-ext-fond text-[14px] text-actor-ext">
@@ -96,7 +103,7 @@ export function ContactsDirectory({
 
   if (contacts.length === 0) {
     return (
-      <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
+      <p className="px-[22px] py-10 text-center text-[13.5px] font-light text-gris">
         Aucun contact. Ajoutez-en un avec le bouton +.
       </p>
     );
@@ -104,24 +111,24 @@ export function ContactsDirectory({
 
   if (sections.length === 0) {
     return (
-      <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
+      <p className="px-[22px] py-10 text-center text-[13.5px] font-light text-gris">
         Aucun contact pour « {query.trim()} ».
       </p>
     );
   }
 
   return (
-    <div className="pt-1">
-      {sections.map((section) => (
-        <section key={section.letter}>
-          <h2 className="domaine sticky top-0 z-1 bg-white px-3.5 pt-3 pb-1 text-gris">
-            {section.letter}
-          </h2>
-          {section.items.map((c) => (
-            <ContactRow key={c.id} contact={c} />
-          ))}
-        </section>
-      ))}
-    </div>
+    <ListPanel className="mt-1">
+      {sections.flatMap((section) => [
+        <div
+          key={`lettre-${section.letter}`}
+          data-list-row
+          className="domaine border-b border-(--filet) bg-(--fond-enfonce) px-3.5 py-1.5 text-gris"
+        >
+          {section.letter}
+        </div>,
+        ...section.items.map((c) => <ContactRow key={c.id} contact={c} />),
+      ])}
+    </ListPanel>
   );
 }

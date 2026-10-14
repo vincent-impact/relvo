@@ -59,14 +59,14 @@ export function ContactsGroups({ groups }: { groups: DirectoryGroup[] }) {
           // groupe, le clic mène droit à sa conversation ; le retour doit le
           // ramener là d'où il vient).
           href={`/conversations/${g.id}?from=${encodeURIComponent("/contacts?tab=groupes")}`}
-          className="flex items-center gap-3 border-b border-[#f1efeb] px-[18px] py-3.5 active:bg-(--surface-2)"
+          className="flex items-center gap-3 border-b border-(--filet) px-[18px] py-3.5 active:bg-(--fond-enfonce)"
         >
           <span className="grid size-[42px] flex-none place-items-center rounded-full bg-(--green-600) text-white">
             <Users className="size-[20px]" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="truncate text-[15.5px] font-bold">{g.title}</div>
-            <div className="mt-0.5 truncate text-[13px] text-[#86857d]">
+            <div className="mt-0.5 truncate text-[13px] font-light text-gris">
               Groupe WhatsApp
             </div>
           </div>
