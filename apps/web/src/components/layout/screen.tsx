@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 // Conteneur scrollable d'un écran à onglets. Une seule zone de scroll par
 // page : le ciel scrolle avec le contenu, et le dock flottant (ancré, absolu)
-// le chevauche. Le padding-bas réserve la place du dock et un souffle — ou,
+// le chevauche. Le padding-bas réserve la place du dock et de son disque — ou,
 // quand l'écran ancre un composer qui grandit (brouillon posé), la place que ce
 // composer occupe (`bottomInset`, mesuré par l'appelant) : le fil doit rester
 // lisible et scrollable jusqu'à son dernier message, on ne rédige pas une

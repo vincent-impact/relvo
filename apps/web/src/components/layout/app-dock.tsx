@@ -5,7 +5,7 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 
 // Le dock — la SEULE barre d'onglets, noire et flottante : décollée du bas et
 // des bords de `--dock-marge`, au-dessus de la zone sûre iOS. Le padding-bas
-// du <Screen> réserve sa hauteur.
+// du <Screen> réserve sa hauteur et le débord du disque.
 //
 // Le dock cède la place sur le DÉTAIL d'une conversation (`/conversations/x`),
 // où le composer de réponse ou les boutons « Ignorer » / « Ouvrir un sujet »

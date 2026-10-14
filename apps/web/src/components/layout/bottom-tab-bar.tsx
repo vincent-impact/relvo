@@ -14,9 +14,9 @@ import { cn } from "@/lib/utils";
 // Le dock — CINQ places, et rien de plus (invariant 35) : Accueil · Calendrier ·
 // Relvo · Sujets · Conversations. Une pilule NOIRE, flottante, décollée du bas
 // et des bords (design-system/03-patterns, « Le cadre : le ciel en haut, le dock
-// en bas »). Relvo au centre, sans libellé, un disque violet posé dans l'axe de
-// la pilule (RelvoDockButton) : c'est l'accès à l'échange, au même endroit sur
-// toutes les pages, sous le pouce. Une entrée ne s'ajoute pas au dock, elle en
+// en bas »). Relvo au centre, sans libellé, un disque violet cerclé de noir qui
+// déborde de la pilule en haut et en bas (RelvoDockButton) : c'est l'accès à
+// l'échange, au même endroit sur toutes les pages, sous le pouce. Une entrée ne s'ajoute pas au dock, elle en
 // remplace une. Tout ce qu'on ouvre moins d'une fois par jour vit dans le
 // menu latéral (SideMenu).
 //
@@ -94,8 +94,8 @@ export function BottomTabBar() {
       {LEFT.map((tab) => (
         <TabLink key={tab.href} tab={tab} pathname={pathname} />
       ))}
-      {/* La place centrale : le disque dans l'axe de la pilule, à 4 px de ses
-          bords — seule la couleur le détache, jamais un débordement. */}
+      {/* La place centrale : le disque dans l'axe de la pilule, plus grand
+          qu'elle ; son anneau noir est le dock qui s'étire autour de lui. */}
       <div className="flex flex-1 items-center justify-center">
         <RelvoDockButton />
       </div>

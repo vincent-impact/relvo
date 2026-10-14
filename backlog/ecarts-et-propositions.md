@@ -1187,8 +1187,10 @@ la typographie, la palette, la densité et un geste signature.
 - **Pas de relance.** Le dirigeant a demandé une relance du tirage puis a confirmé la direction
   retenue ; la relance n'a pas été servie.
 - **Le retour du téléphone, une fois la direction posée dans l'application.** Le dirigeant l'a
-  regardée sur son compte et a tranché : le bouton Relvo **ne déborde plus**, il est posé dans
-  l'axe du dock, lui-même abaissé ; le ciel tient sur **une seule rangée** — titre, actions,
+  regardée sur son compte et a tranché : le bouton Relvo est **réaxé** sur le dock, abaissé, et
+  déborde **des deux côtés**, un **anneau noir** l'y rattachant — le dock s'étire autour de lui,
+  il est dans la barre, pas dessus (retenu contre un disque sans débord, essayé entre les deux,
+  qui semblait posé sur la barre) ; le ciel tient sur **une seule rangée** — titre, actions,
   burger — et respire sous la barre d'état du téléphone, où les boutons se collaient ; l'avatar
   de l'accueil est retiré, il ne menait nulle part ; un indicateur à zéro écrit « 0 », pas un
   tiret. « Un compteur à zéro ne s'affiche pas » reste vrai pour les badges et les pastilles,

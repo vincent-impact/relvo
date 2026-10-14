@@ -289,7 +289,8 @@
   /* ── Le chrome mobile ───────────────────────────────────────────────────── */
   --dock-h: 54px; /* la pilule */
   --dock-marge: 14px; /* son décollement du bas et des bords */
-  --disque-relvo: 46px; /* au centre de la pilule, à 4 px de ses bords */
+  --disque-relvo: 56px; /* le disque violet, dans l'axe de la pilule */
+  --disque-anneau: 6px; /* l'anneau noir qui l'y rattache : le dock s'étire autour */
   --bar-h: 64px; /* le composer, ancré, qui remplace le dock */
   --tab-h: calc(
     var(--dock-h) + var(--dock-marge)

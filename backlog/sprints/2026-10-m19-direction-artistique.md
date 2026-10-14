@@ -248,8 +248,11 @@ plus claire et agréable », et six retours, tous appliqués dans le même commi
 - **Un indicateur à zéro écrit « 0 »**, en gris clair, pas un tiret. `02-composants.md` distingue
   désormais le badge (absent à zéro) de l'indicateur (cellule fixe).
 - **Le dock est abaissé** de dix pixels.
-- **Le bouton Relvo est réaxé** dans la pilule, il ne déborde plus : le brief, les tokens, les
-  patterns, les principes et la carte du projet sont corrigés ; `--dock-deborde` disparaît.
+- **Le bouton Relvo est réaxé** dans la pilule. Un premier essai sans débord semblait posé sur
+  la barre ; le dirigeant a demandé un disque plus grand, qui déborde en haut et en bas, cerclé
+  d'un **anneau noir** qui prolonge le dock autour de lui (`--disque-anneau`). Le brief, les
+  tokens, les patterns, les principes et la carte du projet le disent ; `--dock-deborde`
+  disparaît.
 
 ## Où on en est
 

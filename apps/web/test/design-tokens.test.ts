@@ -78,6 +78,7 @@ const tokensAttendus = [
   "--dock-h",
   "--dock-marge",
   "--disque-relvo",
+  "--disque-anneau",
   "--bar-h",
   "--tab-h",
   // la typographie
