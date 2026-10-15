@@ -863,10 +863,10 @@ diapositive devient courante.
 l'accueil : la `redirect("/")` de l'action retombait sur le **cache du routeur**, qui avait
 mémorisé « / » comme une redirection vers `/bienvenue` — c'est par là que le compte était
 arrivé — pendant `staleTimes.dynamic`. L'action rend la main et le client fait une navigation
-complète (`window.location.replace`), qui repart de zéro. À remonter dans `PITFALLS.md` à la
-clôture (M19.12), avec l'autre : le client Prisma d'un serveur de développement déjà lancé
-ignore une colonne ajoutée tant qu'on ne le relance pas (`db.account.updateMany` refusait
-`welcomeSeenAt` après `pnpm db:generate`).
+complète (`window.location.replace`), qui repart de zéro — `PITFALLS.md` #60. L'autre, #61 :
+le client Prisma d'un serveur de développement déjà lancé ignore une colonne ajoutée tant
+qu'on ne le relance pas (`db.account.updateMany` refusait `welcomeSeenAt` après
+`pnpm db:generate`).
 
 **Le guidage, sur les surfaces qui existent.** Quatre écrans recopiaient le bloc de Relvo à la
 main ; il est désormais UN composant, `RelvoBlock`, avec sa phrase et son lien fléché, et

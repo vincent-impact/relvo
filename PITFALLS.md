@@ -403,12 +403,44 @@ sa `locale` explicitement (`locale="fr-FR"`), jamais celle du processus. Devant 
 d'hydratation sans cause évidente, lire l'attribut que React nomme et chercher qui le
 formate.
 
+### #60 — Une `redirect()` dans une Server Action retombe sur le cache du routeur, qui a mémorisé la page cible comme une REDIRECTION
+
+**Symptôme** : l'action pose bien son état (la trace est en base), mais le navigateur ne bouge
+pas — ou l'URL change et l'écran reste l'ancien. Reproductible à la première connexion : le
+compte arrive sur `/`, le layout le renvoie sur `/bienvenue` ; « Plus tard » fait
+`redirect("/")`… et l'on reste sur les diapositives.
+
+**Cause** : le cache du routeur de Next (`staleTimes.dynamic`, 30 s) a gardé `/` tel qu'il a
+été servi la première fois — **une redirection vers `/bienvenue`**. La navigation déclenchée
+par l'action resserre cette entrée au lieu de redemander la page au serveur, qui l'aurait
+rendue normalement maintenant que la trace existe.
+
+**Règle** : quand une action change ce qui décide d'une redirection de layout (une garde
+d'onboarding, un droit, un état de compte), elle ne redirige pas elle-même : elle rend la
+main, et le client fait une **navigation complète** (`window.location.replace`), qui repart
+de zéro. Le même réflexe que pour l'OAuth d'un canal (`window.location.href = url`).
+
+### #61 — Un `next dev` déjà lancé garde l'ANCIEN client Prisma après `pnpm db:generate`
+
+**Symptôme** : la migration est appliquée, `pnpm db:generate` a tourné, `tsc` passe — et
+l'application rend une 500 : `PrismaClientValidationError … Unknown argument
+\`welcomeSeenAt\``, sur une colonne qui existe.
+
+**Cause** : le serveur de développement a chargé le client généré au démarrage ; Turbopack
+ne recharge pas le moteur Prisma quand `src/generated/` change sous lui. Le code applicatif
+est à jour, le client qui valide les requêtes ne l'est pas.
+
+**Règle** : après **toute** migration (`#33`), relancer `next dev` — pas seulement
+`db:generate`. En local, Relvo se lance avec `PORT=3100 AUTH_URL=http://localhost:3100` :
+sans l'override d'`AUTH_URL`, l'inscription redirige vers le port du `.env.local`, qui n'écoute
+pas.
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
 |---|---|
-| **Next** | #5, #5b, #5c, #14, #45, #48 |
-| **Prisma** | #1, #2, #4, #19, #33, #35, #36, #37, #47 |
+| **Next** | #5, #5b, #5c, #14, #45, #48, #60 |
+| **Prisma** | #1, #2, #4, #19, #33, #35, #36, #37, #47, #61 |
 | **Auth.js** | #5c, #6, #7, #21 |
 | **Tailwind** | #15 |
 | **AWS SDK** | #8, #9, #10, #11 |
