@@ -52,6 +52,7 @@ export function RelvoHeader({
   wrapTitle = false,
   titleFull = false,
   tail = true,
+  hero,
   children,
   className,
 }: {
@@ -70,6 +71,12 @@ export function RelvoHeader({
   titleFull?: boolean;
   /** La queue du ciel sous le header. `false` quand le ciel est fixe : l'écran la pose lui-même. */
   tail?: boolean;
+  /**
+   * Une CARTE DE VISITE centrée (la fiche d'un contact) à la place du titre :
+   * la rangée ne porte que la flèche et les actions, `hero` vient dessous et
+   * rend son propre h1. `title` reste requis pour le nom de la page.
+   */
+  hero?: React.ReactNode;
   /** Ce qui vit dans le ciel : nouvelles, indicateurs, segmented, onglets. */
   children?: React.ReactNode;
   className?: string;
@@ -115,7 +122,16 @@ export function RelvoHeader({
           paddingTop: "calc(max(env(safe-area-inset-top), 12px) + 14px)",
         }}
       >
-        {multiline ? (
+        {hero ? (
+          <>
+            <div className="flex h-[34px] items-center gap-2">
+              {backLink}
+              <div className="flex-1" />
+              {buttons}
+            </div>
+            {hero}
+          </>
+        ) : multiline ? (
           // La flèche et les actions tiennent la première ligne ; le titre
           // replie dans sa colonne, sa ligne du dessus (le domaine) au-dessus.
           <div className="flex items-start gap-2.5">

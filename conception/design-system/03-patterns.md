@@ -35,12 +35,19 @@ sur deux lignes **à droite de la flèche**, jamais sous elle : une rangée de b
 au-dessus du titre est un étage de plus sur chaque écran poussé. La rangée respire sous la barre d'état du téléphone : collée à l'heure
 et à la batterie, elle étouffe. Le ciel est court sur une page de liste, un peu plus haut sur
 l'accueil et sur une fiche dont il porte la bande de domaine et les onglets, et prend près de
-la moitié de l'écran sur la connexion. **Le ciel ne s'arrête jamais net** : il finit sur sa
-lueur, et cette lueur s'éteint dans le blanc **sous** ce qui suit — la première carte, un
-en-tête de zone, le bloc de Relvo — sans prendre de hauteur ; un fondu qui finissait au bord du
+la moitié de l'écran sur la connexion. **Le ciel ne s'arrête jamais net** : il finit sur le
+violet clair, et c'est **sous** ce qui suit — la première carte, un en-tête de zone, le bloc de
+Relvo — que le violet s'éteint dans le blanc, sur la hauteur d'une carte et demie, sans prendre
+de place ; c'est la pente des planches de la direction, et un fondu qui finissait au bord du
 header était brutal. **La première carte chevauche toujours le bas du ciel** : c'est elle qui
 lie les deux zones, et le ciel réserve la place par son dégradé, jamais par une bordure. Quand
 le ciel est fixe (le fil d'une conversation, l'échange), sa queue est en tête de ce qui défile.
+
+**La fiche d'un contact est une carte de visite dans le ciel** : le portrait au centre — les
+initiales, ou la silhouette d'un visage en attendant une photo —, le nom dessous, puis ce que
+l'on sait de la personne en une ligne (rôle, entreprise). Sous le ciel, ce que Relvo a retenu de
+l'interlocuteur dans son bloc, puis la fiche entière, chaque champ nommé, « Non renseigné »
+quand il manque : une fiche qui ne montrait que le numéro semblait vide.
 
 Le **dock** est une pilule noire décollée du bas et des bords, à cinq places, **fixe** : il ne
 se masque pas au défilement — un élément de navigation qui disparaît est un élément qu'on

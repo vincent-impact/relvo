@@ -2,13 +2,12 @@ import { notFound } from "next/navigation";
 import { ContactDetail } from "@/components/contacts/contact-detail";
 import { getTenantDb } from "@/server/auth-context";
 
-// Fiche Contact (refonte 2026-07-28 v2) — représentation « classique » (carnet
-// téléphone/WhatsApp) : TOUS les champs visibles (Entreprise · Téléphone(s) ·
-// Email(s)), édition en place, actions « Modifier » / « Supprimer » dans le dock
-// violet (le corps + le dock sont rendus par le client `ContactDetail`, qui
-// possède son propre <Screen> — cf. le détail d'une conversation). Page PUREMENT
-// INFORMATIVE (pas de fil des échanges : la conversation vit dans la fiche Sujet,
-// invariant n°11).
+// Fiche Contact — la carte de visite dans le ciel (portrait, nom, rôle), la
+// note de Relvo sur l'interlocuteur, puis TOUS les champs (Prénom · Nom ·
+// Entreprise · Téléphone(s) · Email(s)) ; édition en place par le crayon du
+// ciel (le corps est rendu par le client `ContactDetail`, qui possède son
+// propre <Screen>). Page PUREMENT INFORMATIVE (pas de fil des échanges : la
+// conversation vit dans la fiche Sujet, invariant n°11).
 
 export default async function ContactPage({
   params,
@@ -37,6 +36,9 @@ export default async function ContactPage({
       additionalEmails: true,
       additionalPhones: true,
       status: true,
+      jobTitle: true,
+      role: true,
+      relvoNote: true,
     },
   });
   if (!contact) notFound();

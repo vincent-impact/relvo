@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-15T12:57:13+00:00",
+  "generatedAt": "2026-10-15T13:28:43+00:00",
   "title": "Design System: Relvo",
   "extensions": {
     "colorMeta": {
@@ -82,16 +82,16 @@
       "ciel-bas": {
         "role": "neutral",
         "displayName": "Domaine bas",
-        "canonical": "oklch(88.7% 0.055 291.0)",
+        "canonical": "oklch(63.5% 0.188 284.2)",
         "tonalRamp": [
-          "oklch(15.0% 0.035 291.0)",
-          "oklch(25.0% 0.040 291.0)",
-          "oklch(35.0% 0.045 291.0)",
-          "oklch(45.0% 0.050 291.0)",
-          "oklch(55.0% 0.055 291.0)",
-          "oklch(65.0% 0.050 291.0)",
-          "oklch(80.0% 0.042 291.0)",
-          "oklch(95.0% 0.035 291.0)"
+          "oklch(15.0% 0.120 284.2)",
+          "oklch(25.0% 0.137 284.2)",
+          "oklch(35.0% 0.154 284.2)",
+          "oklch(45.0% 0.171 284.2)",
+          "oklch(55.0% 0.188 284.2)",
+          "oklch(65.0% 0.171 284.2)",
+          "oklch(80.0% 0.145 284.2)",
+          "oklch(95.0% 0.120 284.2)"
         ]
       },
       "actor-me": {

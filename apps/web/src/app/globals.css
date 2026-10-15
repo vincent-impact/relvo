@@ -111,29 +111,35 @@
   --relvo-clair: #6d5df5; /* le bas du ciel, le haut d'un dégradé de bouton */
   --relvo-pale: #f2f0ff; /* le fond du bloc de Relvo */
   --relvo-filet: #e3dffb; /* le bord du bloc de Relvo */
-  /* Le ciel : nuit, puis le violet de Relvo tenu sur presque toute la hauteur,
-     puis le violet clair dans les 40 DERNIERS pixels — ancrés au bas du header,
-     quelle que soit sa hauteur. Le ciel ne finit PAS blanc : il finit sur sa
-     lueur (`--ciel-bas`), et c'est la QUEUE du ciel (`.ciel-queue`, posée sous
-     le header par `RelvoHeader`) qui fond vers le blanc, SOUS le contenu : la
-     première carte, les puces, le bloc de Relvo se posent dessus. Le fondu
-     dure ainsi deux fois plus longtemps sans coûter un pixel de hauteur — un
-     fondu de 44 px qui s'arrêtait net au bord du header était brutal (retour
-     du dirigeant, M19.10). Un texte blanc posé dans le ciel reste sur le
-     violet : la bande claire tient sous la marge basse d'un header qui finit
-     sur du texte (puces d'une conversation, 16 px). */
-  --ciel-bas: #d9d4fc;
+  /* Le ciel, comme sur les planches de la direction : nuit, le violet de
+     Relvo vers 40 % de la hauteur du header, le violet clair en bas — et le
+     fondu vers le blanc ne se fait PAS dans le header : il se fait SOUS ce qui
+     suit, sur 150 px (la QUEUE du ciel, `.ciel-queue`, posée par `RelvoHeader`
+     sans prendre de hauteur). La première carte, le bloc de Relvo, les puces
+     se posent sur ce fondu, comme sur les planches ; un fondu de 44 px arrêté
+     au bord du header était brutal (retour du dirigeant, M19.10). Le header
+     finit sur `--ciel-bas`, le violet clair à peine éclairci (14 % vers le
+     blanc, la pente des 24 derniers pixels) : la queue repart de là. Un texte
+     blanc posé dans le ciel est donc toujours sur le violet de Relvo ou son
+     clair, jamais sur le fondu. */
+  --ciel-bas: #8174f6;
   --ciel: linear-gradient(
     180deg,
     var(--nuit) 0,
     var(--relvo) 40%,
-    var(--relvo) calc(100% - 40px),
-    var(--relvo-clair) calc(100% - 14px),
+    var(--relvo-clair) calc(100% - 24px),
     var(--ciel-bas) 100%
   );
-  /* La queue : la lueur du ciel qui s'éteint dans le blanc. */
-  --ciel-queue-h: 56px;
-  --ciel-queue: linear-gradient(180deg, var(--ciel-bas) 0, #ffffff 100%);
+  /* La queue : 150 px, la pente des planches (le violet clair atteint le blanc
+     150 px sous le header), avec un arrêt intermédiaire pour que le blanc
+     arrive franchement. */
+  --ciel-queue-h: 150px;
+  --ciel-queue: linear-gradient(
+    180deg,
+    var(--ciel-bas) 0,
+    #c5befb 56px,
+    #ffffff 150px
+  );
   /* Le ciel haut de la connexion : près de la moitié de l'écran. */
   --ciel-haut: linear-gradient(
     180deg,

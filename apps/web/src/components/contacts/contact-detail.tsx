@@ -9,9 +9,11 @@ import {
   PencilSimple,
   Phone,
   Trash,
+  User,
 } from "@/components/shared/picto";
 import { toast } from "sonner";
 import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
+import { RelvoLogo } from "@/components/layout/relvo-logo";
 import { Screen } from "@/components/layout/screen";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ListPanel } from "@/components/shared/list-panel";
@@ -25,13 +27,19 @@ import {
   deleteContactAction,
   updateContactAction,
 } from "@/server/actions/contacts";
-import { contactFullName } from "@/lib/display";
+import { contactFullName, initialsFor } from "@/lib/display";
 import { cn } from "@/lib/utils";
 
-// La fiche d'un contact — le CIEL porte le nom en titre et « À compléter »
-// quand Relvo l'a créée seul (invariant 12). La carte dessous est la fiche
+// La fiche d'un contact — le CIEL est la CARTE DE VISITE : le portrait au
+// centre (les initiales, ou la silhouette d'un visage en attendant une photo —
+// proposition « La photo d'un contact » dans `ecarts`), le nom dessous, puis
+// ce que l'on sait de la personne en une ligne (rôle, entreprise), et
+// « À compléter » quand Relvo l'a créée seul (invariant 12). Sous le ciel, ce
+// que Relvo a retenu de l'interlocuteur (sa note, dans son bloc), puis la fiche
 // entière, tous les champs nommés ; un numéro appelle, une adresse écrit —
-// « le numéro de téléphone sur le camion ». Modifier est le crayon du ciel, comme sur toute fiche ; en
+// « le numéro de téléphone sur le camion ». Une fiche qui ne montrait que le
+// numéro, sans visage, n'était pas au standing de Relvo (retour du dirigeant,
+// 2026-10-15). Modifier est le crayon du ciel, comme sur toute fiche ; en
 // édition, une barre ancrée prend la place du dock, comme un composer. Le dock
 // reste : Relvo est à sa place sur toutes les pages (invariant 22).
 
@@ -45,6 +53,20 @@ type Contact = {
   additionalEmails: string[];
   additionalPhones: string[];
   status: string;
+  jobTitle: string | null;
+  /** Rôle écrit par Relvo (fournisseur, client…), corrigeable. */
+  role: string | null;
+  /** Note de Relvo d'une ligne : ton, habitudes de l'interlocuteur. */
+  relvoNote: string | null;
+};
+
+// Le rôle dans les mots du dirigeant ; `other` ne dit rien, donc rien.
+const ROLE_LABEL: Record<string, string> = {
+  supplier: "Fournisseur",
+  customer: "Client",
+  employee: "Équipe",
+  administration: "Administration",
+  partner: "Partenaire",
 };
 
 type EditState = {
@@ -134,19 +156,8 @@ export function ContactDetail({
       <Screen>
         <RelvoHeader
           back={backHref}
-          wrapTitle
           title={fullName}
-          eyebrow={
-            auto ? (
-              <span className="inline-flex flex-none items-center gap-1 rounded-(--rayon-pilule) bg-white/14 px-2 py-px text-[11px] font-medium tracking-[0.06em] text-white">
-                <i
-                  aria-hidden
-                  className="size-2 rounded-full border-2 border-(--attente)"
-                />
-                À compléter
-              </span>
-            ) : undefined
-          }
+          hero={<CarteDeVisite contact={contact} auto={auto} />}
           action={
             editing ? null : (
               <button
@@ -159,7 +170,7 @@ export function ContactDetail({
               </button>
             )
           }
-          className="pb-9"
+          className="pb-10"
         />
 
         {editing ? (
@@ -269,6 +280,77 @@ export function ContactDetail({
   );
 }
 
+// ── La carte de visite, dans le ciel ──────────────────────────────────────
+// Le portrait est un disque de verre clair sur le ciel : les initiales en
+// condensé, ou la silhouette quand le nom n'en donne pas (une adresse, un
+// numéro). Le nom est le titre de la page, centré ; la ligne dessous dit le
+// rôle et l'entreprise, ou la fonction — ce qu'on sait, rien d'autre.
+
+function CarteDeVisite({ contact, auto }: { contact: Contact; auto: boolean }) {
+  const fullName = contactFullName(contact);
+  const initials = initialsFor(fullName);
+  const role = contact.role ? (ROLE_LABEL[contact.role] ?? null) : null;
+  const ligne = [role ?? contact.jobTitle, contact.company]
+    .filter((v): v is string => Boolean(v && v.trim()))
+    .join(" · ");
+
+  return (
+    <div className="flex flex-col items-center px-2 pt-2 text-center">
+      <span
+        aria-hidden
+        className="grid size-[88px] place-items-center rounded-full bg-white/16 text-white ring-1 ring-white/35 ring-inset"
+      >
+        {initials ? (
+          <span className="font-heading text-[32px] leading-none font-semibold tracking-[-0.01em]">
+            {initials}
+          </span>
+        ) : (
+          <User className="size-10 text-white/85" />
+        )}
+      </span>
+      <h1 className="mt-3 line-clamp-2 font-heading text-[28px] leading-8 font-semibold tracking-[-0.01em] text-white">
+        {fullName}
+      </h1>
+      {ligne ? (
+        <p className="mt-1 max-w-full truncate text-[14px] font-normal text-white/85">
+          {ligne}
+        </p>
+      ) : null}
+      {auto ? (
+        <span className="mt-2.5 inline-flex items-center gap-1.5 rounded-(--rayon-pilule) bg-white/14 px-2.5 py-1 text-[11px] font-medium tracking-[0.06em] text-white uppercase">
+          <i
+            aria-hidden
+            className="size-2 rounded-full border-2 border-(--attente)"
+          />
+          À compléter
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+// ── Ce que Relvo a retenu de l'interlocuteur ──────────────────────────────
+
+function NoteDeRelvo({ note }: { note: string }) {
+  return (
+    <section
+      aria-label="Relvo"
+      className="mx-4 mb-3 rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-3.5 pt-3 pb-3 text-noir shadow-carte"
+    >
+      <div className="flex items-center gap-2">
+        <RelvoLogo
+          size={22}
+          variant="full"
+          className="text-relvo-clair"
+          title=""
+        />
+        <span className="libelle text-relvo!">Relvo</span>
+      </div>
+      <p className="mt-1.5 text-[14px] leading-5 font-light">{note}</p>
+    </section>
+  );
+}
+
 // ── Lecture : la fiche, TOUS les champs ───────────────────────────────────
 // Comme un carnet de téléphone : Prénom, Nom, Entreprise, Téléphone(s),
 // Email(s), chacun sur sa ligne, « Non renseigné » quand il manque — une
@@ -313,6 +395,9 @@ function Fiche({ contact }: { contact: Contact }) {
 
   return (
     <div className="relative z-3 -mt-5">
+      {contact.relvoNote?.trim() ? (
+        <NoteDeRelvo note={contact.relvoNote.trim()} />
+      ) : null}
       <ListPanel>
         {rows.map((r, i) => {
           const Icon = r.icon;

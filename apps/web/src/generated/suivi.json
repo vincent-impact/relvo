@@ -165,6 +165,10 @@
       "date": "2026-10-15",
       "entrees": [
         {
+          "type": "new",
+          "texte": "Le violet du haut de chaque écran fond vers le blanc plus loin, sous les premières cartes, comme sur les planches validées ; la fiche d'un contact s'ouvre sur son portrait, son nom et son rôle, avec ce que Relvo a retenu de lui, puis toutes ses coordonnées."
+        },
+        {
           "type": "fix",
           "texte": "Les écrans poussés (conversation, sujet, contact) prennent moins de hauteur en tête, le violet du haut fond plus doucement vers le blanc, les compteurs des onglets d'un sujet sont posés sur leurs icônes, une tâche créée depuis le Calendrier se propose au jour sélectionné, et la fiche d'un contact affiche de nouveau tous ses champs."
         },

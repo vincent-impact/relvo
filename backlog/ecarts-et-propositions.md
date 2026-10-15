@@ -1356,6 +1356,15 @@ par Relvo, le champ montre des lignes qui respirent, pas un vide figé.
 
 ## Propositions
 
+### La photo d'un contact
+
+**`proposé`** · Exprimé par le dirigeant à la reprise de la fiche contact (M19.10). La carte de
+visite porte un portrait — les initiales, ou la silhouette d'un visage — qui appelle une photo.
+Elle demande une colonne sur le contact (la clé du fichier), le paquet de stockage pour la
+déposer, et un geste sur le portrait (prendre ou choisir une photo). Aucun bouton n'est posé
+tant que le geste n'existe pas : un bouton sans effet se retire. À placer avec les gestes du
+composer (dictée, pièces jointes), dans la même épique.
+
 ### Trancher les choix d'un brouillon avec Relvo, avant de remplir l'e-mail
 
 **`proposé`** · Exprimé par le dirigeant au premier brouillon réel. Quand un brouillon laisse des

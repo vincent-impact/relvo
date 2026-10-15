@@ -741,6 +741,16 @@ j'avais regardé sans le voir. Les cinq sont corrigés dans le même commit.
    quand il manque — ; un numéro appelle et une adresse écrit, par le disque au bout de la
    ligne. L'entreprise n'est plus redite dans le ciel.
 
+**Deuxième retour, le même jour.** Le fondu corrigé restait court : le dirigeant veut celui des
+**planches** de la direction, où le dégradé est celui de la page entière et où le violet clair
+atteint le blanc 150 px sous le header, sous les cartes. C'est désormais la queue du ciel : le
+header finit sur le violet clair, la queue fait 150 px. Et la fiche contact « n'était pas au
+standing de Relvo » : elle redevient une **carte de visite** — le portrait au centre du ciel
+(initiales, ou la silhouette d'un visage), le nom, le rôle que Relvo a écrit et l'entreprise ;
+la note de Relvo sur l'interlocuteur dans son bloc (le champ existait, aucun écran ne le
+montrait) ; puis tous les champs. Le portrait appelle une photo : proposition « La photo d'un
+contact » dans `ecarts`, sans bouton tant que le geste n'existe pas.
+
 **Hors code** : le nom de famille d'un contact rempli par une adresse e-mail (« Carole
 carole.garat@… ») est une erreur d'extraction de Relvo, corrigée à la main par le dirigeant ;
 à surveiller dans M7 (le contact déduit d'un expéditeur sans nom).
@@ -765,7 +775,8 @@ carole.garat@… ») est une erreur d'extraction de Relvo, corrigée à la main 
       par écran : ✅ Accueil · ✅ Conversations · ✅ Sujets et fiche Sujet · ✅ Mémoire,
       domaine, Contacts et fiche contact · ✅ Calendrier et Échange · ✅ menu, Canaux, Profil,
       Préférences, Usage, connexion — **M19.6 livré** · ⏳ M19.10 robustesse : ✅ les cinq
-      retours du téléphone (ciel, étages, badges d'onglet, Calendrier, fiche contact) · ⏳
+      retours du téléphone (ciel, étages, badges d'onglet, Calendrier, fiche contact) · ✅ le
+      fondu des planches, la fiche contact en carte de visite · ⏳
       break-ui, sombre/soleil, Android, desktop
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives
       de première connexion, invitation à connecter la première adresse, états vides qui guident

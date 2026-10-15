@@ -7,7 +7,7 @@ colors:
   relvo-clair: "#6d5df5"
   relvo-pale: "#f2f0ff"
   relvo-filet: "#e3dffb"
-  ciel-bas: "#d9d4fc"
+  ciel-bas: "#8174f6"
   actor-me: "#2b6fe0"
   actor-ext: "#8a5410"
   actor-ext-fond: "#f6ead8"
@@ -314,8 +314,9 @@ en bas, fixe, décollé du bas et des bords de 14px.
 
 Le ciel porte **une seule rangée** sous la zone sûre : flèche retour ou rien, titre, actions de
 page, burger ; un titre long replie sur deux lignes à droite de la flèche, jamais sous elle. Le
-ciel ne finit pas blanc : il finit sur sa lueur (`ciel-bas`), et sa **queue** (`.ciel-queue`,
-56px, sans hauteur dans le flux) fond vers le blanc **sous** ce qui suit. La **première carte
+ciel ne finit pas blanc : il finit sur le violet clair (`ciel-bas`), et sa **queue**
+(`.ciel-queue`, 150px, sans hauteur dans le flux) fond vers le blanc **sous** ce qui suit, la
+pente des planches de la direction. La **première carte
 chevauche toujours le bas du ciel** (`-mt-7.5` sur `IndicatorTabs` et `SegTabs`) : c'est elle
 qui lie les deux zones. Les cartes se suivent avec
 12px entre elles ; une zone est nommée par un en-tête symétrique en texte nu (titre à gauche,
