@@ -46,7 +46,7 @@ function Signe() {
 
 // Un e-mail qui devient une affaire, et l'affaire ses tâches : la
 // transformation que Relvo opère, montrée avec les pièces du produit — la
-// ligne d'un message, la carte d'un sujet avec sa bande et sa pastille, des
+// ligne d'un message, la carte d'une affaire avec sa bande et sa pastille, des
 // tâches à cocher — reliées par des flèches.
 function Fleche({ branches = 1 }: { branches?: 1 | 3 }) {
   const w = 280;
@@ -169,7 +169,7 @@ function Brief() {
   return (
     <RelvoBlock className="w-[280px] text-left">
       <RelvoSentence>
-        Depuis votre dernière visite, j’ai lu 12 messages et ouvert 2 sujets.
+        Depuis votre dernière visite, j’ai lu 12 messages et ouvert 2 affaires.
       </RelvoSentence>
       <span className="mt-0.5 block py-1.5 pl-[1.1em] -indent-[1.1em] text-[14px] leading-[18px] font-medium text-relvo">
         → Le devis de la chambre froide attend votre décision.
@@ -263,7 +263,7 @@ export function Diapositives({ firstName }: { firstName: string }) {
     {
       key: "memoire",
       title: "J’apprends vite.",
-      text: "Je peux me tromper, surtout au début. Dites-moi simplement comment vous voulez que je me comporte : je n’oublie rien.",
+      text: "Je peux me tromper. Dites-moi simplement comment vous voulez que je me comporte : je n’oublie rien.",
       Illustration: Memoire,
     },
   ];

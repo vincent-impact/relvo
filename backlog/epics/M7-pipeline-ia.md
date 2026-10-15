@@ -4,7 +4,7 @@ public: true
 ordre_public: 10
 titre_client: Tri automatique des messages
 resume_client: >
-  Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent, ouvre le sujet
+  Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent, ouvre l'affaire
   correspondant, propose les tâches à faire et prépare un brouillon de réponse. C'est la fin du
   tri à la main.
 statut: partiel

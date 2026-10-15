@@ -45,7 +45,7 @@ const LEFT: Tab[] = [
 const RIGHT: Tab[] = [
   {
     href: "/fil",
-    label: "Sujets",
+    label: "Affaires",
     icon: SubjectsIcon,
     match: (p) => p.startsWith("/fil") || p.startsWith("/sujets"),
   },

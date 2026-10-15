@@ -182,7 +182,7 @@ export function TaskModal({
         {/* Sujet rattaché — affiché + (ré)assignable / détachable. */}
         <div className="min-w-0">
           <div className="mb-1.5 text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
-            Sujet
+            Affaire
           </div>
           <div className="flex min-w-0 items-center gap-2">
             <button
@@ -207,7 +207,7 @@ export function TaskModal({
                     : "text-(--text-tertiary) italic",
                 )}
               >
-                {subjectTitle ?? "Aucun sujet"}
+                {subjectTitle ?? "Aucune affaire"}
               </span>
               <span className="flex-none text-[12.5px] font-bold text-relvo">
                 {picking ? "Fermer" : "Changer"}
@@ -221,7 +221,7 @@ export function TaskModal({
                   setSubjectTitle(null);
                   setFolderSlug(null);
                 }}
-                aria-label="Détacher le sujet"
+                aria-label="Détacher l’affaire"
                 className="grid size-[42px] flex-none place-items-center rounded-xl border border-(--border) text-(--text-tertiary)"
               >
                 <X className="size-[18px]" strokeWidth={2.2} />
@@ -240,7 +240,7 @@ export function TaskModal({
                   autoFocus
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Rechercher un sujet…"
+                  placeholder="Rechercher une affaire…"
                   className="min-w-0 flex-1 bg-transparent text-[13.5px] outline-none"
                 />
               </div>
@@ -251,7 +251,7 @@ export function TaskModal({
                   </p>
                 ) : filtered.length === 0 ? (
                   <p className="px-3.5 py-3 text-[13px] text-(--text-tertiary)">
-                    Aucun sujet trouvé.
+                    Aucune affaire trouvée.
                   </p>
                 ) : (
                   filtered.slice(0, 50).map((o) => (

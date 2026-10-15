@@ -148,8 +148,8 @@ export default async function BilanPage({
           <div className="mx-4 mt-2.5 rounded-[14px] border border-(--hairline) bg-white shadow-surface-1">
             {[
               {
-                t1: "Sujets",
-                t2: `${flux.sujetsOuverts} ouverts · ${flux.sujetsFermes} fermés cette semaine`,
+                t1: "Affaires",
+                t2: `${flux.sujetsOuverts} ouvertes · ${flux.sujetsFermes} fermées cette semaine`,
                 v: `+${flux.sujetsOuverts - flux.sujetsFermes}`,
               },
               {

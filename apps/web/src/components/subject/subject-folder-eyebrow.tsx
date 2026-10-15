@@ -86,7 +86,7 @@ export function SubjectFolderEyebrow({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="gap-4 p-5">
           <DialogHeader>
-            <DialogTitle>Domaine du sujet</DialogTitle>
+            <DialogTitle>Domaine de l’affaire</DialogTitle>
           </DialogHeader>
           <div className="flex flex-wrap gap-2">
             <button

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-15T14:12:55+00:00",
+  "generatedAt": "2026-10-15T17:08:26+00:00",
   "title": "Design System: Relvo",
   "extensions": {
     "colorMeta": {
@@ -748,7 +748,7 @@
     "overview": "Le monde du camion lettré et de la vitrine de l'artisan : l'entreprise se reconnaît à sa bande de couleur et à ses gros chiffres. Relvo s'adresse à des dirigeants food et bâtiment qui ouvrent l'application debout, à une main, en pleine lumière, puis la retrouvent posés au bureau. L'écran se lit donc par ses zones, pas par son texte : un ciel violet en haut qui fond vers le blanc, des cartes blanches nettes, un dock noir qui flotte, et au centre un disque violet qui est la seule chose colorée de la barre. Calme, premium, rassurant, humain.\n\nLe produit est **plat** : la hiérarchie vient de la couleur et de la matière, jamais d'un relief, d'un verre ou d'un grain. Quatre matières se partagent l'écran, chacune avec sa responsabilité : le **ciel** (identité, titre de page), le **bloc de Relvo** (tout ce que l'agent dit), la **carte blanche** (ce qui se lit ou se manipule), le **texte nu** sur blanc (titres de zone). Ce que la direction refuse est écrit dans `00-brief-da.md` §5 : relief nacré, verre, grain, fond pierre, ruban décoratif, aplat d'informations.",
     "keyCharacteristics": [
       "Un ciel étoilé en dégradé de violet nuit vers le blanc, en CSS, jamais une image",
-      "Une bande de domaine pleine sur la tranche gauche de chaque carte et ligne de sujet",
+      "Une bande de domaine pleine sur la tranche gauche de chaque carte et ligne d'affaire",
       "Gros chiffres condensés (Barlow Semi Condensed 600) sur un texte fin (Barlow 300)",
       "L'état se lit à la forme : pastille pleine, pastille cerclée, horaire barré",
       "La sélection est un cerclage, jamais un remplissage",
@@ -763,12 +763,12 @@
       },
       {
         "name": "La règle de la rareté",
-        "body": "Une pastille urgente sur un ou deux sujets sur vingt-quatre vaut plus que vingt badges colorés. `urgent`, `fait`, `attente` ne sont jamais empruntés pour de la mise en forme.",
+        "body": "Une pastille urgente sur une ou deux affaires sur vingt-quatre vaut plus que vingt badges colorés. `urgent`, `fait`, `attente` ne sont jamais empruntés pour de la mise en forme.",
         "section": "colors"
       },
       {
         "name": "La règle de la bande",
-        "body": "Une bande de domaine par carte ou par ligne, sur la tranche gauche, à l'intérieur de la surface. Deux bandes sur un objet, ou une bande sur une tâche qui a déjà son sujet écrit, font un camion de foire. On ne prend jamais la couleur de bande pour du texte.",
+        "body": "Une bande de domaine par carte ou par ligne, sur la tranche gauche, à l'intérieur de la surface. Deux bandes sur un objet, ou une bande sur une tâche qui a déjà son affaire écrite, font un camion de foire. On ne prend jamais la couleur de bande pour du texte.",
         "section": "colors"
       },
       {
@@ -778,7 +778,7 @@
       },
       {
         "name": "La règle de la matière égale",
-        "body": "Deux cartes blanches de même ombre font deux zones d'égale importance ; c'est la couleur qui hiérarchise, jamais une ombre plus forte. Une carte ne contient jamais une autre carte avec sa propre ombre : un sujet cité dans un bloc de Relvo est une sous-carte à filet, sans ombre.",
+        "body": "Deux cartes blanches de même ombre font deux zones d'égale importance ; c'est la couleur qui hiérarchise, jamais une ombre plus forte. Une carte ne contient jamais une autre carte avec sa propre ombre : une affaire citée dans un bloc de Relvo est une sous-carte à filet, sans ombre.",
         "section": "elevation"
       },
       {
@@ -790,7 +790,7 @@
     "dos": [
       "Do laisser le ciel haut de la connexion fondre vers le blanc comme tout ciel, et y poser le mot-marque « Relvo » à 40px : le seul corps au-dessus du titre de page, assumé là et nulle part ailleurs.",
       "Do poser au-dessus du titre de page, dans le ciel, sa **ligne du dessus** en petites capitales (`eyebrow` de `RelvoHeader`) : la date sur l'accueil, le domaine sur une fiche. Le détecteur « kicker-above-heading » la lit comme un surtitre décoratif ; c'est le seul endroit de l'écran qui porte cette donnée, tranché par le dirigeant (`03-patterns.md`, « Le cadre »).",
-      "Do poser la **bande de domaine** sur la tranche gauche de chaque carte et ligne de sujet (`.bande-carte` 10px, `.bande-ligne` 6px), comme un fond plein à l'intérieur de la surface. Ce n'est pas un `border-left` décoratif (détecteur « side-tab ») : c'est le geste signature du monde, une bande par surface, la couleur du domaine stockée sur le dossier.",
+      "Do poser la **bande de domaine** sur la tranche gauche de chaque carte et ligne d'affaire (`.bande-carte` 10px, `.bande-ligne` 6px), comme un fond plein à l'intérieur de la surface. Ce n'est pas un `border-left` décoratif (détecteur « side-tab ») : c'est le geste signature du monde, une bande par surface, la couleur du domaine stockée sur le dossier.",
       "Do utiliser le **violet et ses dégradés** sur le ciel, le disque Relvo, l'action principale, les jauges et les interrupteurs : le violet est **sémantique** (livrée et voix de Relvo), pas un dégradé violet-bleu d'ornement. Un détecteur qui le signale a tort ici, et seulement ici.",
       "Do laisser le **disque Relvo déborder** du dock, la pilule soulevée autour de lui : c'est le relief unique du produit, désigné par la couleur et le débordement, sans ombre propre.",
       "Do rendre une entité de liste en **ligne dans une carte unique** (`ListPanel`), séparée par le filet.",

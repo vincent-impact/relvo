@@ -123,7 +123,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       name: "Général",
       slug: "general",
       description:
-        "Connaissances transversales chargées dans le contexte de tous les sujets.",
+        "Connaissances transversales chargées dans le contexte de toutes les affaires.",
       isDefault: true,
     },
   });

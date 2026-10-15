@@ -895,6 +895,28 @@ démonstration après le langage de mouvement, zéro erreur ; les 305 tests. **�
 dirigeant** : la séquence sur son iPhone (il verra les diapositives une fois, son compte n'a
 pas la trace), le geste de glissé, et le choix d'une boîte jusqu'à Canaux.
 
+## Le mot du dirigeant : « affaire » (tranché le jour même)
+
+À la lecture des diapositives, le dirigeant a tranché le mot : **« affaire »**, pas « sujet ».
+« Sujet » est impersonnel ; une affaire parle à tout le monde, on *traite* des affaires, et
+c'est ce qu'on fait avec Relvo. La décision est dans `ecarts` ; la livraison a suivi dans la
+journée, en un chantier à part, parce qu'un mot qui change à moitié est pire qu'un mot qui ne
+change pas. **Trois périmètres.** Le mot de l'utilisateur, partout où il le lit ou l'entend :
+les libellés (l'onglet du dock, « Nouvelle affaire », « ouvertes · validées · fermées », les
+états vides, les toasts, les confirmations, les invites de l'échange, la devise de la
+connexion), les phrases de Relvo (les nouvelles, le brief, les suggestions, la carte vivante),
+les titres du journal et les messages d'erreur du domaine (« Affaire SUB-0219 créée »,
+« Relvo a relu l'affaire », « Aucune affaire ouverte… »), les champs client des épiques,
+`CLAUDE.md`, et la conception récrite **en place** — `01` à `05`, le design system,
+`uml.mermaid` pour ses libellés, `DESIGN.md`, `PRODUCT.md` — par trois agents isolés avec
+les mêmes règles, relus sur le diff. **Ce qui ne bouge pas** : `Subject` et ses routes
+(`/sujets`, `/fil`, `sans-sujet`), les identifiants, les invariants numérotés, les commentaires
+du code, l'historique (sprints, journal du client, registre). **Les consignes du modèle**
+gardent « sujet » comme nom de concept — deux cents occurrences, un vocabulaire que les jeux
+d'évaluation ont appris — et reçoivent une règle dans le socle : tout texte destiné au
+dirigeant dit « affaire ». À confirmer par `eval:*` à leur prochaine passe ; sept tests du
+domaine qui citaient un titre de journal ont été mis à jour, rien d'autre n'a bougé.
+
 ## Où on en est
 
 - [x] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 la

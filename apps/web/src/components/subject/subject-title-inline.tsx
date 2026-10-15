@@ -114,7 +114,7 @@ export function SubjectTitleInline({
             cancel();
           }
         }}
-        aria-label="Nom du sujet"
+        aria-label="Nom de l’affaire"
         // Même typo que le <h1> parent : le titre ne doit pas sauter de taille
         // au moment où l'on commence à écrire.
         className="w-full border-b-2 border-white/70 bg-white/10 font-heading text-[26px] font-semibold tracking-[-0.01em] text-white outline-none"
@@ -126,8 +126,8 @@ export function SubjectTitleInline({
     <button
       type="button"
       onClick={open}
-      title="Renommer le sujet"
-      aria-label={`Renommer le sujet : ${shown}`}
+      title="Renommer l’affaire"
+      aria-label={`Renommer l’affaire : ${shown}`}
       // Titre lisible, TROIS lignes au plus : un titre de 200 caractères (la
       // limite du domaine) prenait sept lignes et tout l'écran (pire cas,
       // M19.10). Le `line-clamp` du <h1> parent n'opère pas à travers un

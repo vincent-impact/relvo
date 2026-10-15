@@ -174,7 +174,7 @@ export function SubjectDetailForm({
         contactIds: form.contactIds,
       });
       if (res.ok) {
-        toast.success("Sujet créé");
+        toast.success("Affaire créée");
         router.push(`/sujets/${res.data.id}`);
       } else {
         toast.error(res.message);
@@ -192,12 +192,12 @@ export function SubjectDetailForm({
   return (
     <div className="space-y-6 px-4 pt-5">
       <div>
-        <FieldLabel>Nom du sujet</FieldLabel>
+        <FieldLabel>Nom de l’affaire</FieldLabel>
         <input
           value={form.title}
           onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
           onBlur={saveTitle}
-          placeholder="Intitulé du sujet…"
+          placeholder="Intitulé de l’affaire…"
           className="w-full rounded-xl border border-(--border) px-3.5 py-3 text-[15px] font-semibold outline-none focus:border-relvo"
         />
       </div>
@@ -353,7 +353,7 @@ export function SubjectDetailForm({
           className="flex w-full items-center justify-center gap-2 rounded-xl bg-relvo py-3.5 text-[15px] font-bold text-white disabled:opacity-60"
         >
           <Check className="size-5" strokeWidth={2.4} />
-          Créer le sujet
+          Créer l’affaire
         </button>
       ) : null}
     </div>
@@ -372,7 +372,7 @@ export function SubjectDangerZone({ subjectId }: { subjectId: string }) {
     startTransition(async () => {
       const res = await deleteSubjectAction(subjectId);
       if (res.ok) {
-        toast.success("Sujet supprimé");
+        toast.success("Affaire supprimée");
         router.push("/fil");
       } else {
         toast.error(res.message);
@@ -389,7 +389,7 @@ export function SubjectDangerZone({ subjectId }: { subjectId: string }) {
         className="flex w-full items-center justify-center gap-2 rounded-xl border border-(--red-200) py-3 text-[14px] font-semibold text-(--red-600)"
       >
         <Trash className="size-[18px]" />
-        Supprimer le sujet
+        Supprimer l’affaire
       </button>
 
       <ConfirmDialog
@@ -397,7 +397,7 @@ export function SubjectDangerZone({ subjectId }: { subjectId: string }) {
         onOpenChange={setOpen}
         tone="destructive"
         icon={Trash}
-        title="Supprimer ce sujet ?"
+        title="Supprimer cette affaire ?"
         description="Ses tâches et tout son journal seront définitivement effacés. Cette action est irréversible."
         confirmLabel="Supprimer"
         pending={pending}

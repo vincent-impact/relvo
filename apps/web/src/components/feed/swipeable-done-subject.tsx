@@ -46,7 +46,7 @@ export function SwipeableDoneSubject({
     startTransition(async () => {
       const res = await reopenSubjectAction(subjectId);
       if (res.ok) {
-        toast.success("Sujet remis");
+        toast.success("Affaire remise");
         router.refresh();
       } else {
         toast.error(res.message);
@@ -59,7 +59,7 @@ export function SwipeableDoneSubject({
       const res = await deleteSubjectAction(subjectId);
       if (res.ok) {
         setConfirmDelete(false);
-        toast.success("Sujet supprimé");
+        toast.success("Affaire supprimée");
         router.refresh();
       } else {
         toast.error(res.message);
@@ -96,7 +96,7 @@ export function SwipeableDoneSubject({
         onOpenChange={setConfirmDelete}
         tone="destructive"
         icon={Trash}
-        title="Supprimer ce sujet ?"
+        title="Supprimer cette affaire ?"
         description="Ses tâches et tout son journal seront définitivement effacés. Cette action est irréversible."
         confirmLabel="Supprimer"
         pending={pending}

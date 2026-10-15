@@ -8,15 +8,15 @@ const PROMPTS = {
   general: [
     "Qu'est-ce qui est urgent aujourd'hui ?",
     "Quelles sont mes tâches cette semaine ?",
-    "Quels sujets attendent une réponse ?",
+    "Quelles affaires attendent une réponse ?",
   ],
   fil: [
     "Qu'est-ce qui est urgent aujourd'hui ?",
-    "Quels sujets attendent une réponse ?",
-    "Range mes sujets ouverts par priorité",
+    "Quelles affaires attendent une réponse ?",
+    "Range mes affaires ouvertes par priorité",
   ],
   subject: [
-    "Résume-moi ce sujet",
+    "Résume-moi cette affaire",
     "Prépare une réponse",
     "Quelles tâches restent à faire ?",
     "Qui sont les contacts impliqués ?",
@@ -49,7 +49,7 @@ export default async function ConversationPage({
       prompts = PROMPTS.subject;
     }
   } else if (from?.startsWith("/fil")) {
-    contextLabel = "Sujets";
+    contextLabel = "Affaires";
     prompts = PROMPTS.fil;
   }
   // Depuis l'accueil, pas de puce « Contexte » : elle ne changeait rien aux

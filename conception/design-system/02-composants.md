@@ -30,14 +30,14 @@ que le registre fournit est une **erreur de process**, pas un choix esthétique.
 
 ## Les règles de composition qui ne se devinent pas
 
-**Une entité de liste est une LIGNE dans UNE carte, pas une carte par ligne.** Un sujet, une
+**Une entité de liste est une LIGNE dans UNE carte, pas une carte par ligne.** Une affaire, une
 tâche, une conversation, un contact se rendent en ligne, séparées par un filet, dans une carte
 blanche unique (`ListPanel`) posée sur le fond blanc de l'écran. Des cartes empilées avec leurs
 marges et leurs ombres divisent par deux le nombre d'éléments visibles à l'écran — sur un produit
 dont le travail est de *trier*, c'est le mauvais arbitrage. Une ligne pose `data-list-row` sur
 sa racine : c'est ce qui retire le filet de la dernière. **Une seule exception, voulue** : « En
 attente de vous », sur l'accueil, est une suite de cartes à feuilleter horizontalement, une par
-sujet, parce que chacune porte le contact, l'enjeu, depuis quand, et le geste — ce qu'une ligne
+affaire, parce que chacune porte le contact, l'enjeu, depuis quand, et le geste — ce qu'une ligne
 ne peut pas porter.
 
 **La MATIÈRE dit l'importance, et il y a quatre matières.** Le **ciel** (le header en livrée,
@@ -47,7 +47,7 @@ lit ou se manipule, chiffres, lignes, formulaires ; le **texte nu** sur le fond 
 titres de zone et leurs qualificatifs. Deux cartes blanches de même matière font deux zones
 d'égale importance — donc aucune ; c'est la couleur qui hiérarchise, jamais une ombre plus
 forte. Corollaire : un texte n'a pas besoin d'une carte, et une carte ne contient jamais une
-autre carte avec sa propre ombre — un sujet cité dans un bloc de Relvo est une sous-carte à
+autre carte avec sa propre ombre — une affaire citée dans un bloc de Relvo est une sous-carte à
 filet, sans ombre.
 
 **Mais toute zone est NOMMÉE, et les en-têtes sont symétriques.** Sans libellé, un écran encore
@@ -59,11 +59,11 @@ matière, la lisibilité vient du libellé ; les deux ne s'opposent pas. Un libe
 jamais parce que sa zone est vide : c'est là qu'il sert le plus, au-dessus de l'invite qui
 amorce le remplissage.
 
-**Le domaine se lit à sa bande, une par carte ou par ligne.** Une carte de sujet, une ligne de
-sujet, un sujet cité par Relvo, le bandeau « Suivi dans » d'une conversation portent sur leur
+**Le domaine se lit à sa bande, une par carte ou par ligne.** Une carte d'affaire, une ligne
+d'affaire, une affaire citée par Relvo, le bandeau « Suivi dans » d'une conversation portent sur leur
 tranche gauche la bande pleine de leur domaine et son nom en capitales condensées de la même
 couleur. Une seule bande par surface, sur la tranche : deux bandes sur un même objet, ou une
-bande sur une tâche qui a déjà son sujet écrit, font un camion de foire. Les icônes du dock, les
+bande sur une tâche qui a déjà son affaire écrite, font un camion de foire. Les icônes du dock, les
 pastilles d'état et les avatars ne portent jamais la couleur d'un domaine.
 
 **Les chiffres sont gros et condensés, le texte est fin.** Un indicateur, un horaire, un délai,
@@ -87,13 +87,13 @@ un choix dans le texte ; la **carte vivante** (`CarteVivante`) — une phrase qu
 est et trois compteurs qui se posent quand ils changent. Un écran qui recopie le bloc à la
 main diverge en une semaine.
 
-**Un état vide guide, dans la voix de Relvo, quand c'est Relvo qui remplit.** Les sujets
-ouverts, l'annuaire, les conversations, les boîtes, les nouvelles : vides, ils sont un bloc de
+**Un état vide guide, dans la voix de Relvo, quand c'est Relvo qui remplit.** Les affaires
+ouvertes, l'annuaire, les conversations, les boîtes, les nouvelles : vides, ils sont un bloc de
 Relvo qui dit ce qu'il fera et par où commencer — relier la première boîte quand rien n'est
 arrivé, ou ce que le « + » permet sinon. Un onglet que l'utilisateur remplit par un geste
 (validés, fermés) garde un texte nu qui enseigne le geste.
 
-**Chaque phrase de Relvo pointe sa preuve.** Un bloc de Relvo qui parle d'un sujet, d'une tâche
+**Chaque phrase de Relvo pointe sa preuve.** Un bloc de Relvo qui parle d'une affaire, d'une tâche
 ou d'un message porte sous la phrase le lien vers cet objet, ou l'objet lui-même en sous-carte ;
 une affirmation de l'agent sans porte vers ce qu'elle décrit est une affirmation que le
 dirigeant ne peut pas vérifier.
@@ -105,7 +105,7 @@ et sort de la carte à deux chiffres. Le point du non-lu tient l'autre coin. Un 
 « 0 », en gris clair — un tiret ou un vide y laisserait croire à une donnée manquante.
 
 **Une présentation unique par entité, partout.** Une tâche se rend de la même façon dans la
-liste d'un sujet et dans une liste à plat ; seul le contexte affiché varie (le titre du sujet
+liste d'une affaire et dans une liste à plat ; seul le contexte affiché varie (le titre de l'affaire
 apparaît dans la liste à plat, la date disparaît quand le semainier la porte déjà). Deux rendus
 d'une même entité divergent en une semaine.
 
@@ -118,7 +118,7 @@ domaine. Les gestes et ce qu'ils déclenchent font foi dans
 canal. Un tap qui ouvre une modale sur une liste qu'on parcourt au pouce transforme chaque
 défilement en champ de mines.
 
-**Une confirmation nomme ce qu'elle met en jeu.** Jamais « un ou plusieurs sujets » : une
+**Une confirmation nomme ce qu'elle met en jeu.** Jamais « une ou plusieurs affaires » : une
 confirmation sans information se clique sans être lue, ce qui la rend pire qu'absente.
 
 **Ce qui est destructeur est irréversible ; le reste ne l'est jamais.** Aucun geste courant du
@@ -134,6 +134,6 @@ porte l'information de provenance. Les bulles restent réservées aux messages c
 messagerie, aux couleurs des acteurs : la mienne bleue à droite, celle d'un tiers ambre pâle à
 gauche. Relvo n'a pas de bulle, il a un bloc.
 
-**Un composant rendu par Relvo est le même que celui de l'écran.** Une carte de sujet affichée
+**Un composant rendu par Relvo est le même que celui de l'écran.** Une carte d'affaire affichée
 dans un échange avec l'agent est identique à celle de la liste — c'est ce qui rend l'agent
 crédible comme surface d'action, et ce qui garantit qu'un seul correctif suffit.

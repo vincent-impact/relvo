@@ -54,7 +54,7 @@ se masque pas au défilement — un élément de navigation qui disparaît est u
 cherche. L'accès à Relvo vit **en son centre**, à la même place sur toutes les pages, un disque
 violet qui déborde du dock en haut et en bas, la pilule se soulevant autour de lui en courbe
 douce, sans libellé ; il porte un badge quand Relvo attend une réponse. Le
-dock est présent sur les pages à onglet et les pages du menu, et sur la fiche d'un sujet ; il
+dock est présent sur les pages à onglet et les pages du menu, et sur la fiche d'une affaire ; il
 **cède la place au composer** dans une conversation et dans l'échange, où l'on écrit.
 
 Le **menu latéral** s'ouvre depuis le burger, à droite du header, et glisse depuis la gauche

@@ -11,7 +11,7 @@
 ## Projet
 
 Relvo transforme le flux désordonné de messages reçus par un dirigeant — e-mails, messagerie —
-en **sujets métier structurés**, avec tâches, journal de bord et aide à la décision.
+en **affaires structurées** (« sujets » dans le code et la conception, **« affaires » pour l'utilisateur**), avec tâches, journal de bord et aide à la décision.
 
 **Public** : dirigeants des secteurs **food** et **bâtiment**. Peu familiers des SaaS
 bureautiques, à l'aise avec les assistants conversationnels.
@@ -121,20 +121,20 @@ relvo/
 |---|---|---|
 | `/` | **Accueil** — brief en quatre zones : dernières nouvelles (header) · activité · aujourd'hui · en attente de vous | onglet |
 | `/calendrier` | **Calendrier** — la page des **tâches** : indicateurs, semaine ou mois | onglet |
-| `/fil` | **Sujets** — indicateurs cliquables qui **sélectionnent** la liste, filtres par domaine, « à trier » | onglet |
+| `/fil` | **Affaires** — indicateurs cliquables qui **sélectionnent** la liste, filtres par domaine, « à trier » | onglet |
 | `/conversations` · `/conversations/[id]` | **Conversations** — **seule surface d'affichage et de réponse** d'un fil | onglet |
 | `/relvo` · `/relvo/historique` | **Échange avec Relvo**, plein écran ; questions de Relvo en formulaires | **bouton central du dock** |
 | `/bilan` | **Bilan** — deux familles de chiffres, séparées | menu |
-| `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Mémoire** — instructions du compte, puis les domaines (Instructions / Documents / Sujets) | menu |
+| `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Mémoire** — instructions du compte, puis les domaines (Instructions / Documents / Affaires) | menu |
 | `/contacts` · `/contacts/[id]` · `/contacts/nouveau` | **Contacts** — annuaire et fiche | menu |
 | `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros. Il n'y a **pas** de page Réglages | menu |
 | `/recherche` | Recherche transverse | menu, en dernier |
-| `/sujets/[id]` · `/sujets/nouveau` | Fiche d'un sujet | hors-nav |
+| `/sujets/[id]` · `/sujets/nouveau` | Fiche d'une affaire | hors-nav |
 | `/(auth)/*` | Tunnel d'authentification | — |
 
 **Navigation** : barre d'onglets basse, fixe, violette, **cinq places** : Accueil · Calendrier ·
 **Relvo** (bouton central, disque violet qui déborde du dock des deux côtés, le dock se soulevant autour de lui, badge quand une question attend) ·
-Sujets · Conversations. Le **menu latéral** (burger, discret, à droite du header) porte Bilan, Mémoire, Contacts, Canaux, Profil,
+Affaires · Conversations. Le **menu latéral** (burger, discret, à droite du header) porte Bilan, Mémoire, Contacts, Canaux, Profil,
 Préférences, Usage, Rechercher. **Toute page du menu porte le burger** ; la flèche retour est
 réservée aux écrans poussés (fiches, création). Les boutons de page se posent **à droite**.
 

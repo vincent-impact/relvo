@@ -50,20 +50,20 @@ export default async function FilPage() {
     <Screen>
       <PollRefresh />
       <RelvoHeader
-        title="Sujets"
+        title="Affaires"
         className="pb-[46px]"
         action={
           <>
             <Link
               href="/recherche"
-              aria-label="Rechercher un sujet"
+              aria-label="Rechercher une affaire"
               className={SKY_BTN}
             >
               <Search className="size-4" strokeWidth={2.4} />
             </Link>
             <Link
               href="/sujets/nouveau"
-              aria-label="Nouveau sujet"
+              aria-label="Nouvelle affaire"
               className={SKY_BTN}
             >
               <Plus className="size-4" strokeWidth={2.6} />

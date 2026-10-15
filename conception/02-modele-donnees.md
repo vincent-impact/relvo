@@ -84,7 +84,7 @@ et l'état ne change jamais que par la méthode du domaine qui le journalise.
 Il porte enfin le **dernier passage** de l'utilisateur sur les onglets « Suivies » et
 « Ignorées » de Conversations. Ces deux horodatages servent aux **pastilles** du sélecteur :
 elles comptent ce que Relvo a rangé dans l'onglet depuis, et tombent quand l'onglet est vu.
-« Sans sujet » n'a pas d'horodatage : sa pastille est un stock, le résidu de Relvo, qui ne se
+« Sans affaire » n'a pas d'horodatage : sa pastille est un stock, le résidu de Relvo, qui ne se
 vide qu'en triant. Une visite n'est pas une décision, elle n'est pas journalisée.
 
 Il porte de même le **dernier passage sur l'accueil**, qui borne « depuis votre dernière
@@ -93,7 +93,7 @@ enregistré depuis, et l'horodatage avance quand l'accueil est vu.
 
 ## Folder
 
-Un **domaine** : conteneur métier qui regroupe les sujets d'un périmètre, les documents de
+Un **domaine** : conteneur métier qui regroupe les affaires d'un périmètre, les documents de
 connaissance qui servent à les traiter, et les messages classés dans ce domaine à la réception.
 
 Porte un nom, un identifiant lisible, une description, et deux clés de présentation — couleur et
@@ -102,7 +102,7 @@ icône — **nullables**, avec repli sur un mapping dérivé de l'identifiant li
 `is_default` marque le domaine **« Général »**, auto-créé à la création du compte.
 
 **Invariant structurel :** aucun `Subject.folder_id` ne pointe vers le domaine « Général ».
-Quand Relvo ne sait pas classer un sujet, `folder_id` reste **nul** — le sujet apparaît « sans
+Quand Relvo ne sait pas classer une affaire, `folder_id` reste **nul** — l'affaire apparaît « sans
 domaine » plutôt que d'atterrir dans Général. Cela préserve le rôle de mémoire transversale de
 celui-ci au lieu d'en faire un dépotoir. Le comportement associé fait foi dans `04`.
 
@@ -158,7 +158,7 @@ simplicité d'usage, et facturation à l'usage chez l'agrégateur.
 
 **`ChannelCatchup`** porte le **rattrapage du courrier récent** d'un canal (cf. `05-ia.md`
 §9.6) : la fenêtre lue, l'état — demandé, en cours, terminé, arrêté au plafond, en échec —,
-l'avancement de l'import et du tri, ce que Relvo en a fait (messages lus, sujets ouverts,
+l'avancement de l'import et du tri, ce que Relvo en a fait (messages lus, affaires ouvertes,
 conversations mises en sourdine), le coût en euros, et la raison de l'arrêt. Une ligne par
 rattrapage demandé ; la demande naît à la connexion d'un canal, l'exécution commence aussitôt,
 par tranches, et reprend tant que la ligne n'est pas close. C'est ce que le premier échange avec
@@ -209,14 +209,14 @@ La clé est calculée à la réception : on cherche la conversation correspondan
 
 ⚠️ **La clé e-mail inclut le SET de destinataires**, trié et normalisé, pas un interlocuteur
 unique. C'est ce qui fait qu'une réponse adressée à un sous-ensemble différent produit une
-**nouvelle** conversation. La conséquence métier — elle est rangée automatiquement dans le même
-sujet — fait foi dans `04`.
+**nouvelle** conversation. La conséquence métier — elle est rangée automatiquement dans la même
+affaire — fait foi dans `04`.
 
 L'**objet normalisé** retire les préfixes de réponse et de transfert répétés et multilingues,
 écrase les espaces et passe en minuscules, afin qu'une réponse rejoigne la conversation de
 départ.
 
-⚠️ **Les clés ne fusionnent jamais.** Ce qui réunit deux conversations est le **sujet**, jamais
+⚠️ **Les clés ne fusionnent jamais.** Ce qui réunit deux conversations est l'**affaire**, jamais
 la clé.
 
 ### Le statut `ignoré`
@@ -247,7 +247,7 @@ dit seulement ce que Relvo en pense, et pourquoi.
 
 ## SubjectConversation
 
-Table de liaison entre un sujet et une conversation. **Chaque ligne est une écoute.**
+Table de liaison entre une affaire et une conversation. **Chaque ligne est une écoute.**
 
 Elle porte les deux **bornes**, toutes deux **nullables** et pointant vers des **messages** :
 
@@ -256,29 +256,29 @@ Elle porte les deux **bornes**, toutes deux **nullables** et pointant vers des *
 | `anchor_message_id` — le début | pas de borne basse → **tout le fil** (cas de l'e-mail) |
 | `closing_message_id` — la fin  | **l'écoute est en cours**                              |
 
-Contrainte d'unicité sur le couple (sujet, conversation).
+Contrainte d'unicité sur le couple (affaire, conversation).
 
 > ⚠️ **Aucune contrainte d'unicité sur `subject_id` seul.** La poser interdirait d'un coup le
 > rattachement d'un second fil, le changement d'objet et le changement d'adresse d'un
-> interlocuteur. La règle « au plus un sujet ouvert par conversation » est une **règle métier**,
+> interlocuteur. La règle « au plus une affaire ouverte par conversation » est une **règle métier**,
 > pas une contrainte de schéma — cf. `04 §13`.
 
 > ⚠️ **Les bornes désignent des messages, jamais des dates.** Une borne calculée sur un
 > horodatage devient fausse dès que deux messages arrivent dans la même seconde.
 
-## Subject
+## Affaire (`Subject`)
 
 Entité centrale du produit.
 
 Porte une **référence** lisible générée automatiquement, un **titre**, un **résumé** et une
 **description**, un **domaine** nullable, un **set de contacts**, un **statut** de cycle de vie à
 trois valeurs, une **priorité** à deux valeurs, un marqueur d'attente de réponse, le canal
-d'origine, et l'acteur qui l'a créé.
+d'origine, et l'acteur qui l'a créée.
 
-Il porte aussi une **situation structurée** en quatre champs courts — où on en est, la prochaine
+Elle porte aussi une **situation structurée** en quatre champs courts — où on en est, la prochaine
 étape, de qui on attend quoi, l'échéance qui compte — maintenue par Relvo à chaque relecture, avec
 l'horodatage de sa dernière mise à jour. La situation structurée est ce que Relvo **relit**, et
-ce qui rend les sujets comparables entre eux.
+ce qui rend les affaires comparables entre elles.
 
 **Le résumé et la description sont deux colonnes pour un seul champ à l'écran.** La description
 est ce que l'utilisateur écrit ; le résumé, ce que Relvo rédige — une phrase, deux au plus, qui
@@ -290,7 +290,7 @@ Les **étiquettes** sont un tableau de clés du registre du compte (cf. `Label`)
 Relvo seul. Le **domaine proposé** est un nom libre, renseigné quand aucun domaine existant ne
 convient : c'est de l'accumulation de ces propositions que naît un domaine nouveau (cf. `04 §10`).
 
-Il porte enfin une série d'horodatages, chacun répondant à une question distincte :
+Elle porte enfin une série d'horodatages, chacun répondant à une question distincte :
 
 | Champ                     | Question à laquelle il répond                                        |
 | ------------------------- | -------------------------------------------------------------------- |
@@ -298,12 +298,12 @@ Il porte enfin une série d'horodatages, chacun répondant à une question disti
 | `last_activity_at`        | quand s'est-il passé quelque chose ? — pilote le tri                 |
 | `last_opened_at`          | l'utilisateur a-t-il déjà regardé ? — **nul ⇒ marqueur « Nouveau »** |
 | `resolution_suggested_at` | Relvo a-t-il suggéré que c'était fini ?                              |
-| `resolved_at`             | quand a-t-il été validé ?                                            |
-| `closed_at`               | quand a-t-il été clos ?                                              |
+| `resolved_at`             | quand a-t-elle été validée ?                                         |
+| `closed_at`               | quand a-t-elle été close ?                                           |
 
 ⚠️ **`closed_at` est une simple date de clôture. Il ne borne rien.** L'appartenance est portée
-**exclusivement** par les bornes d'écoute. Les confondre ampute silencieusement le périmètre d'un
-sujet quand on le valide — cf. `04 §5`.
+**exclusivement** par les bornes d'écoute. Les confondre ampute silencieusement le périmètre d'une
+affaire quand on la valide — cf. `04 §5`.
 
 ⚠️ **Les marqueurs ne sont pas stockés.** « Nouveau », « À faire », « En retard » sont **dérivés**
 au calcul. Seuls `priority` et `waiting_for_reply` sont des champs.
@@ -319,7 +319,7 @@ au calcul. Seuls `priority` et `waiting_for_reply` sont des champs.
   C'est la granularité fine du modèle : elle permettra de séparer des affaires **entrelacées**
   dans un même fil. L'interface ne l'expose pas — cf. `04 §13`.
 - **`folder_id` — nullable.** Le domaine assigné au message à la réception ; c'est lui qui donne
-  ensuite son domaine au sujet ouvert depuis ce message.
+  ensuite son domaine à l'affaire ouverte depuis ce message.
 
 Le message porte aussi : l'expéditeur (contact **nullable**, plus l'adresse brute et le nom
 affiché conservés quand aucun contact n'existe encore), le destinataire, le **sens**, les
@@ -331,7 +331,7 @@ vocal —, les horodatages de réception et d'envoi, un statut, et `read_at`.
 jointe. Le rangement n'attend pas la transcription, et un message dont la transcription a échoué
 est un message au contenu vide et à l'audio lisible.
 
-⚠️ **`read_at` se pose à l'ouverture de la CONVERSATION**, pas du sujet. C'est là que les
+⚠️ **`read_at` se pose à l'ouverture de la CONVERSATION**, pas de l'affaire. C'est là que les
 messages arrivent.
 
 ⚠️ **`triage_hint` n'est plus alimenté.** Il expliquait pourquoi Relvo n'avait pas su rattacher
@@ -341,7 +341,7 @@ qui porte des données passées ne se récupère pas.
 
 ## Attachment
 
-Pièce jointe rattachée à un message, et au sujet quand il y en a un. Porte un nom, un type MIME,
+Pièce jointe rattachée à un message, et à l'affaire quand il y en a une. Porte un nom, un type MIME,
 une taille, et la **clé d'objet** dans le stockage.
 
 ⚠️ **`storage_key` est une clé d'objet, pas une URL.** Le bucket est privé ; l'URL de lecture est
@@ -360,10 +360,10 @@ fois pour le même document au même niveau.
 
 ## Task
 
-Unité de travail **du sujet**, pas de l'utilisateur.
+Unité de travail **de l'affaire**, pas de l'utilisateur.
 
-- **`subject_id` — nullable.** Une tâche peut exister sans sujet : créée à la volée, ou détachée.
-  La clé étrangère reste en cascade — supprimer un sujet supprime ses tâches rattachées.
+- **`subject_id` — nullable.** Une tâche peut exister sans affaire : créée à la volée, ou détachée.
+  La clé étrangère reste en cascade — supprimer une affaire supprime ses tâches rattachées.
 - **`source_actor`** — qui a créé ou proposé la tâche. C'est un **attribut historique permanent**.
   C'est aussi ce qui autorise Relvo à **retirer** une tâche devenue sans objet (statut `deleted`,
   journalisé — cf. `05-ia.md` §4.2) : seulement une tâche qu'il avait lui-même proposée.
@@ -373,7 +373,7 @@ Unité de travail **du sujet**, pas de l'utilisateur.
 - **`completion_mode`** — comment la tâche a été terminée : manuellement, par correspondance avec
   un message, ou avec une action.
 - **`completed_by_actor`** — qui l'a cochée.
-- **`metadata`** — porte la **provenance d'une déduction** — la référence du sujet précédent ou
+- **`metadata`** — porte la **provenance d'une déduction** — la référence de l'affaire précédente ou
   du document de connaissance sur lequel Relvo s'est appuyé —, la **raison** en une phrase, et,
   sur une tâche qui se répond, les **décisions** que le message demande (question, précision,
   options, réponse du dirigeant et son horodatage — cf. `05-ia.md` §3.1).
@@ -418,7 +418,7 @@ Aucune colonne ne la porte, et c'est délibéré : elle a été introduite sans 
 
 Exécution concrète déclenchée depuis l'interface — en V1, essentiellement l'envoi d'un message.
 
-Rattachée au sujet, optionnellement à une tâche et à un message. Porte un type, un titre, un
+Rattachée à l'affaire, optionnellement à une tâche et à un message. Porte un type, un titre, un
 **payload** opaque, un statut, et qui l'a exécutée, quand.
 
 **Le brouillon de Relvo vit dans le payload** — destinataire, canal, contenu, et la raison et la
@@ -456,8 +456,8 @@ Deux familles d'entrées portent la **boucle d'apprentissage** et la **maîtrise
 Document de référence chargé par l'utilisateur pour enrichir le contexte de Relvo.
 
 **Toujours rattaché à un domaine** — à défaut, au domaine « Général ». C'est ce domaine qui
-détermine sa portée : les documents de « Général » sont chargés pour **tous** les sujets, ceux
-d'un domaine métier seulement pour les sujets de ce domaine.
+détermine sa portée : les documents de « Général » sont chargés pour **toutes** les affaires, ceux
+d'un domaine métier seulement pour les affaires de ce domaine.
 
 Deux natures, portées par un énuméré :
 
@@ -477,40 +477,40 @@ L'**état d'absorption** — lu ou écarté — décide de l'inclusion dans les 
 par Relvo et modifiable par l'utilisateur. Il sert aussi, sur une instruction, d'interrupteur
 d'activation.
 
-**La portée « sujet » n'existe pas.** Un document spécifique à une affaire ponctuelle reste une
+**La portée « affaire » n'existe pas.** Un document spécifique à une affaire ponctuelle reste une
 pièce jointe du message qui l'a apporté.
 
-Une instruction peut naître d'une **correction** : quand l'utilisateur reclasse un sujet ou
+Une instruction peut naître d'une **correction** : quand l'utilisateur reclasse une affaire ou
 écarte une tâche et dit pourquoi, son explication devient une instruction du domaine. Elle garde
-alors la référence du **sujet qui l'a provoquée** — nullable, la plupart des instructions étant
+alors la référence de l'**affaire qui l'a provoquée** — nullable, la plupart des instructions étant
 écrites directement.
 
 ## Label
 
-Une **étiquette** : un marqueur thématique attribué au sujet par Relvo, qui **traverse les
+Une **étiquette** : un marqueur thématique attribué à l'affaire par Relvo, qui **traverse les
 domaines**. Le domaine est le périmètre de mémoire que l'utilisateur contrôle ; l'étiquette est
 une facette que Relvo tient pour lui-même — pour retrouver un précédent hors du domaine, filtrer,
 et poser des analogies que ni le contact ni la date ne suggèrent.
 
 Le registre est **par compte**. Une étiquette porte une clé normalisée — unique par compte —, un
 libellé, une **origine** — amorcée par un socle de secteur, ou proposée par Relvo — et un
-**statut** : candidate tant qu'un seul sujet la porte, active dès qu'un second la reprend.
+**statut** : candidate tant qu'une seule affaire la porte, active dès qu'une seconde la reprend.
 
 ⚠️ **L'utilisateur n'écrit jamais une étiquette.** Il peut filtrer dessus, jamais en saisir : un
-vocabulaire à deux mains diverge en quelques semaines, et une étiquette portée par un seul sujet
+vocabulaire à deux mains diverge en quelques semaines, et une étiquette portée par une seule affaire
 ne relie rien. Le comportement — attribution, promotion, choix dans le registre — fait foi dans
 `04 §10` et `05 §9`.
 
 ## RelvoQuestion
 
 Une **question de Relvo** : ce qu'il aurait besoin de savoir pour mieux faire, formulé à la
-structuration d'un sujet — « Narbonne est-il une franchise ? » —, ou posé par une étape de la
+structuration d'une affaire — « Narbonne est-il une franchise ? » —, ou posé par une étape de la
 prise en main et du rattrapage (`05 §11.11`). C'est l'objet par lequel **Relvo parle en
 premier** (`05 §11.12`).
 
-Elle porte une **portée** — un contact, un domaine, un sujet ou le compte —, un texte, les
+Elle porte une **portée** — un contact, un domaine, une affaire ou le compte —, un texte, les
 **réponses proposées** quand elle se pose en formulaire, un statut — ouverte, répondue,
-écartée —, la réponse, ce qui l'a fait naître — un sujet, ou l'étape d'un script —, et les
+écartée —, la réponse, ce qui l'a fait naître — une affaire, ou l'étape d'un script —, et les
 horodatages de question et de réponse.
 
 ⚠️ **Une question n'est jamais une tâche.** Elle vit sur la fiche où on y répond et dans

@@ -242,7 +242,7 @@ describe("l'avancement et la clôture", () => {
     ]);
     expect(journal[1].title).toBe("Rattrapage arrêté au plafond");
     expect(journal[1].description).toContain(
-      "40 messages lus, 3 sujets ouverts",
+      "40 messages lus, 3 affaires ouvertes",
     );
     expect((journal[1].metadata as { reason: string }).reason).toBe(
       "plafond-euros",

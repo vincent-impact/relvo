@@ -2,9 +2,9 @@
 id: M3
 public: true
 ordre_public: 3
-titre_client: Sujets, tâches et domaines
+titre_client: Affaires, tâches et domaines
 resume_client: >
-  Poser la structure de votre espace de travail : un sujet regroupe une affaire en cours, ses
+  Poser la structure de votre espace de travail : une affaire regroupe un dossier en cours, ses
   échanges, ses tâches et l'historique des décisions prises. C'est l'unité autour de laquelle
   tourne tout le produit.
 statut: termine

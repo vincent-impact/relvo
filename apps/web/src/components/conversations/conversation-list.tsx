@@ -88,11 +88,11 @@ function ChannelTag({ type }: { type: string }) {
 const EMPTY: Record<ConversationFilterSlug, { title: string; hint: string }> = {
   "sans-sujet": {
     title: "Rien à trier",
-    hint: "Toutes vos conversations actives sont couvertes par un sujet.",
+    hint: "Toutes vos conversations actives sont couvertes par une affaire.",
   },
   suivies: {
     title: "Aucune conversation suivie",
-    hint: "Les conversations couvertes par un sujet ouvert apparaîtront ici.",
+    hint: "Les conversations couvertes par une affaire ouverte apparaîtront ici.",
   },
   ignorees: {
     title: "Aucune conversation ignorée",
@@ -291,17 +291,17 @@ function ConversationRow({
             <AlertDialogDescription>
               {data.listeningSubjects.length === 1 ? (
                 <>
-                  Le sujet{" "}
+                  L’affaire{" "}
                   <span className="font-semibold text-(--text-primary)">
                     « {data.listeningSubjects[0]!.title} »
                   </span>{" "}
-                  écoute encore ce fil. Il ne sera plus alimenté par ces
+                  écoute encore ce fil. Elle ne sera plus alimentée par ces
                   messages. Aucune donnée n’est supprimée.
                 </>
               ) : (
                 <>
-                  Ces sujets écoutent encore ce fil et ne seront plus alimentés
-                  :
+                  Ces affaires écoutent encore ce fil et ne seront plus
+                  alimentées :
                   <span className="mt-1.5 block font-semibold text-(--text-primary)">
                     {data.listeningSubjects
                       .map((s) => `« ${s.title} »`)

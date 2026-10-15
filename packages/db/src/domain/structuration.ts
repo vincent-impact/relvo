@@ -447,7 +447,7 @@ export async function loadSubjectSheet(
         folder: { select: { id: true, name: true, description: true } },
       },
     }),
-    "Sujet",
+    "Affaire",
   );
 
   const account = assertFound(
@@ -756,12 +756,12 @@ export async function applyStructuration(
         contactIds: true,
       },
     }),
-    "Sujet",
+    "Affaire",
   );
   if (subject.status !== SubjectStatus.open) {
     throw new DomainError(
       "INVALID_STATE",
-      "La structuration ne s'applique qu'à un sujet ouvert.",
+      "La structuration ne s'applique qu'à une affaire ouverte.",
     );
   }
 
@@ -839,8 +839,8 @@ export async function applyStructuration(
     eventType: EVENT_TYPES.subjectStructured,
     title:
       taskIds.length === 0
-        ? "Relvo a lu le sujet : rien à faire pour l'instant"
-        : `Relvo a structuré le sujet : ${taskIds.length} tâche${taskIds.length > 1 ? "s" : ""}`,
+        ? "Relvo a lu l'affaire : rien à faire pour l'instant"
+        : `Relvo a structuré l'affaire : ${taskIds.length} tâche${taskIds.length > 1 ? "s" : ""}`,
     description: data.situation.where || null,
     actor: Actor.ai,
     metadata: {
@@ -990,7 +990,7 @@ export async function logStructurationFailure(
     subjectId: input.subjectId,
     messageId: input.messageId,
     eventType: EVENT_TYPES.structurationFailed,
-    title: "Structuration interrompue — le sujet reste sans tâche",
+    title: "Structuration interrompue — l'affaire reste sans tâche",
     description: input.error.slice(0, 500),
     actor: Actor.system,
     metadata: { cause: input.cause ?? null },

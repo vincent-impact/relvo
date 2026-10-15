@@ -52,7 +52,7 @@ async function DossierTabs({ folder }: { folder: Folder }) {
     { value: "documents", label: "Documents", count: files.length },
   ];
   if (!folder.isDefault) {
-    options.push({ value: "sujets", label: "Sujets", count: rows.length });
+    options.push({ value: "sujets", label: "Affaires", count: rows.length });
   }
 
   return (
@@ -122,8 +122,8 @@ async function DossierTabs({ folder }: { folder: Folder }) {
               sujets:
                 rows.length === 0 ? (
                   <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
-                    Aucun sujet ouvert ici. Relvo en ouvrira quand un message
-                    concernera ce domaine.
+                    Aucune affaire ouverte ici. Relvo en ouvrira une quand un
+                    message concernera ce domaine.
                   </p>
                 ) : (
                   <div className="pt-3 pb-2">

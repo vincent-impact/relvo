@@ -30,8 +30,8 @@ export default async function NouveauSujetPage() {
       <main className="entre-ecran min-h-0 flex-1 overflow-y-auto bg-background pb-[calc(92px+env(safe-area-inset-bottom))]">
         <RelvoHeader
           back="/fil"
-          title="Nouveau sujet"
-          subtitle="Paramétrez le sujet à suivre"
+          title="Nouvelle affaire"
+          subtitle="Paramétrez l’affaire à suivre"
           className="pb-9"
         />
         <SubjectDetailForm

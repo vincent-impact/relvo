@@ -220,7 +220,7 @@ pierre, ruban décoratif, aplat d'informations.
 
 **Key Characteristics:**
 - Un ciel étoilé en dégradé de violet nuit vers le blanc, en CSS, jamais une image
-- Une bande de domaine pleine sur la tranche gauche de chaque carte et ligne de sujet
+- Une bande de domaine pleine sur la tranche gauche de chaque carte et ligne d'affaire
 - Gros chiffres condensés (Barlow Semi Condensed 600) sur un texte fin (Barlow 300)
 - L'état se lit à la forme : pastille pleine, pastille cerclée, horaire barré
 - La sélection est un cerclage, jamais un remplissage
@@ -271,13 +271,13 @@ de Relvo ou de la livrée : ciel, disque du dock, bouton principal, jauge, inter
 chrome est violet, ce qui dit « c'est Relvo qui parle » est le **bloc violet pâle signé des
 étoiles**, jamais la teinte seule. Un bouton de l'utilisateur n'est jamais sur `relvo-pale`.
 
-**La règle de la rareté.** Une pastille urgente sur un ou deux sujets sur vingt-quatre vaut plus
+**La règle de la rareté.** Une pastille urgente sur une ou deux affaires sur vingt-quatre vaut plus
 que vingt badges colorés. `urgent`, `fait`, `attente` ne sont jamais empruntés pour de la mise en
 forme.
 
 **La règle de la bande.** Une bande de domaine par carte ou par ligne, sur la tranche gauche,
 à l'intérieur de la surface. Deux bandes sur un objet, ou une bande sur une tâche qui a déjà
-son sujet écrit, font un camion de foire. On ne prend jamais la couleur de bande pour du texte.
+son affaire écrite, font un camion de foire. On ne prend jamais la couleur de bande pour du texte.
 
 ## Typography
 
@@ -293,10 +293,10 @@ et large, lisible en plein soleil. Chargée par `next/font` (`apps/web/src/app/f
 - **Display** (600, 28px, 34px) : le titre de page dans le ciel ; 26px quand il descend sous la
   flèche d'un écran poussé.
 - **Headline** (600, 28px, 32px, chiffres tabulaires, `-0.02em`) : le chiffre d'un
-  indicateur — les cellules de Sujets, du Calendrier, de Conversations, de Contacts et
+  indicateur — les cellules d'Affaires, du Calendrier, de Conversations, de Contacts et
   l'activité de l'accueil, au même corps ; 19px pour un horaire, 16px pour un compte à droite
   d'une ligne. Jamais plus gros que le titre de page. Utilitaire `.chiffre`.
-- **Title** (400, 14.5px, 18px) : le titre d'une ligne de sujet ou de tâche ; 18px condensé,
+- **Title** (400, 14.5px, 18px) : le titre d'une ligne d'affaire ou de tâche ; 18px condensé,
   deux lignes au plus, pour le titre d'une carte d'attente.
 - **Body** (300, 14px, 20px) : la phrase de Relvo, le texte courant, un lien de suggestion
   (500), une phrase d'échéance ; 12px/15px en graisse **400** pour la ligne d'état sous un
@@ -328,7 +328,7 @@ pente des planches de la direction. La **première carte
 chevauche toujours le bas du ciel** (`-mt-7.5` sur `IndicatorTabs` et `SegTabs`) : c'est elle
 qui lie les deux zones. Les cartes se suivent avec
 12px entre elles ; une zone est nommée par un en-tête symétrique en texte nu (titre à gauche,
-qualificatif à droite, `ZoneHeading`). Une ligne de sujet fait 58px ; une carte d'attente fait
+qualificatif à droite, `ZoneHeading`). Une ligne d'affaire fait 58px ; une carte d'attente fait
 300px de large et se feuillette horizontalement avec accroche.
 
 Cible tactile minimale 44px. Le dock réserve `--tab-h` (54 + 14px) sous chaque page ; dans une
@@ -358,7 +358,7 @@ les utilitaires `.grain` et `.glass-relvo` de l'ancienne matière sont inertes.
 ### Named Rules
 **La règle de la matière égale.** Deux cartes blanches de même ombre font deux zones d'égale
 importance ; c'est la couleur qui hiérarchise, jamais une ombre plus forte. Une carte ne contient
-jamais une autre carte avec sa propre ombre : un sujet cité dans un bloc de Relvo est une
+jamais une autre carte avec sa propre ombre : une affaire citée dans un bloc de Relvo est une
 sous-carte à filet, sans ombre.
 
 **La règle du relief unique.** Le seul objet qui se détache du chrome est le disque Relvo, par
@@ -423,7 +423,7 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
 
 ### Chips
 - **Style :** pilule blanche à filet, texte noir, une pastille de couleur de domaine devant le
-  nom (filtres par domaine de Sujets, chips de canal).
+  nom (filtres par domaine d'Affaires, chips de canal).
 - **State :** la puce active est **noire sur blanc**, jamais violette : le violet est la livrée,
   pas un état.
 
@@ -448,9 +448,9 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
   violette, ou « fait/total ») avec ce qu'on attend dessous (« à vous », « attend », « ✦ à
   valider » en violet). 58px de haut ; une ligne faite s'enfonce (`fond-enfonce`, titre barré).
 - **TaskItem :** case ronde à cocher à gauche (22px, cerclée gris clair, pleine violette quand
-  c'est fait), titre, sujet · interlocuteur en fin, et à droite l'horaire condensé 19px ; en
+  c'est fait), titre, affaire · interlocuteur en fin, et à droite l'horaire condensé 19px ; en
   retard, un point rouge devant le titre et l'horaire **barré** en rouge. Pas de bande : la tâche
-  n'a pas deux fois la couleur de son sujet.
+  n'a pas deux fois la couleur de son affaire.
 
 ### Inputs / Fields
 - **Style :** pilule sur `fond-puce` (le composer : 44px minimum, texte 14.5px fin, rayon 22px,
@@ -489,8 +489,8 @@ scintillent pas.
 ### Le bloc de Relvo (signature)
 Une carte sur `relvo-pale` bordée de `relvo-filet`, le logo en violet clair et « RELVO · à
 l'instant » en libellé violet, la phrase en 14px fin, et sous elle **ses preuves** : un lien
-fléché violet par suggestion, une question avec son bouton « Répondre » en dégradé. Un sujet
-cité est une sous-carte à filet. C'est le même composant dans l'échange et sur l'accueil.
+fléché violet par suggestion, une question avec son bouton « Répondre » en dégradé. Une affaire
+citée est une sous-carte à filet. C'est le même composant dans l'échange et sur l'accueil.
 
 ## Do's and Don'ts
 
@@ -507,7 +507,7 @@ comme un tic d'interface générée est ici une décision de direction.
   capitales (`eyebrow` de `RelvoHeader`) : la date sur l'accueil, le domaine sur une fiche. Le
   détecteur « kicker-above-heading » la lit comme un surtitre décoratif ; c'est le seul endroit
   de l'écran qui porte cette donnée, tranché par le dirigeant (`03-patterns.md`, « Le cadre »).
-- **Do** poser la **bande de domaine** sur la tranche gauche de chaque carte et ligne de sujet
+- **Do** poser la **bande de domaine** sur la tranche gauche de chaque carte et ligne d'affaire
   (`.bande-carte` 10px, `.bande-ligne` 6px), comme un fond plein à l'intérieur de la surface. Ce
   n'est pas un `border-left` décoratif (détecteur « side-tab ») : c'est le geste signature du
   monde, une bande par surface, la couleur du domaine stockée sur le dossier.

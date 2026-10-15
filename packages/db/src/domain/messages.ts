@@ -640,7 +640,7 @@ export async function sendEmailReply(
 
   assertFound(
     await db.subject.findFirst({ where: { id: data.subjectId } }),
-    "Sujet",
+    "Affaire",
   );
   const channel = assertFound(
     await db.channel.findFirst({
@@ -747,7 +747,7 @@ export async function sendWhatsAppReply(
 
   assertFound(
     await db.subject.findFirst({ where: { id: data.subjectId } }),
-    "Sujet",
+    "Affaire",
   );
   const channel = assertFound(
     await db.channel.findFirst({
@@ -797,7 +797,7 @@ function deriveSubjectTitle(
   if (fromLine) return fromLine.slice(0, 200);
   const fromContent = content?.replace(/\s+/g, " ").trim();
   if (fromContent) return fromContent.slice(0, 80);
-  return "Nouveau sujet";
+  return "Nouvelle affaire";
 }
 
 /**
@@ -951,7 +951,7 @@ export async function openSubjectOnConversation(
       entityId: subject.id,
       subjectId: subject.id,
       eventType: EVENT_TYPES.messageLinked,
-      title: `${others} message${plural} de la conversation couvert${plural} par le sujet`,
+      title: `${others} message${plural} de la conversation couvert${plural} par l'affaire`,
       actor: "system",
     });
   }
@@ -1133,7 +1133,7 @@ export async function assignMessageToSubject(
 ) {
   assertFound(
     await db.subject.findFirst({ where: { id: subjectId } }),
-    "Sujet",
+    "Affaire",
   );
 
   // Les PJ suivent leur message (box « Pièces jointes » de la fiche). Deux
@@ -1153,7 +1153,7 @@ export async function assignMessageToSubject(
     messageId: id,
     subjectId,
     eventType: EVENT_TYPES.messageLinked,
-    title: "Message rattaché à un sujet",
+    title: "Message rattaché à une affaire",
     actor: "user",
   });
 
@@ -1192,7 +1192,7 @@ export async function reassignMessage(
   return db.$transaction(async (tx) => {
     assertFound(
       await tx.subject.findFirst({ where: { id: subjectId } }),
-      "Sujet",
+      "Affaire",
     );
     const { count } = await tx.message.updateMany({
       where: { id },
@@ -1209,7 +1209,7 @@ export async function reassignMessage(
       messageId: id,
       subjectId,
       eventType: EVENT_TYPES.messageReassigned,
-      title: "Message réaffecté à un autre sujet",
+      title: "Message réaffecté à une autre affaire",
       actor: "user",
     });
     return assertFound(
@@ -1254,7 +1254,7 @@ export async function detachMessage(db: TenantDb, id: string) {
       entityId: id,
       messageId: id,
       eventType: EVENT_TYPES.messageDetached,
-      title: "Message détaché (sans sujet)",
+      title: "Message détaché (sans affaire)",
       actor: "user",
     });
     return assertFound(

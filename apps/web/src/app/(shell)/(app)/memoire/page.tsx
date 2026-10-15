@@ -32,7 +32,7 @@ function folderSub(f: CachedFolderRow): string {
   if (f.instructions > 0) parts.push(plural(f.instructions, "instruction"));
   if (f.documents > 0) parts.push(plural(f.documents, "document"));
   if (!f.isDefault && f.openSubjects > 0)
-    parts.push(plural(f.openSubjects, "sujet ouvert", "sujets ouverts"));
+    parts.push(plural(f.openSubjects, "affaire ouverte", "affaires ouvertes"));
   return parts.length ? parts.join(" · ") : "rien encore";
 }
 

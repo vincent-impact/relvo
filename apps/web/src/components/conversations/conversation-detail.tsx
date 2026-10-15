@@ -310,7 +310,7 @@ export function ConversationDetail({
             conversationId,
           });
       if (res.ok) {
-        toast.success(isEmail ? "Fil détaché du sujet" : "Écoute arrêtée");
+        toast.success(isEmail ? "Fil détaché de l’affaire" : "Écoute arrêtée");
         router.refresh();
       } else {
         toast.error(res.message);
@@ -389,7 +389,7 @@ export function ConversationDetail({
     claimed.current = true;
     router.replace(`/conversations/${conversationId}`, { scroll: false });
     if (initialIntent === "link" && subjects.length === 0) {
-      toast.info("Aucun sujet ouvert où rattacher cette conversation.");
+      toast.info("Aucune affaire ouverte où rattacher cette conversation.");
     }
   }, [initialIntent, conversationId, router, subjects.length]);
 
@@ -419,7 +419,7 @@ export function ConversationDetail({
           : await createSubjectFromConversationAction(conversationId, input);
       if (res.ok) {
         setShowCreate(false);
-        toast.success("Sujet créé");
+        toast.success("Affaire créée");
         goToSubject(res.data.id);
       } else {
         toast.error(res.message);
@@ -442,7 +442,7 @@ export function ConversationDetail({
             });
       if (res.ok) {
         setShowPicker(false);
-        toast.success("Rattaché au sujet");
+        toast.success("Rattaché à l’affaire");
         goToSubject(res.data.subjectId);
       } else {
         toast.error(res.message);
@@ -694,7 +694,7 @@ export function ConversationDetail({
                           onClick={() => setUnlinkTarget(l)}
                           aria-label={
                             isEmail
-                              ? "Détacher ce fil du sujet"
+                              ? "Détacher ce fil de l’affaire"
                               : "Arrêter l'écoute"
                           }
                           // 28 px de dessin, 44 px de frappe.
@@ -721,26 +721,26 @@ export function ConversationDetail({
                 <AlertDialogHeader>
                   <AlertDialogTitle>
                     {isEmail
-                      ? "Détacher ce fil du sujet ?"
+                      ? "Détacher ce fil de l’affaire ?"
                       : "Arrêter l'écoute ?"}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
                     {isEmail ? (
                       <>
-                        Le sujet{" "}
+                        L’affaire{" "}
                         <span className="font-semibold text-(--text-primary)">
                           « {unlinkTarget?.title} »
                         </span>{" "}
-                        ne sera plus alimenté par ce fil. Aucun message n’est
+                        ne sera plus alimentée par ce fil. Aucun message n’est
                         supprimé.
                       </>
                     ) : (
                       <>
-                        Le sujet{" "}
+                        L’affaire{" "}
                         <span className="font-semibold text-(--text-primary)">
                           « {unlinkTarget?.title} »
                         </span>{" "}
-                        garde ce qu’il a déjà lu ; la suite de ce fil ne le
+                        garde ce qu’elle a déjà lu ; la suite de ce fil ne la
                         rejoindra plus.
                       </>
                     )}

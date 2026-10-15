@@ -276,7 +276,7 @@ export async function attachConversationToSubject(
 
   const subject = assertFound(
     await db.subject.findFirst({ where: { id: data.subjectId } }),
-    "Sujet",
+    "Affaire",
   );
   const conversation = assertFound(
     await db.conversation.findFirst({ where: { id: data.conversationId } }),
@@ -379,7 +379,7 @@ export async function detachConversationFromSubject(
       where: { subjectId, conversationId },
       include: { conversation: { select: { title: true } } },
     }),
-    "Conversation du sujet",
+    "Conversation de l'affaire",
   );
   return db.$transaction(async (tx) => {
     await tx.subjectConversation.deleteMany({ where: { id: link.id } });
@@ -563,7 +563,7 @@ export async function extendSubjectToConversation(
 
   const subject = assertFound(
     await db.subject.findFirst({ where: { id: data.subjectId } }),
-    "Sujet",
+    "Affaire",
   );
   // Étendre une fenêtre FIGÉE n'a pas de sens : les messages postérieurs à
   // `closedAt` n'appartiennent plus au sujet, la conversation rattachée
@@ -571,7 +571,7 @@ export async function extendSubjectToConversation(
   if (subject.status !== SubjectStatus.open) {
     throw new DomainError(
       "INVALID_STATE",
-      "Seul un sujet ouvert peut être étendu à une nouvelle conversation.",
+      "Seule une affaire ouverte peut être étendue à une nouvelle conversation.",
     );
   }
 

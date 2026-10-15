@@ -26,7 +26,7 @@ function phrase(c: CarteVivanteData): string {
   const ou = c.channelName ? ` de ${c.channelName}` : "";
   switch (c.status) {
     case "pending":
-      return `Je lirai le courrier des dernières semaines${ou} cette nuit : vos premiers sujets seront là demain matin.`;
+      return `Je lirai le courrier des dernières semaines${ou} cette nuit : vos premières affaires seront là demain matin.`;
     case "running":
       return `Je lis le courrier des dernières semaines${ou}. Je ne connais pas encore le total : les chiffres montent à mesure.`;
     case "done":
@@ -87,7 +87,9 @@ export function CarteVivante({
           />
           <Compteur
             n={data.subjectsOpened}
-            label={data.subjectsOpened > 1 ? "sujets ouverts" : "sujet ouvert"}
+            label={
+              data.subjectsOpened > 1 ? "affaires ouvertes" : "affaire ouverte"
+            }
           />
           <Compteur
             n={data.conversationsIgnored}

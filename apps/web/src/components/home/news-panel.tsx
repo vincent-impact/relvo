@@ -30,7 +30,7 @@ export function newsSentence(news: CachedNews, hasChannels = true): string {
   if (news.messagesRead > 0)
     parts.push(`lu ${plural(news.messagesRead, "message", "messages")}`);
   if (news.subjectsOpened > 0)
-    parts.push(`ouvert ${plural(news.subjectsOpened, "sujet", "sujets")}`);
+    parts.push(`ouvert ${plural(news.subjectsOpened, "affaire", "affaires")}`);
   if (news.tasksProposed > 0)
     parts.push(`proposé ${plural(news.tasksProposed, "tâche", "tâches")}`);
   if (news.draftsPrepared > 0)
@@ -52,10 +52,10 @@ export function newsSentence(news: CachedNews, hasChannels = true): string {
     // la première adresse (01 §11, M19.9) — c'est le pas qui suit les
     // diapositives. Avec une boîte, la nuit fera le reste.
     if (!hasChannels)
-      return "Je n’ai encore rien à lire. Reliez la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des dernières semaines et j’ouvre vos premiers sujets.";
+      return "Je n’ai encore rien à lire. Reliez la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des dernières semaines et j’ouvre vos premières affaires.";
     return news.since
       ? "Rien de nouveau de mon côté depuis votre dernière visite."
-      : "Je lirai le courrier des dernières semaines cette nuit : vos premiers sujets seront là demain matin.";
+      : "Je lirai le courrier des dernières semaines cette nuit : vos premières affaires seront là demain matin.";
   }
   const list =
     parts.length === 1

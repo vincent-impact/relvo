@@ -20,7 +20,7 @@ classDiagram
 
     class Folder {
         +bool is_default
-        « Général » : documentaire, non supprimable, jamais de sujet
+        « Général » : documentaire, non supprimable, jamais d'affaire
     }
 
     class Contact {
@@ -54,7 +54,7 @@ classDiagram
     }
 
     class Subject {
-        <<agrégat central>>
+        <<agrégat central — l'affaire>>
         +SubjectStatus status      « open | validated | closed »
         +Priority priority
         +datetime closed_at        « DATE de clôture, PAS une borne »
@@ -105,12 +105,12 @@ classDiagram
         <<registre par compte>>
         +string key                « unique par compte »
         +LabelOrigin origin        « secteur | relvo »
-        +LabelStatus status        « candidate → active au 2e sujet »
+        +LabelStatus status        « candidate → active à la 2e affaire »
     }
 
     class RelvoQuestion {
         <<jamais une tâche>>
-        +QuestionScope scope       « contact | domaine | sujet »
+        +QuestionScope scope       « contact | domaine | affaire »
         +QuestionStatus status     « ouverte | répondue | écartée »
     }
 
@@ -145,10 +145,10 @@ classDiagram
     Folder "1" --> "*" KnowledgeDocument
     Contact "0..1" --> "*" Conversation
 
-    note for SubjectConversation "Aucune contrainte d'unicité sur subject_id.\nLa poser interdirait le changement d'objet,\nl'extension à un second canal et le\nchangement d'adresse d'un interlocuteur.\n\nPlusieurs sujets simultanés : interdits par une\nRÈGLE MÉTIER V1, pas par le schéma — la lever\nne demande aucune migration."
+    note for SubjectConversation "Aucune contrainte d'unicité sur subject_id.\nLa poser interdirait le changement d'objet,\nl'extension à un second canal et le\nchangement d'adresse d'un interlocuteur.\n\nPlusieurs affaires simultanées : interdites par une\nRÈGLE MÉTIER V1, pas par le schéma — la lever\nne demande aucune migration."
 
     note for Message "subject_id sur le MESSAGE, jamais sur la\nconversation : c'est ce qui rend l'écoute\ndémontable le jour où le pipeline IA décidera\nmessage par message."
 
-    note for Label "Un vocabulaire à deux mains diverge.\nL'utilisateur filtre, ne saisit jamais.\nCandidate tant qu'un seul sujet la porte."
+    note for Label "Un vocabulaire à deux mains diverge.\nL'utilisateur filtre, ne saisit jamais.\nCandidate tant qu'une seule affaire la porte."
 
-    note for Subject "closed_at ne borne RIEN.\nAppartenance (bornes) et statut sont deux axes\nindépendants — les confondre ampute le périmètre\nd'un sujet quand on le valide."
+    note for Subject "closed_at ne borne RIEN.\nAppartenance (bornes) et statut sont deux axes\nindépendants — les confondre ampute le périmètre\nd'une affaire quand on la valide."

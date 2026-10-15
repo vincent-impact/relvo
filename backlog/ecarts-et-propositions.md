@@ -1358,7 +1358,7 @@ par Relvo, le champ montre des lignes qui respirent, pas un vide figé.
 
 ### « Affaire » plutôt que « sujet »
 
-**`proposé`** · Par le dirigeant, à la lecture des diapositives de première connexion (M19.9),
+**`tranché`** · Par le dirigeant, à la lecture des diapositives de première connexion (M19.9),
 qui disent déjà « une affaire mérite votre attention », « les affaires en cours ». « Sujet »
 est impersonnel ; une affaire parle à tout le monde — on *traite* des affaires, et c'est
 exactement ce qu'on fait avec Relvo. Le mot est tranché pour les diapositives ; pour le reste
@@ -1372,9 +1372,15 @@ consignes du modèle (`server/ia`, deux cents occurrences) parlent de « sujet �
 changer touche le tri, la structuration et la relecture, et s'évalue avec les jeux
 d'évaluation, pas à l'œil. Et la documentation de conception (`01` à `05`, quatre cents
 occurrences) nomme le concept « sujet » : si le mot du client change, elle se récrit en place,
-dans le même chantier, jamais par une note « on dit maintenant affaire ». Taille mesurée :
-trois cents occurrences dans l'interface, trois cents dans le backlog. À trancher par le
-dirigeant ; se livre comme un item à part entière, pas au fil de l'eau.
+dans le même chantier, jamais par une note « on dit maintenant affaire ».
+
+**Tranché et livré dans la foulée** : l'interface, les phrases de Relvo, les titres du journal
+et les messages d'erreur du domaine, les champs client des épiques, `CLAUDE.md`, et la
+conception récrite en place (`01` à `05`, le design system, `uml.mermaid` pour ses libellés).
+Le code garde `Subject` et ses routes. Les consignes du modèle gardent « sujet » comme nom de
+concept et reçoivent une règle de vocabulaire dans le socle : tout texte destiné au dirigeant
+dit « affaire » — à confirmer par les jeux d'évaluation à leur prochaine passe. L'historique
+(sprints, journal du client, ce registre) n'est pas récrit.
 
 ### La photo d'un contact
 

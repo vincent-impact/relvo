@@ -26,7 +26,7 @@ import type { CachedAwaitingSubject } from "@/server/cached";
 export function ActivityPanel({ activity }: { activity: BriefActivity }) {
   const cells = [
     { value: activity.messagesReceived, label: "messages reçus" },
-    { value: activity.subjectsClosed, label: "sujets fermés" },
+    { value: activity.subjectsClosed, label: "affaires fermées" },
     { value: activity.tasksDone, label: "tâches faites" },
   ];
   return (
@@ -166,7 +166,7 @@ export function AwaitingPanel({
         hint={
           more
             ? `les ${MAX_AWAITING} plus pressants`
-            : `${shown.length} sujet${shown.length > 1 ? "s" : ""}`
+            : `${shown.length} affaire${shown.length > 1 ? "s" : ""}`
         }
       />
       <div

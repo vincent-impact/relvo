@@ -15,7 +15,7 @@ interface grise à un accent y devient un aplat sans repère. **La couleur a don
 rôle** : la livrée dit « vous êtes dans Relvo », les acteurs disent qui parle, les domaines
 disent de quoi il s'agit, les états disent ce qui presse. Tout le reste est blanc, noir, ou gris.
 
-Corollaire tenu partout : **la rareté comme signal** — une pastille urgente sur un ou deux sujets
+Corollaire tenu partout : **la rareté comme signal** — une pastille urgente sur une ou deux affaires
 sur vingt-quatre vaut plus que vingt badges colorés.
 
 ## La livrée — trois violets, un ciel
@@ -63,8 +63,8 @@ Relvo n'a pas de bulle, il a un bloc.
 
 ## Les domaines — une bande, et le texte qui va avec
 
-Un domaine porte une couleur ; le sujet qui lui appartient l'hérite, et la tâche qui appartient
-au sujet l'hérite à son tour. C'est ce qui rend une liste à plat lisible sans lire les titres.
+Un domaine porte une couleur ; l'affaire qui lui appartient l'hérite, et la tâche qui appartient
+à l'affaire l'hérite à son tour. C'est ce qui rend une liste à plat lisible sans lire les titres.
 
 Chaque domaine a **deux tokens** : la **bande** (`--domaine-<nom>`), pleine et vive, posée sur la
 tranche gauche d'une carte ou d'une ligne — à l'intérieur de la surface, jamais au bord de
@@ -86,7 +86,7 @@ titre barré. Un daltonien lit l'écran.
 
 ## La sélection — un cerclage
 
-Un indicateur actif (Sujets, Calendrier, Conversations, Contacts) est un chiffre **cerclé** d'un
+Un indicateur actif (Affaires, Calendrier, Conversations, Contacts) est un chiffre **cerclé** d'un
 trait `--relvo`, à distance de son libellé ; jamais un remplissage, qui effacerait la couleur.
 Dans le dock, l'onglet actif se lit au blanc plein et à la graisse du libellé ; il n'est jamais
 cerclé. Une puce de filtre active est noire sur blanc.
@@ -104,7 +104,7 @@ Une seule famille en deux dessins, chargée via `next/font` :
 | Rôle | Famille | Pourquoi |
 |---|---|---|
 | Texte courant, libellés, interface | **Barlow** 300 / 400 / 500 (`--font-sans`) | Dérivée du lettrage routier : fine, large, lisible en plein soleil. La graisse 300 est le texte, 400 le titre d'une ligne, 500 un libellé qui porte |
-| Chiffres, horaires, délais, titres | **Barlow Semi Condensed** 600 (`--font-condensed`) | Les gros chiffres du camion : un indicateur, un horaire, un titre de sujet sont condensés et gras, le reste fin. Chiffres tabulaires |
+| Chiffres, horaires, délais, titres | **Barlow Semi Condensed** 600 (`--font-condensed`) | Les gros chiffres du camion : un indicateur, un horaire, un titre d'affaire sont condensés et gras, le reste fin. Chiffres tabulaires |
 
 Les titres ne dépassent pas la graisse 600 ; le nom d'un domaine est en 600 condensé, 11 px,
 interlettré. Aucun texte fonctionnel sous 11 px, hors libellé du dock. **Sous 14 px, jamais la
@@ -131,13 +131,13 @@ puce qui le portent. La ligne de partage est tenue par le test des tokens.
 Le fond de l'écran de travail est **blanc** ; le ciel fond dedans. Une zone est une **carte**
 (`--surface`) : blanche, coins de `--rayon-carte` (18 px), un filet à peine visible, et une
 **ombre portée douce** (`--ombre-carte`) avec un décalage et un flou — jamais un halo sans
-décalage, jamais une ombre dure. Une sous-carte dans un bloc de Relvo (un sujet cité) prend un
+décalage, jamais une ombre dure. Une sous-carte dans un bloc de Relvo (une affaire citée) prend un
 rayon plus petit (`--rayon-sous-carte`, 14 px) et un filet, pas d'ombre : **pas de carte dans
 une carte** avec deux ombres.
 
 **Une liste = une carte** : les lignes vivent dans une carte unique, séparées par un filet
 (`--filet`), jamais nues sur le fond et jamais une carte par ligne. Exception voulue : « En
-attente de vous » est une suite de cartes à feuilleter, une par sujet.
+attente de vous » est une suite de cartes à feuilleter, une par affaire.
 
 Le **bloc de Relvo** est une carte sur `--relvo-pale` bordée de `--relvo-filet`, avec le signe
 et un libellé en capitales `--relvo`.

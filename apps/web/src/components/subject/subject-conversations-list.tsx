@@ -166,7 +166,7 @@ export function SubjectConversationsList({
                 conversationId: input.conversationId,
               });
       if (res.ok) {
-        toast.success("Conversation ajoutée au sujet");
+        toast.success("Conversation ajoutée à l’affaire");
         setShowAdd(false);
         router.refresh();
       } else {

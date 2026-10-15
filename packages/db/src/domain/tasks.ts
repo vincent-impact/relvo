@@ -158,7 +158,7 @@ export async function createTask(db: TenantDb, input: CreateTaskInput) {
     if (data.subjectId) {
       assertFound(
         await tx.subject.findFirst({ where: { id: data.subjectId } }),
-        "Sujet",
+        "Affaire",
       );
     }
     const task = await tx.task.create({
@@ -215,7 +215,7 @@ export async function updateTask(
     if (data.subjectId) {
       assertFound(
         await tx.subject.findFirst({ where: { id: data.subjectId } }),
-        "Sujet",
+        "Affaire",
       );
     }
     const { count } = await tx.task.updateMany({

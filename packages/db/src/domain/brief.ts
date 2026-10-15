@@ -185,8 +185,8 @@ export async function getBriefSuggestions(
       kind: "rule",
       text:
         staleReplies === 1
-          ? "Un sujet attend une réponse depuis plus d'une semaine. On fait le point ?"
-          : `${staleReplies} sujets attendent une réponse depuis plus d'une semaine. On fait le point ?`,
+          ? "Une affaire attend une réponse depuis plus d'une semaine. On fait le point ?"
+          : `${staleReplies} affaires attendent une réponse depuis plus d'une semaine. On fait le point ?`,
     });
   }
   if (overdue > 0) {
@@ -203,8 +203,8 @@ export async function getBriefSuggestions(
       kind: "rule",
       text:
         unsorted === 1
-          ? "Une conversation sans sujet attend votre tri."
-          : `${unsorted} conversations sans sujet attendent votre tri.`,
+          ? "Une conversation sans affaire attend votre tri."
+          : `${unsorted} conversations sans affaire attendent votre tri.`,
     });
   }
   return out.slice(0, MAX_SUGGESTIONS);

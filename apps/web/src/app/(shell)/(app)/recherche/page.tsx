@@ -53,7 +53,7 @@ async function SearchResults({ query }: { query: string }) {
   if (rows.length === 0) {
     return (
       <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
-        Aucun sujet pour «&nbsp;{query}&nbsp;».
+        Aucune affaire pour «&nbsp;{query}&nbsp;».
       </p>
     );
   }
@@ -83,7 +83,8 @@ export default async function RecherchePage({
 
       {!query ? (
         <p className="px-[22px] py-10 text-center text-[13.5px] font-normal text-gris">
-          Cherchez un sujet par son titre, sa référence ou un contact rattaché.
+          Cherchez une affaire par son titre, sa référence ou un contact
+          rattaché.
         </p>
       ) : (
         <Suspense key={query} fallback={<RowsSkeleton count={4} />}>

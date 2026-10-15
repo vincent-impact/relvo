@@ -105,7 +105,7 @@ async function ChannelList() {
           <RelvoSentence>
             Je n’ai encore rien à lire. Reliez la boîte où arrivent vos
             fournisseurs et vos clients : je lis le courrier des dernières
-            semaines et j’ouvre les premiers sujets.
+            semaines et j’ouvre les premières affaires.
           </RelvoSentence>
         </RelvoBlock>
       ) : (

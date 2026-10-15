@@ -456,7 +456,7 @@ describe("écriture de la structuration", () => {
       (e) => e.eventType === EVENT_TYPES.subjectStructured,
     )!;
     expect(structure.actor).toBe(Actor.ai);
-    expect(structure.title).toBe("Relvo a structuré le sujet : 2 tâches");
+    expect(structure.title).toBe("Relvo a structuré l'affaire : 2 tâches");
     expect(structure.messageId).toBe(message.id);
     expect(structure.metadata).toMatchObject({
       proposal,
@@ -494,7 +494,7 @@ describe("écriture de la structuration", () => {
     const ev = await db.eventLog.findFirstOrThrow({
       where: { subjectId, eventType: EVENT_TYPES.subjectStructured },
     });
-    expect(ev.title).toBe("Relvo a lu le sujet : rien à faire pour l'instant");
+    expect(ev.title).toBe("Relvo a lu l'affaire : rien à faire pour l'instant");
   });
 
   it("pose le domaine proposé quand le sujet n'en a ni un, ni une proposition", async () => {

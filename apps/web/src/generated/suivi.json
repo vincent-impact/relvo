@@ -50,22 +50,22 @@
       "largeur": 0.93
     },
     {
-      "titre": "Sujets, tâches et domaines",
-      "resume": "Poser la structure de votre espace de travail : un sujet regroupe une affaire en cours, ses échanges, ses tâches et l'historique des décisions prises. C'est l'unité autour de laquelle tourne tout le produit.",
+      "titre": "Affaires, tâches et domaines",
+      "resume": "Poser la structure de votre espace de travail : une affaire regroupe un dossier en cours, ses échanges, ses tâches et l'historique des décisions prises. C'est l'unité autour de laquelle tourne tout le produit.",
       "statut": "termine",
       "gauche": 4.21,
       "largeur": 3.27
     },
     {
       "titre": "Écrans de l'application",
-      "resume": "Construire les écrans du quotidien, pensés d'abord pour le téléphone et l'usage à une main : vos actions du jour, vos sujets, vos conversations, vos contacts, votre planning.",
+      "resume": "Construire les écrans du quotidien, pensés d'abord pour le téléphone et l'usage à une main : vos actions du jour, vos affaires, vos conversations, vos contacts, votre planning.",
       "statut": "termine",
       "gauche": 7.48,
       "largeur": 6.07
     },
     {
       "titre": "Fichiers et pièces jointes",
-      "resume": "Conserver durablement les documents reçus — factures, bons de livraison, devis — et les rendre consultables depuis le sujet, y compris après sa clôture. Ils sont stockés en Europe.",
+      "resume": "Conserver durablement les documents reçus — factures, bons de livraison, devis — et les rendre consultables depuis l'affaire, y compris après sa clôture. Ils sont stockés en Europe.",
       "statut": "termine",
       "gauche": 14.02,
       "largeur": 6.54
@@ -86,7 +86,7 @@
     },
     {
       "titre": "Regroupement en conversations",
-      "resume": "Ranger chaque message dans le bon fil dès sa réception, sans jamais se tromper — par objet pour un e-mail, par interlocuteur pour WhatsApp. C'est ce rangement qui permet ensuite d'ouvrir un sujet d'un seul geste.",
+      "resume": "Ranger chaque message dans le bon fil dès sa réception, sans jamais se tromper — par objet pour un e-mail, par interlocuteur pour WhatsApp. C'est ce rangement qui permet ensuite d'ouvrir une affaire d'un seul geste.",
       "statut": "termine",
       "gauche": 22.9,
       "largeur": 4.2
@@ -100,7 +100,7 @@
     },
     {
       "titre": "Tri automatique des messages",
-      "resume": "Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent, ouvre le sujet correspondant, propose les tâches à faire et prépare un brouillon de réponse. C'est la fin du tri à la main.",
+      "resume": "Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent, ouvre l'affaire correspondant, propose les tâches à faire et prépare un brouillon de réponse. C'est la fin du tri à la main.",
       "statut": "partiel",
       "gauche": 49.53,
       "largeur": 9.35
@@ -164,6 +164,10 @@
     {
       "date": "2026-10-15",
       "entrees": [
+        {
+          "type": "new",
+          "texte": "Relvo ne parle plus de « sujets » mais d'« affaires » : l'onglet, les listes, les messages et les écrans de bienvenue emploient le mot que vous utilisez."
+        },
         {
           "type": "new",
           "texte": "Les écrans de bienvenue parlent avec vos mots : ce que Relvo fait d'un e-mail, ce qu'il retient de ce que vous lui dites."

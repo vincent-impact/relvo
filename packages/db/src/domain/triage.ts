@@ -672,7 +672,7 @@ export async function applyTriageMatter(
   if (conversation.type !== ConversationType.email_subject) {
     throw new DomainError(
       "VALIDATION",
-      "Le tri automatique n'ouvre de sujet que sur un fil e-mail.",
+      "Le tri automatique n'ouvre d'affaire que sur un fil e-mail.",
     );
   }
 

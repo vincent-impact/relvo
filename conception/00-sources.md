@@ -57,8 +57,8 @@ personne ne lui donne d'adresse. Voici les adresses, pour Relvo :
 **`sources/` est vide aujourd'hui, et c'est un manque, pas un état neutre.**
 
 Relvo remplace un système en place : la boîte mail et le WhatsApp d'un dirigeant. La source la
-plus fiable sur les données réelles — combien de messages par jour, quelle proportion mérite un
-sujet, combien d'interlocuteurs distincts, quelle longueur de fil — est **le compte réel du
+plus fiable sur les données réelles — combien de messages par jour, quelle proportion mérite une
+affaire, combien d'interlocuteurs distincts, quelle longueur de fil — est **le compte réel du
 premier utilisateur**, et personne ne l'a encore mesurée.
 
 Tant qu'elle manque, tout dimensionnement s'appuie sur le jeu de démonstration, qui n'a jamais
@@ -79,7 +79,7 @@ seed de démonstration reproduit — est **fictif mais réaliste**, construit po
 les références `SUB-xxxx` existent pour rester cohérents d'un écran à l'autre ; ils ne
 mesurent rien.
 
-> ⚠️ **Ne jamais dimensionner sur la maquette ni sur le seed.** Six sujets et huit messages sont
+> ⚠️ **Ne jamais dimensionner sur la maquette ni sur le seed.** Six affaires et huit messages sont
 > une quantité choisie pour qu'une liste tienne dans un écran.
 
 ### Ce que la maquette ne couvre pas

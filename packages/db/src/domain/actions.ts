@@ -66,7 +66,7 @@ export async function createAction(db: TenantDb, input: CreateActionInput) {
   return db.$transaction(async (tx) => {
     assertFound(
       await tx.subject.findFirst({ where: { id: data.subjectId } }),
-      "Sujet",
+      "Affaire",
     );
     const action = await tx.action.create({
       data: {
@@ -91,7 +91,7 @@ export async function createDraftReply(db: TenantDb, input: DraftReplyInput) {
   return db.$transaction(async (tx) => {
     assertFound(
       await tx.subject.findFirst({ where: { id: data.subjectId } }),
-      "Sujet",
+      "Affaire",
     );
     const action = await tx.action.create({
       data: {

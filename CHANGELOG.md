@@ -6,6 +6,7 @@
 
 ## 2026-10-15
 
+- **Nouveau** — Relvo ne parle plus de « sujets » mais d'« affaires » : l'onglet, les listes, les messages et les écrans de bienvenue emploient le mot que vous utilisez.
 - **Nouveau** — Les écrans de bienvenue parlent avec vos mots : ce que Relvo fait d'un e-mail, ce qu'il retient de ce que vous lui dites.
 - **Nouveau** — À votre première connexion, Relvo se présente en quelques écrans à faire glisser, puis vous invite à relier votre boîte e-mail. Tant qu'aucune boîte n'est reliée, chaque page vide vous dit par où commencer, et la page Canaux montre où en est la lecture de votre courrier.
 - **Nouveau** — Les écrans s'ouvrent et les listes apparaissent avec un mouvement court et net ; un bouton répond sous le doigt ; si votre téléphone est réglé en « réduire les animations », Relvo le respecte.

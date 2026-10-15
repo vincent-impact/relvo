@@ -23,9 +23,9 @@ export function SubjectKpiTabs({
       value={active}
       onChange={onChange}
       tabs={[
-        { key: "ouverts", label: "ouverts", count: counts.ouverts },
-        { key: "valides", label: "validés", count: counts.valides },
-        { key: "fermes", label: "fermés", count: counts.fermes },
+        { key: "ouverts", label: "ouvertes", count: counts.ouverts },
+        { key: "valides", label: "validées", count: counts.valides },
+        { key: "fermes", label: "fermées", count: counts.fermes },
       ]}
     />
   );

@@ -67,7 +67,7 @@ export function ResolutionBanner({
       <div className="flex min-w-0 flex-1 flex-col gap-2.5">
         <p className="text-[14px] leading-5 font-light text-noir">
           Les tâches sont faites et rien n’est arrivé depuis.{" "}
-          <span className="text-gris">Ce sujet est-il réglé ?</span>
+          <span className="text-gris">Cette affaire est-elle réglée ?</span>
         </p>
         <div className="flex gap-2">
           <button
@@ -77,7 +77,7 @@ export function ResolutionBanner({
             className="pressable inline-flex h-[34px] items-center rounded-(--rayon-pilule) px-4 text-[13px] font-medium text-white disabled:opacity-60"
             style={{ background: "var(--degrade-relvo)" }}
           >
-            Valider le sujet
+            Valider l’affaire
           </button>
           <button
             type="button"
