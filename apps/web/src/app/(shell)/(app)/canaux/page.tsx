@@ -2,7 +2,10 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Envelope, WhatsappLogo } from "@/components/shared/picto";
 import { ConnectEmailButton } from "@/components/settings/connect-email-button";
-import { ChannelDeleteButton } from "@/components/settings/channel-delete-button";
+import { ChannelRemoveLink } from "@/components/settings/channel-delete-button";
+import { RelvoLogo } from "@/components/layout/relvo-logo";
+import { ListPanel } from "@/components/shared/list-panel";
+import { ZoneHeading } from "@/components/shared/zone-heading";
 import { ChannelReconnectButton } from "@/components/settings/channel-reconnect-button";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
@@ -74,60 +77,101 @@ async function ChannelList() {
   const hasWhatsApp = channels.some((c) => c.type === "whatsapp");
 
   return (
-    <div className="px-4 pt-5">
-      <div className="overflow-hidden rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte">
-        {channels.length === 0 ? (
-          <p className="p-5 text-center text-[13.5px] font-light text-gris">
-            Aucun canal connecté.
+    <div className="pt-3">
+      {/* La zone est nommée, même vide : c'est là que le libellé sert le plus. */}
+      <ZoneHeading
+        label="Vos boîtes"
+        hint={channels.length > 0 ? `${channels.length}` : undefined}
+      />
+      {channels.length === 0 ? (
+        // Le vide GUIDE, dans la voix de Relvo : c'est ici que la première
+        // connexion aboutit (M19.9), et c'est la promesse redite une fois, à
+        // l'endroit du geste. Le bouton, lui, est sous le bloc : un bouton de
+        // l'utilisateur n'est jamais sur le violet pâle de Relvo.
+        <section
+          aria-label="Relvo"
+          className="mx-4 rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-3.5 pt-3 pb-3 text-noir shadow-carte"
+        >
+          <div className="flex items-center gap-2">
+            <RelvoLogo
+              size={22}
+              variant="full"
+              className="text-relvo-clair"
+              title=""
+            />
+            <span className="libelle text-relvo!">Relvo</span>
+          </div>
+          <p className="mt-1.5 text-[14px] leading-5 font-light">
+            Je n’ai encore rien à lire. Reliez la boîte où arrivent vos
+            fournisseurs et vos clients : je lis le courrier des dernières
+            semaines et j’ouvre les premiers sujets.
           </p>
-        ) : (
-          channels.map((ch, i) => {
+        </section>
+      ) : (
+        <ListPanel>
+          {channels.map((ch, i) => {
             const st = CHANNEL_STATUS[statuts[i]] ?? CHANNEL_STATUS.pending;
             const Icon = ch.type === "whatsapp" ? WhatsappLogo : Envelope;
+            // Reconnecter remplace le badge quand le compte existe chez le
+            // fournisseur et que le canal n'est pas connecté : l'état devient
+            // le geste (PITFALLS #53).
+            const reconnect =
+              ch.config?.externalAccountId && statuts[i] !== "connected";
             return (
               <div
                 key={ch.id}
-                className={`flex items-center gap-3 px-3.5 py-3 ${i > 0 ? "border-t border-(--filet)" : ""}`}
+                data-list-row
+                className="flex items-center gap-3 border-b border-(--filet) px-3.5 py-3"
               >
-                <span className="grid size-9 flex-none place-items-center rounded-full bg-relvo-pale text-relvo">
+                <span className="grid size-9 flex-none place-items-center rounded-full bg-(--fond-puce) text-noir">
                   <Icon className="size-[18px]" />
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-[14.5px] leading-[18px] font-normal text-noir">
                     {ch.name}
                   </div>
-                  <div className="truncate text-[12px] font-light text-gris">
+                  <div className="truncate text-[12px] font-normal text-gris">
                     {ch.identifier}
                   </div>
+                  {/* La ligne de rattrapage : Relvo rend compte, dans ses mots,
+                        de ce qu'il a fait de la boîte — la preuve pointée. */}
                   {ch.catchups[0] ? (
-                    <div className="truncate text-[12px] text-relvo">
+                    <div className="mt-0.5 text-[14px] leading-[18px] font-light text-relvo">
                       {libelleRattrapage(ch.catchups[0])}
                     </div>
                   ) : null}
                 </div>
-                <span
-                  className={`inline-flex flex-none items-center gap-1.5 text-[11px] font-medium tracking-[0.06em] uppercase ${st.cls}`}
-                >
-                  <i aria-hidden className={`size-2 rounded-full ${st.dot}`} />
-                  {st.label}
-                </span>
-                {/* Reconnecter (ré-auth du même compte, sans perte) — seulement
-                    quand le compte existe chez le fournisseur ET que le canal
-                    n'est pas connecté : sur un canal qui marche, l'icône se
-                    lisait comme un « rafraîchir » (PITFALLS #53). */}
-                {ch.config?.externalAccountId && statuts[i] !== "connected" ? (
+                {reconnect ? (
                   <ChannelReconnectButton
                     channelId={ch.id}
                     channelName={ch.name}
                   />
-                ) : null}
-                <ChannelDeleteButton channelId={ch.id} channelName={ch.name} />
+                ) : (
+                  <span
+                    className={`inline-flex flex-none items-center gap-1.5 text-[11px] font-medium tracking-[0.06em] uppercase ${st.cls}`}
+                  >
+                    <i
+                      aria-hidden
+                      className={`size-2 rounded-full ${st.dot}`}
+                    />
+                    {st.label}
+                  </span>
+                )}
               </div>
             );
-          })
-        )}
+          })}
+        </ListPanel>
+      )}
+      <div className="px-4">
+        <ConnectEmailButton hasEmail={hasEmail} hasWhatsApp={hasWhatsApp} />
+        <ChannelRemoveLink
+          channels={channels.map((c) => ({
+            id: c.id,
+            name: c.name,
+            identifier: c.identifier,
+          }))}
+        />
       </div>
-      <ConnectEmailButton hasEmail={hasEmail} hasWhatsApp={hasWhatsApp} />
     </div>
   );
 }
@@ -140,7 +184,7 @@ export default function CanauxPage() {
         subtitle="Vos boîtes e-mail et messageries"
         className="pb-5"
       />
-      <Suspense fallback={<RowsSkeleton count={2} />}>
+      <Suspense fallback={<RowsSkeleton count={2} className="mt-8" />}>
         <ChannelList />
       </Suspense>
     </Screen>
@@ -207,7 +251,8 @@ function libelleRattrapage(c: {
   conversationsIgnored: number;
   stopReason: string | null;
 }): string {
-  const bilan = `${c.messagesImported} message${c.messagesImported > 1 ? "s" : ""} lu${c.messagesImported > 1 ? "s" : ""}, ${c.subjectsOpened} sujet${c.subjectsOpened > 1 ? "s" : ""} ouvert${c.subjectsOpened > 1 ? "s" : ""}, ${c.conversationsIgnored} mis${c.conversationsIgnored > 1 ? "es" : "e"} en sourdine`;
+  // « ignorée » : le mot de Conversations, pas « sourdine ».
+  const bilan = `${c.messagesImported} message${c.messagesImported > 1 ? "s" : ""} lu${c.messagesImported > 1 ? "s" : ""}, ${c.subjectsOpened} sujet${c.subjectsOpened > 1 ? "s" : ""} ouvert${c.subjectsOpened > 1 ? "s" : ""}, ${c.conversationsIgnored} ignorée${c.conversationsIgnored > 1 ? "s" : ""}`;
   switch (c.status) {
     case "pending":
       return "Relvo lira le courrier des dernières semaines cette nuit.";

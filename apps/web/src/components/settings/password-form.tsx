@@ -33,21 +33,21 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
         message={state.status === "error" ? state.message : undefined}
       />
 
-      {/* Compte Google-only : pas de mot de passe actuel à confirmer. */}
-      <div className="space-y-1.5">
-        <Label htmlFor="currentPassword">
-          {hasPassword ? "Mot de passe actuel" : "Mot de passe actuel (aucun)"}
-        </Label>
-        <Input
-          id="currentPassword"
-          name="currentPassword"
-          type="password"
-          autoComplete="current-password"
-          disabled={!hasPassword}
-          required={hasPassword}
-        />
-        <FieldError messages={state.fieldErrors?.currentPassword} />
-      </div>
+      {/* Compte Google-only : pas de mot de passe actuel à confirmer — et pas
+          de champ désactivé pour le dire, un champ mort n'est pas une information. */}
+      {hasPassword ? (
+        <div className="space-y-1.5">
+          <Label htmlFor="currentPassword">Mot de passe actuel</Label>
+          <Input
+            id="currentPassword"
+            name="currentPassword"
+            type="password"
+            autoComplete="current-password"
+            required
+          />
+          <FieldError messages={state.fieldErrors?.currentPassword} />
+        </div>
+      ) : null}
 
       <div className="space-y-1.5">
         <Label htmlFor="newPassword">Nouveau mot de passe</Label>
@@ -61,7 +61,7 @@ export function PasswordForm({ hasPassword }: { hasPassword: boolean }) {
         <FieldError messages={state.fieldErrors?.newPassword} />
       </div>
 
-      <SubmitButton>
+      <SubmitButton className="w-full">
         {hasPassword ? "Changer le mot de passe" : "Définir un mot de passe"}
       </SubmitButton>
     </form>

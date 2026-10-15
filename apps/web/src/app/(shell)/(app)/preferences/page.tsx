@@ -16,9 +16,9 @@ export default async function PreferencesPage() {
       <RelvoHeader
         title="Préférences"
         subtitle="Ce que Relvo fait de lui-même"
-        className="pb-5"
+        className="pb-9"
       />
-      <div className="px-4 pt-5">
+      <div className="relative z-3 -mt-5 px-4">
         <PreferencesToggles assistantEnabled={account.assistantEnabled} />
       </div>
     </Screen>

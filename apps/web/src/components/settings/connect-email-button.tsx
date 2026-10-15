@@ -2,38 +2,45 @@
 
 import { Envelope, WhatsappLogo } from "@/components/shared/picto";
 import { useState, useTransition } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { MailProvider } from "@/server/unipile/client";
 import { connectEmailChannelAction } from "@/server/actions/email";
 import { connectWhatsAppChannelAction } from "@/server/actions/whatsapp";
 
-// M5.7 / M6.3 — connexion d'un canal via le hosted auth Unipile. Email : on fait
-// choisir le TYPE de boîte (Gmail / Outlook / IMAP) → un seul provider passé à
-// Unipile, son écran de sélection est sauté. WhatsApp : hosted auth QR code.
-//
-// V1 : UN SEUL canal e-mail et UN SEUL canal WhatsApp par utilisateur (2026-07-28,
-// pour ne pas complexifier l'usage ni multiplier les comptes Unipile). Quand un
-// type est déjà connecté, on masque sa/ses tuile(s) — pour en changer, l'utilisateur
-// supprime le canal existant (bouton corbeille de la liste). Garde côté serveur en
-// renfort (connect*ChannelAction).
+// Relier une boîte — UN bouton primaire, et le choix technique (Gmail, Outlook,
+// une autre boîte) vient APRÈS le « oui », dans une feuille, pas avant sous
+// forme de quatre cases à égalité. WhatsApp en second, en puce blanche : le
+// brief dit « sa première adresse e-mail ». L'avertissement sur la session
+// WhatsApp vit dans sa feuille, pas sur la page.
 
-const CHOICES: { provider: MailProvider; label: string }[] = [
-  { provider: "GOOGLE", label: "Gmail" },
-  { provider: "OUTLOOK", label: "Outlook" },
-  { provider: "MAIL", label: "Autre (IMAP)" },
+const CHOICES: { provider: MailProvider; label: string; hint: string }[] = [
+  { provider: "GOOGLE", label: "Gmail", hint: "Google Workspace compris" },
+  { provider: "OUTLOOK", label: "Outlook", hint: "Microsoft 365 compris" },
+  {
+    provider: "MAIL",
+    label: "Une autre boîte",
+    hint: "OVH, Orange, Free, Gandi…",
+  },
 ];
 
 export function ConnectEmailButton({
   hasEmail = false,
   hasWhatsApp = false,
 }: {
-  /** Un canal e-mail existe déjà → on masque les tuiles e-mail. */
+  /** Un canal e-mail existe déjà → pas de bouton e-mail. */
   hasEmail?: boolean;
-  /** Un canal WhatsApp existe déjà → on masque la tuile WhatsApp. */
+  /** Un canal WhatsApp existe déjà → pas de ligne WhatsApp. */
   hasWhatsApp?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState<MailProvider | "WHATSAPP" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<"email" | "whatsapp" | null>(null);
 
   function connect(provider: MailProvider) {
     setError(null);
@@ -44,6 +51,7 @@ export function ConnectEmailButton({
         window.location.href = result.data.url;
         return;
       }
+      setSheet(null);
       setError(result.message);
       setBusy(null);
     });
@@ -58,70 +66,104 @@ export function ConnectEmailButton({
         window.location.href = result.data.url;
         return;
       }
+      setSheet(null);
       setError(result.message);
       setBusy(null);
     });
   }
 
-  const bothConnected = hasEmail && hasWhatsApp;
+  if (hasEmail && hasWhatsApp) return null;
 
   return (
-    <div className="mt-3">
-      {bothConnected ? (
-        <p className="rounded-2xl border border-dashed border-(--border) px-4 py-3.5 text-center text-[12.5px] font-semibold text-(--text-tertiary)">
-          E-mail et WhatsApp sont connectés. Supprimez un canal ci-dessus pour
-          le remplacer.
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 gap-2">
-          {/* Tuiles e-mail — masquées si une boîte est déjà connectée. */}
-          {!hasEmail
-            ? CHOICES.map((c) => (
-                <button
-                  key={c.provider}
-                  type="button"
-                  onClick={() => connect(c.provider)}
-                  disabled={pending}
-                  className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-(--border) py-4 text-[12.5px] font-semibold text-(--text-secondary) disabled:opacity-60"
-                >
-                  <Envelope className="size-[18px]" />
-                  {busy === c.provider ? "Ouverture…" : c.label}
-                </button>
-              ))
-            : null}
-          {/* WhatsApp (M6.3) : hosted auth QR code — masqué si déjà connecté. */}
-          {!hasWhatsApp ? (
-            <button
-              type="button"
-              onClick={connectWhatsApp}
-              disabled={pending}
-              className="flex flex-col items-center justify-center gap-1.5 rounded-2xl border border-dashed border-(--border) py-4 text-[12.5px] font-semibold text-(--text-secondary) disabled:opacity-60"
-            >
-              <WhatsappLogo className="size-[18px]" />
-              {busy === "WHATSAPP" ? "Ouverture…" : "WhatsApp"}
-            </button>
-          ) : null}
-        </div>
-      )}
-      {error ? (
-        <p className="mt-2 px-1 text-[12px] text-(--red-600)">{error}</p>
-      ) : !bothConnected ? (
-        <p className="mt-3 px-1 text-[12px] text-(--text-tertiary)">
-          {!hasEmail
-            ? "Connectez Gmail, Outlook ou toute boîte IMAP (OVH, Orange…). Relvo lit les nouveaux emails et répond depuis votre adresse. "
-            : ""}
-          {!hasWhatsApp
-            ? "Pour WhatsApp, scannez un QR code depuis l’app WhatsApp de votre téléphone."
-            : ""}
-        </p>
+    <div className="mt-3 space-y-2">
+      {!hasEmail ? (
+        <button
+          type="button"
+          onClick={() => setSheet("email")}
+          disabled={pending}
+          className="pressable flex h-11 w-full items-center justify-center gap-2 rounded-(--rayon-pilule) text-[15px] font-medium text-white disabled:opacity-60"
+          style={{ background: "var(--degrade-relvo)" }}
+        >
+          <Envelope className="size-[18px]" />
+          Connecter ma boîte e-mail
+        </button>
       ) : null}
       {!hasWhatsApp ? (
-        <p className="mt-2 px-1 text-[11.5px] leading-snug text-(--text-tertiary)">
-          WhatsApp : la connexion passe par une session non officielle. Un usage
-          intensif peut entraîner un blocage du numéro par WhatsApp (rare pour
-          un volume normal, mais à connaître).
-        </p>
+        <button
+          type="button"
+          onClick={() => setSheet("whatsapp")}
+          disabled={pending}
+          className="pressable flex h-11 w-full items-center justify-center gap-2 rounded-(--rayon-pilule) border border-(--filet) bg-white text-[15px] font-medium text-noir shadow-carte disabled:opacity-60"
+        >
+          <WhatsappLogo className="size-[18px]" />
+          Ajouter WhatsApp
+        </button>
       ) : null}
+      {error ? (
+        <p className="px-1 text-[12px] font-normal text-urgent">{error}</p>
+      ) : null}
+
+      <Dialog
+        open={sheet === "email"}
+        onOpenChange={(o) => !o && !pending && setSheet(null)}
+      >
+        <DialogContent className="gap-3 p-5">
+          <DialogHeader>
+            <DialogTitle>Quelle boîte e-mail ?</DialogTitle>
+          </DialogHeader>
+          <div className="overflow-hidden rounded-(--rayon-carte) border border-(--filet)">
+            {CHOICES.map((c) => (
+              <button
+                key={c.provider}
+                type="button"
+                onClick={() => connect(c.provider)}
+                disabled={pending}
+                className="flex h-13 w-full items-center gap-3 border-b border-(--filet) px-3.5 text-left last:border-b-0 active:bg-(--fond-enfonce) disabled:opacity-60"
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-[14.5px] font-normal text-noir">
+                    {busy === c.provider ? "Ouverture…" : c.label}
+                  </span>
+                  <span className="block text-[12px] font-normal text-gris">
+                    {c.hint}
+                  </span>
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-[12px] font-normal text-gris">
+            Relvo lit les nouveaux e-mails et répond depuis votre adresse.
+          </p>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={sheet === "whatsapp"}
+        onOpenChange={(o) => !o && !pending && setSheet(null)}
+      >
+        <DialogContent className="gap-3 p-5">
+          <DialogHeader>
+            <DialogTitle>Ajouter WhatsApp</DialogTitle>
+          </DialogHeader>
+          <p className="text-[14px] leading-5 font-light text-noir">
+            Vous scannerez un QR code depuis l’app WhatsApp de votre téléphone.
+          </p>
+          <p className="text-[12px] leading-4 font-normal text-gris">
+            La connexion passe par une session non officielle : un usage
+            intensif peut entraîner un blocage du numéro par WhatsApp — rare
+            pour un volume normal, mais à connaître.
+          </p>
+          <button
+            type="button"
+            onClick={connectWhatsApp}
+            disabled={pending}
+            className="pressable flex h-11 w-full items-center justify-center gap-2 rounded-(--rayon-pilule) text-[15px] font-medium text-white disabled:opacity-60"
+            style={{ background: "var(--degrade-relvo)" }}
+          >
+            {busy === "WHATSAPP" ? "Ouverture…" : "Scanner le QR code"}
+          </button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

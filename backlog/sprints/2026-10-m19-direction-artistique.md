@@ -640,6 +640,63 @@ seule liste du jour avec les rendez-vous en tête plutôt que deux lentilles sur
 journée (question de périmètre) ; la première phrase du bloc de Relvo calculée (les nouvelles
 de l'accueil) quand M10 s'y pose.
 
+### Le menu, Canaux, Profil, Préférences, Usage et la connexion
+
+**Ce que la critique a dit.** Les quatre pages du menu n'avaient pas reçu la direction au
+même degré que les onglets : primitives du registre non adaptées (`Card` à anneau sans ombre
+de carte, interrupteur de 18 px, champs et boutons de 36 px), textes à 12–13 px en graisse
+fine, et aucune première carte qui chevauche le ciel. Canaux : l'encart « E-mail et WhatsApp
+sont connectés » s'affichait sous quatre canaux « en attente » (il testait l'existence, pas
+le statut) ; **l'action la plus destructrice du produit** était une corbeille nue de 32 px sur
+chaque ligne ; l'invite était un choix technique à quatre cases (Gmail, Outlook, IMAP,
+WhatsApp) avant même de savoir pourquoi confier son courrier ; « Reconnecter » un glyphe de
+rotation seul. Profil : trois cartes, trois descriptions qui redisaient trois titres, « Se
+déconnecter » en rouge et en double (le menu l'a déjà), un champ « Mot de passe actuel
+(aucun) » désactivé. Préférences : **trois interrupteurs sans effet** qui répondaient « arrive
+bientôt ». Usage : « 32 % » à 44 px, plus gros que le titre de page ; dit trois fois ;
+l'encart de démonstration en ambre d'Externe ; une **erreur d'hydratation reproductible** —
+le composant de jauge du registre formate son texte ARIA selon la locale du processus
+(« 32% » sur le serveur, « 32 % » sur un téléphone en français). Menu : l'avatar de Moi
+peint avec le dégradé du disque de Relvo, la page courante non marquée, « Se déconnecter » à
+22 px au ras du bord. Connexion : le ciel s'arrêtait net sur un violet clair sans fondu ;
+trois accroches pour dire « bienvenue » ; « Oublié ? » à 12 px gris, le lien le plus utile du
+public qui oublie ses mots de passe. Scores Nielsen 17/36 (Canaux), 22 (Profil), 20
+(Préférences), 20/32 (Usage), 22 (menu), 23 (connexion).
+
+**Ce qui a été retiré, et pourquoi il ne manque pas** :
+
+| Retiré | Il ne manque pas parce que… |
+|---|---|
+| L'encart « sont connectés. Supprimez un canal… » | il mentait ; l'absence de bouton d'ajout dit déjà qu'on ne peut plus ajouter, le retrait vit en pied, nommé |
+| La corbeille sur chaque ligne de canal | « Retirer un canal… » en pied de page, rouge, fait choisir le canal puis confirme en le nommant — la destruction ne se tient pas à douze pixels d'un badge |
+| Les quatre tuiles techniques et leurs deux paragraphes | un bouton « Connecter ma boîte e-mail », et le choix Gmail / Outlook / une autre boîte vient après le « oui », dans une feuille ; WhatsApp en second, son avertissement dans sa feuille |
+| « Aucun canal connecté. » | le vide est un bloc de Relvo qui dit pourquoi relier une boîte — c'est là que la première connexion aboutit (M19.9) |
+| La carte « Session » et ses deux boutons | l'e-mail est dans le champ, « Se déconnecter » au pied du menu ; la réinitialisation de la démo est une commande de démonstration, en pied de page |
+| Les descriptions sous les titres du Profil | les champs le disent ; seule reste la phrase du compte Google sans mot de passe |
+| Le champ « Mot de passe actuel (aucun) » | un champ désactivé n'est pas une information |
+| Brief quotidien, Notifications push, Lecture vocale, et leur toast | ils ne faisaient rien ; ils reviennent avec leur fonction (tranche 5, M10), pas avec une excuse |
+| Le sous-titre « Votre part du plafond mensuel » et la première phrase du paragraphe | « Ce mois-ci » et « 32 % » se comprennent seuls ; ne reste que la phrase qui désamorce la peur du plafond |
+| « Votre assistant de messagerie » et « Accédez à votre espace Relvo. » | le ciel a fait la promesse ; la carte nomme la tâche : « Connexion », « Créer un compte » |
+| Le glyphe de rotation « Reconnecter » | une puce qui dit son mot, à la place du badge d'état quand le canal n'est pas connecté |
+
+**Ce qui a changé de forme** : les champs et les boutons du registre à 44 px partout ;
+l'interrupteur à 48 px, activé en dégradé de Relvo ; les premières cartes des quatre pages
+chevauchent le ciel ; l'avatar du menu est bleu (Moi), son en-tête ouvre le Profil, la page
+courante est marquée au fond enfoncé, fermer et se déconnecter se frappent au pouce ; la
+ligne de rattrapage des Canaux en 14 px violet (c'est Relvo qui parle), « ignorée » au lieu
+de « en sourdine » ; la jauge du registre fixe sa locale (plus d'erreur d'hydratation),
+dégradé de Relvo sur fond puce ; l'encart de démonstration en gris ; le ciel de la connexion
+fond vers le blanc, « Oublié ? » en 14 px violet avec 44 px de frappe, « E-mail » en
+français, le bandeau de succès aux tokens. `DESIGN.md` écrit le mot-marque à 40 px et les
+formulaires à 44 px.
+
+**Confié à plus tard** : une alerte ailleurs que sur Canaux quand une boîte reste « en
+attente » (l'accueil, dans la voix de Relvo) ; dire sur l'accueil que l'assistant est coupé ;
+la date de remise à zéro de l'Usage quand le compteur sera réel ; le nom d'un canal quand V1
+n'en autorise qu'un par type.
+
+**M19.6 est livré** : les douze écrans de la liste sont passés par la méthode. Reste M19.10.
+
 ## Tranché à la reprise de la tranche 3 — la première connexion (M19.9)
 
 Le dirigeant ajoute à la tranche 4 une **séquence de première connexion** : cinq ou six
@@ -668,8 +725,9 @@ La trace « vues une fois » est une colonne du compte, migration accordée (ci-
       partout
 - [ ] Tranche 3 — « Alléger » : ✅ les reports de la revue de finition (Contacts, en-têtes de
       la fiche, textes sous 11 px, couleurs en dur — cliquet vide) · ⏳ M19.6 l'allègement écran
-      par écran : ✅ Accueil · ✅ Conversations (liste et fil) · ✅ Sujets et fiche Sujet · ✅ Mémoire, domaine, Contacts et fiche contact · ✅ Calendrier et Échange · reste
-      Calendrier, Échange, Mémoire, Contacts, les quatre pages du menu, l'authentification ·
+      par écran : ✅ Accueil · ✅ Conversations · ✅ Sujets et fiche Sujet · ✅ Mémoire,
+      domaine, Contacts et fiche contact · ✅ Calendrier et Échange · ✅ menu, Canaux, Profil,
+      Préférences, Usage, connexion — **M19.6 livré** · ⏳
       M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives
       de première connexion, invitation à connecter la première adresse, états vides qui guident

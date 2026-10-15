@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import {
   type Picto,
@@ -94,6 +95,8 @@ const SETTINGS: Entry[] = [
 
 const ITEM =
   "flex h-13 items-center gap-3.5 px-5 text-[17px] font-normal text-noir active:bg-(--fond-enfonce)";
+// La page courante : fond enfoncé et graisse — jamais un cerclage ni du violet.
+const ITEM_ACTIVE = "bg-(--fond-enfonce) font-medium";
 
 function Separator() {
   return <div className="my-2 h-px bg-(--filet)" />;
@@ -105,6 +108,7 @@ export function SideMenu({
   user: { firstName: string; lastName: string; email: string };
 }) {
   const ctx = useContext(SideMenuCtx);
+  const pathname = usePathname();
   if (!ctx) return null;
   const { open, setOpen } = ctx;
   const close = () => setOpen(false);
@@ -118,7 +122,12 @@ export function SideMenu({
         key={e.href}
         href={e.href}
         onClick={close}
-        className={cn(ITEM, className)}
+        aria-current={pathname.startsWith(e.href) ? "page" : undefined}
+        className={cn(
+          ITEM,
+          pathname.startsWith(e.href) && ITEM_ACTIVE,
+          className,
+        )}
       >
         <Icon className="size-[22px] flex-none text-relvo" />
         {e.label}
@@ -131,34 +140,39 @@ export function SideMenu({
       <SheetContent
         side="left"
         showCloseButton={false}
-        className="w-[320px] max-w-[85vw] rounded-r-(--rayon-feuille) border-0 bg-white text-noir shadow-(--ombre-feuille)"
+        className="w-[320px] max-w-[85vw] rounded-r-(--rayon-feuille) border-0 bg-white text-noir shadow-(--ombre-feuille) data-[side=left]:w-[320px]"
         style={{
           // Sur grand écran, la feuille s'aligne sur le bord du cadre mobile
           // (max-w-120 = 30rem, centré), pas sur celui de la fenêtre.
           left: "max(0px, calc(50% - 15rem))",
         }}
       >
+        {/* L'en-tête nomme le compte et ouvre le Profil ; l'avatar est celui de
+            MOI, bleu (le triptyque) — jamais le dégradé du disque de Relvo. */}
         <div
           className="flex flex-none items-center gap-3 border-b border-(--filet) px-5 pb-4"
           style={{ paddingTop: "max(env(safe-area-inset-top), 20px)" }}
         >
-          <span
-            className="chiffre grid size-11 flex-none place-items-center rounded-full text-[15px] text-white"
-            style={{ background: "var(--degrade-disque)" }}
+          <Link
+            href="/profil"
+            onClick={close}
+            className="flex min-w-0 flex-1 items-center gap-3 active:opacity-80"
           >
-            {initials}
-          </span>
-          <div className="min-w-0 flex-1">
-            <SheetTitle className="truncate font-heading text-[20px] leading-6 font-semibold tracking-[-0.01em] text-noir">
-              {user.firstName} {user.lastName}
-            </SheetTitle>
-            <SheetDescription className="truncate text-[13px] font-light text-gris">
-              {user.email}
-            </SheetDescription>
-          </div>
+            <span className="chiffre grid size-11 flex-none place-items-center rounded-full bg-actor-me text-[15px] text-white">
+              {initials}
+            </span>
+            <span className="min-w-0 flex-1">
+              <SheetTitle className="truncate font-heading text-[20px] leading-6 font-semibold tracking-[-0.01em] text-noir">
+                {user.firstName} {user.lastName}
+              </SheetTitle>
+              <SheetDescription className="truncate text-[13px] font-normal text-gris">
+                {user.email}
+              </SheetDescription>
+            </span>
+          </Link>
           <SheetClose
             aria-label="Fermer le menu"
-            className="pressable grid size-[34px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-noir"
+            className="pressable relative grid size-[34px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-noir before:absolute before:-inset-[5px] before:content-['']"
           >
             <X className="size-4" strokeWidth={2.2} />
           </SheetClose>
@@ -176,16 +190,15 @@ export function SideMenu({
           })}
         </nav>
 
+        {/* Se déconnecter : une ligne comme les autres, grise, à 52 px — son
+            seul exemplaire (Profil ne la répète plus). */}
         <form
           action={logoutAction}
-          className="flex-none px-5 pt-3"
-          style={{ paddingBottom: "max(env(safe-area-inset-bottom), 22px)" }}
+          className="flex-none"
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom), 14px)" }}
         >
-          <button
-            type="submit"
-            className="flex items-center gap-3.5 text-[16px] font-light text-gris active:opacity-70"
-          >
-            <SignOut className="size-[22px]" />
+          <button type="submit" className={cn(ITEM, "w-full text-gris")}>
+            <SignOut className="size-[22px] flex-none" />
             Se déconnecter
           </button>
         </form>

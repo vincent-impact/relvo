@@ -57,7 +57,7 @@ export function FormBanner({
         "rounded-lg border px-3 py-2 text-sm",
         status === "error"
           ? "border-destructive/30 bg-destructive/10 text-destructive"
-          : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+          : "border-(--fait)/30 bg-(--fait)/10 text-(--fait)",
       )}
     >
       {message}

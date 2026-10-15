@@ -5,33 +5,10 @@ import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import { setAssistantEnabledAction } from "@/server/actions/preferences";
 
-// Préférences (page du menu). Le premier réglage PERSISTÉ est l'assistant : il
-// gouverne tout ce que Relvo fait de lui-même sur le compte (M7) — le tri à
-// l'arrivée aujourd'hui, la structuration, la relecture et l'échange demain.
-// Les autres toggles restent la coquille M9 : état local, non persisté.
-
-const PREFS = [
-  {
-    key: "brief",
-    label: "Brief quotidien",
-    desc: "Recevoir le récapitulatif du matin",
-    default: true,
-  },
-  {
-    key: "push",
-    label: "Notifications push",
-    desc: "Être alerté des sujets urgents",
-    default: false,
-  },
-  {
-    key: "voice",
-    label: "Lecture vocale",
-    desc: "Lire les réponses de Relvo à voix haute",
-    default: false,
-  },
-];
-
-const ROW = "flex items-center gap-3 px-4 py-3.5";
+// Une seule ligne : l'assistant. Les autres réglages (brief quotidien,
+// notifications, lecture vocale) reviendront avec leur fonction — un
+// interrupteur qui ne fait rien ne se montre pas, et un produit ne s'excuse
+// pas à chaque tap.
 
 export function PreferencesToggles({
   assistantEnabled,
@@ -40,9 +17,6 @@ export function PreferencesToggles({
 }) {
   const [assistant, setAssistant] = useState(assistantEnabled);
   const [pending, startTransition] = useTransition();
-  const [state, setState] = useState<Record<string, boolean>>(
-    Object.fromEntries(PREFS.map((p) => [p.key, p.default])),
-  );
 
   function toggleAssistant(next: boolean) {
     const previous = assistant;
@@ -64,41 +38,25 @@ export function PreferencesToggles({
 
   return (
     <div className="overflow-hidden rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte">
-      <div className={ROW}>
+      <label className="flex cursor-pointer items-center gap-3 px-4 py-3.5">
         <div className="min-w-0 flex-1">
           <div className="text-[14.5px] font-normal text-noir">
             Assistant Relvo
           </div>
-          <div className="mt-0.5 text-[12.5px] font-light text-gris">
+          <div className="mt-0.5 text-[14px] leading-5 font-light text-gris">
             Relvo lit les messages reçus, ouvre les sujets qui le méritent et
             prépare le travail. Coupé, les messages arrivent quand même et vous
             triez à la main.
           </div>
         </div>
         <Switch
+          size="lg"
           checked={assistant}
           disabled={pending}
           onCheckedChange={toggleAssistant}
           aria-label="Assistant Relvo"
         />
-      </div>
-      {PREFS.map((p) => (
-        <div key={p.key} className={`${ROW} border-t border-(--filet)`}>
-          <div className="min-w-0 flex-1">
-            <div className="text-[14.5px] font-normal text-noir">{p.label}</div>
-            <div className="mt-0.5 text-[12.5px] font-light text-gris">
-              {p.desc}
-            </div>
-          </div>
-          <Switch
-            checked={state[p.key]}
-            onCheckedChange={(v) => {
-              setState((s) => ({ ...s, [p.key]: v }));
-              toast.info("La persistance des préférences arrive bientôt.");
-            }}
-          />
-        </div>
-      ))}
+      </label>
     </div>
   );
 }

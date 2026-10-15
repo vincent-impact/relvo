@@ -421,7 +421,7 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
 
 ### Inputs / Fields
 - **Style :** pilule sur `fond-puce` (le composer : 44px minimum, texte 14.5px fin, rayon 22px,
-  disque de dictée violet à droite) ; la primitive du registre est un champ 36px à filet, texte
+  disque de dictée violet à droite) ; la primitive du registre est un champ 44px à filet, texte
   16px pour ne pas déclencher le zoom d'iOS.
 - **Focus :** bord et anneau violets (`--ring` = `relvo`), 3px à 50 %.
 - **Error / Disabled :** bord rouge et anneau rouge à 20 % ; désactivé à 50 % d'opacité.
@@ -467,6 +467,9 @@ quatre premières sont des **exceptions assumées aux détecteurs d'impeccable**
 comme un tic d'interface générée est ici une décision de direction.
 
 ### Do:
+- **Do** laisser le ciel haut de la connexion fondre vers le blanc comme tout ciel, et y poser
+  le mot-marque « Relvo » à 40px : le seul corps au-dessus du titre de page, assumé là et
+  nulle part ailleurs.
 - **Do** poser au-dessus du titre de page, dans le ciel, sa **ligne du dessus** en petites
   capitales (`eyebrow` de `RelvoHeader`) : la date sur l'accueil, le domaine sur une fiche. Le
   détecteur « kicker-above-heading » la lit comme un surtitre décoratif ; c'est le seul endroit
@@ -486,6 +489,8 @@ comme un tic d'interface générée est ici une décision de direction.
   horaire barré (en retard), coche sur disque et titre barré (fait).
 - **Do** cercler l'indicateur actif et souligner l'onglet actif d'une fiche ; rendre la puce
   active noire.
+- **Do** rendre un formulaire en **champs et boutons de 44px** (`Input` et `Button` du registre,
+  adaptés), et un interrupteur de 48px activé en dégradé de Relvo.
 - **Do** écrire « 0 » en gris clair dans une cellule d'indicateur, et **ne rien afficher** pour un
   badge ou un compteur à zéro.
 - **Do** faire pointer chaque phrase de Relvo vers sa preuve (lien ou sous-carte).

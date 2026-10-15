@@ -14,11 +14,8 @@ export default async function UsagePage() {
   await requireAccount();
   return (
     <Screen>
-      <RelvoHeader
-        title="Usage"
-        subtitle="Votre part du plafond mensuel"
-        className="pb-5"
-      />
+      {/* Pas de sous-titre : « Ce mois-ci » et la phrase du plafond le disent. */}
+      <RelvoHeader title="Usage" className="pb-9" />
       <UsagePane />
     </Screen>
   );

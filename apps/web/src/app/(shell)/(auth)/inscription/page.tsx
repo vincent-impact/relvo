@@ -17,18 +17,15 @@ export default async function InscriptionPage() {
   if (await getCurrentAccount()) redirect("/");
 
   return (
-    <AuthCard
-      title="Créer un compte"
-      description="Quelques secondes pour démarrer avec Relvo."
-    >
+    <AuthCard title="Créer un compte">
       <div className="space-y-4">
         {googleEnabled && (
           <>
             <GoogleButton label="S'inscrire avec Google" />
-            <div className="flex items-center gap-3 text-[12px] text-(--text-tertiary)">
-              <span className="h-px flex-1 bg-(--border-light)" />
+            <div className="flex items-center gap-3 text-[12px] font-normal text-gris">
+              <span className="h-px flex-1 bg-(--filet)" />
               ou
-              <span className="h-px flex-1 bg-(--border-light)" />
+              <span className="h-px flex-1 bg-(--filet)" />
             </div>
           </>
         )}

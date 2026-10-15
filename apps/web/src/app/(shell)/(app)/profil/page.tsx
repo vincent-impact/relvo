@@ -1,94 +1,60 @@
 import type { Metadata } from "next";
-import { SignOut } from "@/components/shared/picto";
 import { DEMO_EMAIL } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { PasswordForm } from "@/components/settings/password-form";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { ResetDemoButton } from "@/components/settings/reset-demo-button";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { logoutAction } from "@/server/actions/auth";
 import { requireAccount } from "@/server/auth-context";
 
 export const metadata: Metadata = { title: "Profil — Relvo" };
 
-// Profil — page du menu (M18) : identité, mot de passe, session. Les anciens
-// Réglages à onglets n'existent plus : Canaux, Profil, Préférences et Usage
-// sont quatre pages à part entière, chacune avec son burger.
+// Profil — deux cartes à lignes, nommées par un libellé : le compte, le mot de
+// passe. Pas de description sous le titre (les champs le disent), pas de carte
+// « Session » : l'e-mail est dans le champ, et « Se déconnecter » vit au pied
+// du menu, son seul exemplaire. La réinitialisation du compte de démonstration
+// est une commande de démonstration : en pied de page, pas une carte du
+// produit.
 
-// Le reset du compte démo (Server Action invoquée depuis cette page) recrée
-// beaucoup d'objets (29 sujets + 115 tâches + journaux) → on relève le plafond
-// de durée de la fonction serverless pour éviter un timeout (clampé au max du
-// plan Vercel). Fluid Compute autorise des durées longues.
+// La réinitialisation de la démo rejoue le seed complet (R2 compris).
 export const maxDuration = 300;
+
+const CARTE =
+  "relative z-3 mx-4 rounded-(--rayon-carte) border border-(--filet) bg-white px-4 pt-3.5 pb-4 shadow-carte";
 
 export default async function ProfilPage() {
   const account = await requireAccount();
 
   return (
     <Screen>
-      <RelvoHeader title="Profil" subtitle="Votre compte" className="pb-5" />
-      <div className="space-y-5 px-4 pt-5">
-        <Card>
-          <CardHeader>
-            <CardTitle>Informations personnelles</CardTitle>
-            <CardDescription>
-              Modifiez votre nom et votre adresse email.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ProfileForm
-              defaultValues={{
-                firstName: account.firstName,
-                lastName: account.lastName,
-                email: account.email,
-              }}
-            />
-          </CardContent>
-        </Card>
+      <RelvoHeader title="Profil" subtitle="Votre compte" className="pb-9" />
+      <div className="-mt-5 space-y-4">
+        <section className={CARTE}>
+          <div className="libelle mb-3">Vous</div>
+          <ProfileForm
+            defaultValues={{
+              firstName: account.firstName,
+              lastName: account.lastName,
+              email: account.email,
+            }}
+          />
+        </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Mot de passe</CardTitle>
-            <CardDescription>
-              {account.passwordHash
-                ? "Changez votre mot de passe."
-                : "Définissez un mot de passe pour vous connecter sans Google."}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <PasswordForm hasPassword={Boolean(account.passwordHash)} />
-          </CardContent>
-        </Card>
+        <section className={CARTE}>
+          <div className="libelle mb-3">Mot de passe</div>
+          {account.passwordHash ? null : (
+            <p className="mb-3 text-[14px] leading-5 font-light text-gris">
+              Définissez un mot de passe pour vous connecter sans Google.
+            </p>
+          )}
+          <PasswordForm hasPassword={Boolean(account.passwordHash)} />
+        </section>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Session</CardTitle>
-            <CardDescription>
-              Connecté en tant que {account.email}.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <form action={logoutAction}>
-              <Button
-                type="submit"
-                variant="outline"
-                className="w-full border-(--red-200) text-(--red-600) hover:bg-(--red-50) hover:text-(--red-600)"
-              >
-                <SignOut className="size-4" />
-                Se déconnecter
-              </Button>
-            </form>
-            {account.email === DEMO_EMAIL ? <ResetDemoButton /> : null}
-          </CardContent>
-        </Card>
+        {account.email === DEMO_EMAIL ? (
+          <div className="px-4 pt-2">
+            <ResetDemoButton />
+          </div>
+        ) : null}
       </div>
     </Screen>
   );

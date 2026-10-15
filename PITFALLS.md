@@ -386,6 +386,23 @@ composant client — faire de la ligne un composant client (`DocumentRow`) plut�
 l'icône en enfant depuis la page. Pour trouver le coupable d'un avertissement de clé sans
 liste : retirer le composant client suspect du rendu et recapturer, l'avertissement tombe.
 
+### #59 — Un composant du registre qui formate un nombre selon la locale rend un texte ARIA différent entre le serveur et le téléphone
+
+**Symptôme** : une erreur d'hydratation reproductible à chaque chargement d'une page qui ne
+contient ni date, ni `Math.random`, ni `window` — ici l'Usage. React montre
+`aria-valuetext="32%"` côté serveur et `aria-valuetext="32 %"` côté client.
+
+**Cause** : la jauge du registre (`Progress`, Base UI) écrit son `aria-valuetext` avec
+`Intl.NumberFormat` **sans locale** : sur le serveur, c'est la locale du processus Node
+(`en-US` sur Vercel comme en `pnpm dev`, « 32% »), sur le téléphone celle du navigateur
+(`fr-FR`, « 32 % » avec une espace fine). Le chiffre visible, lui, est une chaîne à nous et ne
+bouge pas : la divergence est invisible à l'œil et bruyante en console.
+
+**Règle** : tout composant du registre qui formate une valeur (jauge, compteur, date) reçoit
+sa `locale` explicitement (`locale="fr-FR"`), jamais celle du processus. Devant une erreur
+d'hydratation sans cause évidente, lire l'attribut que React nomme et chercher qui le
+formate.
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -407,7 +424,7 @@ d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revér
 documentation de la plateforme, jamais de mémoire. Le piège **#54** relève du **navigateur du
 téléphone** : il se périme avec la version de Chrome, dans le bon sens.
 
-Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58** sont des **règles de conception ou d'hygiène** :
+Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58, #59** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
 
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et

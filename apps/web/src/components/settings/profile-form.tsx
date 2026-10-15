@@ -58,7 +58,7 @@ export function ProfileForm({
       </div>
 
       <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">E-mail</Label>
         <Input
           id="email"
           name="email"
@@ -69,7 +69,7 @@ export function ProfileForm({
         <FieldError messages={state.fieldErrors?.email} />
       </div>
 
-      <SubmitButton>Enregistrer</SubmitButton>
+      <SubmitButton className="w-full">Enregistrer</SubmitButton>
     </form>
   );
 }

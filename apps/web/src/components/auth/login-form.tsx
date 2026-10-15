@@ -20,7 +20,7 @@ export function LoginForm() {
       <FormBanner status={state.status} message={state.message} />
 
       <div className="space-y-1.5">
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">E-mail</Label>
         <Input
           id="email"
           name="email"
@@ -34,9 +34,11 @@ export function LoginForm() {
       <div className="space-y-1.5">
         <div className="flex items-center justify-between">
           <Label htmlFor="password">Mot de passe</Label>
+          {/* Le lien de secours du public qui oublie ses mots de passe : lisible,
+              et 44 px de frappe. */}
           <Link
             href="/mot-de-passe-oublie"
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="relative py-2 text-[14px] font-medium text-relvo before:absolute before:-inset-x-2 before:-inset-y-1 before:content-['']"
           >
             Oublié ?
           </Link>

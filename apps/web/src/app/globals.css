@@ -131,8 +131,8 @@
     180deg,
     var(--nuit) 0,
     var(--relvo) 150px,
-    var(--relvo-clair) 300px,
-    #8b80ea 380px
+    var(--relvo-clair) calc(100% - 60px),
+    #ffffff 100%
   );
   /* Le champ d'étoiles : points en dégradés radiaux, masqués vers le bas. Les
      trois étoiles à quatre branches (celles du signe) sont posées par `.ciel`. */

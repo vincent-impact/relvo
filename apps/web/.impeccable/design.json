@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-15T09:56:54+00:00",
+  "generatedAt": "2026-10-15T10:35:11+00:00",
   "title": "Design System: Relvo",
   "extensions": {
     "colorMeta": {
@@ -773,6 +773,7 @@
       }
     ],
     "dos": [
+      "Do laisser le ciel haut de la connexion fondre vers le blanc comme tout ciel, et y poser le mot-marque « Relvo » à 40px : le seul corps au-dessus du titre de page, assumé là et nulle part ailleurs.",
       "Do poser au-dessus du titre de page, dans le ciel, sa **ligne du dessus** en petites capitales (`eyebrow` de `RelvoHeader`) : la date sur l'accueil, le domaine sur une fiche. Le détecteur « kicker-above-heading » la lit comme un surtitre décoratif ; c'est le seul endroit de l'écran qui porte cette donnée, tranché par le dirigeant (`03-patterns.md`, « Le cadre »).",
       "Do poser la **bande de domaine** sur la tranche gauche de chaque carte et ligne de sujet (`.bande-carte` 10px, `.bande-ligne` 6px), comme un fond plein à l'intérieur de la surface. Ce n'est pas un `border-left` décoratif (détecteur « side-tab ») : c'est le geste signature du monde, une bande par surface, la couleur du domaine stockée sur le dossier.",
       "Do utiliser le **violet et ses dégradés** sur le ciel, le disque Relvo, l'action principale, les jauges et les interrupteurs : le violet est **sémantique** (livrée et voix de Relvo), pas un dégradé violet-bleu d'ornement. Un détecteur qui le signale a tort ici, et seulement ici.",
@@ -780,6 +781,7 @@
       "Do rendre une entité de liste en **ligne dans une carte unique** (`ListPanel`), séparée par le filet.",
       "Do dire l'état **à la forme** d'abord : pastille pleine (urgent), cerclée (en attente), horaire barré (en retard), coche sur disque et titre barré (fait).",
       "Do cercler l'indicateur actif et souligner l'onglet actif d'une fiche ; rendre la puce active noire.",
+      "Do rendre un formulaire en **champs et boutons de 44px** (`Input` et `Button` du registre, adaptés), et un interrupteur de 48px activé en dégradé de Relvo.",
       "Do écrire « 0 » en gris clair dans une cellule d'indicateur, et **ne rien afficher** pour un badge ou un compteur à zéro.",
       "Do faire pointer chaque phrase de Relvo vers sa preuve (lien ou sous-carte).",
       "Do prendre toute valeur dans `globals.css` : le test des tokens refuse une couleur hexadécimale dans un composant, hors les exceptions qu'il nomme (logo, bouton Google, manifeste, e-mail sortant, page publique de suivi).",

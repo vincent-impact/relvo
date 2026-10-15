@@ -23,11 +23,13 @@ export function AuthCard({
       )}
     >
       <div className="mb-5">
-        <h1 className="text-[20px] leading-tight font-medium tracking-[-0.01em] text-noir">
+        {/* Le titre nomme la tâche, en condensé comme tout titre ; le ciel a
+            déjà fait la promesse. */}
+        <h1 className="font-heading text-[22px] leading-7 font-semibold tracking-[-0.01em] text-noir">
           {title}
         </h1>
         {description ? (
-          <p className="mt-1 text-[13.5px] leading-[1.45] font-light text-gris">
+          <p className="mt-1 text-[14px] leading-[1.45] font-light text-gris">
             {description}
           </p>
         ) : null}
@@ -49,9 +51,9 @@ export function AuthLink({
   prefix?: React.ReactNode;
 }) {
   return (
-    <p className="text-center text-[13.5px] text-(--text-secondary)">
+    <p className="py-1 text-center text-[14px] font-normal text-gris">
       {prefix ? <>{prefix} </> : null}
-      <Link href={href} className="font-semibold text-relvo hover:underline">
+      <Link href={href} className="font-medium text-relvo">
         {children}
       </Link>
     </p>

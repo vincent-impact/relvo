@@ -8,7 +8,9 @@ export function DemoNotice({ children }: { children: React.ReactNode }) {
   return (
     <div
       role="note"
-      className="mx-4 flex items-start gap-2.5 rounded-[12px] border border-(--amber-800)/20 bg-(--amber-50) px-3.5 py-2.5 text-[12.5px] leading-[1.4] text-(--amber-800)"
+      // Gris, pas ambre : « démonstration » n'est ni un tiers ni une attente,
+      // et ces couleurs ne s'empruntent pas.
+      className="mx-4 flex items-start gap-2.5 rounded-(--rayon-option) bg-(--fond-enfonce) px-3.5 py-2.5 text-[12px] leading-4 font-normal text-gris"
     >
       <Flask className="mt-px size-4 flex-none" />
       <span>{children}</span>
