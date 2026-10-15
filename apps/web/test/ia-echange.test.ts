@@ -385,3 +385,17 @@ describe("un tour de l'échange, par chat()", () => {
     expect(execute).toHaveBeenCalledTimes(2);
   });
 });
+
+describe("la fenêtre d'annulation, tenue par l'écran", () => {
+  it("« Annuler » reste actif quelques minutes après le geste, puis s'éteint", async () => {
+    const { annulable, FENETRE_ANNULATION_MS } =
+      await import("@/lib/relvo-annulation");
+    const a = "2026-10-15T20:00:00.000Z";
+    const t0 = Date.parse(a);
+    const geste = { type: "tache" as const, id: "x", a };
+    expect(annulable(geste, t0 + 1_000)).toBe(true);
+    expect(annulable(geste, t0 + FENETRE_ANNULATION_MS - 1)).toBe(true);
+    expect(annulable(geste, t0 + FENETRE_ANNULATION_MS)).toBe(false);
+    expect(annulable({ ...geste, a: "hier" }, t0)).toBe(false);
+  });
+});

@@ -362,7 +362,25 @@ chat`, « Annuler » la rouvre ; « Prépare une réponse à Karim » → le bro
       et en deux tours enchaînés avec outils rejoués. **Registre** : shadcn n'a aucune
       primitive de fil ; AI Elements (Radix) écarté — composé à partir de l'existant.
       **Reste à vérifier par le dirigeant en production**, sur son compte.
-- [ ] Tranche 2 — « Relvo agit »
+- [x] Tranche 2 — « Relvo agit » : ✅ la palette entière de `05 §11.6` — douze outils
+      d'écriture de plus (`update_task`, `mark_task_done`, `mark_task_deleted`,
+      `create_subject`, `update_subject_status`, `update_subject_priority`,
+      `update_subject_summary`, `create_message_draft`, `create_knowledge_note`,
+      `update_knowledge_note`, `delete_knowledge_note`) et `search_messages` (requête mot à
+      mot du domaine, bornée) · ✅ **provenance** : les fonctions d'écriture du domaine
+      reçoivent une `Origine` optionnelle, fusionnée dans la métadonnée du journal qu'elles
+      écrivent déjà (`source: "chat"`), `deleteNote` journalise enfin · ✅ **annulation** : un
+      descripteur par geste (`annulationSchema`, domaine), `defaireGeste` défait par la
+      fonction de l'écran — une tâche supprimée se recrée depuis son instantané —, server
+      action `annulerGesteAction`, bouton actif cinq minutes côté écran, bloc barré une fois
+      défait · ✅ le brouillon passe par `preparerBrouillon` (M7.7) sur la tâche de réponse
+      ouverte de l'affaire, ou une tâche de réponse créée avec la consigne ; « Aller au
+      brouillon » ouvre la conversation, qui reprend le brouillon ouvert ; rien n'est envoyé ·
+      ✅ tests : `packages/db/test/echange.test.ts` (provenance sur douze événements, recherche,
+      chaque annulation, descripteur refusé) · ✅ vérifié en local contre le modèle : retrait
+      d'urgence, instruction en Mémoire, recherche, brouillon pour Karim, affaire réglée, et
+      « Annuler » sur une tâche créée (headless iPhone). **Reste à vérifier par le dirigeant
+      en production.**
 - [ ] Tranche 3 — « Relvo se souvient »
 - [ ] Tranche 4 — « Relvo parle en premier » (M18.9, M18.11, puis M10.16)
 - [ ] Tranche 5 — Durcissement

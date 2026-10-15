@@ -3,7 +3,7 @@ import { Prisma } from "../generated/prisma/client";
 import { ActionStatus, ActionType, Actor } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
 import { assertFound } from "./errors";
-import { EVENT_TYPES, logEvent } from "./events";
+import { avecOrigine, EVENT_TYPES, logEvent, type Origine } from "./events";
 import { ensureAffected } from "./helpers";
 import { taskProvenanceSchema } from "./tasks";
 
@@ -86,7 +86,11 @@ export async function createAction(db: TenantDb, input: CreateActionInput) {
  * Prépare un brouillon de réponse (Action send_message, status=open). Le
  * brouillon atterrit ensuite dans le composer ; il n'est jamais envoyé d'office.
  */
-export async function createDraftReply(db: TenantDb, input: DraftReplyInput) {
+export async function createDraftReply(
+  db: TenantDb,
+  input: DraftReplyInput,
+  origine?: Origine,
+) {
   const data = draftReplySchema.parse(input);
   return db.$transaction(async (tx) => {
     assertFound(
@@ -121,7 +125,7 @@ export async function createDraftReply(db: TenantDb, input: DraftReplyInput) {
         ? `D'après ${data.sources.map((x) => x.libelle).join(", ")}`
         : undefined,
       actor: "ai",
-      metadata: { sources: data.sources ?? [] },
+      metadata: avecOrigine({ sources: data.sources ?? [] }, origine),
     });
     return action;
   });
@@ -182,7 +186,11 @@ export async function markActionDone(
   });
 }
 
-export async function cancelAction(db: TenantDb, id: string) {
+export async function cancelAction(
+  db: TenantDb,
+  id: string,
+  origine?: Origine,
+) {
   return db.$transaction(async (tx) => {
     const { count } = await tx.action.updateMany({
       where: { id },
@@ -201,6 +209,7 @@ export async function cancelAction(db: TenantDb, id: string) {
       eventType: EVENT_TYPES.actionCancelled,
       title: `Action annulée : ${action.title}`,
       actor: "user",
+      metadata: avecOrigine(null, origine),
     });
     return action;
   });

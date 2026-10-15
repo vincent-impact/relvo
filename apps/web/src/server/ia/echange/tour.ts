@@ -102,6 +102,7 @@ export async function repondreAuTour(entree: EntreeTour): Promise<Response> {
 
   let ecrit = false;
   const outils = outilsRelvo(db, {
+    accountId,
     now,
     subjectId: page.subjectId,
     onEcriture: () => {

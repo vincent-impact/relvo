@@ -7,7 +7,7 @@ import {
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
 import { assertFound } from "./errors";
-import { EVENT_TYPES, logEvent } from "./events";
+import { avecOrigine, EVENT_TYPES, logEvent, type Origine } from "./events";
 import { ensureAffected } from "./helpers";
 
 // Domaine Knowledge — INSTRUCTIONS (kind=note) : consignes Markdown que Relvo
@@ -33,7 +33,12 @@ export const updateNoteSchema = z.object({
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
 export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
 
-export async function createNote(db: TenantDb, input: CreateNoteInput) {
+export async function createNote(
+  db: TenantDb,
+  input: CreateNoteInput,
+  /** L'échange avec Relvo, quand c'est lui qui demande (M10.13). */
+  origine?: Origine,
+) {
   const data = createNoteSchema.parse(input);
   return db.$transaction(async (tx) => {
     const note = await tx.knowledgeDocument.create({
@@ -52,6 +57,7 @@ export async function createNote(db: TenantDb, input: CreateNoteInput) {
       eventType: EVENT_TYPES.knowledgeCreated,
       title: `Instruction « ${note.name} » créée`,
       actor: "user",
+      metadata: avecOrigine(null, origine),
     });
     return note;
   });
@@ -61,6 +67,7 @@ export async function updateNote(
   db: TenantDb,
   id: string,
   input: UpdateNoteInput,
+  origine?: Origine,
 ) {
   const data = updateNoteSchema.parse(input);
   return db.$transaction(async (tx) => {
@@ -83,6 +90,7 @@ export async function updateNote(
       eventType: EVENT_TYPES.knowledgeUpdated,
       title: `Instruction « ${note.name} » modifiée`,
       actor: "user",
+      metadata: avecOrigine(null, origine),
     });
     return note;
   });
@@ -121,12 +129,29 @@ export async function setNoteActive(db: TenantDb, id: string, active: boolean) {
   });
 }
 
-export async function deleteNote(db: TenantDb, id: string) {
-  const { count } = await db.knowledgeDocument.deleteMany({
-    where: { id, kind: KnowledgeKind.note },
+export async function deleteNote(db: TenantDb, id: string, origine?: Origine) {
+  return db.$transaction(async (tx) => {
+    const note = assertFound(
+      await tx.knowledgeDocument.findFirst({
+        where: { id, kind: KnowledgeKind.note },
+        select: { id: true, name: true },
+      }),
+      "Instruction",
+    );
+    const { count } = await tx.knowledgeDocument.deleteMany({
+      where: { id, kind: KnowledgeKind.note },
+    });
+    ensureAffected(count, "Instruction");
+    await logEvent(tx as Tx, {
+      entityType: "system",
+      entityId: note.id,
+      eventType: EVENT_TYPES.knowledgeDeleted,
+      title: `Instruction « ${note.name} » supprimée`,
+      actor: "user",
+      metadata: avecOrigine(null, origine),
+    });
+    return { id };
   });
-  ensureAffected(count, "Instruction");
-  return { id };
 }
 
 /**

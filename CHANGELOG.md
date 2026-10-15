@@ -6,6 +6,7 @@
 
 ## 2026-10-15
 
+- **Nouveau** — Relvo peut maintenant agir pour vous dans l'échange : ouvrir ou régler une affaire, la marquer urgente, modifier ou cocher une tâche, préparer un brouillon de réponse, retenir une instruction, retrouver un message. Chaque geste s'annule d'un appui pendant quelques minutes.
 - **Nouveau** — Dans l'échange, Relvo vous montre vos affaires et vos tâches telles qu'elles apparaissent ailleurs dans l'application, et vous dit en une phrase ce qu'il a trouvé ou fait.
 - **Nouveau** — Relvo vous répond dans l'échange : il lit vos affaires, vos tâches et vos contacts, résume une affaire, et crée une tâche ou un rendez-vous quand vous le lui demandez.
 - **Nouveau** — Relvo ne parle plus de « sujets » mais d'« affaires » : l'onglet, les listes, les messages et les écrans de bienvenue emploient le mot que vous utilisez.

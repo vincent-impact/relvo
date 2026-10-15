@@ -1,7 +1,10 @@
 "use client";
 
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { getToolName, isToolUIPart, type UIMessagePart } from "ai";
+import { toast } from "sonner";
+import type { MessageTrouve } from "@relvo/db";
 import {
   RelvoBlock,
   RelvoSentence,
@@ -18,9 +21,11 @@ import type {
   RelvoUIMessage,
   SortieOutil,
 } from "@/server/ia/echange/outils";
+import { annulable, type Annulation } from "@/lib/relvo-annulation";
+import { annulerGesteAction } from "@/server/actions/relvo";
 import { cn } from "@/lib/utils";
 
-// Le FIL de l'échange avec Relvo (M10.9, M10.14) — ce que le dirigeant lit.
+// Le FIL de l'échange avec Relvo (M10.9, M10.10, M10.14) — ce que le dirigeant lit.
 //
 // Un tour du dirigeant est la bulle sortante des conversations ; un tour de
 // Relvo est UN bloc de Relvo, dans lequel le texte arrive en flux et où chaque
@@ -29,7 +34,9 @@ import { cn } from "@/lib/utils";
 // une ligne de tâche (01 §11 « Relvo rend les mêmes composants que
 // l'interface », invariant 31). Jamais une liste à puces pour ce que le produit
 // sait rendre. Une action faite est une phrase signée ✦ avec [Voir] et
-// [Annuler] (05 §11.6) ; l'annulation se branche en tranche 2.
+// [Annuler] (05 §11.6) : « Annuler » défait par la même fonction du domaine
+// que l'écran (`defaireGeste`), et reste actif quelques minutes — au-delà, le
+// geste se défait par les écrans habituels.
 //
 // Une affaire ou une tâche citée dans un bloc de Relvo est une SOUS-CARTE à
 // filet, sans ombre (02-composants : une carte ne contient pas une carte).
@@ -86,8 +93,121 @@ const EN_COURS: Record<keyof OutilsRelvoUI, string> = {
   get_kpis: "Je compte",
   list_contacts: "Je cherche dans l'annuaire",
   get_contact: "Je cherche dans l'annuaire",
+  search_messages: "Je cherche dans vos messages",
   create_task: "Je crée la tâche",
+  update_task: "Je modifie la tâche",
+  mark_task_done: "Je coche la tâche",
+  mark_task_deleted: "Je retire la tâche",
+  create_subject: "J'ouvre l'affaire",
+  update_subject_status: "Je change l'état de l'affaire",
+  update_subject_priority: "Je change la priorité",
+  update_subject_summary: "Je récris le résumé",
+  create_message_draft: "Je prépare le brouillon",
+  create_knowledge_note: "J'écris l'instruction",
+  update_knowledge_note: "Je modifie l'instruction",
+  delete_knowledge_note: "Je retire l'instruction",
 };
+
+/**
+ * Un GESTE de Relvo dans le fil : la phrase signée ✦, l'objet rendu, puis
+ * [Voir] et [Annuler]. « Annuler » appelle la server action qui défait par le
+ * domaine ; le bloc se marque alors « annulé » et ne propose plus rien.
+ */
+function BlocAction({
+  phrase,
+  voir,
+  annulation,
+  children,
+}: {
+  phrase: React.ReactNode;
+  /** La porte vers l'objet : href et libellé. */
+  voir: { href: string; label: string } | null;
+  annulation: Annulation;
+  children?: React.ReactNode;
+}) {
+  const [etat, setEtat] = useState<"fait" | "annule">("fait");
+  const [pending, start] = useTransition();
+  const actif = etat === "fait" && annulable(annulation);
+  function annuler() {
+    start(async () => {
+      const res = await annulerGesteAction(annulation);
+      if (res.ok) {
+        setEtat("annule");
+        toast.success(res.data.fait);
+      } else {
+        toast.error(res.message);
+      }
+    });
+  }
+  if (etat === "annule") {
+    return (
+      <RelvoSentence className="text-gris line-through decoration-(--gris-clair)">
+        {phrase}
+      </RelvoSentence>
+    );
+  }
+  return (
+    <>
+      <RelvoSentence>✦ {phrase}</RelvoSentence>
+      {children}
+      <div className="mt-1 flex items-center gap-4">
+        {voir ? (
+          <Link href={voir.href} className={cn(RELVO_LINK, "py-1")}>
+            → {voir.label}
+          </Link>
+        ) : null}
+        <button
+          type="button"
+          onClick={annuler}
+          disabled={!actif || pending}
+          className={cn(
+            "py-1 text-[14px] font-medium",
+            actif ? "text-relvo active:opacity-80" : "text-gris opacity-60",
+          )}
+        >
+          {pending ? "Annulation…" : "Annuler"}
+        </button>
+      </div>
+    </>
+  );
+}
+
+function Messages({ messages }: { messages: MessageTrouve[] }) {
+  if (messages.length === 0) return null;
+  return (
+    <SousCarte>
+      {messages.map((m) => (
+        <Link
+          key={m.id}
+          href={`/conversations/${m.conversationId}`}
+          data-list-row
+          className="block border-b border-(--filet) px-3.5 py-2.5 active:bg-(--fond-enfonce)"
+        >
+          <span className="flex items-baseline justify-between gap-2">
+            <span className="truncate text-[14.5px] font-medium text-noir">
+              {m.sens === "sortant" ? "Moi" : (m.expediteur ?? "Externe")}
+            </span>
+            <span className="flex-none text-[12px] font-normal text-gris">
+              {new Date(m.recuLe).toLocaleDateString("fr-FR", {
+                day: "numeric",
+                month: "short",
+                timeZone: "Europe/Paris",
+              })}
+            </span>
+          </span>
+          {m.objet ? (
+            <span className="block truncate text-[13px] font-normal text-noir">
+              {m.objet}
+            </span>
+          ) : null}
+          <span className="line-clamp-2 text-[12.5px] leading-4 font-normal text-gris">
+            {m.extrait}
+          </span>
+        </Link>
+      ))}
+    </SousCarte>
+  );
+}
 
 function Affaires({ affaires }: { affaires: SubjectRowData[] }) {
   if (affaires.length === 0) return null;
@@ -183,33 +303,127 @@ function Sortie({ sortie }: { sortie: SortieOutil }) {
           <Affaires affaires={sortie.affaires} />
         </>
       );
-    case "tache-creee": {
+    case "messages":
+      return <Messages messages={sortie.messages} />;
+    case "tache-creee":
+    case "tache-modifiee":
+    case "tache-cochee": {
       const t = sortie.tache;
-      const voir = t.subjectId ? `/sujets/${t.subjectId}` : "/calendrier";
+      const verbe =
+        sortie.type === "tache-creee"
+          ? "J’ai créé la tâche"
+          : sortie.type === "tache-modifiee"
+            ? "J’ai modifié la tâche"
+            : "J’ai coché la tâche";
       return (
-        <>
-          <RelvoSentence>
-            ✦ J’ai créé la tâche{" "}
-            <span className="font-medium">« {t.title} »</span>
-            {t.subjectTitle ? ` dans ${t.subjectTitle}` : ""}.
-          </RelvoSentence>
+        <BlocAction
+          phrase={
+            <>
+              {verbe} <span className="font-medium">« {t.title} »</span>
+              {sortie.type === "tache-creee" && t.subjectTitle
+                ? ` dans ${t.subjectTitle}`
+                : ""}
+              .
+            </>
+          }
+          voir={{
+            href: t.subjectId ? `/sujets/${t.subjectId}` : "/calendrier",
+            label: "Voir",
+          }}
+          annulation={sortie.annulation}
+        >
           <Taches taches={[t]} />
-          <div className="mt-1 flex items-center gap-4">
-            <Link href={voir} className={cn(RELVO_LINK, "py-1")}>
-              → Voir
-            </Link>
-            <button
-              type="button"
-              disabled
-              title="Bientôt"
-              className="py-1 text-[14px] font-medium text-gris opacity-60"
-            >
-              Annuler
-            </button>
-          </div>
-        </>
+        </BlocAction>
       );
     }
+    case "tache-supprimee":
+      return (
+        <BlocAction
+          phrase={
+            <>
+              J’ai retiré la tâche{" "}
+              <span className="font-medium">« {sortie.titre} »</span>.
+            </>
+          }
+          voir={null}
+          annulation={sortie.annulation}
+        />
+      );
+    case "affaire-creee":
+      return (
+        <BlocAction
+          phrase={
+            <>
+              J’ai ouvert l’affaire{" "}
+              <span className="font-medium">« {sortie.affaire.title} »</span>.
+            </>
+          }
+          voir={{ href: `/sujets/${sortie.affaire.id}`, label: "Voir" }}
+          annulation={sortie.annulation}
+        >
+          <Affaires affaires={[sortie.affaire]} />
+        </BlocAction>
+      );
+    case "affaire-modifiee":
+      return (
+        <BlocAction
+          phrase={
+            <>
+              <span className="font-medium">« {sortie.affaire.title} »</span> :{" "}
+              {sortie.geste}.
+            </>
+          }
+          voir={{ href: `/sujets/${sortie.affaire.id}`, label: "Voir" }}
+          annulation={sortie.annulation}
+        >
+          <Affaires affaires={[sortie.affaire]} />
+        </BlocAction>
+      );
+    case "brouillon":
+      return (
+        <BlocAction
+          phrase={
+            <>
+              J’ai préparé un brouillon pour {sortie.contact}. Rien n’est envoyé
+              : vous le relisez, puis vous l’envoyez.
+            </>
+          }
+          voir={{
+            href: `/conversations/${sortie.conversationId}?repondre=${sortie.taskId}&from=%2Frelvo`,
+            label: "Aller au brouillon",
+          }}
+          annulation={sortie.annulation}
+        >
+          <div className="mt-2.5 rounded-(--rayon-sous-carte) border border-(--filet) bg-white px-3.5 py-2.5">
+            <p className="line-clamp-4 text-[13.5px] leading-[18px] font-light whitespace-pre-line text-noir">
+              {sortie.extrait}
+            </p>
+            {sortie.sources.length ? (
+              <p className="mt-1.5 text-[12px] font-normal text-gris">
+                Basé sur : {sortie.sources.join(", ")}
+              </p>
+            ) : null}
+          </div>
+        </BlocAction>
+      );
+    case "note":
+      return (
+        <BlocAction
+          phrase={
+            <>
+              Instruction{" "}
+              <span className="font-medium">« {sortie.titre} »</span>{" "}
+              {sortie.geste}
+              {sortie.geste === "créée" ? ` dans ${sortie.domaine}` : ""}.
+            </>
+          }
+          voir={{
+            href: `/memoire/${sortie.folderId}`,
+            label: "Voir dans la Mémoire",
+          }}
+          annulation={sortie.annulation}
+        />
+      );
     case "introuvable":
     case "erreur":
       return null;

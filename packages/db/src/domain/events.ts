@@ -122,6 +122,24 @@ export type EventInput = {
 };
 
 /**
+ * D'où vient une écriture demandée par le dirigeant AUTREMENT que par l'écran —
+ * aujourd'hui l'échange avec Relvo (05 §11.6, M10.13). Elle voyage en
+ * métadonnée de l'entrée de journal que la fonction écrit déjà : aucun
+ * changement de schéma, et l'audit distingue un geste du chat d'un geste de
+ * l'interface ou du pipeline.
+ */
+export type Origine = { source: "chat" };
+
+/** La métadonnée d'un événement, avec son origine quand il y en a une. */
+export function avecOrigine(
+  metadata: Record<string, unknown> | null | undefined,
+  origine?: Origine | null,
+): Record<string, unknown> | null {
+  if (!origine) return metadata ?? null;
+  return { ...(metadata ?? {}), source: origine.source };
+}
+
+/**
  * Insère un EventLog. À appeler dans la transaction de la mutation qui le
  * justifie. `accountId` est ajouté par l'extension tenant.
  */

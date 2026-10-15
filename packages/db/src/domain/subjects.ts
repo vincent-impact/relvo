@@ -4,7 +4,7 @@ import { Actor, Priority, SubjectStatus } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
 import { contactDisplayName } from "./contacts";
 import { DomainError, assertFound } from "./errors";
-import { EVENT_TYPES, logEvent } from "./events";
+import { avecOrigine, EVENT_TYPES, logEvent, type Origine } from "./events";
 import { ensureAffected } from "./helpers";
 import { cursorArgs, paginationSchema, toPage } from "./pagination";
 import { nextSubjectReference } from "./reference";
@@ -238,12 +238,17 @@ export async function getSubject(db: TenantDb, id: string) {
  * Ne retente QUE sur la référence auto-calculée : une référence imposée par
  * l'appelant qui entre en collision est une vraie erreur, pas une course.
  */
-export async function createSubject(db: TenantDb, input: CreateSubjectInput) {
+export async function createSubject(
+  db: TenantDb,
+  input: CreateSubjectInput,
+  /** L'échange avec Relvo, quand c'est lui qui demande (M10.13). */
+  origine?: Origine,
+) {
   const data = createSubjectSchema.parse(input);
   const MAX_ATTEMPTS = 3;
   for (let attempt = 1; ; attempt++) {
     try {
-      return await createSubjectOnce(db, data);
+      return await createSubjectOnce(db, data, origine);
     } catch (err) {
       const isReferenceRace =
         err instanceof Prisma.PrismaClientKnownRequestError &&
@@ -260,6 +265,7 @@ async function createSubjectOnce(
   // Type de SORTIE du schéma (défauts appliqués), pas `CreateSubjectInput` qui
   // est le type d'ENTRÉE — `createdByActor` y est encore optionnel.
   data: ReturnType<typeof createSubjectSchema.parse>,
+  origine?: Origine,
 ): Promise<Awaited<ReturnType<typeof getSubject>>> {
   return db.$transaction(async (tx) => {
     if (data.folderId) await assertFolderAssignable(tx as Tx, data.folderId);
@@ -291,6 +297,7 @@ async function createSubjectOnce(
       title: `Affaire ${subject.reference} créée`,
       description: subject.title,
       actor: data.createdByActor,
+      metadata: avecOrigine(null, origine),
     });
     return subject;
   });
@@ -300,6 +307,7 @@ export async function updateSubject(
   db: TenantDb,
   id: string,
   input: UpdateSubjectInput,
+  origine?: Origine,
 ) {
   const data = updateSubjectSchema.parse(input);
   return db.$transaction(async (tx) => {
@@ -345,7 +353,7 @@ export async function updateSubject(
         title: change.title,
         description: change.description ?? null,
         actor: "user",
-        metadata: change.metadata,
+        metadata: avecOrigine(change.metadata, origine),
       });
     }
     return subject;
@@ -357,6 +365,7 @@ export async function updateSubjectStatus(
   id: string,
   status: SubjectStatus,
   actor: Actor = Actor.user,
+  origine?: Origine,
 ) {
   return db.$transaction(async (tx) => {
     const current = assertFound(
@@ -413,7 +422,7 @@ export async function updateSubjectStatus(
       eventType,
       title: `État : ${STATUS_LABELS[current.status]} → ${STATUS_LABELS[status]}`,
       actor,
-      metadata: { from: current.status, to: status },
+      metadata: avecOrigine({ from: current.status, to: status }, origine),
     });
     return subject;
   });
@@ -424,8 +433,9 @@ export function validateSubject(
   db: TenantDb,
   id: string,
   actor: Actor = Actor.user,
+  origine?: Origine,
 ) {
-  return updateSubjectStatus(db, id, SubjectStatus.validated, actor);
+  return updateSubjectStatus(db, id, SubjectStatus.validated, actor, origine);
 }
 
 /** « Fermer » : on referme la fenêtre de travail sans la valider (sujet écarté). */
@@ -433,8 +443,9 @@ export function closeSubject(
   db: TenantDb,
   id: string,
   actor: Actor = Actor.user,
+  origine?: Origine,
 ) {
-  return updateSubjectStatus(db, id, SubjectStatus.closed, actor);
+  return updateSubjectStatus(db, id, SubjectStatus.closed, actor, origine);
 }
 
 export async function updateSubjectPriority(
@@ -477,8 +488,9 @@ export function reopenSubject(
   db: TenantDb,
   id: string,
   actor: Actor = Actor.user,
+  origine?: Origine,
 ) {
-  return updateSubjectStatus(db, id, SubjectStatus.open, actor);
+  return updateSubjectStatus(db, id, SubjectStatus.open, actor, origine);
 }
 
 /**

@@ -9,7 +9,7 @@ import {
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
 import { DomainError, assertFound } from "./errors";
-import { EVENT_TYPES, logEvent } from "./events";
+import { avecOrigine, EVENT_TYPES, logEvent, type Origine } from "./events";
 import { ensureAffected } from "./helpers";
 import { cursorArgs, paginationSchema, toPage } from "./pagination";
 import { revokeResolutionSuggestion, suggestResolution } from "./subjects";
@@ -152,7 +152,12 @@ export async function getTask(db: TenantDb, id: string) {
   return assertFound(await db.task.findFirst({ where: { id } }), "Tâche");
 }
 
-export async function createTask(db: TenantDb, input: CreateTaskInput) {
+export async function createTask(
+  db: TenantDb,
+  input: CreateTaskInput,
+  /** L'échange avec Relvo, quand c'est lui qui demande (M10.13). */
+  origine?: Origine,
+) {
   const data = createTaskSchema.parse(input);
   return db.$transaction(async (tx) => {
     if (data.subjectId) {
@@ -198,7 +203,7 @@ export async function createTask(db: TenantDb, input: CreateTaskInput) {
       // Une tâche de Relvo dit pourquoi, et d'après quoi (M7.20).
       description: data.metadata?.raison || null,
       actor: data.sourceActor,
-      metadata: data.metadata ?? null,
+      metadata: avecOrigine(data.metadata ?? null, origine),
     });
     return task;
   });
@@ -208,6 +213,7 @@ export async function updateTask(
   db: TenantDb,
   id: string,
   input: UpdateTaskInput,
+  origine?: Origine,
 ) {
   const data = updateTaskSchema.parse(input);
   return db.$transaction(async (tx) => {
@@ -249,6 +255,7 @@ export async function updateTask(
       eventType: EVENT_TYPES.taskUpdated,
       title: `Tâche modifiée : ${task.title}`,
       actor: "user",
+      metadata: avecOrigine(null, origine),
     });
     return task;
   });
@@ -264,8 +271,12 @@ export async function completeTask(
   id: string,
   completedByActor: Actor = Actor.user,
   completionMode?: CompletionMode,
-  /** Ce qui dit qu'elle est faite, et le message qui le dit — quand c'est Relvo qui coche (05 §4.2). */
-  origine?: { reason?: string | null; messageId?: string | null },
+  /** Ce qui dit qu'elle est faite, et le message qui le dit — quand c'est Relvo qui coche (05 §4.2) ; `source` quand l'échange le demande (M10.13). */
+  origine?: {
+    reason?: string | null;
+    messageId?: string | null;
+    source?: Origine["source"];
+  },
 ) {
   const task = await db.$transaction(async (tx) => {
     const current = assertFound(
@@ -311,6 +322,10 @@ export async function completeTask(
           : `Tâche cochée : ${task.title}`,
       description: origine?.reason ?? null,
       actor: completedByActor,
+      metadata: avecOrigine(
+        null,
+        origine?.source ? { source: origine.source } : null,
+      ),
     });
     return task;
   });
@@ -378,7 +393,7 @@ export async function settleSubjectAfterLastTask(
  * Rouvre une tâche terminée (done → open) — geste « swipe gauche » symétrique de
  * la complétion. Réinitialise les champs de complétion. Idempotent si déjà open.
  */
-export async function reopenTask(db: TenantDb, id: string) {
+export async function reopenTask(db: TenantDb, id: string, origine?: Origine) {
   const task = await db.$transaction(async (tx) => {
     const current = assertFound(
       await tx.task.findFirst({ where: { id } }),
@@ -418,6 +433,7 @@ export async function reopenTask(db: TenantDb, id: string) {
       eventType: EVENT_TYPES.taskReopened,
       title: `Tâche rouverte : ${task.title}`,
       actor: Actor.user,
+      metadata: avecOrigine(null, origine),
     });
     return task;
   });
@@ -497,7 +513,7 @@ export async function retireTaskByAi(
   });
 }
 
-export async function deleteTask(db: TenantDb, id: string) {
+export async function deleteTask(db: TenantDb, id: string, origine?: Origine) {
   return db.$transaction(async (tx) => {
     const task = assertFound(
       await tx.task.findFirst({ where: { id } }),
@@ -518,15 +534,18 @@ export async function deleteTask(db: TenantDb, id: string) {
       eventType: EVENT_TYPES.taskDeleted,
       title: `Tâche supprimée : ${task.title}`,
       actor: "user",
-      metadata: {
-        proposal: {
-          title: task.title,
-          sourceActor: task.sourceActor,
-          kind: task.kind,
-          startDate: task.startDate?.toISOString().slice(0, 10) ?? null,
-          metadata: readTaskMetadata(task.metadata),
+      metadata: avecOrigine(
+        {
+          proposal: {
+            title: task.title,
+            sourceActor: task.sourceActor,
+            kind: task.kind,
+            startDate: task.startDate?.toISOString().slice(0, 10) ?? null,
+            metadata: readTaskMetadata(task.metadata),
+          },
         },
-      },
+        origine,
+      ),
     });
     return task;
   });

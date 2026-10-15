@@ -173,6 +173,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Relvo peut maintenant agir pour vous dans l'échange : ouvrir ou régler une affaire, la marquer urgente, modifier ou cocher une tâche, préparer un brouillon de réponse, retenir une instruction, retrouver un message. Chaque geste s'annule d'un appui pendant quelques minutes."
+        },
+        {
+          "type": "new",
           "texte": "Dans l'échange, Relvo vous montre vos affaires et vos tâches telles qu'elles apparaissent ailleurs dans l'application, et vous dit en une phrase ce qu'il a trouvé ou fait."
         },
         {
