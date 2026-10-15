@@ -172,6 +172,10 @@
       "date": "2026-10-15",
       "entrees": [
         {
+          "type": "fix",
+          "texte": "L'échange avec Relvo ne se bloque plus après quelques messages : vous pouvez enchaîner les questions et les demandes dans un même échange."
+        },
+        {
           "type": "new",
           "texte": "Relvo vous dit quand il s'arrête avant la fin et quoi faire si quelque chose ne passe pas — session expirée, pas de réseau — sans jamais perdre ce que vous aviez écrit. Les questions simples lui coûtent moins cher."
         },
