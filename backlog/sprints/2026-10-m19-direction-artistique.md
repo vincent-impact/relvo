@@ -50,9 +50,9 @@ signature), **Alléger** (écran par écran), **Guider** (langage de mouvement, 
 - **Le témoin** : si la direction retenue est la DA actuelle poussée au bout, les tranches
   « Alléger » et « Guider » se livrent quand même.
 - **Ce que `mobile-native` a le droit de dire** : relecteur, jamais correcteur du viewport.
-- **La trace « diapositives vues »** (M19.9) : colonne horodatée sur le compte par une
-  migration additive accordée en exception, ou dérivation « aucun canal connecté » le temps de
-  M19. À trancher avant la tranche 4.
+- ~~**La trace « diapositives vues »**~~ (M19.9) — **tranché par le dirigeant** : une colonne
+  horodatée sur le compte, migration additive accordée en exception ; les diapositives
+  n'apparaissent qu'une seule fois.
 
 ---
 
@@ -368,7 +368,7 @@ adresse e-mail. L'échange scripté (M10.16) reste la prise en main et commence 
 ce canal : les diapositives y conduisent, elles ne le remplacent pas. La décision et ce qu'elle
 a retenu contre quoi sont dans `ecarts` (« La première connexion s'ouvre sur des
 diapositives ») ; `01-principes.md` §11, `05-ia.md` §11.11 et le brief disent la séquence.
-Reste ouvert : où vit la trace « vues une fois » (ci-dessus).
+La trace « vues une fois » est une colonne du compte, migration accordée (ci-dessus).
 
 ## Où on en est
 

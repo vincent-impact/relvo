@@ -40,8 +40,9 @@ mouvement et les composants de premiers pas livrés ici).
   relief réservé au bouton Relvo, la rareté de l'urgent — sont des **décisions**, pas des
   réglages. Les quatre directions les mappent ; une direction qui les abandonne le dit et le
   justifie.
-- **Le domaine et le modèle** : aucune migration, aucune nouvelle entité. Un composant habillé
-  rend la même donnée qu'avant.
+- **Le domaine et le modèle** : aucune nouvelle entité, et une seule migration, additive,
+  accordée en exception : la trace « diapositives de bienvenue vues » sur le compte (M19.9). Un
+  composant habillé rend la même donnée qu'avant.
 - **La maquette** reste figée et n'est pas rebuildée. Après ce chantier, elle ne fait plus foi
   sur le rendu — seulement sur les flux et les libellés — et `00-sources.md` le dit (M19.12).
 
@@ -108,11 +109,10 @@ npx skills@latest add emilkowalski/skills
   deux moteurs.
 - **Le témoin.** Si la direction retenue est la DA actuelle poussée au bout, l'épique ne
   rétrécit pas : les tranches 3 et 4 sont indépendantes du choix.
-- **La trace « diapositives vues ».** L'épique ne porte aucune migration ; or une diapositive
-  vue une fois doit l'être **dans le domaine**, jamais dans le stockage du navigateur, qui se
-  vide. Deux voies : une colonne horodatée sur le compte, sur le modèle de `home_seen_at`, par
-  une migration additive accordée en exception ; ou, le temps de M19, la dérivation « aucun
-  canal connecté » avec un bouton Passer. À trancher avant la tranche 4.
+- ~~**La trace « diapositives vues »**~~ — **tranché** : une colonne horodatée sur le compte,
+  sur le modèle de `home_seen_at`, par une **migration additive accordée en exception** à
+  « aucune migration ». Une diapositive vue une fois l'est dans le domaine, jamais dans le
+  stockage du navigateur, qui se vide. Tranche 4, avec `pnpm db:generate` (`PITFALLS.md` #33).
 
 ⚠️ **« Entièrement » porte sur l'apparence, pas sur les flux.** Rouvrir la disposition un mois
 après l'avoir tranchée sur planches, c'est reproduire ce qui a coûté trois réécritures à M9. Si

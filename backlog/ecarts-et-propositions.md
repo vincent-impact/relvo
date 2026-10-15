@@ -1229,9 +1229,11 @@ utilisateur ne voit qu'un accueil vide et un dock dont il ne sait rien.
   arriverait sans savoir pourquoi confier son courrier. **Retenu contre** faire porter ce
   contexte par le premier échange : Relvo n'a rien à lire tant qu'aucun canal n'est connecté,
   et une conversation qui commence par « connectez une adresse » est un formulaire déguisé.
-- **Reste à trancher** : où vit la trace « diapositives vues » — l'épique n'accorde aucune
-  migration, le stockage du navigateur ne tient pas (M19, « Reste à trancher en cours de
-  sprint »).
+- **La trace « diapositives vues » vit sur le compte** : une colonne horodatée, sur le modèle
+  de `home_seen_at`, par une migration additive — la seule que M19 s'accorde, en exception
+  écrite dans l'épique. **Retenu contre** le stockage du navigateur, qui se vide, et contre la
+  dérivation « aucun canal connecté », qui remontrerait les diapositives à chaque connexion
+  tant que l'adresse n'est pas branchée.
 
 **Mis en œuvre par** M19.9, tranche 4 « Guider » ; `01-principes.md` §11 et `05-ia.md` §11.11
 disent la séquence.
