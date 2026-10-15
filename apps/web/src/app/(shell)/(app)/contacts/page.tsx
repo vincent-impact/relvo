@@ -8,7 +8,7 @@ import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { ContactsSearchField } from "@/components/contacts/contacts-search-field";
 import { ContactsSearchProvider } from "@/components/contacts/contacts-search-context";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
-import { cachedContactCount, cachedContacts } from "@/server/cached";
+import { cachedContacts } from "@/server/cached";
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
 import { formatRelative } from "@/lib/display";
 
@@ -53,14 +53,13 @@ export default async function ContactsPage({
   const accountId = await requireAccountId();
   const { tab } = await searchParams;
   const defaultTab = tab === "groupes" ? "groupes" : "contacts";
-  const total = await cachedContactCount(accountId);
 
   return (
     <ContactsSearchProvider>
       <Screen>
+        {/* Pas de sous-titre : l'indicateur cerclé dit déjà « 20 contacts ». */}
         <RelvoHeader
           title="Contacts"
-          subtitle={`${total} contact${total > 1 ? "s" : ""}`}
           className="pb-[38px]"
           action={
             <Link

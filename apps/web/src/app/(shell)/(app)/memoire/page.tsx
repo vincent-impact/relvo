@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
-import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
+import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { InstructionList } from "@/components/memoire/instruction-list";
 import { ListPanel } from "@/components/shared/list-panel";
@@ -24,17 +24,16 @@ function plural(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n > 1 ? many : one}`;
 }
 
+// La sous-ligne d'un domaine ne compte que ce qui existe : un zéro dans une
+// phrase n'est pas un indicateur de cellule fixe, l'absence du mot dit
+// l'absence de la chose. Rien du tout → « rien encore ».
 function folderSub(f: CachedFolderRow): string {
-  const parts = [
-    plural(f.instructions, "instruction"),
-    plural(f.documents, "document"),
-  ];
-  parts.push(
-    f.isDefault
-      ? "sans sujet, par nature"
-      : `${plural(f.openSubjects, "sujet ouvert", "sujets ouverts")}`,
-  );
-  return parts.join(" · ");
+  const parts: string[] = [];
+  if (f.instructions > 0) parts.push(plural(f.instructions, "instruction"));
+  if (f.documents > 0) parts.push(plural(f.documents, "document"));
+  if (!f.isDefault && f.openSubjects > 0)
+    parts.push(plural(f.openSubjects, "sujet ouvert", "sujets ouverts"));
+  return parts.length ? parts.join(" · ") : "rien encore";
 }
 
 async function MemoireBody({ accountId }: { accountId: string }) {
@@ -52,7 +51,7 @@ async function MemoireBody({ accountId }: { accountId: string }) {
       <section>
         <ZoneHeading
           label="Votre entreprise"
-          hint={`${plural(notes.length, "instruction")} · vous seul les écrivez`}
+          hint={plural(notes.length, "instruction")}
         />
         {defaultFolderId ? (
           <InstructionList
@@ -96,7 +95,7 @@ async function MemoireBody({ accountId }: { accountId: string }) {
                   <div className="truncate text-[14.5px] leading-[18px] font-normal text-noir">
                     {f.name}
                   </div>
-                  <div className="truncate text-[12px] leading-[14px] font-light text-gris">
+                  <div className="truncate text-[12px] leading-[14px] font-normal text-gris">
                     {folderSub(f)}
                   </div>
                 </div>
@@ -107,16 +106,19 @@ async function MemoireBody({ accountId }: { accountId: string }) {
               </Link>
             );
           })}
+          {/* Même invite que « Ajouter une instruction » : une seule grammaire
+              d'ajout sur l'écran, à portée du pouce en bas de la liste. */}
+          <Link
+            data-list-row
+            href="/memoire/nouveau"
+            className="flex items-center gap-2.5 border-b border-(--filet) px-3.5 py-3 text-[14px] font-medium text-relvo active:bg-relvo-pale"
+          >
+            <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-pale">
+              <Plus className="size-[15px]" strokeWidth={2.4} />
+            </span>
+            Ajouter un domaine
+          </Link>
         </ListPanel>
-      </section>
-
-      <section>
-        <ZoneHeading label="Ce que Relvo a appris" hint="bientôt" />
-        <p className="mx-4 text-[13.5px] leading-[1.45] font-light text-gris">
-          Relvo notera ici ce qu&apos;il a compris de vos habitudes en vous
-          regardant trier, et vous pourrez le corriger d&apos;un geste. Rien de
-          ce qu&apos;il apprend ici n&apos;est partagé avec un autre compte.
-        </p>
       </section>
     </div>
   );
@@ -126,19 +128,12 @@ export default async function MemoirePage() {
   const accountId = await requireAccountId();
   return (
     <Screen>
+      {/* Pas de « + » dans le ciel : au-dessus d'une liste d'instructions, il
+          menait à un domaine. L'ajout vit en bas de chaque liste. */}
       <RelvoHeader
         title="Mémoire"
         subtitle="Ce que Relvo sait de votre entreprise"
         className="pb-5"
-        action={
-          <Link
-            href="/memoire/nouveau"
-            aria-label="Nouveau domaine"
-            className={SKY_BTN}
-          >
-            <Plus className="size-4" strokeWidth={2.6} />
-          </Link>
-        }
       />
       <Suspense fallback={<RowsSkeleton count={4} />}>
         <MemoireBody accountId={accountId} />

@@ -16,7 +16,6 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 export function AppDock() {
   const pathname = usePathname();
   if (/^\/conversations\/[^/]+$/.test(pathname)) return null;
-  if (/^\/contacts\/(?!nouveau$)[^/]+$/.test(pathname)) return null;
 
   return (
     <div

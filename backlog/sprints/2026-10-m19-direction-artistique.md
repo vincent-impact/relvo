@@ -527,6 +527,59 @@ de l'onglet Documents est résolu : une icône Phosphor passée en enfant d'un c
 depuis la page serveur traverse la frontière sans clés — la ligne est devenue un composant
 client qui rend son icône lui-même (`PITFALLS.md` #58).
 
+### Mémoire, un domaine, les Contacts et la fiche d'un contact
+
+**Ce que la critique a dit.** La Mémoire posait le signe de Relvo (une étoile générique) sur
+chaque instruction, que seul l'utilisateur écrit ; ses aperçus montraient « # Ton » puis
+« … » ; une zone « Ce que Relvo a appris · bientôt » annonçait M17 sur un écran de travail ;
+le « + » du ciel menait à « Nouveau domaine » au-dessus d'une liste d'instructions ; chaque
+domaine comptait « 0 document » ; supprimer une instruction était un tap sans confirmation à
+côté du bouton primaire. Un domaine n'avait pas sa couleur sur sa propre fiche, ses documents
+étaient des cartes empilées, ses sujets des lignes nues, et « Déposer un document » un cadre
+pointillé sans effet. L'annuaire disait « 20 contacts » deux fois, triait par nom de famille
+en affichant le prénom d'abord (« Karim Benali » sous B), répétait l'entreprise sous un
+contact qui est l'entreprise, et les groupes étaient hors carte, en vert emprunté à « fait » ;
+le champ de recherche montrait deux croix (la native de WebKit et la nôtre). La fiche d'un
+contact faisait disparaître le dock, donc Relvo, pour une barre « Supprimer / Modifier » ;
+elle disait le nom trois fois, habillait un tiers en violet avec un halo, et le numéro de
+téléphone n'appelait pas. Scores Nielsen 16/36 (Mémoire), 17/36 (domaine), 22/36 (annuaire),
+16/36 (fiche). Mesures : console propre, aucun débordement.
+
+**Ce qui a été retiré, et pourquoi il ne manque pas** :
+
+| Retiré | Il ne manque pas parce que… |
+|---|---|
+| L'étoile devant chaque instruction | elle disait « Relvo parle » sur ce que l'utilisateur écrit (invariant 20) ; l'état se lit à la puce « Désactivée » seule |
+| « vous seul les écrivez » dans le qualificatif | c'est vrai de toutes les instructions ; l'état vide le dit |
+| La zone « Ce que Relvo a appris · bientôt » | il n'y a rien derrière ; elle revient avec M17, avec quelque chose à montrer |
+| Le « + » du ciel de la Mémoire | « Ajouter un domaine » vit en bas de la liste des domaines, dans la grammaire d'« Ajouter une instruction » |
+| « 0 document » dans la sous-ligne d'un domaine | l'absence du mot dit l'absence de la chose ; « rien encore » si tout est à zéro |
+| Le sous-titre « Un domaine de la mémoire de Relvo » | la flèche retour et « Mémoire » l'ont dit ; la bande du domaine, dans le ciel, dit ce que rien d'autre ne disait |
+| « Déposer un document (PDF, image) » | il ne déposait rien ; il revient avec l'envoi |
+| Le sous-titre « 20 contacts » | l'indicateur cerclé le dit, en plus gros |
+| L'entreprise sous un contact qui est l'entreprise | c'est le titre |
+| « Groupe WhatsApp » sous chaque groupe | l'onglet s'appelle Groupes et l'avatar porte le pictogramme |
+| La barre « Supprimer / Modifier » de la fiche contact | Modifier est le crayon du ciel comme sur toute fiche ; Supprimer est un lien en édition, confirmé en nommant le contact ; le dock et Relvo reviennent (invariant 22) |
+| L'avatar géant violet, le nom et l'entreprise dans la carte | le ciel est la carte de visite : titre, ligne du dessus, marqueur « À compléter » |
+| Les lignes Prénom / Nom / Entreprise en lecture et « Non renseigné » | un carnet lit « Karim Benali · SoGood », il ne lit pas des champs ; l'édition montre les champs |
+
+**Ce qui a changé de forme** : l'aperçu d'une instruction est son premier paragraphe, sans
+titres Markdown ; supprimer une instruction demande confirmation en la nommant ; le domaine
+porte sa bande dans le ciel, ses documents et ses sujets sont des lignes dans une carte,
+« Lu » est signé du logo de Relvo ; l'annuaire trie et sectionne sur le nom affiché, les
+contacts sans initiales lisibles prennent le pictogramme ; les groupes sont des tiers (ambre)
+dans une carte ; le champ de recherche a 16 px (pas de zoom iOS) et une seule croix, 44 px de
+frappe ; sur la fiche d'un contact, chaque numéro appelle et chaque adresse écrit, le numéro en
+condensé — le numéro sur le camion ; en édition, une barre prend la place du dock comme un
+composer ; le squelette des onglets a la silhouette de `SegTabs` ; sous 14 px plus de graisse
+fine ni de 700. Pictogramme `Phone` ajouté au registre des pleins.
+
+**Confié à plus tard** : Général à deux portes (ses instructions en tête de la Mémoire et en
+dernière ligne des domaines) et l'icône de domaine choisie mais jamais rendue — deux
+questions de périmètre pour le dirigeant ; l'éditeur d'instruction en modale centrée, dont le
+bas passe sous le clavier (un écran poussé serait la forme juste, M19.10) ; une porte de la
+fiche contact vers ses sujets et ses conversations (périmètre, `05-ia.md` §10.1).
+
 ## Tranché à la reprise de la tranche 3 — la première connexion (M19.9)
 
 Le dirigeant ajoute à la tranche 4 une **séquence de première connexion** : cinq ou six
@@ -555,7 +608,7 @@ La trace « vues une fois » est une colonne du compte, migration accordée (ci-
       partout
 - [ ] Tranche 3 — « Alléger » : ✅ les reports de la revue de finition (Contacts, en-têtes de
       la fiche, textes sous 11 px, couleurs en dur — cliquet vide) · ⏳ M19.6 l'allègement écran
-      par écran : ✅ Accueil · ✅ Conversations (liste et fil) · ✅ Sujets et fiche Sujet · reste
+      par écran : ✅ Accueil · ✅ Conversations (liste et fil) · ✅ Sujets et fiche Sujet · ✅ Mémoire, domaine, Contacts et fiche contact · reste
       Calendrier, Échange, Mémoire, Contacts, les quatre pages du menu, l'authentification ·
       M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives

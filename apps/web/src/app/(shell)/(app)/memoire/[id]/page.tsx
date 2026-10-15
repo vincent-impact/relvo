@@ -1,7 +1,9 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { Plus } from "lucide-react";
-import { FileText, Sparkle } from "@/components/shared/picto";
+import { FileText } from "@/components/shared/picto";
+import { RelvoLogo } from "@/components/layout/relvo-logo";
+import { ListPanel } from "@/components/shared/list-panel";
+import { folderVisual } from "@/lib/folders";
 import type { Folder } from "@relvo/db";
 import { enrichSubjects } from "@relvo/db";
 import { FeedTabs } from "@/components/feed/feed-tabs";
@@ -68,62 +70,70 @@ async function DossierTabs({ folder }: { folder: Folder }) {
             }))}
           />
         ),
-        documents: (
-          <div className="px-4 pt-4">
-            {files.length === 0 ? (
-              <p className="py-6 text-center text-[13.5px] text-(--text-tertiary)">
-                Aucun document.
-              </p>
-            ) : (
-              <div className="space-y-2.5">
+        documents:
+          // Une liste = une carte ; la ligne est celle des documents d'un sujet.
+          // Pas de « Déposer un document » tant que rien ne se dépose : un
+          // contrôle sans effet se retire.
+          files.length === 0 ? (
+            <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
+              Aucun document. Les pièces que Relvo lit pour ce domaine
+              s’ajoutent ici.
+            </p>
+          ) : (
+            <div className="pt-3 pb-2">
+              <ListPanel>
                 {files.map((f) => (
                   <div
                     key={f.id}
-                    className="flex items-center gap-3 rounded-2xl border border-(--border-light) bg-white px-3 py-3 shadow-(--shadow-card)"
+                    data-list-row
+                    className="flex items-center gap-3 border-b border-(--filet) px-3.5 py-2.5"
                   >
-                    <span className="grid size-[38px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-gris">
+                    <span className="grid size-[34px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-gris">
                       <FileText className="size-[18px]" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14px] font-semibold">
+                      <div className="truncate text-[14.5px] leading-[18px] font-normal text-noir">
                         {f.name}
                       </div>
-                      <div className="text-[11.5px] text-(--text-tertiary)">
+                      <div className="mt-0.5 text-[12px] leading-4 font-normal text-gris">
                         {formatRelative(f.updatedAt)}
                         {f.aiLabel ? ` · ${f.aiLabel}` : ""}
                       </div>
                     </div>
+                    {/* « Lu » est une décision de Relvo : son logo, sur son fond. */}
                     {f.absorptionStatus === "read" ? (
-                      <span className="inline-flex flex-none items-center gap-1 rounded-full bg-relvo-bg px-2 py-0.5 text-[11px] font-bold text-relvo">
-                        <Sparkle className="size-3" />
+                      <span className="inline-flex flex-none items-center gap-1 rounded-(--rayon-pilule) bg-relvo-pale px-2 py-0.5 text-[11px] font-medium text-relvo">
+                        <RelvoLogo size={11} variant="full" title="" />
                         Lu
                       </span>
                     ) : (
-                      <span className="flex-none rounded-full bg-(--surface-2) px-2 py-0.5 text-[11px] font-bold text-(--text-tertiary)">
+                      <span className="flex-none rounded-(--rayon-pilule) bg-(--fond-puce) px-2 py-0.5 text-[11px] font-medium text-gris">
                         Écarté
                       </span>
                     )}
                   </div>
                 ))}
-              </div>
-            )}
-            <AddRow label="Déposer un document (PDF, image)" />
-          </div>
-        ),
+              </ListPanel>
+            </div>
+          ),
         ...(folder.isDefault
           ? {}
           : {
-              sujets: (
-                <div className="pt-1">
-                  {rows.length === 0 ? (
-                    <p className="px-[22px] py-6 text-center text-[13.5px] text-(--text-tertiary)">
-                      Aucun sujet dans ce dossier.
-                    </p>
-                  ) : (
-                    rows.map((row) => <SubjectRow key={row.id} data={row} />)
-                  )}
-                </div>
-              ),
+              sujets:
+                rows.length === 0 ? (
+                  <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
+                    Aucun sujet ouvert ici. Relvo en ouvrira quand un message
+                    concernera ce domaine.
+                  </p>
+                ) : (
+                  <div className="pt-3 pb-2">
+                    <ListPanel>
+                      {rows.map((row) => (
+                        <SubjectRow key={row.id} data={row} />
+                      ))}
+                    </ListPanel>
+                  </div>
+                ),
             }),
       }}
     />
@@ -143,10 +153,27 @@ export default async function DossierPage({
 
   return (
     <Screen>
+      {/* La bande du domaine dans le ciel, comme sur sa ligne et comme sur la
+          fiche d'un sujet : le fil de couleur ne se rompt pas à sa porte. */}
       <RelvoHeader
         back="/memoire"
         title={folder.name}
-        subtitle="Un domaine de la mémoire de Relvo"
+        eyebrow={
+          <span className="inline-flex items-center gap-2">
+            <i
+              aria-hidden
+              className="h-2 w-5 flex-none rounded-full"
+              style={{
+                background: folderVisual({
+                  slug: folder.slug,
+                  color: folder.color,
+                  icon: folder.icon,
+                }).color,
+              }}
+            />
+            Domaine
+          </span>
+        }
         className="pb-9"
         action={
           <EditDomainButton
@@ -165,13 +192,3 @@ export default async function DossierPage({
 }
 
 // Affordance « + Ajouter… » (coquille M9 : édition de note / upload à venir).
-function AddRow({ label }: { label: string }) {
-  return (
-    <div className="mt-3 flex items-center gap-2.5 rounded-2xl border border-dashed border-(--border) px-3.5 py-3.5 text-[13.5px] font-semibold text-(--text-tertiary)">
-      <span className="grid size-6 flex-none place-items-center rounded-full bg-(--surface-2)">
-        <Plus className="size-[15px]" strokeWidth={2.4} />
-      </span>
-      {label}
-    </div>
-  );
-}

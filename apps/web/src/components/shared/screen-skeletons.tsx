@@ -42,7 +42,7 @@ export function IndicatorTabsSkeleton() {
 export function TabsSkeleton({ rows = 4 }: { rows?: number }) {
   return (
     <>
-      <div className="mx-4 mt-3 h-10 animate-pulse rounded-full bg-(--fond-enfonce)" />
+      <div className="relative z-3 mx-4 -mt-7.5 h-[51px] animate-pulse rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte" />
       <RowsSkeleton count={rows} />
     </>
   );

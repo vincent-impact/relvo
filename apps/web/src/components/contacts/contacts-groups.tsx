@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { Users } from "@/components/shared/picto";
 import { useContactsSearch } from "@/components/contacts/contacts-search-context";
+import { ListPanel } from "@/components/shared/list-panel";
 
 // Onglet « Groupes » de l'annuaire (2026-07-24). Un groupe n'est PAS un Contact :
 // c'est une conversation WhatsApp de type `whatsapp_group` (il est son propre
@@ -35,7 +36,7 @@ export function ContactsGroups({ groups }: { groups: DirectoryGroup[] }) {
 
   if (groups.length === 0) {
     return (
-      <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
+      <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
         Aucun groupe. Les groupes WhatsApp apparaissent ici dès leur premier
         message.
       </p>
@@ -44,39 +45,36 @@ export function ContactsGroups({ groups }: { groups: DirectoryGroup[] }) {
 
   if (filtered.length === 0) {
     return (
-      <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
+      <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
         Aucun groupe pour « {query.trim()} ».
       </p>
     );
   }
 
+  // La même ligne que l'annuaire : un groupe est un tiers (ambre Externe), le
+  // pictogramme dit « groupe », l'onglet dit déjà « WhatsApp ».
   return (
-    <div className="pt-1">
+    <ListPanel className="mt-1">
       {filtered.map((g) => (
         <Link
           key={g.id}
-          // Retour → l'annuaire, onglet Groupes (l'utilisateur ne modifie pas un
-          // groupe, le clic mène droit à sa conversation ; le retour doit le
-          // ramener là d'où il vient).
+          data-list-row
           href={`/conversations/${g.id}?from=${encodeURIComponent("/contacts?tab=groupes")}`}
-          className="flex items-center gap-3 border-b border-(--filet) px-[18px] py-3.5 active:bg-(--fond-enfonce)"
+          className="flex items-center gap-3 border-b border-(--filet) px-3.5 py-2.5 active:bg-(--fond-enfonce)"
         >
-          <span className="grid size-[42px] flex-none place-items-center rounded-full bg-(--green-600) text-white">
-            <Users className="size-[20px]" />
+          <span className="grid size-10 flex-none place-items-center rounded-full bg-actor-ext-fond text-actor-ext">
+            <Users className="size-[18px]" />
           </span>
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[15.5px] font-bold">{g.title}</div>
-            <div className="mt-0.5 truncate text-[13px] font-light text-gris">
-              Groupe WhatsApp
-            </div>
-          </div>
+          <span className="min-w-0 flex-1 truncate text-[14.5px] leading-[18px] font-normal text-noir">
+            {g.title}
+          </span>
           {g.time ? (
-            <span className="flex-none text-[11.5px] text-(--text-tertiary)">
+            <span className="chiffre flex-none text-[13px] text-gris">
               {g.time}
             </span>
           ) : null}
         </Link>
       ))}
-    </div>
+    </ListPanel>
   );
 }

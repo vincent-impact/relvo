@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus } from "lucide-react";
-import { Sparkle, Trash } from "@/components/shared/picto";
+import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { Trash } from "@/components/shared/picto";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -34,6 +35,17 @@ export type Instruction = {
 
 type Editing = Instruction | "new" | null;
 
+/** L'aperçu d'une instruction : son premier paragraphe, sans les titres
+ *  Markdown ni les lignes vides — « # Ton » puis « … » ressemblait à un bug. */
+function preview(content: string | null): string | null {
+  if (!content) return null;
+  const lines = content
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !/^#{1,6}\s/.test(l));
+  return lines.length ? lines.join(" ") : null;
+}
+
 export function InstructionList({
   folderId,
   notes,
@@ -51,7 +63,7 @@ export function InstructionList({
           en dernier (design-system/02-composants). */}
       <div className="overflow-hidden rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte">
         {notes.length === 0 ? (
-          <p className="px-4 py-5 text-[13.5px] font-light text-gris">
+          <p className="px-4 py-5 text-[14px] font-light text-gris">
             Aucune instruction. Ajoutez des consignes que Relvo suivra.
           </p>
         ) : (
@@ -62,20 +74,11 @@ export function InstructionList({
               onClick={() => setEditing(n)}
               className="flex w-full items-start gap-2.5 border-b border-(--filet) px-3.5 py-3 text-left active:bg-(--fond-enfonce)"
             >
-              <Sparkle
-                className={cn(
-                  "mt-1 size-3.5 flex-none",
-                  n.active ? "text-relvo" : "text-(--gris-clair)",
-                )}
-              />
+              {/* Pas de signe de Relvo : c'est l'utilisateur qui écrit ici
+                  (invariant 20). L'état se lit à la puce, et à elle seule. */}
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "flex-1 truncate text-[14.5px] leading-[18px] font-normal",
-                      n.active ? "text-noir" : "text-gris",
-                    )}
-                  >
+                  <span className="flex-1 truncate text-[14.5px] leading-[18px] font-normal text-noir">
                     {n.name}
                   </span>
                   {!n.active ? (
@@ -84,15 +87,11 @@ export function InstructionList({
                     </span>
                   ) : null}
                 </span>
-                {n.content ? (
-                  <span className="mt-0.5 line-clamp-2 text-[12.5px] leading-[16px] font-light whitespace-pre-wrap text-gris">
-                    {n.content}
+                {preview(n.content) ? (
+                  <span className="mt-0.5 line-clamp-2 text-[12px] leading-4 font-normal text-gris">
+                    {preview(n.content)}
                   </span>
-                ) : (
-                  <span className="mt-0.5 block text-[12.5px] font-light text-gris italic">
-                    (Vide)
-                  </span>
-                )}
+                ) : null}
               </span>
             </button>
           ))
@@ -137,6 +136,7 @@ function InstructionEditor({
   const [name, setName] = useState(note?.name ?? "");
   const [content, setContent] = useState(note?.content ?? "");
   const [active, setActive] = useState(note?.active ?? true);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   function save() {
     const trimmed = name.trim();
@@ -205,19 +205,19 @@ function InstructionEditor({
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Titre de l'instruction"
-          className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[15px] font-semibold outline-none focus:border-relvo"
+          className="w-full rounded-(--rayon-option) border border-(--filet) px-3 py-2.5 text-[15px] font-medium outline-none focus:border-relvo"
         />
         <textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Décrivez la consigne que Relvo doit suivre…"
           rows={8}
-          className="max-h-[45vh] w-full resize-none rounded-xl border border-(--border) px-3 py-2.5 text-[14px] leading-[1.5] outline-none focus:border-relvo"
+          className="max-h-[45vh] w-full resize-none rounded-(--rayon-option) border border-(--filet) px-3 py-2.5 text-[14px] leading-[1.5] outline-none focus:border-relvo"
         />
 
         {!isNew ? (
-          <label className="flex items-center justify-between rounded-xl bg-(--surface) px-3.5 py-2.5">
-            <span className="text-[13.5px] font-semibold text-(--text-secondary)">
+          <label className="flex items-center justify-between rounded-(--rayon-option) bg-(--fond-enfonce) px-3.5 py-2.5">
+            <span className="text-[14px] font-normal text-noir">
               {active ? "Activée — Relvo l'applique" : "Désactivée"}
             </span>
             <Switch
@@ -228,27 +228,41 @@ function InstructionEditor({
           </label>
         ) : null}
 
-        <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={save}
+          disabled={pending}
+          className="w-full rounded-(--rayon-pilule) bg-relvo py-2.5 text-[14px] font-medium text-white disabled:opacity-60"
+        >
+          {isNew ? "Créer" : "Enregistrer"}
+        </button>
+        {/* Supprimer est rare et irréversible : un lien texte à l'écart du
+            bouton primaire, et une confirmation qui nomme l'instruction. */}
+        {!isNew ? (
           <button
             type="button"
-            onClick={save}
+            onClick={() => setConfirmDelete(true)}
             disabled={pending}
-            className="flex-1 rounded-xl bg-relvo py-2.5 text-[14px] font-bold text-white disabled:opacity-60"
+            className="mx-auto inline-flex items-center gap-1.5 py-1 text-[13px] font-medium text-urgent disabled:opacity-60"
           >
-            {isNew ? "Créer" : "Enregistrer"}
+            <Trash className="size-[15px]" />
+            Supprimer l&apos;instruction
           </button>
-          {!isNew ? (
-            <button
-              type="button"
-              onClick={remove}
-              disabled={pending}
-              aria-label="Supprimer l'instruction"
-              className="grid size-[42px] flex-none place-items-center rounded-xl border border-(--red-200) text-(--red-600) disabled:opacity-60"
-            >
-              <Trash className="size-[18px]" />
-            </button>
-          ) : null}
-        </div>
+        ) : null}
+        <ConfirmDialog
+          open={confirmDelete}
+          onOpenChange={setConfirmDelete}
+          tone="destructive"
+          icon={Trash}
+          title={`Supprimer « ${note?.name ?? ""} » ?`}
+          description="Relvo ne suivra plus cette consigne. Elle ne pourra pas être récupérée."
+          confirmLabel={pending ? "Suppression…" : "Supprimer"}
+          pending={pending}
+          onConfirm={() => {
+            setConfirmDelete(false);
+            remove();
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

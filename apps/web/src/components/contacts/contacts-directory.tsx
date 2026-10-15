@@ -4,7 +4,9 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useContactsSearch } from "@/components/contacts/contacts-search-context";
 import { ListPanel } from "@/components/shared/list-panel";
-import { contactFullName, contactInitials } from "@/lib/display";
+import { ContactAvatarIcon } from "@/components/contacts/contact-avatar-icon";
+import { guessContactKind } from "@/lib/contact-avatar";
+import { contactFullName, initialsFor } from "@/lib/display";
 
 export type DirectoryContact = {
   id: string;
@@ -32,14 +34,23 @@ function fold(s: string): string {
     .toUpperCase();
 }
 
-/** Lettre de section : 1ʳᵉ lettre du nom de famille, ou « # » si non alphabétique. */
-function sectionLetter(lastName: string): string {
-  const c = fold(lastName).charAt(0);
+/** Lettre de section : 1ʳᵉ lettre du nom AFFICHÉ, ou « # » si non alphabétique.
+ *  La lettre suit ce que l'œil lit (« Karim Benali » sous K) : trier par nom
+ *  de famille en affichant le prénom d'abord contredisait la lettre. */
+function sectionLetter(shown: string): string {
+  const c = fold(shown).charAt(0);
   return c >= "A" && c <= "Z" ? c : "#";
 }
 
 function ContactRow({ contact }: { contact: DirectoryContact }) {
-  const sub = [contact.jobTitle, contact.company].filter(Boolean).join(" · ");
+  const name = contactFullName(contact);
+  // L'entreprise ne se redit pas quand le contact EST l'entreprise.
+  const company =
+    contact.company && contact.company.trim() !== name.trim()
+      ? contact.company
+      : null;
+  const sub = [contact.jobTitle, company].filter(Boolean).join(" · ");
+  const initials = initialsFor(name);
   return (
     <Link
       href={`/contacts/${contact.id}`}
@@ -47,14 +58,19 @@ function ContactRow({ contact }: { contact: DirectoryContact }) {
       className="flex items-center gap-3 border-b border-(--filet) px-3.5 py-2.5 active:bg-(--fond-enfonce)"
     >
       <span className="chiffre grid size-10 flex-none place-items-center rounded-full bg-actor-ext-fond text-[14px] text-actor-ext">
-        {contactInitials(contact)}
+        {initials ?? (
+          <ContactAvatarIcon
+            kind={guessContactKind({ name })}
+            className="size-[18px]"
+          />
+        )}
       </span>
       <div className="min-w-0 flex-1">
         <div className="text-[14.5px] leading-[18px] font-normal text-noir">
-          {contactFullName(contact)}
+          {name}
         </div>
         {sub ? (
-          <div className="mt-0.5 truncate text-[12px] font-light text-gris">
+          <div className="mt-0.5 truncate text-[12px] font-normal text-gris">
             {sub}
           </div>
         ) : null}
@@ -85,15 +101,13 @@ export function ContactsDirectory({
         )
       : contacts;
 
-    const sorted = [...filtered].sort(
-      (a, b) =>
-        fold(a.lastName).localeCompare(fold(b.lastName), "fr") ||
-        fold(a.firstName ?? "").localeCompare(fold(b.firstName ?? ""), "fr"),
+    const sorted = [...filtered].sort((a, b) =>
+      fold(contactFullName(a)).localeCompare(fold(contactFullName(b)), "fr"),
     );
 
     const groups: { letter: string; items: DirectoryContact[] }[] = [];
     for (const c of sorted) {
-      const letter = sectionLetter(c.lastName);
+      const letter = sectionLetter(contactFullName(c));
       const last = groups[groups.length - 1];
       if (last && last.letter === letter) last.items.push(c);
       else groups.push({ letter, items: [c] });
@@ -103,15 +117,15 @@ export function ContactsDirectory({
 
   if (contacts.length === 0) {
     return (
-      <p className="px-[22px] py-10 text-center text-[13.5px] font-light text-gris">
-        Aucun contact. Ajoutez-en un avec le bouton +.
+      <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
+        Aucun contact. Ajoutez-en un avec le + en haut à droite.
       </p>
     );
   }
 
   if (sections.length === 0) {
     return (
-      <p className="px-[22px] py-10 text-center text-[13.5px] font-light text-gris">
+      <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
         Aucun contact pour « {query.trim()} ».
       </p>
     );

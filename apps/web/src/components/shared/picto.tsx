@@ -56,6 +56,7 @@ export const Flask = plein(P.Flask, "Flask");
 
 // Les canaux et les contacts
 export const Envelope = plein(P.Envelope, "Envelope");
+export const Phone = plein(P.Phone, "Phone");
 export const WhatsappLogo = plein(P.WhatsappLogo, "WhatsappLogo");
 export const Buildings = plein(P.Buildings, "Buildings");
 export const LinkSimple = plein(P.LinkSimple, "LinkSimple");

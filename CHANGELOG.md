@@ -6,6 +6,7 @@
 
 ## 2026-10-15
 
+- **Nouveau** — Dans la Mémoire et les Contacts, les écrans sont plus légers et rien n'y est dit deux fois ; sur la fiche d'un contact, vous retrouvez la barre du bas avec Relvo, et un numéro de téléphone s'appelle d'un appui.
 - **Nouveau** — Dans Sujets, chaque ligne est plus lisible et rien n'y est dit deux fois ; sur la fiche d'un sujet, le domaine se change depuis le haut de l'écran, les onglets portent leur nom, une tâche en retard apparaît barrée en rouge, et le journal ne se remplit plus d'une ligne à chaque fois que vous ouvrez la fiche.
 - **Nouveau** — Dans Conversations, la liste est plus lisible et rien n'y est dit deux fois ; dans un fil, le bouton d'envoi ne promet plus une dictée qui n'existe pas, le sujet suivi s'affiche avec son domaine, et détacher un fil vous demande confirmation.
 - **Nouveau** — La page d'accueil est plus légère : les chiffres d'activité ne dominent plus ce qui attend votre décision, rien n'y est dit deux fois, et Relvo vous dit « Bonsoir » après 18 h.

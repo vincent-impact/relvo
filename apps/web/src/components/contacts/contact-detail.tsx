@@ -4,15 +4,17 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import {
+  Envelope,
   FloppyDisk,
   PencilSimple,
+  Phone,
   Trash,
-  User,
 } from "@/components/shared/picto";
 import { toast } from "sonner";
-import { RelvoHeader } from "@/components/layout/relvo-header";
+import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { ListPanel } from "@/components/shared/list-panel";
 import {
   ContactIdentifierFields,
   splitIdentifierList,
@@ -23,16 +25,15 @@ import {
   deleteContactAction,
   updateContactAction,
 } from "@/server/actions/contacts";
-import { contactFullName, initialsFor } from "@/lib/display";
+import { contactFullName } from "@/lib/display";
 
-// Fiche Contact (refonte 2026-07-28 v3) — « carte de visite » qui occupe une
-// grande partie de l'écran : grand avatar (placeholder générique en attendant
-// une photo) + nom, puis TOUS les champs listés (Prénom · Nom · Entreprise ·
-// Téléphone(s) · Email(s)), même vides (« Non renseigné »). ⚠️ Aucune action
-// d'édition par ligne : on modifie UNIQUEMENT via le bouton « Modifier » du DOCK
-// violet, qui bascule la fiche en mode édition. « Modifier » et « Supprimer »
-// remplacent la barre d'onglets sur cette page (comme le détail d'une
-// conversation) — cf. AppDock qui masque le dock ici.
+// La fiche d'un contact — le CIEL est la carte de visite : le nom en titre,
+// l'entreprise en ligne du dessous, « À compléter » quand Relvo l'a créée
+// seul (invariant 12). La carte ne porte que les COORDONNÉES, et chacune est
+// un geste : le numéro appelle, l'adresse écrit — « le numéro de téléphone sur
+// le camion ». Modifier est le crayon du ciel, comme sur toute fiche ; en
+// édition, une barre ancrée prend la place du dock, comme un composer. Le dock
+// reste : Relvo est à sa place sur toutes les pages (invariant 22).
 
 type Contact = {
   id: string;
@@ -103,8 +104,6 @@ export function ContactDetail({
       additionalEmails: email.additional,
     };
     startTransition(async () => {
-      // Contact « auto » (créé par Relvo) → l'enregistrement le passe en
-      // « complete » (invariant : validation utilisateur).
       const res = auto
         ? await completeContactAction(contact.id, input)
         : await updateContactAction(contact.id, input);
@@ -132,16 +131,46 @@ export function ContactDetail({
 
   return (
     <>
-      <Screen className="flex min-h-full flex-col">
+      <Screen>
         <RelvoHeader
           back={backHref}
+          wrapTitle
           title={fullName}
-          subtitle={contact.company || "Contact"}
+          eyebrow={
+            contact.company || auto ? (
+              <span className="inline-flex items-center gap-2.5">
+                {contact.company ? (
+                  <span className="truncate">{contact.company}</span>
+                ) : null}
+                {auto ? (
+                  <span className="inline-flex flex-none items-center gap-1 rounded-(--rayon-pilule) bg-white/14 px-2 py-px text-[11px] font-medium tracking-[0.06em] text-white">
+                    <i
+                      aria-hidden
+                      className="size-2 rounded-full border-2 border-(--attente)"
+                    />
+                    À compléter
+                  </span>
+                ) : null}
+              </span>
+            ) : undefined
+          }
+          action={
+            editing ? null : (
+              <button
+                type="button"
+                onClick={startEdit}
+                aria-label="Modifier le contact"
+                className={SKY_BTN}
+              >
+                <PencilSimple className="size-[15px]" />
+              </button>
+            )
+          }
           className="pb-9"
         />
 
         {editing ? (
-          <div className="mx-4 mt-4 space-y-3 rounded-2xl border border-(--border-light) bg-white p-4 shadow-(--shadow-card)">
+          <div className="relative z-3 mx-4 -mt-5 space-y-3 rounded-(--rayon-carte) border border-(--filet) bg-white p-4 shadow-carte">
             <div className="grid grid-cols-2 gap-3">
               <Field label="Prénom">
                 <input
@@ -187,63 +216,50 @@ export function ContactDetail({
               placeholder="nom@exemple.fr"
               addLabel="Ajouter un email"
             />
-          </div>
-        ) : (
-          <ReadCard contact={contact} auto={auto} />
-        )}
-      </Screen>
-
-      {/* Dock violet — remplace la barre d'onglets sur cette page. */}
-      <div
-        className="absolute inset-x-0 bottom-0 z-30 bg-white px-4 pt-3 shadow-haut"
-        style={{
-          paddingBottom: "max(env(safe-area-inset-bottom), 14px)",
-        }}
-      >
-        {editing ? (
-          <div className="flex gap-2">
-            <button
-              type="button"
-              disabled={pending}
-              onClick={() => setEditing(false)}
-              className={dockGhost}
-            >
-              <X className="size-[16px]" strokeWidth={2.2} />
-              Annuler
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={save}
-              className={dockPrimary}
-            >
-              <FloppyDisk className="size-[16px]" />
-              Enregistrer
-            </button>
-          </div>
-        ) : (
-          <div className="flex gap-2">
+            {/* Supprimer est rare et irréversible : un lien à l'écart, en
+                édition seulement, et une confirmation qui nomme le contact. */}
             <button
               type="button"
               disabled={pending}
               onClick={() => setConfirmDelete(true)}
-              className={dockGhost}
+              className="mx-auto flex items-center gap-1.5 py-1 text-[13px] font-medium text-urgent disabled:opacity-50"
             >
-              <Trash className="size-[16px]" />
-              Supprimer
-            </button>
-            <button
-              type="button"
-              disabled={pending}
-              onClick={startEdit}
-              className={dockPrimary}
-            >
-              <PencilSimple className="size-[16px]" />
-              Modifier
+              <Trash className="size-[15px]" />
+              Supprimer ce contact
             </button>
           </div>
+        ) : (
+          <Coordonnees contact={contact} />
         )}
-      </div>
+      </Screen>
+
+      {/* En édition, la barre prend la place du dock, comme un composer : plus
+          haute que lui et son disque, zone sûre comprise. */}
+      {editing ? (
+        <div
+          className="absolute inset-x-0 bottom-0 z-30 flex gap-2 bg-white px-4 pt-3.5 shadow-haut"
+          style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 20px)" }}
+        >
+          <button
+            type="button"
+            disabled={pending}
+            onClick={() => setEditing(false)}
+            className={barGhost}
+          >
+            <X className="size-[16px]" strokeWidth={2.2} />
+            Annuler
+          </button>
+          <button
+            type="button"
+            disabled={pending}
+            onClick={save}
+            className={barPrimary}
+          >
+            <FloppyDisk className="size-[16px]" />
+            Enregistrer
+          </button>
+        </div>
+      ) : null}
 
       <ConfirmDialog
         open={confirmDelete}
@@ -260,12 +276,9 @@ export function ContactDetail({
   );
 }
 
-// ── Vue lecture : « carte de visite » plein écran, TOUS les champs visibles ───
+// ── Lecture : les coordonnées, chacune un geste ───────────────────────────
 
-function ReadCard({ contact, auto }: { contact: Contact; auto: boolean }) {
-  const fullName = contactFullName(contact);
-  const initials = initialsFor(fullName);
-
+function Coordonnees({ contact }: { contact: Contact }) {
   const phones = [contact.phone, ...contact.additionalPhones].filter(
     (v): v is string => Boolean(v),
   );
@@ -273,77 +286,48 @@ function ReadCard({ contact, auto }: { contact: Contact; auto: boolean }) {
     (v): v is string => Boolean(v),
   );
 
-  const rows: { label: string; value: string | null }[] = [
-    { label: "Prénom", value: contact.firstName },
-    { label: "Nom", value: contact.lastName },
-    { label: "Entreprise", value: contact.company },
-    ...(phones.length > 0
-      ? phones.map((v, i) => ({
-          label: phones.length > 1 ? `Téléphone ${i + 1}` : "Téléphone",
-          value: v,
-        }))
-      : [{ label: "Téléphone", value: null }]),
-    ...(emails.length > 0
-      ? emails.map((v, i) => ({
-          label: emails.length > 1 ? `Email ${i + 1}` : "Email",
-          value: v,
-        }))
-      : [{ label: "Email", value: null }]),
-  ];
+  if (phones.length === 0 && emails.length === 0) {
+    return (
+      <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
+        Aucune coordonnée. Le crayon, en haut, pour en ajouter.
+      </p>
+    );
+  }
 
   return (
-    <div className="mx-4 mt-4 mb-4 flex flex-1 flex-col overflow-hidden rounded-3xl border border-(--border-light) bg-white shadow-(--shadow-card)">
-      {auto ? (
-        <p className="bg-(--amber-50) px-5 py-2 text-center text-[12px] font-semibold text-(--amber-800)">
-          Fiche créée par Relvo — vérifiez et complétez les coordonnées.
-        </p>
-      ) : null}
-
-      {/* En-tête « carte de visite » : grand avatar (placeholder) + nom */}
-      <div className="flex flex-col items-center gap-3.5 px-6 pt-9 pb-7">
-        <span className="grid size-28 flex-none place-items-center rounded-full bg-relvo text-white ring-4 ring-(--purple-100)">
-          {initials ? (
-            <span className="text-[34px] font-bold">{initials}</span>
-          ) : (
-            <User className="size-14" />
-          )}
-        </span>
-        <div className="text-center">
-          <div className="text-[22px] leading-tight font-bold text-(--text-primary)">
-            {fullName}
-          </div>
-          {contact.company ? (
-            <div className="mt-1 text-[14px] text-(--text-tertiary)">
-              {contact.company}
-            </div>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Coordonnées — liste lisible, non éditable (édition via « Modifier ») */}
-      <dl className="border-t border-(--border-light)">
-        {rows.map((r, i) => (
-          <div
-            key={`${r.label}-${i}`}
-            className={`flex items-baseline gap-3 px-5 py-3.5 ${
-              i > 0 ? "border-t border-(--border-light)" : ""
-            }`}
+    <div className="relative z-3 -mt-5">
+      <ListPanel>
+        {phones.map((v) => (
+          <a
+            key={`tel-${v}`}
+            href={`tel:${v.replace(/[^\d+]/g, "")}`}
+            data-list-row
+            className="flex h-[58px] items-center gap-3 border-b border-(--filet) px-3.5 active:bg-(--fond-enfonce)"
           >
-            <dt className="w-[92px] flex-none text-[13px] text-(--text-tertiary)">
-              {r.label}
-            </dt>
-            {r.value ? (
-              <dd className="min-w-0 flex-1 text-[15px] font-medium break-words text-(--text-primary)">
-                {r.value}
-              </dd>
-            ) : (
-              <dd className="min-w-0 flex-1 text-[14.5px] text-(--text-tertiary) italic">
-                Non renseigné
-              </dd>
-            )}
-          </div>
+            <span className="chiffre min-w-0 flex-1 truncate text-[19px] text-noir">
+              {v}
+            </span>
+            <span className="grid size-9 flex-none place-items-center rounded-full bg-relvo-pale text-relvo">
+              <Phone className="size-[17px]" />
+            </span>
+          </a>
         ))}
-      </dl>
+        {emails.map((v) => (
+          <a
+            key={`mail-${v}`}
+            href={`mailto:${v}`}
+            data-list-row
+            className="flex h-[58px] items-center gap-3 border-b border-(--filet) px-3.5 active:bg-(--fond-enfonce)"
+          >
+            <span className="min-w-0 flex-1 truncate text-[14.5px] font-normal text-noir">
+              {v}
+            </span>
+            <span className="grid size-9 flex-none place-items-center rounded-full bg-relvo-pale text-relvo">
+              <Envelope className="size-[17px]" />
+            </span>
+          </a>
+        ))}
+      </ListPanel>
     </div>
   );
 }
@@ -351,11 +335,11 @@ function ReadCard({ contact, auto }: { contact: Contact; auto: boolean }) {
 const inputCls =
   "w-full rounded-(--rayon-option) border border-(--filet) bg-(--fond-puce) px-3 py-2.5 text-[14px] font-light text-noir outline-none focus:border-relvo focus:bg-white";
 
-const dockGhost =
-  "inline-flex flex-1 items-center justify-center gap-1.5 rounded-(--rayon-pilule) border border-(--filet) py-2.5 text-[13.5px] font-medium text-noir active:bg-(--fond-puce) disabled:opacity-50";
+const barGhost =
+  "inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-(--rayon-pilule) border border-(--filet) text-[14px] font-medium text-noir active:bg-(--fond-puce) disabled:opacity-50";
 
-const dockPrimary =
-  "inline-flex flex-1 items-center justify-center gap-1.5 rounded-(--rayon-pilule) bg-relvo py-2.5 text-[13.5px] font-medium text-white active:opacity-90 disabled:opacity-50";
+const barPrimary =
+  "inline-flex h-11 flex-1 items-center justify-center gap-1.5 rounded-(--rayon-pilule) bg-relvo text-[14px] font-medium text-white active:opacity-90 disabled:opacity-50";
 
 function Field({
   label,
