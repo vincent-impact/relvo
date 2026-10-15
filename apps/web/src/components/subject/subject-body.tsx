@@ -100,7 +100,7 @@ export function SubjectBody({
 
   return (
     <>
-      <main className="min-h-0 flex-1 overflow-y-auto bg-background pb-[calc(92px+env(safe-area-inset-bottom))]">
+      <main className="entre-ecran min-h-0 flex-1 overflow-y-auto bg-background pb-[calc(92px+env(safe-area-inset-bottom))]">
         {header}
         <SegTabs
           options={options}

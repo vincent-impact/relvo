@@ -54,13 +54,12 @@ export type Recipient = {
 /** Trois points qui respirent — « Relvo rédige ». */
 function ThinkingDots() {
   return (
-    <span className="ml-0.5 inline-flex items-center gap-[3px]" aria-hidden>
+    <span
+      className="respire ml-0.5 inline-flex items-center gap-[3px]"
+      aria-hidden
+    >
       {[0, 1, 2].map((i) => (
-        <span
-          key={i}
-          className="size-[4px] animate-bounce rounded-full bg-current"
-          style={{ animationDelay: `${i * 160}ms`, animationDuration: "900ms" }}
-        />
+        <span key={i} className="size-[4px] rounded-full bg-current" />
       ))}
     </span>
   );
@@ -207,7 +206,7 @@ export function RecipientComposer({
       disabled={blocked || !typing}
       aria-label="Envoyer"
       className={cn(
-        "grid flex-none place-items-center rounded-full text-white shadow-disque active:scale-95 disabled:opacity-60",
+        "grid flex-none place-items-center rounded-full text-white shadow-disque transition-transform duration-(--dur-presse) active:scale-[0.97] disabled:opacity-60",
         expanded ? "size-9" : "size-11",
       )}
       style={{ background: "var(--degrade-disque)" }}

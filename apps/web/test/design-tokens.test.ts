@@ -25,6 +25,7 @@ const tokensAttendus = [
   "--ciel",
   "--ciel-bas",
   "--ciel-queue",
+  "--ciel-plein",
   "--etoiles",
   "--etoile-signe",
   "--degrade-relvo",
@@ -86,6 +87,14 @@ const tokensAttendus = [
   // la typographie
   "--font-barlow",
   "--font-barlow-condensed",
+  // le mouvement : quatre durées, trois courbes
+  "--dur-presse",
+  "--dur-court",
+  "--dur-moyen",
+  "--dur-accompagnement",
+  "--courbe-sortie",
+  "--courbe-deplacement",
+  "--courbe-feuille",
 ];
 
 describe("design tokens — l'inventaire de 01-tokens.md", () => {
@@ -111,9 +120,26 @@ describe("design tokens — l'inventaire de 01-tokens.md", () => {
       ".bande-ligne",
       ".cercle-actif",
       ".pressable:active",
+      // le mouvement : les primitives et le mode réduit
+      "@keyframes apparait",
+      "@keyframes entre-ecran",
+      "@keyframes arrive",
+      ".apparait",
+      ".apparait-liste",
+      ".entre-ecran",
+      ".arrive",
+      ".respire",
+      "@media (prefers-reduced-motion: reduce)",
     ]) {
       expect(css, cls).toContain(cls);
     }
+  });
+
+  it("fait partir les transitions de Tailwind sur les tokens", () => {
+    expect(css).toMatch(/--default-transition-duration:\s*var\(--dur-court\)/);
+    expect(css).toMatch(
+      /--default-transition-timing-function:\s*var\(--courbe-sortie\)/,
+    );
   });
 
   it("ne garde rien de la matière écartée comme valeur vivante", () => {
@@ -229,5 +255,38 @@ describe("design tokens — aucune couleur en dur dans un composant", () => {
     expect(migres, "fichiers migrés : les retirer de RESTE_A_MIGRER").toEqual(
       [],
     );
+  });
+});
+
+// Le mouvement est tenu par ses tokens (01-tokens.md, « Le mouvement ») :
+// aucune durée ni courbe littérale dans un composant, jamais `transition-all`
+// (on nomme ce qui bouge), jamais `ease-in` sur une interface (elle démarre
+// lentement, au moment où l'œil regarde). Les primitives du registre sont
+// adaptées au thème comme les autres : elles ne font pas exception.
+describe("design tokens — le mouvement passe par les tokens", () => {
+  it("aucune durée, courbe ou transition-all littérale dans un composant", () => {
+    const fautifs: string[] = [];
+    const motifs: [RegExp, string][] = [
+      [/\btransition-all\b/, "transition-all : nommer les propriétés"],
+      [/\bduration-\d+\b/, "duration-N : duration-(--dur-*)"],
+      [/\bease-in-out\b/, "ease-in-out : ease-deplacement ou ease-feuille"],
+      [/\bease-in\b/, "ease-in : ease-sortie"],
+      [
+        /\banimate-(bounce|ping)\b/,
+        "animate-bounce/ping : .respire ou .arrive",
+      ],
+      [
+        /(transition|animation[A-Za-z]*)\s*[:=]\s*[`"'][^`"']*\d+m?s\b/,
+        "durée en millisecondes dans un style : var(--dur-*)",
+      ],
+    ];
+    for (const p of fichiersSource(join(ROOT, "src"))) {
+      if (p.endsWith("globals.css") || p.endsWith("suivi.module.css")) continue;
+      const src = readFileSync(p, "utf8");
+      for (const [re, raison] of motifs) {
+        if (re.test(src)) fautifs.push(`${relative(ROOT, p)} : ${raison}`);
+      }
+    }
+    expect(fautifs).toEqual([]);
   });
 });

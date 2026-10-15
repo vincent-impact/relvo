@@ -764,7 +764,7 @@ export function ConversationDetail({
         </RelvoHeader>
       </div>
 
-      <Screen bottomInset={attached ? composerHeight : null}>
+      <Screen entree bottomInset={attached ? composerHeight : null}>
         <SkyTail />
         <ConversationThread
           messages={messages}

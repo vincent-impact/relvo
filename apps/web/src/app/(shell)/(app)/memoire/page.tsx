@@ -47,7 +47,7 @@ async function MemoireBody({ accountId }: { accountId: string }) {
     : [];
 
   return (
-    <div className="space-y-5 pt-4">
+    <div className="apparait-liste space-y-5 pt-4">
       <section>
         <ZoneHeading
           label="Votre entreprise"

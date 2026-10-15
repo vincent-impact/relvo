@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Nouveau domaine — Relvo" };
 // Accessible via le « + » de la page Mémoire (/memoire).
 export default function NouveauDomainePage() {
   return (
-    <Screen>
+    <Screen entree>
       <RelvoHeader
         back="/memoire"
         title="Nouveau domaine"

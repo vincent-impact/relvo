@@ -11,26 +11,36 @@ import { cn } from "@/lib/utils";
 // composer occupe (`bottomInset`, mesuré par l'appelant) : le fil doit rester
 // lisible et scrollable jusqu'à son dernier message, on ne rédige pas une
 // réponse sans pouvoir relire ce à quoi on répond.
+//
+// `entree` : un écran POUSSÉ (fiche, création, recherche) entre de la droite
+// (`.entre-ecran`, 01-tokens « Le mouvement ») ; un onglet du dock, lui, ne
+// s'anime pas — on le touche trente fois par jour.
 
 export function Screen({
   children,
   className,
   bottomInset = null,
+  entree = false,
 }: {
   children: React.ReactNode;
   className?: string;
   /** Hauteur (px) de ce qui recouvre le bas de l'écran, quand ce n'est pas le dock. */
   bottomInset?: number | null;
+  /** Écran poussé : il entre de la droite. */
+  entree?: boolean;
 }) {
   const { onScroll, reset } = useNavScroll();
   useEffect(() => reset(), [reset]);
   return (
     <main
       onScroll={(e) => onScroll(e.currentTarget.scrollTop)}
-      className="min-h-0 flex-1 overflow-y-auto bg-background"
+      // `overflow-x-hidden` : l'entrée de la droite déborde de 16 px pendant
+      // un quart de seconde, et un conteneur en `auto` offrirait ce débord au
+      // défilement.
+      className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-background"
     >
       <div
-        className={cn(className)}
+        className={cn(entree && "entre-ecran", className)}
         style={{
           paddingBottom:
             bottomInset != null

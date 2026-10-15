@@ -15,7 +15,7 @@ export default async function NouveauContactPage({
 }) {
   const { email, phone } = await searchParams;
   return (
-    <Screen>
+    <Screen entree>
       <RelvoHeader
         back="/contacts"
         title="Nouveau contact"

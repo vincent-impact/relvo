@@ -152,7 +152,7 @@ export default async function DossierPage({
   if (!folder) notFound();
 
   return (
-    <Screen>
+    <Screen entree>
       {/* La bande du domaine dans le ciel, comme sur sa ligne et comme sur la
           fiche d'un sujet : le fil de couleur ne se rompt pas à sa porte. */}
       <RelvoHeader

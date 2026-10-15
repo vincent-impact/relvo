@@ -66,7 +66,10 @@ export function SwipeableSubject({
   function setX(x: number, animate = false) {
     const el = cardRef.current;
     if (!el) return;
-    el.style.transition = animate ? "transform .2s ease" : "none";
+    // Le retour en place : une sortie, sur la courbe de sortie (01-tokens).
+    el.style.transition = animate
+      ? "transform var(--dur-moyen) var(--courbe-sortie)"
+      : "none";
     el.style.transform = `translateX(${x}px)`;
   }
 
@@ -229,7 +232,7 @@ export function SwipeableSubject({
   return (
     <div
       className={cn(
-        "overflow-hidden transition-all duration-300",
+        "overflow-hidden transition-[max-height,opacity] duration-(--dur-moyen) ease-sortie",
         leaving ? "max-h-0 opacity-0" : "max-h-[600px]",
       )}
     >

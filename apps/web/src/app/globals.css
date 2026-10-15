@@ -102,6 +102,18 @@
   --shadow-surface-1: var(--ombre-carte);
   --shadow-surface-2: var(--ombre-carte);
   --shadow-surface-3: var(--ombre-feuille);
+
+  /* Le mouvement (01-tokens, « Le mouvement ») : trois courbes, et les
+     utilitaires `transition-*` partent sur la durée courte et la courbe de
+     sortie sans qu'un composant ait rien à dire. Une durée s'écrit
+     `duration-(--dur-moyen)`, jamais en millisecondes dans un composant. */
+  --ease-sortie: var(--courbe-sortie);
+  --ease-deplacement: var(--courbe-deplacement);
+  --ease-feuille: var(--courbe-feuille);
+  --default-transition-duration: var(--dur-court);
+  --default-transition-timing-function: var(--courbe-sortie);
+  --animate-apparait: apparait var(--dur-moyen) var(--courbe-sortie) both;
+  --animate-arrive: arrive var(--dur-accompagnement) var(--courbe-sortie) both;
 }
 
 :root {
@@ -139,6 +151,14 @@
     var(--ciel-bas) 0,
     #c5befb 56px,
     #ffffff 150px
+  );
+  /* Le ciel PLEIN des diapositives de première connexion : tout l'écran,
+     sans fondu — il n'y a encore rien de blanc à rejoindre. */
+  --ciel-plein: linear-gradient(
+    180deg,
+    var(--nuit) 0,
+    var(--relvo) 45%,
+    var(--relvo-clair) 100%
   );
   /* Le ciel haut de la connexion : près de la moitié de l'écran. */
   --ciel-haut: linear-gradient(
@@ -315,6 +335,30 @@
   --tab-h: calc(
     var(--dock-h) + var(--dock-marge)
   ); /* réservation sous une page */
+
+  /* ── Le mouvement : quatre durées, trois courbes ────────────────────────── */
+  --dur-presse: 120ms; /* le retour d'un appui : on le sent, on ne le voit pas */
+  --dur-court: 160ms; /* une couleur, un survol, un badge, une puce */
+  --dur-moyen: 240ms; /* une feuille, un menu, un écran poussé, une liste qui arrive */
+  --dur-accompagnement: 480ms; /* la SEULE durée qu'on a le droit de voir : premiers pas, carte vivante */
+  --courbe-sortie: cubic-bezier(
+    0.23,
+    1,
+    0.32,
+    1
+  ); /* entrer, sortir : vite d'abord */
+  --courbe-deplacement: cubic-bezier(
+    0.77,
+    0,
+    0.175,
+    1
+  ); /* se déplacer à l'écran */
+  --courbe-feuille: cubic-bezier(
+    0.32,
+    0.72,
+    0,
+    1
+  ); /* une feuille qui monte, à la manière d'iOS */
 
   /* ── Anciens noms, migration des composants en cours : ALIAS vers la matière
      retenue, pour que l'application rende déjà dans la direction. Un alias ne
@@ -549,10 +593,160 @@
   color: var(--relvo);
 }
 
-/* État enfoncé : +1px et l'ombre se raccourcit. */
+/* État enfoncé : +1px et l'ombre se raccourcit — sur la durée d'appui, en
+   transition (jamais en keyframes : un appui s'interrompt). */
+.pressable {
+  transition:
+    transform var(--dur-presse) var(--courbe-sortie),
+    box-shadow var(--dur-presse) var(--courbe-sortie);
+}
 .pressable:active {
   transform: translateY(1px);
   box-shadow: var(--ombre-pressed);
+}
+
+/* ── Le mouvement : les primitives (01-tokens, « Le mouvement ») ─────────────
+   Opacité et transform seulement ; ce qui arrive part de 6 px plus bas, pas
+   de nulle part. `apparait` = ce que le serveur livre après coup (une liste,
+   un bloc) ; `.apparait-liste` échelonne ses enfants de 35 ms, huit au plus ;
+   `entre-ecran` = un écran poussé (fiche, création, échange) qui vient de la
+   droite ; `arrive` = un chiffre qui change ou une nouvelle qui se pose, sur
+   la durée d'accompagnement ; `respire` = Relvo travaille (boucle). */
+@keyframes apparait {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes entre-ecran {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+}
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes fondu {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes respire {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+.apparait {
+  animation: apparait var(--dur-moyen) var(--courbe-sortie) both;
+}
+.apparait-liste > * {
+  animation: apparait var(--dur-moyen) var(--courbe-sortie) both;
+}
+.apparait-liste > :nth-child(2) {
+  animation-delay: 35ms;
+}
+.apparait-liste > :nth-child(3) {
+  animation-delay: 70ms;
+}
+.apparait-liste > :nth-child(4) {
+  animation-delay: 105ms;
+}
+.apparait-liste > :nth-child(5) {
+  animation-delay: 140ms;
+}
+.apparait-liste > :nth-child(6) {
+  animation-delay: 175ms;
+}
+.apparait-liste > :nth-child(7) {
+  animation-delay: 210ms;
+}
+.apparait-liste > :nth-child(n + 8) {
+  animation-delay: 245ms;
+}
+.entre-ecran {
+  animation: entre-ecran var(--dur-moyen) var(--courbe-sortie) both;
+}
+.arrive {
+  animation: arrive var(--dur-accompagnement) var(--courbe-sortie) both;
+}
+.respire > * {
+  animation: respire 900ms var(--courbe-deplacement) infinite;
+}
+.respire > :nth-child(2) {
+  animation-delay: 160ms;
+}
+.respire > :nth-child(3) {
+  animation-delay: 320ms;
+}
+
+/* Mouvement réduit : moins et plus doux, pas zéro. Ce qui aide à comprendre
+   (un fondu) reste ; ce qui se déplace ne se déplace plus. */
+@media (prefers-reduced-motion: reduce) {
+  /* `:nth-child(n)` pour battre l'échelonnement (une media query n'ajoute
+     aucune spécificité). */
+  .apparait,
+  .apparait-liste > :nth-child(n),
+  .entre-ecran,
+  .arrive {
+    animation-name: fondu;
+    animation-duration: var(--dur-court);
+    animation-delay: 0ms;
+  }
+  .respire > * {
+    animation: none;
+    opacity: 0.6;
+  }
+  .pressable:active {
+    transform: none;
+  }
+  /* Les primitives du registre (tw-animate-css n'en sait rien) : la feuille,
+     les dialogues et le menu ne glissent ni ne zooment plus, ils fondent. */
+  [data-slot="dialog-content"],
+  [data-slot="alert-dialog-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"] {
+    --tw-enter-scale: 1;
+    --tw-exit-scale: 1;
+    --tw-enter-translate-x: 0;
+    --tw-enter-translate-y: 0;
+    --tw-exit-translate-x: 0;
+    --tw-exit-translate-y: 0;
+  }
+  [data-slot="sheet-content"][data-starting-style],
+  [data-slot="sheet-content"][data-ending-style] {
+    transform: none;
+  }
+}
+
+/* L'accordéon du registre : tw-animate-css n'écoute que les variables de
+   Radix et consorts ; Base UI expose `--accordion-panel-height`. Sans ceci,
+   le panneau saute de 0 à auto. (`height` : le cas toléré du repli.) */
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--accordion-panel-height);
+  }
+}
+@keyframes accordion-up {
+  from {
+    height: var(--accordion-panel-height);
+  }
+  to {
+    height: 0;
+  }
 }
 
 /* Anciens utilitaires de la matière précédente, rendus INERTES le temps de la

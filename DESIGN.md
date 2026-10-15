@@ -93,6 +93,14 @@ spacing:
   ligne: "12px"
   entre-cartes: "12px"
   dock-marge: "14px"
+motion:
+  dur-presse: "120ms"
+  dur-court: "160ms"
+  dur-moyen: "240ms"
+  dur-accompagnement: "480ms"
+  courbe-sortie: "cubic-bezier(0.23, 1, 0.32, 1)"
+  courbe-deplacement: "cubic-bezier(0.77, 0, 0.175, 1)"
+  courbe-feuille: "cubic-bezier(0.32, 0.72, 0, 1)"
 components:
   button-primary:
     backgroundColor: "{colors.relvo}"
@@ -357,6 +365,26 @@ sous-carte à filet, sans ombre.
 sa couleur et son débordement du dock — pas par un relief. Si une tuile se met à briller ou si
 un second objet du dock se colore, on perd « ce qui se détache, c'est Relvo ».
 
+## Motion
+
+Le mouvement est court et il sort vite : il **se sent, il ne se voit pas**. Quatre durées —
+`presse` 120ms (le retour d'un appui), `court` 160ms (une couleur, un badge ; la durée par défaut
+de toute transition), `moyen` 240ms (une feuille, un menu, un écran poussé, une liste qui
+arrive), `accompagnement` 480ms (la seule qu'on a le droit de voir : premiers pas, carte
+vivante). Trois courbes — `sortie` `cubic-bezier(0.23, 1, 0.32, 1)` pour tout ce qui entre ou
+sort, `deplacement` `cubic-bezier(0.77, 0, 0.175, 1)` pour ce qui se déplace à l'écran,
+`feuille` `cubic-bezier(0.32, 0.72, 0, 1)` pour une feuille qui monte. Opacité et `transform`
+seulement.
+
+Cinq primitives : `.apparait` (ce que le serveur livre après coup monte de 6px ;
+`.apparait-liste` échelonne de 35ms), `.entre-ecran` (un écran poussé entre de la droite, 16px),
+les feuilles et menus du registre sur `moyen`/`feuille`, `.pressable` et `active:scale-[0.97]`
+en transition sur `presse`, `.arrive` (un chiffre qui change) et `.respire` (Relvo travaille, la
+seule boucle). `prefers-reduced-motion` ramène tout à un fondu.
+
+Ce qui ne s'anime pas : le changement d'onglet du dock et d'un segmented, le cerclage d'un
+indicateur, une liste refiltrée, les étoiles et le ciel, la saisie, un survol.
+
 ## Shapes
 
 Les rayons sont **comptés** : 6px pour un petit contrôle, 8px pour un bouton d'icône sur le
@@ -523,8 +551,9 @@ comme un tic d'interface générée est ici une décision de direction.
   descendre sous 11px hors du dock (libellé d'onglet, badge du disque).
 - **Don't** arrêter le ciel net : il fond, et la première carte le chevauche.
 - **Don't** faire scintiller les étoiles ni allonger une transition : le mouvement est court et
-  sort vite. Les tokens de durée et de courbe n'existent pas encore (ils arrivent avec le langage
-  de mouvement) ; en attendant, aucune durée littérale dans un composant.
+  sort vite. Aucune durée ni courbe littérale dans un composant (`--dur-*`, `--courbe-*`), jamais
+  `transition-all`, jamais une courbe qui démarre lentement, rien au-delà de 300ms hors
+  accompagnement, pas d'animation sur un onglet du dock ni sur un survol.
 - **Don't** rendre une suggestion ou une puce en pointillé : le pointillé est réservé à « vide / à
   compléter » (une puce Urgent inactive, un domaine sans logo, un canal à connecter).
 - **Don't** afficher un thème sombre : l'application est claire seulement ; le bloc `.dark`

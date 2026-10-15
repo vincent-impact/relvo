@@ -42,7 +42,7 @@ export function RelvoDockButton({
       href={`/relvo?from=${encodeURIComponent(pathname)}`}
       aria-label={label}
       className={cn(
-        "relative grid size-(--disque-relvo) flex-none place-items-center rounded-full text-white transition-transform active:translate-y-px active:scale-[0.97]",
+        "relative grid size-(--disque-relvo) flex-none place-items-center rounded-full text-white transition-transform duration-(--dur-presse) active:translate-y-px active:scale-[0.97]",
         className,
       )}
       style={{ background: "var(--degrade-disque)" }}

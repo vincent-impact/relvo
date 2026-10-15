@@ -19,7 +19,7 @@ export default async function RelvoHistoryPage() {
 
   return (
     <MobileFrame>
-      <main className="min-h-0 flex-1 overflow-y-auto bg-background">
+      <main className="entre-ecran min-h-0 flex-1 overflow-y-auto bg-background">
         <RelvoHeader back="/relvo" title="Mes échanges avec Relvo" />
 
         <div className="pt-5">

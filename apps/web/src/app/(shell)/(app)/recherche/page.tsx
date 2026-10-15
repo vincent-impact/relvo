@@ -76,7 +76,7 @@ export default async function RecherchePage({
   const query = (q ?? "").trim();
 
   return (
-    <Screen>
+    <Screen entree>
       <RelvoHeader title="Recherche" className="pb-9">
         <SearchBar initial={query} />
       </RelvoHeader>

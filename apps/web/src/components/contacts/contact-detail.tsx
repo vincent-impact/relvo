@@ -153,7 +153,7 @@ export function ContactDetail({
 
   return (
     <>
-      <Screen>
+      <Screen entree>
         <RelvoHeader
           back={backHref}
           title={fullName}

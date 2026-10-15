@@ -158,9 +158,50 @@ rond par nature (pastilles, avatars, disque Relvo, case à cocher) est rond.
 **Ce qui se presse s'enfonce** (`.pressable`) : 1 px de translation et l'ombre portée qui se
 raccourcit. Un aplat de couleur n'est jamais le seul signal d'un état.
 
-Le mouvement est court et sort vite (`--dur-*`, `--ease-*`) : une transition qu'on remarque est
-une transition trop longue sur une app qu'on ouvre trente fois par jour. Les étoiles ne
-scintillent pas.
+## Le mouvement — court, et il sort vite
+
+Une transition qu'on remarque est une transition trop longue sur une application qu'on ouvre
+trente fois par jour. Le mouvement courant **se sent, il ne se voit pas** ; seul
+l'**accompagnement** — les premiers pas, la carte vivante — a le droit d'être vu.
+
+**Quatre durées** : `--dur-presse` (le retour d'un appui), `--dur-court` (une couleur, un
+badge, une puce ; c'est la durée par défaut de toute transition), `--dur-moyen` (une feuille,
+un menu, un écran poussé, une liste qui arrive), `--dur-accompagnement` (la seule qu'on voit).
+**Trois courbes** : `--courbe-sortie` pour tout ce qui entre ou sort — vite d'abord, l'œil
+regarde ce moment-là —, `--courbe-deplacement` pour ce qui se déplace à l'écran,
+`--courbe-feuille` pour une feuille qui monte. Jamais une courbe qui **démarre lentement** sur
+une interface. Les utilitaires Tailwind (`transition-*`) partent d'eux-mêmes sur la durée
+courte et la courbe de sortie ; une autre durée s'écrit `duration-(--dur-moyen)`, une autre
+courbe `ease-feuille`. **Aucune durée ni courbe littérale dans un composant**, ni dans ceux du
+registre : le test des tokens le tient.
+
+**Cinq primitives**, toutes en opacité et en `transform` seulement, parce que ce sont les deux
+propriétés qui ne redessinent pas la page :
+
+- **Ce qui arrive apparaît** (`.apparait`) : ce que le serveur livre après coup — une liste, un
+  bloc — monte de 6 px en s'opacifiant ; `.apparait-liste` échelonne ses enfants de 35 ms,
+  huit au plus. Rien n'apparaît de nulle part : jamais depuis une échelle nulle.
+- **Un écran poussé entre de la droite** (`.entre-ecran`, `<Screen entree>`) : une fiche, une
+  création, l'échange. Un onglet du dock, lui, ne s'anime pas. Limite assumée : le retour
+  arrière rejoue la même entrée — le CSS ne connaît pas le sens de la navigation.
+- **Une feuille monte, un menu s'ouvre** : les primitives du registre — la feuille sur
+  `--dur-moyen` et la courbe de feuille ; un dialogue et un menu sur `--dur-court` et la courbe
+  de sortie, le menu depuis son déclencheur, pas depuis son centre.
+- **Ce qui se presse s'enfonce** (`.pressable`, `active:scale-[0.97]`) : 1 px de translation et
+  l'ombre portée qui se raccourcit, en transition — jamais en images-clés, un appui
+  s'interrompt. Un aplat de couleur n'est jamais le seul signal d'un état.
+- **Une nouvelle se pose** (`.arrive`) : un chiffre qui change, une nouvelle qui se pose,
+  descend de 4 px sur la durée d'accompagnement. **Relvo travaille** (`.respire`) : trois
+  points qui respirent, la seule boucle du produit.
+
+Le mouvement **réduit** du téléphone est respecté : moins et plus doux, pas zéro — ce qui aide
+à comprendre (un fondu) reste, ce qui se déplace ne se déplace plus.
+
+**Ce qui ne s'anime pas**, et c'est une liste à tenir : le changement d'onglet du dock et d'un
+segmented ; le cerclage qui change d'indicateur ; une liste refiltrée ; les étoiles et le ciel ;
+un chiffre d'indicateur ; la saisie et le clavier ; un survol — le produit est tactile, un
+`hover:` s'y déclenche au toucher et ment. Rien ne dure plus de 300 ms hors accompagnement, et
+aucune transition ne porte « tout » : on nomme ce qui bouge.
 
 > ⚠️ **Piège Tailwind v4.** Il n'y a pas de `tailwind.config.js`. Un rayon lu depuis une variable
 > s'écrit `rounded-b-(--ma-var)` — **parenthèses**. `rounded-b-[--ma-var]` ne produit rien,

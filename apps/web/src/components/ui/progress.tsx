@@ -44,7 +44,7 @@ function ProgressIndicator({
   return (
     <ProgressPrimitive.Indicator
       data-slot="progress-indicator"
-      className={cn("h-full rounded-full transition-all", className)}
+      className={cn("h-full rounded-full transition-[width]", className)}
       style={{ background: "var(--degrade-relvo)" }}
       {...props}
     />

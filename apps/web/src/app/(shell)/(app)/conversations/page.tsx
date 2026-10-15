@@ -67,16 +67,18 @@ async function List({
   const noneAtAll =
     page.items.length === 0 && (await db.conversation.count()) === 0;
   return (
-    <ConversationList
-      // La clé force un remontage à chaque changement de filtre/canal : l'état
-      // local (scroll infini, retraits optimistes) appartient à la vue affichée.
-      key={`${filter}:${channel}`}
-      filter={filter}
-      channel={channel}
-      initialItems={page.items.map(toConversationRowData)}
-      initialCursor={page.nextCursor}
-      noneAtAll={noneAtAll}
-    />
+    <div className="apparait">
+      <ConversationList
+        // La clé force un remontage à chaque changement de filtre/canal : l'état
+        // local (scroll infini, retraits optimistes) appartient à la vue affichée.
+        key={`${filter}:${channel}`}
+        filter={filter}
+        channel={channel}
+        initialItems={page.items.map(toConversationRowData)}
+        initialCursor={page.nextCursor}
+        noneAtAll={noneAtAll}
+      />
+    </div>
   );
 }
 

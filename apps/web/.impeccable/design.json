@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-15T13:28:43+00:00",
+  "generatedAt": "2026-10-15T14:12:55+00:00",
   "title": "Design System: Relvo",
   "extensions": {
     "colorMeta": {
@@ -813,7 +813,7 @@
       "Don't rendre une ombre sans décalage (halo), ni une ombre dure, ni une ombre plus forte pour hiérarchiser.",
       "Don't dépasser les rayons comptés (20px hors pilule et dock), ni la graisse 600, ni descendre sous 11px hors du dock (libellé d'onglet, badge du disque).",
       "Don't arrêter le ciel net : il fond, et la première carte le chevauche.",
-      "Don't faire scintiller les étoiles ni allonger une transition : le mouvement est court et sort vite. Les tokens de durée et de courbe n'existent pas encore (ils arrivent avec le langage de mouvement) ; en attendant, aucune durée littérale dans un composant.",
+      "Don't faire scintiller les étoiles ni allonger une transition : le mouvement est court et sort vite. Aucune durée ni courbe littérale dans un composant (`--dur-*`, `--courbe-*`), jamais `transition-all`, jamais une courbe qui démarre lentement, rien au-delà de 300ms hors accompagnement, pas d'animation sur un onglet du dock ni sur un survol.",
       "Don't rendre une suggestion ou une puce en pointillé : le pointillé est réservé à « vide / à compléter » (une puce Urgent inactive, un domaine sans logo, un canal à connecter).",
       "Don't afficher un thème sombre : l'application est claire seulement ; le bloc `.dark` n'existe que pour les primitives du registre qui le citent."
     ]
