@@ -13,7 +13,12 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 // vivent hors du groupe `(app)` et n'ont pas de dock. Les LISTES et les fiches
 // (affaire, contact en carte de visite) gardent le dock.
 
-export function AppDock() {
+export function AppDock({
+  pendingQuestions = 0,
+}: {
+  /** Questions de Relvo en attente — le badge du bouton central. */
+  pendingQuestions?: number;
+}) {
   const pathname = usePathname();
   if (/^\/conversations\/[^/]+$/.test(pathname)) return null;
 
@@ -24,7 +29,7 @@ export function AppDock() {
         bottom: "calc(var(--dock-marge) + env(safe-area-inset-bottom))",
       }}
     >
-      <BottomTabBar />
+      <BottomTabBar pendingQuestions={pendingQuestions} />
     </div>
   );
 }

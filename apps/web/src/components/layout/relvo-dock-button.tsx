@@ -15,9 +15,8 @@ import { cn } from "@/lib/utils";
 // ou se met à briller, on perd « ce qui se détache, c'est Relvo ».
 //
 // Le badge porte le nombre de questions de Relvo en attente (`RelvoQuestion`,
-// invariant 36) — branché par la tranche « Relvo parle en premier » ; d'ici là,
-// il reste absent. Il est repoussé hors du bord pour ne jamais masquer les
-// petites étoiles.
+// invariant 36), compté par le layout de l'application (M18.9, livré par M10).
+// Il est repoussé hors du bord pour ne jamais masquer les petites étoiles.
 //
 // Page-aware (invariant 26) : le bouton ouvre l'échange plein écran en
 // transmettant la page d'origine (`?from=`) pour le chip de contexte, les

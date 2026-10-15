@@ -173,6 +173,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Relvo vous pose désormais ses questions : un badge sur son bouton, la question dans l'échange avec des réponses à choisir, et ce qu'il retient de votre réponse. À la première ouverture, il vous demande votre métier et une règle à toujours suivre."
+        },
+        {
+          "type": "new",
           "texte": "Relvo se souvient de votre échange en cours : si vous revenez dans les cinq minutes, vous le retrouvez où vous l'aviez laissé. Vos dix derniers échanges, titrés, sont dans l'historique, sur votre appareil."
         },
         {

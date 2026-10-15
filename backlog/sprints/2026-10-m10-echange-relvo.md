@@ -391,5 +391,21 @@ chat`, « Annuler » la rouvre ; « Prépare une réponse à Karim » → le bro
       ✅ règles pures tenues par `ia-echange.test.ts` (reprise, purge, titre, classification
       simulée) · ✅ vérifié en headless iPhone : tour, reprise après rechargement, historique
       titré (« Arbitrage quantité huile de friture »), nouvel échange forcé.
-- [ ] Tranche 4 — « Relvo parle en premier » (M18.9, M18.11, puis M10.16)
+- [x] Tranche 4 — « Relvo parle en premier » : ✅ M18.9 — migration additive en deux temps
+      (la portée `account` seule dans sa migration, PostgreSQL refusant d'utiliser une valeur
+      d'énuméré ajoutée dans la même transaction ; puis `proposed_answers`, `origin_step` et la
+      contrainte « une cible par portée » récrite, même nom, catalogue intact), domaine
+      `questions.ts` (poser, répondre, écarter, lister, compter ; une réponse structurée modifie
+      un objet du compte — les secteurs —, une réponse libre devient une instruction du domaine
+      de la portée ou de Général), badge du bouton Relvo alimenté par le layout
+      (`cachedOpenQuestions`), « Répondre » de l'accueil ouvre l'échange, où la question se
+      pose en `EtapeFormulaire` avec « Je vous l'écris… », « Plus tard », « Ne plus me le
+      demander » · ❌ M18.11 **glissée vers M12 (M12.9)** : aucun socle push · ✅ M10.16 **en
+      partie** : le script de la prise en main en texte fixe dans le domaine
+      (`SCRIPT_PRISE_EN_MAIN` : le métier, la première règle), posé à l'ouverture de l'échange
+      et idempotent, les réponses journalisées avec leur provenance ; la carte vivante du
+      rattrapage en tête de l'échange quand une lecture est en cours. **Reste de M10.16** : la
+      naissance du script à la connexion d'un canal et la lecture immédiate — c'est la
+      tranche 10 de M7, qui vient après ce sprint · ✅ `questions.test.ts` (cible par portée
+      tenue par la base, destinations, écart, script idempotent).
 - [ ] Tranche 5 — Durcissement

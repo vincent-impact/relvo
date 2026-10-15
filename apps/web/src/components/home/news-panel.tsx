@@ -65,6 +65,9 @@ export function newsSentence(news: CachedNews, hasChannels = true): string {
 }
 
 function suggestionHref(s: BriefSuggestion): string {
+  // Une question de Relvo se répond dans l'échange, en formulaire (05 §11.12) ;
+  // une suggestion par règles y entre comme premier tour, à envoyer.
+  if (s.kind === "question") return "/relvo?from=%2F";
   return `/relvo?from=%2F&q=${encodeURIComponent(s.text)}`;
 }
 

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { AppDock } from "@/components/layout/app-dock";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { SideMenu, SideMenuProvider } from "@/components/layout/side-menu";
+import { countOpenQuestions, tenantDb } from "@relvo/db";
 import { requireAccount } from "@/server/auth-context";
 
 // Chrome mobile-first commun aux vues structurées : colonne unique pleine
@@ -27,13 +28,19 @@ export default async function AppLayout({
   // montre pas. La trace est sur le compte, jamais dans le navigateur.
   if (!account.welcomeSeenAt) redirect("/bienvenue");
 
+  // Le badge du bouton Relvo : les questions qu'il a posées et qui attendent
+  // (invariant 36). Compté à chaque rendu, sans cache : une question naît
+  // aussi hors de toute action de l'écran (une structuration, le rattrapage),
+  // et un badge en retard est un badge faux. Un décompte indexé, rien de plus.
+  const pendingQuestions = await countOpenQuestions(tenantDb(account.id));
+
   // Une seule zone de scroll (le <Screen> de chaque page) + dock ancré qui la
   // chevauche. Le hero violet de la page scrolle sous la tab bar givrée.
   return (
     <SideMenuProvider>
       <MobileFrame>
         {children}
-        <AppDock />
+        <AppDock pendingQuestions={pendingQuestions} />
       </MobileFrame>
       {/* Projection explicite (PITFALLS #41) : jamais l'objet compte entier
           vers un composant client. */}

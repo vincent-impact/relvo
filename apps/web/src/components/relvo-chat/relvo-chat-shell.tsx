@@ -15,6 +15,13 @@ import {
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
 import { RelvoFil } from "@/components/relvo-chat/relvo-fil";
+import { QuestionsRelvo } from "@/components/relvo-chat/questions-relvo";
+import {
+  CarteVivante,
+  type CarteVivanteData,
+} from "@/components/shared/carte-vivante";
+import { PollRefresh } from "@/components/shared/poll-refresh";
+import type { OpenQuestion } from "@relvo/db";
 import type { RelvoUIMessage } from "@/server/ia/echange/outils";
 import { doitReprendre, titreParDefaut } from "@/lib/echanges-regles";
 import {
@@ -39,6 +46,10 @@ import {
 // rouvre s'il date de moins de cinq minutes (05 §11.2), sinon un nouvel
 // échange — `?nouveau=1` en force un, `?reprendre=<id>` rouvre un échange de
 // l'historique. Le titre est demandé à la fin du premier tour (M10.4).
+//
+// Relvo parle en premier (invariant 36) : ses questions ouvertes se posent en
+// tête, en formulaire (M18.9), et la lecture du courrier en cours se montre
+// en carte vivante qui se rafraîchit (M10.16) — avant le fil, quel qu'il soit.
 
 type Initial = Pick<EchangeStocke, "id" | "titre" | "creeLe" | "messages">;
 
@@ -50,6 +61,8 @@ export function RelvoChatShell({
   initialText = "",
   nouveau = false,
   reprendre = null,
+  questions = [],
+  lecture = null,
 }: {
   backHref: string;
   /** La page d'origine, transmise à chaque tour. */
@@ -63,6 +76,10 @@ export function RelvoChatShell({
   nouveau?: boolean;
   /** Un échange de l'historique à rouvrir. */
   reprendre?: string | null;
+  /** Les questions de Relvo en attente, dans l'ordre où il les a posées. */
+  questions?: OpenQuestion[];
+  /** La lecture du courrier en cours, ou null. */
+  lecture?: CarteVivanteData | null;
 }) {
   // Ce que l'appareil sait de l'échange à ouvrir — lu AVANT de monter le fil,
   // parce que les messages initiaux du hook ne se posent qu'une fois.
@@ -113,6 +130,8 @@ export function RelvoChatShell({
       contextLabel={contextLabel}
       prompts={prompts}
       initialText={initialText}
+      questions={questions}
+      lecture={lecture}
     />
   );
 }
@@ -124,6 +143,8 @@ function RelvoSession({
   contextLabel,
   prompts,
   initialText,
+  questions,
+  lecture,
 }: {
   initial: Initial;
   backHref: string;
@@ -131,6 +152,8 @@ function RelvoSession({
   contextLabel: string | null;
   prompts: string[];
   initialText: string;
+  questions: OpenQuestion[];
+  lecture: CarteVivanteData | null;
 }) {
   // Une invite touchée se pose dans le composer : le composant repart avec
   // ce texte (la clé change), l'utilisateur l'envoie ou le corrige.
@@ -251,6 +274,14 @@ function RelvoSession({
             </span>
           </div>
         ) : null}
+
+        {lecture ? (
+          <>
+            <CarteVivante data={lecture} className="mb-3" />
+            <PollRefresh intervalMs={20_000} />
+          </>
+        ) : null}
+        <QuestionsRelvo questions={questions} />
 
         {vide ? (
           <RelvoBlock className="pb-2">

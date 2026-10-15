@@ -1,6 +1,6 @@
-import { Actor } from "../generated/prisma/enums";
+import { Actor, type Sector } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
-import { EVENT_TYPES, logEvent } from "./events";
+import { avecOrigine, EVENT_TYPES, logEvent, type Origine } from "./events";
 
 // Domaine Account — le peu qui se règle sur le compte lui-même. `Account` n'est
 // pas scopé par le client tenant (c'est la racine), d'où l'identifiant explicite
@@ -69,4 +69,31 @@ export async function markWelcomeSeen(
     where: { id: accountId, welcomeSeenAt: null },
     data: { welcomeSeenAt: at },
   });
+}
+
+/**
+ * Les SECTEURS du compte — ce qui choisit les socles métier de la couche
+ * Produit (05 §10.1). Posés par la prise en main (une réponse de Relvo,
+ * 05 §11.11) ou par le profil. Journalisé : c'est une décision du dirigeant.
+ */
+export async function setSectors(
+  db: TenantDb,
+  accountId: string,
+  sectors: readonly Sector[],
+  origine?: Origine,
+): Promise<{ sectors: Sector[] }> {
+  const uniques = [...new Set(sectors)];
+  await db.account.update({
+    where: { id: accountId },
+    data: { sectors: uniques },
+  });
+  await logEvent(db as Tx, {
+    entityType: "system",
+    entityId: accountId,
+    eventType: EVENT_TYPES.sectorsUpdated,
+    title: `Secteurs : ${uniques.length ? uniques.join(", ") : "aucun"}`,
+    actor: Actor.user,
+    metadata: avecOrigine({ sectors: uniques }, origine),
+  });
+  return { sectors: uniques };
 }

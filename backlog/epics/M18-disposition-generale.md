@@ -39,9 +39,9 @@ et les questions de Relvo) et M13.2.
 | M18.6  | **Bilan** : « Ce que Relvo a fait pour vous » (cumulatif, depuis le début du mois et depuis toujours) et « Où en êtes-vous » (flux sur 7 jours, dont messages reçus par jour), **séparés** ; chaque chiffre lu du journal, un tap ouvre la liste derrière ; jamais de « temps gagné » |
 | M18.7  | **Mémoire** remplace l'onglet Domaines : instructions du compte en tête, domaines en lignes avec leur rail, zone « Ce que Relvo a appris » réservée à M17                                                                                                    |
 | M18.8  | **Usage** : la part du plafond mensuel consommée, en **pourcentage** — jamais d'euros. Le plafond est provisoire jusqu'à M14.5 (seuil par compte) ; le lire depuis une configuration, pas une constante                                                     |
-| M18.9  | **`RelvoQuestion` élargie** : portée « compte », naissance depuis une étape de script, réponses proposées, réponse depuis l'échange par formulaire (même fonction métier que la fiche) ; **badge** du bouton Relvo et ligne de l'accueil                      |
+| M18.9  | **`RelvoQuestion` élargie** : portée « compte », naissance depuis une étape de script, réponses proposées, réponse depuis l'échange par formulaire (même fonction métier que la fiche) ; **badge** du bouton Relvo et ligne de l'accueil — **livré par M10**              |
 | M18.10 | **Retrait des routes mortes** : `/messages`, `/planning`, `/dossiers` (redirections vers Conversations, Calendrier, Mémoire) ; registre de composants à jour                                                                                                |
-| M18.11 | **Notification push** quand une question de Relvo s'ouvre (PWA). Peut glisser vers M12 si le socle push n'existe pas encore                                                                                                                                |
+| M18.11 | **Notification push** quand une question de Relvo s'ouvre (PWA). **Glissée vers M12 (M12.9)** : le socle push n'existe pas                                                                                                                              |
 
 ## Découpage proposé, en tranches verticales
 

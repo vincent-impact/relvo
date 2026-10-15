@@ -103,6 +103,13 @@ export const EVENT_TYPES = {
   catchupRequested: "catchup_requested",
   catchupStarted: "catchup_started",
   catchupFinished: "catchup_finished",
+  // Les questions de Relvo (M18.9, 05 §11.12) — posée, répondue, écartée ; la
+  // réponse et sa destination en métadonnée.
+  questionAsked: "question_asked",
+  questionAnswered: "question_answered",
+  questionDismissed: "question_dismissed",
+  // Les secteurs du compte, posés par une réponse de la prise en main.
+  sectorsUpdated: "sectors_updated",
 } as const;
 
 export type EventInput = {

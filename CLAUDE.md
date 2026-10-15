@@ -112,8 +112,9 @@ relvo/
 
 > ⚠️ **Cette table décrit la cible** tranchée le 2026-09-20 (`ecarts`, « La disposition
 > générale »), livrée par l'épique **M18**. **En place** : le dock, le menu, le header, l'accueil
-> en brief, le Calendrier, le Bilan, la Mémoire, l'Usage, les redirections. **Pas encore** : le
-> badge du bouton Relvo, la `RelvoQuestion` élargie et la notification (tranche 5). ⚠️ Le
+> en brief, le Calendrier, le Bilan, la Mémoire, l'Usage, les redirections, le badge du bouton
+> Relvo et la `RelvoQuestion` élargie (M10). **Pas encore** : la notification push, glissée vers
+> M12 faute de socle. ⚠️ Le
 > **Bilan** et l'**Usage** affichent des **chiffres de démonstration** (`lib/demo-bilan.ts`) et
 > le disent en tête : ils ne sont pas reliés au journal ni au compteur d'inférence.
 

@@ -1,5 +1,7 @@
+import { ensureOnboardingQuestions, listOpenQuestions } from "@relvo/db";
 import { RelvoChatShell } from "@/components/relvo-chat/relvo-chat-shell";
-import { getTenantDb } from "@/server/auth-context";
+import type { CarteVivanteData } from "@/components/shared/carte-vivante";
+import { getTenantDb, requireAccountId } from "@/server/auth-context";
 
 // Échange avec Relvo, plein écran (coquille M9). Page-aware : `from` porte la
 // page d'origine pour le bouton retour, le chip de contexte et les prompts.
@@ -39,13 +41,37 @@ export default async function ConversationPage({
   // l'historique de l'appareil (M10.3, M10.4).
   const { from, q, nouveau, reprendre } = await searchParams;
   const backHref = from && from !== "/relvo" ? from : "/";
+  const accountId = await requireAccountId();
+  const db = await getTenantDb();
+
+  // Relvo parle en premier (invariant 36, 05 §11.12) : les étapes du script
+  // qui restent à poser naissent ici, puis les questions ouvertes — toutes
+  // origines confondues — se posent en tête de l'échange, en formulaire. La
+  // lecture du courrier en cours (rattrapage) se montre en carte vivante.
+  await ensureOnboardingQuestions(db, accountId);
+  const [questions, rattrapage] = await Promise.all([
+    listOpenQuestions(db, { limit: 5 }),
+    db.channelCatchup.findFirst({
+      where: { status: { in: ["pending", "running"] } },
+      orderBy: { requestedAt: "desc" },
+      include: { channel: { select: { name: true } } },
+    }),
+  ]);
+  const lecture: CarteVivanteData | null = rattrapage
+    ? {
+        status: rattrapage.status,
+        messagesImported: rattrapage.messagesImported,
+        subjectsOpened: rattrapage.subjectsOpened,
+        conversationsIgnored: rattrapage.conversationsIgnored,
+        channelName: rattrapage.channel.name,
+      }
+    : null;
 
   let contextLabel: string | null = null;
   let prompts = PROMPTS.general;
 
   const sujetMatch = from?.match(/^\/sujets\/([0-9a-f-]+)/i);
   if (sujetMatch) {
-    const db = await getTenantDb();
     const subject = await db.subject.findFirst({
       where: { id: sujetMatch[1] },
       select: { reference: true, title: true },
@@ -71,6 +97,8 @@ export default async function ConversationPage({
       initialText={q?.trim() || ""}
       nouveau={nouveau === "1"}
       reprendre={reprendre?.trim() || null}
+      questions={questions}
+      lecture={lecture}
     />
   );
 }

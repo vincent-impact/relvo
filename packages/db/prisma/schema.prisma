@@ -285,6 +285,8 @@ enum QuestionScope {
   contact
   folder
   subject
+  /// Le compte lui-même : une étape de la prise en main ou du rattrapage (05 §11.11).
+  account
 }
 
 /// Cycle d'une question : ouverte → répondue (sur place) ou écartée (jamais reposée).
@@ -1071,6 +1073,10 @@ model RelvoQuestion {
   text            String
   status          QuestionStatus @default(open)
   answer          String?        @db.Text
+  /// Les réponses proposées quand la question se pose en formulaire (05 §11.11) : [{ key, label, hint? }].
+  proposedAnswers Json?          @map("proposed_answers")
+  /// L'étape du script — prise en main, rattrapage — qui a fait naître la question.
+  originStep      String?        @map("origin_step")
   /// Le sujet dont la structuration a fait naître la question.
   originSubjectId String?        @map("origin_subject_id") @db.Uuid
   askedAt         DateTime       @default(now()) @map("asked_at")

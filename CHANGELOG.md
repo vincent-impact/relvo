@@ -6,6 +6,7 @@
 
 ## 2026-10-15
 
+- **Nouveau** — Relvo vous pose désormais ses questions : un badge sur son bouton, la question dans l'échange avec des réponses à choisir, et ce qu'il retient de votre réponse. À la première ouverture, il vous demande votre métier et une règle à toujours suivre.
 - **Nouveau** — Relvo se souvient de votre échange en cours : si vous revenez dans les cinq minutes, vous le retrouvez où vous l'aviez laissé. Vos dix derniers échanges, titrés, sont dans l'historique, sur votre appareil.
 - **Nouveau** — Relvo peut maintenant agir pour vous dans l'échange : ouvrir ou régler une affaire, la marquer urgente, modifier ou cocher une tâche, préparer un brouillon de réponse, retenir une instruction, retrouver un message. Chaque geste s'annule d'un appui pendant quelques minutes.
 - **Nouveau** — Dans l'échange, Relvo vous montre vos affaires et vos tâches telles qu'elles apparaissent ailleurs dans l'application, et vous dit en une phrase ce qu'il a trouvé ou fait.
