@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Check } from "lucide-react";
-import { Sparkle } from "@/components/shared/picto";
+import { RelvoLogo } from "@/components/layout/relvo-logo";
 import type React from "react";
 import { toast } from "sonner";
 import { ListPanel } from "@/components/shared/list-panel";
@@ -116,8 +116,8 @@ function FormulaireFige({
 }) {
   return (
     <ListPanel className={cn(RELVO_PANEL, className)}>
-      <div className="flex items-center gap-2 border-b border-(--purple-100) px-3.5 py-2 text-[12px] font-bold text-relvo">
-        <Sparkle className="size-3.5" />
+      <div className="flex items-center gap-2 border-b border-(--purple-100) px-3.5 py-2 text-[12px] font-medium text-relvo">
+        <RelvoLogo size={14} variant="full" title="" className="flex-none" />
         <span className="min-w-0 flex-1 truncate">{titre}</span>
         {action}
       </div>
@@ -230,8 +230,8 @@ export function DecisionSheet({
 
   return (
     <ListPanel className={cn(RELVO_PANEL, className)}>
-      <div className="flex items-center gap-2 border-b border-(--purple-100) px-3.5 py-2.5 text-[12px] font-bold text-relvo">
-        <Sparkle className="size-3.5" />
+      <div className="flex items-center gap-2 border-b border-(--purple-100) px-3.5 py-2.5 text-[12px] font-medium text-relvo">
+        <RelvoLogo size={14} variant="full" title="" className="flex-none" />
         <span className="min-w-0 flex-1 truncate">
           Relvo · ce message attend {total} décision{total > 1 ? "s" : ""}
         </span>
@@ -250,12 +250,14 @@ export function DecisionSheet({
       ))}
 
       <div className="flex items-center gap-3 px-3.5 py-2.5 text-[12.5px] text-(--text-secondary)">
+        {/* Le compte des réponses vit dans l'en-tête (« 0 / 2 ») : le pied ne
+            le redit pas, il ne parle que quand Relvo peut agir. */}
         <span className="min-w-0 flex-1">
           {complete
             ? drafted
               ? "Réponse rédigée. Relvo peut la refaire."
               : "Relvo peut rédiger."
-            : `Encore ${total - answered} réponse${total - answered > 1 ? "s" : ""}.`}
+            : ""}
         </span>
         <button
           type="button"
@@ -359,12 +361,12 @@ function DecisionLine({
             onChange={(e) => setFree(e.target.value)}
             autoFocus
             placeholder="Votre réponse…"
-            className="min-w-0 flex-1 rounded-xl border border-(--border) bg-white px-3 py-2 text-[14px] outline-none focus:border-brand"
+            className="min-w-0 flex-1 rounded-xl border border-(--border) bg-white px-3 py-2 text-[14px] outline-none focus:border-relvo"
           />
           <button
             type="submit"
             disabled={disabled || !free.trim()}
-            className="rounded-full bg-(--text-primary) px-3.5 text-[13px] font-bold text-white disabled:opacity-50"
+            className="rounded-full bg-relvo px-3.5 text-[13px] font-medium text-white disabled:opacity-50"
           >
             OK
           </button>

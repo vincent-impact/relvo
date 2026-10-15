@@ -417,6 +417,61 @@ et « brouillon prêt » sur la carte d'attente, que `AwaitingSubject` ne sait p
 ce matin »), à discuter. L'exception « ligne du dessus » (la date, le domaine) est écrite dans
 `DESIGN.md` contre le détecteur « kicker-above-heading ».
 
+### Conversations — la liste et le fil
+
+**Ce que la critique a dit.** La liste est spécifique et honnête, mais dit trois fois ce
+qu'elle pourrait dire une fois : « 5 conversations à trier » en sous-titre du ciel, puis « 5 /
+à trier » cerclé quarante pixels plus bas ; le canal écrit à côté de son icône ; « lu » dit par
+quatre signaux, dont l'heure en violet — la livrée empruntée pour un état ; la cellule d'un
+flux vu rendue **vide** au lieu de « 0 » ; « Supprimer » rouge sur le swipe d'un e-mail et
+« Ignorer » sur WhatsApp pour le même geste, avec une boîte qui disait « Supprimer ce fil ?
+… Aucune donnée n'est supprimée » ; un avatar-bouton caché de 40 px au bord gauche d'une
+ligne qu'on balaie. Sur le fil : **deux commandes mortes dans le composer**, le micro (aucune
+dictée dans le code) et le trombone (aucun gestionnaire) — l'objet le plus visible de la seule
+surface de réponse du produit ne faisait rien ; la ligne « suivi dans » rendait le sujet par
+un point de 8 px et un titre, là où le produit rend un sujet par sa bande et son domaine ;
+détacher un fil était un tap de 28 px dans le ciel, sans mot ni confirmation ; la teinte bleue
+du courriel sortant contredisait « un e-mail se rend sur blanc dans les deux sens » ; une
+carte de pièce jointe ombrée dans une carte ombrée ; initiales à 9,5 px en graisse 800 ; un
+bloc « Relvo n'a pas encore lu ce fil » qui prenait la place d'un message pour dire rien.
+Scores Nielsen 23/36 (liste) et 22/36 (fil). Mesures : aucun débordement, console vide,
+cibles de 28 px sur les puces et le détachement.
+
+**Ce qui a été retiré, et pourquoi il ne manque pas** :
+
+| Retiré | Il ne manque pas parce que… |
+|---|---|
+| Le sous-titre « N conversations à trier » / « Tout est couvert par un sujet » | l'indicateur cerclé dit le même nombre et le même mot ; l'état vide dit déjà « tout est couvert » |
+| Le mot « Email » / « WhatsApp » à côté de l'icône | ce public lit l'enveloppe et le logo sans mot, la puce de canal active le redit ; l'aperçu gagne soixante pixels |
+| L'heure en violet sur une ligne non lue | la graisse du titre et la pastille disent le non-lu ; le violet est la voix de Relvo, pas un état |
+| Le tap caché sur l'avatar (fiche ou création du contact) | la même porte existe dans le fil, libellée (« Enregistrer », chevron) ; un bouton invisible au bord d'une ligne à balayer est un piège |
+| « Supprimer » (rouge, corbeille) sur le swipe d'un e-mail | rien n'est détruit : « Ignorer », ambre, sur les deux canaux, et la boîte titre « Ignorer ce fil ? » — `04-design-domaine.md` aligné |
+| L'heure du verdict en liste | la ligne porte déjà la sienne vingt pixels plus haut ; elle reste dans le fil |
+| Le « ✦ » de « Rien à trier » | le signe dit « Relvo parle » ; ici personne ne parle |
+| Le micro du composer | il ne dictait rien : le disque porte l'avion, désactivé à vide. Le micro de la direction revient avec la dictée, **à placer au backlog** par le dirigeant |
+| Le trombone | aucun envoi de pièce jointe n'existe ; il revient avec |
+| « Relvo n'a pas encore lu ce fil. » | l'absence de verdict est déjà le signal ; le bloc ne s'affiche que quand Relvo a quelque chose à dire |
+| La teinte bleue du courriel sortant | l'en-tête porte déjà l'avatar bleu « M » et « Moi » ; la règle « blanc dans les deux sens » est tenue |
+| « modifiez librement avant d'envoyer » sur la barre de brouillon | le champ est visiblement éditable, le curseur y est |
+| « Encore N réponses. » au pied du formulaire de décisions | l'en-tête porte « 0 / 2 » |
+
+**Ce qui a changé de forme** : un flux vu écrit « 0 » en gris clair, jamais une cellule vide ;
+puces de canal à 36 px, 44 de frappe ; pastille de non-lus à 22 px comme sur une ligne de
+sujet ; la ligne « suivi dans » rend le sujet par sa bande, son domaine en capitales
+condensées et son titre (le domaine exposé par `ConversationListening`) ; détacher ou
+arrêter l'écoute passe par une confirmation qui nomme le sujet, 44 px de frappe ; une bulle
+qui suit une bulle du même expéditeur ne répète pas son en-tête ; initiales en 11 px condensé ;
+gouttière du fil e-mail à 16 px comme toute carte ; pièce jointe en sous-carte à filet, sans
+ombre, étiquette grise (l'ambre est Externe, c'est Relvo qui a nommé) ; le signe de Relvo —
+le logo — partout où il parle (barre de brouillon, formulaire de décisions) ; sous 14 px, plus
+de graisse fine ni de graisse 700 (libellés de swipe, états vides, en-têtes de formulaire).
+
+**Confié à plus tard** : la dictée et l'envoi de pièces jointes, deux items que le dirigeant
+place au backlog (M10 pour la dictée, probablement) ; l'heure absolue et un séparateur de jour
+dans un fil de bulles (aujourd'hui « 1 h » répété) ; le hero fixe du fil, qui garde ~200 px
+hors défilement — décision du 2026-09-18, à rouvrir seulement si l'usage le réclame ; les
+durées littérales des trois points « Relvo rédige », qui attendent les tokens de M19.8.
+
 ## Tranché à la reprise de la tranche 3 — la première connexion (M19.9)
 
 Le dirigeant ajoute à la tranche 4 une **séquence de première connexion** : cinq ou six
@@ -445,7 +500,7 @@ La trace « vues une fois » est une colonne du compte, migration accordée (ci-
       partout
 - [ ] Tranche 3 — « Alléger » : ✅ les reports de la revue de finition (Contacts, en-têtes de
       la fiche, textes sous 11 px, couleurs en dur — cliquet vide) · ⏳ M19.6 l'allègement écran
-      par écran : ✅ Accueil · reste Sujets, Conversations (liste et détail), fiche Sujet,
+      par écran : ✅ Accueil · ✅ Conversations (liste et fil) · reste Sujets, fiche Sujet,
       Calendrier, Échange, Mémoire, Contacts, les quatre pages du menu, l'authentification ·
       M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives

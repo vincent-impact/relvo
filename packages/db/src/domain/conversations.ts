@@ -964,7 +964,12 @@ export type ConversationListening = {
   subjectId: string;
   reference: string;
   title: string;
-  folder: { slug: string; color: string | null; icon: string | null } | null;
+  folder: {
+    name: string;
+    slug: string;
+    color: string | null;
+    icon: string | null;
+  } | null;
   /** L'écoute est-elle encore ouverte (borne de fin non posée) ? */
   active: boolean;
 };
@@ -1009,7 +1014,7 @@ const CONVERSATION_MESSAGE_INCLUDE = {
       id: true,
       reference: true,
       title: true,
-      folder: { select: { slug: true, color: true, icon: true } },
+      folder: { select: { name: true, slug: true, color: true, icon: true } },
     },
   },
   attachments: {
@@ -1103,7 +1108,9 @@ export async function getConversationThread(
           id: true,
           reference: true,
           title: true,
-          folder: { select: { slug: true, color: true, icon: true } },
+          folder: {
+            select: { name: true, slug: true, color: true, icon: true },
+          },
         },
       },
     },

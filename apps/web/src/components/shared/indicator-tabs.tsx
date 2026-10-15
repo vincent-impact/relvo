@@ -73,7 +73,7 @@ export function IndicatorTabs<K extends string>({
             <span
               className={cn(
                 "text-center text-[12px] leading-none",
-                isActive ? "font-medium text-relvo" : "font-light text-gris",
+                isActive ? "font-medium text-relvo" : "font-normal text-gris",
               )}
             >
               {t.label}

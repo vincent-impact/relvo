@@ -60,9 +60,11 @@ export function ConversationFilters({
     router.push(`/conversations?${params.toString()}`);
   }
 
-  // Un flux déjà vu (onglet actif) n'affiche pas de chiffre ; le stock, toujours.
+  // Un flux déjà vu (onglet actif) est à zéro, et un indicateur à zéro écrit
+  // « 0 » (02-composants) — jamais une cellule vide, qui se lirait comme une
+  // donnée manquante. Le stock, lui, s'affiche toujours.
   const flux = (slug: ConversationFilterSlug, n: number) =>
-    slug === filter ? undefined : n;
+    slug === filter ? 0 : n;
 
   return (
     <>
@@ -98,8 +100,9 @@ export function ConversationFilters({
               type="button"
               onClick={() => go({ channel: opt.value })}
               aria-pressed={active}
+              // 36 px de haut (la puce du système), 44 px de frappe par le pseudo-élément.
               className={cn(
-                "pressable inline-flex h-7 items-center gap-1.5 rounded-(--rayon-pilule) border px-3 text-[12px] whitespace-nowrap transition-colors",
+                "pressable relative inline-flex h-9 items-center gap-1.5 rounded-(--rayon-pilule) border px-3 text-[12px] whitespace-nowrap transition-colors before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']",
                 active
                   ? "border-noir bg-noir font-medium text-white"
                   : "border-(--filet) bg-white font-normal text-noir",

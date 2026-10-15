@@ -19,7 +19,14 @@ import type { ThreadMessageData } from "@/lib/conversation-row";
 // conversation sera écoutée. Le dock demande alors de VALIDER. Le TAP hors
 // sélection reste réservé aux pièces jointes (aucune pop-up de message).
 
-function Bubble({ m }: { m: ThreadMessageData }) {
+function Bubble({
+  m,
+  continued = false,
+}: {
+  m: ThreadMessageData;
+  /** Suit une bulle du même expéditeur : l'en-tête n'est pas répété. */
+  continued?: boolean;
+}) {
   return (
     <MessageBubble
       data={{
@@ -30,8 +37,22 @@ function Bubble({ m }: { m: ThreadMessageData }) {
         time: m.time,
         content: m.content,
         attachment: m.attachment,
+        continued,
       }}
     />
+  );
+}
+
+/** Même expéditeur que la bulle précédente : un seul en-tête par séquence. */
+function follows(
+  prev: ThreadMessageData | undefined,
+  m: ThreadMessageData,
+): boolean {
+  return (
+    !!prev &&
+    prev.direction === "incoming" &&
+    m.direction === "incoming" &&
+    (prev.senderName ?? null) === (m.senderName ?? null)
   );
 }
 
@@ -60,14 +81,15 @@ export function ConversationThread({
 
   const empty =
     messages.length === 0 ? (
-      <p className="py-10 text-center text-[13.5px] text-(--text-tertiary)">
+      <p className="py-10 text-center text-[14px] font-light text-gris">
         Aucun message dans cette conversation.
       </p>
     ) : null;
 
   if (isEmail) {
+    // La gouttière de l'application (16 px), comme toute carte.
     return (
-      <div className="flex flex-col gap-2.5 px-2.5 pt-3.5 pb-3">
+      <div className="flex flex-col gap-2.5 px-4 pt-3.5 pb-3">
         {empty}
         {messages.map((m) => (
           <div key={m.id} className="contents">
@@ -84,10 +106,15 @@ export function ConversationThread({
     return (
       <div className="flex flex-col pt-1.5 pb-3">
         {empty}
-        {messages.map((m) => (
+        {messages.map((m, i) => (
           <div key={m.id} className="contents">
-            <div className="flex flex-col px-[18px] py-[7px]">
-              <Bubble m={m} />
+            <div
+              className={cn(
+                "flex flex-col px-[18px]",
+                follows(messages[i - 1], m) ? "pt-0.5 pb-[7px]" : "py-[7px]",
+              )}
+            >
+              <Bubble m={m} continued={follows(messages[i - 1], m)} />
             </div>
             {after[m.id] ?? null}
           </div>

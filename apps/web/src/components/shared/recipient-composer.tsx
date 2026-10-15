@@ -2,12 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
-import {
-  Microphone,
-  PaperPlaneRight,
-  Paperclip,
-  Sparkle,
-} from "@/components/shared/picto";
+import { PaperPlaneRight, Paperclip } from "@/components/shared/picto";
+import { RelvoLogo } from "@/components/layout/relvo-logo";
 import { cn } from "@/lib/utils";
 
 // RecipientComposer — le composer signature de la Direction B, VIOLET (cohérence
@@ -80,7 +76,9 @@ export function RecipientComposer({
   value,
   placeholder,
   defaultValue = "",
-  attach = true,
+  // Le trombone ne revient qu'avec l'envoi de pièces jointes (backlog) : un
+  // bouton sans effet se retire.
+  attach = false,
   onSend,
   draft,
 }: {
@@ -175,13 +173,15 @@ export function RecipientComposer({
     }
   };
 
+  // « Brouillon de Relvo » suffit : le champ est visiblement éditable, le
+  // curseur y est.
   const barLabel = loading ? (
     <>
       Relvo rédige votre réponse
       <ThinkingDots />
     </>
   ) : (
-    "Brouillon de Relvo — modifiez librement avant d'envoyer"
+    "Brouillon de Relvo"
   );
   // Les citations du brouillon (05 §10.4) : un encart minimal, une ligne,
   // sous l'étiquette — l'utilisateur sait d'où vient ce qu'il va envoyer.
@@ -197,23 +197,22 @@ export function RecipientComposer({
     </button>
   ) : null;
 
+  // Le disque dit la vérité : il envoie, et il attend qu'il y ait quoi envoyer.
+  // Le micro de la direction reviendra quand la dictée existera (backlog) — un
+  // bouton qui ne fait rien n'est pas une promesse, c'est un mensonge au pouce.
   const sendButton = (
     <button
       type="button"
       onClick={send}
-      disabled={blocked}
-      aria-label={typing ? "Envoyer" : "Dicter"}
+      disabled={blocked || !typing}
+      aria-label="Envoyer"
       className={cn(
         "grid flex-none place-items-center rounded-full text-white shadow-disque active:scale-95 disabled:opacity-60",
         expanded ? "size-9" : "size-11",
       )}
       style={{ background: "var(--degrade-disque)" }}
     >
-      {typing ? (
-        <PaperPlaneRight className={expanded ? "size-[17px]" : "size-[19px]"} />
-      ) : (
-        <Microphone className={expanded ? "size-[18px]" : "size-5"} />
-      )}
+      <PaperPlaneRight className={expanded ? "size-[17px]" : "size-[19px]"} />
     </button>
   );
 
@@ -231,26 +230,31 @@ export function RecipientComposer({
           className="flex items-center gap-2 rounded-(--rayon-option) bg-relvo-pale px-3 py-1.5 text-[12.5px] font-medium text-relvo"
           aria-live="polite"
         >
-          <Sparkle
-            className={cn("size-3.5 flex-none", loading && "animate-pulse")}
+          {/* Le signe de Relvo, le même partout où il parle. */}
+          <RelvoLogo
+            size={14}
+            variant="full"
+            title=""
+            className={cn("flex-none", loading && "animate-pulse")}
           />
           <span className="flex min-w-0 flex-1 flex-col">
             <span className="flex items-center truncate">{barLabel}</span>
             {sources.length ? (
               <span
-                className="truncate text-[11.5px] font-light text-gris"
+                className="truncate text-[11.5px] font-normal text-gris"
                 title={`Basé sur : ${sources.join(", ")}`}
               >
                 Basé sur : {sources.join(", ")}
               </span>
             ) : null}
           </span>
+          {/* Deux boutons de 28 px, 44 px de frappe par le pseudo-élément. */}
           {!loading && draft?.onRegenerate ? (
             <button
               type="button"
               onClick={draft.onRegenerate}
               aria-label="Régénérer le brouillon"
-              className="grid size-7 flex-none place-items-center rounded-full text-relvo active:bg-relvo-filet"
+              className="relative grid size-7 flex-none place-items-center rounded-full text-relvo before:absolute before:-inset-2 before:content-[''] active:bg-relvo-filet"
             >
               <RefreshCw className="size-[15px]" strokeWidth={2.2} />
             </button>
@@ -265,7 +269,7 @@ export function RecipientComposer({
                 draft.onClear?.();
               }}
               aria-label="Effacer le brouillon"
-              className="grid size-7 flex-none place-items-center rounded-full text-relvo active:bg-relvo-filet"
+              className="relative grid size-7 flex-none place-items-center rounded-full text-relvo before:absolute before:-inset-2 before:content-[''] active:bg-relvo-filet"
             >
               <X className="size-[16px]" strokeWidth={2.4} />
             </button>

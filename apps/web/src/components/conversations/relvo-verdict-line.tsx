@@ -69,7 +69,9 @@ export function RelvoVerdictLine({
             {reason}
           </span>
         ) : null}
-        {relvo?.time && !ignore ? (
+        {/* L'heure du verdict ne se lit que dans le fil : en liste, la ligne
+            porte déjà la sienne vingt pixels plus haut. */}
+        {relvo?.time && !ignore && !clamp ? (
           <span className="text-(--text-tertiary)"> · {relvo.time}</span>
         ) : null}
       </span>

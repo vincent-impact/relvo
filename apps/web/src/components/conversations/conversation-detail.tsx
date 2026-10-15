@@ -31,6 +31,16 @@ import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   clearDraftAction,
   prepareDraftAction,
 } from "@/server/actions/brouillon";
@@ -157,6 +167,9 @@ export function ConversationDetail({
   // Sélection WhatsApp : intent (create/link) + message de départ choisi.
   // Messagerie + intention héritée → on entre d'emblée en choix du message
   // d'ancrage (invariant n°13bis : jamais d'ancre par défaut).
+  // Le sujet dont on s'apprête à détacher le fil (confirmation nommée).
+  const [unlinkTarget, setUnlinkTarget] =
+    useState<ConversationListening | null>(null);
   const [selecting, setSelecting] = useState<Intent | null>(
     !startsEmail ? initialIntent : null,
   );
@@ -528,19 +541,11 @@ export function ConversationDetail({
                 SEULEMENT tant que le fil n'est pas suivi : c'est là qu'il sert
                 (confirmer ou contredire, réactiver). Un fil suivi par un sujet
                 a sa mémoire dans le sujet ; l'avis reste dans le journal. */}
-            {!activeListening ? (
-              <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 [&_.text-\(--text-secondary\)]:text-white/85 [&_.text-\(--text-tertiary\)]:text-white/70 [&_.text-relvo]:text-white">
-                {relvo || ignore ? (
-                  <RelvoVerdictLine
-                    relvo={relvo}
-                    ignore={ignore}
-                    clamp={false}
-                  />
-                ) : (
-                  <p className="text-[12.5px] text-white/70">
-                    Relvo n’a pas encore lu ce fil.
-                  </p>
-                )}
+            {/* Le bloc n'existe que quand Relvo a quelque chose à dire : une
+                phrase qui dit « rien » prendrait la place d'un message. */}
+            {!activeListening && (relvo || ignore) ? (
+              <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 [&_.text-\(--text-secondary\)]:text-white [&_.text-\(--text-tertiary\)]:text-white/80 [&_.text-relvo]:text-white">
+                <RelvoVerdictLine relvo={relvo} ignore={ignore} clamp={false} />
               </div>
             ) : null}
 
@@ -569,13 +574,13 @@ export function ConversationDetail({
                   />
                 </button>
               ) : (
-                <span className="inline-flex h-7 flex-none items-center gap-1 rounded-full bg-white/12 px-2 text-[12px] font-semibold text-(--on-violet)">
+                <span className="inline-flex h-7 flex-none items-center gap-1 rounded-full bg-white/12 px-2 text-[12px] font-semibold text-white">
                   <ChannelIcon className="size-[13px]" />
                   {channelLabel}
                 </span>
               )}
               {participants.length === 0 && !isGroup ? (
-                <span className="text-[12.5px] text-white/70 italic">
+                <span className="text-[12px] font-normal text-white/80">
                   Aucun interlocuteur identifié.
                 </span>
               ) : (
@@ -596,7 +601,7 @@ export function ConversationDetail({
                         }
                         className="inline-flex h-7 min-w-0 items-center gap-1.5 rounded-full bg-white/12 pr-2 pl-1 text-[12.5px] font-semibold text-white active:bg-white/20"
                       >
-                        <span className="grid size-5 flex-none place-items-center rounded-full bg-white/25 text-[9.5px] font-extrabold">
+                        <span className="chiffre grid size-5 flex-none place-items-center rounded-full bg-white/25 text-[11px]">
                           {p.contactId ? (
                             (initialsFor(p.name) ?? "?")
                           ) : (
@@ -620,7 +625,7 @@ export function ConversationDetail({
                         <button
                           type="button"
                           onClick={() => openCreateForParticipant(p)}
-                          className="h-7 flex-none rounded-full border border-white/35 px-2 text-[11.5px] font-bold whitespace-nowrap text-white active:bg-white/10"
+                          className="h-7 flex-none rounded-full border border-white/35 px-2 text-[12px] font-medium whitespace-nowrap text-white active:bg-white/10"
                         >
                           Enregistrer
                         </button>
@@ -631,7 +636,12 @@ export function ConversationDetail({
               )}
             </div>
 
-            {/* Sujets suivis — une ligne fine par sujet ; chaîne brisée = détacher. */}
+            {/* Sujets suivis — la LIGNE DE SUJET du produit, posée sur le ciel :
+                la bande de son domaine sur la tranche, le nom du domaine en
+                capitales condensées, le titre. Sur un fil e-mail, le sujet porte
+                souvent le même titre que le fil : la bande et le nom disent
+                « le sujet du même nom », pas un doublon. Chaîne brisée =
+                détacher, après confirmation nommée. */}
             {listenings.length > 0 ? (
               <div className="space-y-1">
                 {listenings.map((l) => {
@@ -639,19 +649,25 @@ export function ConversationDetail({
                   return (
                     <div
                       key={l.subjectId}
-                      className="flex h-9 items-center gap-2 rounded-full border border-white/15 bg-white/10 pr-1 pl-3"
+                      className="flex h-10 items-center gap-2.5 overflow-hidden rounded-xl border border-white/15 bg-white/10 pr-1"
                     >
                       <span
-                        className="size-2 flex-none rounded-full"
+                        aria-hidden
+                        className="h-full w-1.5 flex-none"
                         style={{ background: color }}
                       />
                       <Link
                         href={`/sujets/${l.subjectId}?from=${encodeURIComponent(backTo)}`}
-                        className="min-w-0 flex-1 active:opacity-80"
+                        className="flex h-full min-w-0 flex-1 flex-col justify-center active:opacity-80"
                       >
+                        {l.folder ? (
+                          <span className="domaine truncate text-white/80">
+                            {l.folder.name}
+                          </span>
+                        ) : null}
                         <span
                           className={cn(
-                            "block truncate text-[13px] font-semibold text-white",
+                            "block truncate text-[13px] leading-4 font-semibold text-white",
                             !l.active && "line-through decoration-white/40",
                           )}
                         >
@@ -662,13 +678,14 @@ export function ConversationDetail({
                         <button
                           type="button"
                           disabled={pending}
-                          onClick={() => unlink(l.subjectId)}
+                          onClick={() => setUnlinkTarget(l)}
                           aria-label={
                             isEmail
                               ? "Détacher ce fil du sujet"
                               : "Arrêter l'écoute"
                           }
-                          className="grid size-7 flex-none place-items-center rounded-full text-white active:bg-white/15 disabled:opacity-50"
+                          // 28 px de dessin, 44 px de frappe.
+                          className="relative grid size-7 flex-none place-items-center rounded-full text-white before:absolute before:-inset-2 before:content-[''] active:bg-white/15 disabled:opacity-50"
                         >
                           <LinkBreak className="size-[15px]" />
                         </button>
@@ -678,6 +695,58 @@ export function ConversationDetail({
                 })}
               </div>
             ) : null}
+
+            {/* Détacher nomme ce qu'il met en jeu (02-composants) : un geste
+                rare, un tap dans le ciel, sous le pouce — jamais sans confirmer. */}
+            <AlertDialog
+              open={unlinkTarget !== null}
+              onOpenChange={(o) => {
+                if (!o) setUnlinkTarget(null);
+              }}
+            >
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {isEmail
+                      ? "Détacher ce fil du sujet ?"
+                      : "Arrêter l'écoute ?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {isEmail ? (
+                      <>
+                        Le sujet{" "}
+                        <span className="font-semibold text-(--text-primary)">
+                          « {unlinkTarget?.title} »
+                        </span>{" "}
+                        ne sera plus alimenté par ce fil. Aucun message n’est
+                        supprimé.
+                      </>
+                    ) : (
+                      <>
+                        Le sujet{" "}
+                        <span className="font-semibold text-(--text-primary)">
+                          « {unlinkTarget?.title} »
+                        </span>{" "}
+                        garde ce qu’il a déjà lu ; la suite de ce fil ne le
+                        rejoindra plus.
+                      </>
+                    )}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Annuler</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => {
+                      const id = unlinkTarget?.subjectId;
+                      setUnlinkTarget(null);
+                      if (id) unlink(id);
+                    }}
+                  >
+                    {isEmail ? "Détacher" : "Arrêter l'écoute"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </RelvoHeader>
       </div>

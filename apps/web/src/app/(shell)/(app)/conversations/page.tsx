@@ -88,7 +88,6 @@ export default async function ConversationsPage({
     getTenantDb(),
   ]);
   const badges = await getConversationBadges(db, accountId);
-  const unsorted = badges.unsorted;
 
   const seen = SEEN_FILTERS[filter];
   if (seen && badges[seen] > 0) {
@@ -98,15 +97,9 @@ export default async function ConversationsPage({
   return (
     <Screen>
       <PollRefresh />
-      <RelvoHeader
-        title="Conversations"
-        subtitle={
-          unsorted > 0
-            ? `${unsorted} conversation${unsorted > 1 ? "s" : ""} à trier`
-            : "Tout est couvert par un sujet"
-        }
-        className="pb-[46px]"
-      />
+      {/* Pas de sous-titre : l'indicateur cerclé, juste dessous, dit déjà « 5 à
+          trier », et l'état vide de la liste dit « tout est couvert ». */}
+      <RelvoHeader title="Conversations" className="pb-[46px]" />
 
       <ConversationFilters filter={filter} channel={channel} badges={badges} />
 

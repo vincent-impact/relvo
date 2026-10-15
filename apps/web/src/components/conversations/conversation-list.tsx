@@ -8,7 +8,6 @@ import {
   Envelope,
   EyeSlash,
   FolderOpen,
-  Trash,
   WhatsappLogo,
 } from "@/components/shared/picto";
 import { toast } from "sonner";
@@ -39,10 +38,6 @@ import {
 import { initialsFor } from "@/lib/display";
 import { guessContactKind } from "@/lib/contact-avatar";
 import { ContactAvatarIcon } from "@/components/contacts/contact-avatar-icon";
-import {
-  ContactCreateDialog,
-  type ContactPrefill,
-} from "@/components/contacts/contact-create-dialog";
 import { cn } from "@/lib/utils";
 import { ListPanel } from "@/components/shared/list-panel";
 import { RelvoVerdictLine } from "@/components/conversations/relvo-verdict-line";
@@ -60,18 +55,23 @@ import { RelvoVerdictLine } from "@/components/conversations/relvo-verdict-line"
 // coûter exactement le même effort que faire taire.
 
 const CHANNEL: Record<string, { label: string; icon: Picto }> = {
-  email: { label: "Email", icon: Envelope },
+  email: { label: "E-mail", icon: Envelope },
   whatsapp: { label: "WhatsApp", icon: WhatsappLogo },
 };
 
-// Canal en tête de la ligne méta (icône + nom), suivi de l'aperçu du message.
+// Canal en tête de la ligne méta : l'icône seule, nommée pour les lecteurs
+// d'écran. Ce public vit dans ces deux applications et lit l'enveloppe et le
+// logo sans mot ; le mot prenait soixante pixels à l'aperçu.
 function ChannelTag({ type }: { type: string }) {
   const c = CHANNEL[type] ?? { label: "Canal", icon: Envelope };
   const Icon = c.icon;
   return (
-    <span className="inline-flex flex-none items-center gap-1 text-[12px] font-light text-gris">
+    <span
+      role="img"
+      aria-label={c.label}
+      className="inline-flex flex-none items-center text-gris"
+    >
       <Icon className="size-3.5" />
-      {c.label}
     </span>
   );
 }
@@ -81,7 +81,7 @@ function ChannelTag({ type }: { type: string }) {
 // perte de données le jour où l'ingestion tombe en panne.
 const EMPTY: Record<ConversationFilterSlug, { title: string; hint: string }> = {
   "sans-sujet": {
-    title: "Rien à trier ✦",
+    title: "Rien à trier",
     hint: "Toutes vos conversations actives sont couvertes par un sujet.",
   },
   suivies: {
@@ -98,13 +98,10 @@ function ConversationRow({
   data,
   filter,
   onRemove,
-  onCreateContact,
 }: {
   data: ConversationRowData;
   filter: ConversationFilterSlug;
   onRemove: (id: string) => void;
-  /** Avatar d'un interlocuteur NON enregistré → ouvre la pop-up de création. */
-  onCreateContact: (prefill: ContactPrefill) => void;
 }) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -128,21 +125,6 @@ function ConversationRow({
     name: data.interlocutorName ?? data.title,
     raw: data.interlocutorRaw,
   });
-  const rawId = data.interlocutorRaw?.trim() ?? null;
-  function tapAvatar() {
-    if (registered) {
-      // Retour depuis la fiche → cette liste (au bon filtre).
-      const from = encodeURIComponent(`/conversations?filtre=${filter}`);
-      router.push(`/contacts/${data.contactId}?from=${from}`);
-    } else {
-      onCreateContact({
-        name: data.interlocutorName ?? null,
-        email: isEmail ? rawId : null,
-        phone: isEmail ? null : (rawId?.split("@")[0] ?? null),
-      });
-    }
-  }
-
   function swipeLeft() {
     startTransition(async () => {
       const res = reviving
@@ -186,21 +168,15 @@ function ConversationRow({
         icon: RotateCcw,
         tone: "success" as const,
       }
-    : isEmail
-      ? {
-          onAct: onLeft,
-          label: "Supprimer",
-          icon: Trash,
-          tone: "danger" as const,
-          keepOnAct: listened,
-        }
-      : {
-          onAct: onLeft,
-          label: "Ignorer",
-          icon: EyeSlash,
-          tone: "warning" as const,
-          keepOnAct: listened,
-        };
+    : {
+        // Un seul mot sur les deux canaux : rien n'est détruit, donc jamais
+        // « Supprimer » (02-composants, 04 §7 — ignorer est une pause).
+        onAct: onLeft,
+        label: "Ignorer",
+        icon: EyeSlash,
+        tone: "warning" as const,
+        keepOnAct: listened,
+      };
 
   return (
     <SwipeRow
@@ -238,28 +214,11 @@ function ConversationRow({
           ) : (
             <ContactAvatarIcon kind={avatarKind} className="size-[18px]" />
           );
-          // Un groupe n'est pas un contact : son avatar n'ouvre pas de fiche, le
-          // tap retombe sur la ligne (ouverture de la conversation).
-          return isGroup ? (
-            <span className={avatarClass}>{inner}</span>
-          ) : (
-            <button
-              type="button"
-              // Isole le geste de la SwipeRow (sinon le tap ouvrirait aussi la
-              // conversation) : on coupe le pointerdown avant qu'elle ne capture.
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.stopPropagation();
-                tapAvatar();
-              }}
-              aria-label={
-                registered ? "Voir le contact" : "Enregistrer le contact"
-              }
-              className={cn(avatarClass, "active:opacity-80")}
-            >
-              {inner}
-            </button>
-          );
+          // L'avatar dit l'acteur, il n'est pas une porte : la fiche du contact
+          // (ou son enregistrement) se gagne depuis le fil, où le geste est
+          // libellé. Un bouton caché de 40 px au bord gauche d'une ligne qu'on
+          // balaie au pouce était un piège, pas un raccourci.
+          return <span className={avatarClass}>{inner}</span>;
         })()}
 
         <div className="min-w-0 flex-1">
@@ -274,32 +233,25 @@ function ConversationRow({
             >
               {data.title}
             </span>
-            <span
-              className={cn(
-                "chiffre flex-none text-[13px] leading-[18px]",
-                unread ? "text-relvo" : "text-gris",
-              )}
-            >
+            {/* L'heure reste grise : le violet est la voix de Relvo, pas un état.
+                Le non-lu se lit à la graisse du titre et à la pastille. */}
+            <span className="chiffre flex-none text-[13px] leading-[18px] text-gris">
               {data.time}
             </span>
           </div>
 
-          {/* Ligne méta : canal (icône + nom) + aperçu (une ligne) + pastille. */}
+          {/* Ligne méta : icône du canal + aperçu (une ligne) + pastille. */}
           <div className="mt-0.5 flex items-center gap-2">
             <ChannelTag type={data.channelType} />
-            <p
-              className={cn(
-                "line-clamp-1 min-w-0 flex-1 text-[12px] leading-4",
-                unread ? "font-normal text-gris" : "font-light text-gris",
-              )}
-            >
+            <p className="line-clamp-1 min-w-0 flex-1 text-[12px] leading-4 font-normal text-gris">
               {data.preview}
             </p>
             {/* Pastille de non-lus façon messagerie — le nombre, pas un point :
                 sur une SOURCE, savoir « 14 » plutôt que « des messages » change
-                la décision de l'ouvrir ou de l'ignorer. */}
+                la décision de l'ouvrir ou de l'ignorer. Même pastille que sur
+                une ligne de sujet (22 px). */}
             {unread ? (
-              <span className="chiffre inline-flex h-5 min-w-5 flex-none items-center justify-center rounded-full bg-relvo px-1.5 text-[11px] text-white">
+              <span className="chiffre inline-flex h-[22px] min-w-[22px] flex-none items-center justify-center rounded-full bg-relvo px-1.5 text-[12px] text-white">
                 {data.unreadCount}
               </span>
             ) : null}
@@ -329,9 +281,7 @@ function ConversationRow({
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {isEmail ? "Supprimer ce fil ?" : "Ignorer ce fil ?"}
-            </AlertDialogTitle>
+            <AlertDialogTitle>Ignorer ce fil ?</AlertDialogTitle>
             <AlertDialogDescription>
               {data.listeningSubjects.length === 1 ? (
                 <>
@@ -366,7 +316,7 @@ function ConversationRow({
                 swipeLeft();
               }}
             >
-              {isEmail ? "Supprimer" : "Ignorer"}
+              Ignorer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -389,11 +339,6 @@ export function ConversationList({
   const [items, setItems] = useState(initialItems);
   const [cursor, setCursor] = useState(initialCursor);
   const [loading, setLoading] = useState(false);
-  // Pop-up de création de contact (avatar d'un interlocuteur non enregistré) —
-  // une seule pour toute la liste, pré-remplie par la ligne cliquée.
-  const [contactPrefill, setContactPrefill] = useState<ContactPrefill | null>(
-    null,
-  );
   const sentinelRef = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
   // Une page suivante a-t-elle été chargée ? (cf. resynchronisation ci-dessous)
@@ -454,10 +399,8 @@ export function ConversationList({
     <div>
       {items.length === 0 ? (
         <div className="px-[22px] py-12 text-center">
-          <p className="text-[14.5px] font-bold text-(--text-secondary)">
-            {empty.title}
-          </p>
-          <p className="mt-1.5 text-[13px] text-(--text-tertiary)">
+          <p className="text-[14.5px] font-medium text-noir">{empty.title}</p>
+          <p className="mt-1.5 text-[14px] font-light text-gris">
             {empty.hint}
           </p>
         </div>
@@ -469,7 +412,6 @@ export function ConversationList({
               data={c}
               filter={filter}
               onRemove={remove}
-              onCreateContact={setContactPrefill}
             />
           ))}
         </ListPanel>
@@ -485,14 +427,6 @@ export function ConversationList({
           ) : null}
         </div>
       ) : null}
-
-      <ContactCreateDialog
-        open={contactPrefill != null}
-        onOpenChange={(o) => {
-          if (!o) setContactPrefill(null);
-        }}
-        prefill={contactPrefill ?? {}}
-      />
     </div>
   );
 }

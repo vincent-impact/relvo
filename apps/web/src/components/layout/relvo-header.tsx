@@ -32,7 +32,7 @@ export const SKY_BTN =
   "pressable relative grid size-[30px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-white/14 text-white before:absolute before:-inset-[7px] before:content-['']";
 
 const EYEBROW =
-  "truncate text-[12px] tracking-[0.08em] text-white/90 uppercase";
+  "truncate text-[12px] font-normal tracking-[0.08em] text-white/90 uppercase";
 
 export function RelvoHeader({
   title,

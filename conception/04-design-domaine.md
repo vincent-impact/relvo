@@ -490,7 +490,7 @@ vocabulaire de l'interface doit le refléter.
 | Geste | Ce qu'il fait vraiment |
 |---|---|
 | « Fermer » un sujet | pose un statut, réversible |
-| « Supprimer » / « Ignorer » une conversation | met la **source** en pause, réversible, sur les deux canaux |
+| « Ignorer » une conversation | met la **source** en pause, réversible, sur les deux canaux — jamais « Supprimer », rien n'est détruit |
 | « Détacher » un fil e-mail | supprime une **liaison**, pas des messages |
 | Cocher une tâche | pose un état, réversible |
 

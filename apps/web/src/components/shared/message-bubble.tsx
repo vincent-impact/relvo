@@ -35,6 +35,8 @@ export type MessageBubbleData = {
    *  si entrant, destinataire si sortant. */
   senderContactId?: string | null;
   recipientContactId?: string | null;
+  /** Bulle qui suit une bulle du même expéditeur : pas d'en-tête, la séquence le dit. */
+  continued?: boolean;
 };
 
 const AVATAR: Record<Actor, { letter: string; bg: string }> = {
@@ -60,7 +62,7 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
     <div
       className={cn("max-w-[86%]", outgoing ? "self-end" : "w-full self-start")}
     >
-      {!outgoing ? (
+      {!outgoing && !data.continued ? (
         <div className="mb-1.5 flex items-center gap-[7px]">
           <span
             className={cn(
@@ -79,7 +81,7 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
             {data.senderName ?? "Externe"}
           </span>
           {data.channel || data.time ? (
-            <span className="text-[11.5px] font-light whitespace-nowrap text-gris">
+            <span className="text-[12px] font-normal whitespace-nowrap text-gris">
               {[data.channel, data.time].filter(Boolean).join(" · ")}
             </span>
           ) : null}

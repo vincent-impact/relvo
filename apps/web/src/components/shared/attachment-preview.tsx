@@ -36,7 +36,9 @@ export function AttachmentPreview({
         name={name}
         mimeType={mimeType}
         className={cn(
-          "block w-fit max-w-full cursor-pointer overflow-hidden rounded-(--rayon-carte) border border-(--filet) shadow-carte",
+          // Sous-carte dans un message : filet, pas d'ombre (pas de carte dans
+          // une carte avec deux ombres), rayon de sous-carte.
+          "block w-fit max-w-full cursor-pointer overflow-hidden rounded-(--rayon-sous-carte) border border-(--filet)",
           className,
         )}
       >
@@ -57,8 +59,10 @@ export function AttachmentPreview({
       </span>
       <span className="min-w-0">
         <span className="block truncate text-[13px] font-semibold">{name}</span>
+        {/* Ce que Relvo a lu dans la pièce : un libellé gris, pas la couleur
+            d'un acteur (l'ambre est Externe, et c'est Relvo qui a nommé). */}
         {label ? (
-          <span className="mt-0.5 inline-block rounded-full bg-(--amber-50) px-[7px] py-px text-[11px] text-(--amber-800)">
+          <span className="mt-0.5 inline-block rounded-full bg-(--fond-puce) px-[7px] py-px text-[11px] font-medium text-gris">
             {label}
           </span>
         ) : null}
@@ -66,7 +70,7 @@ export function AttachmentPreview({
     </>
   );
   const cardClass = cn(
-    "inline-flex items-center gap-2.5 rounded-(--rayon-sous-carte) border border-(--filet) bg-white px-[11px] py-2 shadow-carte",
+    "inline-flex items-center gap-2.5 rounded-(--rayon-sous-carte) border border-(--filet) bg-white px-[11px] py-2",
     className,
   );
 

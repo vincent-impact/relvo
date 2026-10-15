@@ -38,12 +38,10 @@ export function EmailMessage({ data }: { data: EmailMessageData }) {
       className={cn(
         // Padding resserré : sur mobile l'espace horizontal est rare, la bulle
         // e-mail ne doit pas le gaspiller (item 2026-07-23).
-        "rounded-(--rayon-carte) border px-3 py-3",
-        // Repli assumé de l'invariant : teinte très légère au SORTANT seulement,
-        // pour distinguer « Moi » sans jamais teinter du texte long.
-        outgoing
-          ? "border-(--blue-100) bg-(--blue-50)"
-          : "border-(--filet) bg-white shadow-carte",
+        // Carte blanche DANS LES DEUX SENS (02-composants, « Rendu et fond ») :
+        // c'est l'en-tête — l'avatar bleu « M » et « Moi » — qui dit le sortant,
+        // jamais une teinte sous du texte long.
+        "rounded-(--rayon-carte) border border-(--filet) bg-white px-3 py-3 shadow-carte",
       )}
     >
       <header className="mb-2 flex items-center gap-2">
@@ -59,7 +57,7 @@ export function EmailMessage({ data }: { data: EmailMessageData }) {
         </span>
         <span className="text-[13px] font-medium text-noir">{senderName}</span>
         {data.time ? (
-          <span className="ml-auto text-[11.5px] font-light whitespace-nowrap text-gris">
+          <span className="ml-auto text-[12px] font-normal whitespace-nowrap text-gris">
             {data.time}
           </span>
         ) : null}

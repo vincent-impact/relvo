@@ -6,6 +6,7 @@
 
 ## 2026-10-15
 
+- **Nouveau** — Dans Conversations, la liste est plus lisible et rien n'y est dit deux fois ; dans un fil, le bouton d'envoi ne promet plus une dictée qui n'existe pas, le sujet suivi s'affiche avec son domaine, et détacher un fil vous demande confirmation.
 - **Nouveau** — La page d'accueil est plus légère : les chiffres d'activité ne dominent plus ce qui attend votre décision, rien n'y est dit deux fois, et Relvo vous dit « Bonsoir » après 18 h.
 
 ## 2026-10-14

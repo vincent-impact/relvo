@@ -148,7 +148,7 @@ export function SwipeRow({
               dir >= 0 && "hidden",
             )}
           >
-            <span className="text-[11px] font-bold tracking-[0.3px]">
+            <span className="text-[11px] font-semibold tracking-[0.3px]">
               {left.label}
             </span>
             <left.icon className="size-[22px]" />
@@ -164,7 +164,7 @@ export function SwipeRow({
             )}
           >
             <right.icon className="size-[22px]" />
-            <span className="text-[11px] font-bold tracking-[0.3px]">
+            <span className="text-[11px] font-semibold tracking-[0.3px]">
               {right.label}
             </span>
           </div>

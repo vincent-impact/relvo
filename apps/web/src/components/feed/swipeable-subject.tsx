@@ -245,7 +245,7 @@ export function SwipeableSubject({
           )}
         >
           <Check className="size-[22px]" strokeWidth={2.4} />
-          <span className="text-[11px] font-bold tracking-[0.3px]">
+          <span className="text-[11px] font-semibold tracking-[0.3px]">
             Valider
           </span>
         </div>
@@ -257,7 +257,7 @@ export function SwipeableSubject({
               dir >= 0 && "hidden",
             )}
           >
-            <span className="text-[11px] font-bold tracking-[0.3px]">
+            <span className="text-[11px] font-semibold tracking-[0.3px]">
               Fermer
             </span>
             <EyeSlash className="size-[22px]" />
