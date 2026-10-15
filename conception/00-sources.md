@@ -20,8 +20,8 @@ vaut pour tous les documents du dépôt, `CLAUDE.md` compris — il renvoie, il 
 | **1** | [`02-modele-donnees.md`](02-modele-donnees.md) | Le **persisté** : entités, champs, relations, contraintes |
 | **1** | [`04-design-domaine.md`](04-design-domaine.md) + [`uml.mermaid`](uml.mermaid) | Le **comportement** : agrégats, cycles de vie, règles métier, périmètre |
 | 2 | Les **fichiers du client** — [`sources/`](sources/) | Les **données réelles** : volumes, champs, cas pratiqués |
-| 3 | Le **brief de direction artistique** — [`design-system/00-brief-da.md`](design-system/00-brief-da.md) | L'intention visuelle et le registre de langue |
-| 4 | La **maquette** — [`mockup/`](mockup/) | Le rendu, les libellés, la densité — **jamais ses données** |
+| 3 | Le **design system** — [`design-system/`](design-system/) | Le **rendu** : l'intention et le registre de langue (le brief), les tokens, les règles de composition et de disposition |
+| 4 | La **maquette** — [`mockup/`](mockup/) | Les **flux et les libellés** — jamais le rendu, **jamais ses données** |
 
 ### Le rang 1 ne se départage pas
 
@@ -69,9 +69,20 @@ Tant qu'elle manque, tout dimensionnement s'appuie sur le jeu de démonstration,
 > L'historique git étant immuable, un effacement RGPD y devient impossible. Trancher où vit un
 > fichier client **avant** de le committer, pas après.
 
+### Rang 3 — le design system, et ce qui le tient
+
+`design-system/` fait foi sur le **rendu** : le brief porte l'intention et le registre de langue,
+`01-tokens.md` la matière, `02-composants.md` les règles de composition, `03-patterns.md` la
+disposition. Ce rang n'est pas tenu par la vigilance : les tokens vivent dans `globals.css`, et
+un test tient leur inventaire et le cliquet des valeurs en dur. `DESIGN.md`, à la racine, est un
+relevé écrit depuis le code pour les outils de revue ; il pointe ici et ne tranche rien.
+
 ### Rang 4 — la maquette, et le piège de ses données
 
-`mockup/` fait foi sur le **rendu** : libellés, densité, hiérarchie visuelle, gestes.
+`mockup/` fait foi sur les **flux et les libellés** : ce qu'un écran permet, dans quel ordre,
+avec quels mots. Elle ne fait **pas** foi sur le rendu — couleurs, typographie, densité,
+matière — qui vit au rang 3 : l'application a été habillée après elle, et la maquette n'est
+jamais rebuildée. Là où les deux divergent sur l'apparence, c'est le design system qui a raison.
 
 **Elle ne fait foi sur aucune donnée.** Le jeu « Tasty Crousty » qu'elle affiche — et que le
 seed de démonstration reproduit — est **fictif mais réaliste**, construit pour peupler des
@@ -85,8 +96,8 @@ mesurent rien.
 ### Ce que la maquette ne couvre pas
 
 La maquette précède plusieurs refontes du modèle de conversation. Là où elle montre un écran
-qui n'existe plus, c'est `04-design-domaine.md` qui a raison — la maquette a raison sur le
-**style**, jamais sur la **structure du domaine**.
+qui n'existe plus, c'est `04-design-domaine.md` qui a raison — la maquette a raison sur les
+**libellés**, jamais sur la **structure du domaine**.
 
 ---
 

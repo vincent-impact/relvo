@@ -435,6 +435,24 @@ est à jour, le client qui valide les requêtes ne l'est pas.
 sans l'override d'`AUTH_URL`, l'inscription redirige vers le port du `.env.local`, qui n'écoute
 pas.
 
+### #62 — Les identifiants ARIA de dnd-kit sortent d'un compteur, qui ne compte pas pareil sur le serveur et sur le téléphone
+
+**Symptôme** : une erreur d'hydratation reproductible à chaque chargement d'une page qui porte un
+glissé — le Calendrier, en semaine comme en mois — sans date, ni `Math.random`, ni `window` en
+cause. React montre `aria-describedby="DndDescribedBy-0"` d'un côté et un autre rang de l'autre.
+
+**Cause** : `DndContext` fabrique les identifiants de ses nœuds d'accessibilité à partir d'un
+**compteur de module**, incrémenté à chaque contexte monté. Le serveur et le navigateur ne
+montent pas les contextes dans le même ordre ni le même nombre de fois (deux vues sur la même
+page, un remontage en développement) : le rang diverge, l'attribut aussi. Le compteur repart de
+zéro par processus, donc l'erreur peut n'apparaître que sur la seconde vue, ou après une
+navigation.
+
+**Règle** : tout `DndContext` reçoit un `id` stable et unique par surface (`agenda-semaine`,
+`planning-mois`) ; dnd-kit en dérive alors des identifiants déterministes. Même réflexe que le
+#59 : devant une hydratation qui casse sur un attribut ARIA, chercher qui le génère, pas ce
+qu'il affiche.
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |

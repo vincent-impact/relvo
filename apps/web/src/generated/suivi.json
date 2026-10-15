@@ -115,9 +115,9 @@
     {
       "titre": "Nouvelle apparence et premiers pas guidés",
       "resume": "Une interface plus légère et plus lisible, choisie parmi plusieurs directions visuelles comparées sur de vrais écrans. Et des premiers pas accompagnés : Relvo vous guide à travers l'application au lieu de vous laisser devant des écrans vides.",
-      "statut": "en-cours",
+      "statut": "termine",
       "gauche": 62.15,
-      "largeur": 8.88
+      "largeur": 1.4
     },
     {
       "titre": "Connaissances métier",
@@ -159,7 +159,7 @@
     "date": "2026-12-23",
     "gauche": 95.79
   },
-  "en_cours": "Nouvelle apparence et premiers pas guidés",
+  "en_cours": null,
   "journal": [
     {
       "date": "2026-10-15",

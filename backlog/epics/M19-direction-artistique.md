@@ -7,9 +7,9 @@ resume_client: >
   Une interface plus légère et plus lisible, choisie parmi plusieurs directions visuelles
   comparées sur de vrais écrans. Et des premiers pas accompagnés : Relvo vous guide à travers
   l'application au lieu de vous laisser devant des écrans vides.
-statut: en-cours
+statut: termine
 debut: 2026-10-12
-fin: 2026-10-31
+fin: 2026-10-15
 ---
 
 # M19 — Direction artistique, allègement et prise en main

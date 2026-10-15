@@ -917,6 +917,30 @@ d'évaluation ont appris — et reçoivent une règle dans le socle : tout texte
 dirigeant dit « affaire ». À confirmer par `eval:*` à leur prochaine passe ; sept tests du
 domaine qui citaient un titre de journal ont été mis à jour, rien d'autre n'a bougé.
 
+## La clôture (M19.12)
+
+Les deux fichiers de règles, `02-composants.md` et `03-patterns.md`, ont été relus contre le
+code, affirmation par affirmation : `ListPanel` et `data-list-row`, les trois formes du bloc
+de Relvo, le badge posé sur l'icône d'un onglet et le point du non-lu dans l'autre coin,
+l'indicateur à zéro, la puce de filtre active noire, les bulles aux couleurs des acteurs, le
+ciel et sa queue, le dock à cinq places qui ne se masque pas au défilement et ne cède la place
+que sur le détail d'une conversation (l'échange et les premiers pas vivent hors du groupe
+`(app)`), les diapositives et l'invitation, le manifest et les métadonnées PWA, la carte de
+visite du contact. **Tout est tenu.** Une précision ajoutée (« Passer » mène à l'invitation,
+jamais hors de la séquence) et un commentaire de code périmé corrigé (le dock reste sur la
+fiche d'un contact depuis la carte de visite ; il disait encore le contraire).
+`00-sources.md` dit maintenant que le **design system fait foi sur le rendu** (rang 3) et la
+maquette sur les flux et les libellés seulement ; `CLAUDE.md` et `ecarts` le reprennent. Le
+piège de l'hydratation des identifiants de dnd-kit, corrigé en tranche 3 sans avoir été écrit,
+devient `PITFALLS.md` #62. L'épique passe en `termine`.
+
+**Confié à plus tard** : `NavVisibilityProvider` calcule encore un masquage du dock au
+défilement que plus personne ne lit depuis que le dock est fixe — à retirer au prochain passage
+dans `layout/`. **Entre les mains du dirigeant**, hors de l'épique : la forme de la vue Mois ;
+la pastille de non-lus sur une ligne d'affaire, que le brief réserve à la conversation et que
+la ligne rend encore ; la dictée, les pièces jointes et la photo d'un contact, à placer dans
+une épique.
+
 ## Où on en est
 
 - [x] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 la
@@ -932,7 +956,7 @@ domaine qui citaient un titre de journal ont été mis à jour, rien d'autre n'a
       depuis le code livré avec ses exceptions aux détecteurs, sidecar, contrat de direction au
       présent, revue de finition rendue, son lot de corrections appliqué, icônes pleines
       partout
-- [ ] Tranche 3 — « Alléger » : ✅ les reports de la revue de finition (Contacts, en-têtes de
+- [x] Tranche 3 — « Alléger » : ✅ les reports de la revue de finition (Contacts, en-têtes de
       la fiche, textes sous 11 px, couleurs en dur — cliquet vide) · ⏳ M19.6 l'allègement écran
       par écran : ✅ Accueil · ✅ Conversations · ✅ Sujets et fiche Sujet · ✅ Mémoire,
       domaine, Contacts et fiche contact · ✅ Calendrier et Échange · ✅ menu, Canaux, Profil,
@@ -943,6 +967,8 @@ domaine qui citaient un titre de journal ont été mis à jour, rien d'autre n'a
 - [x] Tranche 4 — « Guider » : ✅ M19.8 langage de mouvement (quatre durées, trois courbes,
       cinq primitives, mode réduit, cliquet dans le test des tokens, relecture faite) · ✅ M19.9
       premiers pas — diapositives de première connexion, invitation en étape-formulaire, bloc
-      de Relvo partagé, carte vivante sur Canaux, états vides qui guident — **livrés, à
-      vérifier sur l'iPhone du dirigeant**
-- [ ] Tranche 5 — « Clore » : M19.12
+      de Relvo partagé, carte vivante sur Canaux, états vides qui guident — **livrés et
+      vérifiés sur l'iPhone du dirigeant**
+- [x] Tranche 5 — « Clore » : ✅ M19.12 règles relues contre le code, la maquette reléguée
+      aux flux et aux libellés, piège #62, épique en `termine`. **M19 est fermée** ; la suite
+      est la tranche 10 de M7, puis M10.

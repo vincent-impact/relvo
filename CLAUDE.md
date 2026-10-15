@@ -36,7 +36,7 @@ compte personnel, **même « en attendant »** — c'est exactement ce qui ne se
 | [`conception/04-design-domaine.md`](conception/04-design-domaine.md) + [`uml.mermaid`](conception/uml.mermaid) | Le **comportement** : agrégats, cycles de vie, règles métier, **périmètre V1** |
 | [`conception/05-ia.md`](conception/05-ia.md) | Ce que Relvo fait, et surtout ce qu'il **ne fait pas** |
 | [`conception/design-system/`](conception/design-system/) | Tokens, règles de composition, patterns de disposition |
-| [`conception/mockup/`](conception/mockup/) | **Référence visuelle figée**, jamais buildée. ⚠️ **Ses données sont de la démonstration** — ne jamais dimensionner dessus |
+| [`conception/mockup/`](conception/mockup/) | **Flux et libellés figés**, jamais buildée ; elle **ne fait pas foi sur le rendu** — c'est le design system. ⚠️ **Ses données sont de la démonstration** — ne jamais dimensionner dessus |
 | [`backlog/product-backlog.md`](backlog/product-backlog.md) | L'**ordre**. La définition de chaque item vit dans `backlog/epics/` |
 | [`backlog/definition-of-done.md`](backlog/definition-of-done.md) | Les conditions de clôture d'un item. Non négociables |
 | [`backlog/ecarts-et-propositions.md`](backlog/ecarts-et-propositions.md) | **L'historique des décisions** — le seul endroit du dépôt où il est à sa place |

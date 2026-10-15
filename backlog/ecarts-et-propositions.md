@@ -1382,6 +1382,15 @@ concept et reçoivent une règle de vocabulaire dans le socle : tout texte desti
 dit « affaire » — à confirmer par les jeux d'évaluation à leur prochaine passe. L'historique
 (sprints, journal du client, ce registre) n'est pas récrit.
 
+### La maquette ne fait plus foi sur le rendu
+
+**`tranché`** · Après l'habillage, l'application ne ressemble plus à la maquette, et la maquette
+n'est jamais rebuildée. Elle reste la référence des **flux et des libellés** — ce qu'un écran
+permet, et avec quels mots ; le **rendu** fait foi au rang 3, dans `design-system/`, tenu par
+`globals.css` et le test des tokens. L'alternative — remettre la maquette au niveau de
+l'application — aurait coûté une seconde implémentation de chaque écran, pour une référence que
+personne ne regarde plus en construisant.
+
 ### La photo d'un contact
 
 **`proposé`** · Exprimé par le dirigeant à la reprise de la fiche contact (M19.10). La carte de
