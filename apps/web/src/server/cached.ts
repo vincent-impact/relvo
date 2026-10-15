@@ -354,6 +354,14 @@ export const cachedContactCount = unstable_cache(
   CACHE,
 );
 
+// Le compte a-t-il relié une boîte ? C'est ce qui sépare « rien n'est encore
+// arrivé » de « rien à montrer » dans les états vides (M19.9).
+export const cachedChannelCount = unstable_cache(
+  (accountId: string): Promise<number> => tenantDb(accountId).channel.count(),
+  ["channel-count", CACHE_V],
+  CACHE,
+);
+
 // ── Noms de domaines par slug (libellés des chips de filtre Mon fil) ──────────
 export const cachedFolderNames = unstable_cache(
   async (accountId: string): Promise<Record<string, string>> => {

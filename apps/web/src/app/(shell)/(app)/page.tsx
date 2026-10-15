@@ -16,6 +16,7 @@ import {
   cachedBriefActivity,
   cachedBriefNews,
   cachedBriefSuggestions,
+  cachedChannelCount,
 } from "@/server/cached";
 import { getTenantDb, requireAccount } from "@/server/auth-context";
 import { FUSEAU, calendrierParis, jourParis } from "@relvo/db/temps";
@@ -47,11 +48,18 @@ async function News({
   sinceISO: string | null;
   todayKey: string;
 }) {
-  const [news, suggestions] = await Promise.all([
+  const [news, suggestions, channels] = await Promise.all([
     cachedBriefNews(accountId, sinceISO),
     cachedBriefSuggestions(accountId, todayKey),
+    cachedChannelCount(accountId),
   ]);
-  return <NewsPanel news={news} suggestions={suggestions} />;
+  return (
+    <NewsPanel
+      news={news}
+      suggestions={suggestions}
+      hasChannels={channels > 0}
+    />
+  );
 }
 
 async function Brief({
@@ -69,8 +77,10 @@ async function Brief({
     cachedAgendaTasks(accountId, dayStart, next.toISOString(), todayKey),
     cachedAwaitingSubjects(accountId),
   ]);
+  // Les trois zones arrivent l'une après l'autre (`.apparait-liste`) : le
+  // brief se pose, il ne surgit pas.
   return (
-    <div className="space-y-4 pt-3">
+    <div className="apparait-liste space-y-4 pt-3">
       <ActivityPanel activity={activity} />
       <TodayPanel tasks={byDay[todayKey] ?? []} />
       <AwaitingPanel subjects={awaiting} todayKey={todayKey} />

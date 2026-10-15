@@ -14,6 +14,7 @@ import {
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { domainAction } from "@/lib/action-result";
+import { revalidateTenantData } from "@/server/cached";
 import { getCurrentAccountId } from "@/server/auth-context";
 import { relireSujet } from "@/server/ia/pipeline/relecture";
 import {
@@ -85,6 +86,9 @@ export async function connectEmailChannelAction(
       );
     }
     revalidatePath("/canaux");
+    // Les états vides lisent le nombre de boîtes depuis le cache tenant
+    // (M19.9) : une boîte reliée doit cesser d'être demandée tout de suite.
+    revalidateTenantData();
     return ok({ url });
   } catch (error) {
     if (isDomainError(error)) return err(error.code, error.message);

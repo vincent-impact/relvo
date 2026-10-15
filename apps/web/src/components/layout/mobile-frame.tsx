@@ -7,9 +7,11 @@ import { cn } from "@/lib/utils";
 export function MobileFrame({
   children,
   className,
+  style,
 }: {
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   return (
     <div
@@ -19,7 +21,7 @@ export function MobileFrame({
       )}
       // Hauteur pilotée par JS en PWA iOS (cf. ViewportHeight) ; `100dvh` = repli
       // SSR/navigateur. Évite le mauvais calcul de `dvh` au lancement standalone.
-      style={{ height: "var(--app-height, 100dvh)" }}
+      style={{ height: "var(--app-height, 100dvh)", ...style }}
     >
       {children}
     </div>

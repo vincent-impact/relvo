@@ -8,7 +8,7 @@ import { ContactsTabs } from "@/components/contacts/contacts-tabs";
 import { ContactsSearchField } from "@/components/contacts/contacts-search-field";
 import { ContactsSearchProvider } from "@/components/contacts/contacts-search-context";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
-import { cachedContacts } from "@/server/cached";
+import { cachedChannelCount, cachedContacts } from "@/server/cached";
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
 import { formatRelative } from "@/lib/display";
 
@@ -28,13 +28,15 @@ async function ContactsBody({
   defaultTab: "contacts" | "groupes";
 }) {
   const db = await getTenantDb();
-  const [contacts, groups] = await Promise.all([
+  const [contacts, groups, channels] = await Promise.all([
     cachedContacts(accountId),
     listConversationGroups(db),
+    cachedChannelCount(accountId),
   ]);
   return (
     <ContactsTabs
       defaultTab={defaultTab}
+      hasChannels={channels > 0}
       contacts={contacts}
       groups={groups.map((g) => ({
         id: g.id,

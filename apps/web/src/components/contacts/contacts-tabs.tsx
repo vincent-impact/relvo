@@ -22,10 +22,13 @@ type Tab = "contacts" | "groupes";
 export function ContactsTabs({
   contacts,
   groups,
+  hasChannels = true,
   defaultTab = "contacts",
 }: {
   contacts: DirectoryContact[];
   groups: DirectoryGroup[];
+  /** Aucune boîte reliée : l'état vide de l'annuaire mène à Canaux. */
+  hasChannels?: boolean;
   /** Onglet actif initial — deep-link (?tab=groupes) au retour d'un groupe. */
   defaultTab?: Tab;
 }) {
@@ -43,7 +46,7 @@ export function ContactsTabs({
       />
 
       {tab === "contacts" ? (
-        <ContactsDirectory contacts={contacts} />
+        <ContactsDirectory contacts={contacts} hasChannels={hasChannels} />
       ) : (
         <ContactsGroups groups={groups} />
       )}

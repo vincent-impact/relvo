@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import { toast } from "sonner";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader, SkyTail } from "@/components/layout/relvo-header";
-import { RelvoLogo } from "@/components/layout/relvo-logo";
+import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
 
 // L'échange avec Relvo, plein écran — la coquille, avant M10 qui y posera la
@@ -45,7 +45,7 @@ export function RelvoChatShell({
       {/* Le ciel est FIXE : sa queue se pose en tête de ce qui défile. */}
       <RelvoHeader back={backHref} title="Relvo" tail={false} />
 
-      <main className="min-h-0 flex-1 overflow-y-auto bg-background px-4 pt-4 pb-6">
+      <main className="entre-ecran min-h-0 flex-1 overflow-y-auto bg-background px-4 pt-4 pb-6">
         <SkyTail className="-mx-4 -mt-4" />
         {contextLabel ? (
           <div className="mb-3 flex">
@@ -62,22 +62,8 @@ export function RelvoChatShell({
           </div>
         ) : null}
 
-        <section
-          aria-label="Relvo"
-          className="rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-3.5 pt-3 pb-2 text-noir shadow-carte"
-        >
-          <div className="flex items-center gap-2">
-            <RelvoLogo
-              size={22}
-              variant="full"
-              className="text-relvo-clair"
-              title=""
-            />
-            <span className="libelle text-relvo!">Relvo</span>
-          </div>
-          <p className="mt-1.5 text-[14px] leading-5 font-light">
-            Dites-moi ce que vous voulez faire.
-          </p>
+        <RelvoBlock className="pb-2">
+          <RelvoSentence>Dites-moi ce que vous voulez faire.</RelvoSentence>
           {prompts.map((p) => (
             <button
               key={p}
@@ -88,7 +74,7 @@ export function RelvoChatShell({
               → {p}
             </button>
           ))}
-        </section>
+        </RelvoBlock>
       </main>
 
       <RecipientComposer

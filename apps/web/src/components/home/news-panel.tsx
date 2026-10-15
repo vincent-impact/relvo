@@ -1,5 +1,9 @@
 import Link from "next/link";
-import { RelvoLogo } from "@/components/layout/relvo-logo";
+import {
+  RELVO_LINK,
+  RelvoBlock,
+  RelvoSentence,
+} from "@/components/shared/relvo-block";
 import type { CachedNews } from "@/server/cached";
 import type { BriefSuggestion } from "@relvo/db";
 
@@ -21,7 +25,7 @@ function plural(n: number, one: string, many: string): string {
 }
 
 /** La phrase du résumé, composée depuis les compteurs — jamais générée. */
-export function newsSentence(news: CachedNews): string {
+export function newsSentence(news: CachedNews, hasChannels = true): string {
   const parts: string[] = [];
   if (news.messagesRead > 0)
     parts.push(`lu ${plural(news.messagesRead, "message", "messages")}`);
@@ -44,9 +48,14 @@ export function newsSentence(news: CachedNews): string {
   // « de mon côté » : la phrase compte ce que Relvo a FAIT, pas l'état du
   // compte — sans ça, suivie de « 88 tâches en retard », elle se contredit.
   if (parts.length === 0) {
+    // Sans boîte reliée, rien n'est encore arrivé : Relvo le dit et GUIDE vers
+    // la première adresse (01 §11, M19.9) — c'est le pas qui suit les
+    // diapositives. Avec une boîte, la nuit fera le reste.
+    if (!hasChannels)
+      return "Je n’ai encore rien à lire. Reliez la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des dernières semaines et j’ouvre vos premiers sujets.";
     return news.since
       ? "Rien de nouveau de mon côté depuis votre dernière visite."
-      : "Je n'ai encore rien lu : connectez un canal pour que je commence.";
+      : "Je lirai le courrier des dernières semaines cette nuit : vos premiers sujets seront là demain matin.";
   }
   const list =
     parts.length === 1
@@ -62,36 +71,30 @@ function suggestionHref(s: BriefSuggestion): string {
 export function NewsPanel({
   news,
   suggestions,
+  hasChannels = true,
 }: {
   news: CachedNews;
   suggestions: BriefSuggestion[];
+  /** Aucune boîte reliée : le bloc guide vers Canaux au lieu de résumer. */
+  hasChannels?: boolean;
 }) {
   const questions = suggestions.filter((s) => s.kind === "question");
   const others = suggestions.filter((s) => s.kind !== "question");
   return (
-    <section
-      aria-label="Dernières nouvelles"
-      className="rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-3.5 pt-3 pb-2 text-noir shadow-carte"
-    >
-      <div className="flex items-center gap-2">
-        <RelvoLogo
-          size={22}
-          variant="full"
-          className="text-relvo-clair"
-          title=""
-        />
-        <span className="libelle text-relvo!">Relvo</span>
-      </div>
-      <p className="mt-1.5 text-[14px] leading-5 font-light">
-        {newsSentence(news)}
-      </p>
+    <RelvoBlock label="Dernières nouvelles" className="apparait pb-2">
+      <RelvoSentence>{newsSentence(news, hasChannels)}</RelvoSentence>
+      {!hasChannels ? (
+        <Link href="/canaux" className={RELVO_LINK}>
+          → Relier ma boîte e-mail
+        </Link>
+      ) : null}
       {/* Un lien fléché : retrait suspendu (la seconde ligne s'aligne sous le
           texte, pas sous la flèche) et une hauteur de frappe qui tient au pouce. */}
       {others.map((s, i) => (
         <Link
           key={`${s.kind}-${i}`}
           href={suggestionHref(s)}
-          className="mt-0.5 block py-1.5 pl-[1.1em] -indent-[1.1em] text-[14px] leading-[18px] font-medium text-relvo active:opacity-80"
+          className={RELVO_LINK}
         >
           → {s.text}
         </Link>
@@ -113,6 +116,6 @@ export function NewsPanel({
           </Link>
         </div>
       ))}
-    </section>
+    </RelvoBlock>
   );
 }

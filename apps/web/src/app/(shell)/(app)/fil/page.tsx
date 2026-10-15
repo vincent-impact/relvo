@@ -9,7 +9,11 @@ import {
   IndicatorTabsSkeleton,
   RowsSkeleton,
 } from "@/components/shared/screen-skeletons";
-import { cachedFilFeed, cachedFolders } from "@/server/cached";
+import {
+  cachedChannelCount,
+  cachedFilFeed,
+  cachedFolders,
+} from "@/server/cached";
 import { requireAccountId } from "@/server/auth-context";
 
 // Sujets — le ciel court (loupe et « + » à droite, puis le burger), la carte
@@ -20,18 +24,22 @@ import { requireAccountId } from "@/server/auth-context";
 // depuis le cache serveur en formes plates.
 
 async function FilFeed({ accountId }: { accountId: string }) {
-  const [{ ouverts, valides, fermes }, folders] = await Promise.all([
+  const [{ ouverts, valides, fermes }, folders, channels] = await Promise.all([
     cachedFilFeed(accountId),
     cachedFolders(accountId),
+    cachedChannelCount(accountId),
   ]);
 
   return (
-    <FeedView
-      ouverts={ouverts}
-      valides={valides}
-      fermes={fermes}
-      folders={folders}
-    />
+    <div className="apparait">
+      <FeedView
+        ouverts={ouverts}
+        valides={valides}
+        fermes={fermes}
+        folders={folders}
+        hasChannels={channels > 0}
+      />
+    </div>
   );
 }
 

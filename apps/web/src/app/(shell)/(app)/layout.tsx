@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { AppDock } from "@/components/layout/app-dock";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { SideMenu, SideMenuProvider } from "@/components/layout/side-menu";
@@ -20,6 +21,11 @@ export default async function AppLayout({
 }) {
   // Garde-fou tenant (le proxy redirige déjà les anonymes, ceinture + bretelles).
   const account = await requireAccount();
+
+  // La première connexion (01 §11, M19.9) : tant que les diapositives n'ont
+  // pas été vues — terminées ou passées —, le chrome de l'application ne se
+  // montre pas. La trace est sur le compte, jamais dans le navigateur.
+  if (!account.welcomeSeenAt) redirect("/bienvenue");
 
   // Une seule zone de scroll (le <Screen> de chaque page) + dock ancré qui la
   // chevauche. Le hero violet de la page scrolle sous la tab bar givrée.

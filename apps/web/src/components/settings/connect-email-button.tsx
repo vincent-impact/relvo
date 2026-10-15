@@ -18,7 +18,13 @@ import { connectWhatsAppChannelAction } from "@/server/actions/whatsapp";
 // brief dit « sa première adresse e-mail ». L'avertissement sur la session
 // WhatsApp vit dans sa feuille, pas sur la page.
 
-const CHOICES: { provider: MailProvider; label: string; hint: string }[] = [
+/** Les trois boîtes qu'on sait relier — la même liste sur la dernière
+ * diapositive de la première connexion (M19.9). */
+export const MAIL_CHOICES: {
+  provider: MailProvider;
+  label: string;
+  hint: string;
+}[] = [
   { provider: "GOOGLE", label: "Gmail", hint: "Google Workspace compris" },
   { provider: "OUTLOOK", label: "Outlook", hint: "Microsoft 365 compris" },
   {
@@ -112,7 +118,7 @@ export function ConnectEmailButton({
             <DialogTitle>Quelle boîte e-mail ?</DialogTitle>
           </DialogHeader>
           <div className="overflow-hidden rounded-(--rayon-carte) border border-(--filet)">
-            {CHOICES.map((c) => (
+            {MAIL_CHOICES.map((c) => (
               <button
                 key={c.provider}
                 type="button"

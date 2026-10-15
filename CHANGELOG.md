@@ -6,6 +6,8 @@
 
 ## 2026-10-15
 
+- **Nouveau** — À votre première connexion, Relvo se présente en quelques écrans à faire glisser, puis vous invite à relier votre boîte e-mail. Tant qu'aucune boîte n'est reliée, chaque page vide vous dit par où commencer, et la page Canaux montre où en est la lecture de votre courrier.
+- **Nouveau** — Les écrans s'ouvrent et les listes apparaissent avec un mouvement court et net ; un bouton répond sous le doigt ; si votre téléphone est réglé en « réduire les animations », Relvo le respecte.
 - **Corrigé** — Créer un sujet à la main fonctionne de nouveau sur tous les comptes, un titre très long ne remplit plus l'écran, et un compte qui n'a encore rien reçu est guidé vers la connexion de sa boîte depuis Conversations.
 - **Nouveau** — Le violet du haut de chaque écran fond vers le blanc plus loin, sous les premières cartes, comme sur les planches validées ; la fiche d'un contact s'ouvre sur son portrait, son nom et son rôle, avec ce que Relvo a retenu de lui, puis toutes ses coordonnées.
 - **Corrigé** — Les écrans poussés (conversation, sujet, contact) prennent moins de hauteur en tête, le violet du haut fond plus doucement vers le blanc, les compteurs des onglets d'un sujet sont posés sur leurs icônes, une tâche créée depuis le Calendrier se propose au jour sélectionné, et la fiche d'un contact affiche de nouveau tous ses champs.

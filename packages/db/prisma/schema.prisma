@@ -342,6 +342,12 @@ model Account {
   /// dernières nouvelles (05 §11.12). Avance quand l'accueil est vu ; une visite
   /// n'est pas une décision, elle n'est pas journalisée.
   homeSeenAt            DateTime?   @map("home_seen_at")
+  /// Les diapositives de première connexion ont été vues (01 §11, M19.9) :
+  /// elles ne se montrent qu'une fois, et la trace vit ICI, jamais dans le
+  /// stockage du navigateur qui se vide. Null = jamais vues. Posée quand
+  /// l'utilisateur les termine ou les passe ; une vue n'est pas une décision,
+  /// elle n'est pas journalisée.
+  welcomeSeenAt         DateTime?   @map("welcome_seen_at")
   createdAt             DateTime    @default(now()) @map("created_at")
   updatedAt             DateTime    @updatedAt @map("updated_at")
 

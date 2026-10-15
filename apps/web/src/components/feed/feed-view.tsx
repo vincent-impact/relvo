@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { FeedDomainBar } from "@/components/feed/feed-domain-bar";
 import {
@@ -15,6 +16,11 @@ import {
 } from "@/components/shared/subject-row";
 import type { FolderChip } from "@/server/cached";
 import { ListPanel } from "@/components/shared/list-panel";
+import {
+  RELVO_LINK,
+  RelvoBlock,
+  RelvoSentence,
+} from "@/components/shared/relvo-block";
 import { ZoneHeading } from "@/components/shared/zone-heading";
 
 // Vue complète de Sujets (client) — la carte KPI est une BARRE D'ONGLETS chiffrée
@@ -35,9 +41,11 @@ const TAB_LABEL: Record<SubjectTab, string> = {
   fermes: "Fermés",
 };
 
-// L'état vide GUIDE : c'est dans un onglet vide qu'on apprend le geste.
+// L'état vide GUIDE : c'est dans un onglet vide qu'on apprend le geste. Les
+// ouverts, eux, sont dans la voix de Relvo (ci-dessous) : c'est lui qui les
+// remplit, et c'est lui qui dit par où commencer quand rien n'est arrivé.
 const EMPTY: Record<SubjectTab, string> = {
-  ouverts: "Aucun sujet ouvert. Relvo en ouvrira à l'arrivée de vos messages.",
+  ouverts: "Aucun sujet ouvert.",
   valides:
     "Aucun sujet validé. Glissez un sujet ouvert vers la droite pour le valider.",
   fermes: "Aucun sujet fermé. Glissez un sujet vers la gauche pour le fermer.",
@@ -56,11 +64,14 @@ export function FeedView({
   valides,
   fermes,
   folders,
+  hasChannels = true,
 }: {
   ouverts: SubjectRowData[];
   valides: SubjectRowData[];
   fermes: SubjectRowData[];
   folders: FolderChip[];
+  /** Aucune boîte reliée : l'état vide mène à Canaux. */
+  hasChannels?: boolean;
 }) {
   const params = useSearchParams();
   const [tab, setTab] = useState<SubjectTab>(() => initialTab(params));
@@ -152,7 +163,22 @@ export function FeedView({
         <div className="pt-3" />
       )}
 
-      {filtered.length === 0 ? (
+      {filtered.length === 0 && domainName == null && tab === "ouverts" ? (
+        // Rien d'ouvert : Relvo dit ce qu'il fera, et par où commencer. Le
+        // « + » reste la porte de l'utilisateur, le bloc ne l'enferme pas.
+        <RelvoBlock className="mx-4">
+          <RelvoSentence>
+            {hasChannels
+              ? "Je n’ai pas encore ouvert de sujet. Dès que je lis votre courrier, chaque affaire — un devis, une relance, un litige — apparaît ici. Vous pouvez aussi en ouvrir un vous-même avec le +."
+              : "Je n’ai encore rien à lire. Reliez la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des dernières semaines et j’ouvre ici vos premiers sujets."}
+          </RelvoSentence>
+          {!hasChannels ? (
+            <Link href="/canaux" className={RELVO_LINK}>
+              → Relier ma boîte e-mail
+            </Link>
+          ) : null}
+        </RelvoBlock>
+      ) : filtered.length === 0 ? (
         <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
           {domainName != null
             ? `Aucun sujet « ${domainName} » parmi les ${TAB_LABEL[tab].toLowerCase()}.`

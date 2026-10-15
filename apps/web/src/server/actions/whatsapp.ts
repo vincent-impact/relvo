@@ -12,6 +12,7 @@ import {
   upsertChannelConfig,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
+import { revalidateTenantData } from "@/server/cached";
 import { domainAction } from "@/lib/action-result";
 import { relireApresEnvoi } from "@/server/actions/email";
 import {
@@ -73,6 +74,7 @@ export async function connectWhatsAppChannelAction(): Promise<
       );
     }
     revalidatePath("/canaux");
+    revalidateTenantData();
     return ok({ url });
   } catch (error) {
     if (isDomainError(error)) return err(error.code, error.message);

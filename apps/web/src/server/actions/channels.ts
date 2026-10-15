@@ -15,6 +15,7 @@ import {
   upsertChannelConfig,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
+import { revalidateTenantData } from "@/server/cached";
 import { domainAction } from "@/lib/action-result";
 import {
   appBaseUrl,
@@ -26,6 +27,8 @@ import {
 
 function revalidateChannels() {
   revalidatePath("/canaux");
+  // Les états vides lisent le nombre de boîtes depuis le cache tenant (M19.9).
+  revalidateTenantData();
 }
 
 export async function createChannelAction(input: CreateChannelInput) {

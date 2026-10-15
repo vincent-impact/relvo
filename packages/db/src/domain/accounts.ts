@@ -53,3 +53,20 @@ export async function setAssistantEnabled(
   });
   return { assistantEnabled: enabled, changed: true };
 }
+
+/**
+ * Les diapositives de première connexion ont été vues — terminées ou passées
+ * (01 §11, M19.9). Elles ne se montrent qu'une fois, et la trace vit sur le
+ * compte, jamais dans le navigateur. Une vue n'est pas une décision : rien
+ * n'est journalisé. Idempotent : une seconde pose ne recule pas la date.
+ */
+export async function markWelcomeSeen(
+  db: TenantDb,
+  accountId: string,
+  at: Date = new Date(),
+): Promise<void> {
+  await db.account.updateMany({
+    where: { id: accountId, welcomeSeenAt: null },
+    data: { welcomeSeenAt: at },
+  });
+}

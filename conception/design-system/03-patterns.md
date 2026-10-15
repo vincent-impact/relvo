@@ -60,6 +60,20 @@ dock est présent sur les pages à onglet et les pages du menu, et sur la fiche 
 Le **menu latéral** s'ouvre depuis le burger, à droite du header, et glisse depuis la gauche
 par-dessus la page assombrie.
 
+## La première connexion : le ciel plein, puis le bloc de Relvo
+
+Un compte qui n'a jamais vu les diapositives ne voit pas le chrome : le groupe `(app)` l'envoie
+sur `/bienvenue`, hors dock — on ne montre pas une barre d'onglets avant d'avoir dit à quoi elle
+sert. L'écran est le **ciel plein** (`--ciel-plein`, sans fondu : rien de blanc à rejoindre),
+« Passer » en haut à droite, cinq diapositives à glisser en `scroll-snap` natif — une
+illustration faite de **morceaux du produit** (une ligne de sujet, le bloc des nouvelles, un
+brouillon, le disque), un titre condensé, une phrase fine —, les points et « Continuer ». La
+sixième est l'**invitation** : un bloc de Relvo posé sur le ciel, avec l'étape-formulaire des
+trois boîtes et « Plus tard ». Choisir une boîte enchaîne sur la connexion ordinaire d'un canal
+et aboutit sur Canaux, où le guidage reprend ; « Plus tard » ramène à l'accueil, dont le bloc
+des nouvelles redit l'invitation tant qu'aucune boîte n'est reliée. La trace « vues » est sur le
+compte : on ne les remontre jamais.
+
 ## Cibles tactiles et zones sûres
 
 Cible tactile minimale : **44 px**. Les zones sûres iOS (`env(safe-area-inset-*)`) sont

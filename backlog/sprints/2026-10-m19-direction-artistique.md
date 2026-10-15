@@ -797,6 +797,101 @@ dans la voix de Relvo avec les états vides qui guident (M19.9).
 carole.garat@… ») est une erreur d'extraction de Relvo, corrigée à la main par le dirigeant ;
 à surveiller dans M7 (le contact déduit d'un expéditeur sans nom).
 
+## Le langage de mouvement (M19.8)
+
+Le mouvement arrive en dernier, comme prévu : on n'anime pas ce qu'on va retirer, et la
+tranche 3 a retiré beaucoup. La règle d'Emil Kowalski qui gouverne tout : **une animation se
+juge d'abord à sa fréquence**. Ce qu'on touche trente fois par jour — un onglet du dock, un
+segmented, un indicateur — ne s'anime pas ; ce qu'on voit de temps en temps — une feuille, un
+menu, un écran poussé — s'anime court et sort vite ; seul ce qu'on voit une fois — les
+premiers pas, la carte vivante — a le droit d'être vu. D'où les **quatre durées**
+(`--dur-presse` 120 ms, `--dur-court` 160, `--dur-moyen` 240, `--dur-accompagnement` 480) et
+les **trois courbes** (`--courbe-sortie`, la `cubic-bezier(0.23, 1, 0.32, 1)` forte pour tout
+ce qui entre ou sort ; `--courbe-deplacement` pour ce qui se déplace ; `--courbe-feuille`, la
+courbe iOS, pour une feuille). Les utilitaires Tailwind partent d'eux-mêmes sur la durée courte
+et la courbe de sortie (`--default-transition-*`) : un composant n'a plus rien à dire.
+
+**Cinq primitives**, en opacité et `transform` seulement : `.apparait` (ce que le serveur livre
+après coup monte de 6 px ; `.apparait-liste` échelonne de 35 ms — l'accueil, Sujets,
+Conversations, Mémoire, Canaux), `.entre-ecran` (un écran poussé entre de la droite, par
+`<Screen entree>` — fiches, créations, recherche, l'échange), les feuilles et menus du registre
+(la feuille sur `moyen`/`feuille`, dialogues et menu sur `court`/`sortie`), `.pressable` en
+transition sur la durée d'appui, `.arrive` (un chiffre qui change) et `.respire` (Relvo
+travaille, la seule boucle — elle remplace le `animate-bounce` du composer). Le mode réduit du
+téléphone ramène tout à un fondu, primitives du registre comprises (tw-animate-css n'en sait
+rien). **Ce qui ne s'anime pas** est écrit dans `01-tokens.md`, et le **test des tokens tient
+la doctrine** : aucune durée ni courbe littérale dans un composant, jamais `transition-all`,
+jamais `ease-in`, jamais `animate-bounce` — y compris dans les primitives du registre, qui
+sont adaptées au thème comme les autres (`transition-all` nommé propriété par propriété dans
+dix fichiers de `ui/`).
+
+**La relecture.** Le skill `review-animations` n'est pas installé (les douze d'Emil retenues ne
+le comprennent pas) ; la relecture a été faite par un agent isolé avec sa table « never ship »,
+sur le diff et les fichiers. Rien de bloquant ; trois défauts réels corrigés : l'échelonnement
+survivait au mode réduit (une media query n'ajoute pas de spécificité, `:nth-child(n)` la
+remonte) ; l'accordéon du registre sautait de 0 à auto (tw-animate n'écoute que les variables
+de Radix, Base UI expose `--accordion-panel-height` — images-clés récrites) ; l'entrée de
+l'échange était posée sur le cadre entier, qui débordait de 16 px pendant un quart de seconde.
+Et trois ajustements : `width` seul sur la barre de progression, la durée d'appui sur le
+`Button` du registre, la doc qui disait « moyen » là où le code dit « court ». **Limite
+assumée** : un retour arrière rejoue l'entrée de droite — le CSS ne connaît pas le sens de la
+navigation. **Non mesuré** : `animation-performance` sur un téléphone d'entrée de gamme ; ce
+qu'on sait par le code, c'est que tout est en `transform`/`opacité` hors les deux cas tolérés
+(le repli d'une ligne glissée en `max-height`, la barre de progression en `width`), et qu'aucune
+variable CSS n'est animée sur un parent. La mesure se fera sur le téléphone du dirigeant.
+
+## Les premiers pas (M19.9)
+
+**Les diapositives.** Un compte qui n'a jamais vu les diapositives ne voit pas le chrome : le
+groupe `(app)` l'envoie sur `/bienvenue`, hors dock. Le ciel plein (`--ciel-plein`, sans
+fondu), « Passer » en haut à droite, cinq diapositives à glisser en `scroll-snap` natif — pas
+de bibliothèque, le pouce fait ce qu'il fait partout —, chacune une illustration faite de
+**morceaux du produit** (le signe, une ligne de sujet avec sa bande, le bloc des nouvelles, un
+brouillon, le dock et son disque) et une phrase : « Je suis Relvo. Je lis le courrier que vous
+recevez, et j'en fais des sujets. » · « Chaque affaire devient un sujet. » · « Je vous dis ce
+qui attend. » · « Je prépare vos réponses. Vous relisez, vous envoyez. Rien ne part sans
+vous. » · « Le disque au centre, c'est moi. » Du contexte, pas un mode d'emploi : aucune
+n'explique un écran. La sixième est l'**invitation**, un bloc de Relvo sur le ciel avec
+l'**étape-formulaire** des trois boîtes (la même liste que Canaux, exportée) et « Plus tard ».
+« Passer » mène à l'invitation, pas hors de la séquence : l'invitation est le but. La trace
+`welcome_seen_at` est posée par le domaine (`markWelcomeSeen`, idempotent) — la seule
+migration que M19 s'accorde, additive — ; le compte de démonstration naît avec la trace (il a
+déjà ses boîtes). Seule surface à la durée d'accompagnement : l'illustration se pose quand sa
+diapositive devient courante.
+
+**Le piège trouvé en vérifiant.** « Plus tard » posait la trace et ne ramenait pas à
+l'accueil : la `redirect("/")` de l'action retombait sur le **cache du routeur**, qui avait
+mémorisé « / » comme une redirection vers `/bienvenue` — c'est par là que le compte était
+arrivé — pendant `staleTimes.dynamic`. L'action rend la main et le client fait une navigation
+complète (`window.location.replace`), qui repart de zéro. À remonter dans `PITFALLS.md` à la
+clôture (M19.12), avec l'autre : le client Prisma d'un serveur de développement déjà lancé
+ignore une colonne ajoutée tant qu'on ne le relance pas (`db.account.updateMany` refusait
+`welcomeSeenAt` après `pnpm db:generate`).
+
+**Le guidage, sur les surfaces qui existent.** Quatre écrans recopiaient le bloc de Relvo à la
+main ; il est désormais UN composant, `RelvoBlock`, avec sa phrase et son lien fléché, et
+trois formes y vivent — la phrase, l'**étape-formulaire** (`EtapeFormulaire` : une question,
+deux à quatre options blanches à filet de 48 px, une réponse secondaire en texte) et la **carte
+vivante** (`CarteVivante` : la phrase qui dit où Relvo en est, trois compteurs qui se posent
+quand ils changent, les trois points qui respirent tant qu'il lit). M13.2 et M10.16 les
+consommeront ; ils ont déjà chacun un consommateur réel : la dernière diapositive, et la page
+des canaux, où la ligne de rattrapage sous chaque boîte devient une carte vivante sous la liste
+(la page se rafraîchit tant que Relvo lit). Les **états vides guident** dans la voix de Relvo,
+et distinguent « rien n'est encore arrivé » (aucune boîte reliée : la phrase mène à Canaux) de
+« rien à montrer » : les nouvelles de l'accueil, les sujets ouverts, l'annuaire, les
+conversations, les boîtes. Validés et fermés gardent leur texte nu, qui enseigne le geste. Le
+nombre de boîtes vient du cache tenant (`cachedChannelCount`) ; relier ou retirer une boîte
+l'invalide. L'ouverture du premier sujet et la présentation du bouton Relvo n'ont pas de
+surface à eux : le premier sujet est dit par le bloc des nouvelles (« ouvert 1 sujet »), le
+bouton par la cinquième diapositive — l'échange scripté (M10.16) fera le reste.
+
+**Vérifié** : un compte neuf inscrit par le formulaire, les six diapositives, « Plus tard »,
+puis l'accueil, Sujets, Contacts, Conversations, Canaux et le Calendrier vides, en 390 px
+sombre émulé, zéro erreur console (`premiers-pas.mjs` dans le scratchpad) ; les huit écrans de
+démonstration après le langage de mouvement, zéro erreur ; les 305 tests. **À vérifier par le
+dirigeant** : la séquence sur son iPhone (il verra les diapositives une fois, son compte n'a
+pas la trace), le geste de glissé, et le choix d'une boîte jusqu'à Canaux.
+
 ## Où on en est
 
 - [x] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 la
@@ -820,6 +915,9 @@ carole.garat@… ») est une erreur d'extraction de Relvo, corrigée à la main 
       retours du téléphone (ciel, étages, badges d'onglet, Calendrier, fiche contact) · ✅ le
       fondu des planches, la fiche contact en carte de visite · ✅ le pire cas par les
       formulaires, le compte vide, 320 px, 999, desktop, sombre, Android — **M19.10 livré**
-- [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives
-      de première connexion, invitation à connecter la première adresse, états vides qui guident
+- [x] Tranche 4 — « Guider » : ✅ M19.8 langage de mouvement (quatre durées, trois courbes,
+      cinq primitives, mode réduit, cliquet dans le test des tokens, relecture faite) · ✅ M19.9
+      premiers pas — diapositives de première connexion, invitation en étape-formulaire, bloc
+      de Relvo partagé, carte vivante sur Canaux, états vides qui guident — **livrés, à
+      vérifier sur l'iPhone du dirigeant**
 - [ ] Tranche 5 — « Clore » : M19.12

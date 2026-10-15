@@ -16,6 +16,11 @@ import {
   loadConversationsAction,
   reactivateConversationAction,
 } from "@/server/actions/conversations";
+import {
+  RELVO_LINK,
+  RelvoBlock,
+  RelvoSentence,
+} from "@/components/shared/relvo-block";
 import { SwipeRow } from "@/components/shared/swipe-row";
 import { ConversationTriageDialog } from "@/components/conversations/conversation-triage-dialog";
 import {
@@ -40,7 +45,6 @@ import { guessContactKind } from "@/lib/contact-avatar";
 import { ContactAvatarIcon } from "@/components/contacts/contact-avatar-icon";
 import { cn } from "@/lib/utils";
 import { ListPanel } from "@/components/shared/list-panel";
-import { RelvoLogo } from "@/components/layout/relvo-logo";
 import Link from "next/link";
 import { RelvoVerdictLine } from "@/components/conversations/relvo-verdict-line";
 
@@ -405,31 +409,16 @@ export function ConversationList({
       {items.length === 0 && noneAtAll ? (
         // Rien n'est jamais arrivé : Relvo guide vers la première boîte, dans
         // son bloc — « Rien à trier » laisserait croire que le travail est fait.
-        <section
-          aria-label="Relvo"
-          className="mx-4 mt-3 rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-3.5 pt-3 pb-3 text-noir shadow-carte"
-        >
-          <div className="flex items-center gap-2">
-            <RelvoLogo
-              size={22}
-              variant="full"
-              className="text-relvo-clair"
-              title=""
-            />
-            <span className="libelle text-relvo!">Relvo</span>
-          </div>
-          <p className="mt-1.5 text-[14px] leading-5 font-light">
+        <RelvoBlock className="mx-4 mt-3">
+          <RelvoSentence>
             Je n’ai encore reçu aucun message. Reliez la boîte où arrivent vos
             fournisseurs et vos clients : je lis le courrier des dernières
             semaines et vos conversations apparaissent ici.
-          </p>
-          <Link
-            href="/canaux"
-            className="mt-2 block py-1.5 pl-[1.1em] -indent-[1.1em] text-[14px] font-medium text-relvo"
-          >
+          </RelvoSentence>
+          <Link href="/canaux" className={RELVO_LINK}>
             → Relier ma boîte e-mail
           </Link>
-        </section>
+        </RelvoBlock>
       ) : items.length === 0 ? (
         <div className="px-[22px] py-12 text-center">
           <p className="text-[14.5px] font-medium text-noir">{empty.title}</p>

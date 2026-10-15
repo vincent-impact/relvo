@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Envelope, WhatsappLogo } from "@/components/shared/picto";
+import { CarteVivante } from "@/components/shared/carte-vivante";
+import { PollRefresh } from "@/components/shared/poll-refresh";
+import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { ConnectEmailButton } from "@/components/settings/connect-email-button";
 import { ChannelRemoveLink } from "@/components/settings/channel-delete-button";
-import { RelvoLogo } from "@/components/layout/relvo-logo";
 import { ListPanel } from "@/components/shared/list-panel";
 import { ZoneHeading } from "@/components/shared/zone-heading";
 import { ChannelReconnectButton } from "@/components/settings/channel-reconnect-button";
@@ -76,8 +78,19 @@ async function ChannelList() {
   const hasEmail = channels.some((c) => c.type === "email");
   const hasWhatsApp = channels.some((c) => c.type === "whatsapp");
 
+  // Le nom de la boîte n'est dit que s'il y a plusieurs cartes à distinguer.
+  const avecRattrapage = channels.filter((ch) => ch.catchups[0]);
+  const rattrapages = avecRattrapage.map((ch) => ({
+    channelId: ch.id,
+    status: ch.catchups[0].status,
+    messagesImported: ch.catchups[0].messagesImported,
+    subjectsOpened: ch.catchups[0].subjectsOpened,
+    conversationsIgnored: ch.catchups[0].conversationsIgnored,
+    channelName: avecRattrapage.length > 1 ? ch.name : null,
+  }));
+
   return (
-    <div className="pt-3">
+    <div className="apparait pt-3">
       {/* La zone est nommée, même vide : c'est là que le libellé sert le plus. */}
       <ZoneHeading
         label="Vos boîtes"
@@ -88,25 +101,13 @@ async function ChannelList() {
         // connexion aboutit (M19.9), et c'est la promesse redite une fois, à
         // l'endroit du geste. Le bouton, lui, est sous le bloc : un bouton de
         // l'utilisateur n'est jamais sur le violet pâle de Relvo.
-        <section
-          aria-label="Relvo"
-          className="mx-4 rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-3.5 pt-3 pb-3 text-noir shadow-carte"
-        >
-          <div className="flex items-center gap-2">
-            <RelvoLogo
-              size={22}
-              variant="full"
-              className="text-relvo-clair"
-              title=""
-            />
-            <span className="libelle text-relvo!">Relvo</span>
-          </div>
-          <p className="mt-1.5 text-[14px] leading-5 font-light">
+        <RelvoBlock className="mx-4">
+          <RelvoSentence>
             Je n’ai encore rien à lire. Reliez la boîte où arrivent vos
             fournisseurs et vos clients : je lis le courrier des dernières
             semaines et j’ouvre les premiers sujets.
-          </p>
-        </section>
+          </RelvoSentence>
+        </RelvoBlock>
       ) : (
         <ListPanel>
           {channels.map((ch, i) => {
@@ -133,13 +134,6 @@ async function ChannelList() {
                   <div className="truncate text-[12px] font-normal text-gris">
                     {ch.identifier}
                   </div>
-                  {/* La ligne de rattrapage : Relvo rend compte, dans ses mots,
-                        de ce qu'il a fait de la boîte — la preuve pointée. */}
-                  {ch.catchups[0] ? (
-                    <div className="mt-0.5 text-[14px] leading-[18px] font-light text-relvo">
-                      {libelleRattrapage(ch.catchups[0])}
-                    </div>
-                  ) : null}
                 </div>
                 {reconnect ? (
                   <ChannelReconnectButton
@@ -162,6 +156,18 @@ async function ChannelList() {
           })}
         </ListPanel>
       )}
+      {/* Le rattrapage du courrier récent (M7.19) : Relvo rend compte, dans
+          ses mots et dans sa carte VIVANTE (05 §11.11), de ce qu'il fait de
+          chaque boîte — une carte par boîte qui en a un, sous la liste, jamais
+          une carte dans la ligne. Tant qu'il lit, la page se rafraîchit. */}
+      {rattrapages.map((r) => (
+        <CarteVivante key={r.channelId} data={r} className="mx-4 mt-3" />
+      ))}
+      {rattrapages.some(
+        (r) => r.status === "pending" || r.status === "running",
+      ) ? (
+        <PollRefresh />
+      ) : null}
       <div className="px-4">
         <ConnectEmailButton hasEmail={hasEmail} hasWhatsApp={hasWhatsApp} />
         <ChannelRemoveLink
@@ -237,32 +243,4 @@ function avecDelai<T>(promise: Promise<T>): Promise<T | null> {
   return Promise.race([promise.catch(() => null), delai]).finally(() =>
     clearTimeout(timer),
   );
-}
-
-/**
- * Le rattrapage du courrier récent, en une ligne sous le canal (M7.19) : ce
- * que Relvo va lire, lit, ou a lu — et pourquoi il s'est arrêté. Le
- * vocabulaire est celui de l'utilisateur, jamais celui du pipeline.
- */
-function libelleRattrapage(c: {
-  status: string;
-  messagesImported: number;
-  subjectsOpened: number;
-  conversationsIgnored: number;
-  stopReason: string | null;
-}): string {
-  // « ignorée » : le mot de Conversations, pas « sourdine ».
-  const bilan = `${c.messagesImported} message${c.messagesImported > 1 ? "s" : ""} lu${c.messagesImported > 1 ? "s" : ""}, ${c.subjectsOpened} sujet${c.subjectsOpened > 1 ? "s" : ""} ouvert${c.subjectsOpened > 1 ? "s" : ""}, ${c.conversationsIgnored} ignorée${c.conversationsIgnored > 1 ? "s" : ""}`;
-  switch (c.status) {
-    case "pending":
-      return "Relvo lira le courrier des dernières semaines cette nuit.";
-    case "running":
-      return `Relvo lit le courrier des dernières semaines — ${bilan}.`;
-    case "done":
-      return `Courrier récent lu : ${bilan}.`;
-    case "capped":
-      return `Courrier récent lu jusqu'au plafond : ${bilan}. Le reste se trie au fil de l'eau.`;
-    default:
-      return `La lecture du courrier récent a été interrompue — ${bilan}.`;
-  }
 }

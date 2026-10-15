@@ -77,6 +77,22 @@ couleur confirme, la forme suffit. **La sélection est un cerclage** : l'indicat
 page est un chiffre cerclé, à distance de son libellé ; une puce de filtre active est pleine et
 noire ; l'onglet actif du dock se lit au blanc plein et à la graisse, jamais à un cerclage.
 
+**Le bloc de Relvo est un composant, pas une recette.** `RelvoBlock` est la seule façon de
+rendre la voix de l'agent — les nouvelles de l'accueil, un état vide qui guide, une question,
+l'avancement d'une lecture. Trois formes y vivent, qui se consomment telles quelles dans un
+écran comme dans l'échange : la **phrase** (`RelvoSentence`) et son lien fléché ; l'**étape-
+formulaire** (`EtapeFormulaire`) — une question courte, deux à quatre réponses complètes en
+options blanches à filet, une réponse secondaire en texte (« Plus tard », « Autre… »), jamais
+un choix dans le texte ; la **carte vivante** (`CarteVivante`) — une phrase qui dit où Relvo en
+est et trois compteurs qui se posent quand ils changent. Un écran qui recopie le bloc à la
+main diverge en une semaine.
+
+**Un état vide guide, dans la voix de Relvo, quand c'est Relvo qui remplit.** Les sujets
+ouverts, l'annuaire, les conversations, les boîtes, les nouvelles : vides, ils sont un bloc de
+Relvo qui dit ce qu'il fera et par où commencer — relier la première boîte quand rien n'est
+arrivé, ou ce que le « + » permet sinon. Un onglet que l'utilisateur remplit par un geste
+(validés, fermés) garde un texte nu qui enseigne le geste.
+
 **Chaque phrase de Relvo pointe sa preuve.** Un bloc de Relvo qui parle d'un sujet, d'une tâche
 ou d'un message porte sous la phrase le lien vers cet objet, ou l'objet lui-même en sous-carte ;
 une affirmation de l'agent sans porte vers ce qu'elle décrit est une affirmation que le

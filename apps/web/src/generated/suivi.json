@@ -165,6 +165,14 @@
       "date": "2026-10-15",
       "entrees": [
         {
+          "type": "new",
+          "texte": "À votre première connexion, Relvo se présente en quelques écrans à faire glisser, puis vous invite à relier votre boîte e-mail. Tant qu'aucune boîte n'est reliée, chaque page vide vous dit par où commencer, et la page Canaux montre où en est la lecture de votre courrier."
+        },
+        {
+          "type": "new",
+          "texte": "Les écrans s'ouvrent et les listes apparaissent avec un mouvement court et net ; un bouton répond sous le doigt ; si votre téléphone est réglé en « réduire les animations », Relvo le respecte."
+        },
+        {
           "type": "fix",
           "texte": "Créer un sujet à la main fonctionne de nouveau sur tous les comptes, un titre très long ne remplit plus l'écran, et un compte qui n'a encore rien reçu est guidé vers la connexion de sa boîte depuis Conversations."
         },

@@ -4,6 +4,11 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { useContactsSearch } from "@/components/contacts/contacts-search-context";
 import { ListPanel } from "@/components/shared/list-panel";
+import {
+  RELVO_LINK,
+  RelvoBlock,
+  RelvoSentence,
+} from "@/components/shared/relvo-block";
 import { ContactAvatarIcon } from "@/components/contacts/contact-avatar-icon";
 import { guessContactKind } from "@/lib/contact-avatar";
 import { contactFullName, initialsFor } from "@/lib/display";
@@ -86,8 +91,11 @@ function ContactRow({ contact }: { contact: DirectoryContact }) {
 
 export function ContactsDirectory({
   contacts,
+  hasChannels = true,
 }: {
   contacts: DirectoryContact[];
+  /** Aucune boîte reliée : l'état vide mène à Canaux. */
+  hasChannels?: boolean;
 }) {
   const { query } = useContactsSearch();
 
@@ -116,10 +124,21 @@ export function ContactsDirectory({
   }, [contacts, query]);
 
   if (contacts.length === 0) {
+    // L'annuaire se remplit tout seul : Relvo le dit, et dit par où
+    // commencer quand rien n'est arrivé. Le « + » reste la porte de l'utilisateur.
     return (
-      <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
-        Aucun contact. Ajoutez-en un avec le + en haut à droite.
-      </p>
+      <RelvoBlock className="mx-4 mt-1">
+        <RelvoSentence>
+          {hasChannels
+            ? "Je remplis l’annuaire à mesure que je lis votre courrier : chaque personne qui vous écrit devient un contact, avec son entreprise et son rôle. Vous pouvez aussi en ajouter un avec le +."
+            : "L’annuaire se remplit tout seul à partir de votre courrier. Reliez la boîte où arrivent vos fournisseurs et vos clients, et chaque personne qui vous écrit apparaîtra ici."}
+        </RelvoSentence>
+        {!hasChannels ? (
+          <Link href="/canaux" className={RELVO_LINK}>
+            → Relier ma boîte e-mail
+          </Link>
+        ) : null}
+      </RelvoBlock>
     );
   }
 
