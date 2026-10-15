@@ -1,30 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { X } from "lucide-react";
-import { toast } from "sonner";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader, SkyTail } from "@/components/layout/relvo-header";
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
+import { RelvoFil } from "@/components/relvo-chat/relvo-fil";
+import type { RelvoUIMessage } from "@/server/ia/echange/outils";
 
-// L'échange avec Relvo, plein écran — la coquille, avant M10 qui y posera la
-// conversation. Relvo parle en premier (invariant 36) : l'état vide est un
-// BLOC DE RELVO, pas un portrait qui demande ce qu'il peut faire, et les
-// invites y sont des liens fléchés, la forme des suggestions de l'accueil. Le
-// composer est CELUI des conversations : un seul composant, celui que M10
-// branchera. Tant que Relvo ne répond pas ici, l'envoi le dit en langage
-// client — jamais un code de sprint.
+// L'échange avec Relvo, plein écran (M10.1, M10.5, M10.6, M10.14). Relvo parle
+// en premier (invariant 36) : l'état vide est un BLOC DE RELVO avec des invites
+// fléchées, jamais de fausses bulles (invariant 28). Dès le premier tour, le
+// fil prend la place. Le composer est CELUI des conversations ; un envoi part
+// à la route de l'échange, qui répond en flux (`useChat`).
+//
+// Page-aware (invariant 26) : la page d'origine voyage avec chaque tour
+// (`from`), et la puce de contexte s'efface d'un × pour passer en discussion
+// générale — sans quitter la page, le retour reste celui d'origine.
+//
+// Rien n'est persisté ici : rafraîchir vide le fil. La mémoire locale et les
+// sessions implicites arrivent avec la tranche « Relvo se souvient » (M10.2).
 
 export function RelvoChatShell({
   backHref,
+  from,
   contextLabel,
   prompts,
   initialText = "",
 }: {
   backHref: string;
-  /** Libellé du chip page-aware (le titre d'un sujet, « Sujets »), ou null. */
+  /** La page d'origine, transmise à chaque tour. */
+  from: string | null;
+  /** Libellé de la puce page-aware (le titre d'une affaire, « Affaires »), ou null. */
   contextLabel: string | null;
   prompts: string[];
   /** Premier tour proposé (une suggestion de l'accueil) : pré-rempli, jamais envoyé seul. */
@@ -34,56 +44,91 @@ export function RelvoChatShell({
   // ce texte (la clé change), l'utilisateur l'envoie ou le corrige.
   const [seed, setSeed] = useState(initialText);
   const [seedKey, setSeedKey] = useState(0);
+  const [general, setGeneral] = useState(false);
+
+  // La page et le mode voyagent avec CHAQUE tour (corps de la requête), pas
+  // avec le transport : la bascule en discussion générale vaut dès le tour
+  // suivant.
+  const [transport] = useState(
+    () => new DefaultChatTransport<RelvoUIMessage>({ api: "/api/relvo" }),
+  );
+  const { messages, sendMessage, status, error, regenerate } =
+    useChat<RelvoUIMessage>({ transport });
+  const busy = status === "submitted" || status === "streaming";
 
   function fill(text: string) {
     setSeed(text);
     setSeedKey((k) => k + 1);
   }
 
+  // Le fil suit ce qui arrive : on reste en bas tant que Relvo écrit.
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = mainRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages, status]);
+
+  const vide = messages.length === 0;
+
   return (
     <MobileFrame>
       {/* Le ciel est FIXE : sa queue se pose en tête de ce qui défile. */}
       <RelvoHeader back={backHref} title="Relvo" tail={false} />
 
-      <main className="entre-ecran min-h-0 flex-1 overflow-y-auto bg-background px-4 pt-4 pb-6">
+      <main
+        ref={mainRef}
+        className="entre-ecran min-h-0 flex-1 overflow-y-auto bg-background px-4 pt-4 pb-6"
+      >
         <SkyTail className="-mx-4 -mt-4" />
-        {contextLabel ? (
+        {contextLabel && !general ? (
           <div className="mb-3 flex">
             <span className="inline-flex h-9 min-w-0 items-center gap-1.5 rounded-(--rayon-pilule) border border-(--filet) bg-white pr-1 pl-3 text-[13px] font-normal text-noir shadow-carte">
               <span className="truncate">{contextLabel}</span>
-              <Link
-                href="/relvo"
+              <button
+                type="button"
+                onClick={() => setGeneral(true)}
                 aria-label="Quitter ce contexte"
                 className="relative grid size-7 flex-none place-items-center rounded-full text-gris before:absolute before:-inset-2 before:content-[''] active:bg-(--fond-puce)"
               >
                 <X className="size-3.5" strokeWidth={2.4} />
-              </Link>
+              </button>
             </span>
           </div>
         ) : null}
 
-        <RelvoBlock className="pb-2">
-          <RelvoSentence>Dites-moi ce que vous voulez faire.</RelvoSentence>
-          {prompts.map((p) => (
-            <button
-              key={p}
-              type="button"
-              onClick={() => fill(p)}
-              className="mt-0.5 block w-full py-1.5 pl-[1.1em] text-left -indent-[1.1em] text-[14px] leading-[18px] font-medium text-relvo active:opacity-80"
-            >
-              → {p}
-            </button>
-          ))}
-        </RelvoBlock>
+        {vide ? (
+          <RelvoBlock className="pb-2">
+            <RelvoSentence>Dites-moi ce que vous voulez faire.</RelvoSentence>
+            {prompts.map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => fill(p)}
+                className="mt-0.5 block w-full py-1.5 pl-[1.1em] text-left -indent-[1.1em] text-[14px] leading-[18px] font-medium text-relvo active:opacity-80"
+              >
+                → {p}
+              </button>
+            ))}
+          </RelvoBlock>
+        ) : (
+          <RelvoFil
+            messages={messages}
+            status={status}
+            error={error}
+            onRetry={() => regenerate({ body: { from, general } })}
+          />
+        )}
       </main>
 
       <RecipientComposer
         key={seedKey}
         placeholder="Écrire à Relvo…"
         defaultValue={seed}
-        onSend={() => {
-          toast.info("Relvo ne répond pas encore dans cet écran.");
-          return false;
+        onSend={(text) => {
+          // Un tour à la fois : le texte reste dans le champ tant que Relvo écrit.
+          if (busy) return false;
+          void sendMessage({ text }, { body: { from, general } });
+          return true;
         }}
       />
     </MobileFrame>

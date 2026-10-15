@@ -129,9 +129,9 @@
     {
       "titre": "Échange avec Relvo",
       "resume": "Demander à Relvo d'agir plutôt que de naviguer dans les écrans : « où en est la commande de sauce ? », « crée-moi une tâche pour lundi », « prépare une réponse à Karim ». Chaque action reste visible et annulable.",
-      "statut": "a-faire",
-      "gauche": 78.5,
-      "largeur": 5.14
+      "statut": "en-cours",
+      "gauche": 63.55,
+      "largeur": 10.28
     },
     {
       "titre": "Lecture des pièces jointes",
@@ -166,11 +166,19 @@
     "date": "2026-12-23",
     "gauche": 95.79
   },
-  "en_cours": null,
+  "en_cours": "Échange avec Relvo",
   "journal": [
     {
       "date": "2026-10-15",
       "entrees": [
+        {
+          "type": "new",
+          "texte": "Dans l'échange, Relvo vous montre vos affaires et vos tâches telles qu'elles apparaissent ailleurs dans l'application, et vous dit en une phrase ce qu'il a trouvé ou fait."
+        },
+        {
+          "type": "new",
+          "texte": "Relvo vous répond dans l'échange : il lit vos affaires, vos tâches et vos contacts, résume une affaire, et crée une tâche ou un rendez-vous quand vous le lui demandez."
+        },
         {
           "type": "new",
           "texte": "Relvo ne parle plus de « sujets » mais d'« affaires » : l'onglet, les listes, les messages et les écrans de bienvenue emploient le mot que vous utilisez."

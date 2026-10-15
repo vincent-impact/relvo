@@ -7,9 +7,9 @@ resume_client: >
   Demander à Relvo d'agir plutôt que de naviguer dans les écrans : « où en est la commande de
   sauce ? », « crée-moi une tâche pour lundi », « prépare une réponse à Karim ». Chaque action
   reste visible et annulable.
-statut: a-faire
-debut: 2026-11-16
-fin: 2026-11-27
+statut: en-cours
+debut: 2026-10-15
+fin: 2026-11-06
 ---
 
 # M10 — L'échange avec Relvo

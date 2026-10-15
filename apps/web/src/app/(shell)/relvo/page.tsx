@@ -58,6 +58,7 @@ export default async function ConversationPage({
   return (
     <RelvoChatShell
       backHref={backHref}
+      from={from ?? null}
       contextLabel={contextLabel}
       prompts={prompts}
       initialText={q?.trim() || ""}
