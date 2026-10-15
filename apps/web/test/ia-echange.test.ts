@@ -551,3 +551,144 @@ describe("les erreurs du fil, en langage client (M10.15)", async () => {
     expect(phraseArret("plafond")).toContain("la suite");
   });
 });
+
+describe("l'historique rejoué repart en clair — sans ancre du fournisseur (PITFALLS #63)", async () => {
+  const { createOpenAI } = await import("@ai-sdk/openai");
+  const { convertToModelMessages, streamText } = await import("ai");
+  const { sansAncresFournisseur } =
+    await import("@/server/ia/echange/conversions");
+  const outils = {
+    list_subjects: tool({ inputSchema: z.object({}) }),
+  };
+  // Ce que le téléphone renvoie après un tour : l'appel d'outil et le texte
+  // portent l'identifiant d'item OpenAI, le raisonnement n'a jamais été envoyé.
+  const historique = [
+    {
+      id: "u1",
+      role: "user" as const,
+      parts: [{ type: "text" as const, text: "Qu'est-ce qui est urgent ?" }],
+    },
+    {
+      id: "a1",
+      role: "assistant" as const,
+      parts: [
+        { type: "step-start" as const },
+        {
+          type: "tool-list_subjects" as const,
+          toolCallId: "call_1",
+          state: "output-available" as const,
+          input: {},
+          output: { type: "affaires", items: [] },
+          callProviderMetadata: { openai: { itemId: "fc_1" } },
+        },
+        { type: "step-start" as const },
+        {
+          type: "text" as const,
+          text: "Rien d'urgent.",
+          state: "done" as const,
+          providerMetadata: {
+            openai: { itemId: "msg_1", phase: "final_answer" },
+          },
+        },
+      ],
+    },
+    {
+      id: "u2",
+      role: "user" as const,
+      parts: [{ type: "text" as const, text: "Et demain ?" }],
+    },
+  ];
+
+  async function corpsEnvoye(
+    messages: Awaited<ReturnType<typeof convertToModelMessages>>,
+  ) {
+    let corps: { input: Array<Record<string, unknown>> } | undefined;
+    const openai = createOpenAI({
+      apiKey: "test",
+      fetch: async (_url, init) => {
+        corps = JSON.parse(String(init?.body));
+        return new Response("data: [DONE]\n\n", {
+          status: 200,
+          headers: { "content-type": "text/event-stream" },
+        });
+      },
+    });
+    const flux = streamText({
+      model: openai("gpt-5.6-terra"),
+      messages,
+      tools: outils,
+    });
+    await flux.consumeStream({ onError: () => undefined });
+    return corps!;
+  }
+
+  it("avec ses ancres, le tour précédent serait RÉFÉRENCÉ chez OpenAI — ce que la règle interdit", async () => {
+    const brut = await convertToModelMessages(historique, { tools: outils });
+    const corps = await corpsEnvoye(brut);
+    // Seul le texte est référencé : un appel d'outil ordinaire repart toujours
+    // en clair (`function_call`, sans identifiant d'item).
+    expect(
+      corps.input.filter((i) => i.type === "item_reference").map((i) => i.id),
+    ).toEqual(["msg_1"]);
+    expect(
+      corps.input.find((i) => i.type === "function_call"),
+    ).not.toHaveProperty("id");
+  });
+
+  it("sans ancre, le texte et l'appel d'outil repartent en clair, et le raisonnement est écarté", async () => {
+    // Le SDK découpe un tour en autant de messages assistant que d'étapes :
+    // l'appel d'outil, puis le texte. Un raisonnement glissé devant le texte
+    // (comme si le téléphone l'avait gardé) doit disparaître aussi.
+    const brut = await convertToModelMessages(historique, { tools: outils });
+    const dernierAssistant = [...brut]
+      .reverse()
+      .find((m) => m.role === "assistant")!;
+    const avecRaisonnement = brut.map((m) =>
+      m === dernierAssistant && Array.isArray(m.content)
+        ? {
+            ...m,
+            content: [
+              {
+                type: "reasoning" as const,
+                text: "",
+                providerOptions: { openai: { itemId: "rs_1" } },
+              },
+              ...m.content,
+            ],
+          }
+        : m,
+    );
+    const propre = sansAncresFournisseur(avecRaisonnement);
+    const parts = propre
+      .filter((m) => m.role === "assistant")
+      .flatMap((m) => (Array.isArray(m.content) ? m.content : []));
+    expect(parts.map((p) => p.type)).toEqual(["tool-call", "text"]);
+    for (const p of parts as Array<{
+      providerOptions?: Record<string, Record<string, unknown>>;
+    }>) {
+      expect(p.providerOptions?.openai).not.toHaveProperty("itemId");
+    }
+    // La phase du texte, elle, reste : seule l'ancre part.
+    expect(
+      (
+        parts as Array<{
+          type: string;
+          providerOptions?: { openai?: { phase?: string } };
+        }>
+      ).find((p) => p.type === "text")?.providerOptions?.openai?.phase,
+    ).toBe("final_answer");
+    // Les messages du dirigeant ne sont pas touchés.
+    expect(propre.filter((m) => m.role === "user")).toEqual(
+      brut.filter((m) => m.role === "user"),
+    );
+
+    const corps = await corpsEnvoye(propre);
+    expect(corps.input.some((i) => i.type === "item_reference")).toBe(false);
+    const appel = corps.input.find((i) => i.type === "function_call")!;
+    expect(appel).toMatchObject({ call_id: "call_1", name: "list_subjects" });
+    expect(appel).not.toHaveProperty("id");
+    const texte = corps.input.find((i) => i.role === "assistant")!;
+    expect(texte).not.toHaveProperty("id");
+    expect(corps.input.some((i) => i.type === "reasoning")).toBe(false);
+  });
+});

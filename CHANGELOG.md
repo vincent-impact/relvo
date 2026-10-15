@@ -6,6 +6,7 @@
 
 ## 2026-10-15
 
+- **Corrigé** — L'échange avec Relvo ne se bloque plus après quelques messages : vous pouvez enchaîner les questions et les demandes dans un même échange.
 - **Nouveau** — Relvo vous dit quand il s'arrête avant la fin et quoi faire si quelque chose ne passe pas — session expirée, pas de réseau — sans jamais perdre ce que vous aviez écrit. Les questions simples lui coûtent moins cher.
 - **Nouveau** — Relvo vous pose désormais ses questions : un badge sur son bouton, la question dans l'échange avec des réponses à choisir, et ce qu'il retient de votre réponse. À la première ouverture, il vous demande votre métier et une règle à toujours suivre.
 - **Nouveau** — Relvo se souvient de votre échange en cours : si vous revenez dans les cinq minutes, vous le retrouvez où vous l'aviez laissé. Vos dix derniers échanges, titrés, sont dans l'historique, sur votre appareil.

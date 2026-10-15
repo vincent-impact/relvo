@@ -422,3 +422,8 @@ chat`, « Annuler » la rouvre ; « Prépare une réponse à Karim » → le bro
       (M10.16 achevé par la tranche 10 de M7), M18 en `termine` (M18.11 → M12.9), les décisions
       dans `ecarts`. **Suivant** : la tranche 10 de M7 — le rattrapage dès la connexion d'un
       canal, qui fait naître le script dans l'échange.
+- [x] Correctif après mise en production — ✅ l'échange se bloquait après quelques tours
+      (« Je n'ai pas pu répondre… » à chaque message, sans issue) : OpenAI refusait l'historique
+      rejoué, référencé par ses identifiants d'items sans le raisonnement qui les accompagne.
+      L'historique repart désormais en clair (`sansAncresFournisseur`, piège **#63**), test au
+      niveau du corps envoyé à l'API, scénarios rejoués en local sur deux tours raisonnés.

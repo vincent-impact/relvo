@@ -5,7 +5,11 @@ import {
   prefixeStable,
   type ContexteEchange,
 } from "../contexte";
-import { injecterVolatil, lirePage } from "./conversions";
+import {
+  injecterVolatil,
+  lirePage,
+  sansAncresFournisseur,
+} from "./conversions";
 import {
   outilsRelvo,
   type ContexteOutils,
@@ -91,10 +95,14 @@ export async function construireTour(
     },
   });
 
-  const historique = await convertToModelMessages(entree.messages, {
-    tools: outils,
-    ignoreIncompleteToolCalls: true,
-  });
+  // L'historique rejoué repart EN CLAIR : sans les ancres du fournisseur, qui
+  // feraient exiger un raisonnement que le téléphone n'a pas (#63).
+  const historique = sansAncresFournisseur(
+    await convertToModelMessages(entree.messages, {
+      tools: outils,
+      ignoreIncompleteToolCalls: true,
+    }),
+  );
   const modelMessages = injecterVolatil(
     [{ role: "user", content: contexte.prefixe }, ...historique],
     contexte.volatil,

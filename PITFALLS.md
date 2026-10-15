@@ -453,6 +453,33 @@ navigation.
 #59 : devant une hydratation qui casse sur un attribut ARIA, chercher qui le génère, pas ce
 qu'il affiche.
 
+### #63 — Un tour de Relvo rejoué avec ses identifiants OpenAI exige un raisonnement que le téléphone n'a jamais reçu
+
+**Symptôme** : l'échange avec Relvo fonctionne, puis, après quelques tours, chaque message revient
+avec « Je n'ai pas pu répondre. Réessayez dans un instant » — et réessayer ne change rien, ni
+dans la minute ni une heure plus tard. Le journal de Vercel montre un `400` de l'API Responses :
+`Item 'msg_…' of type 'message' was provided without its required 'reasoning' item: 'rs_…'`. En
+local, deux tours courts passent ; le défaut ne se montre que lorsqu'un tour s'est terminé par une
+réponse **raisonnée** (un item de raisonnement juste devant le texte final).
+
+**Cause** : le fournisseur OpenAI du SDK pose sur chaque partie de réponse l'identifiant de son
+item (`providerMetadata.openai.itemId`). Le téléphone garde ces métadonnées dans l'échange et les
+renvoie au tour suivant. Avec `store` à vrai (le défaut), le fournisseur ne renvoie alors **pas**
+le texte d'un tour précédent : il le **référence** (`item_reference`) — et OpenAI exige, pour un
+message référencé, l'item de raisonnement qui l'a précédé dans la même réponse. Or la route ne
+transmet pas le raisonnement au client (`sendReasoning: false`) : la référence est orpheline, le
+tour est refusé, et comme l'historique est rejoué à l'identique, il le reste. Garder le
+raisonnement côté client ne vaudrait guère mieux : la référence pointe sur un état conservé chez
+OpenAI, borné dans le temps — un échange repris plus tard retomberait sur le même mur.
+
+**Règle** : l'historique rejoué repart **en clair**. Avant l'appel, `sansAncresFournisseur`
+(`server/ia/echange/conversions.ts`) retire `itemId` des parties assistant et écarte les parties de
+raisonnement ; le texte et les appels d'outils sont renvoyés tels quels, sans référence à un état
+distant. Le préfixe caché ne change pas (#49) : les jetons sont les mêmes, seule la forme de l'envoi
+diffère. Le test `ia-echange.test.ts` capture le corps réellement envoyé à l'API et vérifie qu'il
+ne contient aucun `item_reference` — c'est lui qui tient la règle, pas la relecture du fournisseur
+à chaque montée de version.
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |

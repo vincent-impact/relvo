@@ -128,3 +128,31 @@ export function lirePage(from: string | null | undefined): {
     contactId: contact?.[1] ?? null,
   };
 }
+
+/**
+ * Retire des tours PRÉCÉDENTS les ancres du fournisseur (`itemId` OpenAI) et
+ * les parties de raisonnement. Rejouée avec son ancre, une réponse n'est pas
+ * renvoyée : elle est RÉFÉRENCÉE côté OpenAI, qui exige alors l'item de
+ * raisonnement qui l'a précédée — que le téléphone n'a jamais reçu
+ * (PITFALLS.md #63). Sans ancre, le texte et les appels d'outils repartent en
+ * clair, comme n'importe quel historique ; le préfixe caché ne change pas.
+ */
+export function sansAncresFournisseur(
+  messages: ModelMessage[],
+): ModelMessage[] {
+  return messages.map((m) => {
+    if (m.role !== "assistant" || typeof m.content === "string") return m;
+    const content = m.content
+      .filter((p) => p.type !== "reasoning")
+      .map((p) => {
+        if (!("providerOptions" in p)) return p;
+        const openai = p.providerOptions?.openai;
+        if (!openai || !("itemId" in openai)) return p;
+        const { itemId: _ancre, ...reste } = openai;
+        void _ancre;
+        const providerOptions = { ...p.providerOptions, openai: reste };
+        return { ...p, providerOptions };
+      });
+    return { ...m, content } as ModelMessage;
+  });
+}
