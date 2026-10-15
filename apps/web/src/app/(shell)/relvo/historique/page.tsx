@@ -2,12 +2,12 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
-import { ZoneHeading } from "@/components/shared/zone-heading";
+import { HistoriqueLocal } from "@/components/relvo-chat/historique-local";
 import { requireAccount } from "@/server/auth-context";
 
-// Historique des ÉCHANGES avec Relvo (coquille M9, Direction B). Ils sont
-// éphémères en IndexedDB côté client (M10) : en V1 on n'affiche que l'entrée
-// « Nouvel échange » mise en avant et un empty-state honnête.
+// Historique des ÉCHANGES avec Relvo (M10.4). Ils sont éphémères, en
+// IndexedDB sur l'appareil (05 §11.3) : la page serveur ne porte que l'entrée
+// « Nouvel échange » ; la liste se lit côté client (`HistoriqueLocal`).
 //
 // « Échange » et non « conversation » : depuis M6bis, une Conversation est une
 // ENTITÉ DE DONNÉES — le fil avec un interlocuteur externe. Garder le même mot
@@ -26,7 +26,7 @@ export default async function RelvoHistoryPage() {
           {/* Une action de l'utilisateur : carte blanche, jamais le violet pâle
               signé, réservé à la voix de Relvo (01-tokens). */}
           <Link
-            href="/relvo"
+            href="/relvo?nouveau=1"
             className="mx-4 flex items-center gap-3 rounded-(--rayon-carte) border border-(--filet) bg-white px-3.5 py-3.5 shadow-carte active:bg-(--fond-enfonce)"
           >
             <span className="grid size-9 flex-none place-items-center rounded-full bg-relvo text-white">
@@ -42,12 +42,7 @@ export default async function RelvoHistoryPage() {
             </span>
           </Link>
 
-          <div className="mt-7">
-            <ZoneHeading label="Récentes" />
-            <p className="px-4 text-[14px] font-light text-gris">
-              Vos échanges récents avec Relvo apparaîtront ici.
-            </p>
-          </div>
+          <HistoriqueLocal />
         </div>
       </main>
     </MobileFrame>

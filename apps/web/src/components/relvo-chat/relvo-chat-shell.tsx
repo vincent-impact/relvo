@@ -1,18 +1,31 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { X } from "lucide-react";
+import { Plus, X } from "lucide-react";
+import { ClockCounterClockwise } from "@/components/shared/picto";
 import { MobileFrame } from "@/components/layout/mobile-frame";
-import { RelvoHeader, SkyTail } from "@/components/layout/relvo-header";
+import {
+  RelvoHeader,
+  SKY_BTN,
+  SkyTail,
+} from "@/components/layout/relvo-header";
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
 import { RelvoFil } from "@/components/relvo-chat/relvo-fil";
 import type { RelvoUIMessage } from "@/server/ia/echange/outils";
+import { doitReprendre, titreParDefaut } from "@/lib/echanges-regles";
+import {
+  dernierEchange,
+  lireEchange,
+  sauverEchange,
+  type EchangeStocke,
+} from "@/lib/echanges-store";
 
-// L'échange avec Relvo, plein écran (M10.1, M10.5, M10.6, M10.14). Relvo parle
-// en premier (invariant 36) : l'état vide est un BLOC DE RELVO avec des invites
+// L'échange avec Relvo, plein écran (M10.1 à M10.6, M10.14). Relvo parle en
+// premier (invariant 36) : l'état vide est un BLOC DE RELVO avec des invites
 // fléchées, jamais de fausses bulles (invariant 28). Dès le premier tour, le
 // fil prend la place. Le composer est CELUI des conversations ; un envoi part
 // à la route de l'échange, qui répond en flux (`useChat`).
@@ -21,8 +34,13 @@ import type { RelvoUIMessage } from "@/server/ia/echange/outils";
 // (`from`), et la puce de contexte s'efface d'un × pour passer en discussion
 // générale — sans quitter la page, le retour reste celui d'origine.
 //
-// Rien n'est persisté ici : rafraîchir vide le fil. La mémoire locale et les
-// sessions implicites arrivent avec la tranche « Relvo se souvient » (M10.2).
+// La mémoire est celle de l'APPAREIL (invariant 23, 05 §11.3) : l'échange se
+// sauve dans IndexedDB à chaque tour ; à l'ouverture, l'échange en cours se
+// rouvre s'il date de moins de cinq minutes (05 §11.2), sinon un nouvel
+// échange — `?nouveau=1` en force un, `?reprendre=<id>` rouvre un échange de
+// l'historique. Le titre est demandé à la fin du premier tour (M10.4).
+
+type Initial = Pick<EchangeStocke, "id" | "titre" | "creeLe" | "messages">;
 
 export function RelvoChatShell({
   backHref,
@@ -30,6 +48,8 @@ export function RelvoChatShell({
   contextLabel,
   prompts,
   initialText = "",
+  nouveau = false,
+  reprendre = null,
 }: {
   backHref: string;
   /** La page d'origine, transmise à chaque tour. */
@@ -39,12 +59,85 @@ export function RelvoChatShell({
   prompts: string[];
   /** Premier tour proposé (une suggestion de l'accueil) : pré-rempli, jamais envoyé seul. */
   initialText?: string;
+  /** « + Nouvel échange » : on ne rouvre rien. */
+  nouveau?: boolean;
+  /** Un échange de l'historique à rouvrir. */
+  reprendre?: string | null;
+}) {
+  // Ce que l'appareil sait de l'échange à ouvrir — lu AVANT de monter le fil,
+  // parce que les messages initiaux du hook ne se posent qu'une fois.
+  const [initial, setInitial] = useState<Initial | null>(null);
+  useEffect(() => {
+    let vivant = true;
+    (async () => {
+      if (reprendre) {
+        const e = await lireEchange(reprendre);
+        if (e && vivant) return setInitial(e);
+      }
+      if (!nouveau && !initialText) {
+        const d = await dernierEchange();
+        if (d && doitReprendre(d.dernierTourLe) && vivant) return setInitial(d);
+      }
+      if (vivant) {
+        setInitial({
+          id: crypto.randomUUID(),
+          titre: null,
+          creeLe: new Date().toISOString(),
+          messages: [],
+        });
+      }
+    })();
+    return () => {
+      vivant = false;
+    };
+  }, [reprendre, nouveau, initialText]);
+
+  if (!initial) {
+    return (
+      <MobileFrame>
+        <RelvoHeader back={backHref} title="Relvo" tail={false} />
+        <main className="entre-ecran min-h-0 flex-1 overflow-y-auto bg-background px-4 pt-4">
+          <SkyTail className="-mx-4 -mt-4" />
+          <div className="h-[150px] animate-pulse rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale" />
+        </main>
+      </MobileFrame>
+    );
+  }
+
+  return (
+    <RelvoSession
+      key={initial.id}
+      initial={initial}
+      backHref={backHref}
+      from={from}
+      contextLabel={contextLabel}
+      prompts={prompts}
+      initialText={initialText}
+    />
+  );
+}
+
+function RelvoSession({
+  initial,
+  backHref,
+  from,
+  contextLabel,
+  prompts,
+  initialText,
+}: {
+  initial: Initial;
+  backHref: string;
+  from: string | null;
+  contextLabel: string | null;
+  prompts: string[];
+  initialText: string;
 }) {
   // Une invite touchée se pose dans le composer : le composant repart avec
   // ce texte (la clé change), l'utilisateur l'envoie ou le corrige.
   const [seed, setSeed] = useState(initialText);
   const [seedKey, setSeedKey] = useState(0);
   const [general, setGeneral] = useState(false);
+  const [titre, setTitre] = useState<string | null>(initial.titre);
 
   // La page et le mode voyagent avec CHAQUE tour (corps de la requête), pas
   // avec le transport : la bascule en discussion générale vaut dès le tour
@@ -53,8 +146,46 @@ export function RelvoChatShell({
     () => new DefaultChatTransport<RelvoUIMessage>({ api: "/api/relvo" }),
   );
   const { messages, sendMessage, status, error, regenerate } =
-    useChat<RelvoUIMessage>({ transport });
+    useChat<RelvoUIMessage>({
+      id: initial.id,
+      transport,
+      messages: initial.messages,
+      onFinish: ({ messages: tous }) => {
+        // Le titre, à la fin du PREMIER tour (M10.4) : un appel de
+        // classification ; en attendant, le repli posé à la sauvegarde.
+        if (initial.titre) return;
+        if (tous.filter((m) => m.role === "assistant").length !== 1) return;
+        const question = texteDe(tous.find((m) => m.role === "user"));
+        const reponse = texteDe(
+          [...tous].reverse().find((m) => m.role === "assistant"),
+        );
+        if (!question || !reponse) return;
+        void fetch("/api/relvo/titre", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ question, reponse }),
+        })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((j: { titre?: string | null } | null) => {
+            if (j?.titre) setTitre(j.titre);
+          })
+          .catch(() => undefined);
+      },
+    });
   const busy = status === "submitted" || status === "streaming";
+
+  // La sauvegarde sur l'appareil, à chaque tour posé — jamais en plein flux.
+  useEffect(() => {
+    if (status === "streaming" || messages.length === 0) return;
+    void sauverEchange({
+      id: initial.id,
+      titre: titre ?? titreParDefaut(texteDe(messages[0]) ?? ""),
+      creeLe: initial.creeLe,
+      dernierTourLe: new Date().toISOString(),
+      page: from,
+      messages,
+    });
+  }, [messages, status, titre, initial.id, initial.creeLe, from]);
 
   function fill(text: string) {
     setSeed(text);
@@ -69,11 +200,36 @@ export function RelvoChatShell({
   }, [messages, status]);
 
   const vide = messages.length === 0;
+  const nouveauHref = `/relvo?nouveau=1${from ? `&from=${encodeURIComponent(from)}` : ""}`;
 
   return (
     <MobileFrame>
       {/* Le ciel est FIXE : sa queue se pose en tête de ce qui défile. */}
-      <RelvoHeader back={backHref} title="Relvo" tail={false} />
+      <RelvoHeader
+        back={backHref}
+        title="Relvo"
+        tail={false}
+        action={
+          <div className="flex items-center gap-2">
+            {!vide ? (
+              <Link
+                href={nouveauHref}
+                aria-label="Nouvel échange"
+                className={SKY_BTN}
+              >
+                <Plus className="size-[18px]" strokeWidth={2.4} />
+              </Link>
+            ) : null}
+            <Link
+              href="/relvo/historique"
+              aria-label="Mes échanges"
+              className={SKY_BTN}
+            >
+              <ClockCounterClockwise className="size-[18px]" />
+            </Link>
+          </div>
+        }
+      />
 
       <main
         ref={mainRef}
@@ -133,4 +289,15 @@ export function RelvoChatShell({
       />
     </MobileFrame>
   );
+}
+
+/** Le texte d'un message de l'interface, ou null. */
+function texteDe(m: RelvoUIMessage | undefined): string | null {
+  if (!m) return null;
+  const t = m.parts
+    .filter((p) => p.type === "text")
+    .map((p) => p.text)
+    .join("\n")
+    .trim();
+  return t || null;
 }

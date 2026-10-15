@@ -381,6 +381,15 @@ chat`, « Annuler » la rouvre ; « Prépare une réponse à Karim » → le bro
       d'urgence, instruction en Mémoire, recherche, brouillon pour Karim, affaire réglée, et
       « Annuler » sur une tâche créée (headless iPhone). **Reste à vérifier par le dirigeant
       en production.**
-- [ ] Tranche 3 — « Relvo se souvient »
+- [x] Tranche 3 — « Relvo se souvient » : ✅ M10.2 mémoire locale en IndexedDB (`idb`,
+      `lib/echanges-store.ts`), les messages de l'interface rejoués tels quels, outils compris,
+      dix échanges gardés, « Effacer mon historique » · ✅ M10.3 sessions implicites : l'échange
+      en cours se rouvre en deçà de cinq minutes (`doitReprendre`), `?nouveau=1` en force un,
+      « + » dans le ciel · ✅ M10.4 historique sur l'appareil (`/relvo/historique`), titres
+      générés à la fin du premier tour par un appel de classification (`titre-echange`,
+      `/api/relvo/titre`, consigné), repli sur les premiers mots, horloge dans le ciel ·
+      ✅ règles pures tenues par `ia-echange.test.ts` (reprise, purge, titre, classification
+      simulée) · ✅ vérifié en headless iPhone : tour, reprise après rechargement, historique
+      titré (« Arbitrage quantité huile de friture »), nouvel échange forcé.
 - [ ] Tranche 4 — « Relvo parle en premier » (M18.9, M18.11, puis M10.16)
 - [ ] Tranche 5 — Durcissement

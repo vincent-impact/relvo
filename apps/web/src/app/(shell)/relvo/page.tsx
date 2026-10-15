@@ -26,11 +26,18 @@ const PROMPTS = {
 export default async function ConversationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ from?: string; q?: string }>;
+  searchParams: Promise<{
+    from?: string;
+    q?: string;
+    nouveau?: string;
+    reprendre?: string;
+  }>;
 }) {
   // `q` : une suggestion de l'accueil, posée comme premier tour (05 §11.12) —
   // le texte arrive dans le composer, l'utilisateur l'envoie ou le corrige.
-  const { from, q } = await searchParams;
+  // `nouveau` force un nouvel échange ; `reprendre` rouvre un échange de
+  // l'historique de l'appareil (M10.3, M10.4).
+  const { from, q, nouveau, reprendre } = await searchParams;
   const backHref = from && from !== "/relvo" ? from : "/";
 
   let contextLabel: string | null = null;
@@ -62,6 +69,8 @@ export default async function ConversationPage({
       contextLabel={contextLabel}
       prompts={prompts}
       initialText={q?.trim() || ""}
+      nouveau={nouveau === "1"}
+      reprendre={reprendre?.trim() || null}
     />
   );
 }

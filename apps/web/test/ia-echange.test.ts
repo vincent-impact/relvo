@@ -399,3 +399,90 @@ describe("la fenêtre d'annulation, tenue par l'écran", () => {
     expect(annulable({ ...geste, a: "hier" }, t0)).toBe(false);
   });
 });
+
+describe("la mémoire locale des échanges — les règles (05 §11.2–§11.4)", () => {
+  it("rouvre l'échange en cours en deçà de cinq minutes, sinon un nouvel échange", async () => {
+    const { doitReprendre, SESSION_REPRISE_MS } =
+      await import("@/lib/echanges-regles");
+    const t0 = Date.parse("2026-10-15T20:00:00.000Z");
+    const il_y_a = (ms: number) => new Date(t0 - ms).toISOString();
+    expect(doitReprendre(il_y_a(30_000), t0)).toBe(true);
+    expect(doitReprendre(il_y_a(SESSION_REPRISE_MS - 1), t0)).toBe(true);
+    expect(doitReprendre(il_y_a(SESSION_REPRISE_MS), t0)).toBe(false);
+    expect(doitReprendre(il_y_a(60 * 60_000), t0)).toBe(false);
+    expect(doitReprendre("n'importe quoi", t0)).toBe(false);
+  });
+
+  it("garde les dix plus récents, nomme ce qui dépasse", async () => {
+    const { purger, HISTORIQUE_MAX } = await import("@/lib/echanges-regles");
+    const xs = Array.from({ length: 13 }, (_, i) => ({
+      id: `e${i}`,
+      dernierTourLe: new Date(Date.UTC(2026, 9, 1 + i)).toISOString(),
+    }));
+    const { gardes, supprimes } = purger(xs);
+    expect(gardes).toHaveLength(HISTORIQUE_MAX);
+    expect(gardes[0]!.id).toBe("e12");
+    expect(supprimes.map((s) => s.id)).toEqual(["e2", "e1", "e0"]);
+  });
+
+  it("le titre de repli borne les premiers mots ; le titre du modèle est nettoyé de même", async () => {
+    const { titreParDefaut, nettoyerTitre, TITRE_MAX } =
+      await import("@/lib/echanges-regles");
+    expect(titreParDefaut("  Qu'est-ce qui est urgent aujourd'hui ?  ")).toBe(
+      "Qu'est-ce qui est urgent aujourd'hui ?",
+    );
+    const long = titreParDefaut(
+      "Prépare une réponse à Karim pour relancer sur la rupture de sauce blanche et demander un point",
+    );
+    expect(long.length).toBeLessThanOrEqual(TITRE_MAX + 1);
+    expect(long.endsWith("…")).toBe(true);
+    expect(long).not.toMatch(/\s…$/);
+    expect(titreParDefaut("   ")).toBe("Échange");
+    expect(nettoyerTitre("« Rendez-vous Karim demain 10h. »")).toBe(
+      "Rendez-vous Karim demain 10h",
+    );
+    expect(nettoyerTitre("")).toBe("Échange");
+  });
+});
+
+describe("le titre d'un échange — un appel de classification (M10.4)", () => {
+  it("système constant, tour dans le message utilisateur, titre nettoyé, mesure du tier classification", async () => {
+    const { titrerEchange, SYSTEME_TITRE } =
+      await import("@/server/ia/echange/titre");
+    const modele = new MockLanguageModelV4({
+      doGenerate: async () => ({
+        content: [
+          {
+            type: "text",
+            text: '{"titre":"« Rendez-vous Karim demain 10h. »"}',
+          },
+        ],
+        finishReason: { unified: "stop", raw: undefined },
+        usage: {
+          inputTokens: {
+            total: 300,
+            noCache: 300,
+            cacheRead: undefined,
+            cacheWrite: undefined,
+          },
+          outputTokens: { total: 12, text: 12, reasoning: undefined },
+        },
+        warnings: [],
+      }),
+    });
+    const { titre, mesure } = await titrerEchange({
+      question: "Pose-moi un rendez-vous avec Karim demain à 10h",
+      reponse: "C'est fait : demain 10h, avec Karim.",
+      modele,
+    });
+    expect(titre).toBe("Rendez-vous Karim demain 10h");
+    expect(mesure.sollicitation).toBe("titre-echange");
+    expect(mesure.tier).toBe("classification");
+    const appel = modele.doGenerateCalls[0]!;
+    const systeme = appel.prompt.find((m) => m.role === "system");
+    expect(systeme && "content" in systeme ? systeme.content : null).toBe(
+      SYSTEME_TITRE,
+    );
+    expect(JSON.stringify(appel.prompt)).toContain("Pose-moi un rendez-vous");
+  });
+});
