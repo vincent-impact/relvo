@@ -431,6 +431,171 @@ export function projectSheetMessage(
  * la fiche de son contact. Partagée par la structuration et le brouillon ;
  * la relecture la reprendra.
  */
+/**
+ * Le COMPTE tel que les sollicitations le relisent — miroir de
+ * `CompteContexte` —, et le DOMAINE demandé avec ses connaissances lues
+ * (05 §10.2 : « Général » toujours, le domaine du sujet quand il y en a un).
+ * Partagé par la fiche d'un sujet et par l'échange avec Relvo (M10), qui
+ * parle au dirigeant depuis n'importe quelle page.
+ */
+export async function loadAccountProjection(
+  db: TenantDb,
+  accountId: string,
+  folderId: string | null,
+): Promise<{
+  compte: TriageAccountProjection;
+  domaine: StructurationDomainProjection | null;
+}> {
+  const account = assertFound(
+    await db.account.findUnique({
+      where: { id: accountId },
+      select: {
+        firstName: true,
+        lastName: true,
+        sectors: true,
+        observedPreferences: true,
+      },
+    }),
+    "Compte",
+  );
+
+  const [folder, folders, knowledge, labels, mailboxes] = await Promise.all([
+    folderId
+      ? db.folder.findFirst({
+          where: { id: folderId },
+          select: { id: true, name: true, description: true },
+        })
+      : Promise.resolve(null),
+    db.folder.findMany({
+      where: { isActive: true },
+      select: { name: true, description: true, isDefault: true },
+      orderBy: { name: "asc" },
+    }),
+    // Les connaissances LUES de « Général » et du domaine demandé (05 §10.2).
+    db.knowledgeDocument.findMany({
+      where: {
+        absorptionStatus: AbsorptionStatus.read,
+        folder: folderId
+          ? { OR: [{ isDefault: true }, { id: folderId }] }
+          : { isDefault: true },
+      },
+      select: {
+        folderId: true,
+        kind: true,
+        name: true,
+        content: true,
+        aiLabel: true,
+        aiSummary: true,
+        folder: { select: { isDefault: true } },
+      },
+      orderBy: { name: "asc" },
+    }),
+    db.label.findMany({
+      select: { key: true, status: true },
+      orderBy: { key: "asc" },
+    }),
+    db.channel.findMany({
+      where: { type: ChannelType.email, isActive: true },
+      select: { identifier: true },
+      orderBy: { identifier: "asc" },
+    }),
+  ]);
+
+  const instructionsGenerales = knowledge
+    .filter((k) => k.folder.isDefault && k.kind === KnowledgeKind.note)
+    .map((k) => ({ titre: k.name, contenu: k.content ?? "" }));
+  const duDomaine = knowledge.filter(
+    (k) => !k.folder.isDefault && k.folderId === folderId,
+  );
+
+  return {
+    compte: {
+      dirigeant: `${account.firstName} ${account.lastName}`.trim(),
+      entreprise: null,
+      messageries: mailboxes.map((c) => c.identifier),
+      secteurs: account.sectors,
+      domaines: folders.map((f) => ({
+        nom: f.name,
+        description: f.description,
+      })),
+      instructionsGenerales,
+      // Le registre entier, candidates comprises : une candidate reprise par
+      // un second sujet devient active (04 §10) — le modèle doit la voir.
+      etiquettes: labels.map((l) => l.key),
+      preferencesObservees: account.observedPreferences,
+      sujetsOuverts: [],
+    },
+    domaine: folder
+      ? {
+          id: folder.id,
+          nom: folder.name,
+          description: folder.description,
+          instructions: duDomaine
+            .filter((k) => k.kind === KnowledgeKind.note)
+            .map((k) => ({ titre: k.name, contenu: k.content ?? "" })),
+          documents: duDomaine
+            .filter((k) => k.kind === KnowledgeKind.file)
+            .map((k) => ({
+              nom: k.name,
+              etiquette: k.aiLabel,
+              resume: k.aiSummary,
+            })),
+        }
+      : null,
+  };
+}
+
+/** La fiche d'un CONTACT, telle que l'échange et la structuration la relisent. */
+export async function loadContactProjection(
+  db: TenantDb,
+  contactId: string,
+  /** Un sujet à exclure de ses sujets ouverts — celui dont on lit la fiche. */
+  excludeReference: string | null = null,
+): Promise<StructurationContactProjection> {
+  const contact = assertFound(
+    await db.contact.findFirst({
+      where: { id: contactId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        company: true,
+        role: true,
+        relvoNote: true,
+        status: true,
+        email: true,
+      },
+    }),
+    "Contact",
+  );
+  const profil = await getSenderProfile(db, {
+    conversationId: null,
+    contactId: contact.id,
+    adresse: contact.email,
+    contact,
+  });
+  return {
+    id: contact.id,
+    statut: contact.status,
+    nomProvisoire: isPlaceholderName(contact),
+    nom: contactDisplayName(contact),
+    entreprise: contact.company,
+    role: contact.role,
+    noteRelvo: contact.relvoNote,
+    domaineHabituel: profil.domaineHabituel,
+    delaiReponseJours: null,
+    sujetsOuverts: profil.sujetsEnCours
+      .filter((s) => s.reference !== excludeReference)
+      .map((s) => ({
+        reference: s.reference,
+        titre: s.titre,
+        enAttente: s.enAttente,
+      })),
+    derniersValides: profil.sujetsValidesRecents,
+    antecedentsTri: profil.antecedentsTri,
+  };
+}
+
 export async function loadSubjectSheet(
   db: TenantDb,
   subjectId: string,
@@ -450,94 +615,45 @@ export async function loadSubjectSheet(
     "Affaire",
   );
 
-  const account = assertFound(
-    await db.account.findUnique({
-      where: { id: subject.accountId },
+  const [{ compte, domaine }, contacts, tasks, messages] = await Promise.all([
+    loadAccountProjection(db, subject.accountId, subject.folderId),
+    subject.contactIds.length
+      ? db.contact.findMany({
+          where: { id: { in: subject.contactIds } },
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            company: true,
+            role: true,
+          },
+        })
+      : Promise.resolve([]),
+    db.task.findMany({
+      where: { subjectId, status: { not: TaskStatus.deleted } },
       select: {
-        firstName: true,
-        lastName: true,
-        sectors: true,
-        observedPreferences: true,
+        title: true,
+        kind: true,
+        startDate: true,
+        sourceActor: true,
+        status: true,
+        completedAt: true,
+        metadata: true,
       },
+      orderBy: [{ startDate: "asc" }, { createdAt: "asc" }],
     }),
-    "Compte",
-  );
-
-  const [folders, knowledge, labels, mailboxes, contacts, tasks, messages] =
-    await Promise.all([
-      db.folder.findMany({
-        where: { isActive: true },
-        select: { name: true, description: true, isDefault: true },
-        orderBy: { name: "asc" },
-      }),
-      // Les connaissances LUES de « Général » et du domaine du sujet (05 §10.2).
-      db.knowledgeDocument.findMany({
-        where: {
-          absorptionStatus: AbsorptionStatus.read,
-          folder: subject.folderId
-            ? { OR: [{ isDefault: true }, { id: subject.folderId }] }
-            : { isDefault: true },
-        },
-        select: {
-          folderId: true,
-          kind: true,
-          name: true,
-          content: true,
-          aiLabel: true,
-          aiSummary: true,
-          folder: { select: { isDefault: true } },
-        },
-        orderBy: { name: "asc" },
-      }),
-      db.label.findMany({
-        select: { key: true, status: true },
-        orderBy: { key: "asc" },
-      }),
-      db.channel.findMany({
-        where: { type: ChannelType.email, isActive: true },
-        select: { identifier: true },
-        orderBy: { identifier: "asc" },
-      }),
-      subject.contactIds.length
-        ? db.contact.findMany({
-            where: { id: { in: subject.contactIds } },
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              company: true,
-              role: true,
-              relvoNote: true,
-              status: true,
-              email: true,
-            },
-          })
-        : Promise.resolve([]),
-      db.task.findMany({
-        where: { subjectId, status: { not: TaskStatus.deleted } },
-        select: {
-          title: true,
-          kind: true,
-          startDate: true,
-          sourceActor: true,
-          status: true,
-          completedAt: true,
-          metadata: true,
-        },
-        orderBy: [{ startDate: "asc" }, { createdAt: "asc" }],
-      }),
-      db.message.findMany({
-        where: {
-          subjectId,
-          ...(options.messagesBefore
-            ? { createdAt: { lt: options.messagesBefore } }
-            : {}),
-        },
-        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        take: options.messages ?? STRUCTURATION_LAST_MESSAGES,
-        include: SHEET_MESSAGE_INCLUDE,
-      }),
-    ]);
+    db.message.findMany({
+      where: {
+        subjectId,
+        ...(options.messagesBefore
+          ? { createdAt: { lt: options.messagesBefore } }
+          : {}),
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: options.messages ?? STRUCTURATION_LAST_MESSAGES,
+      include: SHEET_MESSAGE_INCLUDE,
+    }),
+  ]);
 
   // Le contact du sujet : le premier de la liste, dans l'ordre de la liste —
   // c'est celui que l'ouverture a créé ou reconnu.
@@ -545,21 +661,9 @@ export async function loadSubjectSheet(
     .map((id) => contacts.find((c) => c.id === id))
     .filter((c): c is NonNullable<typeof c> => c !== undefined);
   const premier = contactRows[0] ?? null;
-  const profil = premier
-    ? await getSenderProfile(db, {
-        conversationId: null,
-        contactId: premier.id,
-        adresse: premier.email,
-        contact: premier,
-      })
+  const contact = premier
+    ? await loadContactProjection(db, premier.id, subject.reference)
     : null;
-
-  const instructionsGenerales = knowledge
-    .filter((k) => k.folder.isDefault && k.kind === KnowledgeKind.note)
-    .map((k) => ({ titre: k.name, contenu: k.content ?? "" }));
-  const duDomaine = knowledge.filter(
-    (k) => !k.folder.isDefault && k.folderId === subject.folderId,
-  );
 
   const interlocuteur = premier ? contactDisplayName(premier) : "le contact";
   const projectedMessages = [...messages]
@@ -568,39 +672,8 @@ export async function loadSubjectSheet(
 
   return {
     accountId: subject.accountId,
-    compte: {
-      dirigeant: `${account.firstName} ${account.lastName}`.trim(),
-      entreprise: null,
-      messageries: mailboxes.map((c) => c.identifier),
-      secteurs: account.sectors,
-      domaines: folders.map((f) => ({
-        nom: f.name,
-        description: f.description,
-      })),
-      instructionsGenerales,
-      // Le registre entier, candidates comprises : une candidate reprise par
-      // un second sujet devient active (04 §10) — le modèle doit la voir.
-      etiquettes: labels.map((l) => l.key),
-      preferencesObservees: account.observedPreferences,
-      sujetsOuverts: [],
-    },
-    domaine: subject.folder
-      ? {
-          id: subject.folder.id,
-          nom: subject.folder.name,
-          description: subject.folder.description,
-          instructions: duDomaine
-            .filter((k) => k.kind === KnowledgeKind.note)
-            .map((k) => ({ titre: k.name, contenu: k.content ?? "" })),
-          documents: duDomaine
-            .filter((k) => k.kind === KnowledgeKind.file)
-            .map((k) => ({
-              nom: k.name,
-              etiquette: k.aiLabel,
-              resume: k.aiSummary,
-            })),
-        }
-      : null,
+    compte,
+    domaine,
     sujet: {
       id: subject.id,
       reference: subject.reference,
@@ -629,29 +702,7 @@ export async function loadSubjectSheet(
       })),
       messages: projectedMessages,
     },
-    contact:
-      premier && profil
-        ? {
-            id: premier.id,
-            statut: premier.status,
-            nomProvisoire: isPlaceholderName(premier),
-            nom: contactDisplayName(premier),
-            entreprise: premier.company,
-            role: premier.role,
-            noteRelvo: premier.relvoNote,
-            domaineHabituel: profil.domaineHabituel,
-            delaiReponseJours: null,
-            sujetsOuverts: profil.sujetsEnCours
-              .filter((s) => s.reference !== subject.reference)
-              .map((s) => ({
-                reference: s.reference,
-                titre: s.titre,
-                enAttente: s.enAttente,
-              })),
-            derniersValides: profil.sujetsValidesRecents,
-            antecedentsTri: profil.antecedentsTri,
-          }
-        : null,
+    contact,
   };
 }
 

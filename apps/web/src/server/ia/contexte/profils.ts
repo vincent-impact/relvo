@@ -1,4 +1,4 @@
-import { coucheProduit, estimerJetons } from "../produit";
+import { coucheProduit, coucheProduitEchange, estimerJetons } from "../produit";
 import {
   blocMessage,
   coucheCompteComplete,
@@ -7,9 +7,15 @@ import {
   coucheSituationTri,
   trierParDate,
 } from "./couches";
-import { blocPrecedents, ficheContact, ficheSujet } from "./fiches";
+import {
+  blocPrecedents,
+  briefCompte,
+  ficheContact,
+  ficheSujet,
+} from "./fiches";
 import { coucheInstant } from "./instant";
 import type {
+  BriefCompte,
   CompteContexte,
   ContactContexte,
   ConversationContexte,
@@ -43,7 +49,8 @@ export type Profil =
   | "structuration"
   | "relecture"
   | "brouillon"
-  | "etiquette-piece-jointe";
+  | "etiquette-piece-jointe"
+  | "echange";
 
 /**
  * Budgets en jetons (estimés), par profil et par couche. Dépassement = test
@@ -86,6 +93,15 @@ export const BUDGETS: Record<Profil, Record<Couche, number>> = {
     domaine: 0,
     situation: 300,
     instant: 0,
+  },
+  // L'échange (M10) : la couche Produit porte en plus le socle de l'échange ;
+  // la Situation est le brief et la fiche de la page, trois messages au plus.
+  echange: {
+    produit: 4_300,
+    compte: 1_600,
+    domaine: 3_500,
+    situation: 3_000,
+    instant: 150,
   },
 };
 
@@ -316,4 +332,59 @@ export function contexteEtiquettePieceJointe(args: {
     },
     `# Ton étiquette\nDonne une catégorie courte à cette pièce jointe (devis, facture, bon de livraison, contrat, photo, autre…).`,
   );
+}
+
+/**
+ * Le contexte de l'ÉCHANGE (M10, `05 §10.1`, `05 §11.5`) — un tour de parole
+ * du dirigeant, pas une sollicitation en un coup. Le cache de prompt est un
+ * préfixe, et la conversation se rejoue à chaque tour : l'ordre est donc
+ * décidé ici.
+ *
+ *   • `system` : la couche Produit de l'échange — identique pour tous les
+ *     comptes d'un même secteur (PITFALLS.md #49).
+ *   • `prefixe` : Compte et Domaine — le premier message de la conversation,
+ *     stable pendant toute la session.
+ *   • `volatil` : Instant (date, HEURE française, page) et Situation (brief,
+ *     fiche de la page) — poussé AVEC le dernier message du dirigeant, parce
+ *     qu'il change à chaque tour : en tête, il annulerait le cache de tout
+ *     l'historique.
+ *
+ * `prompt` concatène les deux pour la mesure et les budgets.
+ */
+export type ContexteEchange = Contexte & { prefixe: string; volatil: string };
+
+export function contexteEchange(args: {
+  compte: CompteContexte;
+  domaine: DomaineContexte | null;
+  brief: BriefCompte;
+  sujet: SujetContexte | null;
+  contact: ContactContexte | null;
+  instant: InstantContexte;
+}): ContexteEchange {
+  const couches: Record<Couche, string> = {
+    produit: coucheProduitEchange(args.compte.secteurs),
+    compte: coucheCompteComplete(args.compte),
+    // Hors d'une fiche, pas de couche Domaine du tout — « aucun domaine »
+    // parle d'un sujet non classé, ce qui n'a pas de sens ici.
+    domaine: args.domaine ? coucheDomaine(args.domaine) : "",
+    instant: coucheInstant(args.instant.maintenant, args.instant.page),
+    situation: [
+      briefCompte(args.brief),
+      args.sujet ? ficheSujet(args.sujet, { messages: 3 }) : null,
+      args.contact ? ficheContact(args.contact) : null,
+    ]
+      .filter(Boolean)
+      .join("\n\n"),
+  };
+  const prefixe = [couches.compte, couches.domaine]
+    .filter(Boolean)
+    .join("\n\n");
+  const volatil = [couches.instant, couches.situation].join("\n\n");
+  return {
+    system: couches.produit,
+    prompt: [prefixe, volatil].join("\n\n"),
+    prefixe,
+    volatil,
+    couches,
+  };
 }

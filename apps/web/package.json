@@ -18,10 +18,12 @@
     "eval:brouillon": "node --env-file=.env.local --import tsx scripts/evaluation/brouillonner.ts",
     "eval:relecture": "node --env-file=.env.local --import tsx scripts/evaluation/relire.ts",
     "ia:journal": "node --env-file=.env.local --import tsx scripts/ia/journal.ts",
+    "ia:assistant": "node --env-file=.env.local --import tsx scripts/ia/activer-assistant.ts",
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^4.0.66",
+    "@ai-sdk/react": "^4.0.146",
     "@base-ui/react": "^1.5.0",
     "@dnd-kit/core": "^6.3.1",
     "@phosphor-icons/react": "^2.1.10",

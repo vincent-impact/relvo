@@ -1,4 +1,5 @@
 import { SOCLE_BATIMENT } from "./batiment";
+import { SOCLE_ECHANGE } from "./echange";
 import { SOCLE_FOOD } from "./food";
 import { SOCLE_PRODUIT } from "./socle";
 
@@ -34,6 +35,8 @@ export function estimerJetons(texte: string): number {
 export const BUDGET_PRODUIT = {
   socle: 1_400,
   parSecteur: 1_100,
+  /** Le socle de l'échange, ajouté au message système de l'échange seulement (M10). */
+  echange: 700,
 } as const;
 
 export function coucheProduit(secteurs: readonly Secteur[]): string {
@@ -41,4 +44,13 @@ export function coucheProduit(secteurs: readonly Secteur[]): string {
   return [SOCLE_PRODUIT, ...retenus.map((s) => SOCLES[s])].join("\n\n");
 }
 
-export { SOCLE_BATIMENT, SOCLE_FOOD, SOCLE_PRODUIT };
+/**
+ * La couche Produit de l'ÉCHANGE (M10) : le socle commun, les socles de
+ * secteur, puis le socle de l'échange — toujours dans cet ordre, pour le
+ * cache. C'est le message système de chaque tour, et rien d'autre n'y entre.
+ */
+export function coucheProduitEchange(secteurs: readonly Secteur[]): string {
+  return [coucheProduit(secteurs), SOCLE_ECHANGE].join("\n\n");
+}
+
+export { SOCLE_BATIMENT, SOCLE_ECHANGE, SOCLE_FOOD, SOCLE_PRODUIT };
