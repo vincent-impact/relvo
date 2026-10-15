@@ -153,6 +153,13 @@
       "statut": "a-faire",
       "gauche": 89.25,
       "largeur": 6.54
+    },
+    {
+      "titre": "La messagerie au quotidien",
+      "resume": "Dicter un message plutôt que le taper, envoyer une photo ou un fichier, écouter et lire les messages vocaux reçus, en laisser un à votre tour, mettre un visage sur un contact. Tout ce qui rend la messagerie de Relvo aussi naturelle que celle de votre téléphone.",
+      "statut": "a-faire",
+      "gauche": null,
+      "largeur": 0
     }
   ],
   "livraison": {

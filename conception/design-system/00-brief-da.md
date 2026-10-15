@@ -198,8 +198,9 @@ on perd « ce qui se détache, c'est Relvo ».
   vingt-quatre), **À faire** (tâches ouvertes), **En attente** (pastille cerclée : on attend un
   retour d'un tiers), **En retard** (une échéance dépassée, l'horaire barré en rouge).
 - **Priorité à deux valeurs** : `normal` / `urgent`. Une seule pastille rouge.
-- **La pastille de non-lus se lit sur la conversation**, là où les messages arrivent, jamais sur
-  l'affaire.
+- **Le non-lu se compte sur la conversation et sur l'affaire** : une affaire qui a reçu trois
+  messages a bougé, et elle porte le chiffre partout où elle se rend, en ligne comme en carte —
+  c'est ainsi qu'on le sait sans l'ouvrir.
 - **On n'ignore pas une affaire, on ignore une source** : une conversation est `active` ou
   `ignorée`. Les gestes suivent : sur une ligne d'affaire, ← **Fermer** / → **Valider** ; sur une
   ligne de conversation, ← **Ignorer**. Rien n'est détruit, et le vocabulaire le dit.
@@ -245,7 +246,7 @@ voici les pièces **signature**, celles qui portent l'identité :
 - La **carte de liste** : les lignes vivent dans une carte unique, séparées par un filet, jamais
   une carte par ligne.
 - La **pastille d'acteur**, les **pastilles d'état** (pleine, cerclée, barrée), la **pastille de
-  non-lus** sur la conversation.
+  non-lus**, sur la conversation comme sur l'affaire.
 - Le **bandeau « Suivi dans »** en tête d'une conversation : bande de domaine + titre de l'affaire.
 
 **Les surfaces de l'échange**

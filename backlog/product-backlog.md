@@ -43,6 +43,7 @@ frontmatter l'est.
 | [M10 — Échange avec Relvo](epics/M10-echange-relvo.md)                     | ⬜ porte aussi la tranche 5 de M18               | M13                             |
 | [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md)                    | ⬜                                               | —                               |
 | [M17 — Mémoire et apprentissage](epics/M17-memoire-apprentissage.md)       | ⬜                                               | la qualité du tri dans la durée |
+| [M20 — Les usages de la messagerie](epics/M20-usages-messagerie.md)        | ⬜ après M7 et M10                               | —                               |
 | [M12 — Mécanismes transverses](epics/M12-transverses.md)                   | 🟡 partiellement livré au fil de l'eau           | —                               |
 | [M13 — Onboarding et bêta](epics/M13-onboarding-beta.md)                   | ⬜                                               | mise en service                 |
 | [M14 — Qualité et exploitation](epics/M14-qualite-exploitation.md)         | ⬜                                               | —                               |

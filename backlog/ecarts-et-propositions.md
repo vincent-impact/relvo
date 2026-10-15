@@ -1397,8 +1397,36 @@ personne ne regarde plus en construisant.
 visite porte un portrait — les initiales, ou la silhouette d'un visage — qui appelle une photo.
 Elle demande une colonne sur le contact (la clé du fichier), le paquet de stockage pour la
 déposer, et un geste sur le portrait (prendre ou choisir une photo). Aucun bouton n'est posé
-tant que le geste n'existe pas : un bouton sans effet se retire. À placer avec les gestes du
-composer (dictée, pièces jointes), dans la même épique.
+tant que le geste n'existe pas : un bouton sans effet se retire. Portée par **M20**, avec les
+autres gestes de la messagerie.
+
+### La vue Mois est une grille à pastilles, pas un mur de puces
+
+**`tranché`** · La vue Mois rendait chaque tâche datée en puce de texte tronqué sur l'aplat de
+son domaine — soixante-neuf puces sur un mois chargé, illisibles. Retenu, parmi trois formes
+(borner les puces ; retirer la vue ; la grille) : **la grille en carte**, chaque case un chiffre
+et jusqu'à trois pastilles de domaine, le tap qui sélectionne le jour et pose sa liste sous la
+grille, le glissé depuis cette liste vers une case. C'est la grammaire de la semaine réutilisée :
+le mois sert à naviguer et à replanifier, pas à lire. L'invariant 15 reste tenu ; ce qui change,
+c'est ce qu'on glisse. Item **M12.8**.
+
+### Le compte des nouveaux messages se lit sur l'affaire aussi
+
+**`tranché`** · Le brief réservait la pastille de non-lus à la conversation. Le dirigeant a tranché
+l'inverse : une affaire qui a reçu trois messages **a bougé**, et il faut le lui dire là où il
+regarde l'affaire — le chiffre est pertinent sur l'élément « affaire » lui-même, pas seulement
+sur la page Affaires. Le brief est amendé : le non-lu se compte sur la conversation **et** sur
+l'affaire, partout où elle se rend en ligne ou en carte. Le code le faisait déjà ; c'est la règle
+qui rejoint le code.
+
+### Les usages de la messagerie forment une épique à part, après le cœur IA
+
+**`tranché`** · La dictée, l'envoi de pièces jointes et la photo d'un contact ne sont pas trois
+items isolés : avec l'écoute et la lecture des messages vocaux reçus, la possibilité d'en laisser
+un et la transcription, ils forment **tout ce qui rend la messagerie de Relvo aussi naturelle que
+celle du téléphone**. Retenu : une épique dédiée, **M20**, après M7 et M10 — plutôt que de les
+disperser dans M10 ou de les reporter sans adresse. Le benchmark des coûts proportionnels (voix,
+vision) en est le premier item, pas un préalable extérieur.
 
 ### Trancher les choix d'un brouillon avec Relvo, avant de remplir l'e-mail
 

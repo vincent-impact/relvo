@@ -936,10 +936,11 @@ devient `PITFALLS.md` #62. L'épique passe en `termine`.
 
 **Confié à plus tard** : `NavVisibilityProvider` calcule encore un masquage du dock au
 défilement que plus personne ne lit depuis que le dock est fixe — à retirer au prochain passage
-dans `layout/`. **Entre les mains du dirigeant**, hors de l'épique : la forme de la vue Mois ;
-la pastille de non-lus sur une ligne d'affaire, que le brief réserve à la conversation et que
-la ligne rend encore ; la dictée, les pièces jointes et la photo d'un contact, à placer dans
-une épique.
+dans `layout/`. **Tranché par le dirigeant à la clôture**, hors de l'épique : la vue Mois
+devient une grille à pastilles (M12.8) ; le compte des nouveaux messages se lit sur l'affaire
+aussi — le brief rejoint le code ; la dictée, les pièces jointes, la photo d'un contact, l'écoute
+et la lecture des vocaux, le vocal qu'on laisse et la transcription forment **M20 — Les usages
+de la messagerie**, après M7 et M10. Les trois décisions sont dans `ecarts`.
 
 ## Où on en est
 
