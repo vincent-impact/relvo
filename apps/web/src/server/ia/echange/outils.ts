@@ -42,7 +42,7 @@ import {
   toSubjectRowData,
 } from "@/components/shared/subject-row";
 import { type TaskItemData, toTaskItemData } from "@/lib/task-item-data";
-import { preparerBrouillon } from "../pipeline/brouillon";
+import type { ResultatBrouillon } from "../pipeline/brouillon";
 import { ficheSujet } from "../contexte";
 import {
   DATE_NUE,
@@ -131,8 +131,20 @@ export type ContexteOutils = {
   now: Date;
   /** La page d'origine : l'affaire ouverte, par défaut de toute désignation. */
   subjectId: string | null;
+  /**
+   * La rédaction d'un brouillon (M7.7), INJECTÉE : la route passe le pipeline
+   * (`preparerBrouillon`), le jeu d'évaluation un simulacre — ce module reste
+   * importable hors Next.
+   */
+  brouillon: (taskId: string) => Promise<ResultatBrouillon>;
   /** Appelé dès qu'un outil a ÉCRIT : la route invalide le cache de données. */
   onEcriture?: () => void;
+};
+
+/** Ce que le serveur attache à un message de Relvo : le tier du tour, et ce qui l'a arrêté avant la fin. */
+export type MetaRelvo = {
+  tier?: "extraction" | "raisonnement";
+  arret?: "plafond" | "longueur";
 };
 
 const CHAT: Origine = { source: "chat" };
@@ -928,10 +940,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
               CHAT,
             ));
           ecrit();
-          const r = await preparerBrouillon({
-            accountId: ctx.accountId,
-            taskId: t.id,
-          });
+          const r = await ctx.brouillon(t.id);
           if (r.issue !== "redige" && r.issue !== "reutilise") {
             const motif =
               r.issue === "decisions-en-attente"
@@ -1106,4 +1115,4 @@ export type OutilsRelvo = ReturnType<typeof outilsRelvo>;
 export type OutilsRelvoUI = InferUITools<OutilsRelvo>;
 
 /** Le message de l'interface, typé par la palette : le fil sait quel outil a rendu quoi. */
-export type RelvoUIMessage = UIMessage<unknown, UIDataTypes, OutilsRelvoUI>;
+export type RelvoUIMessage = UIMessage<MetaRelvo, UIDataTypes, OutilsRelvoUI>;

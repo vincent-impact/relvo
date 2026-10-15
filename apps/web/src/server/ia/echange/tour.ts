@@ -1,47 +1,29 @@
 import "server-only";
 import { after } from "next/server";
-import {
-  convertToModelMessages,
-  createUIMessageStream,
-  createUIMessageStreamResponse,
-  type ModelMessage,
-} from "ai";
-import {
-  getEchangeProjection,
-  isAssistantEnabled,
-  logAiSolicitation,
-  tenantDb,
-} from "@relvo/db";
+import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
+import { isAssistantEnabled, logAiSolicitation, tenantDb } from "@relvo/db";
 import { expireTenantData } from "@/server/cached";
 import { chat, EchecSollicitation } from "../client";
 import { inferenceDisponible, NIVEAU_RETENU } from "../config";
-import { contexteEchange, prefixeStable } from "../contexte";
-import { injecterVolatil, lirePage } from "./conversions";
-import { outilsRelvo, type RelvoUIMessage } from "./outils";
+import { preparerBrouillon } from "../pipeline/brouillon";
+import { construireTour, type EntreeTour } from "./construire";
+import type { MetaRelvo, RelvoUIMessage } from "./outils";
+import { arretDuTour } from "./tier";
 
-// UN TOUR DE L'ÉCHANGE (M10.7, M10.12, M10.13, M10.14) — ce que la route fait
-// d'un message du dirigeant :
+// UN TOUR DE L'ÉCHANGE (M10.7, M10.11 à M10.15) — ce que la route fait d'un
+// message du dirigeant :
 //   1. Assistant actif, inférence joignable — sinon Relvo le dit dans le fil,
 //      en langage client, jamais une erreur HTTP.
-//   2. La projection de la page (`getEchangeProjection`) : compte, brief,
-//      fiche de l'affaire ou du contact ouvert — sauf en discussion générale.
-//   3. Le contexte assemblé pour le cache (PITFALLS.md #49) : Produit seule
-//      en système ; Compte et Domaine en premier message ; l'historique tel
-//      que l'interface le rejoue ; Instant et Situation avec le DERNIER
-//      message, entre délimiteurs.
-//   4. `chat()` : flux, outils, plafond d'étapes, niveau explicite, clé de
-//      cache du compte.
-//   5. La mesure consignée à la fin du flux (`logAiSolicitation`), dans
+//   2. Le tour construit (`construire.ts`) : projection de la page, contexte
+//      en préfixe caché (#49), outils, historique rejoué, tier choisi par tour.
+//   3. `chat()` : flux, outils, plafond d'étapes, niveau explicite du tier,
+//      clé de cache du compte.
+//   4. La mesure consignée à la fin du flux (`logAiSolicitation`), dans
 //      `after()` — un tour coûte ce qu'il coûte, qu'il ait abouti ou non.
+//   5. Ce qui arrête un tour avant la fin — le plafond d'étapes, la sortie
+//      trop longue — voyage en métadonnée du message : le fil le dit.
 
-export type EntreeTour = {
-  accountId: string;
-  messages: RelvoUIMessage[];
-  /** La page d'origine (`?from=`), ou null. */
-  from: string | null;
-  /** Discussion générale : la page n'est pas chargée (M10.5). */
-  general: boolean;
-};
+export type { EntreeTour };
 
 /** Une réponse de Relvo SANS appel au modèle — un fil, pas une erreur HTTP. */
 export function reponseFixe(
@@ -81,54 +63,22 @@ export async function repondreAuTour(entree: EntreeTour): Promise<Response> {
     return reponseFixe(PHRASES.desactive, messages);
   }
 
-  const page = lirePage(entree.general ? null : entree.from);
-  const projection = await getEchangeProjection(db, {
-    accountId,
-    subjectId: page.subjectId,
-    contactId: page.contactId,
+  const tour = await construireTour(db, entree, {
     now,
-  });
-  const contexte = contexteEchange({
-    compte: projection.compte,
-    domaine: projection.domaine,
-    brief: projection.brief,
-    sujet: projection.sujet,
-    contact: projection.contact,
-    instant: {
-      maintenant: now.toISOString(),
-      page: entree.general ? null : page.page,
-    },
+    brouillon: (taskId) => preparerBrouillon({ accountId, taskId }),
   });
 
-  let ecrit = false;
-  const outils = outilsRelvo(db, {
-    accountId,
-    now,
-    subjectId: page.subjectId,
-    onEcriture: () => {
-      ecrit = true;
-    },
-  });
-
-  const historique = await convertToModelMessages(messages, {
-    tools: outils,
-    ignoreIncompleteToolCalls: true,
-  });
-  const modelMessages: ModelMessage[] = injecterVolatil(
-    [{ role: "user", content: contexte.prefixe }, ...historique],
-    contexte.volatil,
-  );
-
-  let tour: ReturnType<typeof chat<typeof outils>>;
+  let appel: ReturnType<typeof chat<typeof tour.outils>>;
   try {
-    tour = chat({
+    appel = chat({
       sollicitation: "echange",
-      system: contexte.system,
-      messages: modelMessages,
-      tools: outils,
-      reasoning: NIVEAU_RETENU.raisonnement,
+      system: tour.contexte.system,
+      messages: tour.modelMessages,
+      tools: tour.outils,
+      tier: tour.tier,
+      reasoning: NIVEAU_RETENU[tour.tier],
       cacheCle: accountId,
-      prefixeStable: prefixeStable(contexte),
+      prefixeStable: tour.prefixeStable,
     });
   } catch (err) {
     if (
@@ -143,13 +93,14 @@ export async function repondreAuTour(entree: EntreeTour): Promise<Response> {
 
   // Le flux est consommé jusqu'au bout même si le téléphone décroche : la
   // mesure, et les écritures des outils, ne dépendent pas de la connexion.
-  tour.flux.consumeStream({ onError: () => undefined });
+  appel.flux.consumeStream({ onError: () => undefined });
   after(async () => {
     try {
-      const mesure = await tour.mesure;
+      const mesure = await appel.mesure;
       await logAiSolicitation(db, mesure);
       console.info("[ia] echange", {
         accountId,
+        tier: tour.tier,
         coutEur: mesure.cout.eur,
         cacheLecture: mesure.jetons.cacheLecture,
         dureeMs: mesure.dureeMs,
@@ -157,12 +108,20 @@ export async function repondreAuTour(entree: EntreeTour): Promise<Response> {
     } catch (err) {
       console.error("[ia] echange — mesure non consignée", err);
     }
-    if (ecrit) expireTenantData();
+    if (tour.aEcrit()) expireTenantData();
   });
 
-  return tour.flux.toUIMessageStreamResponse({
+  return appel.flux.toUIMessageStreamResponse<RelvoUIMessage>({
     originalMessages: messages,
     sendReasoning: false,
+    messageMetadata: ({ part }): MetaRelvo | undefined => {
+      if (part.type === "start") return { tier: tour.tier };
+      if (part.type === "finish") {
+        const arret = arretDuTour(part.finishReason);
+        return arret ? { tier: tour.tier, arret } : { tier: tour.tier };
+      }
+      return undefined;
+    },
     onError: (err) => {
       console.error("[ia] echange — flux", err);
       return PHRASES.erreur;

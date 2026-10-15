@@ -486,3 +486,68 @@ describe("le titre d'un échange — un appel de classification (M10.4)", () => 
     expect(JSON.stringify(appel.prompt)).toContain("Pose-moi un rendez-vous");
   });
 });
+
+describe("le tier par tour (M10.11) — des règles écrites, jamais un appel de plus", async () => {
+  const { tierDuTour, arretDuTour } = await import("@/server/ia/echange/tier");
+  it("une question de lecture, courte, sans geste, passe en extraction", () => {
+    for (const q of [
+      "Qu'est-ce qui est urgent aujourd'hui ?",
+      "Combien de tâches en retard ?",
+      "Quelles affaires attendent une réponse ?",
+      "Qui est Karim Benali ?",
+      "Où en est la rupture de sauce blanche ?",
+      "Mes tâches de la semaine",
+      "Montre-moi les affaires ouvertes",
+      "Retrouve le mail de la DDPP",
+    ]) {
+      expect(tierDuTour(q), q).toBe("extraction");
+    }
+  });
+  it("un geste, une rédaction, un résumé, une question longue ou composée passent en raisonnement", () => {
+    for (const q of [
+      "Crée-moi une tâche : rappeler le plombier lundi",
+      "Pose un rendez-vous avec Karim demain à 10h",
+      "Prépare une réponse à Karim pour relancer",
+      "Résume-moi cette affaire",
+      "Marque cette affaire comme réglée",
+      "Retiens que les devis au-dessus de 5000 € passent par moi",
+      "Qu'est-ce qui est urgent ? Et qu'est-ce que je dois faire en premier ?",
+      "Si la livraison n'arrive pas jeudi, qu'est-ce que je fais ?",
+      "Quelles sont les affaires ouvertes dont le dernier message date de plus d'une semaine et qui n'ont aucune tâche planifiée pour les dix prochains jours ?",
+      "",
+    ]) {
+      expect(tierDuTour(q), q || "(vide)").toBe("raisonnement");
+    }
+  });
+  it("ce qui arrête un tour avant la fin se nomme : le plafond d'étapes, la sortie trop longue", () => {
+    expect(arretDuTour("tool-calls")).toBe("plafond");
+    expect(arretDuTour("length")).toBe("longueur");
+    expect(arretDuTour("stop")).toBeNull();
+    expect(arretDuTour(undefined)).toBeNull();
+  });
+});
+
+describe("les erreurs du fil, en langage client (M10.15)", async () => {
+  const { phraseErreur, phraseArret, ERREUR_GENERIQUE } =
+    await import("@/lib/echange-erreurs");
+  it("session expirée, réseau, échange trop long, surcharge, et le reste", () => {
+    expect(phraseErreur('{"error":"Non authentifié."}').lien?.href).toContain(
+      "/connexion",
+    );
+    expect(phraseErreur("Failed to fetch").reessayer).toBe(true);
+    expect(phraseErreur("Failed to fetch").phrase).toContain("réseau");
+    expect(
+      phraseErreur("Cet échange est devenu trop long pour moi.").lien?.href,
+    ).toBe("/relvo?nouveau=1");
+    expect(phraseErreur("429 Too Many Requests").phrase).toContain("sollicité");
+    expect(
+      phraseErreur("Je n'ai pas pu répondre. Réessayez dans un instant.")
+        .phrase,
+    ).toBe("Je n'ai pas pu répondre. Réessayez dans un instant.");
+    expect(
+      phraseErreur("TypeError: cannot read properties of undefined {x}"),
+    ).toEqual(ERREUR_GENERIQUE);
+    expect(phraseErreur(undefined)).toEqual(ERREUR_GENERIQUE);
+    expect(phraseArret("plafond")).toContain("la suite");
+  });
+});

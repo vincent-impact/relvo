@@ -1,0 +1,10 @@
+{"id":"E1","question":"Qu'est-ce qui est urgent aujourd'hui ?","from":"/","attendu":{"outil":"list_subjects","args":{"filtre":"urgentes"},"tier":"extraction"}}
+{"id":"E2","question":"Combien de tâches en retard ?","from":"/","attendu":{"tier":"extraction","note":"le brief du compte porte déjà le chiffre : aucun outil n'est attendu, la réponse vient du contexte"}}
+{"id":"E3","question":"Quelles affaires attendent une réponse ?","from":"/","attendu":{"outil":"list_subjects","args":{"filtre":"en_attente"},"tier":"extraction"}}
+{"id":"E4","question":"Résume-moi cette affaire","from":"/sujets/{{sujet:DDPP}}","attendu":{"outil":"get_subject","tier":"raisonnement"}}
+{"id":"E5","question":"Crée-moi une tâche : rappeler le plombier lundi","from":"/","attendu":{"outil":"create_task","args":{"titre":"~plombier","date":"{{lundi}}","heure":null},"tier":"raisonnement"}}
+{"id":"E6","question":"Pose un rendez-vous avec Karim demain à 10h","from":"/sujets/{{sujet:DDPP}}","attendu":{"outil":"create_task","args":{"date":"{{demain}}","heure":"10:00"},"tier":"raisonnement"}}
+{"id":"E7","question":"Retiens que les livraisons du lundi se font avant 9h","from":"/","attendu":{"outil":"create_knowledge_note","tier":"raisonnement"}}
+{"id":"E8","question":"Retrouve ce que Karim a dit sur la sauce blanche","from":"/","attendu":{"outil":"search_messages","tier":"extraction"}}
+{"id":"E9","question":"Qui est Karim Benali ?","from":"/","attendu":{"outil":"get_contact","tier":"extraction"}}
+{"id":"E10","question":"Marque l'affaire du renfort samedi soir comme urgente","from":"/","attendu":{"outil":"update_subject_priority","args":{"urgent":true},"tier":"raisonnement"}}

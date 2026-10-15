@@ -1238,6 +1238,39 @@ utilisateur ne voit qu'un accueil vide et un dock dont il ne sait rien.
 **Mis en œuvre par** M19.9, tranche 4 « Guider » ; `01-principes.md` §11 et `05-ia.md` §11.11
 disent la séquence.
 
+### L'échange avec Relvo : le dirigeant est l'acteur, l'annulation est un geste de l'écran, le tier se décide par règles
+
+**`tranché`** · Avec le dirigeant, à l'ouverture de M10, puis en construisant.
+
+- **L'acteur d'une action demandée dans l'échange est le dirigeant (`user`)**, avec sa
+  provenance `source: "chat"` dans le journal (`05 §11.6`). La tâche qu'il dicte est la sienne,
+  Relvo n'est que la main ; `05 §7.2` (Relvo ne valide ni ne ferme jamais une affaire) reste
+  vrai, et l'invariant 6 garde son sens — « source Relvo » veut dire « Relvo l'a proposée ».
+  **Retenu contre** l'acteur `ai`, qui aurait compté les gestes du dirigeant dans ce que Relvo
+  fait pour lui (Bilan, invariant 37).
+- **La provenance est un paramètre optionnel des fonctions d'écriture du domaine**, fusionné
+  dans la métadonnée de l'entrée de journal qu'elles écrivent déjà. Aucun schéma, aucune
+  signature de l'écran ne change. **Retenu contre** une entrée de journal à part, qui aurait
+  séparé le geste de sa trace.
+- **La fenêtre d'annulation est tenue par l'écran seulement** : cinq minutes pendant lesquelles
+  « Annuler » reste actif sur le bloc, puis le geste se défait par les écrans habituels. Chaque
+  bloc porte un descripteur, et une seule fonction du domaine défait par la fonction de
+  l'écran — une tâche supprimée se recrée depuis son instantané. **Retenu contre** une garde
+  serveur de la fenêtre : elle protégerait une chose qui reste de toute façon réversible.
+- **Le tier d'un tour se décide par des règles écrites**, jamais par un appel de plus : une
+  question de lecture courte sans geste passe en extraction, tout le reste en raisonnement. Les
+  règles sont tenues par un test et mesurées au journal avant d'être affinées.
+- **La mémoire des échanges est celle de l'appareil** (IndexedDB), comme `05 §11.3` le dit ; le
+  titre d'un échange est un appel de classification à la fin du premier tour. **La notification
+  push d'une question** (M18.11) glisse vers M12 (M12.9) : aucun socle push n'existe.
+- **Le message système de l'échange porte le socle commun ET un socle de l'échange** —
+  comment Relvo parle au dirigeant et agit —, identique pour tous les comptes d'un même secteur.
+  Il diffère de celui du pipeline de ce seul bloc ; les consignes stables n'ont rien à faire
+  dans le message utilisateur (`PITFALLS.md` #49).
+
+**Mis en œuvre par** M10, tranches 1 à 5 ; `05-ia.md` §11 reste la conception, le sprint
+`2026-10-m10-echange-relvo.md` l'histoire de la construction.
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté

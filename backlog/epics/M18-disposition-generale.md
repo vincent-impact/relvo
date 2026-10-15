@@ -7,9 +7,9 @@ resume_client: >
   Une page d'accueil qui dit ce que Relvo a fait depuis votre dernière visite, ce qui vous attend
   aujourd'hui et ce qui attend votre réponse. Relvo au centre de la barre du bas, un menu pour le
   reste, et une page Bilan pour voir ce que Relvo fait pour vous.
-statut: partiel
+statut: termine
 debut: 2026-09-22
-fin: 2026-10-12
+fin: 2026-10-15
 ---
 
 # M18 — Disposition générale

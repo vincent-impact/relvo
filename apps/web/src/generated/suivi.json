@@ -108,9 +108,9 @@
     {
       "titre": "Nouvel accueil et navigation simplifiée",
       "resume": "Une page d'accueil qui dit ce que Relvo a fait depuis votre dernière visite, ce qui vous attend aujourd'hui et ce qui attend votre réponse. Relvo au centre de la barre du bas, un menu pour le reste, et une page Bilan pour voir ce que Relvo fait pour vous.",
-      "statut": "partiel",
+      "statut": "termine",
       "gauche": 52.8,
-      "largeur": 9.35
+      "largeur": 10.75
     },
     {
       "titre": "Nouvelle apparence et premiers pas guidés",
@@ -129,9 +129,9 @@
     {
       "titre": "Échange avec Relvo",
       "resume": "Demander à Relvo d'agir plutôt que de naviguer dans les écrans : « où en est la commande de sauce ? », « crée-moi une tâche pour lundi », « prépare une réponse à Karim ». Chaque action reste visible et annulable.",
-      "statut": "en-cours",
+      "statut": "partiel",
       "gauche": 63.55,
-      "largeur": 10.28
+      "largeur": 0
     },
     {
       "titre": "Lecture des pièces jointes",
@@ -166,11 +166,15 @@
     "date": "2026-12-23",
     "gauche": 95.79
   },
-  "en_cours": "Échange avec Relvo",
+  "en_cours": null,
   "journal": [
     {
       "date": "2026-10-15",
       "entrees": [
+        {
+          "type": "new",
+          "texte": "Relvo vous dit quand il s'arrête avant la fin et quoi faire si quelque chose ne passe pas — session expirée, pas de réseau — sans jamais perdre ce que vous aviez écrit. Les questions simples lui coûtent moins cher."
+        },
         {
           "type": "new",
           "texte": "Relvo vous pose désormais ses questions : un badge sur son bouton, la question dans l'échange avec des réponses à choisir, et ce qu'il retient de votre réponse. À la première ouverture, il vous demande votre métier et une règle à toujours suivre."

@@ -22,6 +22,7 @@ import type {
   SortieOutil,
 } from "@/server/ia/echange/outils";
 import { annulable, type Annulation } from "@/lib/relvo-annulation";
+import { phraseArret, phraseErreur } from "@/lib/echange-erreurs";
 import { annulerGesteAction } from "@/server/actions/relvo";
 import { cn } from "@/lib/utils";
 
@@ -460,7 +461,8 @@ function TourRelvo({ message }: { message: RelvoUIMessage }) {
   const visibles = parts.filter(
     (p) => (p.type === "text" && p.text.trim()) || isToolUIPart(p),
   );
-  if (visibles.length === 0) return null;
+  const arret = message.metadata?.arret ?? null;
+  if (visibles.length === 0 && !arret) return null;
   return (
     <RelvoBlock className="pb-2.5">
       {visibles.map((p, i) =>
@@ -470,6 +472,11 @@ function TourRelvo({ message }: { message: RelvoUIMessage }) {
           <BlocOutil key={i} part={p} />
         ),
       )}
+      {arret ? (
+        <RelvoSentence className="text-gris">
+          {phraseArret(arret)}
+        </RelvoSentence>
+      ) : null}
     </RelvoBlock>
   );
 }
@@ -490,6 +497,32 @@ function TourDirigeant({ message }: { message: RelvoUIMessage }) {
         content: texte,
       }}
     />
+  );
+}
+
+/** Une erreur dans le fil (M10.15) : une phrase de Relvo, et le geste qui va avec. */
+function BlocErreur({
+  message,
+  onRetry,
+}: {
+  message: string | undefined;
+  onRetry: () => void;
+}) {
+  const e = phraseErreur(message);
+  return (
+    <RelvoBlock className="pb-2.5" label="Relvo n’a pas pu répondre">
+      <RelvoSentence>{e.phrase}</RelvoSentence>
+      {e.lien ? (
+        <Link href={e.lien.href} className={RELVO_LINK}>
+          → {e.lien.label}
+        </Link>
+      ) : null}
+      {e.reessayer ? (
+        <button type="button" onClick={onRetry} className={RELVO_LINK}>
+          → Réessayer
+        </button>
+      ) : null}
+    </RelvoBlock>
   );
 }
 
@@ -526,15 +559,7 @@ export function RelvoFil({
         </RelvoBlock>
       ) : null}
       {status === "error" ? (
-        <RelvoBlock className="pb-2.5" label="Relvo n’a pas pu répondre">
-          <RelvoSentence>
-            {error?.message?.trim() ||
-              "Je n’ai pas pu répondre. Réessayez dans un instant."}
-          </RelvoSentence>
-          <button type="button" onClick={onRetry} className={RELVO_LINK}>
-            → Réessayer
-          </button>
-        </RelvoBlock>
+        <BlocErreur message={error?.message} onRetry={onRetry} />
       ) : null}
     </div>
   );

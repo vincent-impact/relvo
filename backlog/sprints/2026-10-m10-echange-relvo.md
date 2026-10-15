@@ -408,4 +408,17 @@ chat`, « Annuler » la rouvre ; « Prépare une réponse à Karim » → le bro
       naissance du script à la connexion d'un canal et la lecture immédiate — c'est la
       tranche 10 de M7, qui vient après ce sprint · ✅ `questions.test.ts` (cible par portée
       tenue par la base, destinations, écart, script idempotent).
-- [ ] Tranche 5 — Durcissement
+- [x] Tranche 5 — Durcissement : ✅ M10.11 le tier par tour, des règles écrites (`tier.ts` :
+      lecture courte sans geste → extraction, le reste → raisonnement), le tier dans la mesure
+      et la métadonnée du message · ✅ le plafond d'étapes et la sortie trop longue dits dans le
+      fil (`arret` en métadonnée, phrase de Relvo) · ✅ M10.15 les erreurs en langage client
+      (`echange-erreurs.ts` : session expirée → se reconnecter, réseau, échange trop long →
+      nouvel échange, surcharge, générique), le texte du dirigeant jamais perdu · ✅ le tour
+      construit à part (`construire.ts`, sans `server-only` ni `next/*`) pour la route et pour
+      le jeu · ✅ le jeu d'évaluation `eval:echange` (`jeu/echange/cas.jsonl`, dix cas : outil
+      attendu, arguments, tier, coût, cache lu) — **10/10** sur le compte de démonstration, le
+      cas du compte de tâches en retard répondu depuis le brief sans outil, comme il se doit ·
+      ✅ la clôture : `05 §11` relu contre le code sans phrase à récrire, M10 en `partiel`
+      (M10.16 achevé par la tranche 10 de M7), M18 en `termine` (M18.11 → M12.9), les décisions
+      dans `ecarts`. **Suivant** : la tranche 10 de M7 — le rattrapage dès la connexion d'un
+      canal, qui fait naître le script dans l'échange.
