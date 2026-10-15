@@ -112,20 +112,28 @@
   --relvo-pale: #f2f0ff; /* le fond du bloc de Relvo */
   --relvo-filet: #e3dffb; /* le bord du bloc de Relvo */
   /* Le ciel : nuit, puis le violet de Relvo tenu sur presque toute la hauteur,
-     et le fondu vers le blanc dans les 44 DERNIERS pixels seulement — ancré au
-     bas du header, quelle que soit sa hauteur. Un texte blanc posé dans le ciel
-     est donc toujours sur le violet de Relvo : la bande tient sous la marge
-     basse d'un header qui finit sur du texte (puces d'une conversation, 14 px)
-     comme sous la carte qui chevauche le bas de 30 px. (Des arrêts depuis le
-     haut éclaircissaient un header haut — la fiche — là où il porte du texte.) */
+     puis le violet clair dans les 40 DERNIERS pixels — ancrés au bas du header,
+     quelle que soit sa hauteur. Le ciel ne finit PAS blanc : il finit sur sa
+     lueur (`--ciel-bas`), et c'est la QUEUE du ciel (`.ciel-queue`, posée sous
+     le header par `RelvoHeader`) qui fond vers le blanc, SOUS le contenu : la
+     première carte, les puces, le bloc de Relvo se posent dessus. Le fondu
+     dure ainsi deux fois plus longtemps sans coûter un pixel de hauteur — un
+     fondu de 44 px qui s'arrêtait net au bord du header était brutal (retour
+     du dirigeant, M19.10). Un texte blanc posé dans le ciel reste sur le
+     violet : la bande claire tient sous la marge basse d'un header qui finit
+     sur du texte (puces d'une conversation, 16 px). */
+  --ciel-bas: #d9d4fc;
   --ciel: linear-gradient(
     180deg,
     var(--nuit) 0,
     var(--relvo) 40%,
-    var(--relvo) calc(100% - 44px),
-    var(--relvo-clair) calc(100% - 18px),
-    #ffffff 100%
+    var(--relvo) calc(100% - 40px),
+    var(--relvo-clair) calc(100% - 14px),
+    var(--ciel-bas) 100%
   );
+  /* La queue : la lueur du ciel qui s'éteint dans le blanc. */
+  --ciel-queue-h: 56px;
+  --ciel-queue: linear-gradient(180deg, var(--ciel-bas) 0, #ffffff 100%);
   /* Le ciel haut de la connexion : près de la moitié de l'écran. */
   --ciel-haut: linear-gradient(
     180deg,
@@ -471,6 +479,15 @@
 .ciel > * {
   position: relative;
   z-index: 1;
+}
+/* La queue du ciel : en flux mais SANS hauteur (marge négative), non
+   positionnée — ce qui suit se peint par-dessus, cartes comme texte, et la
+   lueur fond derrière. */
+.ciel-queue {
+  height: var(--ciel-queue-h);
+  margin-bottom: calc(-1 * var(--ciel-queue-h));
+  background: var(--ciel-queue);
+  pointer-events: none;
 }
 
 /* Le chiffre : condensé, gras, tabulaire. À poser sur un indicateur, un

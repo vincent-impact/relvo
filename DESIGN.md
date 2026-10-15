@@ -7,6 +7,7 @@ colors:
   relvo-clair: "#6d5df5"
   relvo-pale: "#f2f0ff"
   relvo-filet: "#e3dffb"
+  ciel-bas: "#d9d4fc"
   actor-me: "#2b6fe0"
   actor-ext: "#8a5410"
   actor-ext-fond: "#f6ead8"
@@ -312,8 +313,11 @@ livrée : le **ciel** en haut, qui scrolle avec le contenu et fond vers le blanc
 en bas, fixe, décollé du bas et des bords de 14px.
 
 Le ciel porte **une seule rangée** sous la zone sûre : flèche retour ou rien, titre, actions de
-page, burger. La **première carte chevauche toujours le bas du ciel** (`-mt-7.5` sur
-`IndicatorTabs` et `SegTabs`) : c'est elle qui lie les deux zones. Les cartes se suivent avec
+page, burger ; un titre long replie sur deux lignes à droite de la flèche, jamais sous elle. Le
+ciel ne finit pas blanc : il finit sur sa lueur (`ciel-bas`), et sa **queue** (`.ciel-queue`,
+56px, sans hauteur dans le flux) fond vers le blanc **sous** ce qui suit. La **première carte
+chevauche toujours le bas du ciel** (`-mt-7.5` sur `IndicatorTabs` et `SegTabs`) : c'est elle
+qui lie les deux zones. Les cartes se suivent avec
 12px entre elles ; une zone est nommée par un en-tête symétrique en texte nu (titre à gauche,
 qualificatif à droite, `ZoneHeading`). Une ligne de sujet fait 58px ; une carte d'attente fait
 300px de large et se feuillette horizontalement avec accroche.

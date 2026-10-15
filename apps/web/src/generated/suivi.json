@@ -165,6 +165,10 @@
       "date": "2026-10-15",
       "entrees": [
         {
+          "type": "fix",
+          "texte": "Les écrans poussés (conversation, sujet, contact) prennent moins de hauteur en tête, le violet du haut fond plus doucement vers le blanc, les compteurs des onglets d'un sujet sont posés sur leurs icônes, une tâche créée depuis le Calendrier se propose au jour sélectionné, et la fiche d'un contact affiche de nouveau tous ses champs."
+        },
+        {
           "type": "new",
           "texte": "Les pages Canaux, Profil, Préférences, Usage et l'écran de connexion sont plus simples : un seul bouton pour relier votre boîte, des champs plus faciles à toucher, et plus de réglages qui ne font rien."
         },

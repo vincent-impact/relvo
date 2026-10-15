@@ -27,7 +27,7 @@ import {
   SubjectPickerDialog,
   type SubjectPickerOption,
 } from "@/components/messages/subject-picker-dialog";
-import { RelvoHeader } from "@/components/layout/relvo-header";
+import { RelvoHeader, SkyTail } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
 import {
@@ -530,12 +530,20 @@ export function ConversationDetail({
       {/* Le hero reste VISIBLE : hors du défilement (retour du 2026-09-18), le
           retour et les sujets suivis sont toujours à portée. */}
       <div className="relative z-20 flex-none">
-        <RelvoHeader back={backTo} titleFull title={title} className="pb-3.5">
+        <RelvoHeader
+          back={backTo}
+          titleFull
+          title={title}
+          // Le ciel est FIXE ici : sa queue se pose en tête du fil, qui défile.
+          tail={false}
+          className="pb-4"
+        >
           {/* Le hero d'une conversation tient sur PEU (retour du 2026-09-18 :
-              fixé, il couvrait un tiers de l'écran). Plus de libellés de
-              section : le canal et les interlocuteurs en puces sur une ligne,
-              les sujets suivis en lignes fines dessous. */}
-          <div className="space-y-2 px-[18px] pt-2">
+              fixé, il couvrait un tiers de l'écran ; retour du 2026-10-15 : il
+              empilait encore quatre étages). La flèche partage la ligne du
+              titre ; le canal est une icône, les interlocuteurs des puces sur
+              la même ligne ; un sujet suivi tient sur UNE ligne. */}
+          <div className="space-y-1.5 pt-0.5">
             {/* L'avis de tri de Relvo (M7.20) — action, nature, raison, heure ;
                 ou « Relvo n'a pas encore lu ce fil ». Sur le violet, en blanc.
                 SEULEMENT tant que le fil n'est pas suivi : c'est là qu'il sert
@@ -574,9 +582,14 @@ export function ConversationDetail({
                   />
                 </button>
               ) : (
-                <span className="inline-flex h-7 flex-none items-center gap-1 rounded-full bg-white/12 px-2 text-[12px] font-semibold text-white">
-                  <ChannelIcon className="size-[13px]" />
-                  {channelLabel}
+                // Le canal en icône seule, comme sur la liste : son mot n'ajoute
+                // rien au titre du fil.
+                <span
+                  role="img"
+                  aria-label={channelLabel}
+                  className="grid size-7 flex-none place-items-center rounded-full bg-white/12 text-white"
+                >
+                  <ChannelIcon className="size-[14px]" />
                 </span>
               )}
               {participants.length === 0 && !isGroup ? (
@@ -636,12 +649,12 @@ export function ConversationDetail({
               )}
             </div>
 
-            {/* Sujets suivis — la LIGNE DE SUJET du produit, posée sur le ciel :
-                la bande de son domaine sur la tranche, le nom du domaine en
-                capitales condensées, le titre. Sur un fil e-mail, le sujet porte
-                souvent le même titre que le fil : la bande et le nom disent
-                « le sujet du même nom », pas un doublon. Chaîne brisée =
-                détacher, après confirmation nommée. */}
+            {/* Sujets suivis — la LIGNE DE SUJET du produit, posée sur le ciel,
+                sur UNE ligne : la bande de son domaine sur la tranche, le nom
+                du domaine en capitales condensées, le titre. Sur un fil e-mail,
+                le sujet porte souvent le même titre que le fil : la bande et le
+                nom disent « le sujet du même nom », pas un doublon. Chaîne
+                brisée = détacher, après confirmation nommée. */}
             {listenings.length > 0 ? (
               <div className="space-y-1">
                 {listenings.map((l) => {
@@ -649,7 +662,7 @@ export function ConversationDetail({
                   return (
                     <div
                       key={l.subjectId}
-                      className="flex h-10 items-center gap-2.5 overflow-hidden rounded-xl border border-white/15 bg-white/10 pr-1"
+                      className="flex h-9 items-center gap-2.5 overflow-hidden rounded-xl border border-white/15 bg-white/10 pr-1"
                     >
                       <span
                         aria-hidden
@@ -658,16 +671,16 @@ export function ConversationDetail({
                       />
                       <Link
                         href={`/sujets/${l.subjectId}?from=${encodeURIComponent(backTo)}`}
-                        className="flex h-full min-w-0 flex-1 flex-col justify-center active:opacity-80"
+                        className="flex h-full min-w-0 flex-1 items-center gap-2 active:opacity-80"
                       >
                         {l.folder ? (
-                          <span className="domaine truncate text-white/80">
+                          <span className="domaine max-w-[40%] flex-none truncate text-white/80">
                             {l.folder.name}
                           </span>
                         ) : null}
                         <span
                           className={cn(
-                            "block truncate text-[13px] leading-4 font-semibold text-white",
+                            "min-w-0 truncate text-[13px] leading-4 font-semibold text-white",
                             !l.active && "line-through decoration-white/40",
                           )}
                         >
@@ -752,6 +765,7 @@ export function ConversationDetail({
       </div>
 
       <Screen bottomInset={attached ? composerHeight : null}>
+        <SkyTail />
         <ConversationThread
           messages={messages}
           channelType={channelType}

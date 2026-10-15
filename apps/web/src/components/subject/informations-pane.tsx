@@ -13,7 +13,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ActorPill } from "@/components/shared/actor-pill";
 import { ListPanel } from "@/components/shared/list-panel";
 import { ZoneHeading } from "@/components/shared/zone-heading";
 import { AddTask } from "@/components/subject/add-task";
@@ -38,8 +37,8 @@ import { cn } from "@/lib/utils";
 //      sous-parties, nommées, séparées d'un filet, qui se lisent comme les
 //      lignes d'une même fiche :
 //        · Résumé — court : le descriptif de l'utilisateur s'il l'a écrit,
-//          sinon celui que Relvo a rédigé, signalé par sa pastille dans le titre
-//          du panneau. Un crayon discret sur la ligne ouvre la POP-UP d'édition
+//          sinon celui que Relvo a rédigé, sans signature. Un crayon discret
+//          sur la ligne ouvre la POP-UP d'édition
 //          pré-remplie ; ce que l'utilisateur enregistre devient SON descriptif
 //          et l'emporte. (Le bouton « Modifier » en tête de panneau a été retiré :
 //          il ne modifiait que le résumé, pas la description, et n'appelait pas.)
@@ -133,7 +132,6 @@ export function InformationsPane({
   // Le résumé affiché : celui de l'utilisateur, sinon celui de Relvo.
   const relvoSummary = (relvo?.summary ?? "").trim();
   const shown = base || relvoSummary;
-  const byRelvo = !base && Boolean(relvoSummary);
   const folder = folders.find((f) => f.id === folderId) ?? null;
   const taskTotal = tasks.length;
   const taskDone = tasks.filter((t) => t.status === "done").length;
@@ -261,16 +259,13 @@ export function InformationsPane({
           sous-titres plus petits que le libellé du panneau : on lit qu'elles
           sont des parties du résumé, pas des sections de la page (libellés
           intervertis à la demande du dirigeant, 2026-09-18). Le mot « Résumé »
-          ne disparaît jamais :
-            • Relvo a rédigé → sa pastille d'acteur à côté du libellé
-            • l'utilisateur a écrit → le libellé seul (sa version l'emporte)
+          ne disparaît jamais, et il n'est plus signé : que Relvo l'ait rédigé va
+          de soi sur une fiche qu'il tient (retour du dirigeant, 2026-10-15) ;
+          ce que l'utilisateur écrit l'emporte sans le dire.
             • vide (sujet créé à la main) → dans le panneau, une INVITE dans le
               vocabulaire d'« Ajouter une tâche ». */}
       <section>
-        <SectionHead
-          title="Résumé"
-          badge={byRelvo ? <ActorPill actor="ai" /> : null}
-        />
+        <SectionHead title="Résumé" />
         {shown || situation ? (
           <ListPanel className="mx-0 divide-y divide-(--border-light) px-4">
             <DescriptionLine

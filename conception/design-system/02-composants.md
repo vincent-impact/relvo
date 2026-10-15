@@ -83,7 +83,9 @@ une affirmation de l'agent sans porte vers ce qu'elle décrit est une affirmatio
 dirigeant ne peut pas vérifier.
 
 **Un badge à zéro ne s'affiche pas.** Une pastille ou une puce « 0 » n'informe de rien et
-encombre la barre qui la porte. Un **indicateur**, lui, est une cellule fixe : à zéro, il écrit
+encombre la barre qui la porte. Le compteur d'un onglet à icône est un badge **posé sur
+l'icône**, dans son coin haut droit, comme sur un téléphone ; à côté d'elle, il élargit l'onglet
+et sort de la carte à deux chiffres. Le point du non-lu tient l'autre coin. Un **indicateur**, lui, est une cellule fixe : à zéro, il écrit
 « 0 », en gris clair — un tiret ou un vide y laisserait croire à une donnée manquante.
 
 **Une présentation unique par entité, partout.** Une tâche se rend de la même façon dans la

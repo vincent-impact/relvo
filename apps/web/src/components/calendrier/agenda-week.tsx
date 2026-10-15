@@ -23,6 +23,7 @@ import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 import { ListPanel } from "@/components/shared/list-panel";
 import { ZoneHeading } from "@/components/shared/zone-heading";
+import { setSelectedDay } from "@/components/calendrier/selected-day";
 
 // Semainier (Accueil, onglet « Agenda ») — RAIL de jours qui glisse librement de
 // gauche à droite (scroll horizontal natif, sans chevrons), AUJOURD'HUI centré au
@@ -165,6 +166,13 @@ export function AgendaWeek({
     days.find((d) => d.isToday) ??
     days[0];
   const dayTasks = tasksByDay[selectedDesc.key] ?? [];
+
+  // Le jour regardé est partagé avec le « + » du ciel (selected-day.ts) ; hors
+  // du rail, plus de jour.
+  useEffect(() => {
+    setSelectedDay(selectedDesc.key);
+  }, [selectedDesc.key]);
+  useEffect(() => () => setSelectedDay(null), []);
 
   // Centre AUJOURD'HUI dans le rail au montage (effet DOM, pas de setState).
   const railRef = useRef<HTMLDivElement | null>(null);
@@ -355,7 +363,9 @@ function DayCell({
   const { setNodeRef, isOver } = useDroppable({ id: desc.key });
   // Le jour : la lettre au-dessus, le chiffre condensé, un point dessous quand
   // il porte des tâches (rouge si elles sont passées et ouvertes). Aujourd'hui
-  // est un disque violet ; le jour sélectionné est cerclé — jamais rempli.
+  // est un disque violet ; le jour sélectionné est cerclé — jamais rempli — au
+  // ras du chiffre (40 px) : décollé de 4 px, le cercle mordait sur la lettre
+  // du jour et sur le point (retour du dirigeant, 2026-10-15).
   return (
     <button
       ref={(node) => {
@@ -380,7 +390,9 @@ function DayCell({
           "chiffre grid size-9 place-items-center rounded-full text-[18px] leading-none transition-shadow",
           desc.isToday ? "bg-relvo text-white" : "text-noir",
           isPast && !desc.isToday && "text-gris",
-          (isSelected || isOver) && !desc.isToday && "cercle-actif",
+          (isSelected || isOver) &&
+            !desc.isToday &&
+            "text-relvo ring-2 ring-relvo",
           (isSelected || isOver) &&
             desc.isToday &&
             "ring-2 ring-relvo ring-offset-2 ring-offset-white",

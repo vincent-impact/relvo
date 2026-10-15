@@ -30,13 +30,17 @@ l'utilisateur, sur fond blanc, en cartes.
 Le **ciel** porte **une seule rangée** : le titre de la page, gros et condensé, et à sa droite
 les boutons propres à la page, puis le burger, discret ; sur un écran poussé, la flèche retour
 précède le titre. Le qualificatif se lit au-dessus (la date sur l'accueil, le domaine sur une
-fiche) ou en dessous, en petites capitales. Seul un titre long — une fiche, une conversation —
-descend sous la rangée. La rangée respire sous la barre d'état du téléphone : collée à l'heure
+fiche) ou en dessous, en petites capitales. Un titre long — une fiche, une conversation — replie
+sur deux lignes **à droite de la flèche**, jamais sous elle : une rangée de boutons seule
+au-dessus du titre est un étage de plus sur chaque écran poussé. La rangée respire sous la barre d'état du téléphone : collée à l'heure
 et à la batterie, elle étouffe. Le ciel est court sur une page de liste, un peu plus haut sur
 l'accueil et sur une fiche dont il porte la bande de domaine et les onglets, et prend près de
-la moitié de l'écran sur la connexion. **La première carte
-chevauche toujours le bas du ciel** : c'est elle qui lie les deux zones, et le ciel réserve la
-place par son dégradé, jamais par une bordure.
+la moitié de l'écran sur la connexion. **Le ciel ne s'arrête jamais net** : il finit sur sa
+lueur, et cette lueur s'éteint dans le blanc **sous** ce qui suit — la première carte, un
+en-tête de zone, le bloc de Relvo — sans prendre de hauteur ; un fondu qui finissait au bord du
+header était brutal. **La première carte chevauche toujours le bas du ciel** : c'est elle qui
+lie les deux zones, et le ciel réserve la place par son dégradé, jamais par une bordure. Quand
+le ciel est fixe (le fil d'une conversation, l'échange), sa queue est en tête de ce qui défile.
 
 Le **dock** est une pilule noire décollée du bas et des bords, à cinq places, **fixe** : il ne
 se masque pas au défilement — un élément de navigation qui disparaît est un élément qu'on

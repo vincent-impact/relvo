@@ -26,12 +26,12 @@ import {
   updateContactAction,
 } from "@/server/actions/contacts";
 import { contactFullName } from "@/lib/display";
+import { cn } from "@/lib/utils";
 
-// La fiche d'un contact — le CIEL est la carte de visite : le nom en titre,
-// l'entreprise en ligne du dessous, « À compléter » quand Relvo l'a créée
-// seul (invariant 12). La carte ne porte que les COORDONNÉES, et chacune est
-// un geste : le numéro appelle, l'adresse écrit — « le numéro de téléphone sur
-// le camion ». Modifier est le crayon du ciel, comme sur toute fiche ; en
+// La fiche d'un contact — le CIEL porte le nom en titre et « À compléter »
+// quand Relvo l'a créée seul (invariant 12). La carte dessous est la fiche
+// entière, tous les champs nommés ; un numéro appelle, une adresse écrit —
+// « le numéro de téléphone sur le camion ». Modifier est le crayon du ciel, comme sur toute fiche ; en
 // édition, une barre ancrée prend la place du dock, comme un composer. Le dock
 // reste : Relvo est à sa place sur toutes les pages (invariant 22).
 
@@ -137,20 +137,13 @@ export function ContactDetail({
           wrapTitle
           title={fullName}
           eyebrow={
-            contact.company || auto ? (
-              <span className="inline-flex items-center gap-2.5">
-                {contact.company ? (
-                  <span className="truncate">{contact.company}</span>
-                ) : null}
-                {auto ? (
-                  <span className="inline-flex flex-none items-center gap-1 rounded-(--rayon-pilule) bg-white/14 px-2 py-px text-[11px] font-medium tracking-[0.06em] text-white">
-                    <i
-                      aria-hidden
-                      className="size-2 rounded-full border-2 border-(--attente)"
-                    />
-                    À compléter
-                  </span>
-                ) : null}
+            auto ? (
+              <span className="inline-flex flex-none items-center gap-1 rounded-(--rayon-pilule) bg-white/14 px-2 py-px text-[11px] font-medium tracking-[0.06em] text-white">
+                <i
+                  aria-hidden
+                  className="size-2 rounded-full border-2 border-(--attente)"
+                />
+                À compléter
               </span>
             ) : undefined
           }
@@ -229,7 +222,7 @@ export function ContactDetail({
             </button>
           </div>
         ) : (
-          <Coordonnees contact={contact} />
+          <Fiche contact={contact} />
         )}
       </Screen>
 
@@ -276,9 +269,14 @@ export function ContactDetail({
   );
 }
 
-// ── Lecture : les coordonnées, chacune un geste ───────────────────────────
+// ── Lecture : la fiche, TOUS les champs ───────────────────────────────────
+// Comme un carnet de téléphone : Prénom, Nom, Entreprise, Téléphone(s),
+// Email(s), chacun sur sa ligne, « Non renseigné » quand il manque — une
+// fiche qui n'affichait que le numéro semblait vide (retour du dirigeant,
+// 2026-10-15). Un numéro appelle et une adresse écrit, par le disque au bout
+// de la ligne.
 
-function Coordonnees({ contact }: { contact: Contact }) {
+function Fiche({ contact }: { contact: Contact }) {
   const phones = [contact.phone, ...contact.additionalPhones].filter(
     (v): v is string => Boolean(v),
   );
@@ -286,47 +284,77 @@ function Coordonnees({ contact }: { contact: Contact }) {
     (v): v is string => Boolean(v),
   );
 
-  if (phones.length === 0 && emails.length === 0) {
-    return (
-      <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
-        Aucune coordonnée. Le crayon, en haut, pour en ajouter.
-      </p>
-    );
-  }
+  const rows: {
+    label: string;
+    value: string | null;
+    href?: string;
+    icon?: typeof Phone;
+  }[] = [
+    { label: "Prénom", value: contact.firstName },
+    { label: "Nom", value: contact.lastName },
+    { label: "Entreprise", value: contact.company },
+    ...(phones.length > 0
+      ? phones.map((v, i) => ({
+          label: phones.length > 1 ? `Téléphone ${i + 1}` : "Téléphone",
+          value: v,
+          href: `tel:${v.replace(/[^\d+]/g, "")}`,
+          icon: Phone,
+        }))
+      : [{ label: "Téléphone", value: null }]),
+    ...(emails.length > 0
+      ? emails.map((v, i) => ({
+          label: emails.length > 1 ? `Email ${i + 1}` : "Email",
+          value: v,
+          href: `mailto:${v}`,
+          icon: Envelope,
+        }))
+      : [{ label: "Email", value: null }]),
+  ];
 
   return (
     <div className="relative z-3 -mt-5">
       <ListPanel>
-        {phones.map((v) => (
-          <a
-            key={`tel-${v}`}
-            href={`tel:${v.replace(/[^\d+]/g, "")}`}
-            data-list-row
-            className="flex h-[58px] items-center gap-3 border-b border-(--filet) px-3.5 active:bg-(--fond-enfonce)"
-          >
-            <span className="chiffre min-w-0 flex-1 truncate text-[19px] text-noir">
-              {v}
-            </span>
-            <span className="grid size-9 flex-none place-items-center rounded-full bg-relvo-pale text-relvo">
-              <Phone className="size-[17px]" />
-            </span>
-          </a>
-        ))}
-        {emails.map((v) => (
-          <a
-            key={`mail-${v}`}
-            href={`mailto:${v}`}
-            data-list-row
-            className="flex h-[58px] items-center gap-3 border-b border-(--filet) px-3.5 active:bg-(--fond-enfonce)"
-          >
-            <span className="min-w-0 flex-1 truncate text-[14.5px] font-normal text-noir">
-              {v}
-            </span>
-            <span className="grid size-9 flex-none place-items-center rounded-full bg-relvo-pale text-relvo">
-              <Envelope className="size-[17px]" />
-            </span>
-          </a>
-        ))}
+        {rows.map((r, i) => {
+          const Icon = r.icon;
+          return (
+            <div
+              key={`${r.label}-${i}`}
+              data-list-row
+              className="flex min-h-[52px] items-center gap-3 border-b border-(--filet) px-3.5 py-2"
+            >
+              <span className="libelle w-[84px] flex-none">{r.label}</span>
+              {r.value ? (
+                <span
+                  className={cn(
+                    "min-w-0 flex-1 break-words text-noir",
+                    Icon === Phone
+                      ? "chiffre text-[17px]"
+                      : "text-[14.5px] font-normal",
+                  )}
+                >
+                  {r.value}
+                </span>
+              ) : (
+                <span className="min-w-0 flex-1 text-[14px] font-light text-gris">
+                  Non renseigné
+                </span>
+              )}
+              {r.href && Icon ? (
+                <a
+                  href={r.href}
+                  aria-label={
+                    Icon === Phone
+                      ? `Appeler ${r.value}`
+                      : `Écrire à ${r.value}`
+                  }
+                  className="pressable relative grid size-9 flex-none place-items-center rounded-full bg-relvo-pale text-relvo before:absolute before:-inset-1 before:content-['']"
+                >
+                  <Icon className="size-[17px]" />
+                </a>
+              ) : null}
+            </div>
+          );
+        })}
       </ListPanel>
     </div>
   );

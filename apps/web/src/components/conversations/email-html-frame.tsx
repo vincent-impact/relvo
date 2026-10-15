@@ -21,6 +21,8 @@ import { useEffect, useRef, useState } from "react";
 // visible. Le RESET borne encore les largeurs fixes (`max-width:100%` partout +
 // `table-layout:fixed`).
 //
+// Une cellule en `nowrap` (les invitations d'agenda) est repliée de force : un
+// texte qui tient dans la zone visible vaut mieux qu'une ligne coupée.
 // Reste le cas résiduel (rare) d'un e-mail à `min-width` codée en dur, que rien
 // ne peut faire rétrécir. Plutôt que de le rogner (illisible), on RÉ-AUTORISE le
 // scroll horizontal — mais UNIQUEMENT sur cet e-mail-là : ceux qui tiennent
@@ -33,6 +35,7 @@ const RESET = `
   body{font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:#1a1128;overflow-wrap:anywhere;word-break:break-word}
   img{height:auto}
   table{table-layout:fixed}
+  td,th{white-space:normal!important}
   a{color:#2b6fe0}
 `;
 

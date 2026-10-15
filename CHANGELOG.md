@@ -6,6 +6,7 @@
 
 ## 2026-10-15
 
+- **Corrigé** — Les écrans poussés (conversation, sujet, contact) prennent moins de hauteur en tête, le violet du haut fond plus doucement vers le blanc, les compteurs des onglets d'un sujet sont posés sur leurs icônes, une tâche créée depuis le Calendrier se propose au jour sélectionné, et la fiche d'un contact affiche de nouveau tous ses champs.
 - **Nouveau** — Les pages Canaux, Profil, Préférences, Usage et l'écran de connexion sont plus simples : un seul bouton pour relier votre boîte, des champs plus faciles à toucher, et plus de réglages qui ne font rien.
 - **Nouveau** — Dans le Calendrier, les couleurs des domaines sont les mêmes que partout, les trois chiffres du haut correspondent aux listes, et une tâche se coche plus facilement ; l'écran Relvo s'ouvre sur sa parole et ne vous propose plus de sujets qui ne sont pas les vôtres.
 - **Nouveau** — Dans la Mémoire et les Contacts, les écrans sont plus légers et rien n'y est dit deux fois ; sur la fiche d'un contact, vous retrouvez la barre du bas avec Relvo, et un numéro de téléphone s'appelle d'un appui.

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { toast } from "sonner";
 import { MobileFrame } from "@/components/layout/mobile-frame";
-import { RelvoHeader } from "@/components/layout/relvo-header";
+import { RelvoHeader, SkyTail } from "@/components/layout/relvo-header";
 import { RelvoLogo } from "@/components/layout/relvo-logo";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
 
@@ -42,9 +42,11 @@ export function RelvoChatShell({
 
   return (
     <MobileFrame>
-      <RelvoHeader back={backHref} title="Relvo" />
+      {/* Le ciel est FIXE : sa queue se pose en tête de ce qui défile. */}
+      <RelvoHeader back={backHref} title="Relvo" tail={false} />
 
       <main className="min-h-0 flex-1 overflow-y-auto bg-background px-4 pt-4 pb-6">
+        <SkyTail className="-mx-4 -mt-4" />
         {contextLabel ? (
           <div className="mb-3 flex">
             <span className="inline-flex h-9 min-w-0 items-center gap-1.5 rounded-(--rayon-pilule) border border-(--filet) bg-white pr-1 pl-3 text-[13px] font-normal text-noir shadow-carte">

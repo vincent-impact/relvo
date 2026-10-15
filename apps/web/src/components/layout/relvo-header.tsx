@@ -5,17 +5,21 @@ import { cn } from "@/lib/utils";
 
 // RelvoHeader — le CIEL en tête de chaque écran (design-system/03-patterns,
 // « Le cadre : le ciel en haut, le dock en bas ») : violet nuit, violet de
-// Relvo, puis le blanc de l'écran de travail, avec son champ d'étoiles (`.ciel`,
-// globals.css). Il ne s'arrête jamais net : la première carte le chevauche et
-// il fond derrière elle — d'où le rembourrage bas, que `children` consomme.
+// Relvo, puis sa lueur, avec son champ d'étoiles (`.ciel`, globals.css). Il ne
+// s'arrête jamais net : sa QUEUE (`.ciel-queue`) fond vers le blanc SOUS ce qui
+// suit — la première carte, les puces, le bloc de Relvo se posent dessus. La
+// queue ne prend pas de hauteur (marge négative) : le fondu dure deux fois
+// plus longtemps sans coûter un pixel. Un écran dont le ciel est FIXE (le fil
+// d'une conversation, l'échange) pose la queue lui-même en tête de son
+// défilement (`tail={false}`) : sinon elle voilerait ce qui défile dessous.
 //
-// UNE SEULE RANGÉE : le titre de la page, gros et condensé, et à sa droite les
-// actions de la page puis le BURGER, discret. Sur un écran poussé (`back`), la
-// flèche retour précède le titre et il n'y a pas de burger. Le titre d'une
-// fiche ou d'une conversation (`wrapTitle`, `titleFull`) est trop long pour
-// partager la rangée : il descend sous la flèche. `eyebrow` est la ligne
-// au-dessus (la date sur l'accueil, le domaine sur une fiche), `subtitle` la
-// ligne en dessous, en petites capitales.
+// UNE SEULE RANGÉE : [flèche] titre … actions [burger]. Le titre d'une fiche
+// ou d'une conversation (`wrapTitle`, `titleFull`) replie sur plusieurs lignes
+// DANS SA COLONNE, à droite de la flèche — jamais sous elle : une rangée de
+// boutons seule au-dessus du titre coûtait 46 px sur chaque écran poussé
+// (retour du dirigeant, M19.10). `eyebrow` est la ligne au-dessus (la date sur
+// l'accueil, le domaine sur une fiche), `subtitle` la ligne en dessous, en
+// petites capitales.
 //
 // La rangée respire sous la barre d'état du téléphone : la zone sûre, plus une
 // marge — sans elle, le titre et les boutons se collent à l'heure et à la
@@ -34,6 +38,11 @@ export const SKY_BTN =
 const EYEBROW =
   "truncate text-[12px] font-normal tracking-[0.08em] text-white/90 uppercase";
 
+/** La queue du ciel : à poser en tête du défilement quand le ciel est fixe. */
+export function SkyTail({ className }: { className?: string }) {
+  return <div aria-hidden className={cn("ciel-queue", className)} />;
+}
+
 export function RelvoHeader({
   title,
   eyebrow,
@@ -42,6 +51,7 @@ export function RelvoHeader({
   action,
   wrapTitle = false,
   titleFull = false,
+  tail = true,
   children,
   className,
 }: {
@@ -54,27 +64,28 @@ export function RelvoHeader({
   back?: string;
   /** Action(s) de page, posée(s) à DROITE, avant le burger. */
   action?: React.ReactNode;
-  /** Titre sur 2 lignes (lisible en entier), sous la flèche — fiche d'un sujet. */
+  /** Titre sur 2 lignes (lisible en entier), à droite de la flèche — fiche d'un sujet. */
   wrapTitle?: boolean;
-  /** Titre affiché EN ENTIER, sans aucune troncature, sous la flèche (conversation). */
+  /** Titre affiché EN ENTIER, sans aucune troncature, à droite de la flèche (conversation). */
   titleFull?: boolean;
+  /** La queue du ciel sous le header. `false` quand le ciel est fixe : l'écran la pose lui-même. */
+  tail?: boolean;
   /** Ce qui vit dans le ciel : nouvelles, indicateurs, segmented, onglets. */
   children?: React.ReactNode;
   className?: string;
 }) {
   const pushed = Boolean(back);
-  // Un titre long ne partage pas la rangée : il descend sous les boutons.
-  const titleBelow = wrapTitle || titleFull;
+  const multiline = wrapTitle || titleFull;
 
   const h1 = (
     <h1
       className={cn(
-        "font-heading font-semibold tracking-[-0.01em] text-white",
+        "min-w-0 font-heading font-semibold tracking-[-0.01em] text-white",
         titleFull
           ? "text-[26px] leading-7.5"
           : wrapTitle
             ? "line-clamp-2 text-[28px] leading-8"
-            : "min-w-0 flex-1 truncate text-[28px] leading-8.5",
+            : "flex-1 truncate text-[28px] leading-8.5",
       )}
     >
       {title}
@@ -97,43 +108,47 @@ export function RelvoHeader({
   ) : null;
 
   return (
-    <header
-      className={cn("ciel overflow-hidden px-4 pb-4", className)}
-      style={{
-        paddingTop: "calc(max(env(safe-area-inset-top), 12px) + 14px)",
-      }}
-    >
-      {titleBelow ? (
-        <>
-          {/* La rangée des boutons seule, 34 px ; le titre long en dessous,
-              avec sa ligne du dessus (le domaine d'une fiche). */}
-          <div className="flex h-[34px] items-center gap-2">
+    <>
+      <header
+        className={cn("ciel overflow-hidden px-4 pb-4", className)}
+        style={{
+          paddingTop: "calc(max(env(safe-area-inset-top), 12px) + 14px)",
+        }}
+      >
+        {multiline ? (
+          // La flèche et les actions tiennent la première ligne ; le titre
+          // replie dans sa colonne, sa ligne du dessus (le domaine) au-dessus.
+          <div className="flex items-start gap-2.5">
             {backLink}
-            <div className="flex-1" />
+            <div className="min-w-0 flex-1">
+              {eyebrow ? (
+                <div className={cn(EYEBROW, "mt-px mb-1")}>{eyebrow}</div>
+              ) : null}
+              {h1}
+            </div>
             {buttons}
           </div>
-          {eyebrow ? (
-            <div className={cn(EYEBROW, "mt-3 mb-1")}>{eyebrow}</div>
-          ) : null}
-          <div className={cn("min-w-0", eyebrow ? "" : "mt-2")}>{h1}</div>
-        </>
-      ) : (
-        <>
-          {eyebrow ? (
-            <div className={cn(EYEBROW, "mb-1")}>{eyebrow}</div>
-          ) : null}
-          {/* La rangée : [flèche] titre … actions [burger] — 34 px au moins. */}
-          <div className="flex min-h-[34px] items-center gap-2">
-            {backLink}
-            {h1}
-            {buttons}
-          </div>
-        </>
-      )}
+        ) : (
+          <>
+            {eyebrow ? (
+              <div className={cn(EYEBROW, "mb-1")}>{eyebrow}</div>
+            ) : null}
+            {/* La rangée : [flèche] titre … actions [burger] — 34 px au moins. */}
+            <div className="flex min-h-[34px] items-center gap-2">
+              {backLink}
+              {h1}
+              {buttons}
+            </div>
+          </>
+        )}
 
-      {subtitle ? <div className={cn(EYEBROW, "mt-1")}>{subtitle}</div> : null}
+        {subtitle ? (
+          <div className={cn(EYEBROW, "mt-1")}>{subtitle}</div>
+        ) : null}
 
-      {children ? <div className="mt-3">{children}</div> : null}
-    </header>
+        {children ? <div className="mt-3">{children}</div> : null}
+      </header>
+      {tail ? <SkyTail /> : null}
+    </>
   );
 }

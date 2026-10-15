@@ -23,6 +23,8 @@ const tokensAttendus = [
   "--relvo-pale",
   "--relvo-filet",
   "--ciel",
+  "--ciel-bas",
+  "--ciel-queue",
   "--etoiles",
   "--etoile-signe",
   "--degrade-relvo",
@@ -101,6 +103,7 @@ describe("design tokens — l'inventaire de 01-tokens.md", () => {
   it("expose la matière en utilitaires : ciel, chiffre, domaine, bande, cercle", () => {
     for (const cls of [
       ".ciel",
+      ".ciel-queue",
       ".chiffre",
       ".domaine",
       ".libelle",

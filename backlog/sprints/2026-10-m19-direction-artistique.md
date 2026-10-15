@@ -708,6 +708,43 @@ a retenu contre quoi sont dans `ecarts` (« La première connexion s'ouvre sur d
 diapositives ») ; `01-principes.md` §11, `05-ia.md` §11.11 et le brief disent la séquence.
 La trace « vues une fois » est une colonne du compte, migration accordée (ci-dessus).
 
+## La robustesse commence par le téléphone (M19.10)
+
+Le dirigeant a testé la tranche 3 en production, sur son iPhone, et a renvoyé cinq captures.
+Chaque point est un défaut qu'aucune capture à 390 px en headless n'avait montré — ou que
+j'avais regardé sans le voir. Les cinq sont corrigés dans le même commit.
+
+1. **Le ciel d'un écran poussé empilait quatre étages** (fil d'une conversation : la flèche
+   seule, le titre, les puces, la carte du sujet). La flèche tient désormais la **ligne du
+   titre**, qui replie dans sa colonne — sur toutes les fiches, le gain est une rangée de 46 px.
+   Dans le fil, le canal est une **icône** (son mot n'ajoutait rien), et le sujet suivi tient
+   sur **une ligne** : la bande, le domaine en capitales, le titre. Le HTML d'un e-mail
+   d'invitation débordait de sa carte : les cellules en `nowrap` sont repliées de force.
+2. **Le fondu du ciel était brutal** : violet → blanc en 44 px, arrêté au bord du header. Le
+   ciel finit maintenant sur sa **lueur** (`--ciel-bas`), et sa **queue** (`.ciel-queue`, 56 px,
+   sans hauteur dans le flux) s'éteint dans le blanc **sous** ce qui suit — carte, en-tête de
+   zone, bloc de Relvo. Le fondu dure deux fois plus longtemps sans coûter un pixel. Quand le
+   ciel est fixe (conversation, échange), la queue se pose en tête de ce qui défile : sinon elle
+   voilerait les messages. Écrit dans `03-patterns.md` et `DESIGN.md`, tenu par le test des
+   tokens.
+3. **Fiche sujet** : les compteurs des onglets, à droite des icônes, élargissaient l'onglet et
+   « 50 » sortait de la carte. Le compteur est un **badge sur l'icône**, coin haut droit, comme
+   sur un téléphone ; le point rouge du non-lu tient l'autre coin (`02-composants.md`). Le
+   « Résumé » n'est plus signé Relvo : que Relvo l'ait rédigé va de soi sur une fiche qu'il
+   tient. « Urgent » en pointillé est validé par le dirigeant.
+4. **Calendrier** : le cercle du jour sélectionné, décollé de 4 px, mordait sur la lettre du
+   jour et sur le point ; il est au ras du chiffre (40 px), le cercle de l'indicateur ne change
+   pas. Et une tâche créée par le « + » du ciel se propose **au jour sélectionné** dans le rail :
+   un petit magasin client (`selected-day.ts`) relie les deux îlots.
+5. **Fiche contact** : le dirigeant a été étonné de n'y voir que le numéro. La carte redevient
+   la **fiche entière** — Prénom, Nom, Entreprise, Téléphone(s), Email(s), « Non renseigné »
+   quand il manque — ; un numéro appelle et une adresse écrit, par le disque au bout de la
+   ligne. L'entreprise n'est plus redite dans le ciel.
+
+**Hors code** : le nom de famille d'un contact rempli par une adresse e-mail (« Carole
+carole.garat@… ») est une erreur d'extraction de Relvo, corrigée à la main par le dirigeant ;
+à surveiller dans M7 (le contact déduit d'un expéditeur sans nom).
+
 ## Où on en est
 
 - [x] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 la
@@ -727,8 +764,9 @@ La trace « vues une fois » est une colonne du compte, migration accordée (ci-
       la fiche, textes sous 11 px, couleurs en dur — cliquet vide) · ⏳ M19.6 l'allègement écran
       par écran : ✅ Accueil · ✅ Conversations · ✅ Sujets et fiche Sujet · ✅ Mémoire,
       domaine, Contacts et fiche contact · ✅ Calendrier et Échange · ✅ menu, Canaux, Profil,
-      Préférences, Usage, connexion — **M19.6 livré** · ⏳
-      M19.10 robustesse
+      Préférences, Usage, connexion — **M19.6 livré** · ⏳ M19.10 robustesse : ✅ les cinq
+      retours du téléphone (ciel, étages, badges d'onglet, Calendrier, fiche contact) · ⏳
+      break-ui, sombre/soleil, Android, desktop
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives
       de première connexion, invitation à connecter la première adresse, états vides qui guident
 - [ ] Tranche 5 — « Clore » : M19.12
