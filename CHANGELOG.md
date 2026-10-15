@@ -6,6 +6,7 @@
 
 ## 2026-10-15
 
+- **Corrigé** — Créer un sujet à la main fonctionne de nouveau sur tous les comptes, un titre très long ne remplit plus l'écran, et un compte qui n'a encore rien reçu est guidé vers la connexion de sa boîte depuis Conversations.
 - **Nouveau** — Le violet du haut de chaque écran fond vers le blanc plus loin, sous les premières cartes, comme sur les planches validées ; la fiche d'un contact s'ouvre sur son portrait, son nom et son rôle, avec ce que Relvo a retenu de lui, puis toutes ses coordonnées.
 - **Corrigé** — Les écrans poussés (conversation, sujet, contact) prennent moins de hauteur en tête, le violet du haut fond plus doucement vers le blanc, les compteurs des onglets d'un sujet sont posés sur leurs icônes, une tâche créée depuis le Calendrier se propose au jour sélectionné, et la fiche d'un contact affiche de nouveau tous ses champs.
 - **Nouveau** — Les pages Canaux, Profil, Préférences, Usage et l'écran de connexion sont plus simples : un seul bouton pour relier votre boîte, des champs plus faciles à toucher, et plus de réglages qui ne font rien.

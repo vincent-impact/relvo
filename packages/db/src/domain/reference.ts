@@ -37,9 +37,10 @@ function sequenceOf(reference: string): number {
  * Calcule la prochaine référence disponible pour le compte courant. À appeler
  * dans la transaction de création du Subject (le client tenant scope la lecture).
  *
- * Le tri se fait sur la chaîne : c'est correct parce que le padding est fixe
+ * Le tri se fait sur la chaîne : c'est correct tant que le padding est fixe
  * (`SUB-00042`), donc l'ordre lexicographique et l'ordre numérique coïncident.
- * Il cesserait de l'être au-delà de 99 999 sujets — d'où la garde ci-dessous.
+ * Il cesserait de l'être au-delà de 99 999 sujets — d'où la garde — et il
+ * l'est déjà pour une référence à padding différent — d'où la sonde.
  */
 export async function nextSubjectReference(db: Tx): Promise<string> {
   const last = await db.subject.findFirst({
@@ -47,14 +48,33 @@ export async function nextSubjectReference(db: Tx): Promise<string> {
     select: { reference: true },
     orderBy: { reference: "desc" },
   });
-  const next = (last ? sequenceOf(last.reference) : 0) + 1;
-  if (next > 99_999) {
-    // Au-delà du padding, l'ordre lexicographique ne suit plus l'ordre
-    // numérique et ce calcul deviendrait faux en silence. Mieux vaut échouer
-    // bruyamment que distribuer des références en doublon.
-    throw new Error(
-      "Séquence de référence Subject épuisée (> 99 999) : élargir PAD.",
-    );
+  let next = (last ? sequenceOf(last.reference) : 0) + 1;
+  // Le maximum lexicographique n'est le maximum numérique QUE si toutes les
+  // références ont le même padding. Une référence à quatre chiffres
+  // (« SUB-0219 », le jeu de démonstration, une saisie à la main) passe
+  // devant « SUB-00220 » dans l'ordre des chaînes : le calcul repropose alors
+  // 220 à chaque création, et la deuxième casse en P2002 (constaté le
+  // 2026-10-15, M19.10). On SONDE donc la référence calculée et on avance
+  // tant qu'elle est prise — quelques lectures dans la transaction, jamais une
+  // collision.
+  for (let essais = 0; essais < 1000; essais++) {
+    if (next > 99_999) {
+      // Au-delà du padding, l'ordre lexicographique ne suit plus l'ordre
+      // numérique et ce calcul deviendrait faux en silence. Mieux vaut échouer
+      // bruyamment que distribuer des références en doublon.
+      throw new Error(
+        "Séquence de référence Subject épuisée (> 99 999) : élargir PAD.",
+      );
+    }
+    const candidate = formatSubjectReference(next);
+    const taken = await db.subject.findFirst({
+      where: { reference: candidate },
+      select: { id: true },
+    });
+    if (!taken) return candidate;
+    next += 1;
   }
-  return formatSubjectReference(next);
+  throw new Error(
+    "Séquence de référence Subject : mille références prises d'affilée.",
+  );
 }

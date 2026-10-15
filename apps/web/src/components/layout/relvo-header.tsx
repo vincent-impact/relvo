@@ -102,7 +102,13 @@ export function RelvoHeader({
   const buttons = (
     <>
       {action ? (
-        <div className="flex flex-none items-center gap-2">{action}</div>
+        // Sous 360 px (pire cas, M19.10), la rangée d'une page à segmented
+        // (Calendrier, Bilan) ne laissait au titre que « Cale… » : les
+        // actions passent alors sur une ligne à elles, à droite, et le
+        // burger reste sur celle du titre.
+        <div className="flex flex-none items-center gap-2 max-[359px]:order-last max-[359px]:mt-2 max-[359px]:basis-full max-[359px]:justify-end">
+          {action}
+        </div>
       ) : null}
       {pushed ? null : <MenuButton className={SKY_BTN} />}
     </>
@@ -150,7 +156,7 @@ export function RelvoHeader({
               <div className={cn(EYEBROW, "mb-1")}>{eyebrow}</div>
             ) : null}
             {/* La rangée : [flèche] titre … actions [burger] — 34 px au moins. */}
-            <div className="flex min-h-[34px] items-center gap-2">
+            <div className="flex min-h-[34px] flex-wrap items-center gap-2">
               {backLink}
               {h1}
               {buttons}

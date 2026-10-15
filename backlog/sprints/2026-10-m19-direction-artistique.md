@@ -751,6 +751,48 @@ la note de Relvo sur l'interlocuteur dans son bloc (le champ existait, aucun éc
 montrait) ; puis tous les champs. Le portrait appelle une photo : proposition « La photo d'un
 contact » dans `ecarts`, sans bouton tant que le geste n'existe pas.
 
+**Le pire cas, par les formulaires.** Les données extrêmes sont entrées par les écrans de
+l'application, à la frontière réelle (actions, Zod) : trois contacts (« Aleksandra
+Wiśniewska-Kowalczyk » avec l'adresse de 63 caractères, « Jo » sans rien, « María José de la
+Cruz y Fernández »), deux sujets (un titre de 200 caractères, la limite du domaine, et
+« Benachrichtigungseinstellungen »), deux tâches longues ; puis chaque écran à 390 et 320 px,
+les compteurs forcés à 999 par injection (inféré, pas la frontière des données), et cinq écrans
+à 1280 px. Un compte neuf, inscrit par le formulaire, a donné les seize écrans vides.
+
+Ce qui a cassé, et la correction :
+
+1. **Créer un sujet à la main renvoyait une erreur 500** sur le compte de démonstration. La
+   séquence des références prend le maximum *lexicographique* de « SUB-… » ; le jeu de
+   démonstration porte des références à quatre chiffres (« SUB-0219 »), qui passent devant
+   « SUB-00220 » dans l'ordre des chaînes : la deuxième création reproposait 220 et cassait sur
+   l'unicité. La référence calculée est désormais sondée et avance tant qu'elle est prise ; un
+   test fixe le cas des paddings mélangés.
+2. **Un titre de 200 caractères prenait sept lignes** dans le ciel de la fiche. Le `line-clamp`
+   du titre n'opérait pas à travers le bouton d'édition en place : le texte se borne lui-même à
+   trois lignes, le titre entier reste dans le champ d'un appui.
+3. **Un compte neuf lisait « Rien à trier · toutes vos conversations sont couvertes »** : faux,
+   rien n'est arrivé. Quand le compte n'a aucune conversation, Relvo le dit dans son bloc et
+   mène à Canaux.
+4. **À 320 px, « Calendrier » devenait « Cale… »** derrière le segmented : sous 360 px, les
+   actions de page passent sur une ligne à elles, le burger reste sur celle du titre.
+5. Trois textes sous 14 px encore en graisse 300 (Recherche, Bilan) passent en 400.
+
+Ce qui a tenu : les noms longs et les adresses sans espace (repli, troncature au bon endroit),
+les initiales (« J » pour Jo, « AW »), les compteurs à trois chiffres dans les indicateurs, les
+badges d'onglet et les pastilles, les cartes à 320 px, le repli desktop (colonne centrée), les
+seize écrans vides. Le sombre est couvert par le code : rien ne lit `prefers-color-scheme`
+hors du suivi public, les captures sont toutes en sombre émulé (#51). Android : `theme_color`,
+`viewport-fit=cover` et la zone sûre du dock sont en place, rien à changer côté page (#54). En
+pleine lumière, la règle « sous 14 px jamais 300 » est tenue par le code, à vérifier au soleil
+par le dirigeant.
+
+**Confié à plus tard** : la Recherche ne cherche que les sujets (« Aucun sujet pour
+« Northwind » » alors qu'un contact porte ce nom) — le périmètre de `/recherche` est un item
+fonctionnel, pas de robustesse ; l'état vide de Sujets et de Contacts en texte nu, à mettre
+dans la voix de Relvo avec les états vides qui guident (M19.9).
+
+**M19.10 est livré.**
+
 **Hors code** : le nom de famille d'un contact rempli par une adresse e-mail (« Carole
 carole.garat@… ») est une erreur d'extraction de Relvo, corrigée à la main par le dirigeant ;
 à surveiller dans M7 (le contact déduit d'un expéditeur sans nom).
@@ -776,8 +818,8 @@ carole.garat@… ») est une erreur d'extraction de Relvo, corrigée à la main 
       domaine, Contacts et fiche contact · ✅ Calendrier et Échange · ✅ menu, Canaux, Profil,
       Préférences, Usage, connexion — **M19.6 livré** · ⏳ M19.10 robustesse : ✅ les cinq
       retours du téléphone (ciel, étages, badges d'onglet, Calendrier, fiche contact) · ✅ le
-      fondu des planches, la fiche contact en carte de visite · ⏳
-      break-ui, sombre/soleil, Android, desktop
+      fondu des planches, la fiche contact en carte de visite · ✅ le pire cas par les
+      formulaires, le compte vide, 320 px, 999, desktop, sombre, Android — **M19.10 livré**
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives
       de première connexion, invitation à connecter la première adresse, états vides qui guident
 - [ ] Tranche 5 — « Clore » : M19.12

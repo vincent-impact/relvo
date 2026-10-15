@@ -165,6 +165,10 @@
       "date": "2026-10-15",
       "entrees": [
         {
+          "type": "fix",
+          "texte": "Créer un sujet à la main fonctionne de nouveau sur tous les comptes, un titre très long ne remplit plus l'écran, et un compte qui n'a encore rien reçu est guidé vers la connexion de sa boîte depuis Conversations."
+        },
+        {
           "type": "new",
           "texte": "Le violet du haut de chaque écran fond vers le blanc plus loin, sous les premières cartes, comme sur les planches validées ; la fiche d'un contact s'ouvre sur son portrait, son nom et son rôle, avec ce que Relvo a retenu de lui, puis toutes ses coordonnées."
         },

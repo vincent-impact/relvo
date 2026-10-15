@@ -61,6 +61,11 @@ async function List({
     channelType: CONVERSATION_CHANNEL_SLUGS[channel],
     limit: CONVERSATIONS_PAGE_SIZE,
   });
+  // « Rien à trier » (le travail est fait) n'est pas « aucune conversation »
+  // (rien n'est encore arrivé : un compte neuf, sans boîte reliée). Le second
+  // cas se guide, dans la voix de Relvo, vers Canaux.
+  const noneAtAll =
+    page.items.length === 0 && (await db.conversation.count()) === 0;
   return (
     <ConversationList
       // La clé force un remontage à chaque changement de filtre/canal : l'état
@@ -70,6 +75,7 @@ async function List({
       channel={channel}
       initialItems={page.items.map(toConversationRowData)}
       initialCursor={page.nextCursor}
+      noneAtAll={noneAtAll}
     />
   );
 }

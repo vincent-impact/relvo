@@ -103,13 +103,13 @@ export default async function BilanPage({
                 <div className="chiffre text-[30px] leading-8 text-noir">
                   {t.value}
                 </div>
-                <div className="mt-px text-[12px] font-light text-gris">
+                <div className="mt-px text-[12px] font-normal text-gris">
                   {t.label}
                 </div>
               </div>
             ))}
           </div>
-          <p className="mx-4 mt-2 text-[12px] leading-[1.4] font-light text-gris">
+          <p className="mx-4 mt-2 text-[12px] leading-[1.4] font-normal text-gris">
             Chaque chiffre viendra du journal. Un tap ouvrira la liste derrière.
           </p>
         </section>

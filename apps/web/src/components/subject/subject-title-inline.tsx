@@ -128,13 +128,16 @@ export function SubjectTitleInline({
       onClick={open}
       title="Renommer le sujet"
       aria-label={`Renommer le sujet : ${shown}`}
-      // Titre lisible EN ENTIER (2 lignes) — plus de liseré pointillé sous le
-      // titre (retiré le 2026-07-23) : l'affordance passe par le curseur texte
-      // et le voile au survol, pas par une barre décorative qui encombrait le
-      // hero.
+      // Titre lisible, TROIS lignes au plus : un titre de 200 caractères (la
+      // limite du domaine) prenait sept lignes et tout l'écran (pire cas,
+      // M19.10). Le `line-clamp` du <h1> parent n'opère pas à travers un
+      // bouton bloc : c'est le texte lui-même qui se borne, et le titre entier
+      // reste dans le champ d'édition, d'un appui. Plus de liseré pointillé
+      // sous le titre (retiré le 2026-07-23) : l'affordance passe par le
+      // curseur texte et le voile au survol.
       className="block w-full cursor-text text-left font-heading text-[26px] leading-7.5 font-semibold tracking-[-0.01em] text-white transition-colors hover:bg-white/10"
     >
-      {shown}
+      <span className="line-clamp-3">{shown}</span>
     </button>
   );
 }

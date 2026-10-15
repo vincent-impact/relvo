@@ -82,7 +82,7 @@ export default async function RecherchePage({
       </RelvoHeader>
 
       {!query ? (
-        <p className="px-[22px] py-10 text-center text-[13.5px] font-light text-gris">
+        <p className="px-[22px] py-10 text-center text-[13.5px] font-normal text-gris">
           Cherchez un sujet par son titre, sa référence ou un contact rattaché.
         </p>
       ) : (

@@ -82,4 +82,20 @@ describe("référence de sujet", () => {
     const auto = await createSubject(db, { title: "Auto" });
     expect(auto.reference).toBe("SUB-00001");
   });
+
+  // Régression du 2026-10-15 (M19.10) : le jeu de démonstration porte des
+  // références à QUATRE chiffres (« SUB-0219 »). Dans l'ordre des chaînes,
+  // « SUB-0219 » passe devant « SUB-00220 » : le maximum lexicographique
+  // reproposait 220 à chaque création, et la deuxième cassait en P2002. La
+  // référence calculée est sondée, et avance tant qu'elle est prise.
+  it("n'entre jamais en collision quand les paddings sont mélangés", async () => {
+    const db = await makeAccount("reference-padding-mixte@test.fr");
+    await createSubject(db, { title: "Démo", reference: "SUB-0219" });
+    const a = await createSubject(db, { title: "Premier à la main" });
+    const b = await createSubject(db, { title: "Deuxième à la main" });
+    const c = await createSubject(db, { title: "Troisième à la main" });
+    expect(a.reference).toBe("SUB-00220");
+    expect(b.reference).toBe("SUB-00221");
+    expect(c.reference).toBe("SUB-00222");
+  });
 });
