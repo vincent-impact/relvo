@@ -4,7 +4,9 @@ import { cn } from "@/lib/utils";
 // <Suspense> des pages pendant que leur zone de données stream — le hero violet,
 // lui, est déjà rendu (instantané). Dimensions approchées des vraies surfaces.
 
-/** Liste de lignes (sujets, contacts, dossiers, messages). */
+/** Liste de lignes (sujets, contacts, dossiers, messages) : UNE carte, des
+ *  lignes séparées d'un filet — la silhouette de `ListPanel`, pas une carte par
+ *  ligne que la liste refuse. */
 export function RowsSkeleton({
   count = 4,
   className,
@@ -13,11 +15,16 @@ export function RowsSkeleton({
   className?: string;
 }) {
   return (
-    <div className={cn("space-y-2 px-4 pt-3", className)}>
+    <div
+      className={cn(
+        "mx-4 mt-3 animate-pulse overflow-hidden rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte",
+        className,
+      )}
+    >
       {Array.from({ length: count }, (_, i) => (
         <div
           key={i}
-          className="h-[72px] animate-pulse rounded-(--rayon-carte) bg-white shadow-carte"
+          className="h-[58px] border-b border-(--filet) last:border-b-0"
         />
       ))}
     </div>

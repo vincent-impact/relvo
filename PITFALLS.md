@@ -368,6 +368,24 @@ seul) ou dans le suivant — **jamais après le push**. Un `suivi.json` qui boug
 sans qu'on ait rien changé est le signal qu'un commit a été oublié : régénérer le CHANGELOG
 d'abord, regarder le diff ensuite.
 
+### #58 — Une icône Phosphor passée en ENFANT d'un composant client depuis un composant serveur déclenche « Each child in a list should have a unique key »
+
+**Symptôme** : un avertissement React de clé manquante, attribué à un composant qui n'a aucune
+liste (« Check the render method of `SubjectBody` »), reproductible à chaque rendu d'un seul
+onglet. Rien dans le `map()` en cause : toutes les clés sont là.
+
+**Cause** : un pictogramme Phosphor (`shared/picto.tsx`, entrée SSR) rendu dans la page
+**serveur**, puis passé via `children` à un composant **client** (`AttachmentViewer`). Le
+rendu serveur de l'icône est une `<svg>` dont les chemins forment un tableau sans clés ; ce
+tableau traverse la frontière serveur/client sérialisé, et le client le reçoit comme une liste
+d'enfants dynamique. Le même pictogramme rendu directement dans un composant client, ou dans
+un composant serveur sans traverser de frontière, ne pose rien.
+
+**Règle** : un pictogramme destiné à l'intérieur d'un composant client se rend **dans** un
+composant client — faire de la ligne un composant client (`DocumentRow`) plutôt que de passer
+l'icône en enfant depuis la page. Pour trouver le coupable d'un avertissement de clé sans
+liste : retirer le composant client suspect du rendu et recapturer, l'avertissement tombe.
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -389,7 +407,7 @@ d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revér
 documentation de la plateforme, jamais de mémoire. Le piège **#54** relève du **navigateur du
 téléphone** : il se périme avec la version de Chrome, dans le bon sens.
 
-Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57** sont des **règles de conception ou d'hygiène** :
+Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
 
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et

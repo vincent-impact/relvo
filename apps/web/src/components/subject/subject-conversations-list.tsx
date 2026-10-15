@@ -12,6 +12,7 @@ import {
 } from "@/components/shared/picto";
 import { toast } from "sonner";
 import type { ConversationRowData } from "@/lib/conversation-row";
+import { initialsFor } from "@/lib/display";
 import {
   AddConversationDialog,
   type AddConvContact,
@@ -46,60 +47,70 @@ function ConversationRow({
 }) {
   const unread = row.unreadCount > 0;
   const isGroup = row.type === "whatsapp_group";
-  const Icon = isGroup ? Users : (CHANNEL_ICON[row.channelType] ?? Envelope);
+  const ChannelIcon = CHANNEL_ICON[row.channelType] ?? Envelope;
+  const initials = isGroup ? null : initialsFor(row.interlocutorName);
+  // L'interlocuteur devant l'aperçu seulement s'il n'est pas déjà le titre
+  // (un fil WhatsApp direct s'appelle comme lui).
+  const prefix =
+    row.interlocutorName && row.interlocutorName !== row.title
+      ? row.interlocutorName
+      : null;
 
+  // La même ligne que sur /conversations : l'avatar dit l'acteur (ambre =
+  // Externe, initiales), le canal est une icône dans la ligne méta, le
+  // non-lu se lit à la graisse du titre et à la pastille de 22 px.
   return (
     <Link
       href={`/conversations/${row.id}?from=${encodeURIComponent(fromHref)}`}
       data-list-row
       className={cn(
-        "flex gap-3 border-b border-(--border-light) px-4 py-3.5 active:bg-(--surface-2)",
-        unread ? "bg-white" : "bg-(--surface)",
+        "flex items-center gap-3 border-b border-(--filet) px-3.5 py-2.5 active:bg-(--fond-enfonce)",
+        unread ? "bg-white" : "bg-(--fond-enfonce)",
       )}
     >
-      {/* Avatar = canal du fil (objectif : rendre le canal évident d'un coup). */}
       <span
         className={cn(
-          "grid size-[42px] flex-none place-items-center self-start rounded-full text-white",
-          unread ? "bg-(--attente-texte)" : "bg-(--gris-clair)",
+          "chiffre grid size-10 flex-none place-items-center rounded-full text-[14px]",
+          unread
+            ? "bg-actor-ext-fond text-actor-ext"
+            : "bg-(--fond-puce) text-gris",
         )}
       >
-        <Icon className="size-[20px]" />
+        {isGroup ? (
+          <Users className="size-[18px]" />
+        ) : (
+          (initials ?? <ChannelIcon className="size-[18px]" />)
+        )}
       </span>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-2">
-          {/* Titre = objet de l'e-mail (ou nom du fil WhatsApp), 2 lignes max. */}
           <span
             className={cn(
-              "line-clamp-2 min-w-0 flex-1 text-[15px] leading-[1.3]",
-              unread
-                ? "font-bold text-(--text-primary)"
-                : "font-semibold text-(--text-tertiary)",
+              "min-w-0 flex-1 truncate text-[14.5px] leading-[18px] text-noir",
+              unread ? "font-medium" : "font-normal",
             )}
           >
             {row.title}
           </span>
-          <span className="mt-px flex-none text-[11.5px] text-(--text-tertiary)">
+          <span className="chiffre flex-none text-[13px] leading-[18px] text-gris">
             {row.time}
           </span>
         </div>
-
-        {/* Interlocuteur + extrait du dernier message, sur une ligne. */}
-        <div className="mt-1 flex items-center gap-2">
-          <p
-            className={cn(
-              "line-clamp-1 min-w-0 flex-1 text-[13px] leading-[1.4]",
-              unread ? "text-(--text-secondary)" : "text-(--text-tertiary)",
-            )}
+        <div className="mt-0.5 flex items-center gap-2">
+          <span
+            role="img"
+            aria-label={row.channelType === "email" ? "E-mail" : "WhatsApp"}
+            className="inline-flex flex-none items-center text-gris"
           >
-            {row.interlocutorName ? (
-              <span className="font-semibold">{row.interlocutorName} · </span>
-            ) : null}
+            <ChannelIcon className="size-3.5" />
+          </span>
+          <p className="line-clamp-1 min-w-0 flex-1 text-[12px] leading-4 font-normal text-gris">
+            {prefix ? <span className="font-medium">{prefix} · </span> : null}
             {row.preview}
           </p>
           {unread ? (
-            <span className="inline-flex h-[19px] min-w-[19px] flex-none items-center justify-center rounded-full bg-brand px-1.5 text-[11px] font-extrabold text-white">
+            <span className="chiffre inline-flex h-[22px] min-w-[22px] flex-none items-center justify-center rounded-full bg-relvo px-1.5 text-[12px] text-white">
               {row.unreadCount}
             </span>
           ) : null}
@@ -167,11 +178,9 @@ export function SubjectConversationsList({
   return (
     <div className="pt-3 pb-3">
       {rows.length === 0 ? (
-        <div className="px-[22px] py-10 text-center">
-          <p className="text-[13.5px] text-(--text-tertiary)">
-            Aucune conversation rattachée à ce sujet.
-          </p>
-        </div>
+        <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
+          Aucune conversation rattachée à ce sujet.
+        </p>
       ) : (
         <ListPanel>
           {rows.map((row) => (
@@ -181,16 +190,18 @@ export function SubjectConversationsList({
       )}
 
       {availableChannels.length > 0 ? (
-        <div className="px-4 pt-4">
-          <button
-            type="button"
-            onClick={() => setShowAdd(true)}
-            className="inline-flex items-center gap-1.5 rounded-full bg-relvo px-4 py-2 text-[13px] font-bold text-white active:opacity-90"
-          >
-            <Plus className="size-4" strokeWidth={2.4} />
-            Ajouter une conversation
-          </button>
-        </div>
+        // Même dessin que « Ajouter une tâche » : un geste secondaire n'est
+        // pas un bouton primaire.
+        <button
+          type="button"
+          onClick={() => setShowAdd(true)}
+          className="mt-1 flex items-center gap-2.5 px-5 py-3.5 text-[14px] font-medium text-relvo"
+        >
+          <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-bg">
+            <Plus className="size-[15px]" strokeWidth={2.6} />
+          </span>
+          Ajouter une conversation
+        </button>
       ) : null}
 
       <AddConversationDialog

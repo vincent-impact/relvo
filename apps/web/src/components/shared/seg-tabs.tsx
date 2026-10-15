@@ -74,20 +74,23 @@ export function SegTabs({
             onClick={() => onValueChange(opt.value)}
             className={cn(
               "relative flex flex-1 items-center justify-center gap-1.5 px-2 text-[14px] whitespace-nowrap transition-colors",
-              iconOnly ? "py-3" : "py-2.5",
-              active ? "font-medium text-relvo" : "font-light text-gris",
+              iconOnly ? "py-2" : "py-2.5",
+              active ? "font-medium text-relvo" : "font-normal text-gris",
               // L'onglet actif est SOULIGNÉ d'un trait violet, jamais rempli.
               active &&
                 "after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:rounded-full after:bg-relvo after:content-['']",
             )}
           >
             {iconOnly && Icon ? (
-              <span className="relative">
+              // L'icône, et son mot dessous : quatre icônes sans mot se devinent,
+              // elles ne se lisent pas. Le mot tient à 11 px, comme dans le dock.
+              <span className="relative flex flex-col items-center gap-1">
                 <Icon className="size-[19px]" />
+                <span className="text-[11px] leading-none">{opt.label}</span>
                 {opt.dot ? (
                   <span
                     className={cn(
-                      "absolute -top-[3px] -right-[3px] size-[9px] rounded-full bg-urgent ring-2 ring-white",
+                      "absolute -top-[3px] right-[calc(50%-13px)] size-[9px] rounded-full bg-urgent ring-2 ring-white",
                     )}
                   />
                 ) : null}

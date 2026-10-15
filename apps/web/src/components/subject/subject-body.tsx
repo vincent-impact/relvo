@@ -72,7 +72,7 @@ export function SubjectBody({
   const options: SegTabOption[] = [
     {
       value: "informations",
-      label: "Informations et tâches",
+      label: "Tâches",
       icon: ListChecks,
       count: tasksCount,
     },

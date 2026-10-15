@@ -5,7 +5,10 @@ import { Plus, Search } from "lucide-react";
 import { FeedView } from "@/components/feed/feed-view";
 import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
-import { RowsSkeleton } from "@/components/shared/screen-skeletons";
+import {
+  IndicatorTabsSkeleton,
+  RowsSkeleton,
+} from "@/components/shared/screen-skeletons";
 import { cachedFilFeed, cachedFolders } from "@/server/cached";
 import { requireAccountId } from "@/server/auth-context";
 
@@ -61,7 +64,16 @@ export default async function FilPage() {
         }
       />
 
-      <Suspense fallback={<RowsSkeleton count={5} />}>
+      {/* Le squelette a la silhouette du rendu : la carte d'indicateurs qui
+          chevauche le ciel, puis une carte de lignes. */}
+      <Suspense
+        fallback={
+          <>
+            <IndicatorTabsSkeleton />
+            <RowsSkeleton count={8} className="mt-[86px]" />
+          </>
+        }
+      >
         <FilFeed accountId={accountId} />
       </Suspense>
     </Screen>

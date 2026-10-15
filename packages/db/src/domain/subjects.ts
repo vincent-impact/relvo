@@ -511,14 +511,19 @@ export async function openSubject(db: TenantDb, id: string) {
       where: { subjectId: id, direction: "incoming", readAt: null },
       data: { readAt: new Date() },
     });
-    await logEvent(tx as Tx, {
-      entityType: "subject",
-      entityId: subject.id,
-      subjectId: subject.id,
-      eventType: EVENT_TYPES.subjectOpened,
-      title: `Sujet ${subject.reference} ouvert`,
-      actor: "user",
-    });
+    // Le journal ne note l'ouverture qu'UNE fois, celle qui acquitte le
+    // « Nouveau » : une fiche consultée dix fois n'a rien à dire dix fois, et
+    // un journal rempli d'ouvertures noie ce que Relvo a fait.
+    if (statusChanged) {
+      await logEvent(tx as Tx, {
+        entityType: "subject",
+        entityId: subject.id,
+        subjectId: subject.id,
+        eventType: EVENT_TYPES.subjectOpened,
+        title: "Sujet ouvert pour la première fois",
+        actor: "user",
+      });
+    }
     // Flags d'effet réel → l'appelant ne revalide les caches (KPIs, fil) que si
     // quelque chose a changé (statut acquitté ou messages passés en lus).
     return { subject, statusChanged, messagesRead: messagesRead > 0 };

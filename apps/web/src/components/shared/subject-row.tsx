@@ -37,13 +37,12 @@ export type SubjectRowData = {
   resolutionSuggested: boolean;
 };
 
-function statusLine(d: SubjectRowData, done: boolean): string {
-  if (done) return d.summary?.trim() || d.reference;
-  const parts: string[] = [];
-  if (d.waitingForReply) parts.push("en attente d'une réponse");
-  if (d.taskTotal > 0) parts.push(`${d.taskDone}/${d.taskTotal} tâches`);
-  if (parts.length === 0) return d.summary?.trim() || "aucune tâche";
-  return parts.join(" · ");
+// La ligne fine sous le titre ne redit rien de la colonne droite (le compte de
+// tâches y est en condensé, l'attente y est écrite) : elle porte le résumé
+// court du sujet quand il existe, sinon rien — jamais une référence, personne
+// ne reconnaît un sujet à son code.
+function statusLine(d: SubjectRowData): string | null {
+  return d.summary?.trim() || null;
 }
 
 export function SubjectRow({
@@ -64,7 +63,10 @@ export function SubjectRow({
   const done = tone === "done";
   const urgent = data.urgent && !done;
   const isNew = data.isNew && !done;
-  // Ce que la colonne droite attend : Relvo (violet) ou un tiers.
+  // Ce que la colonne droite dit sous le chiffre : seulement l'EXCEPTION —
+  // Relvo qui parle (violet, signé) ou un tiers qu'on attend. L'état par
+  // défaut (« à vous », des tâches ouvertes) ne se nomme pas : sous sept lignes
+  // sur neuf, il n'était plus un signal mais du bruit.
   const right: { kind: "relvo" | "neutre"; label: string } | null = done
     ? null
     : data.resolutionSuggested
@@ -73,9 +75,8 @@ export function SubjectRow({
         ? { kind: "relvo", label: "nouveau" }
         : data.waitingForReply
           ? { kind: "neutre", label: "attend" }
-          : data.taskTotal > 0 && data.taskDone < data.taskTotal
-            ? { kind: "neutre", label: "à vous" }
-            : null;
+          : null;
+  const line = statusLine(data);
 
   return (
     <article
@@ -118,9 +119,11 @@ export function SubjectRow({
             data.title
           )}
         </h3>
-        <p className="truncate text-[12px] leading-[14px] font-light text-gris">
-          {statusLine(data, done)}
-        </p>
+        {line ? (
+          <p className="truncate text-[12px] leading-[14px] font-normal text-gris">
+            {line}
+          </p>
+        ) : null}
       </div>
 
       <div className="flex flex-none flex-col items-end gap-0.5 text-right">
@@ -139,7 +142,7 @@ export function SubjectRow({
               "inline-flex items-center gap-1 text-[11px] leading-3.5",
               right.kind === "relvo"
                 ? "font-medium text-relvo"
-                : "font-light text-gris",
+                : "font-normal text-gris",
             )}
           >
             {right.kind === "relvo" ? (

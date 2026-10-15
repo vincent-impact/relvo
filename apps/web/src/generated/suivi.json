@@ -166,6 +166,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Dans Sujets, chaque ligne est plus lisible et rien n'y est dit deux fois ; sur la fiche d'un sujet, le domaine se change depuis le haut de l'écran, les onglets portent leur nom, une tâche en retard apparaît barrée en rouge, et le journal ne se remplit plus d'une ligne à chaque fois que vous ouvrez la fiche."
+        },
+        {
+          "type": "new",
           "texte": "Dans Conversations, la liste est plus lisible et rien n'y est dit deux fois ; dans un fil, le bouton d'envoi ne promet plus une dictée qui n'existe pas, le sujet suivi s'affiche avec son domaine, et détacher un fil vous demande confirmation."
         },
         {

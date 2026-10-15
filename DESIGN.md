@@ -435,7 +435,8 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
   chaque cellule porte un chiffre condensé 28px dans un disque de 50px et son libellé 12px.
   L'actif est **cerclé** (`.cercle-actif` : trait violet 2px à 4px de distance, chiffre et libellé
   violets) ; un zéro s'écrit « 0 » en gris clair ; un retard est rouge, actif ou non.
-- **Onglets d'une fiche** (`SegTabs`) : même carte, l'actif **souligné** d'un trait violet ; un
+- **Onglets d'une fiche** (`SegTabs`) : même carte, l'icône et son mot à 11px dessous, l'actif
+  **souligné** d'un trait violet ; un
   compteur à zéro ne s'affiche pas.
 - **Menu latéral :** feuille blanche depuis la gauche, lignes de 52px en texte 17px, séparées par
   le filet, Rechercher en dernier, déconnexion en pied. Icônes pleines en violet de Relvo.

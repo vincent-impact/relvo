@@ -24,7 +24,7 @@ export function AddTask({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="mt-1 flex items-center gap-2.5 px-1 py-3.5 text-[14px] font-bold text-relvo"
+        className="mt-1 flex items-center gap-2.5 px-1 py-3.5 text-[14px] font-medium text-relvo"
       >
         <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-bg">
           <Plus className="size-[15px]" strokeWidth={2.6} />

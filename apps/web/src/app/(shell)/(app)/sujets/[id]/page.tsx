@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { FileText, Hourglass } from "@/components/shared/picto";
+import { Hourglass } from "@/components/shared/picto";
 import {
   getSubjectDetail,
   listChannels,
@@ -8,10 +8,12 @@ import {
   resolveReplyTargets,
 } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
-import { folderVisual } from "@/lib/folders";
+import { ListPanel } from "@/components/shared/list-panel";
+import { SubjectFolderEyebrow } from "@/components/subject/subject-folder-eyebrow";
+import { jourParis } from "@relvo/db/temps";
 import { AcknowledgeOnOpen } from "@/components/subject/acknowledge-on-open";
 import { PollRefresh } from "@/components/shared/poll-refresh";
-import { AttachmentViewer } from "@/components/shared/attachment-viewer";
+import { DocumentRow } from "@/components/subject/document-row";
 import { InformationsPane } from "@/components/subject/informations-pane";
 import { JournalPane } from "@/components/subject/journal-pane";
 import { SubjectBody } from "@/components/subject/subject-body";
@@ -95,8 +97,13 @@ export default async function SujetPage({
 
   const rows = conversationRows.map(toConversationRowData);
 
-  const folderOfSubject =
-    folders.find((f) => f.id === subject.folderId) ?? null;
+  // Le retard d'une tâche se dérive ici comme partout (lib/task-item-data) :
+  // une échéance passée sur une tâche ouverte se lit barrée, en rouge.
+  const todayKey = jourParis(new Date());
+  const hasHeroChips =
+    subject.status === "validated" ||
+    subject.status === "closed" ||
+    subject.waitingForReply;
 
   return (
     <>
@@ -143,6 +150,10 @@ export default async function SujetPage({
                 : null,
               status: t.status,
               sourceActor: t.sourceActor,
+              overdue:
+                t.status !== "done" &&
+                t.startDate != null &&
+                t.startDate.toISOString().slice(0, 10) < todayKey,
               subjectId: subject.id,
               subjectTitle: subject.title,
               folderSlug:
@@ -193,23 +204,14 @@ export default async function SujetPage({
         header={
           <RelvoHeader
             back={backHref}
-            // Le domaine du sujet en tête, comme sur sa ligne : la bande et le nom.
+            // Le domaine du sujet en tête, comme sur sa ligne : la bande et le
+            // nom — et c'est là qu'il se change.
             eyebrow={
-              folderOfSubject ? (
-                <span className="inline-flex items-center gap-2">
-                  <i
-                    aria-hidden
-                    className="h-2 w-5 rounded-full"
-                    style={{
-                      background: folderVisual({
-                        slug: folderOfSubject.slug,
-                        color: folderOfSubject.color,
-                      }).color,
-                    }}
-                  />
-                  {folderOfSubject.name}
-                </span>
-              ) : undefined
+              <SubjectFolderEyebrow
+                subjectId={subject.id}
+                folders={folders}
+                folderId={subject.folderId}
+              />
             }
             // Titre ÉDITABLE sur place, LISIBLE EN ENTIER (2 lignes) : renommer
             // un sujet est le geste de correction le plus fréquent (Relvo devine
@@ -221,69 +223,58 @@ export default async function SujetPage({
                 title={subject.title}
               />
             }
-            // Sous-titre = la référence, puis les MARQUEURS du sujet (04 §9) en
-            // petits chips sur la même ligne — les mêmes que sur sa ligne dans la
-            // liste, sans prendre une ligne de plus (retour du 2026-09-16).
+            // Sous-titre = les MARQUEURS du sujet (04 §9) en petits chips, les
+            // mêmes que sur sa ligne dans la liste. Pas de référence : personne
+            // ne reconnaît un sujet à son code. Sans marqueur, pas de ligne.
             subtitle={
-              <span className="inline-flex items-center gap-2.5">
-                <span>{subject.reference}</span>
-                {subject.status === "validated" ? (
-                  <HeroChip>Validé</HeroChip>
-                ) : subject.status === "closed" ? (
-                  <HeroChip>Fermé</HeroChip>
-                ) : null}
-                {subject.waitingForReply ? (
-                  <HeroChip>
-                    <Hourglass className="size-[11px]" />
-                    En attente
-                  </HeroChip>
-                ) : null}
-              </span>
+              hasHeroChips ? (
+                <span className="inline-flex items-center gap-2.5">
+                  {subject.status === "validated" ? (
+                    <HeroChip>Validé</HeroChip>
+                  ) : subject.status === "closed" ? (
+                    <HeroChip>Fermé</HeroChip>
+                  ) : null}
+                  {subject.waitingForReply ? (
+                    <HeroChip>
+                      <Hourglass className="size-[11px]" />
+                      En attente
+                    </HeroChip>
+                  ) : null}
+                </span>
+              ) : undefined
             }
             className="pb-10"
           />
         }
         documentsPane={
-          <div className="px-4 pt-4 pb-2">
-            <p className="mb-3 text-[12.5px] leading-[1.4] text-(--text-tertiary)">
-              Les pièces jointes reçues dans les conversations du sujet
-              s’accumulent ici.
+          // Une liste = une carte (02-composants) ; l'explication ne vit que
+          // dans l'état vide, une liste qui existe s'explique seule.
+          attachments.length === 0 ? (
+            <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
+              Aucun document pour l’instant. Les pièces jointes reçues dans les
+              conversations du sujet s’accumulent ici.
             </p>
-            {attachments.length === 0 ? (
-              <p className="py-8 text-center text-[13.5px] text-(--text-tertiary)">
-                Aucun document pour l’instant.
-              </p>
-            ) : (
-              <div className="space-y-2">
+          ) : (
+            <div className="pt-3 pb-2">
+              <ListPanel>
                 {attachments.map((a) => (
-                  <AttachmentViewer
+                  <div
                     key={a.id}
-                    id={a.id}
-                    name={a.name}
-                    mimeType={a.mimeType}
-                    className="flex cursor-pointer items-center gap-3 rounded-(--rayon-sous-carte) border border-(--filet) bg-white px-3 py-2.5 text-left shadow-carte transition-colors active:bg-(--fond-enfonce)"
+                    data-list-row
+                    className="border-b border-(--filet)"
                   >
-                    <span className="grid size-[34px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-gris">
-                      <FileText className="size-[18px]" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14px] font-semibold">
-                        {a.name}
-                      </div>
-                      <div className="text-[11.5px] text-(--text-tertiary)">
-                        {formatRelative(a.createdAt)}
-                      </div>
-                    </div>
-                    {a.aiLabel ? (
-                      <span className="flex-none rounded-full bg-(--surface-2) px-2 py-px text-[11px] font-semibold text-(--text-secondary)">
-                        {a.aiLabel}
-                      </span>
-                    ) : null}
-                  </AttachmentViewer>
+                    <DocumentRow
+                      id={a.id}
+                      name={a.name}
+                      mimeType={a.mimeType}
+                      label={a.aiLabel}
+                      time={formatRelative(a.createdAt)}
+                    />
+                  </div>
                 ))}
-              </div>
-            )}
-          </div>
+              </ListPanel>
+            </div>
+          )
         }
         journalCount={events.length}
         journalPane={<JournalPane events={events} />}

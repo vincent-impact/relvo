@@ -472,6 +472,61 @@ dans un fil de bulles (aujourd'hui « 1 h » répété) ; le hero fixe du fil, q
 hors défilement — décision du 2026-09-18, à rouvrir seulement si l'usage le réclame ; les
 durées littérales des trois points « Relvo rédige », qui attendent les tokens de M19.8.
 
+### Sujets et la fiche d'un sujet
+
+**Ce que la critique a dit.** La liste est spécifique, mais chaque ligne disait son compte de
+tâches **deux fois** (« 0/4 tâches » à gauche, « 0/4 » à droite) et « à vous » sous sept lignes
+sur neuf — le défaut nommé était devenu du bruit ; « Ouverts · 25 sujets » redisait l'indicateur
+cerclé soixante pixels plus haut ; les puces de domaine faisaient 28 px et menaient parfois à
+une liste vide ; l'état vide disait « Rien ici pour le moment ». Sur la fiche, le domaine était
+dit **trois fois** (bande et nom dans le ciel, puis puce icône + nom sous les onglets) ; le
+journal enregistrait **chaque ouverture** de la fiche (vingt-huit « Sujet SUB-0142 ouvert » sur
+le sujet de démonstration après les relectures) ; une tâche en retard n'était jamais rendue
+barrée, le drapeau n'étant pas dérivé par la page ; le titre de la fiche était à 19 px, plus
+petit que l'horaire d'une tâche ; « SUB-0142 » en sous-titre ; quatre onglets à icônes sans
+mot ; une jauge, une icône et un chiffre pour dire 0/3 ; Documents en cartes empilées sous une
+phrase d'explication permanente ; une ligne de conversation réécrite autrement que sur
+`/conversations` (avatar ambre d'état, pastille bleue, graisse 800) ; le journal en frise à
+points de couleur illisibles au soleil. Scores Nielsen 22/36 (liste) et 20/36 (fiche).
+
+**Ce qui a été retiré, et pourquoi il ne manque pas** :
+
+| Retiré | Il ne manque pas parce que… |
+|---|---|
+| « 0/4 tâches » dans la ligne fine d'un sujet | le même compte est à droite, en condensé ; la ligne fine porte le résumé court du sujet, ou rien |
+| « à vous » sous le chiffre | c'est l'état par défaut ; ne pas le nommer est ce qui fait ressortir « attend », « nouveau », « à valider » |
+| La référence `SUB-…` en repli de la ligne fine et en sous-titre de la fiche | personne ne reconnaît un sujet à son code ; il reste dans l'URL |
+| L'en-tête « Ouverts · 25 sujets » sans filtre | l'indicateur cerclé nomme la zone et la compte ; sous filtre, l'en-tête dit « Fournisseurs · 7 sur 25 », seul endroit qui le dise |
+| Les puces des domaines sans sujet dans l'onglet | une puce vers une liste vide est une puce morte ; le domaine réapparaît dès qu'un sujet l'habite |
+| La puce « Fournisseurs ⌄ » sous les onglets de la fiche | la ligne du dessus du ciel porte déjà la bande et le nom, et c'est elle, désormais, qui ouvre le sélecteur |
+| L'icône et la jauge de l'en-tête « Tâches » | le chiffre condensé « 0/3 » est le même que sur la ligne de la liste, et c'est lui qu'on attrape |
+| La phrase « Les pièces jointes reçues… s'accumulent ici » au-dessus des documents | une liste qui existe s'explique seule ; la phrase vit dans l'état vide |
+| « Sujet SUB-0142 ouvert » à chaque ouverture (domaine) | le journal ne note que la **première** ouverture, celle qui acquitte « Nouveau » ; les suivantes n'ont rien à dire |
+
+**Ce qui a changé de forme** : le titre de la fiche à 26 px, celui d'un écran poussé ; les
+onglets portent leur mot sous l'icône, à 11 px comme le dock ; Urgent se lit à la forme
+(pastille pleine rouge sur puce blanche, pointillé quand il est éteint) ; une tâche en retard
+est barrée en rouge sur la fiche comme ailleurs ; « Résumer ce sujet en une phrase » et
+« Ajouter une conversation » prennent le dessin de « Ajouter une tâche » — une seule invite sur
+la fiche ; Documents et Journal en lignes dans une carte, la lettre de l'acteur dans son disque
+à la place d'un point ; la ligne de conversation de la fiche est celle de `/conversations`
+(initiales ambre, icône du canal, pastille 22 px) ; puces de domaine à 36 px, 44 de frappe ;
+le squelette de la liste a la silhouette d'une carte de lignes et celui de la fiche celle du
+ciel ; les états vides de Sujets apprennent le geste (« Glissez un sujet vers la gauche pour le
+fermer ») ; sous 14 px, plus de graisse fine ni de 700.
+
+**Confié à plus tard** : la pastille de non-lus sur une ligne de sujet, que le brief réserve à
+la conversation (à trancher : la retirer, ou amender le brief) ; « Urgent » en mot sur la
+ligne et en pastille sur la carte d'attente — deux formes pour un état, le brief dit la
+pastille ; la liste plafonnée à 40 sujets par la requête, l'indicateur compterait faux au
+41ᵉ ; sur un sujet ouvert par Relvo, l'invite « Résumer ce sujet » demande au dirigeant le
+travail de Relvo — question pour M10 ; les entrées « ouvert » déjà écrites dans les journaux
+existants restent (jamais de SQL direct), elles ne grossissent plus ; la case de `TaskItem` et
+« 15 oct. » au lieu d'« Aujourd'hui », pour l'écran Calendrier. L'avertissement de clé React
+de l'onglet Documents est résolu : une icône Phosphor passée en enfant d'un composant client
+depuis la page serveur traverse la frontière sans clés — la ligne est devenue un composant
+client qui rend son icône lui-même (`PITFALLS.md` #58).
+
 ## Tranché à la reprise de la tranche 3 — la première connexion (M19.9)
 
 Le dirigeant ajoute à la tranche 4 une **séquence de première connexion** : cinq ou six
@@ -500,7 +555,7 @@ La trace « vues une fois » est une colonne du compte, migration accordée (ci-
       partout
 - [ ] Tranche 3 — « Alléger » : ✅ les reports de la revue de finition (Contacts, en-têtes de
       la fiche, textes sous 11 px, couleurs en dur — cliquet vide) · ⏳ M19.6 l'allègement écran
-      par écran : ✅ Accueil · ✅ Conversations (liste et fil) · reste Sujets, fiche Sujet,
+      par écran : ✅ Accueil · ✅ Conversations (liste et fil) · ✅ Sujets et fiche Sujet · reste
       Calendrier, Échange, Mémoire, Contacts, les quatre pages du menu, l'authentification ·
       M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives

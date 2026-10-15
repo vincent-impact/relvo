@@ -3,13 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ChevronDown, Plus } from "lucide-react";
-import {
-  CheckSquare,
-  Flag,
-  PencilSimple,
-  User,
-} from "@/components/shared/picto";
+import { Plus } from "lucide-react";
+import { PencilSimple, User } from "@/components/shared/picto";
 import { toast } from "sonner";
 import type { Priority } from "@relvo/db";
 import {
@@ -29,7 +24,6 @@ import {
   setSubjectPriorityAction,
   updateSubjectAction,
 } from "@/server/actions/subjects";
-import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 
 // Onglet « Informations » de la fiche Sujet (refonte 2026-07-28 : moins
@@ -134,7 +128,6 @@ export function InformationsPane({
   const [value, setValue] = useState(description ?? "");
   const [editOpen, setEditOpen] = useState(false);
   const [pending, startTransition] = useTransition();
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   const base = (description ?? "").trim();
   // Le résumé affiché : celui de l'utilisateur, sinon celui de Relvo.
@@ -142,12 +135,6 @@ export function InformationsPane({
   const shown = base || relvoSummary;
   const byRelvo = !base && Boolean(relvoSummary);
   const folder = folders.find((f) => f.id === folderId) ?? null;
-  const folderViz = folderVisual(
-    folder
-      ? { slug: folder.slug, color: folder.color, icon: folder.icon }
-      : "general",
-  );
-  const FolderIcon = folderViz.icon;
   const taskTotal = tasks.length;
   const taskDone = tasks.filter((t) => t.status === "done").length;
   // La situation de Relvo, en deux lignes nommées. La prochaine étape est UNE
@@ -205,19 +192,6 @@ export function InformationsPane({
     });
   }
 
-  function setFolder(nextId: string | null) {
-    setPickerOpen(false);
-    startTransition(async () => {
-      const res = await updateSubjectAction(subjectId, { folderId: nextId });
-      if (res.ok) {
-        toast.success("Domaine mis à jour");
-        router.refresh();
-      } else {
-        toast.error(res.message);
-      }
-    });
-  }
-
   function toggleUrgent(next: boolean) {
     startTransition(async () => {
       const res = await setSubjectPriorityAction(
@@ -231,48 +205,30 @@ export function InformationsPane({
 
   return (
     <div className="space-y-6 px-4 pt-4 pb-2">
-      {/* 1. Le contexte : une ligne de puces, qui passe à deux rangées si les noms sont longs */}
+      {/* 1. Le contexte : avec qui, et si ça presse. Le domaine vit dans le ciel
+          (ligne du dessus, où il se change) : il n'est pas redit ici. */}
       <section className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => setPickerOpen(true)}
-          className="pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-full border border-(--hairline) bg-white pr-2 pl-1 text-[12.5px] font-semibold text-(--text-primary) shadow-surface-1"
-        >
-          <span
-            className="grid size-5 flex-none place-items-center rounded-full text-white"
-            style={{ background: folderViz.color }}
-          >
-            <FolderIcon className="size-[12px]" />
-          </span>
-          <span className="max-w-[44vw] truncate">
-            {folder?.name ?? "Non classé"}
-          </span>
-          <ChevronDown
-            className="size-3.5 flex-none text-(--text-tertiary)"
-            strokeWidth={2.4}
-          />
-        </button>
         {contacts.map((c) => (
           <Link
             key={c.id}
             href={`/contacts/${c.id}`}
-            className="pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-full border border-(--hairline) bg-white pr-2.5 pl-1 text-[12.5px] font-semibold text-(--text-primary) shadow-surface-1"
+            className="pressable inline-flex h-9 flex-none items-center gap-1.5 rounded-(--rayon-pilule) border border-(--filet) bg-white pr-3 pl-1.5 text-[13px] font-medium text-noir shadow-carte"
           >
-            <span className="grid size-5 flex-none place-items-center rounded-full bg-(--surface-2) text-(--text-secondary)">
-              <User className="size-[12px]" />
+            <span className="grid size-6 flex-none place-items-center rounded-full bg-(--fond-puce) text-gris">
+              <User className="size-[13px]" />
             </span>
             <span className="max-w-[60vw] truncate">
               {c.name}
               {/* L'entreprise seulement si elle ajoute quelque chose au nom. */}
               {c.company && c.company.trim() !== c.name.trim() ? (
-                <span className="font-normal text-(--text-secondary)">
-                  {" "}
-                  · {c.company}
-                </span>
+                <span className="font-normal text-gris"> · {c.company}</span>
               ) : null}
             </span>
           </Link>
         ))}
+        {/* Urgent se lit à la FORME (01-tokens) : une pastille pleine rouge sur
+            une puce blanche quand c'est le cas ; éteint, l'interrupteur est
+            fantôme, en pointillé — il se lirait sinon comme une information. */}
         <button
           type="button"
           role="switch"
@@ -280,15 +236,21 @@ export function InformationsPane({
           disabled={pending}
           onClick={() => toggleUrgent(priority !== "urgent")}
           className={cn(
-            // Éteint, il est FANTÔME : posé comme les deux autres puces, il se
-            // lirait comme une information alors que c'est un interrupteur.
-            "pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] font-semibold",
+            "pressable inline-flex h-9 flex-none items-center gap-1.5 rounded-(--rayon-pilule) border px-3 text-[12px] font-medium tracking-[0.06em] uppercase",
             priority === "urgent"
-              ? "border-transparent bg-(--red-600) text-white shadow-surface-1"
+              ? "border-(--filet) bg-white text-urgent shadow-carte"
               : "border-dashed border-(--gris-clair) bg-transparent text-gris",
           )}
         >
-          <Flag className="size-[13px]" />
+          <i
+            aria-hidden
+            className={cn(
+              "size-2 rounded-full",
+              priority === "urgent"
+                ? "bg-urgent"
+                : "border-2 border-(--gris-clair)",
+            )}
+          />
           Urgent
         </button>
       </section>
@@ -330,7 +292,7 @@ export function InformationsPane({
                 <button
                   type="button"
                   onClick={openEditor}
-                  className="text-[14.5px] font-semibold text-relvo active:opacity-70"
+                  className="text-[14px] font-medium text-relvo active:opacity-70"
                 >
                   Résumer ce sujet en une phrase
                 </button>
@@ -343,17 +305,16 @@ export function InformationsPane({
             ))}
           </ListPanel>
         ) : (
+          // Même dessin d'invite que « Ajouter une tâche » : un seul sur la fiche.
           <button
             type="button"
             onClick={openEditor}
-            className="flex items-center gap-2.5 px-1 active:opacity-70"
+            className="flex items-center gap-2.5 px-1 py-1 text-[14px] font-medium text-relvo active:opacity-70"
           >
-            <span className="grid size-[30px] flex-none place-items-center rounded-full bg-relvo-bg text-relvo">
-              <Plus className="size-[17px]" strokeWidth={2.4} />
+            <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-bg">
+              <Plus className="size-[15px]" strokeWidth={2.6} />
             </span>
-            <span className="text-[14.5px] font-semibold text-relvo">
-              Résumer ce sujet en une phrase
-            </span>
+            Résumer ce sujet en une phrase
           </button>
         )}
       </section>
@@ -367,36 +328,18 @@ export function InformationsPane({
       <section>
         <SectionHead
           title="Tâches"
+          // Le compte seul, en condensé, comme sur la ligne de la liste : une
+          // icône et une jauge disaient trois fois 0/3.
           right={
             taskTotal > 0 ? (
-              <div className="flex items-center gap-2">
-                <CheckSquare
-                  className={cn(
-                    "size-[15px] flex-none",
-                    taskDone >= taskTotal
-                      ? "text-(--green-600)"
-                      : "text-(--text-tertiary)",
-                  )}
-                />
-                <span className="relative block h-1.5 w-16 overflow-hidden rounded-full bg-(--fond-puce)">
-                  <span
-                    className="absolute inset-y-0 left-0 rounded-full bg-(--green-600) transition-[width]"
-                    style={{
-                      width: `${Math.round((100 * taskDone) / taskTotal)}%`,
-                    }}
-                  />
-                </span>
-                <span className="chiffre text-[12px] text-gris">
-                  {taskDone}/{taskTotal}
-                </span>
-              </div>
+              <span className="chiffre text-[16px] leading-5 text-noir">
+                {taskDone}/{taskTotal}
+              </span>
             ) : null
           }
         />
         {tasks.length === 0 ? (
-          <p className="px-1 text-[13.5px] text-(--text-tertiary)">
-            Aucune tâche.
-          </p>
+          <p className="px-1 text-[14px] font-light text-gris">Aucune tâche.</p>
         ) : (
           <ListPanel className="mx-0">
             {tasks.map((t) => (
@@ -410,62 +353,6 @@ export function InformationsPane({
           subjectFolderSlug={folder?.slug ?? null}
         />
       </section>
-
-      {/* Sélecteur de domaine */}
-      <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
-        <DialogContent className="gap-4 p-5">
-          <DialogHeader>
-            <DialogTitle>Domaine du sujet</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setFolder(null)}
-              className={cn(
-                "inline-flex h-9 items-center rounded-full border px-3.5 text-[13px] font-semibold transition-colors",
-                folderId == null
-                  ? "border-transparent bg-(--text-primary) text-white"
-                  : "border-(--border) bg-white text-(--text-secondary)",
-              )}
-            >
-              Non classé
-            </button>
-            {folders.map((f) => {
-              const viz = folderVisual({
-                slug: f.slug,
-                color: f.color,
-                icon: f.icon,
-              });
-              const active = folderId === f.id;
-              const Icon = viz.icon;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setFolder(f.id)}
-                  className={cn(
-                    "inline-flex h-9 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition-colors",
-                    active
-                      ? "border-transparent text-white"
-                      : "border-(--border) bg-white text-(--text-secondary)",
-                  )}
-                  style={
-                    active
-                      ? { background: viz.color, borderColor: viz.color }
-                      : undefined
-                  }
-                >
-                  <Icon
-                    className="size-[15px] flex-none"
-                    style={active ? undefined : { color: viz.color }}
-                  />
-                  {f.name}
-                </button>
-              );
-            })}
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Édition du résumé — pop-up dédiée (jamais dans le flux de la fiche) */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>

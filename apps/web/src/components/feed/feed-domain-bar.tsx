@@ -10,8 +10,9 @@ import { cn } from "@/lib/utils";
 // sert à ça : la sélection d'un filtre), jamais violette — le violet est la
 // livrée et la voix de Relvo, pas un état.
 
+// 36 px de haut (la puce du système), 44 px de frappe par le pseudo-élément.
 const CHIP =
-  "pressable inline-flex h-7 flex-none items-center gap-1.5 rounded-(--rayon-pilule) border px-3 text-[12px] whitespace-nowrap transition-colors";
+  "pressable relative inline-flex h-9 flex-none items-center gap-1.5 rounded-(--rayon-pilule) border px-3 text-[12px] whitespace-nowrap transition-colors before:absolute before:-inset-y-1 before:inset-x-0 before:content-['']";
 const CHIP_IDLE = "border-(--filet) bg-white font-normal text-noir";
 const CHIP_ON = "border-noir bg-noir font-medium text-white";
 
@@ -19,12 +20,17 @@ export function FeedDomainBar({
   domain,
   onDomain,
   folders,
+  present,
 }: {
   /** Slug du domaine filtré, ou null (tous). */
   domain: string | null;
   onDomain: (slug: string | null) => void;
   folders: FolderChip[];
+  /** Les domaines qui ont au moins un sujet dans l'onglet courant : une puce
+   *  qui mène à une liste vide est une puce morte, elle ne s'affiche pas. */
+  present: ReadonlySet<string>;
 }) {
+  const shown = folders.filter((f) => present.has(f.slug) || f.slug === domain);
   return (
     <div
       role="group"
@@ -40,7 +46,7 @@ export function FeedDomainBar({
         Tous
       </button>
 
-      {folders.map((f) => {
+      {shown.map((f) => {
         const { color } = folderVisual({ slug: f.slug, color: f.color });
         const active = domain === f.slug;
         return (

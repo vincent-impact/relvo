@@ -35,6 +35,14 @@ const TAB_LABEL: Record<SubjectTab, string> = {
   fermes: "Fermés",
 };
 
+// L'état vide GUIDE : c'est dans un onglet vide qu'on apprend le geste.
+const EMPTY: Record<SubjectTab, string> = {
+  ouverts: "Aucun sujet ouvert. Relvo en ouvrira à l'arrivée de vos messages.",
+  valides:
+    "Aucun sujet validé. Glissez un sujet ouvert vers la droite pour le valider.",
+  fermes: "Aucun sujet fermé. Glissez un sujet vers la gauche pour le fermer.",
+};
+
 // Onglet initial déduit de l'URL. `?urgent=1` / `?nouveau=1` (anciens liens)
 // retombent sur « Ouverts » : ces sujets y vivent, distingués visuellement.
 function initialTab(params: URLSearchParams): SubjectTab {
@@ -81,6 +89,21 @@ export function FeedView({
   const filtered = base.filter(
     ({ row }) => domain == null || row.folderSlug === domain,
   );
+  // Les domaines qui ont au moins un sujet dans l'onglet : seuls ceux-là ont
+  // une puce (une puce vers une liste vide est une puce morte).
+  const present = useMemo(
+    () =>
+      new Set(
+        base
+          .map(({ row }) => row.folderSlug)
+          .filter((slug): slug is string => Boolean(slug)),
+      ),
+    [base],
+  );
+  const domainName =
+    domain == null
+      ? null
+      : (folders.find((f) => f.slug === domain)?.name ?? domain);
 
   function renderRow({ row, basket }: Tagged) {
     if (basket === "ouvert") {
@@ -108,21 +131,32 @@ export function FeedView({
     <>
       <SubjectKpiTabs active={tab} onChange={setTab} counts={counts} />
 
-      <FeedDomainBar domain={domain} onDomain={setDomain} folders={folders} />
+      <FeedDomainBar
+        domain={domain}
+        onDomain={setDomain}
+        folders={folders}
+        present={present}
+      />
 
-      {/* La zone est nommée par l'onglet, et qualifiée par son compte. */}
-      <div className="pt-3">
-        <ZoneHeading
-          label={TAB_LABEL[tab]}
-          hint={`${filtered.length} sujet${filtered.length > 1 ? "s" : ""}`}
-        />
-      </div>
+      {/* Sans filtre, l'indicateur cerclé nomme déjà la zone et la compte : un
+          en-tête « Ouverts · 25 sujets » le redisait soixante pixels plus bas.
+          Sous filtre, l'en-tête dit ce que le filtre a retenu. */}
+      {domainName != null ? (
+        <div className="pt-3">
+          <ZoneHeading
+            label={domainName}
+            hint={`${filtered.length} sur ${base.length}`}
+          />
+        </div>
+      ) : (
+        <div className="pt-3" />
+      )}
 
       {filtered.length === 0 ? (
-        <p className="px-[22px] py-10 text-center text-[13.5px] font-light text-gris">
-          {domain != null
-            ? "Aucun sujet ne correspond à ce domaine."
-            : "Rien ici pour le moment."}
+        <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
+          {domainName != null
+            ? `Aucun sujet « ${domainName} » parmi les ${TAB_LABEL[tab].toLowerCase()}.`
+            : EMPTY[tab]}
         </p>
       ) : (
         <ListPanel>{filtered.map(renderRow)}</ListPanel>
