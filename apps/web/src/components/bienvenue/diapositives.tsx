@@ -5,6 +5,7 @@ import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RELVO_LOGO_PATHS, RelvoLogo } from "@/components/layout/relvo-logo";
 import { EtapeFormulaire } from "@/components/relvo-chat/etape-formulaire";
 import { MAIL_CHOICES } from "@/components/settings/connect-email-button";
+import { Brain, Envelope } from "@/components/shared/picto";
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import {
   connecterPremiereBoiteAction,
@@ -14,7 +15,7 @@ import type { MailProvider } from "@/server/unipile/client";
 import { cn } from "@/lib/utils";
 
 // Les diapositives de première connexion (01 §11, M19.9) : un ciel plein
-// écran, cinq phrases courtes qui disent la promesse — ce que Relvo fera du
+// écran, six phrases courtes qui disent la promesse — ce que Relvo fera du
 // courrier —, puis l'invitation à connecter sa première adresse, posée en
 // ÉTAPE-FORMULAIRE dans la voix de Relvo. Du contexte, pas un mode d'emploi :
 // aucune diapositive n'explique un écran ; ce qui s'apprend (sujet, domaine,
@@ -43,33 +44,122 @@ function Signe() {
   return <RelvoLogo size={96} variant="mark" className="text-white" />;
 }
 
-// Une ligne de sujet, telle que la liste la rend : la bande, le domaine, le
-// titre, et une tâche en dessous.
-function Sujet() {
+// Un e-mail qui devient une affaire, et l'affaire ses tâches : la
+// transformation que Relvo opère, montrée avec les pièces du produit — la
+// ligne d'un message, la carte d'un sujet avec sa bande et sa pastille, des
+// tâches à cocher — reliées par des flèches.
+function Fleche({ branches = 1 }: { branches?: 1 | 3 }) {
+  const w = 280;
+  const xs = branches === 3 ? [46, 140, 234] : [140];
   return (
-    <div className="flex w-[264px] overflow-hidden rounded-(--rayon-carte) bg-white text-left text-noir shadow-carte">
-      <i aria-hidden className="bande-carte bg-(--domaine-orange)" />
-      <div className="min-w-0 flex-1 px-3.5 py-3">
-        <div className="domaine text-(--domaine-orange-texte)">
-          Fournisseurs
-        </div>
-        <div className="mt-1 text-[15px] leading-5 font-normal">
-          Devis chambre froide
-        </div>
-        <div className="mt-0.5 text-[12px] leading-4 font-normal text-gris">
-          Karim Benali · 3 messages
-        </div>
-        <div className="mt-2.5 flex items-center gap-2.5 border-t border-(--filet) pt-2.5">
-          <i
-            aria-hidden
-            className="grid size-[22px] flex-none place-items-center rounded-full border-2 border-(--gris-clair)"
-          />
-          <span className="min-w-0 flex-1 truncate text-[14px] font-normal">
-            Valider le devis
+    <svg
+      viewBox={`0 0 ${w} 30`}
+      width={w}
+      height={30}
+      aria-hidden
+      className="text-white/85"
+    >
+      <g
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={2}
+        strokeLinecap="round"
+      >
+        {branches === 3 ? (
+          <path d="M140 2 V12 H46 V22 M140 12 V22 M140 12 H234 V22" />
+        ) : (
+          <path d="M140 2 V22" />
+        )}
+      </g>
+      <g fill="currentColor">
+        {xs.map((x) => (
+          <path key={x} d={`M${x - 5} 20 L${x} 28 L${x + 5} 20 Z`} />
+        ))}
+      </g>
+    </svg>
+  );
+}
+
+function Extraction() {
+  return (
+    <div className="flex w-[280px] flex-col items-center">
+      <div className="flex w-full items-center gap-3 rounded-(--rayon-carte) bg-white px-3.5 py-2.5 text-left text-noir shadow-carte">
+        <span className="grid size-9 flex-none place-items-center rounded-full bg-(--fond-puce)">
+          <Envelope className="size-[18px]" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[14px] leading-[18px] font-normal">
+            Karim Benali
           </span>
-          <span className="chiffre text-[15px] text-noir">jeu.</span>
+          <span className="block truncate text-[12px] leading-4 font-normal text-gris">
+            Re : devis chambre froide, livraison repoussée…
+          </span>
+        </span>
+      </div>
+      <Fleche />
+      <div className="flex w-full overflow-hidden rounded-(--rayon-carte) bg-white text-left text-noir shadow-carte">
+        <i aria-hidden className="bande-carte bg-(--domaine-orange)" />
+        <div className="min-w-0 flex-1 px-3.5 py-2.5">
+          <div className="flex items-center justify-between gap-2">
+            <span className="domaine text-(--domaine-orange-texte)">
+              Fournisseurs
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-medium tracking-[0.06em] text-urgent uppercase">
+              <i aria-hidden className="size-2 rounded-full bg-urgent" />
+              Urgent
+            </span>
+          </div>
+          <div className="mt-0.5 text-[15px] leading-5 font-normal">
+            Devis chambre froide
+          </div>
         </div>
       </div>
+      <Fleche branches={3} />
+      <div className="w-full rounded-(--rayon-carte) bg-white text-left text-noir shadow-carte">
+        {[
+          ["Relancer Karim sur le délai", "jeu."],
+          ["Valider le devis", "ven."],
+          ["Prévenir l’équipe cuisine", "lun."],
+        ].map(([t, d]) => (
+          <div
+            key={t}
+            className="flex items-center gap-2.5 border-b border-(--filet) px-3.5 py-2 last:border-b-0"
+          >
+            <i
+              aria-hidden
+              className="grid size-[20px] flex-none place-items-center rounded-full border-2 border-(--gris-clair)"
+            />
+            <span className="min-w-0 flex-1 truncate text-[13.5px] font-normal">
+              {t}
+            </span>
+            <span className="chiffre text-[14px]">{d}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// La Mémoire : l'entrée du menu, telle qu'elle y est, et une instruction
+// retenue, dans le bloc de Relvo.
+function Memoire() {
+  return (
+    <div className="w-[280px]">
+      <div className="flex items-center gap-3 rounded-(--rayon-carte) bg-white px-3.5 py-3 text-left text-noir shadow-carte">
+        <span className="grid size-9 flex-none place-items-center rounded-full bg-(--fond-puce)">
+          <Brain className="size-[18px]" />
+        </span>
+        <span className="flex-1 text-[15px] font-normal">Mémoire</span>
+        <span className="text-[12px] font-normal text-gris">
+          3 instructions
+        </span>
+      </div>
+      <RelvoBlock className="mt-3 text-left">
+        <RelvoSentence>
+          Noté : pour un devis, je demande toujours le délai de livraison avant
+          de proposer une réponse.
+        </RelvoSentence>
+      </RelvoBlock>
     </div>
   );
 }
@@ -143,32 +233,38 @@ export function Diapositives({ firstName }: { firstName: string }) {
     {
       key: "signe",
       title: <>Bonjour {firstName}.</>,
-      text: "Je suis Relvo. Je lis le courrier que vous recevez, et j’en fais des sujets.",
+      text: "Je suis Relvo. Je fais le tri dans vos messages et je vous avertis quand une affaire mérite votre attention.",
       Illustration: Signe,
     },
     {
-      key: "sujet",
-      title: "Chaque affaire devient un sujet.",
-      text: "Un devis, une relance, un litige : ses messages, ses tâches et son journal, au même endroit.",
-      Illustration: Sujet,
+      key: "extraction",
+      title: "Je prends les devants.",
+      text: "Un devis, une relance, un litige, un retard annoncé… Je vous indique les affaires chaudes du moment et j’organise votre agenda.",
+      Illustration: Extraction,
     },
     {
       key: "brief",
-      title: "Je vous dis ce qui attend.",
-      text: "Dès que vous ouvrez l’application : ce qui attend une réponse, une décision, et ce que j’ai fait de mon côté.",
+      title: "Vos priorités, chaque jour.",
+      text: "Je vous informe de vos priorités et je vous suggère les meilleures réponses et décisions pour avancer.",
       Illustration: Brief,
     },
     {
       key: "brouillon",
       title: "Je prépare vos réponses.",
-      text: "Vous relisez, vous envoyez. Rien ne part sans vous.",
+      text: "Je rédige vos messages à votre façon. Rassurez-vous : rien ne part sans votre accord.",
       Illustration: Brouillon,
     },
     {
       key: "disque",
-      title: "Le disque au centre, c’est moi.",
-      text: "Posez-moi une question depuis n’importe quelle page.",
+      title: "Le disque au centre, c’est moi !",
+      text: "Posez-moi toutes vos questions sur les affaires en cours ou les urgences du moment : j’y réponds.",
       Illustration: Disque,
+    },
+    {
+      key: "memoire",
+      title: "J’apprends vite.",
+      text: "Je peux me tromper, surtout au début. Dites-moi simplement comment vous voulez que je me comporte : je n’oublie rien.",
+      Illustration: Memoire,
     },
   ];
   const total = slides.length + 1;

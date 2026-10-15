@@ -844,14 +844,17 @@ variable CSS n'est animée sur un parent. La mesure se fera sur le téléphone d
 
 **Les diapositives.** Un compte qui n'a jamais vu les diapositives ne voit pas le chrome : le
 groupe `(app)` l'envoie sur `/bienvenue`, hors dock. Le ciel plein (`--ciel-plein`, sans
-fondu), « Passer » en haut à droite, cinq diapositives à glisser en `scroll-snap` natif — pas
+fondu), « Passer » en haut à droite, six diapositives à glisser en `scroll-snap` natif — pas
 de bibliothèque, le pouce fait ce qu'il fait partout —, chacune une illustration faite de
-**morceaux du produit** (le signe, une ligne de sujet avec sa bande, le bloc des nouvelles, un
-brouillon, le dock et son disque) et une phrase : « Je suis Relvo. Je lis le courrier que vous
-recevez, et j'en fais des sujets. » · « Chaque affaire devient un sujet. » · « Je vous dis ce
-qui attend. » · « Je prépare vos réponses. Vous relisez, vous envoyez. Rien ne part sans
-vous. » · « Le disque au centre, c'est moi. » Du contexte, pas un mode d'emploi : aucune
-n'explique un écran. La sixième est l'**invitation**, un bloc de Relvo sur le ciel avec
+**morceaux du produit** et une phrase. Les textes sont ceux du dirigeant, relus en retour de la
+première version : « Je fais le tri dans vos messages et je vous avertis quand une affaire
+mérite votre attention » · « Je prends les devants » (un e-mail qui devient une affaire
+urgente, puis ses tâches à cocher, reliés par des flèches) · « Vos priorités, chaque jour » ·
+« Je prépare vos réponses… rien ne part sans votre accord » · « Le disque au centre, c'est
+moi ! » · « J'apprends vite » (l'entrée Mémoire du menu et une instruction retenue). Du
+contexte, pas un mode d'emploi : aucune n'explique un écran. Les diapositives disent déjà
+« affaire » ; le mot pour le reste du produit est une proposition dans `ecarts`. La septième est
+l'**invitation**, un bloc de Relvo sur le ciel avec
 l'**étape-formulaire** des trois boîtes (la même liste que Canaux, exportée) et « Plus tard ».
 « Passer » mène à l'invitation, pas hors de la séquence : l'invitation est le but. La trace
 `welcome_seen_at` est posée par le domaine (`markWelcomeSeen`, idempotent) — la seule

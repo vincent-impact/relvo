@@ -166,6 +166,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Les écrans de bienvenue parlent avec vos mots : ce que Relvo fait d'un e-mail, ce qu'il retient de ce que vous lui dites."
+        },
+        {
+          "type": "new",
           "texte": "À votre première connexion, Relvo se présente en quelques écrans à faire glisser, puis vous invite à relier votre boîte e-mail. Tant qu'aucune boîte n'est reliée, chaque page vide vous dit par où commencer, et la page Canaux montre où en est la lecture de votre courrier."
         },
         {

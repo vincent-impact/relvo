@@ -1356,6 +1356,26 @@ par Relvo, le champ montre des lignes qui respirent, pas un vide figé.
 
 ## Propositions
 
+### « Affaire » plutôt que « sujet »
+
+**`proposé`** · Par le dirigeant, à la lecture des diapositives de première connexion (M19.9),
+qui disent déjà « une affaire mérite votre attention », « les affaires en cours ». « Sujet »
+est impersonnel ; une affaire parle à tout le monde — on *traite* des affaires, et c'est
+exactement ce qu'on fait avec Relvo. Le mot est tranché pour les diapositives ; pour le reste
+du produit, la proposition est de remplacer le **mot de l'utilisateur** partout où il le lit
+ou l'entend : les libellés (l'onglet « Sujets », « Nouveau sujet », les états vides, les
+toasts), les phrases de Relvo (les nouvelles, le brief, les blocs, le journal), les
+diapositives, la page de suivi. **Ce qui ne bouge pas** : l'entité `Subject`, les routes
+(`/sujets`, `/fil`), les identifiants, les tests — un nom de code n'est pas un mot du client —,
+ni les invariants numérotés, cités dans le code. **Ce qui demande une décision à part** : les
+consignes du modèle (`server/ia`, deux cents occurrences) parlent de « sujet » à Relvo ; les
+changer touche le tri, la structuration et la relecture, et s'évalue avec les jeux
+d'évaluation, pas à l'œil. Et la documentation de conception (`01` à `05`, quatre cents
+occurrences) nomme le concept « sujet » : si le mot du client change, elle se récrit en place,
+dans le même chantier, jamais par une note « on dit maintenant affaire ». Taille mesurée :
+trois cents occurrences dans l'interface, trois cents dans le backlog. À trancher par le
+dirigeant ; se livre comme un item à part entière, pas au fil de l'eau.
+
 ### La photo d'un contact
 
 **`proposé`** · Exprimé par le dirigeant à la reprise de la fiche contact (M19.10). La carte de

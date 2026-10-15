@@ -65,10 +65,10 @@ par-dessus la page assombrie.
 Un compte qui n'a jamais vu les diapositives ne voit pas le chrome : le groupe `(app)` l'envoie
 sur `/bienvenue`, hors dock — on ne montre pas une barre d'onglets avant d'avoir dit à quoi elle
 sert. L'écran est le **ciel plein** (`--ciel-plein`, sans fondu : rien de blanc à rejoindre),
-« Passer » en haut à droite, cinq diapositives à glisser en `scroll-snap` natif — une
-illustration faite de **morceaux du produit** (une ligne de sujet, le bloc des nouvelles, un
-brouillon, le disque), un titre condensé, une phrase fine —, les points et « Continuer ». La
-sixième est l'**invitation** : un bloc de Relvo posé sur le ciel, avec l'étape-formulaire des
+« Passer » en haut à droite, six diapositives à glisser en `scroll-snap` natif — une
+illustration faite de **morceaux du produit** (le signe, un e-mail qui devient une affaire et
+ses tâches, le bloc des nouvelles, un brouillon, le disque, la Mémoire), un titre condensé, une
+phrase fine —, les points et « Continuer ». La septième est l'**invitation** : un bloc de Relvo posé sur le ciel, avec l'étape-formulaire des
 trois boîtes et « Plus tard ». Choisir une boîte enchaîne sur la connexion ordinaire d'un canal
 et aboutit sur Canaux, où le guidage reprend ; « Plus tard » ramène à l'accueil, dont le bloc
 des nouvelles redit l'invitation tant qu'aucune boîte n'est reliée. La trace « vues » est sur le
