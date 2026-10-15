@@ -74,7 +74,7 @@ npx skills@latest add emilkowalski/skills
 | M19.6  | **L'allègement, écran par écran** : Accueil, Sujets, Conversations (liste et détail), fiche Sujet, Calendrier, Échange, Mémoire, Contacts, les quatre pages du menu, le tunnel d'authentification. Pour chacun, dans cet ordre : `critique`, `distill`, `polish`, `audit` ; une capture avant/après ; un commit par écran, avec son pied `Client:`. Un élément retiré est un élément dont on sait dire **pourquoi il ne manque pas** |
 | M19.7  | **Les composants signature habillés**, par le registre d'abord : ligne de sujet, tâche, tuile KPI, pastille d'acteur, badges et marqueurs, bouton Relvo du dock, header et panneau des nouvelles, panneau de liste, feuille du menu, composer. **Un composant rendu par Relvo reste celui de l'écran** |
 | M19.8  | **Le langage de mouvement** : tokens de durée et de courbe, primitives (apparition d'une liste, ouverture d'une feuille, transition entre écrans, état pressé, arrivée d'une nouvelle), et la liste de **ce qui ne s'anime pas**. Relu par `review-animations`, mesuré par `animation-performance` sur un téléphone d'entrée de gamme. Le mouvement courant reste court et sort vite ; seul l'accompagnement a le droit d'être vu |
-| M19.9  | **Les premiers pas, sur les surfaces qui existent** : de l'authentification au premier accueil vide, la connexion d'un canal, l'ouverture du premier sujet, la présentation du bouton Relvo, des états vides qui **guident** au lieu de constater. Les composants que M13.2 consommera — la carte vivante d'avancement, l'étape-formulaire — reçoivent ici leur rendu et leur mouvement ; leur logique reste dans M10.16 |
+| M19.9  | **Les premiers pas, sur les surfaces qui existent**. À la **première connexion**, une série de **cinq ou six diapositives à glisser**, une phrase courte par diapositive, qui disent ce que Relvo fait — du **contexte**, pas un mode d'emploi —, vues une seule fois, qu'on peut passer. Puis le **guidage** : l'invitation à connecter sa **première adresse e-mail**, depuis l'accueil vide jusqu'à la page des canaux. De là, l'ouverture du premier sujet, la présentation du bouton Relvo, des états vides qui **guident** au lieu de constater. Les composants que M13.2 consommera — la carte vivante d'avancement, l'étape-formulaire — reçoivent ici leur rendu et leur mouvement ; leur logique reste dans M10.16. **L'échange scripté reste la prise en main** : il commence à la connexion du canal, les diapositives et le guidage ne font qu'y conduire |
 | M19.10 | **La robustesse** : `break-ui` sur de longs noms, des listes vides, des compteurs à trois chiffres, des volumes réels et non ceux de la maquette ; vérification sur l'iPhone du dirigeant en mode sombre et en pleine lumière, sur Android (#54) ; le repli desktop ne régresse pas |
 | M19.11 | **L'outillage** : skills installés au niveau utilisateur ; `PRODUCT.md` à la racine, un résumé qui **pointe** vers `conception/01-principes.md` ; `DESIGN.md` à la racine, **écrit depuis le code livré** (le frontmatter recopie `globals.css` pour les outils, le texte pointe vers `conception/design-system/` et nomme les exceptions assumées aux détecteurs d'impeccable : la bande de domaine, le violet sémantique, le débordement du disque Relvo) et son sidecar `apps/web/.impeccable/design.json` ; le contrat de direction du brief de surface tenu au présent ; `/design-system/` (sortie de ui-ux-pro-max, à la racine) ignoré par git ; la revue de finition d'impeccable rendue sur les écrans capturés |
 | M19.12 | **La clôture** : `02-composants.md` et `03-patterns.md` relus contre le code ; `00-sources.md` dit que la maquette ne fait plus foi sur le rendu ; les pièges rencontrés remontent à `PITFALLS.md` dans la même session |
@@ -87,7 +87,9 @@ npx skills@latest add emilkowalski/skills
    et rien ne change de place. C'est la tranche qui se vérifie sur l'iPhone.
 3. **« Alléger »** — M19.6, M19.10. Écran par écran, un commit par écran.
 4. **« Guider »** — M19.8, M19.9. Le mouvement arrive en dernier : on n'anime pas ce qu'on va
-   encore retirer.
+   encore retirer. La séquence de première connexion — diapositives, puis invitation à
+   connecter la première adresse — est ce qui précède l'échange scripté de M10.16 ; elle se
+   livre ici, l'échange après.
 5. **« Clore »** — M19.12.
 
 ## Tranché à l'ouverture
@@ -106,6 +108,11 @@ npx skills@latest add emilkowalski/skills
   deux moteurs.
 - **Le témoin.** Si la direction retenue est la DA actuelle poussée au bout, l'épique ne
   rétrécit pas : les tranches 3 et 4 sont indépendantes du choix.
+- **La trace « diapositives vues ».** L'épique ne porte aucune migration ; or une diapositive
+  vue une fois doit l'être **dans le domaine**, jamais dans le stockage du navigateur, qui se
+  vide. Deux voies : une colonne horodatée sur le compte, sur le modèle de `home_seen_at`, par
+  une migration additive accordée en exception ; ou, le temps de M19, la dérivation « aucun
+  canal connecté » avec un bouton Passer. À trancher avant la tranche 4.
 
 ⚠️ **« Entièrement » porte sur l'apparence, pas sur les flux.** Rouvrir la disposition un mois
 après l'avoir tranchée sur planches, c'est reproduire ce qui a coûté trois réécritures à M9. Si

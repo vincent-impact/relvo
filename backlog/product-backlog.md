@@ -38,7 +38,7 @@ frontmatter l'est.
 | [M16 — Consolidation](epics/M16-consolidation.md)                          | ✅                                               | —                               |
 | **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en pause** — reste la tranche 10, après M18   | M8, M10                         |
 | **[M18 — Disposition générale](epics/M18-disposition-generale.md)**       | 🟡 **partiel** — tranches 1 à 4 livrées ; la 5 (M18.9, M18.11) se livre avec M10 | M19, M10, M13 |
-| **[M19 — Direction artistique, allègement et prise en main](epics/M19-direction-artistique.md)** | 🟡 **en cours** — tranche 1 « Voir »            | M10, M13.2                      |
+| **[M19 — Direction artistique, allègement et prise en main](epics/M19-direction-artistique.md)** | 🟡 **en cours** — tranche 3 « Alléger »         | M10, M13.2                      |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
 | [M10 — Échange avec Relvo](epics/M10-echange-relvo.md)                     | ⬜ porte aussi la tranche 5 de M18               | M13                             |
 | [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md)                    | ⬜                                               | —                               |

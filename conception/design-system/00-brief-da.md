@@ -253,8 +253,8 @@ voici les pièces **signature**, celles qui portent l'identité :
   l'utilisateur, **composer** et son disque de dictée. C'est le cœur « agent ».
 - Le **brouillon de Relvo** prêt dans une conversation, les **blocs d'action**, la **question en
   formulaire** à grosses options.
-- Les composants des **premiers pas** : la carte vivante d'avancement, l'étape-formulaire, les
-  états vides qui guident.
+- Les composants des **premiers pas** : les diapositives de première connexion, la carte
+  vivante d'avancement, l'étape-formulaire, les états vides qui guident.
 
 **Un composant rendu par Relvo est celui de l'écran.** Une seule bibliothèque, deux surfaces.
 

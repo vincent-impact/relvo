@@ -1209,6 +1209,33 @@ design d'impeccable, avec ses exceptions assumées (la bande de domaine sur la t
 est le geste signature, pas un tic d'interface générée) ; les captures du point zéro rejouées
 dans la direction.
 
+### La première connexion s'ouvre sur des diapositives, avant l'invitation à connecter une adresse
+
+**`tranché`** · Avec le dirigeant, en reprise de la tranche 3 de M19. Précise « La prise en main
+est une conversation avec Relvo » sans la rouvrir : l'échange scripté reste la prise en main,
+mais il ne commence qu'à la connexion du premier canal — et avant ce canal, un nouvel
+utilisateur ne voit qu'un accueil vide et un dock dont il ne sait rien.
+
+- **Ce qui est retenu.** À la première connexion, une série de **cinq ou six diapositives à
+  glisser**, une phrase courte par diapositive, qui disent ce que Relvo fait : du contexte, pas
+  un mode d'emploi. Vues une seule fois ; on peut les passer. Elles débouchent sur le
+  **guidage** : l'invitation à connecter sa première adresse e-mail. De là, l'échange scripté
+  (M10.16) prend le relais, comme tranché.
+- **Pourquoi ce n'est pas le tutoriel écarté.** Le tutoriel écarté apprenait une interface par
+  des écrans et des infobulles ; les diapositives n'expliquent aucun écran, elles disent la
+  promesse — ce que Relvo fera du courrier — pour que l'invitation à connecter une adresse ait
+  un sens. Ce qui s'apprend, sujet, domaine, tâche, s'apprend toujours dans l'échange.
+- **Retenu contre** envoyer directement le nouvel utilisateur sur la page des canaux : il y
+  arriverait sans savoir pourquoi confier son courrier. **Retenu contre** faire porter ce
+  contexte par le premier échange : Relvo n'a rien à lire tant qu'aucun canal n'est connecté,
+  et une conversation qui commence par « connectez une adresse » est un formulaire déguisé.
+- **Reste à trancher** : où vit la trace « diapositives vues » — l'épique n'accorde aucune
+  migration, le stockage du navigateur ne tient pas (M19, « Reste à trancher en cours de
+  sprint »).
+
+**Mis en œuvre par** M19.9, tranche 4 « Guider » ; `01-principes.md` §11 et `05-ia.md` §11.11
+disent la séquence.
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté

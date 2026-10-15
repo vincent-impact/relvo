@@ -50,6 +50,9 @@ signature), **Alléger** (écran par écran), **Guider** (langage de mouvement, 
 - **Le témoin** : si la direction retenue est la DA actuelle poussée au bout, les tranches
   « Alléger » et « Guider » se livrent quand même.
 - **Ce que `mobile-native` a le droit de dire** : relecteur, jamais correcteur du viewport.
+- **La trace « diapositives vues »** (M19.9) : colonne horodatée sur le compte par une
+  migration additive accordée en exception, ou dérivation « aucun canal connecté » le temps de
+  M19. À trancher avant la tranche 4.
 
 ---
 
@@ -356,6 +359,17 @@ de chaque écran (`critique → distill → polish → audit`), l'état vide « 
 unifier entre l'accueil et le Calendrier, le rafraîchissement du jeu de démonstration, et
 l'avertissement d'hydratation sur `/usage`.
 
+## Tranché à la reprise de la tranche 3 — la première connexion (M19.9)
+
+Le dirigeant ajoute à la tranche 4 une **séquence de première connexion** : cinq ou six
+**diapositives à glisser**, une phrase courte chacune, qui disent ce que Relvo fait — du
+contexte, pas un mode d'emploi — ; puis le **guidage**, qui invite à connecter sa première
+adresse e-mail. L'échange scripté (M10.16) reste la prise en main et commence à la connexion de
+ce canal : les diapositives y conduisent, elles ne le remplacent pas. La décision et ce qu'elle
+a retenu contre quoi sont dans `ecarts` (« La première connexion s'ouvre sur des
+diapositives ») ; `01-principes.md` §11, `05-ia.md` §11.11 et le brief disent la séquence.
+Reste ouvert : où vit la trace « vues une fois » (ci-dessus).
+
 ## Où on en est
 
 - [x] Tranche 1 — « Voir » : ✅ M19.1 brief au présent · ✅ M19.2 point zéro · ✅ M19.3 la
@@ -374,5 +388,6 @@ l'avertissement d'hydratation sur `/usage`.
 - [ ] Tranche 3 — « Alléger » : ✅ les reports de la revue de finition (Contacts, en-têtes de
       la fiche, textes sous 11 px, couleurs en dur — cliquet vide) · ⏳ M19.6 l'allègement écran
       par écran · M19.10 robustesse
-- [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas
+- [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives
+      de première connexion, invitation à connecter la première adresse, états vides qui guident
 - [ ] Tranche 5 — « Clore » : M19.12
