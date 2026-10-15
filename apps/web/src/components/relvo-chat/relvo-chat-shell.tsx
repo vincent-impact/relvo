@@ -1,25 +1,21 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
-import {
-  ClockCounterClockwise,
-  Microphone,
-  PaperPlaneRight,
-  Paperclip,
-} from "@/components/shared/picto";
 import { toast } from "sonner";
 import { MobileFrame } from "@/components/layout/mobile-frame";
-import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
-import { RELVO_LOGO_PATHS } from "@/components/layout/relvo-logo";
+import { RelvoHeader } from "@/components/layout/relvo-header";
+import { RelvoLogo } from "@/components/layout/relvo-logo";
+import { RecipientComposer } from "@/components/shared/recipient-composer";
 
-// Coquille de conversation plein écran (M9 / ux-mobile-first §5) : le ciel
-// court (retour, historique), le chip de contexte, l'état vide (le disque de
-// Relvo et des invites en options pointillées qui pré-remplissent), et le
-// composer BLANC ancré en bas — champ gris, disque violet pour dicter ou
-// envoyer — qui prend la place du dock. SANS IA : le streaming, les tools et le
-// stockage IndexedDB arrivent en M10.
+// L'échange avec Relvo, plein écran — la coquille, avant M10 qui y posera la
+// conversation. Relvo parle en premier (invariant 36) : l'état vide est un
+// BLOC DE RELVO, pas un portrait qui demande ce qu'il peut faire, et les
+// invites y sont des liens fléchés, la forme des suggestions de l'accueil. Le
+// composer est CELUI des conversations : un seul composant, celui que M10
+// branchera. Tant que Relvo ne répond pas ici, l'envoi le dit en langage
+// client — jamais un code de sprint.
 
 export function RelvoChatShell({
   backHref,
@@ -28,144 +24,80 @@ export function RelvoChatShell({
   initialText = "",
 }: {
   backHref: string;
-  /** Libellé du chip page-aware, ou null pour une discussion générale. */
+  /** Libellé du chip page-aware (le titre d'un sujet, « Sujets »), ou null. */
   contextLabel: string | null;
   prompts: string[];
   /** Premier tour proposé (une suggestion de l'accueil) : pré-rempli, jamais envoyé seul. */
   initialText?: string;
 }) {
-  const [value, setValue] = useState(initialText);
-  const ref = useRef<HTMLTextAreaElement>(null);
-  const typing = value.trim().length > 0;
-
-  function autoGrow() {
-    const el = ref.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 120)}px`;
-  }
+  // Une invite touchée se pose dans le composer : le composant repart avec
+  // ce texte (la clé change), l'utilisateur l'envoie ou le corrige.
+  const [seed, setSeed] = useState(initialText);
+  const [seedKey, setSeedKey] = useState(0);
 
   function fill(text: string) {
-    setValue(text);
-    requestAnimationFrame(() => {
-      autoGrow();
-      ref.current?.focus();
-    });
+    setSeed(text);
+    setSeedKey((k) => k + 1);
   }
 
   return (
     <MobileFrame>
-      <RelvoHeader
-        back={backHref}
-        title="Relvo"
-        subtitle="Nouvelle conversation"
-        action={
-          <Link
-            href="/relvo/historique"
-            aria-label="Historique des conversations"
-            className={SKY_BTN}
-          >
-            <ClockCounterClockwise className="size-[17px]" />
-          </Link>
-        }
-      />
+      <RelvoHeader back={backHref} title="Relvo" />
 
-      {contextLabel ? (
-        <div className="flex flex-none items-center gap-2 px-4 pt-3 pb-1 text-[12px] text-gris">
-          <span className="inline-flex h-7 min-w-0 items-center gap-1.5 truncate rounded-(--rayon-pilule) border border-(--filet) bg-white px-3 font-normal text-noir">
-            Contexte : {contextLabel}
-          </span>
-          <Link
-            href="/relvo"
-            aria-label="Discussion générale"
-            className="ml-auto grid size-7 place-items-center rounded-full bg-(--fond-puce) text-gris"
-          >
-            <X className="size-3.5" strokeWidth={2.4} />
-          </Link>
-        </div>
-      ) : null}
-
-      <main className="min-h-0 flex-1 overflow-y-auto bg-background px-[18px] py-7">
-        <div className="mb-5 flex flex-col items-center gap-2.5 text-center">
-          <div
-            className="grid size-14 place-items-center rounded-full text-white shadow-disque"
-            style={{ background: "var(--degrade-disque)" }}
-          >
-            <svg
-              viewBox="116 104 296 296"
-              width="30"
-              height="30"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              {RELVO_LOGO_PATHS.stars.map((d) => (
-                <path key={d} d={d} />
-              ))}
-            </svg>
+      <main className="min-h-0 flex-1 overflow-y-auto bg-background px-4 pt-4 pb-6">
+        {contextLabel ? (
+          <div className="mb-3 flex">
+            <span className="inline-flex h-9 min-w-0 items-center gap-1.5 rounded-(--rayon-pilule) border border-(--filet) bg-white pr-1 pl-3 text-[13px] font-normal text-noir shadow-carte">
+              <span className="truncate">{contextLabel}</span>
+              <Link
+                href="/relvo"
+                aria-label="Quitter ce contexte"
+                className="relative grid size-7 flex-none place-items-center rounded-full text-gris before:absolute before:-inset-2 before:content-[''] active:bg-(--fond-puce)"
+              >
+                <X className="size-3.5" strokeWidth={2.4} />
+              </Link>
+            </span>
           </div>
-          <h3 className="font-heading text-[22px] leading-7 font-semibold tracking-[-0.01em] text-noir">
-            Comment puis-je vous aider ?
-          </h3>
-          <p className="text-[14px] font-light text-gris">
-            Posez votre question ou demandez-moi une action.
+        ) : null}
+
+        <section
+          aria-label="Relvo"
+          className="rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-3.5 pt-3 pb-2 text-noir shadow-carte"
+        >
+          <div className="flex items-center gap-2">
+            <RelvoLogo
+              size={22}
+              variant="full"
+              className="text-relvo-clair"
+              title=""
+            />
+            <span className="libelle text-relvo!">Relvo</span>
+          </div>
+          <p className="mt-1.5 text-[14px] leading-5 font-light">
+            Dites-moi ce que vous voulez faire.
           </p>
-        </div>
-        <div className="flex flex-col gap-2.5">
           {prompts.map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => fill(p)}
-              className="pressable flex h-11 items-center gap-2.5 rounded-(--rayon-pilule) border border-(--filet) bg-white px-4 text-left text-[14px] font-normal text-noir shadow-carte active:bg-(--fond-puce)"
+              className="mt-0.5 block w-full py-1.5 pl-[1.1em] text-left -indent-[1.1em] text-[14px] leading-[18px] font-medium text-relvo active:opacity-80"
             >
-              {p}
+              → {p}
             </button>
           ))}
-        </div>
+        </section>
       </main>
 
-      <div
-        className="relative flex flex-none items-center gap-2.5 bg-white px-4 pt-2.5 shadow-haut"
-        style={{
-          paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
+      <RecipientComposer
+        key={seedKey}
+        placeholder="Écrire à Relvo…"
+        defaultValue={seed}
+        onSend={() => {
+          toast.info("Relvo ne répond pas encore dans cet écran.");
+          return false;
         }}
-      >
-        <div className="flex min-h-11 min-w-0 flex-1 items-center gap-2 rounded-[22px] bg-(--fond-puce) py-1 pr-2.5 pl-4">
-          <button
-            type="button"
-            aria-label="Joindre un fichier"
-            className="order-last grid flex-none place-items-center text-gris"
-          >
-            <Paperclip className="size-5" />
-          </button>
-          <textarea
-            ref={ref}
-            rows={1}
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value);
-              autoGrow();
-            }}
-            placeholder="Écrire à Relvo…"
-            className="max-h-[120px] min-h-[24px] flex-1 resize-none border-none bg-transparent py-1.5 text-[14.5px] leading-snug font-light text-noir outline-none placeholder:text-gris"
-          />
-        </div>
-        <button
-          type="button"
-          aria-label={typing ? "Envoyer" : "Dicter"}
-          onClick={() =>
-            typing && toast.info("La conversation avec Relvo arrive en M10.")
-          }
-          className="pressable grid size-11 flex-none place-items-center rounded-full text-white shadow-disque"
-          style={{ background: "var(--degrade-disque)" }}
-        >
-          {typing ? (
-            <PaperPlaneRight className="size-[19px]" />
-          ) : (
-            <Microphone className="size-5" />
-          )}
-        </button>
-      </div>
+      />
     </MobileFrame>
   );
 }

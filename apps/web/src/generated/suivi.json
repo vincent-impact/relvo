@@ -166,6 +166,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Dans le Calendrier, les couleurs des domaines sont les mêmes que partout, les trois chiffres du haut correspondent aux listes, et une tâche se coche plus facilement ; l'écran Relvo s'ouvre sur sa parole et ne vous propose plus de sujets qui ne sont pas les vôtres."
+        },
+        {
+          "type": "new",
           "texte": "Dans la Mémoire et les Contacts, les écrans sont plus légers et rien n'y est dit deux fois ; sur la fiche d'un contact, vous retrouvez la barre du bas avec Relvo, et un numéro de téléphone s'appelle d'un appui."
         },
         {

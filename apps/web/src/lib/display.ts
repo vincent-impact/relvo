@@ -123,32 +123,3 @@ export function formatDayLabel(date: Date): { weekday: string; day: number } {
     day: date.getUTCDate(),
   };
 }
-
-// Palette de points/pastilles par Dossier (code couleur du planning + agenda).
-// Couleurs « 600 » fixes du mockup. Mapping déterministe par slug, repli sur un
-// cycle pour les dossiers inconnus.
-const DOT_COLORS = [
-  "var(--brand)",
-  "var(--amber-600)",
-  "var(--purple-600)",
-  "var(--green-600)",
-  "var(--red-600)",
-  "var(--blue-600)",
-];
-
-const SLUG_COLOR: Record<string, string> = {
-  fournisseurs: "var(--brand)",
-  rh: "var(--purple-600)",
-  juridique: "var(--red-600)",
-  business: "var(--amber-600)",
-  production: "var(--green-600)",
-  general: "var(--text-tertiary)",
-};
-
-export function folderColor(slug: string | null | undefined): string {
-  if (!slug) return "var(--text-tertiary)";
-  if (SLUG_COLOR[slug]) return SLUG_COLOR[slug];
-  let hash = 0;
-  for (const ch of slug) hash = (hash + ch.charCodeAt(0)) % DOT_COLORS.length;
-  return DOT_COLORS[hash];
-}

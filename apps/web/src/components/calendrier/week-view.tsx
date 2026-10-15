@@ -26,7 +26,6 @@ export type TaskKpis = {
 };
 
 export function WeekView({
-  kpis,
   tasksByDay,
   rangeStartKey,
   rangeDays,
@@ -34,7 +33,6 @@ export function WeekView({
   overdue,
   appointments,
 }: {
-  kpis: TaskKpis;
   tasksByDay: Record<string, TaskItemData[]>;
   rangeStartKey: string;
   rangeDays: number;
@@ -44,10 +42,13 @@ export function WeekView({
 }) {
   const [tab, setTab] = useState<TaskTab>("agenda");
 
+  // Chaque lentille compte ce que sa liste montre — rien d'autre : « 6 »
+  // au-dessus de dix lignes faisait douter de l'application.
   const counts: Record<TaskTab, number> = {
-    agenda: kpis.today,
-    rdv: kpis.rdv,
-    retard: kpis.overdue,
+    agenda: (tasksByDay[todayKey] ?? []).filter((t) => t.status !== "done")
+      .length,
+    rdv: appointments.length,
+    retard: overdue.length,
   };
 
   return (
@@ -80,7 +81,7 @@ export function WeekView({
 
       {tab === "retard" ? (
         overdue.length === 0 ? (
-          <Empty>Aucune tâche en retard ✦</Empty>
+          <Empty>Aucune tâche en retard.</Empty>
         ) : (
           <ListPanel className="mt-4">
             {overdue.map((t) => (
@@ -95,7 +96,7 @@ export function WeekView({
 
 function Empty({ children }: { children: React.ReactNode }) {
   return (
-    <p className="px-[22px] py-10 text-center text-[13.5px] text-(--text-tertiary)">
+    <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
       {children}
     </p>
   );

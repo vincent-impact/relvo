@@ -580,6 +580,66 @@ questions de périmètre pour le dirigeant ; l'éditeur d'instruction en modale 
 bas passe sous le clavier (un écran poussé serait la forme juste, M19.10) ; une porte de la
 fiche contact vers ses sujets et ses conversations (périmètre, `05-ia.md` §10.1).
 
+### Calendrier et Échange avec Relvo
+
+**Ce que la critique a dit.** Le Calendrier colorait les tâches du mois et la miniature de
+glissé par une **palette parallèle** (`folderColor`, « 600 du mockup ») : Fournisseurs en bleu
+de Moi, RH en violet de Relvo, Juridique en rouge d'urgent — contre « aucun domaine n'est
+violet » et « urgent et fait ne s'empruntent pas » — alors que toute ligne du produit passe
+par la bande du domaine. Les lentilles ne comptaient pas ce que leurs listes montraient
+(« 6 aujourd'hui » au-dessus de dix lignes « 10 restantes ») ; « Semaine du 12 oct. » était
+figé sur le jour courant ; la ligne de tâche partagée avait une case de 22 px sans zone de
+frappe, des `hover:` inertes, une sous-ligne en graisse fine, un tiret « — » quand la tâche
+n'a pas d'heure, « 15 oct. » pour aujourd'hui ; le mois avait des en-têtes en 700 synthétique,
+un glissé qui partait au moindre défilement, une phrase d'aide permanente et un bouton
+« Aujourd'hui » sans effet sur le mois courant ; quatre fichiers de composants sans
+consommateur traînaient dans `shared/`. L'Échange était l'état vide de n'importe quel chatbot :
+orbe, « Comment puis-je vous aider ? », quatre cartes d'invites dont **deux nommaient des
+données de démonstration en dur** (« le congélateur de Narbonne », « Karim ») pour tous les
+comptes, un second composer avec le micro et le trombone que Conversations venait de retirer,
+un toast « arrive en M10 » devant le client, un bouton Historique vers une page vide,
+« SUB-0142 — … » en puce de contexte. Scores Nielsen 17/36 (Calendrier) et 14/36 (Échange).
+Mesures : une erreur d'hydratation reproductible sur le Calendrier (les identifiants ARIA de
+dnd-kit, numérotés différemment entre serveur et client).
+
+**Ce qui a été retiré, et pourquoi il ne manque pas** :
+
+| Retiré | Il ne manque pas parce que… |
+|---|---|
+| La palette parallèle `folderColor` / `SLUG_COLOR` / `DOT_COLORS` | la couleur d'un domaine est sa bande, une seule source (`lib/folders`), sur le mois, la miniature et la modale de tâche comme partout |
+| « Semaine du 12 oct. » | « Octobre 2026 », le mois, dans la même graphie que la vue mois ; le rail montre les dates |
+| Le tiret « — » d'une tâche sans heure | le vide dit qu'il n'y a pas d'heure ; le tiret disait « donnée manquante » |
+| « Glissez une tâche d'un jour à l'autre pour la replanifier. » | une tâche se replanifie aussi depuis sa fiche ; le glissé reste pour qui le connaît |
+| « Aujourd'hui » sur le mois courant | un bouton sans effet se retire ; hors du mois courant il revient, blanc, pas sur le violet pâle de Relvo |
+| Le « ✦ » de « Aucune tâche en retard » | le signe dit « Relvo parle » |
+| `agenda-card.tsx`, `segmented-control.tsx`, `kpi-tile.tsx`, `task-card.tsx` | aucun consommateur ; de la matière écartée qui attendait d'être copiée |
+| L'orbe, « Comment puis-je vous aider ? », « Posez votre question… » | Relvo parle en premier, dans son bloc signé ; trois façons de dire « parlez » |
+| Les invites « congélateur de Narbonne » et « Karim » | des données de démonstration écrites en dur : sur un vrai compte, une fausse bulle |
+| Le composer propre à l'échange, son micro et son trombone | le composer est celui des conversations, le seul que M10 branchera |
+| « NOUVELLE CONVERSATION » et le bouton Historique | un seul état avant M10 ; une porte vers une page vide est un bouton sans effet (la page reste dans le dépôt) |
+| La puce « Contexte : Accueil » | elle ne changeait rien aux invites ; depuis un sujet, la puce porte le titre, jamais le code |
+| Le toast « La conversation avec Relvo arrive en M10. » | « Relvo ne répond pas encore dans cet écran. » — jamais un code de sprint devant le client |
+
+**Ce qui a changé de forme** : les lentilles comptent ce que leurs listes montrent ; la case
+d'une tâche a 44 px de frappe sans grossir, « Répondre » 36 px, « Aujourd'hui » et « Demain »
+en mots ; le jour vide est une carte comme sur l'accueil ; le mois : en-têtes en libellé,
+chiffres condensés, hors-mois en gris lisible, dépôt en fond enfoncé, appui long avant de
+glisser (comme la semaine), chevrons à 44 px ; le switch Semaine / Mois a 44 px de frappe ;
+l'échange s'ouvre sur un bloc de Relvo et ses invites en liens fléchés, le squelette a la
+silhouette du ciel ; les deux contextes de glissé portent un identifiant stable (plus
+d'erreur d'hydratation).
+
+**À arbitrer par le dirigeant** : **la forme du mois**. Soixante-neuf puces de 45 × 21 px,
+texte blanc tronqué sur l'aplat du domaine, c'est le camion de foire que le brief refuse ; la
+forme juste serait une grille en carte, chaque case un chiffre et jusqu'à trois pastilles de
+domaine, le tap qui sélectionne le jour et la liste du jour sous la grille (la grammaire de
+la semaine), le glissé depuis la liste vers une case. L'invariant 15 (couleur par domaine,
+replanification par glissement) reste tenu ; ce qui change, c'est ce qu'on glisse. **Confié à
+plus tard** : le mois du jour sélectionné dans le sous-titre (état client à remonter) ; une
+seule liste du jour avec les rendez-vous en tête plutôt que deux lentilles sur la même
+journée (question de périmètre) ; la première phrase du bloc de Relvo calculée (les nouvelles
+de l'accueil) quand M10 s'y pose.
+
 ## Tranché à la reprise de la tranche 3 — la première connexion (M19.9)
 
 Le dirigeant ajoute à la tranche 4 une **séquence de première connexion** : cinq ou six
@@ -608,7 +668,7 @@ La trace « vues une fois » est une colonne du compte, migration accordée (ci-
       partout
 - [ ] Tranche 3 — « Alléger » : ✅ les reports de la revue de finition (Contacts, en-têtes de
       la fiche, textes sous 11 px, couleurs en dur — cliquet vide) · ⏳ M19.6 l'allègement écran
-      par écran : ✅ Accueil · ✅ Conversations (liste et fil) · ✅ Sujets et fiche Sujet · ✅ Mémoire, domaine, Contacts et fiche contact · reste
+      par écran : ✅ Accueil · ✅ Conversations (liste et fil) · ✅ Sujets et fiche Sujet · ✅ Mémoire, domaine, Contacts et fiche contact · ✅ Calendrier et Échange · reste
       Calendrier, Échange, Mémoire, Contacts, les quatre pages du menu, l'authentification ·
       M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives

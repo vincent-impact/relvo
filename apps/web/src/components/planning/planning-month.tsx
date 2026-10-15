@@ -73,7 +73,10 @@ function DraggableChip({
       {...listeners}
       {...attributes}
       onClick={() => onOpen(task)}
-      className={cn("block w-full text-left", isDragging && "opacity-30")}
+      className={cn(
+        "block w-full touch-pan-y text-left",
+        isDragging && "opacity-30",
+      )}
     >
       <Chip task={task} />
     </button>
@@ -94,18 +97,19 @@ function DayCell({
     <div
       ref={setNodeRef}
       className={cn(
-        "min-h-[64px] border-t border-(--border-light) p-1 transition-colors",
-        isOver && "bg-relvo-bg",
+        "min-h-[64px] border-t border-(--filet) p-1 transition-colors",
+        // Le dépôt se lit au fond enfoncé, jamais au violet pâle de Relvo.
+        isOver && "bg-(--fond-enfonce)",
       )}
     >
       <div
         className={cn(
-          "mb-1 flex size-[22px] items-center justify-center rounded-full text-[12.5px] font-bold",
+          "chiffre mb-1 flex size-[22px] items-center justify-center rounded-full text-[13px]",
           cell.isToday
             ? "bg-relvo text-white"
             : cell.inMonth
-              ? "text-(--text-primary)"
-              : "text-(--text-tertiary)/60",
+              ? "text-noir"
+              : "text-gris",
         )}
       >
         {cell.day}
@@ -136,7 +140,11 @@ export function PlanningMonth({
   const [activeId, setActiveId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    // Appui long, comme la semaine : un défilement qui part d'une puce ne
+    // déplace pas la tâche.
+    useSensor(PointerSensor, {
+      activationConstraint: { delay: 240, tolerance: 8 },
+    }),
   );
 
   const active = tasks.find((t) => t.id === activeId) ?? null;
@@ -176,17 +184,17 @@ export function PlanningMonth({
   }
 
   return (
+    // Un `id` stable : sans lui, dnd-kit numérote ses attributs ARIA et le
+    // serveur et le client ne tombent pas sur le même numéro (hydratation).
     <DndContext
+      id="planning-mois"
       sensors={sensors}
       onDragStart={onDragStart}
       onDragEnd={onDragEnd}
     >
       <div className="mt-3 grid grid-cols-7 px-2.5">
         {WEEKDAYS.map((w) => (
-          <div
-            key={w}
-            className="pb-2 text-center text-[11px] font-bold tracking-[0.3px] text-(--text-tertiary) uppercase"
-          >
+          <div key={w} className="libelle pb-2 text-center">
             {w}
           </div>
         ))}

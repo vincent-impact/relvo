@@ -20,7 +20,7 @@ export default async function RelvoHistoryPage() {
   return (
     <MobileFrame>
       <main className="min-h-0 flex-1 overflow-y-auto bg-background">
-        <RelvoHeader back="/" title="Mes échanges avec Relvo" />
+        <RelvoHeader back="/relvo" title="Mes échanges avec Relvo" />
 
         <div className="pt-5">
           {/* Une action de l'utilisateur : carte blanche, jamais le violet pâle
@@ -36,7 +36,7 @@ export default async function RelvoHistoryPage() {
               <span className="block text-[14.5px] font-medium text-noir">
                 Nouvel échange
               </span>
-              <span className="block text-[12px] font-light text-gris">
+              <span className="block text-[12px] font-normal text-gris">
                 Demander à Relvo…
               </span>
             </span>
@@ -44,7 +44,7 @@ export default async function RelvoHistoryPage() {
 
           <div className="mt-7">
             <ZoneHeading label="Récentes" />
-            <p className="px-4 text-[13.5px] font-light text-gris">
+            <p className="px-4 text-[14px] font-light text-gris">
               Vos échanges récents avec Relvo apparaîtront ici.
             </p>
           </div>

@@ -34,10 +34,10 @@ export function HeaderSwitch<T extends string>({
             role="tab"
             aria-selected={active}
             className={cn(
-              "rounded-(--rayon-pilule) px-3 py-[5px] text-[13px] whitespace-nowrap",
+              "relative rounded-(--rayon-pilule) px-3 py-[5px] text-[13px] whitespace-nowrap before:absolute before:inset-x-0 before:-inset-y-2 before:content-['']",
               active
                 ? "bg-white font-medium text-relvo"
-                : "font-light text-white",
+                : "font-normal text-white",
             )}
           >
             {it.label}

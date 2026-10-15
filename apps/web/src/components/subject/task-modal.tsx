@@ -20,7 +20,7 @@ import {
   deleteTaskAction,
   updateTaskAction,
 } from "@/server/actions/tasks";
-import { folderColor } from "@/lib/display";
+import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 
 // Modale d'une tâche — PARTAGÉE entre édition (TaskItem) et création (bouton +
@@ -194,7 +194,9 @@ export function TaskModal({
                 <span
                   aria-hidden
                   className="size-2.5 flex-none rounded-full"
-                  style={{ background: folderColor(folderSlug) }}
+                  style={{
+                    background: folderVisual({ slug: folderSlug }).color,
+                  }}
                 />
               ) : null}
               <span
@@ -267,7 +269,10 @@ export function TaskModal({
                       <span
                         aria-hidden
                         className="size-2 flex-none rounded-full"
-                        style={{ background: folderColor(o.folderSlug) }}
+                        style={{
+                          background: folderVisual({ slug: o.folderSlug })
+                            .color,
+                        }}
                       />
                       <span className="font-numeric text-[11px] font-semibold text-(--text-tertiary)">
                         {o.reference}

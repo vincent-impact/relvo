@@ -12,19 +12,11 @@ import {
 } from "@/components/planning/planning-month";
 import { CreateTaskButton } from "@/components/subject/create-task-button";
 import { IndicatorTabsSkeleton } from "@/components/shared/screen-skeletons";
-import { folderColor, formatTime } from "@/lib/display";
-import {
-  cachedAgendaTasks,
-  cachedTaskFeed,
-  cachedTaskKpis,
-} from "@/server/cached";
+import { formatTime } from "@/lib/display";
+import { folderVisual } from "@/lib/folders";
+import { cachedAgendaTasks, cachedTaskFeed } from "@/server/cached";
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
-import {
-  calendrierParis,
-  debutDuJourParis,
-  jourDecale,
-  jourParis,
-} from "@relvo/db/temps";
+import { calendrierParis, jourDecale, jourParis } from "@relvo/db/temps";
 
 // Calendrier — LA page des tâches (invariant 34), sous un segmented Semaine /
 // Mois posé dans le header, sur la ligne du titre. La vue vit dans l'URL (`?vue=mois`, `?m=AAAA-MM`).
@@ -74,8 +66,7 @@ async function WeekTabs({ accountId }: { accountId: string }) {
   const rangeEnd = new Date(rangeStart);
   rangeEnd.setUTCDate(rangeEnd.getUTCDate() + rangeDays);
 
-  const [kpis, tasksByDay, feed] = await Promise.all([
-    cachedTaskKpis(accountId, todayKey),
+  const [tasksByDay, feed] = await Promise.all([
     cachedAgendaTasks(
       accountId,
       rangeStart.toISOString(),
@@ -87,7 +78,6 @@ async function WeekTabs({ accountId }: { accountId: string }) {
 
   return (
     <WeekView
-      kpis={kpis}
       tasksByDay={tasksByDay}
       rangeStartKey={rangeStart.toISOString().slice(0, 10)}
       rangeDays={rangeDays}
@@ -115,19 +105,6 @@ function WeekSkeleton() {
 }
 
 /** « Semaine du 15 septembre » — le lundi de la semaine courante (jour FR). */
-function weekLabel(now: Date): string {
-  const today = debutDuJourParis(now);
-  const offset = (today.getUTCDay() + 6) % 7;
-  const monday = jourDecale(now, -offset);
-  // Mois court : la ligne du titre porte aussi le segmented et le « + ».
-  const label = monday.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
-  return `Semaine du ${label}`;
-}
-
 // ── Mois ─────────────────────────────────────────────────────────────────────
 
 async function PlanningGrid({
@@ -152,7 +129,12 @@ async function PlanningGrid({
     },
     orderBy: [{ startDate: "asc" }, { startTime: "asc" }],
     include: {
-      subject: { select: { id: true, folder: { select: { slug: true } } } },
+      subject: {
+        select: {
+          id: true,
+          folder: { select: { slug: true, color: true } },
+        },
+      },
     },
   });
 
@@ -162,7 +144,11 @@ async function PlanningGrid({
       id: t.id,
       title: t.title,
       time: formatTime(t.startTime),
-      color: folderColor(t.subject?.folder?.slug),
+      // La couleur de BANDE du domaine, la même que sur toute ligne du produit.
+      color: folderVisual({
+        slug: t.subject?.folder?.slug ?? null,
+        color: t.subject?.folder?.color ?? null,
+      }).color,
       subjectId: t.subject?.id ?? null,
       dayKey: t.startDate!.toISOString().slice(0, 10),
     }));
@@ -186,10 +172,9 @@ async function PlanningGrid({
 
   return (
     <>
+      {/* Pas de phrase d'aide permanente : une tâche se replanifie aussi depuis
+          sa fiche, et le glissé reste pour qui le connaît. */}
       <PlanningMonth cells={cells} tasks={planningTasks} />
-      <p className="px-5 pt-3 text-[12px] text-(--text-tertiary)">
-        Glissez une tâche d’un jour à l’autre pour la replanifier.
-      </p>
     </>
   );
 }
@@ -197,7 +182,7 @@ async function PlanningGrid({
 function GridSkeleton() {
   return (
     <div className="px-4 pt-4">
-      <div className="h-[320px] animate-pulse rounded-2xl bg-white" />
+      <div className="h-[320px] animate-pulse rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte" />
     </div>
   );
 }
@@ -226,12 +211,15 @@ export default async function CalendrierPage({
   }
   const prevYear = month0 - 1 < 0 ? year - 1 : year;
   const nextYear = month0 + 1 > 11 ? year + 1 : year;
+  const moisCourant = year === moisFr.annee && month0 === moisFr.mois - 1;
+  // Un seul qualificatif pour les deux vues : le mois, dans la même graphie.
+  const sousTitre = `${MONTHS[month0]} ${year}`;
 
   return (
     <Screen>
       <RelvoHeader
         title="Calendrier"
-        subtitle={vue === "mois" ? `${MONTHS[month0]} ${year}` : weekLabel(now)}
+        subtitle={sousTitre}
         className={vue === "mois" ? "pb-5" : "pb-[46px]"}
         action={
           <>
@@ -253,20 +241,24 @@ export default async function CalendrierPage({
             <Link
               href={`/calendrier?vue=mois&m=${ymKey(prevYear, (month0 - 1 + 12) % 12)}`}
               aria-label="Mois précédent"
-              className="grid size-9 place-items-center rounded-full bg-(--surface) text-(--text-secondary)"
+              className="pressable grid size-11 place-items-center rounded-full bg-(--fond-puce) text-noir"
             >
               <ChevronLeft className="size-5" strokeWidth={2} />
             </Link>
-            <Link
-              href="/calendrier?vue=mois"
-              className="rounded-full bg-relvo-bg px-3.5 py-1.5 text-[13px] font-bold text-relvo"
-            >
-              Aujourd’hui
-            </Link>
+            {/* « Aujourd'hui » n'existe que hors du mois courant : un bouton sans
+                effet se retire. Un bouton de l'utilisateur, blanc, pas violet pâle. */}
+            {moisCourant ? null : (
+              <Link
+                href="/calendrier?vue=mois"
+                className="pressable inline-flex h-9 items-center rounded-(--rayon-pilule) border border-(--filet) bg-white px-3.5 text-[13px] font-medium text-noir shadow-carte"
+              >
+                Aujourd’hui
+              </Link>
+            )}
             <Link
               href={`/calendrier?vue=mois&m=${ymKey(nextYear, (month0 + 1) % 12)}`}
               aria-label="Mois suivant"
-              className="grid size-9 place-items-center rounded-full bg-(--surface) text-(--text-secondary)"
+              className="pressable grid size-11 place-items-center rounded-full bg-(--fond-puce) text-noir"
             >
               <ChevronRight className="size-5" strokeWidth={2} />
             </Link>

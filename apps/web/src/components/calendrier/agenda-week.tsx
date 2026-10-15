@@ -19,7 +19,7 @@ import { toast } from "sonner";
 import { TaskItem } from "@/components/subject/task-item";
 import type { TaskItemData } from "@/lib/task-item-data";
 import { updateTaskAction } from "@/server/actions/tasks";
-import { folderColor } from "@/lib/display";
+import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 import { ListPanel } from "@/components/shared/list-panel";
 import { ZoneHeading } from "@/components/shared/zone-heading";
@@ -242,7 +242,10 @@ export function AgendaWeek({
     activeId != null ? dayTasks.find((t) => t.id === activeId) : null;
 
   return (
+    // Un `id` stable : sans lui, dnd-kit numérote ses attributs ARIA et le
+    // serveur et le client ne tombent pas sur le même numéro (hydratation).
     <DndContext
+      id="agenda-semaine"
       sensors={sensors}
       collisionDetection={pointerWithin}
       onDragStart={onDragStart}
@@ -290,11 +293,12 @@ export function AgendaWeek({
           />
         </div>
         {dayTasks.length === 0 ? (
-          <p className="px-5 py-2 text-[13.5px] font-light text-gris">
+          // Le même état vide que l'accueil : une carte, pas un texte nu.
+          <div className="mx-4 rounded-(--rayon-carte) border border-(--filet) bg-white px-4 py-3.5 text-[14px] font-light text-gris shadow-carte">
             {selectedDesc.isToday
               ? "Rien de prévu aujourd'hui."
               : "Rien de prévu ce jour-là."}
-          </p>
+          </div>
         ) : (
           <ListPanel>
             {dayTasks.map((t) => (
@@ -313,7 +317,9 @@ export function AgendaWeek({
             <span
               aria-hidden
               className="size-2.5 flex-none rounded-full"
-              style={{ background: folderColor(active.folderSlug) }}
+              style={{
+                background: folderVisual({ slug: active.folderSlug }).color,
+              }}
             />
             <span className="min-w-0 flex-1 truncate text-[14px] font-normal text-noir">
               {active.title}

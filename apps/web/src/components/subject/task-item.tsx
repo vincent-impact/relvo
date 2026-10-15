@@ -10,6 +10,7 @@ import { type TaskItemData } from "@/lib/task-item-data";
 import { TaskModal } from "@/components/subject/task-modal";
 import { completeTaskAction, reopenTaskAction } from "@/server/actions/tasks";
 import { cn } from "@/lib/utils";
+import { jourDecale, jourParis } from "@relvo/db/temps";
 
 // TaskItem — présentation UNIQUE d'une tâche, partout. Gauche : CASE À COCHER
 // ronde (distingue une tâche d'un sujet). Pas de bande de domaine : le sujet
@@ -26,8 +27,13 @@ import { cn } from "@/lib/utils";
 
 export type { TaskItemData };
 
+// « Aujourd'hui » et « Demain » en mots : une date du jour écrite « 15 oct. »
+// ne dit pas qu'elle presse.
 function dateShortLabel(startDate: string | null): string | null {
   if (!startDate) return null;
+  const today = jourParis(new Date());
+  if (startDate === today) return "Aujourd'hui";
+  if (startDate === jourParis(jourDecale(new Date(), 1))) return "Demain";
   return new Date(`${startDate}T00:00:00.000Z`).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "short",
@@ -126,11 +132,13 @@ export function TaskItem({
             e.stopPropagation();
             toggle();
           }}
+          // 22 px de dessin, 44 px de frappe : la case se coche au pouce sans
+          // ouvrir la modale de la ligne.
           className={cn(
-            "mt-px grid size-[22px] flex-none place-items-center rounded-full border-2 transition-colors",
+            "relative mt-px grid size-[22px] flex-none place-items-center rounded-full border-2 transition-colors before:absolute before:-inset-[11px] before:content-['']",
             done
               ? "border-relvo bg-relvo text-white"
-              : "border-(--gris-clair) bg-white text-transparent hover:border-relvo",
+              : "border-(--gris-clair) bg-white text-transparent",
             pending && "opacity-60",
           )}
         >
@@ -156,13 +164,13 @@ export function TaskItem({
             {task.title}
           </div>
           {showSubjectLine ? (
-            <p className="mt-0.5 truncate text-[12px] font-light text-gris">
+            <p className="mt-0.5 truncate text-[12px] font-normal text-gris">
               {task.subjectTitle ? (
                 subjectHref ? (
                   <Link
                     href={subjectHref}
                     onClick={(e) => e.stopPropagation()}
-                    className="underline decoration-(--gris-clair) underline-offset-2 hover:text-relvo hover:decoration-relvo"
+                    className="underline decoration-(--gris-clair) underline-offset-2"
                   >
                     {task.subjectTitle}
                   </Link>
@@ -190,7 +198,7 @@ export function TaskItem({
             <Link
               href={replyHref}
               onClick={(e) => e.stopPropagation()}
-              className="mt-1.5 inline-flex items-center gap-1.5 rounded-(--rayon-pilule) bg-relvo-pale px-2.5 py-1 text-[12px] font-medium text-relvo active:opacity-80"
+              className="mt-1.5 inline-flex h-9 items-center gap-1.5 rounded-(--rayon-pilule) bg-relvo-pale px-3.5 text-[12px] font-medium text-relvo active:opacity-80"
             >
               <ArrowBendUpLeft className="size-[14px]" />
               {aDecider ? "Décider et répondre" : "Répondre"}
@@ -201,9 +209,9 @@ export function TaskItem({
         {/* Droite — colonne heure / date (~22 %). */}
         {meta !== "none" ? (
           <div className="flex w-[78px] flex-none flex-col items-end self-center text-right leading-tight">
-            {colEmpty ? (
-              <span className="text-[14px] text-(--gris-clair)">—</span>
-            ) : (
+            {/* Sans heure ni date, la colonne reste vide : un tiret dirait
+                « donnée manquante ». */}
+            {colEmpty ? null : (
               <>
                 {dateLine ? (
                   <span

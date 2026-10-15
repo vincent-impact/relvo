@@ -1,21 +1,23 @@
 import { MobileFrame } from "@/components/layout/mobile-frame";
 
-// Squelette de chargement de l'échange plein écran avec Relvo (M9.19) — hero violet +
-// orb central. Affiché le temps de résoudre le contexte page-aware.
+// Squelette de chargement de l'échange plein écran avec Relvo (M9.19) : la
+// silhouette du rendu — le ciel, puis la place du bloc de Relvo.
 
 export default function Loading() {
   return (
     <MobileFrame>
       <div
-        className="bg-relvo px-[22px] pb-5"
-        style={{ paddingTop: "max(env(safe-area-inset-top), 14px)" }}
+        className="ciel px-4 pb-4"
+        style={{
+          paddingTop: "calc(max(env(safe-area-inset-top), 12px) + 14px)",
+        }}
       >
-        <div className="h-6 w-28 rounded-lg bg-white/25" />
-        <div className="mt-2 h-3.5 w-36 rounded bg-white/15" />
+        <div className="flex h-[34px] items-center gap-2">
+          <div className="size-[30px] rounded-(--rayon-bouton-ciel) bg-white/14" />
+          <div className="h-[30px] w-24 rounded-lg bg-white/30" />
+        </div>
       </div>
-      <div className="grid flex-1 place-items-center">
-        <div className="size-16 animate-pulse rounded-full bg-(--surface)" />
-      </div>
+      <div className="mx-4 mt-4 h-[150px] animate-pulse rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale" />
     </MobileFrame>
   );
 }

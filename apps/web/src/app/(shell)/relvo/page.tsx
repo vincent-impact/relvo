@@ -8,8 +8,7 @@ const PROMPTS = {
   general: [
     "Qu'est-ce qui est urgent aujourd'hui ?",
     "Quelles sont mes tâches cette semaine ?",
-    "Résume-moi le sujet du congélateur de Narbonne",
-    "Prépare une réponse à Karim sur la sauce blanche",
+    "Quels sujets attendent une réponse ?",
   ],
   fil: [
     "Qu'est-ce qui est urgent aujourd'hui ?",
@@ -45,15 +44,16 @@ export default async function ConversationPage({
       select: { reference: true, title: true },
     });
     if (subject) {
-      contextLabel = `${subject.reference} — ${subject.title}`;
+      // Le titre seul : personne ne reconnaît un sujet à son code.
+      contextLabel = subject.title;
       prompts = PROMPTS.subject;
     }
   } else if (from?.startsWith("/fil")) {
     contextLabel = "Sujets";
     prompts = PROMPTS.fil;
-  } else if (from === "/") {
-    contextLabel = "Accueil";
   }
+  // Depuis l'accueil, pas de puce « Contexte » : elle ne changeait rien aux
+  // invites, et une puce qui ne change rien est une rangée en trop.
 
   return (
     <RelvoChatShell
