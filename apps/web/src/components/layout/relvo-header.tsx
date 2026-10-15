@@ -25,9 +25,11 @@ import { cn } from "@/lib/utils";
 // d'indicateurs, un segmented, les onglets d'une fiche. Le header SCROLLE avec
 // le contenu.
 
-// Bouton d'icône posé sur le ciel : 30 px, blanc translucide, rayon 8.
+// Bouton d'icône posé sur le ciel : 30 px, blanc translucide, rayon 8. Sa zone
+// de frappe fait 44 px (03-patterns, « cible tactile minimale ») par un
+// pseudo-élément qui déborde de 7 px tout autour, sans grossir le dessin.
 export const SKY_BTN =
-  "pressable grid size-[30px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-white/14 text-white";
+  "pressable relative grid size-[30px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-white/14 text-white before:absolute before:-inset-[7px] before:content-['']";
 
 const EYEBROW =
   "truncate text-[12px] tracking-[0.08em] text-white/90 uppercase";

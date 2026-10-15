@@ -359,6 +359,64 @@ de chaque écran (`critique → distill → polish → audit`), l'état vide « 
 unifier entre l'accueil et le Calendrier, le rafraîchissement du jeu de démonstration, et
 l'avertissement d'hydratation sur `/usage`.
 
+## L'allègement, écran par écran (M19.6)
+
+La méthode d'impeccable, telle quelle : `critique` en deux relectures isolées (une revue de
+design, un détecteur plus des mesures navigateur, synthétisées ensuite), puis `distill` et
+`polish` dans le même commit, et ce que l'`audit` aurait relevé consigné ici. Les données de
+démonstration ont été **rafraîchies avant** (`pnpm db:seed`, dont les dates sont relatives au
+jour) : plus de « 88 tâches en retard » ni de « depuis 77 j ». Captures avant et après dans le
+scratchpad (`shots-t3/accueil-avant`, `accueil-apres`), rendues et relues avant le commit.
+
+### Accueil
+
+**Ce que la critique a dit.** Spécifique au produit, sauf la carte Activité, tuile de tableau
+de bord générique qui portait **la plus grosse typographie de l'écran** après le prénom
+(34 px) — trois zéros gris clair plus gros que le sujet urgent, à l'inverse du principe « ce
+qui attend prime sur ce qui s'est passé ». Score Nielsen 21/36 (aide n/a). Les reproches
+tenus : deux grammaires d'en-tête (Activité libellée dans sa carte, les deux autres zones par
+`ZoneHeading`) ; le vide dit trois fois (« Aujourd'hui » · « rien de prévu » · « Rien de prévu
+aujourd'hui. ») ; « Rien de nouveau depuis votre dernière visite » suivi de « 88 tâches en
+retard », contradiction apparente ; le tampon « · à l'instant » qui datait la dernière
+**visite** et se lisait comme l'heure de la prise de parole ; sur une carte d'attente sans
+échéance, « Décision » (état), « Décision à prendre. » (phrase) et « Trancher » (puce) trois
+fois ; la référence `SUB-02…` en repli de contact ; un titre tronqué à une ligne ; le lien de
+suggestion à 13 px sur 17 px de haut, le burger à 30 px ; « 5 sujets » plafonné par la
+requête ; « Bonjour » à 21 h. Le détecteur n'a rien levé d'autre que des tailles hors gamme
+(13 px, 13,5 px) et deux exceptions déjà assumées ; les mesures : aucun débordement, console
+vide, pas d'avertissement d'hydratation sur l'accueil, zéros à 1,9:1 (décision du dirigeant,
+gardée).
+
+**Ce qui a été retiré, et pourquoi il ne manque pas** :
+
+| Retiré | Il ne manque pas parce que… |
+|---|---|
+| Le qualificatif « rien de prévu » quand la liste du jour est vide | la carte-invite juste dessous le dit en entier, et c'est elle la porte vers le Calendrier |
+| Le tampon « · à l'instant » du bloc de Relvo | la phrase porte déjà sa fenêtre (« depuis votre dernière visite ») ; le tampon la répétait avec un référent faux |
+| « Décision à prendre. » / « Réponse attendue. » sans échéance | l'état en haut à droite dit la nature de l'attente ; la ligne ne parle que quand elle a une date (« Avant ce soir. ») |
+| La puce « Trancher » | troisième façon de dire « décision » sur 130 px, et elle n'ouvrait rien que la carte n'ouvre déjà ; seule reste « Répondre », le geste que Relvo prépare |
+| La référence `SUB-…` en repli de contact | personne ne reconnaît un sujet à son code sur un brief ; sans contact, la ligne s'absente |
+| Le libellé « ACTIVITÉ · 7 JOURS » dans la carte | il devient le `ZoneHeading` « Activité / 7 derniers jours » : une seule grammaire d'en-tête sur l'écran |
+
+**Ce qui a changé de forme** : les chiffres d'activité au corps d'un indicateur (28 px, celui
+des cellules de Sujets ou du Calendrier), carte resserrée, chevron qui dit la porte vers le
+Bilan ; « Rien de nouveau **de mon côté** depuis votre dernière visite » ; le titre d'une carte
+d'attente sur deux lignes au plus, la rangée du bas ancrée en bas ; les liens de suggestion à
+14 px, en bloc, avec retrait suspendu, 30 px de haut ; la zone de frappe des boutons du ciel
+portée à 44 px par un pseudo-élément, sans grossir le dessin (`SKY_BTN`, donc toutes les
+pages) ; les qualificatifs de zone et les libellés sous 14 px en graisse 400, règle écrite dans
+`01-tokens.md` ; « Bonsoir » à partir de 18 h ; la requête des sujets en attente en demande
+six pour en montrer cinq et dire « les 5 plus pressants » quand il y en a d'autres (cache
+`v15`) ; les squelettes à la taille du rendu.
+
+**Confié à plus tard** : à M10, le fait qu'une suggestion écrite par Relvo devienne la phrase
+de l'utilisateur dans le composer de `/relvo` (le premier tour devrait être rendu par Relvo),
+et « brouillon prêt » sur la carte d'attente, que `AwaitingSubject` ne sait pas encore dire ;
+à l'écran Calendrier, la case à cocher de `TaskItem` (22 px, la ligne ouvre une modale) et ses
+états `hover:` inertes au doigt ; à `clarify`, une ligne de clôture du brief (« C'est tout pour
+ce matin »), à discuter. L'exception « ligne du dessus » (la date, le domaine) est écrite dans
+`DESIGN.md` contre le détecteur « kicker-above-heading ».
+
 ## Tranché à la reprise de la tranche 3 — la première connexion (M19.9)
 
 Le dirigeant ajoute à la tranche 4 une **séquence de première connexion** : cinq ou six
@@ -387,7 +445,9 @@ La trace « vues une fois » est une colonne du compte, migration accordée (ci-
       partout
 - [ ] Tranche 3 — « Alléger » : ✅ les reports de la revue de finition (Contacts, en-têtes de
       la fiche, textes sous 11 px, couleurs en dur — cliquet vide) · ⏳ M19.6 l'allègement écran
-      par écran · M19.10 robustesse
+      par écran : ✅ Accueil · reste Sujets, Conversations (liste et détail), fiche Sujet,
+      Calendrier, Échange, Mémoire, Contacts, les quatre pages du menu, l'authentification ·
+      M19.10 robustesse
 - [ ] Tranche 4 — « Guider » : M19.8 langage de mouvement · M19.9 premiers pas — diapositives
       de première connexion, invitation à connecter la première adresse, états vides qui guident
 - [ ] Tranche 5 — « Clore » : M19.12

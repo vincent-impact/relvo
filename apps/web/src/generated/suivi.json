@@ -162,8 +162,49 @@
   "en_cours": "Nouvelle apparence et premiers pas guidés",
   "journal": [
     {
+      "date": "2026-10-15",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "La page d'accueil est plus légère : les chiffres d'activité ne dominent plus ce qui attend votre décision, rien n'y est dit deux fois, et Relvo vous dit « Bonsoir » après 18 h."
+        }
+      ]
+    },
+    {
       "date": "2026-10-14",
       "entrees": [
+        {
+          "type": "fix",
+          "texte": "Sur la fiche d'un sujet, le R de la pastille Relvo est bien centré dans sa bulle."
+        },
+        {
+          "type": "fix",
+          "texte": "Dans la Mémoire, les documents d'un domaine et la mention « Désactivée » suivent la nouvelle apparence."
+        },
+        {
+          "type": "fix",
+          "texte": "Sur le Calendrier, les jours de la semaine et les tâches du mois sont écrits un peu plus grand."
+        },
+        {
+          "type": "fix",
+          "texte": "Dans une conversation, les initiales des interlocuteurs et les petites mentions sont un peu plus grandes et plus lisibles."
+        },
+        {
+          "type": "new",
+          "texte": "Sur la fiche d'un sujet, les titres « Résumé » et « Tâches » ont la même forme que sur l'accueil, et le brouillon préparé par Relvo s'affiche dans un bloc violet pâle."
+        },
+        {
+          "type": "new",
+          "texte": "La liste des contacts tient dans une seule carte, les lettres de l'alphabet en lignes grises entre les noms."
+        },
+        {
+          "type": "fix",
+          "texte": "Le haut des écrans reste bien violet derrière les textes blancs ; sur la fiche d'un sujet, la référence et l'état se lisent à nouveau."
+        },
+        {
+          "type": "new",
+          "texte": "Les icônes du menu, des canaux, des contacts et de la fiche d'un sujet sont désormais pleines, comme celles de la barre du bas ; les suggestions de l'échange avec Relvo deviennent des boutons blancs."
+        },
         {
           "type": "new",
           "texte": "Sur la page Sujets, la liste redevient une seule carte aux lignes séparées d'un filet, sans reflet vert ou rouge entre deux sujets ; sur l'accueil, un chiffre d'activité à zéro s'efface en gris ; la suggestion « Ce sujet est-il réglé ? » prend la couleur de Relvo."

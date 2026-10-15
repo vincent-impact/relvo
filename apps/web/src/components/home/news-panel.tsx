@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { RelvoLogo } from "@/components/layout/relvo-logo";
-import { formatRelative } from "@/lib/display";
 import type { CachedNews } from "@/server/cached";
 import type { BriefSuggestion } from "@relvo/db";
 
@@ -12,6 +11,10 @@ import type { BriefSuggestion } from "@relvo/db";
 // une autre suggestion est un lien fléché. Chaque phrase pointe sa preuve :
 // c'est le lien qui ouvre l'échange avec elle comme premier tour. Jamais de
 // raccourcis vers les sujets : ils finiraient par saturer.
+//
+// Le bloc n'est signé que « Relvo », sans horodatage : la phrase porte déjà sa
+// fenêtre (« depuis votre dernière visite »), et un tampon « à l'instant » qui
+// daterait la dernière VISITE se lirait comme l'heure de la prise de parole.
 
 function plural(n: number, one: string, many: string): string {
   return `${n} ${n > 1 ? many : one}`;
@@ -38,9 +41,11 @@ export function newsSentence(news: CachedNews): string {
   const origin = news.since
     ? "Depuis votre dernière visite"
     : "Depuis la connexion de vos canaux";
+  // « de mon côté » : la phrase compte ce que Relvo a FAIT, pas l'état du
+  // compte — sans ça, suivie de « 88 tâches en retard », elle se contredit.
   if (parts.length === 0) {
     return news.since
-      ? "Rien de nouveau depuis votre dernière visite."
+      ? "Rien de nouveau de mon côté depuis votre dernière visite."
       : "Je n'ai encore rien lu : connectez un canal pour que je commence.";
   }
   const list =
@@ -61,13 +66,12 @@ export function NewsPanel({
   news: CachedNews;
   suggestions: BriefSuggestion[];
 }) {
-  const stamp = news.since ? formatRelative(new Date(news.since)) : null;
   const questions = suggestions.filter((s) => s.kind === "question");
   const others = suggestions.filter((s) => s.kind !== "question");
   return (
     <section
       aria-label="Dernières nouvelles"
-      className="rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-3.5 pt-3 pb-3 text-noir shadow-carte"
+      className="rounded-(--rayon-carte) border border-relvo-filet bg-relvo-pale px-3.5 pt-3 pb-2 text-noir shadow-carte"
     >
       <div className="flex items-center gap-2">
         <RelvoLogo
@@ -76,28 +80,28 @@ export function NewsPanel({
           className="text-relvo-clair"
           title=""
         />
-        <span className="libelle text-relvo!">
-          Relvo{stamp ? ` · ${stamp}` : ""}
-        </span>
+        <span className="libelle text-relvo!">Relvo</span>
       </div>
       <p className="mt-1.5 text-[14px] leading-5 font-light">
         {newsSentence(news)}
       </p>
-      {others.map((s) => (
+      {/* Un lien fléché : retrait suspendu (la seconde ligne s'aligne sous le
+          texte, pas sous la flèche) et une hauteur de frappe qui tient au pouce. */}
+      {others.map((s, i) => (
         <Link
-          key={s.text}
+          key={`${s.kind}-${i}`}
           href={suggestionHref(s)}
-          className="mt-1 inline-block text-[13px] font-medium text-relvo active:opacity-80"
+          className="mt-0.5 block py-1.5 pl-[1.1em] -indent-[1.1em] text-[14px] leading-[18px] font-medium text-relvo active:opacity-80"
         >
           → {s.text}
         </Link>
       ))}
-      {questions.map((s) => (
+      {questions.map((s, i) => (
         <div
-          key={s.text}
-          className="mt-2 flex items-center justify-between gap-2.5 border-t border-relvo-filet pt-2"
+          key={`${s.kind}-${i}`}
+          className="mt-2 flex items-center justify-between gap-2.5 border-t border-relvo-filet pt-2 pb-1"
         >
-          <span className="min-w-0 flex-1 text-[13px] leading-[17px]">
+          <span className="min-w-0 flex-1 text-[14px] leading-[18px]">
             {s.text}
           </span>
           <Link

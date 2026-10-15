@@ -351,6 +351,23 @@ directions de M19.3 se demandent avec le vocabulaire du brief, jamais en une phr
 
 ---
 
+### #57 — Le journal du client régresse en silence si `CHANGELOG.md` n'est pas régénéré après chaque commit `feat`/`fix`
+
+**Symptôme** : au démarrage du serveur, `git status` montre `apps/web/src/generated/suivi.json`
+modifié — et le diff **supprime** des jours entiers du journal client. Rien n'a cassé : `predev`
+et `prebuild` régénèrent `suivi.json` depuis `CHANGELOG.md`, et ce dernier, lui, n'est produit
+que par `pnpm changelog` depuis le `git log`. Si les derniers commits `feat`/`fix` ont été
+poussés sans relancer `pnpm changelog`, le `CHANGELOG.md` commité est en retard d'autant, et
+le build de production publie une page de suivi **amputée** des dernières livraisons — alors
+que le `suivi.json` commité, lui, les avait, parce qu'il avait été généré depuis un
+`CHANGELOG.md` local jamais commité.
+
+**Règle** : `pnpm changelog` puis `node scripts/generate-suivi.mjs` après **chaque** commit
+`feat`/`fix`, et les deux fichiers générés partent dans ce commit (amend, le dépôt est tenu
+seul) ou dans le suivant — **jamais après le push**. Un `suivi.json` qui bouge au `pnpm dev`
+sans qu'on ait rien changé est le signal qu'un commit a été oublié : régénérer le CHANGELOG
+d'abord, regarder le diff ensuite.
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -372,7 +389,7 @@ d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revér
 documentation de la plateforme, jamais de mémoire. Le piège **#54** relève du **navigateur du
 téléphone** : il se périme avec la version de Chrome, dans le bon sens.
 
-Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55** sont des **règles de conception ou d'hygiène** :
+Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
 
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et

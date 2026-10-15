@@ -16,6 +16,12 @@ import type { CachedAwaitingSubject } from "@/server/cached";
 // barre d'indicateurs.
 
 // ── Activité — trois chiffres, un flux (invariant 37) ────────────────────────
+// La zone est nommée comme les deux autres, par un ZoneHeading : une seule
+// grammaire d'en-tête sur l'écran. Le chiffre est au corps d'un INDICATEUR
+// (28 px, le même que les cellules de Sujets ou du Calendrier), jamais plus
+// gros que le prénom : ce qui attend le dirigeant prime sur ce qui s'est passé,
+// et la taille des caractères doit le dire aussi. La carte est une porte vers
+// le Bilan : le chevron le montre.
 
 export function ActivityPanel({ activity }: { activity: BriefActivity }) {
   const cells = [
@@ -25,31 +31,30 @@ export function ActivityPanel({ activity }: { activity: BriefActivity }) {
   ];
   return (
     <section aria-label="Activité">
+      <ZoneHeading label="Activité" hint="7 derniers jours" />
       <Link
         href="/bilan"
-        className="mx-4 block rounded-(--rayon-carte) border border-(--filet) bg-white px-3.5 pt-3 pb-2.5 shadow-carte active:bg-(--fond-enfonce)"
+        className="mx-4 flex items-center rounded-(--rayon-carte) border border-(--filet) bg-white py-2.5 pr-3 pl-3.5 shadow-carte active:bg-(--fond-enfonce)"
       >
-        <div className="libelle">Activité · 7 jours</div>
-        <div className="mt-1 flex">
-          {cells.map((c, i) => (
+        {cells.map((c, i) => (
+          <div
+            key={c.label}
+            className={
+              i > 0 ? "flex-1 border-l border-(--filet) pl-3" : "flex-1"
+            }
+          >
+            {/* Un indicateur à zéro écrit « 0 », en gris clair (02-composants). */}
             <div
-              key={c.label}
-              className={
-                i > 0 ? "flex-1 border-l border-(--filet) pl-3" : "flex-1"
-              }
+              className={`chiffre text-[28px] leading-8 ${c.value === 0 ? "text-(--gris-clair)" : "text-noir"}`}
             >
-              {/* Un indicateur à zéro écrit « 0 », en gris clair (02-composants). */}
-              <div
-                className={`chiffre text-[34px] leading-9 ${c.value === 0 ? "text-(--gris-clair)" : "text-noir"}`}
-              >
-                {c.value}
-              </div>
-              <div className="mt-px text-[12px] font-light text-gris">
-                {c.label}
-              </div>
+              {c.value}
             </div>
-          ))}
-        </div>
+            <div className="mt-px text-[12px] leading-4 font-normal text-gris">
+              {c.label}
+            </div>
+          </div>
+        ))}
+        <ChevronRight className="size-4 flex-none text-(--gris-clair)" />
       </Link>
     </section>
   );
@@ -60,10 +65,10 @@ export function ActivityPanel({ activity }: { activity: BriefActivity }) {
 export function TodayPanel({ tasks }: { tasks: TaskItemData[] }) {
   const open = tasks.filter((t) => t.status !== "done");
   const late = open.filter((t) => t.overdue).length;
+  // À vide, le qualificatif se tait : la carte-invite juste dessous dit déjà
+  // « rien de prévu », et c'est elle la porte vers le Calendrier.
   const hint =
-    tasks.length === 0 ? (
-      "rien de prévu"
-    ) : (
+    tasks.length === 0 ? undefined : (
       <>
         {open.length} restante{open.length > 1 ? "s" : ""}
         {late > 0 ? (
@@ -80,7 +85,7 @@ export function TodayPanel({ tasks }: { tasks: TaskItemData[] }) {
       {tasks.length === 0 ? (
         <Link
           href="/calendrier"
-          className="mx-4 flex items-center justify-between rounded-(--rayon-carte) border border-(--filet) bg-white px-4 py-3.5 text-[13.5px] font-light text-gris shadow-carte"
+          className="mx-4 flex items-center justify-between rounded-(--rayon-carte) border border-(--filet) bg-white px-4 py-3.5 text-[14px] font-light text-gris shadow-carte active:bg-(--fond-enfonce)"
         >
           Rien de prévu aujourd&apos;hui.
           <ChevronRight className="size-4 text-(--gris-clair)" />
@@ -100,6 +105,16 @@ export function TodayPanel({ tasks }: { tasks: TaskItemData[] }) {
 // Des cartes à feuilleter, une par sujet : la bande de son domaine sur la
 // tranche, le contact, l'enjeu, depuis quand, et le geste. La seule exception
 // voulue à « une liste = une carte » (design-system/02-composants).
+//
+// Chaque chose n'y est dite qu'une fois : l'état en haut à droite (« Décision »,
+// « Réponse », pastille à la forme) dit la nature de l'attente, donc la ligne
+// d'échéance ne parle que quand il y a une date, et il n'y a pas de puce
+// « Trancher » qui la redirait. La seule puce est « Répondre », le geste que
+// Relvo prépare. La référence d'un sujet ne remplace jamais un contact : un
+// dirigeant ne reconnaît pas un sujet à son code.
+
+/** Au plus cinq cartes ; la requête en demande une de plus pour savoir s'il y en a d'autres. */
+const MAX_AWAITING = 5;
 
 function awaitingState(
   s: CachedAwaitingSubject,
@@ -112,16 +127,12 @@ function awaitingState(
   return { label: what, tone: "attente" };
 }
 
-function awaitingDue(s: CachedAwaitingSubject, todayKey: string): string {
-  if (s.dueDate) {
-    if (s.dueDate === todayKey) return "Avant ce soir.";
-    if (s.dueDate < todayKey) return "L'échéance est passée.";
-    const d = new Date(`${s.dueDate}T00:00:00.000Z`);
-    return `Avant ${d.toLocaleDateString("fr-FR", { weekday: "long", timeZone: "UTC" })}.`;
-  }
-  return s.awaiting === "decision"
-    ? "Décision à prendre."
-    : "Réponse attendue.";
+/** La phrase d'échéance — seulement quand il y en a une. */
+function awaitingDue(dueDate: string, todayKey: string): string {
+  if (dueDate === todayKey) return "Avant ce soir.";
+  if (dueDate < todayKey) return "L'échéance est passée.";
+  const d = new Date(`${dueDate}T00:00:00.000Z`);
+  return `Avant ${d.toLocaleDateString("fr-FR", { weekday: "long", timeZone: "UTC" })}.`;
 }
 
 function awaitingSince(s: CachedAwaitingSubject): string {
@@ -146,22 +157,31 @@ export function AwaitingPanel({
   todayKey: string;
 }) {
   if (subjects.length === 0) return null;
+  const shown = subjects.slice(0, MAX_AWAITING);
+  const more = subjects.length > MAX_AWAITING;
   return (
     <section>
       <ZoneHeading
         label="En attente de vous"
-        hint={`${subjects.length} sujet${subjects.length > 1 ? "s" : ""}`}
+        hint={
+          more
+            ? `les ${MAX_AWAITING} plus pressants`
+            : `${shown.length} sujet${shown.length > 1 ? "s" : ""}`
+        }
       />
       <div
         className="flex snap-x snap-mandatory [scrollbar-width:none] gap-3 overflow-x-auto px-4 pt-0.5 pb-2.5 [&::-webkit-scrollbar]:hidden"
         style={{ scrollPaddingLeft: 16 }}
       >
-        {subjects.map((s) => {
+        {shown.map((s) => {
           const { color, text } = folderVisual({
             slug: s.folderSlug,
             color: s.folderColor,
           });
           const state = awaitingState(s, todayKey);
+          const who = [s.contactName, s.contactCompany]
+            .filter(Boolean)
+            .join(" · ");
           return (
             <Link
               key={s.id}
@@ -173,7 +193,7 @@ export function AwaitingPanel({
                 className="bande-carte"
                 style={{ background: color }}
               />
-              <div className="min-w-0 flex-1 px-3 py-2.5">
+              <div className="flex min-w-0 flex-1 flex-col px-3 py-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="domaine truncate" style={{ color: text }}>
                     {s.folderName ?? "Sans domaine"}
@@ -193,23 +213,22 @@ export function AwaitingPanel({
                     {state.label}
                   </span>
                 </div>
-                <h3 className="mt-0.5 truncate font-heading text-[18px] leading-[22px] font-semibold tracking-[-0.01em] text-noir">
+                {/* Deux lignes au plus : un titre coupé à la moitié ne se lit pas debout. */}
+                <h3 className="mt-0.5 line-clamp-2 font-heading text-[18px] leading-[22px] font-semibold tracking-[-0.01em] text-noir">
                   {s.title}
                 </h3>
-                <div className="mt-px truncate text-[12px] leading-[15px] text-gris">
-                  {[s.contactName, s.contactCompany]
-                    .filter(Boolean)
-                    .join(" · ") || s.reference}
-                </div>
-                <div className="mt-1 truncate text-[13px] leading-[17px] font-light text-noir">
-                  {awaitingDue(s, todayKey)}
-                </div>
-                <div className="mt-2 flex items-center justify-between">
-                  {s.awaiting === "decision" ? (
-                    <span className="inline-flex h-[22px] items-center gap-1.5 rounded-(--rayon-pilule) bg-(--fond-puce) px-2.5 text-[11px] font-medium text-noir">
-                      Trancher
-                    </span>
-                  ) : (
+                {who ? (
+                  <div className="mt-px truncate text-[12px] leading-[15px] text-gris">
+                    {who}
+                  </div>
+                ) : null}
+                {s.dueDate ? (
+                  <div className="mt-1 truncate text-[14px] leading-[18px] font-light text-noir">
+                    {awaitingDue(s.dueDate, todayKey)}
+                  </div>
+                ) : null}
+                <div className="mt-auto flex items-center justify-between pt-2">
+                  {s.awaiting === "reply" ? (
                     <span
                       className="inline-flex h-[22px] items-center gap-1.5 rounded-(--rayon-pilule) px-2.5 text-[11px] font-medium text-white"
                       style={{ background: "var(--degrade-relvo)" }}
@@ -225,8 +244,8 @@ export function AwaitingPanel({
                       </svg>
                       Répondre
                     </span>
-                  )}
-                  <span className="text-[11px] font-light text-gris">
+                  ) : null}
+                  <span className="ml-auto text-[11px] text-gris">
                     {awaitingSince(s)}
                   </span>
                 </div>

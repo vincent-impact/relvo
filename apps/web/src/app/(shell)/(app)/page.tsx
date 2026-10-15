@@ -18,7 +18,7 @@ import {
   cachedBriefSuggestions,
 } from "@/server/cached";
 import { getTenantDb, requireAccount } from "@/server/auth-context";
-import { FUSEAU, jourParis } from "@relvo/db/temps";
+import { FUSEAU, calendrierParis, jourParis } from "@relvo/db/temps";
 
 // Accueil — un BRIEF en quatre zones (01 §11, invariant 34), le premier tour de
 // parole de Relvo rendu en cartes : les dernières nouvelles (dans le header),
@@ -78,16 +78,18 @@ async function Brief({
   );
 }
 
+// Les squelettes font la taille de ce qu'ils remplacent (mesurée sur le rendu
+// de démonstration) : un squelette qui ment fait sauter la page.
 function NewsSkeleton() {
   return (
-    <div className="h-[118px] animate-pulse rounded-(--rayon-carte) bg-white/60" />
+    <div className="h-[142px] animate-pulse rounded-(--rayon-carte) bg-white/60" />
   );
 }
 
 function BriefSkeleton() {
   return (
     <div className="space-y-5 px-4 pt-4">
-      {[76, 140, 110].map((h, i) => (
+      {[96, 77, 158].map((h, i) => (
         <div
           key={i}
           className="animate-pulse rounded-(--rayon-carte) bg-white shadow-carte"
@@ -124,11 +126,14 @@ export default async function AccueilPage() {
       timeZone: FUSEAU,
     }),
   );
+  // Le salut connaît l'heure : « Bonjour » à 21 h sonne faux, et le brief se
+  // relit aussi le soir, posé.
+  const salut = calendrierParis(now).heures >= 18 ? "Bonsoir" : "Bonjour";
 
   return (
     <Screen>
       <PollRefresh />
-      <RelvoHeader title={`Bonjour ${account.firstName}`} eyebrow={dateLabel}>
+      <RelvoHeader title={`${salut} ${account.firstName}`} eyebrow={dateLabel}>
         <Suspense fallback={<NewsSkeleton />}>
           <News
             accountId={account.id}

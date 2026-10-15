@@ -32,8 +32,9 @@ export function ZoneHeading({
         {label}
         {badge}
       </h2>
+      {/* Graisse normale : sous 14 px, la graisse fine s'efface au soleil (01-tokens). */}
       {hint ? (
-        <span className="text-[12px] leading-4 font-light text-gris">
+        <span className="text-[12px] leading-4 font-normal text-gris">
           {hint}
         </span>
       ) : null}

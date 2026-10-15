@@ -63,7 +63,7 @@ export const TENANT_DATA_TAG = "tenant-data";
 // rendez-vous du Calendrier, CachedFolderRow (+ instructions/documents/
 // openSubjects, − sub).
 // Suivant = "v14".
-const CACHE_V = "v14";
+const CACHE_V = "v15";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
@@ -438,8 +438,9 @@ export type CachedAwaitingSubject = {
 
 export const cachedAwaitingSubjects = unstable_cache(
   async (accountId: string): Promise<CachedAwaitingSubject[]> => {
+    // Une de plus que l'accueil n'en montre : il sait ainsi s'il y en a d'autres.
     const rows = await getSubjectsAwaitingUser(tenantDb(accountId), {
-      limit: 5,
+      limit: 6,
     });
     return rows.map((r) => ({
       ...r,

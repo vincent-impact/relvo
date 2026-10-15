@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-14T13:52:42+00:00",
+  "generatedAt": "2026-10-15T08:49:18+00:00",
   "title": "Design System: Relvo",
   "extensions": {
     "colorMeta": {
@@ -758,7 +758,7 @@
       },
       {
         "name": "La règle des deux dessins",
-        "body": "Un titre et un chiffre se lisent de la même voix : `font-heading` et `font-numeric` sont le même dessin condensé. Rien au-dessus de la graisse 600, rien sous 11px — sauf le libellé du dock, à 10px, parce que « Conversations » ne tient pas plus gros sur un téléphone étroit.",
+        "body": "Un titre et un chiffre se lisent de la même voix : `font-heading` et `font-numeric` sont le même dessin condensé. Rien au-dessus de la graisse 600, rien sous 11px — sauf, dans le dock, le libellé d'un onglet et le badge du disque Relvo, à 10px, parce que « Conversations » ne tient pas plus gros sur un téléphone étroit et que le badge ne porte qu'un chiffre. **Sous 14px, jamais la graisse 300** : elle s'efface en plein soleil.",
         "section": "typography"
       },
       {
@@ -773,6 +773,7 @@
       }
     ],
     "dos": [
+      "Do poser au-dessus du titre de page, dans le ciel, sa **ligne du dessus** en petites capitales (`eyebrow` de `RelvoHeader`) : la date sur l'accueil, le domaine sur une fiche. Le détecteur « kicker-above-heading » la lit comme un surtitre décoratif ; c'est le seul endroit de l'écran qui porte cette donnée, tranché par le dirigeant (`03-patterns.md`, « Le cadre »).",
       "Do poser la **bande de domaine** sur la tranche gauche de chaque carte et ligne de sujet (`.bande-carte` 10px, `.bande-ligne` 6px), comme un fond plein à l'intérieur de la surface. Ce n'est pas un `border-left` décoratif (détecteur « side-tab ») : c'est le geste signature du monde, une bande par surface, la couleur du domaine stockée sur le dossier.",
       "Do utiliser le **violet et ses dégradés** sur le ciel, le disque Relvo, l'action principale, les jauges et les interrupteurs : le violet est **sémantique** (livrée et voix de Relvo), pas un dégradé violet-bleu d'ornement. Un détecteur qui le signale a tort ici, et seulement ici.",
       "Do laisser le **disque Relvo déborder** du dock, la pilule soulevée autour de lui : c'est le relief unique du produit, désigné par la couleur et le débordement, sans ombre propre.",
@@ -782,7 +783,8 @@
       "Do écrire « 0 » en gris clair dans une cellule d'indicateur, et **ne rien afficher** pour un badge ou un compteur à zéro.",
       "Do faire pointer chaque phrase de Relvo vers sa preuve (lien ou sous-carte).",
       "Do prendre toute valeur dans `globals.css` : le test des tokens refuse une couleur hexadécimale dans un composant, hors les exceptions qu'il nomme (logo, bouton Google, manifeste, e-mail sortant, page publique de suivi).",
-      "Do interroger le registre shadcn avant d'écrire une primitive, et composer sur Base UI (`render`, jamais `asChild`)."
+      "Do interroger le registre shadcn avant d'écrire une primitive, et composer sur Base UI (`render`, jamais `asChild`).",
+      "Do prendre tout pictogramme dans `shared/picto.tsx` (plein) et ne demander à lucide qu'un glyphe ; le test des tokens refuse un pictogramme lucide."
     ],
     "donts": [
       "Don't réintroduire la matière écartée : verre, grain, fond pierre, relief nacré, ruban oblique, trois niveaux d'élévation. `.grain` et `.glass-relvo` sont inertes et ne se posent plus.",
@@ -792,9 +794,10 @@
       "Don't poser deux bandes sur un objet, ni une bande sur une tâche.",
       "Don't empiler une carte par ligne, ni une carte dans une carte avec deux ombres.",
       "Don't rendre une ombre sans décalage (halo), ni une ombre dure, ni une ombre plus forte pour hiérarchiser.",
-      "Don't dépasser les rayons comptés (20px hors pilule et dock), ni la graisse 600, ni descendre sous 11px hors libellé du dock.",
+      "Don't dépasser les rayons comptés (20px hors pilule et dock), ni la graisse 600, ni descendre sous 11px hors du dock (libellé d'onglet, badge du disque).",
       "Don't arrêter le ciel net : il fond, et la première carte le chevauche.",
       "Don't faire scintiller les étoiles ni allonger une transition : le mouvement est court et sort vite. Les tokens de durée et de courbe n'existent pas encore (ils arrivent avec le langage de mouvement) ; en attendant, aucune durée littérale dans un composant.",
+      "Don't rendre une suggestion ou une puce en pointillé : le pointillé est réservé à « vide / à compléter » (une puce Urgent inactive, un domaine sans logo, un canal à connecter).",
       "Don't afficher un thème sombre : l'application est claire seulement ; le bloc `.dark` n'existe que pour les primitives du registre qui le citent."
     ]
   }

@@ -50,9 +50,9 @@ typography:
     letterSpacing: "-0.01em"
   headline:
     fontFamily: "Barlow Semi Condensed, Barlow, system-ui, sans-serif"
-    fontSize: "34px"
+    fontSize: "28px"
     fontWeight: 600
-    lineHeight: "36px"
+    lineHeight: "32px"
     letterSpacing: "-0.02em"
     fontVariation: "tabular-nums"
   title:
@@ -283,13 +283,15 @@ et large, lisible en plein soleil. Chargée par `next/font` (`apps/web/src/app/f
 ### Hierarchy
 - **Display** (600, 28px, 34px) : le titre de page dans le ciel ; 26px quand il descend sous la
   flèche d'un écran poussé.
-- **Headline** (600, 34px, 36px, chiffres tabulaires, `-0.02em`) : les chiffres d'activité ;
-  28px dans un indicateur, 19px pour un horaire, 16px pour un compte à droite d'une ligne.
-  Utilitaire `.chiffre`.
-- **Title** (400, 14.5px, 18px) : le titre d'une ligne de sujet ou de tâche ; 18px condensé
-  pour le titre d'une carte d'attente.
-- **Body** (300, 14px, 20px) : la phrase de Relvo, le texte courant ; 12px/14px fin pour la
-  ligne d'état sous un titre.
+- **Headline** (600, 28px, 32px, chiffres tabulaires, `-0.02em`) : le chiffre d'un
+  indicateur — les cellules de Sujets, du Calendrier, de Conversations, de Contacts et
+  l'activité de l'accueil, au même corps ; 19px pour un horaire, 16px pour un compte à droite
+  d'une ligne. Jamais plus gros que le titre de page. Utilitaire `.chiffre`.
+- **Title** (400, 14.5px, 18px) : le titre d'une ligne de sujet ou de tâche ; 18px condensé,
+  deux lignes au plus, pour le titre d'une carte d'attente.
+- **Body** (300, 14px, 20px) : la phrase de Relvo, le texte courant, un lien de suggestion
+  (500), une phrase d'échéance ; 12px/15px en graisse **400** pour la ligne d'état sous un
+  titre et le qualificatif d'une zone — sous 14px, jamais la graisse fine.
 - **Label** (500, 11px, `0.1em`, capitales, gris) : le libellé dans une carte. Utilitaire
   `.libelle`.
 - **Domaine** (600 condensé, 11px, `0.12em`, capitales, couleur texte du domaine) : le nom du
@@ -300,7 +302,7 @@ et large, lisible en plein soleil. Chargée par `next/font` (`apps/web/src/app/f
 et `font-numeric` sont le même dessin condensé. Rien au-dessus de la graisse 600, rien sous
 11px — sauf, dans le dock, le libellé d'un onglet et le badge du disque Relvo, à 10px, parce
 que « Conversations » ne tient pas plus gros sur un téléphone étroit et que le badge ne porte
-qu'un chiffre.
+qu'un chiffre. **Sous 14px, jamais la graisse 300** : elle s'efface en plein soleil.
 
 ## Layout
 
@@ -460,10 +462,14 @@ cité est une sous-carte à filet. C'est le même composant dans l'échange et s
 
 Les règles ci-dessous sont celles du code livré et des décisions du dirigeant
 (`backlog/ecarts-et-propositions.md`, « Une direction artistique : “Lettrage d'artisan” »). Les
-trois premières sont des **exceptions assumées aux détecteurs d'impeccable** : ce qu'ils lisent
+quatre premières sont des **exceptions assumées aux détecteurs d'impeccable** : ce qu'ils lisent
 comme un tic d'interface générée est ici une décision de direction.
 
 ### Do:
+- **Do** poser au-dessus du titre de page, dans le ciel, sa **ligne du dessus** en petites
+  capitales (`eyebrow` de `RelvoHeader`) : la date sur l'accueil, le domaine sur une fiche. Le
+  détecteur « kicker-above-heading » la lit comme un surtitre décoratif ; c'est le seul endroit
+  de l'écran qui porte cette donnée, tranché par le dirigeant (`03-patterns.md`, « Le cadre »).
 - **Do** poser la **bande de domaine** sur la tranche gauche de chaque carte et ligne de sujet
   (`.bande-carte` 10px, `.bande-ligne` 6px), comme un fond plein à l'intérieur de la surface. Ce
   n'est pas un `border-left` décoratif (détecteur « side-tab ») : c'est le geste signature du

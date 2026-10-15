@@ -107,7 +107,10 @@ Une seule famille en deux dessins, chargée via `next/font` :
 | Chiffres, horaires, délais, titres | **Barlow Semi Condensed** 600 (`--font-condensed`) | Les gros chiffres du camion : un indicateur, un horaire, un titre de sujet sont condensés et gras, le reste fin. Chiffres tabulaires |
 
 Les titres ne dépassent pas la graisse 600 ; le nom d'un domaine est en 600 condensé, 11 px,
-interlettré. Aucun texte fonctionnel sous 11 px, hors libellé du dock.
+interlettré. Aucun texte fonctionnel sous 11 px, hors libellé du dock. **Sous 14 px, jamais la
+graisse fine** : à 11 ou 12 px, la 300 s'efface en plein soleil, c'est la 400 qui tient. Un
+chiffre n'est jamais plus gros que le titre de la page : l'activité se lit au corps d'un
+indicateur, et ce qui attend le dirigeant garde le plus gros titre sous le ciel.
 
 L'échelle de corps est **mobile d'abord** : calibrée pour un écran d'environ 390 px, le desktop
 en hérite sans la remonter.
