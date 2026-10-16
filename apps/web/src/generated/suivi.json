@@ -129,9 +129,9 @@
     {
       "titre": "Échange avec Relvo",
       "resume": "Demander à Relvo d'agir plutôt que de naviguer dans les écrans : « où en est la commande de sauce ? », « crée-moi une tâche pour lundi », « prépare une réponse à Karim ». Chaque action reste visible et annulable.",
-      "statut": "partiel",
+      "statut": "termine",
       "gauche": 63.55,
-      "largeur": 0
+      "largeur": 0.47
     },
     {
       "titre": "Lecture des pièces jointes",

@@ -7,9 +7,9 @@ resume_client: >
   Demander à Relvo d'agir plutôt que de naviguer dans les écrans : « où en est la commande de
   sauce ? », « crée-moi une tâche pour lundi », « prépare une réponse à Karim ». Chaque action
   reste visible et annulable.
-statut: partiel
+statut: termine
 debut: 2026-10-15
-fin: 2026-10-15
+fin: 2026-10-16
 ---
 
 # M10 — L'échange avec Relvo
@@ -45,11 +45,11 @@ que M10 en est le consommateur. Les identifiants ne changent pas.
 | M10.13 | Traçabilité de la provenance dans le journal                                                                         |
 | M10.14 | Diffusion en continu des réponses                                                                                    |
 | M10.15 | Gestion d'erreur explicite dans le fil                                                                               |
-| M10.16 | **Échange scripté** : un fil dont Relvo tient les étapes sans le modèle — la prise en main (M13.2), la lecture du courrier à la connexion d'un canal — avec une **carte vivante** d'avancement et des questions sous forme de formulaires. **Partiel** : les étapes, les formulaires, la carte vivante sont livrés ; la naissance du script à la connexion d'un canal attend la tranche 10 de M7 |
+| M10.16 | **Échange scripté** : un fil dont Relvo tient les étapes sans le modèle — la prise en main (M13.2), la lecture du courrier à la connexion d'un canal — avec une **carte vivante** d'avancement et des questions sous forme de formulaires. Les étapes, les formulaires, la carte vivante et le script de la prise en main sont livrés ; **ce qui fait naître le script à la connexion d'un canal est M7.19** |
 
-> **État** : M10.1 à M10.15 livrés (sprint `2026-10-m10-echange-relvo.md`) ; M10.16 partiel,
-> achevé par la tranche 10 de M7. La tranche 5 de M18 est livrée ici, sauf la notification
-> (M18.11), glissée vers M12.9.
+> **État** : terminée — M10.1 à M10.16 livrés (sprint `2026-10-m10-echange-relvo.md`), vérifiés
+> en production par le dirigeant. Le déclencheur du script à la connexion d'un canal est porté par
+> M7.19. La tranche 5 de M18 est livrée ici, sauf la notification (M18.11), glissée vers M12.9.
 
 ⚠️ **M10.8 est la ligne qui décide de tout le reste.** Si un outil réimplémente une règle métier
 au lieu d'appeler la fonction existante, on obtient deux comportements pour une même opération —

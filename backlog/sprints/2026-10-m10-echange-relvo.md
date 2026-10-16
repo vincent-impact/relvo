@@ -427,3 +427,7 @@ chat`, « Annuler » la rouvre ; « Prépare une réponse à Karim » → le bro
       rejoué, référencé par ses identifiants d'items sans le raisonnement qui les accompagne.
       L'historique repart désormais en clair (`sansAncresFournisseur`, piège **#63**), test au
       niveau du corps envoyé à l'API, scénarios rejoués en local sur deux tours raisonnés.
+- [x] Clôture — ✅ le dirigeant a vérifié l'échange en production sur son compte ; **M10 en
+      `termine`**. Le reliquat de M10.16 — faire naître le script de la prise en main quand un
+      canal se connecte — n'est pas une tâche de l'échange : c'est M7.19, la tranche 10 de M7,
+      qui est le **prochain chantier**.

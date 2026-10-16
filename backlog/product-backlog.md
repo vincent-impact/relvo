@@ -36,11 +36,11 @@ frontmatter l'est.
 | [M6quater — Sous-typage de la conversation](epics/M6quater-sous-typage.md) | ✅                                               | M7                              |
 | [M9 — Pages applicatives](epics/M9-pages-applicatives.md)                  | ✅                                               | démo client                     |
 | [M16 — Consolidation](epics/M16-consolidation.md)                          | ✅                                               | —                               |
-| **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en pause** — reste la tranche 10, **prochain chantier** (il achève M10.16) | M8, M10                         |
+| **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en pause** — reste la tranche 10 (M7.19 : le rattrapage dès la connexion d'un canal, qui fait naître le script de la prise en main dans l'échange), **prochain chantier** | M8, M10                         |
 | **[M18 — Disposition générale](epics/M18-disposition-generale.md)**       | ✅ — M18.9 livré par M10 ; M18.11 glissé vers M12.9 (pas de socle push) | M19, M10, M13 |
 | **[M19 — Direction artistique, allègement et prise en main](epics/M19-direction-artistique.md)** | ✅                                               | M10, M13.2                      |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
-| **[M10 — Échange avec Relvo](epics/M10-echange-relvo.md)**                 | 🟡 **partiel** — M10.1 à M10.15 livrés ; M10.16 (échange scripté) achevé par la tranche 10 de M7, **prochain chantier** | M13                             |
+| **[M10 — Échange avec Relvo](epics/M10-echange-relvo.md)**                 | ✅ — le déclencheur du script à la connexion d'un canal est M7.19 | M13                             |
 | [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md)                    | ⬜                                               | —                               |
 | [M17 — Mémoire et apprentissage](epics/M17-memoire-apprentissage.md)       | ⬜                                               | la qualité du tri dans la durée |
 | [M20 — Les usages de la messagerie](epics/M20-usages-messagerie.md)        | ⬜ après M7 et M10                               | —                               |
