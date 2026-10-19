@@ -36,7 +36,9 @@ frontmatter l'est.
 | [M6quater — Sous-typage de la conversation](epics/M6quater-sous-typage.md) | ✅                                               | M7                              |
 | [M9 — Pages applicatives](epics/M9-pages-applicatives.md)                  | ✅                                               | démo client                     |
 | [M16 — Consolidation](epics/M16-consolidation.md)                          | ✅                                               | —                               |
-| **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en pause** — reste la tranche 10 (M7.19 : le rattrapage dès la connexion d'un canal, qui fait naître le script de la prise en main dans l'échange), **prochain chantier** | M8, M10                         |
+| **[M21 — Mini backoffice](epics/M21-mini-backoffice.md)**                  | ⬜ **prochain chantier** — l'alpha ouvre, il faut voir, couper et supprimer des comptes | l'alpha                         |
+| **[M22 — Parler à Relvo](epics/M22-voix.md)**                              | ⬜ après M21 — la voix comme entrée de l'échange                                        | M20.1                           |
+| **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en pause** — reste la tranche 10 (M7.19 : le rattrapage dès la connexion d'un canal, qui fait naître le script de la prise en main dans l'échange), après M21 et M22 | M8, M10                         |
 | **[M18 — Disposition générale](epics/M18-disposition-generale.md)**       | ✅ — M18.9 livré par M10 ; M18.11 glissé vers M12.9 (pas de socle push) | M19, M10, M13 |
 | **[M19 — Direction artistique, allègement et prise en main](epics/M19-direction-artistique.md)** | ✅                                               | M10, M13.2                      |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
@@ -64,6 +66,12 @@ qui fera tomber les échafaudages documentés dans `04 §13`.
 **M18 s'intercale entre M7 et M10** : l'échange se construit sur la nouvelle disposition — le
 bouton central du dock, les questions de Relvo, l'accueil en brief — et la prise en main de M13
 se joue dans cette surface. La tranche 10 de M7 passe après M19.
+
+**M21 et M22 passent devant la tranche 10 de M7** (décision du 2026-10-19, `ecarts`, « L'alpha
+dans deux jours ») : l'alpha ouvre avec des comptes de test, et personne ne peut les voir, les
+couper ni les supprimer sans toucher à la base — ce que le dépôt interdit. La voix suit, parce que
+le public dicte plus qu'il n'écrit et que l'échange est désormais la surface où Relvo agit. Le
+rattrapage dès la connexion (M7.19) et la prise en main (M13) viennent après.
 
 **M19 suit M18, pour la même raison** : on habille et on allège **avant** de construire la
 surface de l'échange, pas après. La disposition ne rouvre pas ; c'est l'apparence, la densité et

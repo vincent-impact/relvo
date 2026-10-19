@@ -24,7 +24,7 @@ doit d'abord trier et répondre.
 
 | #     | Item                                                                                                                                                                  |
 | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| M20.1 | **La dictée** dans le composer — le disque de dictée du brief — vers le texte du message, relu avant l'envoi comme tout texte                                           |
+| M20.1 | **La dictée** dans le composer — le disque de dictée du brief — vers le texte du message, relu avant l'envoi comme tout texte ; **sur le socle de M22** (enregistrement, route de transcription, vocabulaire du compte), sans seconde implémentation |
 | M20.2 | **L'envoi de pièces jointes** depuis le composer : une photo prise ou choisie, un fichier ; par le paquet de stockage, dans la limite du canal                           |
 | M20.3 | **Écouter et lire un message vocal reçu** : un lecteur dans le fil, la transcription (M8.7) affichée comme contenu du message, l'audio gardé en pièce jointe          |
 | M20.4 | **Laisser un message vocal** : enregistrer, envoyer par le canal, transcrire dans le contenu pour que Relvo le lise comme les autres                                   |

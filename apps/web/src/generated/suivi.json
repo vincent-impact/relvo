@@ -160,6 +160,13 @@
       "statut": "a-faire",
       "gauche": null,
       "largeur": 0
+    },
+    {
+      "titre": "Parler à Relvo",
+      "resume": "Dicter votre demande à Relvo plutôt que la taper : un appui sur le micro, vous parlez, le texte s'écrit et se corrige avant l'envoi. Pour la cuisine et le chantier, où l'on n'écrit pas.",
+      "statut": "a-faire",
+      "gauche": null,
+      "largeur": 0
     }
   ],
   "livraison": {

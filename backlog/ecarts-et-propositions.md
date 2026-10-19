@@ -1016,6 +1016,28 @@ sans la voix et l'image, une part du courrier reste invisible au pipeline. Les a
 sont des dérivés gratuits de ce qui est déjà stocké : la situation structurée, le journal, les
 titres des sujets.
 
+### L'alpha dans deux jours : le mini backoffice et la voix passent devant le rattrapage
+
+**`tranché`** · Le produit entre en alpha deux jours après la livraison du push. Deux épiques
+sont enregistrées et passent **devant** la tranche 10 de M7 et la prise en main (M13) :
+
+- **M21 — Mini backoffice.** Voir les comptes et ce que chacun coûte en inférence, couper
+  l'assistant d'un compte, **supprimer un compte de test**, choisir qui entre pendant l'alpha.
+  Tout par les méthodes du domaine, journalisées — le backoffice est l'écran de ces méthodes,
+  jamais une console SQL (« L'assistant s'active par un réglage du compte ; l'administration
+  viendra avec le backoffice » tenait ce besoin pour acquis ; le voici daté).
+- **M22 — Parler à Relvo.** La voix comme entrée de l'échange : disque de dictée, transcription
+  posée dans le composer, **relue et corrigée** avant l'envoi. **Retenu** : la transcription de
+  fichier d'OpenAI (`gpt-transcribe` ou sa famille), parce qu'elle accepte un vocabulaire — les
+  noms des contacts et des affaires — et coûte quelques millièmes par minute. **Écartées** : la
+  Web Speech API du navigateur (inégale en PWA installée, audio chez un tiers) ; la transcription
+  en direct par session Realtime reste en réserve si l'attente gêne. La dictée du clavier reste
+  disponible, elle n'est pas le geste du produit.
+
+**Ce qui a tranché** : un compte de test qu'on ne peut pas supprimer proprement finit supprimé en
+base, et c'est la première règle du dépôt qui tombe ; une alpha sans voix, pour un public qui
+dicte, teste un produit que personne n'utilisera ainsi.
+
 ### Relvo vous prévient : Web Push, un réglage par appareil, deux notifications et pas une de plus
 
 **`tranché`** · Le socle des notifications (M12.7, M12.9) est le **Web Push standard** avec des
