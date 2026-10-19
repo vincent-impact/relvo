@@ -2,14 +2,33 @@
 
 import { useEffect, useRef, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
-import { PaperPlaneRight, Paperclip } from "@/components/shared/picto";
+import {
+  Microphone,
+  PaperPlaneRight,
+  Paperclip,
+} from "@/components/shared/picto";
 import { RelvoLogo } from "@/components/layout/relvo-logo";
+import { useDictee } from "@/hooks/use-dictee";
+import {
+  ajouterDictee,
+  formatDuree,
+  PHRASES_DICTEE,
+} from "@/lib/dictee-regles";
 import { cn } from "@/lib/utils";
 
 // RecipientComposer — le composer signature de la Direction B, VIOLET (cohérence
 // avec le chrome de l'app ; Relvo n'est plus un destinataire ici, il vit dans le
 // bouton du header). Micro quand vide (voice-first), avion dès qu'on tape. 📎 dans
 // le champ. `onSend` est optionnel (coquille sans envoi réel).
+//
+// LA DICTÉE (M22.2, M22.3) — avec l'option `dictee`, le disque est le MICRO
+// tant que le champ est vide : un appui demande le micro et enregistre, le
+// champ montre le compteur, un appui finit ; « Relvo écoute… » le temps de la
+// transcription, puis le texte S'AJOUTE à ce qui était saisi (tranché) et le
+// bandeau dit « Dicté — relisez avant d'envoyer ». Jamais envoyé seul : c'est
+// l'avion, comme pour tout texte. L'option n'est ouverte que dans l'échange
+// tant que M20.1 n'est pas livrée ; sans micro sur l'appareil, le disque
+// reste l'avion — un bouton sans effet se retire.
 //
 // DEUX DISPOSITIONS (2026-09-15, premiers brouillons réels) :
 //   · COMPACTE — une ligne : le champ, le trombone à sa droite, le bouton rond à
@@ -78,6 +97,7 @@ export function RecipientComposer({
   // Le trombone ne revient qu'avec l'envoi de pièces jointes (backlog) : un
   // bouton sans effet se retire.
   attach = false,
+  dictee = false,
   onSend,
   draft,
 }: {
@@ -88,6 +108,8 @@ export function RecipientComposer({
   placeholder?: string;
   defaultValue?: string;
   attach?: boolean;
+  /** Le disque de dictée (M22) — ouvert dans l'échange seulement. */
+  dictee?: boolean;
   /** Retourner `false` (ou une promesse de `false`) préserve le texte saisi. */
   onSend?: (
     text: string,
@@ -116,6 +138,29 @@ export function RecipientComposer({
   const r = recipients.find((x) => x.key === cur) || recipients[0];
   const typing = text.trim().length > 0;
 
+  // La dictée : le texte transcrit s'AJOUTE au champ ; s'il passe sur
+  // plusieurs lignes, la disposition s'élargit comme à la frappe.
+  const d = useDictee({
+    onTexte: (t) => {
+      setText((prev) => ajouterDictee(prev, t));
+      requestAnimationFrame(() => {
+        const el = taRef.current;
+        if (!el) return;
+        if (el.scrollHeight > 40) setMultiline(true);
+        // Le curseur en fin de champ : on relit, on corrige, on continue.
+        el.focus();
+        el.setSelectionRange(el.value.length, el.value.length);
+      });
+    },
+  });
+  const micro = dictee && d.disponible;
+  const enregistre = d.etat === "enregistre";
+  const ecoute = d.etat === "transcrit";
+  // Le bandeau de la dictée (phrase d'échec, « Dicté — … ») se masque d'un ×,
+  // à la frappe ou à l'envoi ; une phrase nouvelle le rouvre.
+  const [phraseMasquee, setPhraseMasquee] = useState<string | null>(null);
+  const phraseDictee = d.phrase && d.phrase !== phraseMasquee ? d.phrase : null;
+
   // Nom du destinataire tronqué pour tenir le placeholder sur UNE ligne.
   const recipientLabel =
     r && r.name.length > 16 ? `${r.name.slice(0, 15).trimEnd()}…` : r?.name;
@@ -136,6 +181,7 @@ export function RecipientComposer({
   function onChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
     const next = e.target.value;
     setText(next);
+    if (d.phrase === PHRASES_DICTEE.pose) setPhraseMasquee(d.phrase);
     if (!next.trim()) setMultiline(false);
     else if (e.currentTarget.scrollHeight > 40) setMultiline(true);
   }
@@ -151,9 +197,10 @@ export function RecipientComposer({
   }, [text, maxHeight, loading]);
 
   const [sending, setSending] = useState(false);
-  const blocked = sending || loading;
+  const blocked = sending || loading || enregistre || ecoute;
   const send = async () => {
     if (!typing || blocked) return;
+    d.effacerPhrase();
     if (!onSend) {
       setText("");
       return;
@@ -186,6 +233,22 @@ export function RecipientComposer({
   // sous l'étiquette — l'utilisateur sait d'où vient ce qu'il va envoyer.
   const sources = !loading && posed ? (draft?.sources ?? []) : [];
 
+  // Avec du texte dans le champ, le disque est l'avion — et le micro reste à
+  // portée, DANS le champ, à la place du trombone : la dictée s'ajoute à ce
+  // qui est saisi (tranché), on ne force personne à effacer pour parler.
+  const microDansLeChamp =
+    micro && typing && !enregistre && !ecoute ? (
+      <button
+        type="button"
+        onClick={d.basculer}
+        disabled={!d.pret || sending || loading}
+        aria-label="Dicter"
+        className="relative grid size-7 flex-none place-items-center self-end rounded-full text-relvo before:absolute before:-inset-2 before:content-[''] active:bg-relvo-filet disabled:opacity-60"
+      >
+        <Microphone className="size-5" />
+      </button>
+    ) : null;
+
   const attachButton = attach ? (
     <button
       type="button"
@@ -197,18 +260,41 @@ export function RecipientComposer({
   ) : null;
 
   // Le disque dit la vérité : il envoie, et il attend qu'il y ait quoi envoyer.
-  // Le micro de la direction reviendra quand la dictée existera (backlog) — un
-  // bouton qui ne fait rien n'est pas une promesse, c'est un mensonge au pouce.
-  const sendButton = (
+  // Avec la dictée, il est le MICRO tant qu'il n'y a rien à envoyer — et il
+  // reste la dictée (« Finir ») tant qu'elle est en cours.
+  const disqueDictee = micro && (enregistre || ecoute || !typing);
+  const discClass = cn(
+    "grid flex-none place-items-center rounded-full text-white shadow-disque transition-transform duration-(--dur-presse) active:scale-[0.97] disabled:opacity-60",
+    expanded ? "size-9" : "size-11",
+  );
+  const sendButton = disqueDictee ? (
+    <button
+      type="button"
+      onClick={d.basculer}
+      disabled={ecoute || !d.pret || sending || loading}
+      aria-label={enregistre ? "Finir la dictée" : "Dicter"}
+      className={cn(discClass, enregistre && "respire")}
+      style={{ background: "var(--degrade-disque)" }}
+    >
+      {enregistre ? (
+        <span
+          className={cn(
+            "block rounded-[4px] bg-white",
+            expanded ? "size-3.5" : "size-4",
+          )}
+          aria-hidden
+        />
+      ) : (
+        <Microphone className={expanded ? "size-[17px]" : "size-[20px]"} />
+      )}
+    </button>
+  ) : (
     <button
       type="button"
       onClick={send}
       disabled={blocked || !typing}
       aria-label="Envoyer"
-      className={cn(
-        "grid flex-none place-items-center rounded-full text-white shadow-disque transition-transform duration-(--dur-presse) active:scale-[0.97] disabled:opacity-60",
-        expanded ? "size-9" : "size-11",
-      )}
+      className={discClass}
       style={{ background: "var(--degrade-disque)" }}
     >
       <PaperPlaneRight className={expanded ? "size-[17px]" : "size-[19px]"} />
@@ -222,6 +308,36 @@ export function RecipientComposer({
         paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
       }}
     >
+      {/* La dictée (M22.3) : « Relvo écoute… », « Dicté — relisez avant
+          d'envoyer », ou la phrase d'un échec — jamais une erreur technique. */}
+      {phraseDictee && !showDraftBar ? (
+        <div
+          className="flex items-center gap-2 rounded-(--rayon-option) bg-relvo-pale px-3 py-1.5 text-[12.5px] font-medium text-relvo"
+          aria-live="polite"
+        >
+          <RelvoLogo
+            size={14}
+            variant="full"
+            title=""
+            className={cn("flex-none", ecoute && "animate-pulse")}
+          />
+          <span className="flex min-w-0 flex-1 items-center truncate">
+            {phraseDictee}
+            {ecoute ? <ThinkingDots /> : null}
+          </span>
+          {!ecoute ? (
+            <button
+              type="button"
+              onClick={() => setPhraseMasquee(d.phrase)}
+              aria-label="Masquer"
+              className="relative grid size-7 flex-none place-items-center rounded-full text-relvo before:absolute before:-inset-2 before:content-[''] active:bg-relvo-filet"
+            >
+              <X className="size-[16px]" strokeWidth={2.4} />
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
       {/* Brouillon de Relvo (M7.7) — étiqueté comme une suggestion modifiable,
           régénérable, effaçable ; jamais envoyé seul (05 §3.1). */}
       {showDraftBar ? (
@@ -286,13 +402,37 @@ export function RecipientComposer({
           )}
           style={{ background: "var(--fond-puce)" }}
         >
-          {loading ? (
-            // Relvo rédige : le champ montre des lignes qui respirent, pas un
-            // vide figé — le brouillon arrive en quelques secondes.
+          {enregistre ? (
+            // On enregistre : le compteur, et le geste pour finir.
+            <div
+              className={cn("min-w-0 flex-1 text-noir", FIELD_METRICS)}
+              role="status"
+              aria-label="Enregistrement en cours"
+            >
+              <span
+                className={cn(
+                  "chiffre",
+                  d.dureeS >= d.dureeMaxS - 10 && "text-(--attente-texte)",
+                )}
+              >
+                {formatDuree(d.dureeS)}
+              </span>
+              <span className="font-light text-gris">
+                {" "}
+                · {PHRASES_DICTEE.enregistre}
+              </span>
+            </div>
+          ) : loading || ecoute ? (
+            // Relvo rédige, ou écoute : le champ montre des lignes qui
+            // respirent, pas un vide figé — le texte arrive en quelques secondes.
             <div
               className="min-w-0 flex-1 space-y-2.5 py-2.5"
               role="status"
-              aria-label="Relvo rédige votre réponse"
+              aria-label={
+                ecoute
+                  ? "Relvo écoute votre dictée"
+                  : "Relvo rédige votre réponse"
+              }
             >
               {["88%", "72%", "52%"].map((w) => (
                 <span
@@ -328,11 +468,17 @@ export function RecipientComposer({
 
           {expanded ? (
             <div className="flex items-center justify-between gap-2 pt-1">
-              {attachButton ?? <span />}
+              <span className="flex items-center gap-2">
+                {attachButton}
+                {microDansLeChamp}
+              </span>
               {sendButton}
             </div>
           ) : (
-            attachButton
+            <>
+              {attachButton}
+              {microDansLeChamp}
+            </>
           )}
         </div>
 

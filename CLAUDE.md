@@ -129,7 +129,7 @@ relvo/
 | `/calendrier` | **Calendrier** — la page des **tâches** : indicateurs, semaine ou mois | onglet |
 | `/fil` | **Affaires** — indicateurs cliquables qui **sélectionnent** la liste, filtres par domaine, « à trier » | onglet |
 | `/conversations` · `/conversations/[id]` | **Conversations** — **seule surface d'affichage et de réponse** d'un fil | onglet |
-| `/relvo` · `/relvo/historique` | **Échange avec Relvo**, plein écran ; questions de Relvo en formulaires | **bouton central du dock** |
+| `/relvo` · `/relvo/historique` | **Échange avec Relvo**, plein écran ; questions de Relvo en formulaires ; **dictée** par le disque du composer (M22) — transcription posée en brouillon, jamais envoyée seule | **bouton central du dock** |
 | `/bilan` | **Bilan** — deux familles de chiffres, séparées | menu |
 | `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Mémoire** — instructions du compte, puis les domaines (Instructions / Documents / Affaires) | menu |
 | `/contacts` · `/contacts/[id]` · `/contacts/nouveau` | **Contacts** — annuaire et fiche | menu |

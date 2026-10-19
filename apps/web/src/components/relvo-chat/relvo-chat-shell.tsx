@@ -311,6 +311,7 @@ function RelvoSession({
         key={seedKey}
         placeholder="Écrire à Relvo…"
         defaultValue={seed}
+        dictee
         onSend={(text) => {
           // Un tour à la fois : le texte reste dans le champ tant que Relvo écrit.
           if (busy) return false;

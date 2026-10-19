@@ -6,8 +6,9 @@ titre_client: Parler à Relvo
 resume_client: >
   Dicter votre demande à Relvo plutôt que la taper : un appui sur le micro, vous parlez, le texte
   s'écrit et se corrige avant l'envoi. Pour la cuisine et le chantier, où l'on n'écrit pas.
-statut: en-cours
+statut: termine
 debut: 2026-10-19
+fin: 2026-10-19
 ---
 
 # M22 — Parler à Relvo
@@ -34,12 +35,12 @@ surface où Relvo agit : l'un sans l'autre laisse le téléphone dans la poche.
 
 | #     | Item                                                                                                                                                                                                                                       |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| M22.1 | **Le coût et la qualité d'abord** : benchmark des modèles de transcription sur dix dictées en français avec et sans vocabulaire, coût par minute inscrit aux tarifs (`config.ts`), **tier « transcription »** du client d'inférence, mesure en secondes d'audio dans le journal (`ia:journal`) |
-| M22.2 | **L'enregistrement dans le composer** : le disque de dictée de la direction artistique (`00-brief-da`), un appui pour parler, un appui pour finir, la durée qui s'affiche, la permission micro demandée **sur ce geste** ; `MediaRecorder` avec le format que le téléphone donne (iOS : `audio/mp4`) |
-| M22.3 | **La transcription vers le champ** : une route de l'échange qui reçoit l'audio et rend le texte ; le texte **se pose dans le composer**, se corrige, et part par Envoyer — jamais envoyé seul ; l'échec se dit dans le composer (« je n'ai pas compris, réessayez ») |
-| M22.4 | **Le vocabulaire du compte** : prénoms et entreprises des contacts, titres des affaires ouvertes, mots du secteur, passés en `prompt` et mots-clés — la couche Compte déjà assemblée, rien de nouveau à stocker |
-| M22.5 | **La garde** : durée maximale d'une dictée, coût par minute au disjoncteur (M14.5), aucune transcription si l'assistant est coupé                                                                                                             |
-| M22.6 | **Le même socle pour la messagerie** : M20.1 (dicter un message à un contact) réutilise l'enregistrement et la route, sans seconde implémentation                                                                                            |
+| M22.1 | ✅ **Le coût et la qualité d'abord** : benchmark des modèles de transcription sur dix dictées en français avec et sans vocabulaire, coût par minute inscrit aux tarifs (`config.ts`), **tier « transcription »** du client d'inférence, mesure en secondes d'audio dans le journal (`ia:journal`) |
+| M22.2 | ✅ **L'enregistrement dans le composer** : le disque de dictée de la direction artistique (`00-brief-da`), un appui pour parler, un appui pour finir, la durée qui s'affiche, la permission micro demandée **sur ce geste** ; `MediaRecorder` avec le format que le téléphone donne (iOS : `audio/mp4`) |
+| M22.3 | ✅ **La transcription vers le champ** : une route de l'échange qui reçoit l'audio et rend le texte ; le texte **se pose dans le composer**, se corrige, et part par Envoyer — jamais envoyé seul ; l'échec se dit dans le composer (« je n'ai pas compris, réessayez ») |
+| M22.4 | ✅ **Le vocabulaire du compte** : prénoms et entreprises des contacts, titres des affaires ouvertes, mots du secteur, passés en `prompt` et mots-clés — la couche Compte déjà assemblée, rien de nouveau à stocker |
+| M22.5 | ✅ **La garde** : durée maximale d'une dictée, coût par minute au disjoncteur (M14.5), aucune transcription si l'assistant est coupé                                                                                                             |
+| M22.6 | 📌 **Le même socle pour la messagerie** : M20.1 (dicter un message à un contact) réutilise l'enregistrement et la route, sans seconde implémentation                                                                                            |
 | M22.7 | **En réserve — la transcription en direct** par une session Realtime, si l'attente du mode fichier se révèle gênante en usage                                                                                                                 |
 
 ⚠️ **Le micro en PWA installée sur iPhone est à éprouver le premier jour** : `getUserMedia` et
@@ -47,5 +48,8 @@ surface où Relvo agit : l'un sans l'autre laisse le téléphone dans la poche.
 enregistrement coupé quand l'écran s'éteint). Le benchmark de M22.1 se fait depuis le téléphone,
 pas depuis un Mac.
 
-⚠️ **Un bouton sans effet se retire** (`02-composants.md`) : le disque de dictée ne revient dans le
-composer qu'avec M22.3 livré, pas avant.
+**Livré** (chantier `backlog/sprints/2026-10-m22-voix.md`) : le socle — `transcrire()`,
+`/api/relvo/dictee`, `transcrireDictee`, `useDictee`, `lib/dictee-enregistreur.ts` — est ce que
+M22.6 réutilise dans M20.1 ; le modèle retenu est celui du défaut de configuration, validé par
+le dirigeant sur l'iPhone, et `eval:dictee` reste pour comparer les candidats sur de vraies
+dictées le jour où la qualité le demande.

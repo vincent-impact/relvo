@@ -6,6 +6,7 @@
 
 ## 2026-10-19
 
+- **Nouveau** — Dans l'échange avec Relvo, vous pouvez dicter votre demande : un appui sur le micro, vous parlez, le texte s'écrit dans le champ, et vous le relisez ou le corrigez avant d'envoyer.
 - **Corrigé** — Sur iPhone, la zone claire qui apparaissait ou scintillait parfois sous la barre du bas a disparu.
 - **Nouveau** — L'inscription à Relvo reste libre, mais votre accès s'ouvre quand nous validons votre demande : vous recevez alors un e-mail pour vous connecter.
 - **Nouveau** — Dans Préférences, activez les notifications sur votre téléphone : vous recevez le brief du matin — réponses attendues, urgences, tâches du jour — et les questions de Relvo, même application fermée.

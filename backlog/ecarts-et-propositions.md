@@ -1016,6 +1016,40 @@ sans la voix et l'image, une part du courrier reste invisible au pipeline. Les a
 sont des dérivés gratuits de ce qui est déjà stocké : la situation structurée, le journal, les
 titres des sujets.
 
+### Parler à Relvo : un brouillon dicté, le vocabulaire du compte, le coût à la minute
+
+**`tranché`** · La voix entre dans l'échange (M22) par la **transcription de fichier**
+d'OpenAI, sur le socle de l'AI SDK déjà installé : on enregistre dans le navigateur avec le
+format que le téléphone donne, on envoie à la fin, le texte revient. **Jamais envoyé seul** :
+il se pose dans le composer comme un brouillon, relu, corrigé, envoyé par l'avion. L'audio ne
+quitte l'appareil que pour être transcrit et n'est conservé nulle part.
+
+- **Une minute par dictée**, pas deux : une dictée à Relvo est une demande, pas un mémo.
+  L'appareil s'arrête au plafond et transcrit ce qu'il a ; l'écran qui s'éteint ou l'app qui
+  passe en arrière-plan valent « un appui pour finir » — jamais de reprise sans geste.
+- **La transcription s'ajoute** au texte saisi, elle ne le remplace pas. D'où le micro qui
+  reste **dans le champ** quand on a commencé à taper : le disque est le micro champ vide,
+  l'avion dès qu'il y a quoi envoyer.
+- **Un tier « transcription »** à part des quatre tiers au jeton : pas de niveau de
+  raisonnement, pas de plafond de jetons, un **coût à la minute** dans une table dédiée, et
+  une ligne de journal par dictée qui porte les **secondes d'audio**. Le backoffice et
+  `ia:journal` les lisent ; aucun compteur, aucune clé, aucun projet OpenAI à part.
+- **Le vocabulaire du compte** — contacts complets d'abord, affaires ouvertes, un court
+  lexique par secteur — part en prompt de transcription, en prose bornée. C'est le vrai gain
+  sur la dictée du clavier : les noms s'écrivent juste. Son revers : sur un silence, le
+  modèle **recopie le prompt** ; un texte contenu dans le prompt n'est donc jamais une dictée
+  (`PITFALLS.md` #66).
+- **Le modèle** : le plus petit qui écrit juste les noms du compte, validé par le dirigeant
+  sur l'iPhone depuis la page d'essai du backoffice (`/admin/dictee`), qui porte le même
+  crochet et la même route que le composer. Le benchmark comparatif (`eval:dictee`, dictées
+  hors dépôt) reste disponible, il n'a pas été nécessaire pour trancher.
+- **Écartés** : la Web Speech API (inégale en PWA installée, audio chez un tiers) ; la
+  transcription en direct (Realtime), gardée en réserve si l'attente du mode fichier gênait à
+  l'usage — une dictée de dix secondes revient en deux.
+
+**Ce qui a tranché** : le public dicte plus qu'il n'écrit, et une alpha sans voix teste un
+produit que personne n'utilisera ainsi.
+
 ### Le mini backoffice : l'écran des méthodes du domaine, une suppression sans corbeille, une inscription qui attend sa validation
 
 **`tranché`** · Le backoffice (M21) n'ajoute aucune règle au produit : c'est l'écran des méthodes

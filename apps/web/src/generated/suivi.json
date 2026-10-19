@@ -164,7 +164,7 @@
     {
       "titre": "Parler à Relvo",
       "resume": "Dicter votre demande à Relvo plutôt que la taper : un appui sur le micro, vous parlez, le texte s'écrit et se corrige avant l'envoi. Pour la cuisine et le chantier, où l'on n'écrit pas.",
-      "statut": "en-cours",
+      "statut": "termine",
       "gauche": 65.42,
       "largeur": 0
     }
@@ -173,11 +173,15 @@
     "date": "2026-12-23",
     "gauche": 95.79
   },
-  "en_cours": "Parler à Relvo",
+  "en_cours": null,
   "journal": [
     {
       "date": "2026-10-19",
       "entrees": [
+        {
+          "type": "new",
+          "texte": "Dans l'échange avec Relvo, vous pouvez dicter votre demande : un appui sur le micro, vous parlez, le texte s'écrit dans le champ, et vous le relisez ou le corrigez avant d'envoyer."
+        },
         {
           "type": "fix",
           "texte": "Sur iPhone, la zone claire qui apparaissait ou scintillait parfois sous la barre du bas a disparu."
