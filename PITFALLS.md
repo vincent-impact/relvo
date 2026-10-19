@@ -520,6 +520,42 @@ suivre une silhouette se dessine **dans un SVG statique** (`feDropShadow` sur le
 formes), posé sous le contenu ; les onglets et le disque vivent au-dessus, hors de toute couche
 filtrée. Une ombre rectangulaire reste un `box-shadow`.
 
+### #66 — Sur un silence, un modèle de transcription aligné sur un prompt RECOPIE le prompt au lieu de rendre une chaîne vide
+
+**Symptôme** : une dictée muette (micro coupé, enregistrement vide, bruit) revient avec un
+texte propre et plausible — « Dictée en français de Admin Local. » — posé dans le composer
+comme un brouillon. Aucune erreur, un coût normal, et un mensonge au dirigeant.
+
+**Cause** : le `prompt` d'une transcription n'est pas une consigne mais un **amorçage** : le
+modèle continue le texte qu'on lui donne en s'alignant sur l'audio. Sans audio, il n'a que
+l'amorce — et la rend. C'est le prix du vocabulaire du compte dans le prompt (M22.4), qui
+est par ailleurs le vrai gain de la dictée.
+
+**Règle** : un texte **entièrement contenu dans le prompt** n'est jamais une dictée
+(`estEchoDuPrompt`, `server/ia/client.ts`) : c'est un échec `audio-vide`, qui porte sa
+mesure — les secondes ont été facturées — et le composer dit « Je n'ai pas compris ». Le
+test `ia-dictee.test.ts` tient la garde. Même réflexe pour tout modèle amorcé par un texte :
+vérifier que la sortie n'est pas l'entrée.
+
+### #67 — Le micro simulé de Chrome headless rend du SILENCE, même avec un fichier WAV en entrée
+
+**Symptôme** : `--use-fake-device-for-media-stream --use-file-for-fake-audio-capture=<wav>`
+donne bien une piste, `MediaRecorder` enregistre, mais le fichier produit pèse quelques
+kilo-octets pour dix secondes et la transcription n'entend rien (cf. #66). Rien ne signale
+que le WAV n'est pas joué.
+
+**Cause** : en `--headless=new`, le périphérique audio simulé ne lit pas le fichier (ou pas
+dans le format attendu) ; il produit des trames vides. Le diagnostic « le micro marche »
+(`getUserMedia` résout, `isTypeSupported` répond vrai) est juste et ne dit rien du contenu.
+
+**Règle** : pour rejouer une dictée en headless, **injecter le micro dans la page** : un
+script posé par CDP avant la navigation (`Page.addScriptToEvaluateOnNewDocument`) remplace
+`navigator.mediaDevices.getUserMedia` par un `AudioContext` qui décode le WAV et rend
+`createMediaStreamDestination().stream` ; Chrome lancé avec
+`--autoplay-policy=no-user-gesture-required`, sinon `AudioContext.resume()` ne rend jamais la
+main et le geste reste au repos. Vérifier la **taille** de l'enregistrement produit avant de
+conclure quoi que ce soit sur la transcription.
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -536,6 +572,7 @@ filtrée. Une ombre rectangulaire reste un `box-shadow`.
 | **Zod** | #42 |
 | **React** | #41 |
 | **WebKit (iOS)** | #65 |
+| **Chrome headless** | #67 |
 
 Les pièges **#3, #12, #13, #17, #24, #25, #26** relèvent de la **plateforme de déploiement**, pas
 d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revérifier dans la
