@@ -164,6 +164,7 @@ export function briefCompte(b: BriefCompte): string {
   return [
     `# Aujourd'hui sur le compte`,
     `Sujets ouverts : ${b.sujetsOuverts} · tâches du jour : ${b.tachesDuJour} · en retard : ${b.tachesEnRetard} · conversations à trier : ${b.conversationsATrier}`,
+    `Messages reçus : ${b.messagesRecusAujourdhui} aujourd'hui · ${b.messagesRecus7j} sur sept jours`,
     `## Sujets urgents`,
     urgents.length ? urgents.join("\n") : `Aucun.`,
   ].join("\n");

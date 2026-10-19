@@ -14,6 +14,9 @@ import {
   prisma,
   reopenTask,
   resolveSubject,
+  getBriefProjection,
+  instantDebutJourParis,
+  instantFinJourParis,
   searchMessages,
   tenantDb,
   updateNote,
@@ -227,10 +230,14 @@ describe("la recherche de messages de l'échange", () => {
         subjectLine: i === 2 ? "Divers" : "Livraison sauce blanche",
         content: texte,
       });
-      // Un ordre certain : les horodatages se suivent d'un jour.
+      // Un ordre certain : les réceptions se suivent d'un jour, à minuit UTC —
+      // soit deux heures du matin à Paris, en octobre.
       await prisma.message.update({
         where: { id: message.id },
-        data: { createdAt: new Date(Date.UTC(2026, 9, 10 + i)) },
+        data: {
+          createdAt: new Date(Date.UTC(2026, 9, 10 + i)),
+          receivedAt: new Date(Date.UTC(2026, 9, 10 + i)),
+        },
       });
     }
     const trouves = await searchMessages(db, { recherche: "livraison" });
@@ -248,10 +255,89 @@ describe("la recherche de messages de l'échange", () => {
     expect(
       await searchMessages(db, { recherche: "Karim camion" }),
     ).toHaveLength(0);
-    expect(await searchMessages(db, { recherche: "   " })).toEqual([]);
     expect(
       await searchMessages(db, { recherche: "karim", limite: 2 }),
     ).toHaveLength(2);
+
+    // L'horodatage rendu est à l'heure FRANÇAISE (PITFALLS #55) : minuit UTC
+    // le 12 octobre, c'est 02:00 à Paris.
+    expect(trouves[0]!.recuLe).toBe("2026-10-11 02:00");
+
+    // Sans aucun critère : les derniers messages, les plus récents d'abord.
+    const tous = await searchMessages(db, {});
+    expect(tous.map((m) => m.extrait)).toEqual([
+      "Autre chose",
+      "Relance livraison",
+      "Première livraison décalée",
+    ]);
+    expect(await searchMessages(db, { recherche: "   " })).toHaveLength(3);
+
+    // Une plage de jours français, posée par ses bornes.
+    expect(
+      await searchMessages(db, {
+        depuis: instantDebutJourParis("2026-10-11"),
+      }),
+    ).toHaveLength(2);
+    expect(
+      await searchMessages(db, {
+        jusquA: instantFinJourParis("2026-10-10"),
+      }),
+    ).toHaveLength(1);
+    expect(
+      await searchMessages(db, {
+        depuis: instantDebutJourParis("2026-10-11"),
+        jusquA: instantFinJourParis("2026-10-11"),
+      }),
+    ).toHaveLength(1);
+    expect(
+      await searchMessages(db, {
+        depuis: instantDebutJourParis("2026-10-13"),
+      }),
+    ).toHaveLength(0);
+
+    // L'expéditeur, par son nom ou son adresse ; le sens.
+    expect(await searchMessages(db, { expediteur: "sogood" })).toHaveLength(3);
+    expect(await searchMessages(db, { expediteur: "Benali" })).toHaveLength(3);
+    expect(await searchMessages(db, { expediteur: "inconnu" })).toHaveLength(0);
+    expect(await searchMessages(db, { sens: "entrant" })).toHaveLength(3);
+    expect(await searchMessages(db, { sens: "sortant" })).toHaveLength(0);
+  });
+
+  it("le brief compte les messages reçus depuis minuit à Paris, et sur sept jours", async () => {
+    const { account, db } = await makeAccount("echange-brief-messages@test.fr");
+    const channel = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "Boîte email",
+        type: "email",
+        identifier: "contact@tastycrousty.fr",
+      },
+    });
+    // « Maintenant » : le 19 octobre 2026 à 10 h 58 à Paris (08:58 UTC).
+    const now = new Date("2026-10-19T08:58:00.000Z");
+    const recus = [
+      new Date("2026-10-19T06:58:00.000Z"), // 08:58 à Paris — aujourd'hui
+      new Date("2026-10-18T22:30:00.000Z"), // 00:30 à Paris le 19 — aujourd'hui
+      new Date("2026-10-18T21:30:00.000Z"), // 23:30 à Paris le 18 — hier
+      new Date("2026-10-05T10:00:00.000Z"), // il y a deux semaines
+    ];
+    for (const [i, receivedAt] of recus.entries()) {
+      const { message } = await ingestInboundEmail(db, {
+        channelId: channel.id,
+        externalId: `brief-${i}`,
+        senderRaw: "carole@telegrafik.eu",
+        senderName: "Carole Garat",
+        subjectLine: "Point",
+        content: `Message ${i}`,
+      });
+      await prisma.message.update({
+        where: { id: message.id },
+        data: { receivedAt },
+      });
+    }
+    const brief = await getBriefProjection(db, now);
+    expect(brief.messagesRecusAujourdhui).toBe(2);
+    expect(brief.messagesRecus7j).toBe(3);
   });
 });
 

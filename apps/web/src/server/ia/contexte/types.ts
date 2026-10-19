@@ -170,6 +170,9 @@ export type BriefCompte = {
   tachesDuJour: number;
   tachesEnRetard: number;
   conversationsATrier: number;
+  /** Messages reçus depuis minuit (heure française), et sur sept jours. */
+  messagesRecusAujourdhui: number;
+  messagesRecus7j: number;
 };
 
 /** Ce qu'il faut pour fabriquer une fiche de CLÔTURE — sans appel au modèle. */

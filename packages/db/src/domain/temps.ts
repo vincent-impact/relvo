@@ -94,6 +94,28 @@ export function debutDuJourParis(at: Date = new Date()): Date {
   return new Date(Date.UTC(c.annee, c.mois - 1, c.jour));
 }
 
+/**
+ * L'INSTANT de minuit à Paris au début d'un jour civil français — ce qu'il
+ * faut pour comparer à un horodatage réel (`Message.received_at`) : « reçu
+ * aujourd'hui » commence à minuit heure française, pas à minuit UTC.
+ */
+export function instantDebutJourParis(jour: string): Date {
+  const repere = new Date(`${jour}T00:00:00.000Z`);
+  const c = calendrierParis(repere);
+  // À minuit UTC, Paris est déjà dans la journée (une ou deux heures) : on
+  // recule d'autant pour retomber sur minuit français.
+  const avance = (c.heures * 60 + c.minutes) * 60_000;
+  return new Date(repere.getTime() - avance);
+}
+
+/** La dernière milliseconde d'un jour civil français. */
+export function instantFinJourParis(jour: string): Date {
+  const lendemain = new Date(`${jour}T00:00:00.000Z`);
+  lendemain.setUTCDate(lendemain.getUTCDate() + 1);
+  const j = `${lendemain.getUTCFullYear()}-${pad(lendemain.getUTCMonth() + 1)}-${pad(lendemain.getUTCDate())}`;
+  return new Date(instantDebutJourParis(j).getTime() - 1);
+}
+
 /** Une date nue (`AAAA-MM-JJ`) → la valeur stockée pour ce jour de calendrier. */
 export function dateNue(jour: string): Date {
   return new Date(`${jour}T00:00:00.000Z`);

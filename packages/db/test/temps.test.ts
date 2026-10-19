@@ -6,6 +6,8 @@ import {
   horodatageParis,
   jourDecale,
   jourParis,
+  instantDebutJourParis,
+  instantFinJourParis,
 } from "../src/domain/temps";
 
 // L'HEURE DE RELVO EST L'HEURE FRANÇAISE (PITFALLS #55). Ce test tient la
@@ -89,5 +91,25 @@ describe("le jour civil français", () => {
     expect(jourDecale(veille, 2).toISOString()).toBe(
       "2026-10-26T00:00:00.000Z",
     );
+  });
+});
+
+describe("les bornes d'un jour civil français, en instants", () => {
+  it("minuit à Paris, c'est 22 h UTC la veille en été et 23 h en hiver", () => {
+    expect(instantDebutJourParis("2026-10-19").toISOString()).toBe(
+      "2026-10-18T22:00:00.000Z",
+    );
+    expect(instantDebutJourParis("2026-01-10").toISOString()).toBe(
+      "2026-01-09T23:00:00.000Z",
+    );
+    expect(instantFinJourParis("2026-10-19").toISOString()).toBe(
+      "2026-10-19T21:59:59.999Z",
+    );
+    // Le jour de la bascule d'octobre dure vingt-cinq heures.
+    expect(
+      instantFinJourParis("2026-10-25").getTime() -
+        instantDebutJourParis("2026-10-25").getTime() +
+        1,
+    ).toBe(25 * 3_600_000);
   });
 });

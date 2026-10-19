@@ -60,6 +60,7 @@ async function resoudre(
     return "";
   })();
   out = out.replace(/\{\{lundi\}\}/g, prochainLundi);
+  out = out.replace(/\{\{aujourdhui\}\}/g, jourParis(now));
   out = out.replace(
     /\{\{demain\}\}/g,
     jourDecale(now, 1).toISOString().slice(0, 10),

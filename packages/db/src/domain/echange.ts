@@ -6,6 +6,7 @@ import {
   TaskKind,
   TaskStatus,
 } from "../generated/prisma/enums";
+import { MessageDirection } from "../generated/prisma/enums";
 import type { TenantDb } from "../tenant";
 import { cancelAction } from "./actions";
 import type { Origine } from "./events";
@@ -27,7 +28,13 @@ import {
   type StructurationDomainProjection,
   type SubjectSheetProjection,
 } from "./structuration";
-import { dateNue, debutDuJourParis } from "./temps";
+import {
+  dateNue,
+  debutDuJourParis,
+  horodatageParis,
+  instantDebutJourParis,
+  jourParis,
+} from "./temps";
 import type { TriageAccountProjection } from "./triage";
 
 // Domaine ÉCHANGE (M10) — ce que l'échange avec Relvo LIT en base pour parler
@@ -46,6 +53,10 @@ export type BriefProjection = {
   tachesDuJour: number;
   tachesEnRetard: number;
   conversationsATrier: number;
+  /** Messages reçus depuis minuit, heure française. */
+  messagesRecusAujourdhui: number;
+  /** Messages reçus sur les sept derniers jours. */
+  messagesRecus7j: number;
 };
 
 export type EchangeProjection = {
@@ -70,21 +81,37 @@ export async function getBriefProjection(
   db: TenantDb,
   now: Date = new Date(),
 ): Promise<BriefProjection> {
-  const [kpis, urgents, enRetard] = await Promise.all([
-    getKpis(db, { now }),
-    db.subject.findMany({
-      where: { status: SubjectStatus.open, priority: Priority.urgent },
-      select: { reference: true, title: true, waitingForReply: true },
-      orderBy: { lastActivityAt: "desc" },
-      take: BRIEF_URGENT_MAX,
-    }),
-    db.task.count({
-      where: {
-        status: TaskStatus.open,
-        startDate: { lt: debutDuJourParis(now) },
-      },
-    }),
-  ]);
+  const [kpis, urgents, enRetard, recusAujourdhui, recus7j] = await Promise.all(
+    [
+      getKpis(db, { now }),
+      db.subject.findMany({
+        where: { status: SubjectStatus.open, priority: Priority.urgent },
+        select: { reference: true, title: true, waitingForReply: true },
+        orderBy: { lastActivityAt: "desc" },
+        take: BRIEF_URGENT_MAX,
+      }),
+      db.task.count({
+        where: {
+          status: TaskStatus.open,
+          startDate: { lt: debutDuJourParis(now) },
+        },
+      }),
+      // « Reçu aujourd'hui » commence à minuit à Paris (PITFALLS #55), sur
+      // l'horodatage de réception — pas sur l'instant d'ingestion.
+      db.message.count({
+        where: {
+          direction: MessageDirection.incoming,
+          receivedAt: { gte: instantDebutJourParis(jourParis(now)) },
+        },
+      }),
+      db.message.count({
+        where: {
+          direction: MessageDirection.incoming,
+          receivedAt: { gte: new Date(now.getTime() - 7 * 86_400_000) },
+        },
+      }),
+    ],
+  );
   return {
     sujetsOuverts: kpis.openSubjects,
     sujetsUrgents: urgents.map((s) => ({
@@ -95,6 +122,8 @@ export async function getBriefProjection(
     tachesDuJour: kpis.tasksToday,
     tachesEnRetard: enRetard,
     conversationsATrier: kpis.unsortedConversations,
+    messagesRecusAujourdhui: recusAujourdhui,
+    messagesRecus7j: recus7j,
   };
 }
 
@@ -188,7 +217,7 @@ export type MessageTrouve = {
   affaire: string | null;
   sens: "entrant" | "sortant";
   expediteur: string | null;
-  /** ISO 8601. */
+  /** Heure FRANÇAISE, « AAAA-MM-JJ HH:MM » : c'est ce que le modèle lit et ce qu'il répète (PITFALLS #55). */
   recuLe: string;
   objet: string | null;
   /** Les premiers mots du contenu, bornés. */
@@ -197,38 +226,115 @@ export type MessageTrouve = {
 
 /** Messages rendus au plus par une recherche de l'échange. */
 export const SEARCH_MESSAGES_MAX = 20;
+/** Lus en base avant le tri par date de réception, puis coupés à `limite`. */
+const SEARCH_MESSAGES_FETCH = 60;
 const EXTRAIT_MAX = 240;
 
+export type RechercheMessages = {
+  /** Des mots de l'objet, du texte ou de l'expéditeur ; vide = pas de critère de texte. */
+  recherche?: string | null;
+  /** Bornes sur l'INSTANT de réception (ou d'envoi) — à calculer en heure française. */
+  depuis?: Date | null;
+  jusquA?: Date | null;
+  /** Un nom ou une adresse d'expéditeur. */
+  expediteur?: string | null;
+  sens?: "entrant" | "sortant" | null;
+  limite?: number;
+};
+
+/** L'instant d'un message : reçu, sinon envoyé, sinon ingéré. */
+function instantDuMessage(m: {
+  receivedAt: Date | null;
+  sentAt: Date | null;
+  createdAt: Date;
+}): Date {
+  return m.receivedAt ?? m.sentAt ?? m.createdAt;
+}
+
 /**
- * La recherche de messages de l'échange (`search_messages`, 05 §11.6) : une
- * requête bornée sur l'objet, le texte brut et l'expéditeur, mot à mot — pas
- * de recherche vectorielle (invariant 29). Les plus récents d'abord.
+ * La recherche de messages de l'échange (`search_messages`, 05 §11.6) :
+ * mot à mot sur l'objet, le texte brut et l'expéditeur — pas de recherche
+ * vectorielle (invariant 29) —, et des FILTRES que le modèle peut poser sans
+ * inventer un mot-clé : une plage de jours, un expéditeur, un sens. Sans
+ * aucun critère, les derniers messages. Les plus récents d'abord, par
+ * instant de réception.
  */
 export async function searchMessages(
   db: TenantDb,
-  args: { recherche: string; limite?: number },
+  args: RechercheMessages,
 ): Promise<MessageTrouve[]> {
   // Chaque mot doit se trouver quelque part — objet, texte ou expéditeur —,
   // pas la phrase entière : « Karim sauce blanche » retrouve le message de
   // Karim qui parle de sauce blanche.
-  const mots = args.recherche
+  const mots = (args.recherche ?? "")
     .trim()
     .split(/\s+/)
     .filter((m) => m.length > 1);
-  if (mots.length === 0) return [];
   const take = Math.min(Math.max(args.limite ?? 10, 1), SEARCH_MESSAGES_MAX);
+  const plage =
+    args.depuis || args.jusquA
+      ? {
+          ...(args.depuis ? { gte: args.depuis } : {}),
+          ...(args.jusquA ? { lte: args.jusquA } : {}),
+        }
+      : null;
+  const expediteur = args.expediteur?.trim() || null;
   const rows = await db.message.findMany({
     where: {
-      AND: mots.map((mot) => ({
-        OR: [
-          { subjectLine: { contains: mot, mode: "insensitive" as const } },
-          { content: { contains: mot, mode: "insensitive" as const } },
-          { senderName: { contains: mot, mode: "insensitive" as const } },
-        ],
-      })),
+      AND: [
+        ...mots.map((mot) => ({
+          OR: [
+            { subjectLine: { contains: mot, mode: "insensitive" as const } },
+            { content: { contains: mot, mode: "insensitive" as const } },
+            { senderName: { contains: mot, mode: "insensitive" as const } },
+          ],
+        })),
+        ...(expediteur
+          ? [
+              {
+                OR: [
+                  {
+                    senderName: {
+                      contains: expediteur,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                  {
+                    senderRaw: {
+                      contains: expediteur,
+                      mode: "insensitive" as const,
+                    },
+                  },
+                ],
+              },
+            ]
+          : []),
+        ...(args.sens
+          ? [
+              {
+                direction:
+                  args.sens === "sortant"
+                    ? MessageDirection.outgoing
+                    : MessageDirection.incoming,
+              },
+            ]
+          : []),
+        // La plage porte sur l'instant du message : reçu, sinon envoyé, sinon ingéré.
+        ...(plage
+          ? [
+              {
+                OR: [
+                  { receivedAt: plage },
+                  { receivedAt: null, sentAt: plage },
+                  { receivedAt: null, sentAt: null, createdAt: plage },
+                ],
+              },
+            ]
+          : []),
+      ],
     },
     orderBy: [{ createdAt: "desc" }],
-    take,
+    take: SEARCH_MESSAGES_FETCH,
     select: {
       id: true,
       conversationId: true,
@@ -237,28 +343,37 @@ export async function searchMessages(
       senderName: true,
       senderRaw: true,
       createdAt: true,
+      receivedAt: true,
+      sentAt: true,
       subjectLine: true,
       content: true,
       conversation: { select: { title: true } },
       subject: { select: { title: true } },
     },
   });
-  return rows.map((m) => {
-    const texte = (m.content ?? "").replace(/\s+/g, " ").trim();
-    return {
-      id: m.id,
-      conversationId: m.conversationId,
-      conversation: m.conversation.title,
-      subjectId: m.subjectId,
-      affaire: m.subject?.title ?? null,
-      sens: m.direction === "outgoing" ? "sortant" : "entrant",
-      expediteur: m.senderName ?? m.senderRaw,
-      recuLe: m.createdAt.toISOString(),
-      objet: m.subjectLine,
-      extrait:
-        texte.length > EXTRAIT_MAX ? `${texte.slice(0, EXTRAIT_MAX)}…` : texte,
-    };
-  });
+  return rows
+    .sort(
+      (a, b) => instantDuMessage(b).getTime() - instantDuMessage(a).getTime(),
+    )
+    .slice(0, take)
+    .map((m) => {
+      const texte = (m.content ?? "").replace(/\s+/g, " ").trim();
+      return {
+        id: m.id,
+        conversationId: m.conversationId,
+        conversation: m.conversation.title,
+        subjectId: m.subjectId,
+        affaire: m.subject?.title ?? null,
+        sens: m.direction === "outgoing" ? "sortant" : "entrant",
+        expediteur: m.senderName ?? m.senderRaw,
+        recuLe: horodatageParis(instantDuMessage(m)),
+        objet: m.subjectLine,
+        extrait:
+          texte.length > EXTRAIT_MAX
+            ? `${texte.slice(0, EXTRAIT_MAX)}…`
+            : texte,
+      };
+    });
 }
 
 // ─────────────────────────────────────────────────────────────

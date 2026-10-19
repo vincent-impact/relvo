@@ -8,3 +8,5 @@
 {"id":"E8","question":"Retrouve ce que Karim a dit sur la sauce blanche","from":"/","attendu":{"outil":"search_messages","tier":"extraction"}}
 {"id":"E9","question":"Qui est Karim Benali ?","from":"/","attendu":{"outil":"get_contact","tier":"extraction"}}
 {"id":"E10","question":"Marque l'affaire du renfort samedi soir comme urgente","from":"/","attendu":{"outil":"update_subject_priority","args":{"urgent":true},"tier":"raisonnement"}}
+{"id":"E11","question":"Est-ce que j'ai reçu un email aujourd'hui ?","from":"/","attendu":{"outil":"search_messages","args":{"depuis":"{{aujourdhui}}"},"tier":"extraction","note":"pas un mot-clé inventé : le filtre de jour, à la date du contexte"}}
+{"id":"E12","question":"De quelle date date mon dernier email ?","from":"/","attendu":{"outil":"search_messages","note":"sans mot-clé : les derniers messages, l'horodatage rendu est à l'heure française"}}

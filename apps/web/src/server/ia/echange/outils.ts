@@ -43,6 +43,7 @@ import {
 } from "@/components/shared/subject-row";
 import { type TaskItemData, toTaskItemData } from "@/lib/task-item-data";
 import type { ResultatBrouillon } from "../pipeline/brouillon";
+import { instantDebutJourParis, instantFinJourParis } from "@relvo/db/temps";
 import { ficheSujet } from "../contexte";
 import {
   DATE_NUE,
@@ -468,7 +469,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     get_kpis: tool({
       description:
-        "Les compteurs du jour : affaires ouvertes, urgentes, tâches du jour, en retard, conversations à trier. Pour une question chiffrée.",
+        "Les compteurs du jour : affaires ouvertes, urgentes, tâches du jour, en retard, conversations à trier, messages reçus aujourd'hui et sur sept jours. Pour une question chiffrée.",
       inputSchema: z.object({}),
       execute: async (): Promise<SortieOutil> => {
         try {
@@ -483,6 +484,14 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
               {
                 libelle: "Conversations à trier",
                 valeur: b.conversationsATrier,
+              },
+              {
+                libelle: "Messages reçus aujourd'hui",
+                valeur: b.messagesRecusAujourdhui,
+              },
+              {
+                libelle: "Messages reçus sur sept jours",
+                valeur: b.messagesRecus7j,
               },
             ],
           };
@@ -549,17 +558,38 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     search_messages: tool({
       description:
-        "Cherche dans les messages reçus et envoyés : un mot de l'objet, du texte ou le nom de l'expéditeur. Rend les plus récents. Pour « qu'a dit X à propos de Y », « retrouve le mail sur… ».",
+        "Les messages reçus et envoyés, les plus récents d'abord. Sans aucun critère : les derniers messages. `recherche` : des mots de l'objet, du texte ou de l'expéditeur — jamais une date ni « email ». `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française, pour « aujourd'hui », « hier », « cette semaine » (la date du jour est dans le contexte). `expediteur` : un nom ou une adresse. `sens` : entrant ou sortant. Les horodatages rendus sont à l'heure française.",
       inputSchema: z.object({
-        recherche: z.string(),
+        recherche: z.string().nullable(),
+        depuis: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .nullable(),
+        jusquAu: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .nullable(),
+        expediteur: z.string().nullable(),
+        sens: z.enum(["entrant", "sortant"]).nullable(),
         limite: z.number().int().min(1).max(20).nullable(),
       }),
-      execute: async ({ recherche, limite }): Promise<SortieOutil> => {
+      execute: async ({
+        recherche,
+        depuis,
+        jusquAu,
+        expediteur,
+        sens,
+        limite,
+      }): Promise<SortieOutil> => {
         try {
           return {
             type: "messages",
             messages: await searchMessages(db, {
               recherche,
+              depuis: depuis ? instantDebutJourParis(depuis) : null,
+              jusquA: jusquAu ? instantFinJourParis(jusquAu) : null,
+              expediteur,
+              sens,
               limite: limite ?? 10,
             }),
           };

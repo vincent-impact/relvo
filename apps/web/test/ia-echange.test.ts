@@ -65,6 +65,8 @@ const brief: BriefCompte = {
   tachesDuJour: 3,
   tachesEnRetard: 2,
   conversationsATrier: 4,
+  messagesRecusAujourdhui: 3,
+  messagesRecus7j: 21,
 };
 
 const sujet: SujetContexte = {

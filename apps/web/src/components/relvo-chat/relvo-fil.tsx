@@ -189,11 +189,7 @@ function Messages({ messages }: { messages: MessageTrouve[] }) {
               {m.sens === "sortant" ? "Moi" : (m.expediteur ?? "Externe")}
             </span>
             <span className="flex-none text-[12px] font-normal text-gris">
-              {new Date(m.recuLe).toLocaleDateString("fr-FR", {
-                day: "numeric",
-                month: "short",
-                timeZone: "Europe/Paris",
-              })}
+              {jourCourt(m.recuLe)}
             </span>
           </span>
           {m.objet ? (
@@ -562,5 +558,13 @@ export function RelvoFil({
         <BlocErreur message={error?.message} onRetry={onRetry} />
       ) : null}
     </div>
+  );
+}
+
+/** « 19 oct. » depuis un horodatage français « AAAA-MM-JJ HH:MM » (PITFALLS #55), sans parser d'instant. */
+function jourCourt(horodatage: string): string {
+  return new Date(`${horodatage.slice(0, 10)}T12:00:00Z`).toLocaleDateString(
+    "fr-FR",
+    { day: "numeric", month: "short", timeZone: "UTC" },
   );
 }
