@@ -6,6 +6,7 @@
 
 ## 2026-10-19
 
+- **Nouveau** — L'inscription à Relvo reste libre, mais votre accès s'ouvre quand nous validons votre demande : vous recevez alors un e-mail pour vous connecter.
 - **Nouveau** — Dans Préférences, activez les notifications sur votre téléphone : vous recevez le brief du matin — réponses attendues, urgences, tâches du jour — et les questions de Relvo, même application fermée.
 
 ## 2026-10-15
