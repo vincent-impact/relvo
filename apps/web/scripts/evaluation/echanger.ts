@@ -9,7 +9,7 @@
 // sont RÉELLES sur le compte visé : le compte de démonstration par défaut.
 //
 // Usage :
-//   pnpm --filter web eval:echange [--compte demo@tastycrousty.fr] [--cas E1,E5] [--jeu jeu/echange/cas.jsonl]
+//   pnpm --filter web eval:echange [--compte demo@tastycrousty.fr] [--cas E1,E5] [--jeu jeu/echange/cas.jsonl] [--reponses]
 
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -178,9 +178,19 @@ async function main() {
     const reussi = outilOk && argsOk && tierOk;
     total++;
     if (reussi) ok++;
+    // Les arguments réellement passés se lisent toujours : c'est eux qui
+    // disent pourquoi un outil n'a rien trouvé.
+    const argsVus = appels
+      .map((a) => JSON.stringify(a.args).slice(0, 60))
+      .join(" → ");
     console.log(
-      `| ${c.id} ${reussi ? "✅" : "❌"} | ${question.slice(0, 48)} | ${attendus.join(" ou ") || "—"} | ${appels.map((a) => a.nom).join(" → ") || "aucun"} | ${argsOk ? "ok" : `≠ ${JSON.stringify(premier?.args ?? null).slice(0, 80)}`} | ${c.attendu.tier ?? "—"} | ${tour.tier} | ${m.cout.eur.toFixed(4)} | ${m.jetons.cacheLecture}/${tour.prefixeStable} | ${m.dureeMs} |`,
+      `| ${c.id} ${reussi ? "✅" : "❌"} | ${question.slice(0, 48)} | ${attendus.join(" ou ") || "—"} | ${appels.map((a) => a.nom).join(" → ") || "aucun"} | ${argsOk ? argsVus || "—" : `≠ ${argsVus}`} | ${c.attendu.tier ?? "—"} | ${tour.tier} | ${m.cout.eur.toFixed(4)} | ${m.jetons.cacheLecture}/${tour.prefixeStable} | ${m.dureeMs} |`,
     );
+    if (process.argv.includes("--reponses")) {
+      console.log(
+        `  ↳ ${(await flux.text).replace(/\s+/g, " ").slice(0, 300)}`,
+      );
+    }
   }
   console.log(`\n${ok}/${total} cas réussis.`);
 }
