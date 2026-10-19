@@ -9,7 +9,11 @@ import {
   createSubject,
   deleteAccount,
   getAccountForAdmin,
+  getAccountJournal,
+  getAdminOverview,
   listAccountsForAdmin,
+  listAiFailures,
+  logAiFailure,
   logAiSolicitation,
   prisma,
   savePushSubscription,
@@ -347,5 +351,159 @@ describe("deleteAccount — définitif, tracé chez l'administrateur", () => {
         unipile: { deconnectes: [], echecs: [] },
       }),
     ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  });
+});
+
+describe("la fiche d'un compte — le journal rendu (M21.3)", () => {
+  it("rend la synthèse par sollicitation, les échecs, le journal récent, les rattrapages et les questions", async () => {
+    const now = new Date("2026-10-21T12:00:00Z");
+    const { account, db } = await makeAccount("fiche@test.fr");
+    await logAiSolicitation(db, {
+      ...sollicitation,
+      cout: { eur: 0.001, usd: 0.0012, version: "v" },
+    });
+    await logAiSolicitation(db, {
+      ...sollicitation,
+      sollicitation: "echange",
+      tier: "raisonnement",
+      cout: { eur: 0.01, usd: 0.012, version: "v" },
+    });
+    await logAiFailure(db, {
+      sollicitation: "echange",
+      motif: "entree-trop-longue",
+      detail: "le contexte dépasse le plafond",
+      tier: "raisonnement",
+    });
+    await askQuestion(db, { scope: "account", text: "Vos secteurs ?" });
+    const channel = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "Gmail",
+        type: "email",
+        identifier: "fiche@test.fr",
+      },
+    });
+    await prisma.channelCatchup.create({
+      data: {
+        accountId: account.id,
+        channelId: channel.id,
+        status: "failed",
+        since: new Date("2026-10-01T00:00:00Z"),
+        lastError: "boîte injoignable",
+      },
+    });
+
+    const fiche = await getAccountJournal(account.id, { now });
+    expect(fiche.synthese.map((s) => s.sollicitation)).toEqual([
+      "echange",
+      "tri",
+    ]);
+    expect(fiche.synthese[0].coutEur).toBeCloseTo(0.01, 6);
+    expect(fiche.nonMesures).toBe(2);
+    expect(fiche.echecs).toHaveLength(1);
+    expect(fiche.echecs[0]).toMatchObject({
+      sollicitation: "echange",
+      motif: "entree-trop-longue",
+      detail: "le contexte dépasse le plafond",
+      tier: "raisonnement",
+    });
+    expect(fiche.questions.map((q) => q.text)).toEqual(["Vos secteurs ?"]);
+    expect(fiche.rattrapages).toEqual([
+      expect.objectContaining({
+        channelName: "Gmail",
+        status: "failed",
+        lastError: "boîte injoignable",
+      }),
+    ]);
+    // Le journal récent, du plus récent au plus ancien, toutes entrées confondues.
+    expect(fiche.journal.length).toBeGreaterThanOrEqual(4);
+    expect(fiche.journal[0].at.getTime()).toBeGreaterThanOrEqual(
+      fiche.journal[fiche.journal.length - 1].at.getTime(),
+    );
+    expect(fiche.journal.map((e) => e.eventType)).toContain(
+      EVENT_TYPES.iaEchec,
+    );
+  });
+
+  it("listAiFailures borne par la date et la limite", async () => {
+    const { db } = await makeAccount("echecs@test.fr");
+    for (let i = 0; i < 3; i++) {
+      await logAiFailure(db, {
+        sollicitation: "echange",
+        motif: "inconnu",
+        detail: `n°${i}`,
+      });
+    }
+    expect(
+      await listAiFailures(db, { since: new Date(0), limit: 2 }),
+    ).toHaveLength(2);
+    expect(
+      await listAiFailures(db, {
+        since: new Date(Date.now() + 60_000),
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe("la vue d'ensemble (M21.5)", () => {
+  it("additionne le mois en cours sur tous les comptes et compte actifs, attentes, échecs", async () => {
+    const now = new Date("2026-10-21T12:00:00Z");
+    const { account: a, db: dbA } = await makeAccount("vue-a@test.fr", {
+      activatedAt: now,
+    });
+    const { db: dbB } = await makeAccount("vue-b@test.fr", {
+      activatedAt: now,
+    });
+    await makeAccount("vue-attente@test.fr");
+
+    const dansLeMois = await logAiSolicitation(dbA, {
+      ...sollicitation,
+      cout: { eur: 0.5, usd: 0.58, version: "v" },
+    });
+    const moisDernier = await logAiSolicitation(dbA, {
+      ...sollicitation,
+      cout: { eur: 9, usd: 10, version: "v" },
+    });
+    await logAiSolicitation(dbB, {
+      ...sollicitation,
+      cout: { eur: 0.25, usd: 0.29, version: "v" },
+    });
+    await prisma.eventLog.update({
+      where: { id: dansLeMois.id },
+      data: { createdAt: new Date("2026-10-02T10:00:00Z") },
+    });
+    await prisma.eventLog.update({
+      where: { id: moisDernier.id },
+      data: { createdAt: new Date("2026-09-29T10:00:00Z") },
+    });
+    await logAiFailure(dbA, {
+      sollicitation: "echange",
+      motif: "plafond-sortie",
+      detail: "",
+    });
+    // A a agi il y a deux jours ; B jamais.
+    await prisma.eventLog.create({
+      data: {
+        accountId: a.id,
+        entityType: "system",
+        eventType: "task_completed",
+        title: "Tâche faite",
+        actor: Actor.user,
+        createdAt: new Date("2026-10-19T08:00:00Z"),
+      },
+    });
+
+    const vue = await getAdminOverview({ now, plafondEur: 100 });
+    expect(vue.moisDepuis.toISOString()).toBe("2026-09-30T22:00:00.000Z");
+    expect(vue.coutMoisEur).toBeCloseTo(0.75, 6);
+    expect(vue.appelsMois).toBe(2);
+    expect(vue.plafondEur).toBe(100);
+    expect(vue.comptes).toBe(3);
+    expect(vue.comptesEnAttente).toBe(1);
+    expect(vue.comptesActifs7j).toBe(1);
+    expect(vue.echecs7j[EVENT_TYPES.iaEchec]).toBe(1);
+    expect(vue.echecs7j[EVENT_TYPES.triageFailed]).toBe(0);
+    expect(vue.outboxEnAttente).toBe(0);
+    expect(vue.rattrapagesEnEchec).toBe(0);
   });
 });

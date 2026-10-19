@@ -1,7 +1,13 @@
 import "server-only";
 import { after } from "next/server";
 import { createUIMessageStream, createUIMessageStreamResponse } from "ai";
-import { isAssistantEnabled, logAiSolicitation, tenantDb } from "@relvo/db";
+import {
+  isAssistantEnabled,
+  logAiFailure,
+  logAiSolicitation,
+  tenantDb,
+  type TenantDb,
+} from "@relvo/db";
 import { expireTenantData } from "@/server/cached";
 import { chat, EchecSollicitation } from "../client";
 import { inferenceDisponible, NIVEAU_RETENU } from "../config";
@@ -86,6 +92,8 @@ export async function repondreAuTour(entree: EntreeTour): Promise<Response> {
       err.motif === "entree-trop-longue"
     ) {
       console.warn("[ia] echange", { accountId, motif: err.motif });
+      // Un tour en échec se consigne (M21.3) : la fiche du compte les compte.
+      await consignerEchec(db, tour.tier, err.motif, err.message);
       return reponseFixe(PHRASES.tropLong, messages);
     }
     throw err;
@@ -107,6 +115,14 @@ export async function repondreAuTour(entree: EntreeTour): Promise<Response> {
       });
     } catch (err) {
       console.error("[ia] echange — mesure non consignée", err);
+      // Le flux a échoué avant la mesure : un tour en échec, consigné (M21.3).
+      const motif = err instanceof EchecSollicitation ? err.motif : "inconnu";
+      await consignerEchec(
+        db,
+        tour.tier,
+        motif,
+        err instanceof Error ? err.message : String(err),
+      );
     }
     if (tour.aEcrit()) expireTenantData();
   });
@@ -127,4 +143,23 @@ export async function repondreAuTour(entree: EntreeTour): Promise<Response> {
       return PHRASES.erreur;
     },
   });
+}
+
+/** Consigne un tour de l'échange en échec ; ne fait jamais échouer le tour lui-même. */
+async function consignerEchec(
+  db: TenantDb,
+  tier: string,
+  motif: string,
+  detail: string,
+) {
+  try {
+    await logAiFailure(db, {
+      sollicitation: "echange",
+      motif,
+      detail: detail.slice(0, 500),
+      tier,
+    });
+  } catch (e) {
+    console.error("[ia] echange — échec non consigné", e);
+  }
 }

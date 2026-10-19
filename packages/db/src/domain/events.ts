@@ -77,6 +77,8 @@ export const EVENT_TYPES = {
   // posées dans `domain/triage.ts`, premier écrivain (02, EventLog).
   /** Une entrée PAR SOLLICITATION du modèle : jetons, cache, raisonnement, coût en euros (M7.16). */
   iaSollicitation: "ia_sollicitation",
+  /** Un appel au modèle qui a ÉCHOUÉ avant ou pendant la réponse (M21.3) : sollicitation, motif, détail — la mesure, s'il y en a une, est une `ia_sollicitation` à part. */
+  iaEchec: "ia_echec",
   /** Verdict de tri déposé sur une conversation orpheline (M7.14). */
   triageVerdict: "triage_verdict",
   /** Le tri a échoué : la conversation reste orpheline, rien n'est inventé (M7.15). */

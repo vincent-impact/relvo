@@ -462,7 +462,11 @@ Deux familles d'entrées portent la **boucle d'apprentissage** et la **maîtrise
 - **Chaque sollicitation du modèle est une entrée** : la sollicitation, le tier, le niveau de
   raisonnement, les jetons d'entrée, de sortie, de cache et de raisonnement, et le coût converti
   en euros par une table de tarifs versionnée (cf. `05 §10`). C'est ce compteur qui alimente le
-  disjoncteur, pas la facture.
+  disjoncteur, pas la facture. **Un appel qui échoue** avant ou pendant sa réponse est une entrée
+  à part — sollicitation, motif, détail — ; sa mesure, quand il a coûté, reste une sollicitation.
+
+Le backoffice lit ces entrées **par compte**, avec les mêmes fonctions que les rapports : il n'a
+aucun compteur à lui.
 
 ## KnowledgeDocument
 

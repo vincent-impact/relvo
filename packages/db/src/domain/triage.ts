@@ -828,6 +828,88 @@ export async function logAiSolicitation(
 }
 
 // ─────────────────────────────────────────────────────────────
+// Les échecs — un appel qui n'a pas rendu sa réponse (M21.3)
+// ─────────────────────────────────────────────────────────────
+
+export const logAiFailureSchema = z.object({
+  sollicitation: z.string().trim().min(1).max(40),
+  /** Le motif prévu (`entree-trop-longue`, `plafond-sortie`, …) ou `inconnu`. */
+  motif: z.string().trim().min(1).max(40),
+  detail: z.string().trim().max(500),
+  tier: z.string().trim().max(40).optional().nullable(),
+  messageId: z.uuid().optional().nullable(),
+  conversationId: z.uuid().optional().nullable(),
+  subjectId: z.uuid().optional().nullable(),
+});
+
+export type LogAiFailureInput = z.input<typeof logAiFailureSchema>;
+
+/**
+ * Consigne un appel au modèle qui a échoué (M21.3) : avant de partir ou
+ * pendant la réponse. Le pipeline d'arrivée a déjà ses entrées (`triage_failed`
+ * et consorts) ; celle-ci est pour ce qui n'en avait pas — l'échange en tête —
+ * et pour la fiche d'un compte, qui compte les tours en échec. La mesure d'un
+ * appel parti et coûté se consigne À PART, par `logAiSolicitation`.
+ */
+export async function logAiFailure(db: TenantDb, input: LogAiFailureInput) {
+  const data = logAiFailureSchema.parse(input);
+  return logEvent(db as Tx, {
+    entityType: "system",
+    entityId: data.conversationId ?? data.subjectId ?? data.messageId ?? null,
+    messageId: data.messageId ?? null,
+    subjectId: data.subjectId ?? null,
+    eventType: EVENT_TYPES.iaEchec,
+    title: `Échec « ${data.sollicitation} » — ${data.motif}`,
+    description: data.detail || null,
+    actor: Actor.ai,
+    metadata: {
+      sollicitation: data.sollicitation,
+      motif: data.motif,
+      tier: data.tier ?? null,
+      conversationId: data.conversationId ?? null,
+    },
+  });
+}
+
+export type AiFailureRow = {
+  at: Date;
+  sollicitation: string;
+  motif: string;
+  detail: string | null;
+  tier: string | null;
+  subjectId: string | null;
+};
+
+/** Les échecs d'un compte depuis une date, les plus récents d'abord. */
+export async function listAiFailures(
+  db: TenantDb,
+  opts: { since: Date; limit?: number },
+): Promise<AiFailureRow[]> {
+  const rows = await db.eventLog.findMany({
+    where: { eventType: EVENT_TYPES.iaEchec, createdAt: { gte: opts.since } },
+    orderBy: { createdAt: "desc" },
+    take: opts.limit ?? 50,
+    select: {
+      createdAt: true,
+      description: true,
+      metadata: true,
+      subjectId: true,
+    },
+  });
+  return rows.map((e) => {
+    const m = (e.metadata ?? {}) as Record<string, unknown>;
+    return {
+      at: e.createdAt,
+      sollicitation: typeof m.sollicitation === "string" ? m.sollicitation : "",
+      motif: typeof m.motif === "string" ? m.motif : "inconnu",
+      detail: e.description,
+      tier: typeof m.tier === "string" ? m.tier : null,
+      subjectId: e.subjectId,
+    };
+  });
+}
+
+// ─────────────────────────────────────────────────────────────
 // La synthèse des sollicitations — le compteur relu (M7.13, M7.16)
 // ─────────────────────────────────────────────────────────────
 

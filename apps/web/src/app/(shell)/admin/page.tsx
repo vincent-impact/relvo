@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { listAccountsForAdmin } from "@relvo/db";
+import { getAdminOverview, listAccountsForAdmin } from "@relvo/db";
 import { AccountRow } from "@/components/admin/account-row";
 import { eur } from "@/components/admin/format";
+import { Overview } from "@/components/admin/overview";
 import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { ListPanel } from "@/components/shared/list-panel";
@@ -19,7 +20,13 @@ export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   const now = new Date();
-  const comptes = await listAccountsForAdmin({ now });
+  // Le plafond de la clé du fournisseur, tel que réglé chez lui : une
+  // configuration, jamais un chiffre inventé par le domaine.
+  const plafondEur = Number(process.env.OPENAI_PLAFOND_MENSUEL_EUR) || 100;
+  const [comptes, vue] = await Promise.all([
+    listAccountsForAdmin({ now }),
+    getAdminOverview({ now, plafondEur }),
+  ]);
   const enAttente = comptes.filter((c) => c.activatedAt === null);
   const actifs = comptes
     .filter((c) => c.activatedAt !== null && !c.isTest)
@@ -48,6 +55,7 @@ export default async function AdminPage() {
         className="pb-9"
       />
       <div className="relative z-3 -mt-5 flex flex-col gap-5">
+        <Overview vue={vue} />
         {enAttente.length ? (
           <section>
             <ZoneHeading

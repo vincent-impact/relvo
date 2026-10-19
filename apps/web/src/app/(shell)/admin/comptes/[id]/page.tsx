@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getAccountForAdmin } from "@relvo/db";
+import { getAccountForAdmin, getAccountJournal } from "@relvo/db";
 import { AccountGestes } from "@/components/admin/account-gestes";
+import { AccountJournal } from "@/components/admin/account-journal";
 import { ActivateButton } from "@/components/admin/activate-button";
 import { DeleteAccount } from "@/components/admin/delete-account";
 import {
@@ -63,6 +64,7 @@ export default async function CompteAdminPage({
   const now = new Date();
   const compte = await getAccountForAdmin(id, { now });
   if (!compte) notFound();
+  const fiche = await getAccountJournal(compte.id, { now });
   const enAttente = compte.activatedAt === null;
   const nom = `${compte.firstName} ${compte.lastName}`.trim() || compte.email;
   const soiMeme = compte.id === admin.id;
@@ -192,6 +194,8 @@ export default async function CompteAdminPage({
             </p>
           )}
         </section>
+
+        <AccountJournal fiche={fiche} now={now} />
 
         <section>
           <ZoneHeading label="Gestes" />

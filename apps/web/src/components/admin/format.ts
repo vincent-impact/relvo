@@ -15,6 +15,7 @@ export type CompteAdminVue = {
 export function eur(n: number): string {
   if (n === 0) return "0 €";
   if (n < 0.01) return `${n.toFixed(4)} €`;
+  if (Number.isInteger(n)) return `${n} €`;
   return `${n.toFixed(2).replace(".", ",")} €`;
 }
 

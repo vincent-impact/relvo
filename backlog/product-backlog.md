@@ -36,7 +36,7 @@ frontmatter l'est.
 | [M6quater — Sous-typage de la conversation](epics/M6quater-sous-typage.md) | ✅                                               | M7                              |
 | [M9 — Pages applicatives](epics/M9-pages-applicatives.md)                  | ✅                                               | démo client                     |
 | [M16 — Consolidation](epics/M16-consolidation.md)                          | ✅                                               | —                               |
-| **[M21 — Mini backoffice](epics/M21-mini-backoffice.md)**                  | 🟡 **en cours** — tranche 1 livrée (accès, liste, gestes, porte de l'alpha) ; reste la fiche (M21.3) et la vue d'ensemble (M21.5) | l'alpha                         |
+| **[M21 — Mini backoffice](epics/M21-mini-backoffice.md)**                  | ✅ — accès, liste, gestes, porte de l'alpha, fiche, vue d'ensemble | l'alpha                         |
 | **[M22 — Parler à Relvo](epics/M22-voix.md)**                              | ⬜ après M21 — la voix comme entrée de l'échange                                        | M20.1                           |
 | **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en pause** — reste la tranche 10 (M7.19 : le rattrapage dès la connexion d'un canal, qui fait naître le script de la prise en main dans l'échange), après M21 et M22 | M8, M10                         |
 | **[M18 — Disposition générale](epics/M18-disposition-generale.md)**       | ✅ — M18.9 livré par M10 ; M18.11 glissé vers M12.9 (pas de socle push) | M19, M10, M13 |

@@ -1,4 +1,4 @@
-# Chantier « Mini backoffice » — M21, à partir du 19 octobre 2026
+# Chantier « Mini backoffice » — M21, 19 octobre 2026
 
 ## Démarrage à froid — à lire en premier
 
@@ -222,11 +222,14 @@ Ready. Serveur local : `PORT=3100 AUTH_URL=http://localhost:3100 pnpm --filter w
       page d'attente, `AccesEnAttente`, « À ouvrir », e-mail d'ouverture). Migration
       `20261019103245_m21_backoffice`. Tests : `admin.test.ts` (7), `admin-regles.test.ts` (4),
       `auth-deny-by-default.test.ts` (10). Vérifié en headless.
-- [ ] Tranche 2 — M21.3 fiche (journal de l'inférence en page, tours en échec à consigner) ·
-      M21.5 vue d'ensemble.
+- [x] **Tranche 2 livrée** — M21.3 fiche (`getAccountJournal` : synthèse par sollicitation,
+      silencieux, **tours en échec** consignés par l'échange via `logAiFailure` / `ia_echec`,
+      rattrapages, questions ouvertes, journal récent) · M21.5 vue d'ensemble
+      (`getAdminOverview` : coût du mois à Paris contre `OPENAI_PLAFOND_MENSUEL_EUR`, appels et
+      silencieux, comptes actifs 7 j, demandes, échecs 7 j, outbox, rattrapages en échec ;
+      `debutDuMoisParis` dans `temps.ts`). Tests dans `admin.test.ts`. Vérifié en headless.
+- [x] Le dirigeant est administrateur en production (rôle posé par `admin:role` sur la base
+      Neon) ; l'entrée du menu n'apparaît que lorsque le jeton porte aussi le rôle (`eb73e74`).
+      Le compte de démonstration n'est administrateur nulle part.
 
-**Pour l'alpha** : promouvoir le dirigeant sur la base de production
-(`DATABASE_URL=<prod> pnpm --filter web admin:role <e-mail> admin`), se reconnecter, ouvrir
-`/admin` depuis l'iPhone.
-
-**Suivant** : la tranche 2, puis **M22 — Parler à Relvo**, puis la tranche 10 de M7 (M7.19).
+**M21 terminée.** **Suivant** : **M22 — Parler à Relvo**, puis la tranche 10 de M7 (M7.19).

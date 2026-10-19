@@ -1,6 +1,7 @@
 import {
   type AccountRole,
   Actor,
+  type CatchupStatus,
   type ChannelConfigStatus,
   type ChannelType,
   type Sector,
@@ -9,9 +10,22 @@ import { prisma } from "../index";
 import { tenantDb, type TenantDb, type Tx } from "../tenant";
 import { assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
+import { countPendingFileDeletions } from "./file-deletions";
 import { listPushSubscriptions } from "./notifications";
-import { countOpenQuestions } from "./questions";
-import { listAiSolicitations } from "./triage";
+import {
+  countOpenQuestions,
+  listOpenQuestions,
+  type OpenQuestion,
+} from "./questions";
+import { debutDuMoisParis } from "./temps";
+import {
+  type AiFailureRow,
+  type AiSolicitationRow,
+  type AiSolicitationSummary,
+  listAiFailures,
+  listAiSolicitations,
+  summarizeAiSolicitations,
+} from "./triage";
 
 // L'administration (M21) — ce que le backoffice LIT, et le seul geste qui
 // n'a pas de méthode ailleurs : supprimer un compte.
@@ -248,4 +262,193 @@ export async function deleteAccount(
     await tx.account.delete({ where: { id: target.id } });
   });
   return { email: target.email, channels: target.channels.length };
+}
+
+// ─────────────────────────────────────────────────────────────
+// La fiche d'un compte (M21.3) et la vue d'ensemble (M21.5)
+// ─────────────────────────────────────────────────────────────
+
+export type AdminJournalEntry = {
+  at: Date;
+  eventType: string;
+  title: string;
+  actor: Actor;
+};
+
+export type AdminCatchup = {
+  id: string;
+  channelName: string;
+  status: CatchupStatus;
+  requestedAt: Date;
+  finishedAt: Date | null;
+  messagesImported: number;
+  subjectsOpened: number;
+  conversationsIgnored: number;
+  costEur: number;
+  lastError: string | null;
+};
+
+export type AdminAccountJournal = {
+  /** Le compteur relu, par sollicitation, sur la fenêtre longue. */
+  synthese: AiSolicitationSummary[];
+  /** Les appels dont le cache aurait dû jouer et n'a pas joué, les plus récents d'abord. */
+  silencieux: AiSolicitationRow[];
+  /** Appels sans préfixe mesuré (antérieurs à la mesure, ou brouillons). */
+  nonMesures: number;
+  echecs: AiFailureRow[];
+  journal: AdminJournalEntry[];
+  rattrapages: AdminCatchup[];
+  questions: OpenQuestion[];
+};
+
+/**
+ * Ce que `ia:journal` imprime, rendu pour une page (M21.3) — par les mêmes
+ * fonctions —, plus les échecs, le journal de bord récent, les rattrapages et
+ * les questions ouvertes du compte.
+ */
+export async function getAccountJournal(
+  accountId: string,
+  opts: { now?: Date; journalLimit?: number } = {},
+): Promise<AdminAccountJournal> {
+  const now = opts.now ?? new Date();
+  const since = new Date(
+    now.getTime() - ADMIN_COST_WINDOWS.longue * 86_400_000,
+  );
+  const db = tenantDb(accountId);
+  const [lignes, echecs, journal, rattrapages, questions] = await Promise.all([
+    listAiSolicitations(db, { since }),
+    listAiFailures(db, { since, limit: 20 }),
+    db.eventLog.findMany({
+      orderBy: { createdAt: "desc" },
+      take: opts.journalLimit ?? 50,
+      select: { createdAt: true, eventType: true, title: true, actor: true },
+    }),
+    db.channelCatchup.findMany({
+      orderBy: { requestedAt: "desc" },
+      take: 10,
+      include: { channel: { select: { name: true } } },
+    }),
+    listOpenQuestions(db, { limit: 5 }),
+  ]);
+  const synthese = summarizeAiSolicitations(lignes);
+  return {
+    synthese,
+    silencieux: synthese
+      .flatMap((s) => s.silencieux)
+      .sort((a, b) => b.at.getTime() - a.at.getTime()),
+    nonMesures: lignes.filter((l) => l.prefixeStable === null).length,
+    echecs,
+    journal: journal.map((e) => ({
+      at: e.createdAt,
+      eventType: e.eventType,
+      title: e.title,
+      actor: e.actor,
+    })),
+    rattrapages: rattrapages.map((r) => ({
+      id: r.id,
+      channelName: r.channel.name,
+      status: r.status,
+      requestedAt: r.requestedAt,
+      finishedAt: r.finishedAt,
+      messagesImported: r.messagesImported,
+      subjectsOpened: r.subjectsOpened,
+      conversationsIgnored: r.conversationsIgnored,
+      costEur: r.costEur,
+      lastError: r.lastError,
+    })),
+    questions,
+  };
+}
+
+/** Les échecs que la vue d'ensemble compte : ceux du pipeline et ceux de l'échange. */
+export const ADMIN_FAILURE_EVENT_TYPES = [
+  EVENT_TYPES.triageFailed,
+  EVENT_TYPES.structurationFailed,
+  EVENT_TYPES.relectureFailed,
+  EVENT_TYPES.iaEchec,
+] as const;
+
+export type AdminOverview = {
+  /** Le 1er du mois en cours, minuit à Paris. */
+  moisDepuis: Date;
+  coutMoisEur: number;
+  appelsMois: number;
+  silencieuxMois: number;
+  plafondEur: number;
+  comptes: number;
+  comptesEnAttente: number;
+  /** Comptes dont l'utilisateur a agi dans les sept derniers jours. */
+  comptesActifs7j: number;
+  echecs7j: Record<string, number>;
+  outboxEnAttente: number;
+  rattrapagesEnEchec: number;
+};
+
+/**
+ * La vue d'ensemble (M21.5) : ce que les routes logguent déjà, enfin lisible
+ * sans `vercel logs`. Chaque chiffre vient du journal ou d'une fonction qui
+ * existe — le coût du mois est la somme des sollicitations de tous les
+ * comptes, relues compte par compte ; le plafond est celui de la clé du
+ * fournisseur, donné par l'appelant (configuration), jamais inventé ici.
+ */
+export async function getAdminOverview(opts: {
+  now?: Date;
+  plafondEur: number;
+}): Promise<AdminOverview> {
+  const now = opts.now ?? new Date();
+  const moisDepuis = debutDuMoisParis(now);
+  const sept = new Date(now.getTime() - 7 * 86_400_000);
+
+  const [accounts, activity, echecs, outboxEnAttente, rattrapagesEnEchec] =
+    await Promise.all([
+      prisma.account.findMany({
+        select: { id: true, activatedAt: true },
+      }),
+      lastActivityByAccount(),
+      prisma.eventLog.groupBy({
+        by: ["eventType"],
+        where: {
+          eventType: { in: [...ADMIN_FAILURE_EVENT_TYPES] },
+          createdAt: { gte: sept },
+        },
+        _count: { _all: true },
+      }),
+      countPendingFileDeletions(),
+      prisma.channelCatchup.count({ where: { status: "failed" } }),
+    ]);
+
+  let coutMoisEur = 0;
+  let appelsMois = 0;
+  let silencieuxMois = 0;
+  for (const a of accounts) {
+    const lignes = await listAiSolicitations(tenantDb(a.id), {
+      since: moisDepuis,
+    });
+    appelsMois += lignes.length;
+    for (const s of summarizeAiSolicitations(lignes)) {
+      coutMoisEur += s.coutEur;
+      silencieuxMois += s.silencieux.length;
+    }
+  }
+
+  const echecs7j: Record<string, number> = {};
+  for (const t of ADMIN_FAILURE_EVENT_TYPES) echecs7j[t] = 0;
+  for (const e of echecs) echecs7j[e.eventType] = e._count._all;
+
+  return {
+    moisDepuis,
+    coutMoisEur,
+    appelsMois,
+    silencieuxMois,
+    plafondEur: opts.plafondEur,
+    comptes: accounts.length,
+    comptesEnAttente: accounts.filter((a) => a.activatedAt === null).length,
+    comptesActifs7j: accounts.filter((a) => {
+      const at = activity.get(a.id);
+      return at !== undefined && at >= sept;
+    }).length,
+    echecs7j,
+    outboxEnAttente,
+    rattrapagesEnEchec,
+  };
 }

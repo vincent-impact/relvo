@@ -105,3 +105,17 @@ export function jourDecale(at: Date, jours: number): Date {
   d.setUTCDate(d.getUTCDate() + jours);
   return d;
 }
+
+/**
+ * L'INSTANT RÉEL du minuit parisien qui ouvre le mois civil d'un instant —
+ * à comparer à un `createdAt`, pas à une date nue. On part du minuit UTC du
+ * 1er et on retranche ce que Paris a d'avance à cet instant (une heure en
+ * hiver, deux en été) ; `Intl` tranche l'heure d'été, pas nous.
+ */
+export function debutDuMoisParis(at: Date = new Date()): Date {
+  const c = calendrierParis(at);
+  const candidat = new Date(Date.UTC(c.annee, c.mois - 1, 1));
+  const p = calendrierParis(candidat);
+  const avance = (p.heures * 60 + p.minutes) * 60_000;
+  return new Date(candidat.getTime() - avance);
+}
