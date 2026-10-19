@@ -3,7 +3,7 @@ import { AppDock } from "@/components/layout/app-dock";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { SideMenu, SideMenuProvider } from "@/components/layout/side-menu";
 import { countOpenQuestions, tenantDb } from "@relvo/db";
-import { requireAccount } from "@/server/auth-context";
+import { getSession, requireAccount } from "@/server/auth-context";
 
 // Chrome mobile-first commun aux vues structurées : colonne unique pleine
 // hauteur — en-tête + corps scrollable (fournis par chaque page) — puis la
@@ -34,6 +34,13 @@ export default async function AppLayout({
   // et un badge en retard est un badge faux. Un décompte indexé, rien de plus.
   const pendingQuestions = await countOpenQuestions(tenantDb(account.id));
 
+  // L'entrée « Backoffice » du menu ne se montre que si le clic marchera : le
+  // proxy lit le rôle dans le JETON, qui ne le reçoit qu'à la connexion suivant
+  // la promotion. Rôle en base ET dans le jeton, sinon rien — une entrée qui
+  // renvoie à l'accueil est pire qu'une entrée absente.
+  const session = await getSession();
+  const isAdmin = account.role === "admin" && session?.user?.role === "admin";
+
   // Une seule zone de scroll (le <Screen> de chaque page) + dock ancré qui la
   // chevauche. Le hero violet de la page scrolle sous la tab bar givrée.
   return (
@@ -50,7 +57,7 @@ export default async function AppLayout({
           lastName: account.lastName,
           email: account.email,
         }}
-        isAdmin={account.role === "admin"}
+        isAdmin={isAdmin}
       />
     </SideMenuProvider>
   );
