@@ -163,7 +163,7 @@
     },
     {
       "titre": "Parler à Relvo",
-      "resume": "Dicter votre demande à Relvo plutôt que la taper : un appui sur le micro, vous parlez, le texte s'écrit et se corrige avant l'envoi. Pour la cuisine et le chantier, où l'on n'écrit pas.",
+      "resume": "Dicter votre demande à Relvo plutôt que la taper : vous maintenez le micro, vous parlez, vous relâchez, et Relvo reçoit votre demande. Pour la cuisine et le chantier, où l'on n'écrit pas.",
       "statut": "termine",
       "gauche": 65.42,
       "largeur": 0
@@ -178,6 +178,10 @@
     {
       "date": "2026-10-19",
       "entrees": [
+        {
+          "type": "new",
+          "texte": "Dans l'échange avec Relvo, maintenez le micro, parlez, relâchez : votre demande part aussitôt, sans étape de relecture. Dès que vous tapez, le micro laisse la place au bouton d'envoi."
+        },
         {
           "type": "new",
           "texte": "Dans l'échange avec Relvo, vous pouvez dicter votre demande : un appui sur le micro, vous parlez, le texte s'écrit dans le champ, et vous le relisez ou le corrigez avant d'envoyer."

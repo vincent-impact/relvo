@@ -61,6 +61,8 @@ export class Enregistreur {
   private recorder: RecorderLike | null = null;
   private morceaux: BlobPart[] = [];
   private debutMs = 0;
+  /** L'instant où l'arrêt a été demandé : la durée de la dictée s'arrête là, pas à l'événement `stop`. */
+  private finMs: number | null = null;
   private annulerPlafond: (() => void) | null = null;
   private fin: Promise<Enregistrement> | null = null;
   private terminerFin: ((e: Enregistrement) => void) | null = null;
@@ -72,10 +74,10 @@ export class Enregistreur {
     return this.recorder !== null;
   }
 
-  /** Secondes écoulées depuis le début, 0 au repos. */
+  /** Secondes écoulées depuis le début (jusqu'à l'arrêt demandé), 0 au repos. */
   duree(): number {
     if (!this.recorder) return 0;
-    return (this.deps.maintenant() - this.debutMs) / 1000;
+    return ((this.finMs ?? this.deps.maintenant()) - this.debutMs) / 1000;
   }
 
   /** Demande le micro et commence à enregistrer. Idempotent en cours. */
@@ -114,6 +116,7 @@ export class Enregistreur {
       p.onended = () => this.arreter("coupe");
     }
     this.debutMs = this.deps.maintenant();
+    this.finMs = null;
     recorder.start(1_000);
     this.annulerPlafond = this.deps.planifier(
       () => this.arreter("plafond"),
@@ -132,6 +135,9 @@ export class Enregistreur {
     const fin = this.fin;
     const recorder = this.recorder;
     if (recorder.onstop === null) {
+      // La durée est celle du geste : le navigateur peut mettre plus d'une
+      // seconde à fermer le conteneur, ce temps n'est pas de la dictée.
+      this.finMs = this.deps.maintenant();
       recorder.onstop = () => this.conclure(raison);
       try {
         recorder.stop();
@@ -197,6 +203,7 @@ export class Enregistreur {
     }
     this.flux = null;
     this.recorder = null;
+    this.finMs = null;
     this.morceaux = [];
     this.fin = null;
     this.terminerFin = null;

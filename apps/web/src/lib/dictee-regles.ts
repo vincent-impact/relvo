@@ -1,8 +1,10 @@
 // LES RÈGLES DE LA DICTÉE côté appareil (M22.2, M22.3) — pures, tenues par
-// `test/dictee.test.ts`. Les phrases sont celles tranchées avec le dirigeant
-// (`backlog/sprints/2026-10-m22-voix.md`) ; celles que la route envoie
-// (assistant coupé, inférence absente) arrivent toutes faites et passent
-// telles quelles. Rien de technique ne traverse : ni code, ni trace.
+// `test/ia-dictee.test.ts`. Le geste : on MAINTIENT le micro pour parler, on
+// RELÂCHE pour envoyer — la transcription part à Relvo comme un message, sans
+// relecture (revu avec le dirigeant après le premier essai). Les phrases sont
+// celles tranchées ; celles que la route envoie (assistant coupé, inférence
+// absente) arrivent toutes faites et passent telles quelles. Rien de
+// technique ne traverse : ni code, ni trace.
 
 export const PHRASES_DICTEE = {
   /** Le fournisseur n'a rien compris, ou le texte est vide. */
@@ -10,18 +12,16 @@ export const PHRASES_DICTEE = {
   /** `getUserMedia` refusé. */
   permission:
     "Relvo n'a pas accès au micro. Autorisez-le dans les réglages de votre téléphone.",
-  /** L'enregistrement s'est terminé sous la durée minimale. */
-  tropCourt: "L'enregistrement s'est arrêté. Réessayez.",
+  /** Le bouton a été relâché avant la durée minimale : on explique le geste. */
+  maintenir: "Maintenez le micro pour parler, relâchez pour envoyer.",
   /** Au-delà de la durée ou de la taille maximale (l'appareil s'arrête avant ; la route le redit). */
   tropLong: "La dictée est trop longue. Réessayez en une minute au plus.",
   /** Le réseau. */
   reseau: "Pas de réseau pour l'instant. Réessayez dès que vous êtes connecté.",
   /** Pendant la transcription. */
   ecoute: "Relvo écoute…",
-  /** Le texte est posé dans le champ. */
-  pose: "Dicté — relisez avant d'envoyer",
   /** Le compteur, pendant l'enregistrement. */
-  enregistre: "Appuyez pour finir",
+  enregistre: "Relâchez pour envoyer",
 } as const;
 
 export type ErreurDictee =
@@ -42,7 +42,7 @@ export function phraseDictee(
     case "permission":
       return PHRASES_DICTEE.permission;
     case "trop-court":
-      return PHRASES_DICTEE.tropCourt;
+      return PHRASES_DICTEE.maintenir;
     case "trop-long":
       return PHRASES_DICTEE.tropLong;
     case "reseau":
@@ -58,20 +58,6 @@ export function phraseDictee(
 export function formatDuree(secondes: number): string {
   const s = Math.max(0, Math.floor(secondes));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-}
-
-/**
- * La transcription S'AJOUTE au texte déjà saisi, elle ne le remplace pas
- * (tranché) : séparée d'une espace, ou d'un saut de ligne si le texte finit
- * une phrase. Un champ vide reçoit le texte tel quel.
- */
-export function ajouterDictee(texteSaisi: string, dictee: string): string {
-  const avant = texteSaisi.replace(/\s+$/, "");
-  const ajout = dictee.trim();
-  if (!ajout) return texteSaisi;
-  if (!avant) return ajout;
-  const separateur = /[.!?…]$/.test(avant) ? "\n" : " ";
-  return `${avant}${separateur}${ajout}`;
 }
 
 /**

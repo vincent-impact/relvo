@@ -4,8 +4,8 @@ public: true
 ordre_public: 19
 titre_client: Parler à Relvo
 resume_client: >
-  Dicter votre demande à Relvo plutôt que la taper : un appui sur le micro, vous parlez, le texte
-  s'écrit et se corrige avant l'envoi. Pour la cuisine et le chantier, où l'on n'écrit pas.
+  Dicter votre demande à Relvo plutôt que la taper : vous maintenez le micro, vous parlez, vous
+  relâchez, et Relvo reçoit votre demande. Pour la cuisine et le chantier, où l'on n'écrit pas.
 statut: termine
 debut: 2026-10-19
 fin: 2026-10-19
@@ -13,16 +13,18 @@ fin: 2026-10-19
 
 # M22 — Parler à Relvo
 
-**Objectif** — la **voix comme entrée de l'échange** : on appuie sur le disque de dictée du
-composer, on parle, la transcription se pose dans le champ, **on la relit et on la corrige**, on
-envoie par le geste habituel. Le public dicte plus qu'il n'écrit (`05 §6.6`) ; l'échange est la
-surface où Relvo agit : l'un sans l'autre laisse le téléphone dans la poche.
+**Objectif** — la **voix comme entrée de l'échange** : on maintient le disque de dictée du
+composer, on parle, on relâche — la transcription part à Relvo comme un message tapé. Le public
+dicte plus qu'il n'écrit (`05 §6.6`) ; l'échange est la surface où Relvo agit : l'un sans
+l'autre laisse le téléphone dans la poche.
 **Dépendances** : M10 (l'échange), M14.5 (la garde de coût, par minute d'audio).
 
-> **Ce que « éditer un message vocal » veut dire ici.** La transcription est un **brouillon de
-> texte**, pas un message : elle n'est envoyée que quand le dirigeant appuie sur Envoyer, après
-> l'avoir lue. L'audio ne quitte pas l'appareil autrement que pour être transcrit, et n'est pas
-> conservé — l'échange est éphémère (`05 §11.3`), sa voix aussi.
+> **Ce que dicter veut dire ici.** La dictée est un **message à Relvo**, pas un message qui sort
+> du compte : relâcher envoie, sans relecture — ce que Relvo en fait reste annulable comme tout
+> geste de l'échange. L'audio ne quitte pas l'appareil autrement que pour être transcrit, et
+> n'est pas conservé — l'échange est éphémère (`05 §11.3`), sa voix aussi. Un message dicté à un
+> **contact** (M20.1) se relit avant de partir : l'IA n'envoie jamais seule hors du compte
+> (`05 §7.4`).
 
 ## Les possibilités de reconnaissance vocale
 
@@ -36,8 +38,8 @@ surface où Relvo agit : l'un sans l'autre laisse le téléphone dans la poche.
 | #     | Item                                                                                                                                                                                                                                       |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | M22.1 | ✅ **Le coût et la qualité d'abord** : benchmark des modèles de transcription sur dix dictées en français avec et sans vocabulaire, coût par minute inscrit aux tarifs (`config.ts`), **tier « transcription »** du client d'inférence, mesure en secondes d'audio dans le journal (`ia:journal`) |
-| M22.2 | ✅ **L'enregistrement dans le composer** : le disque de dictée de la direction artistique (`00-brief-da`), un appui pour parler, un appui pour finir, la durée qui s'affiche, la permission micro demandée **sur ce geste** ; `MediaRecorder` avec le format que le téléphone donne (iOS : `audio/mp4`) |
-| M22.3 | ✅ **La transcription vers le champ** : une route de l'échange qui reçoit l'audio et rend le texte ; le texte **se pose dans le composer**, se corrige, et part par Envoyer — jamais envoyé seul ; l'échec se dit dans le composer (« je n'ai pas compris, réessayez ») |
+| M22.2 | ✅ **L'enregistrement dans le composer** : le disque de dictée de la direction artistique (`00-brief-da`), **maintenu** pour parler, la durée qui s'affiche, la permission micro demandée **sur ce geste** ; `MediaRecorder` avec le format que le téléphone donne (iOS : `audio/mp4`) |
+| M22.3 | ✅ **La transcription envoyée** : une route de l'échange qui reçoit l'audio et rend le texte ; **relâcher envoie** le texte à Relvo comme un message tapé ; l'échec se dit dans le composer (« Je n'ai pas compris. Réessayez. ») |
 | M22.4 | ✅ **Le vocabulaire du compte** : prénoms et entreprises des contacts, titres des affaires ouvertes, mots du secteur, passés en `prompt` et mots-clés — la couche Compte déjà assemblée, rien de nouveau à stocker |
 | M22.5 | ✅ **La garde** : durée maximale d'une dictée, coût par minute au disjoncteur (M14.5), aucune transcription si l'assistant est coupé                                                                                                             |
 | M22.6 | 📌 **Le même socle pour la messagerie** : M20.1 (dicter un message à un contact) réutilise l'enregistrement et la route, sans seconde implémentation                                                                                            |

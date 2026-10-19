@@ -18,7 +18,6 @@ import {
   type RecorderLike,
 } from "@/lib/dictee-enregistreur";
 import {
-  ajouterDictee,
   formatDuree,
   PHRASES_DICTEE,
   phraseDictee,
@@ -31,7 +30,7 @@ import {
 // ce que le prompt du vocabulaire contient et combien il pèse ; ce que
 // l'enregistreur fait du micro (demandé au geste, libéré à l'arrêt, plafond,
 // piste coupée, trop court) ; et les règles du composer (ajout au texte,
-// phrases).
+// phrases du geste maintenir-relâcher).
 
 function modeleSimule(text: string, durationInSeconds?: number) {
   const doGenerate = vi.fn(async () => ({
@@ -356,6 +355,29 @@ describe("l'enregistreur — le micro au geste, libéré à l'arrêt", () => {
     expect(a.piste.arrets).toBe(1);
   });
 
+  it("la durée est celle du geste, pas celle de la fermeture du conteneur par le navigateur", async () => {
+    const a = appareil({ differe: true });
+    const e = new Enregistreur(a.deps);
+    await e.demarrer();
+    a.avancer(400);
+    const fin = e.arreter("geste");
+    // Le navigateur met deux secondes à rendre l'événement `stop` : ce n'est
+    // pas de la dictée — un appui de 0,4 s reste trop court.
+    a.avancer(2_000);
+    a.terminerStop();
+    const err = await fin.catch((x) => x);
+    expect((err as ErreurEnregistrement).code).toBe("trop-court");
+
+    const b = appareil({ differe: true });
+    const f = new Enregistreur(b.deps);
+    await f.demarrer();
+    b.avancer(3_000);
+    const fin2 = f.arreter("geste");
+    b.avancer(2_000);
+    b.terminerStop();
+    expect((await fin2).dureeS).toBe(3);
+  });
+
   it("un micro refusé est une erreur de permission, rien n'est enregistré", async () => {
     const a = appareil({ refuser: true });
     const e = new Enregistreur(a.deps);
@@ -366,23 +388,10 @@ describe("l'enregistreur — le micro au geste, libéré à l'arrêt", () => {
 });
 
 describe("les règles du composer", () => {
-  it("la transcription s'ajoute au texte saisi, elle ne le remplace pas", () => {
-    expect(ajouterDictee("", "  Rappelle Karim.  ")).toBe("Rappelle Karim.");
-    expect(ajouterDictee("Je voudrais ", "ouvrir une affaire")).toBe(
-      "Je voudrais ouvrir une affaire",
-    );
-    expect(ajouterDictee("Première phrase.", "Deuxième phrase.")).toBe(
-      "Première phrase.\nDeuxième phrase.",
-    );
-    expect(ajouterDictee("Texte", "")).toBe("Texte");
-  });
-
   it("dit la phrase tranchée pour chaque échec, et laisse passer celle de la route", () => {
     expect(phraseDictee("incompris")).toBe("Je n'ai pas compris. Réessayez.");
     expect(phraseDictee("permission")).toBe(PHRASES_DICTEE.permission);
-    expect(phraseDictee("trop-court")).toBe(
-      "L'enregistrement s'est arrêté. Réessayez.",
-    );
+    expect(phraseDictee("trop-court")).toBe(PHRASES_DICTEE.maintenir);
     expect(
       phraseDictee(
         "serveur",

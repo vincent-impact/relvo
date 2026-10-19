@@ -11,8 +11,8 @@ import { cn } from "@/lib/utils";
 import { eur } from "./format";
 
 // L'ESSAI DE DICTÉE du backoffice (M22.1) — l'éprouvette du micro en PWA
-// installée, avec le crochet et la route que le composer aura : on parle, le
-// texte revient, la mesure avec lui ; « Partager l'enregistrement » ouvre la
+// installée, avec le crochet et la route du composer : on maintient, on
+// parle, on relâche, le texte revient, la mesure avec lui ; « Partager l'enregistrement » ouvre la
 // feuille de partage du téléphone (AirDrop vers le Mac) pour que les dictées
 // du benchmark sortent de l'iPhone sans jamais passer par le serveur. Rien
 // n'est conservé : l'audio vit dans la page, et meurt avec elle.
@@ -65,20 +65,26 @@ export function DicteeEssai() {
       <section className="flex flex-col items-center gap-3 px-4">
         <button
           type="button"
-          onClick={d.basculer}
+          onPointerDown={(e) => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+            e.currentTarget.setPointerCapture(e.pointerId);
+            void d.appuyer();
+          }}
+          onPointerUp={() => d.relacher()}
+          onPointerCancel={() => d.relacher()}
+          onContextMenu={(e) => e.preventDefault()}
           disabled={transcrit || !d.pret}
-          aria-label={enregistre ? "Finir" : "Parler"}
+          aria-label={
+            enregistre ? "Relâchez pour finir" : "Maintenir pour parler"
+          }
           className={cn(
-            "grid size-20 place-items-center rounded-full text-white shadow-disque transition-transform duration-(--dur-presse) active:scale-[0.97] disabled:opacity-60",
-            enregistre && "respire",
+            "grid size-20 touch-none place-items-center rounded-full text-white shadow-disque transition-transform duration-(--dur-presse) select-none [-webkit-touch-callout:none] disabled:opacity-60",
+            enregistre && "respire scale-110",
           )}
           style={{ background: "var(--degrade-disque)" }}
         >
-          {enregistre ? (
-            <span className="block size-7 rounded-[6px] bg-white" aria-hidden />
-          ) : (
-            <Microphone className="size-9" />
-          )}
+          <Microphone className="size-9" />
         </button>
         <p
           className={cn(

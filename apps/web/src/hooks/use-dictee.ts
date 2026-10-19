@@ -23,12 +23,14 @@ import {
 
 // LA DICTÉE côté appareil (M22.2, M22.3) — le crochet que le composer de
 // l'échange et la page d'essai du backoffice partagent. Trois états : repos,
-// enregistre, transcrit. Un appui démarre (le micro est demandé LÀ, jamais au
-// chargement), un appui finit ; l'enregistrement part à la route, le texte
-// revient à `onTexte` — c'est l'appelant qui le pose dans son champ, jamais
-// le crochet qui l'envoie à Relvo. L'écran qui s'éteint, l'app qui passe en
-// arrière-plan, la piste coupée : c'est « un appui pour finir » (tranché),
-// ce qui est enregistré se transcrit.
+// enregistre, transcrit. On MAINTIENT le bouton : `appuyer` demande le micro
+// (LÀ, jamais au chargement) et enregistre ; on RELÂCHE : `relacher` arrête,
+// l'enregistrement part à la route, le texte revient à `onTexte` — et
+// l'appelant l'ENVOIE, c'est le geste (revu avec le dirigeant après le
+// premier essai : pas de relecture). Un relâcher arrivé pendant que le micro
+// s'ouvre est honoré dès qu'il est ouvert. L'écran qui s'éteint, l'app en
+// arrière-plan, la piste coupée : c'est un relâcher, ce qui est enregistré se
+// transcrit.
 //
 // L'audio ne vit que dans la mémoire de l'appareil le temps de l'appel ;
 // `dernierAudio` le garde pour la feuille de partage de la page d'essai.
@@ -154,7 +156,6 @@ export function useDictee({
       }
       if ("texte" in j) {
         setMesure(j.mesure);
-        setPhrase(PHRASES_DICTEE.pose);
         onTexteRef.current(j.texte);
         return;
       }
@@ -193,14 +194,20 @@ export function useDictee({
     [enregistreur, transcrire],
   );
 
-  const parler = useCallback(async () => {
-    if (!enregistreur || enregistreur.enCours) return;
+  // Le relâcher peut précéder l'ouverture du micro : on le retient.
+  const relacheRef = useRef(false);
+
+  /** Le doigt se pose : le micro est demandé, l'enregistrement commence. */
+  const appuyer = useCallback(async () => {
+    if (!enregistreur || enregistreur.enCours || etat !== "repos") return;
+    relacheRef.current = false;
     setPhrase(null);
     setMesure(null);
     try {
       await enregistreur.demarrer();
       setDureeS(0);
       setEtat("enregistre");
+      if (relacheRef.current) void finir("geste");
     } catch (err) {
       setEtat("repos");
       setPhrase(
@@ -211,13 +218,13 @@ export function useDictee({
         ),
       );
     }
-  }, [enregistreur]);
+  }, [enregistreur, etat, finir]);
 
-  /** Un appui pour parler, un appui pour finir. */
-  const basculer = useCallback(() => {
-    if (etat === "enregistre") void finir("geste");
-    else if (etat === "repos") void parler();
-  }, [etat, finir, parler]);
+  /** Le doigt se lève : on arrête, on transcrit, l'appelant envoie. */
+  const relacher = useCallback(() => {
+    relacheRef.current = true;
+    void finir("geste");
+  }, [finir]);
 
   // L'écran qui s'éteint, l'app en arrière-plan : « un appui pour finir ».
   useEffect(() => {
@@ -251,7 +258,8 @@ export function useDictee({
     mesure,
     dernierAudio,
     mimeType: mimeType ?? null,
-    basculer,
+    appuyer,
+    relacher,
     effacerPhrase,
   };
 }

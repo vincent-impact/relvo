@@ -1016,20 +1016,26 @@ sans la voix et l'image, une part du courrier reste invisible au pipeline. Les a
 sont des dérivés gratuits de ce qui est déjà stocké : la situation structurée, le journal, les
 titres des sujets.
 
-### Parler à Relvo : un brouillon dicté, le vocabulaire du compte, le coût à la minute
+### Parler à Relvo : maintenir, parler, relâcher — le vocabulaire du compte, le coût à la minute
 
 **`tranché`** · La voix entre dans l'échange (M22) par la **transcription de fichier**
 d'OpenAI, sur le socle de l'AI SDK déjà installé : on enregistre dans le navigateur avec le
-format que le téléphone donne, on envoie à la fin, le texte revient. **Jamais envoyé seul** :
-il se pose dans le composer comme un brouillon, relu, corrigé, envoyé par l'avion. L'audio ne
-quitte l'appareil que pour être transcrit et n'est conservé nulle part.
+format que le téléphone donne, on envoie à la fin, le texte revient. **Le geste est celui des
+messageries** : on **maintient** le micro pour parler, on **relâche** pour envoyer — la
+transcription part à Relvo comme un message tapé, **sans relecture**. L'audio ne quitte
+l'appareil que pour être transcrit et n'est conservé nulle part.
 
+- **Revu après le premier essai du dirigeant** : la première version posait la transcription
+  dans le composer comme un brouillon à relire, avec un appui pour parler et un appui pour
+  finir. À l'usage, l'étape de relecture n'apportait rien — une dictée à Relvo n'engage rien
+  d'irréversible, ses gestes s'annulent (`05 §11.6`) — et le double appui était un geste de
+  plus. **Écartés** avec elle : le micro gardé dans le champ quand on a commencé à taper (la
+  dictée « s'ajoutait » au texte) ; dès qu'on tape, le disque est l'avion, c'est tout. Ce
+  qui est **conservé** : un message dicté à un **contact** (M20.1) se relira avant de partir,
+  parce qu'il sort du compte (`05 §7.4`).
 - **Une minute par dictée**, pas deux : une dictée à Relvo est une demande, pas un mémo.
-  L'appareil s'arrête au plafond et transcrit ce qu'il a ; l'écran qui s'éteint ou l'app qui
-  passe en arrière-plan valent « un appui pour finir » — jamais de reprise sans geste.
-- **La transcription s'ajoute** au texte saisi, elle ne le remplace pas. D'où le micro qui
-  reste **dans le champ** quand on a commencé à taper : le disque est le micro champ vide,
-  l'avion dès qu'il y a quoi envoyer.
+  L'appareil s'arrête au plafond et envoie ce qu'il a ; l'écran qui s'éteint ou l'app qui
+  passe en arrière-plan valent un relâcher — jamais de reprise sans geste.
 - **Un tier « transcription »** à part des quatre tiers au jeton : pas de niveau de
   raisonnement, pas de plafond de jetons, un **coût à la minute** dans une table dédiée, et
   une ligne de journal par dictée qui porte les **secondes d'audio**. Le backoffice et
