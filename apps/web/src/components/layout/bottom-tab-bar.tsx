@@ -1,5 +1,6 @@
 "use client";
 
+import { useId } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -84,20 +85,36 @@ function TabLink({ tab, pathname }: { tab: Tab; pathname: string }) {
   );
 }
 
-// La silhouette du dock : la pilule noire, soulevée autour du disque central.
-// Trois pièces de la même couleur, qui se recouvrent d'un pixel pour ne laisser
-// aucun filet : la moitié gauche et la moitié droite de la pilule, et au centre
-// une pièce SVG de largeur fixe qui porte la courbe — un plat, une montée douce
+// La silhouette du dock : la pilule noire, soulevée autour du disque central,
+// en UN SEUL SVG qui porte sa propre ombre. La pilule est un rectangle arrondi
+// à 100 % de la largeur ; au centre, un SVG imbriqué posé à `x="50%"` porte la
+// pièce de largeur fixe qui dessine la courbe — un plat, une montée douce
 // (cubique), un sommet qui épouse le disque, et la descente symétrique ; la
-// même chose en bas. L'ombre du dock est une drop-shadow sur l'ensemble, pour
-// qu'elle suive la silhouette et non le rectangle.
+// même chose en bas. Les deux formes, de la même couleur, sont réunies dans un
+// groupe filtré : l'ombre (`feDropShadow`, la valeur du jeton `--ombre-dock`)
+// est celle de leur UNION et suit la silhouette, pas le rectangle.
 //
-// Le dessin est calé sur `--dock-h` (54) et `--dock-etire` (10) : HAUTEUR et
-// ETIRE ici doivent valoir la même chose que les tokens.
+// ⚠️ Pourquoi pas un `filter: drop-shadow` CSS sur la barre : sur iOS, ce filtre
+// crée une couche rectangulaire englobant la barre et son ombre, redessinée
+// entière à chaque changement d'un enfant — l'opacité des onglets, le disque
+// qui se contracte au toucher, le repli au défilement. Pendant ce redessin,
+// WebKit montre le rectangle de la couche avant son contenu : une zone blanche
+// ou grise sous le dock, qui scintille. Ici, le SVG est statique : rastérisé
+// une fois, jamais repeint par les onglets.
+//
+// Le dessin est calé sur `--dock-h` (54), `--dock-etire` (10) et `--rayon-dock`
+// (32) : HAUTEUR, ETIRE et RAYON ici doivent valoir la même chose que les tokens.
 const LARGEUR = 132; // la pièce centrale
 const HAUTEUR = 54; // = --dock-h
 const ETIRE = 10; // = --dock-etire
+const RAYON = 32; // = --rayon-dock (borné à la demi-hauteur par le SVG)
 const PLAT = 10; // le plat avant la montée, de chaque côté
+// L'ombre : `--ombre-dock` = 0 10px 24px à 28 %. En SVG, le flou de 24 px est
+// un écart-type de 12 ; la marge laisse la place à l'ombre sous la pilule.
+const OMBRE_DY = 10;
+const OMBRE_FLOU = 12;
+const OMBRE_OPACITE = 0.28;
+const MARGE = OMBRE_DY + OMBRE_FLOU * 3;
 
 function cheminTissu() {
   const h = HAUTEUR + 2 * ETIRE;
@@ -113,27 +130,40 @@ function cheminTissu() {
 
 function DockFabric() {
   const h = HAUTEUR + 2 * ETIRE;
-  const demi = LARGEUR / 2 - 1; // recouvrement d'un pixel de chaque côté
+  const filtre = useId();
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0">
-      <div
-        className="absolute inset-y-0 left-0 rounded-l-(--rayon-dock) bg-noir"
-        style={{ right: `calc(50% + ${demi}px)` }}
-      />
-      <div
-        className="absolute inset-y-0 right-0 rounded-r-(--rayon-dock) bg-noir"
-        style={{ left: `calc(50% + ${demi}px)` }}
-      />
-      <svg
-        className="absolute left-1/2 -translate-x-1/2 fill-noir"
-        style={{ top: `calc(-1 * var(--dock-etire))` }}
-        width={LARGEUR}
-        height={h}
-        viewBox={`0 0 ${LARGEUR} ${h}`}
-      >
-        <path d={cheminTissu()} />
-      </svg>
-    </div>
+    <svg
+      aria-hidden
+      className="pointer-events-none absolute left-0 w-full overflow-visible text-noir"
+      style={{ top: `calc(-1 * var(--dock-etire))`, height: h }}
+      height={h}
+      // L'ombre déborde du cadre du SVG : la région du filtre et `overflow`
+      // visible la laissent s'étendre sous la pilule.
+    >
+      <defs>
+        <filter
+          id={filtre}
+          x="-10%"
+          y="-50%"
+          width="120%"
+          height={`${100 + (2 * MARGE * 100) / h}%`}
+        >
+          <feDropShadow
+            dx="0"
+            dy={OMBRE_DY}
+            stdDeviation={OMBRE_FLOU}
+            floodColor="currentColor"
+            floodOpacity={OMBRE_OPACITE}
+          />
+        </filter>
+      </defs>
+      <g filter={`url(#${filtre})`} className="fill-noir">
+        <rect x="0" y={ETIRE} width="100%" height={HAUTEUR} rx={RAYON} />
+        <svg x="50%" y="0" overflow="visible">
+          <path transform={`translate(${-LARGEUR / 2} 0)`} d={cheminTissu()} />
+        </svg>
+      </g>
+    </svg>
   );
 }
 
@@ -148,7 +178,6 @@ export function BottomTabBar({
     <nav
       aria-label="Navigation principale"
       className="relative flex h-(--dock-h) items-stretch"
-      style={{ filter: "drop-shadow(var(--ombre-dock))" }}
     >
       <DockFabric />
       {LEFT.map((tab) => (

@@ -91,6 +91,7 @@ Les autres viennent du kit et sont conservés ici parce qu'ils s'appliquent à c
 | **29** | **Un filtre de workspace sans `exec` devant un binaire** | Il cherche un **script** du même nom, n'en trouve pas, **ne fait rien**, et **sort en code 0** : l'étape passe au vert sans avoir rien migré. Le piège le plus insidieux du registre. |
 | 40 | **Les primitives enveloppent Base UI, pas Radix** | La propriété de composition a changé de nom, et un bouton qui rend un lien exige **en plus** de déclarer qu'il n'est pas un bouton natif. ⚠️ Cette seconde moitié **compile, passe le lint, passe les tests et rend un 200** : l'erreur n'existe que dans la console du navigateur. |
 | 41 | **Un type structurel n'arrête pas ce qui ne doit pas traverser la frontière client** | Un composant client déclare un type de props étroit, on lui passe l'objet complet, et **le typage l'accepte** — un objet plus riche satisfait le type. L'erreur ne se voit ni au typage, ni au lint, ni dans un test : seulement au rendu. Remède : **projection explicite champ par champ**, jamais l'objet entier. |
+| **65** | **Un `filter: drop-shadow` CSS sur une barre aux enfants animés** | Sur iOS, la couche du filtre est redessinée entière à chaque changement d'un descendant et montre un rectangle blanc qui scintille. Une ombre qui suit une silhouette se dessine dans un SVG statique (`feDropShadow`), le contenu animé au-dessus. |
 | 42 | **Un défaut posé sous un « optionnel » ne court-circuite rien** | Le défaut s'applique quand même quand la clé est absente. Conséquence sur une fiche faite de blocs qui s'enregistrent séparément : enregistrer une section **efface** les autres. ⚠️ **Le vrai piège est le TEST** : une suite qui poste toujours *tous* les champs ne peut pas le voir. |
 
 ## Tests
@@ -501,6 +502,24 @@ touchent la base (`jwt` pour Google, `signIn`) restent dans `auth.ts`. Le test
 protège la décision, **pas** le remplissage de la session — c'est le `curl` de `/admin` avec un
 vrai cookie qui a attrapé celui-ci.
 
+### #65 — Un `filter: drop-shadow` CSS sur une barre dont les enfants s'animent fait scintiller un rectangle sous elle, sur iOS
+
+**Symptôme** : sous le dock, une zone **rectangulaire** blanche ou grise, de la taille de la
+barre et de son ombre, apparaît par moments ; parfois elle **scintille**, alternant blanc et
+ombré très vite. Jamais en headless sur ordinateur, seulement sur le téléphone.
+
+**Cause** : le dock portait `filter: drop-shadow(…)` pour que l'ombre suive la silhouette de la
+pilule soulevée autour du disque. Sur WebKit, un filtre crée une **couche de rendu
+rectangulaire** qui englobe l'élément et son ombre, et cette couche est **redessinée entière**
+dès qu'un descendant change — l'opacité des onglets en transition, le disque qui se contracte
+au toucher, le repli au défilement. Pendant ce redessin, WebKit affiche le rectangle de la
+couche avant d'avoir peint son contenu.
+
+**Règle** : pas de filtre CSS sur un conteneur dont les enfants s'animent. Une ombre qui doit
+suivre une silhouette se dessine **dans un SVG statique** (`feDropShadow` sur le groupe des
+formes), posé sous le contenu ; les onglets et le disque vivent au-dessus, hors de toute couche
+filtrée. Une ombre rectangulaire reste un `box-shadow`.
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -516,6 +535,7 @@ vrai cookie qui a attrapé celui-ci.
 | **Base UI** | #40 |
 | **Zod** | #42 |
 | **React** | #41 |
+| **WebKit (iOS)** | #65 |
 
 Les pièges **#3, #12, #13, #17, #24, #25, #26** relèvent de la **plateforme de déploiement**, pas
 d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revérifier dans la
