@@ -782,6 +782,8 @@ export const logAiSolicitationSchema = z.object({
   prefixeStable: z.number().int().nonnegative().optional().nullable(),
   /** Appel en lot (rattrapage, M7.19) : niveau de service « flex », coût remisé. */
   lot: z.boolean().optional(),
+  /** Secondes d'audio transcrites (tier « transcription », M22) ; absent sur les autres tiers. */
+  audioSecondes: z.number().nonnegative().optional().nullable(),
   /** Le message qui a déclenché l'appel — clé de l'idempotence. */
   messageId: z.uuid().optional().nullable(),
   conversationId: z.uuid().optional().nullable(),
@@ -822,6 +824,9 @@ export async function logAiSolicitation(
       reponseId: data.reponseId ?? null,
       prefixeStable: data.prefixeStable ?? null,
       lot: data.lot ?? false,
+      ...(data.audioSecondes != null
+        ? { audioSecondes: data.audioSecondes }
+        : {}),
       conversationId: data.conversationId ?? null,
     },
   });
@@ -943,6 +948,8 @@ export type AiSolicitationRow = {
   dureeMs: number;
   prefixeStable: number | null;
   lot: boolean;
+  /** Secondes d'audio (tier « transcription », M22) ; null sur les autres tiers. */
+  audioSecondes: number | null;
   reponseId: string | null;
   subjectId: string | null;
   messageId: string | null;
@@ -957,6 +964,8 @@ export type AiSolicitationSummary = {
   sortie: number;
   raisonnement: number;
   dureeMsMoyenne: number;
+  /** Secondes d'audio transcrites — ce qu'une dictée coûte réellement (M22). */
+  audioSecondes: number;
   /** Appels qui portaient un préfixe stable mesuré. */
   mesures: number;
   /** Somme des préfixes stables attendus, sur les appels mesurés. */
@@ -995,6 +1004,7 @@ function lireLigne(e: {
     dureeMs: n(m.dureeMs),
     prefixeStable: typeof m.prefixeStable === "number" ? m.prefixeStable : null,
     lot: m.lot === true,
+    audioSecondes: typeof m.audioSecondes === "number" ? m.audioSecondes : null,
     reponseId: typeof m.reponseId === "string" ? m.reponseId : null,
     subjectId: e.subjectId,
     messageId: e.messageId,
@@ -1046,6 +1056,7 @@ export function summarizeAiSolicitations(
       sortie: 0,
       raisonnement: 0,
       dureeMsMoyenne: 0,
+      audioSecondes: 0,
       mesures: 0,
       prefixeStable: 0,
       cacheLectureMesuree: 0,
@@ -1059,6 +1070,7 @@ export function summarizeAiSolicitations(
     s.sortie += r.jetons.sortie;
     s.raisonnement += r.jetons.raisonnement;
     s.dureeMsMoyenne += r.dureeMs;
+    s.audioSecondes += r.audioSecondes ?? 0;
     if (r.prefixeStable !== null && r.prefixeStable > 0) {
       s.mesures += 1;
       s.prefixeStable += r.prefixeStable;

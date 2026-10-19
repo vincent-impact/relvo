@@ -88,6 +88,22 @@ export default async function AdminPage() {
           )}
         </section>
 
+        <section>
+          <ZoneHeading label="Essais" hint="pour l'administrateur" />
+          <ListPanel>
+            <Link
+              href="/admin/dictee"
+              data-list-row
+              className="flex items-baseline justify-between gap-3 border-b border-(--filet) px-4 py-3 text-[14.5px] font-medium text-noir active:bg-(--fond-puce)"
+            >
+              Essai de dictée
+              <span className="text-[12px] font-light text-gris">
+                le micro, la transcription, la mesure
+              </span>
+            </Link>
+          </ListPanel>
+        </section>
+
         {tests.length ? (
           <section>
             <ZoneHeading label="Comptes test" hint={`${tests.length}`} />

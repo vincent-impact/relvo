@@ -13,7 +13,7 @@
 import type { NiveauRaisonnement, Tier } from "./config";
 
 /** Date du relevé. À incrémenter à CHAQUE changement de prix ou de taux. */
-export const TARIFS_VERSION = "2026-09-20";
+export const TARIFS_VERSION = "2026-10-19";
 
 /**
  * Remise du niveau de service « flex » (appel EN LOT, `05 §10.5`) : entrée,
@@ -63,6 +63,41 @@ export const TARIFS: Readonly<Record<string, Tarif>> = {
     longContexte: LONG_CONTEXTE_OPENAI,
   },
 };
+
+/**
+ * La TRANSCRIPTION (M22) se tarife à la MINUTE d'audio, pas au jeton : c'est
+ * ce que le fournisseur affiche, et ce qu'une dictée coûte réellement. Même
+ * relevé, même version, même taux que la table au jeton. USD par minute.
+ */
+export const TARIFS_TRANSCRIPTION: Readonly<
+  Record<string, { usdParMinute: number }>
+> = {
+  "gpt-4o-mini-transcribe": { usdParMinute: 0.003 },
+  "gpt-transcribe": { usdParMinute: 0.0045 },
+  "gpt-4o-transcribe": { usdParMinute: 0.006 },
+};
+
+export function tarifTranscription(modele: string): { usdParMinute: number } {
+  const tarif = TARIFS_TRANSCRIPTION[modele];
+  if (!tarif) {
+    throw new Error(
+      `[ia] Aucun tarif à la minute pour le modèle « ${modele} » (table ${TARIFS_VERSION}). ` +
+        "Un modèle sans tarif rend le compteur aveugle : ajouter la ligne dans " +
+        "src/server/ia/tarifs.ts (TARIFS_TRANSCRIPTION) AVANT de l'affecter au tier.",
+    );
+  }
+  return tarif;
+}
+
+/** Coût d'une transcription, au prorata de la seconde. Pur, sans arrondi. */
+export function estimerCoutTranscription(
+  modele: string,
+  audioSecondes: number,
+): Cout {
+  const t = tarifTranscription(modele);
+  const usd = (Math.max(0, audioSecondes) / 60) * t.usdParMinute;
+  return { usd, eur: usd / USD_PAR_EUR, version: TARIFS_VERSION };
+}
 
 /**
  * Consommation d'un appel, normalisée. Les jetons de raisonnement sont
@@ -142,4 +177,10 @@ export type MesureSollicitation = {
    * d'appel ne l'a pas mesuré.
    */
   prefixeStable?: number | null;
+  /**
+   * Secondes d'audio transcrites (tier « transcription », M22) : c'est l'unité
+   * de son coût, et ce que `ia:journal` et le backoffice somment en minutes.
+   * Absent sur les autres tiers.
+   */
+  audioSecondes?: number;
 };

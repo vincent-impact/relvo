@@ -5,14 +5,17 @@ import {
   Output,
   stepCountIs,
   streamText,
+  transcribe,
   type FinishReason,
   type FlexibleSchema,
   type LanguageModel,
   type LanguageModelUsage,
   type ModelMessage,
   type ToolSet,
+  type TranscriptionModel,
 } from "ai";
 import {
+  DICTEE,
   modeleDuTier,
   NIVEAUX_RAISONNEMENT,
   openaiBaseUrl,
@@ -20,11 +23,14 @@ import {
   retentionCache,
   type NiveauRaisonnement,
   type Tier,
+  type TierTexte,
 } from "./config";
 import { estimerJetons } from "./produit";
 import {
   estimerCout,
+  estimerCoutTranscription,
   tarifDuModele,
+  tarifTranscription,
   TARIFS_VERSION,
   type Consommation,
   type MesureSollicitation,
@@ -56,6 +62,11 @@ import {
 //   5. Un appel EN LOT (`lot`, tranche 9) passe au niveau de service « flex »
 //      du fournisseur : moitié prix, latence libre. Réservé à ce qui n'attend
 //      personne — le rattrapage du courrier récent.
+//   6. La TRANSCRIPTION (`transcrire`, M22) est un cinquième tier, à part :
+//      pas de niveau, pas de jetons — un coût à la MINUTE d'audio, et la
+//      mesure porte les secondes transcrites. Le corps est borné AVANT l'appel
+//      comme l'entrée des autres tiers ; l'audio ne vit que le temps de
+//      l'appel, il n'est ni journalisé ni conservé.
 //
 // Comme le client Unipile, c'est une intégration de l'APPLICATION : rien ici
 // n'appartient à `packages/`. La garde `server-only` est posée sur `./index`,
@@ -81,6 +92,7 @@ export type Sollicitation =
   | "ingestion-connaissances" // B4
   | "echange" // C1
   | "titre-echange" // C2
+  | "dictee" // M22 : une dictée du dirigeant transcrite vers le composer
   | "banc-essai"; // M7.17, hors production
 
 type Entree = { system?: string } & (
@@ -154,12 +166,18 @@ export class NiveauRaisonnementManquant extends Error {
  *   • `plafond-sortie` — le modèle a atteint le plafond de jetons de sortie :
  *     la sortie est tronquée, on ne l'exploite pas ;
  *   • `sortie-non-conforme` — la sortie ne respecte pas le schéma (ce que le
- *     mode strict du fournisseur est censé empêcher : à surveiller).
+ *     mode strict du fournisseur est censé empêcher : à surveiller) ;
+ *   • `audio-trop-long` — une dictée au-delà de la durée ou de la taille
+ *     maximale, refusée avant l'appel, zéro seconde facturée (M22) ;
+ *   • `audio-vide` — le fournisseur n'a rien entendu : la dictée a coûté ses
+ *     secondes, le composer dit « je n'ai pas compris » (M22).
  */
 export type MotifEchec =
   | "entree-trop-longue"
   | "plafond-sortie"
-  | "sortie-non-conforme";
+  | "sortie-non-conforme"
+  | "audio-trop-long"
+  | "audio-vide";
 
 /**
  * Un appel qui a échoué de façon PRÉVUE (M7.15, tranche 8). Porte la MESURE
@@ -217,7 +235,7 @@ function openai(): OpenAIProvider {
  * quel et son coût est nul — c'est le cas des tests, jamais de la production.
  */
 function resoudreModele(
-  tier: Tier,
+  tier: TierTexte,
   surcharge: LanguageModel | undefined,
 ): { modele: LanguageModel; id: string; tarife: boolean } {
   const modele = surcharge ?? modeleDuTier(tier);
@@ -256,7 +274,7 @@ export function estimerEntree(options: Entree): number {
  * jeton, appeler coûterait le contexte entier — et, au-delà du seuil de long
  * contexte du fournisseur, le double.
  */
-function verifierEntree(tier: Tier, options: OptionsCommunes): void {
+function verifierEntree(tier: TierTexte, options: OptionsCommunes): void {
   const estime = estimerEntree(options);
   const plafond = PLAFONDS.jetonsEntree[tier];
   if (estime > plafond) {
@@ -341,7 +359,7 @@ function mesurer(
 }
 
 /** Prépare un appel : niveau exigé, modèle résolu et tarifé, entrée bornée. */
-function preparer(tier: Tier, options: OptionsCommunes) {
+function preparer(tier: TierTexte, options: OptionsCommunes) {
   const niveau = exigerNiveau(options.sollicitation, options.reasoning);
   const { modele, id, tarife } = resoudreModele(tier, options.modele);
   verifierEntree(tier, options);
@@ -375,7 +393,7 @@ function exigerSortieComplete(
 }
 
 async function genererObjet<T>(
-  tier: Tier,
+  tier: TierTexte,
   options: OptionsObjet<T>,
 ): Promise<ResultatIa<T>> {
   const { modele, niveau, appel } = preparer(tier, options);
@@ -501,4 +519,138 @@ export function chat<TOOLS extends ToolSet>(
     flux.response,
   ]).then(([usage, response]) => mesurer(appel, usage, response.id));
   return { flux, mesure };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Tier TRANSCRIPTION — la dictée (M22)
+// ─────────────────────────────────────────────────────────────
+
+export type OptionsTranscription = {
+  sollicitation: Sollicitation;
+  /**
+   * L'audio tel que l'appareil l'a enregistré — jamais converti. Le type du
+   * conteneur (`audio/mp4` sur iOS, `audio/webm` ailleurs) se lit dans les
+   * octets eux-mêmes : c'est le SDK qui le reconnaît, pas l'appelant qui le
+   * déclare.
+   */
+  audio: Uint8Array;
+  /**
+   * La durée que l'appareil a mesurée, en secondes : la garde AVANT l'appel,
+   * et le repli du compteur si le fournisseur ne rend pas la sienne.
+   */
+  dureeS: number;
+  /** Le vocabulaire du compte — noms, affaires, mots du secteur (M22.4). */
+  prompt?: string;
+  abortSignal?: AbortSignal;
+  /** Jeu d'évaluation et tests : impose un modèle (identifiant OpenAI ou modèle simulé). */
+  modele?: TranscriptionModel;
+};
+
+function resoudreModeleTranscription(
+  surcharge: TranscriptionModel | undefined,
+): {
+  modele: TranscriptionModel;
+  id: string;
+  tarife: boolean;
+} {
+  const modele = surcharge ?? modeleDuTier("transcription");
+  if (typeof modele === "string") {
+    tarifTranscription(modele);
+    return { modele: openai().transcription(modele), id: modele, tarife: true };
+  }
+  return { modele, id: modele.modelId, tarife: false };
+}
+
+/**
+ * Transcrit une dictée. Ce que le tier garantit : le modèle a un tarif à la
+ * minute AVANT l'appel ; une dictée trop longue ou trop lourde est refusée à
+ * zéro seconde ; la mesure porte les secondes d'audio — celles du fournisseur
+ * quand il les rend, celles de l'appareil sinon — et leur coût ; un texte
+ * vide est un échec nommé (`audio-vide`) qui porte sa mesure, pour que la
+ * dictée ratée coûte au journal ce qu'elle a coûté au fournisseur.
+ */
+export async function transcrire(
+  options: OptionsTranscription,
+): Promise<ResultatIa<string>> {
+  const { modele, id, tarife } = resoudreModeleTranscription(options.modele);
+  if (
+    options.dureeS > DICTEE.dureeMaxS ||
+    options.audio.byteLength > DICTEE.tailleMaxOctets
+  ) {
+    throw new EchecSollicitation({
+      motif: "audio-trop-long",
+      sollicitation: options.sollicitation,
+      detail: `${Math.round(options.dureeS)} s, ${options.audio.byteLength} octets — plafonds ${DICTEE.dureeMaxS} s, ${DICTEE.tailleMaxOctets} octets`,
+      mesure: null,
+    });
+  }
+  const debut = Date.now();
+  const resultat = await transcribe({
+    model: modele,
+    audio: options.audio,
+    abortSignal: options.abortSignal,
+    providerOptions: {
+      openai: {
+        language: DICTEE.langue,
+        ...(options.prompt ? { prompt: options.prompt } : {}),
+      },
+    },
+  });
+  const audioSecondes =
+    resultat.durationInSeconds !== undefined && resultat.durationInSeconds > 0
+      ? resultat.durationInSeconds
+      : options.dureeS;
+  const mesure: MesureSollicitation = {
+    sollicitation: options.sollicitation,
+    tier: "transcription",
+    modele: id,
+    niveau: "none",
+    jetons: {
+      entree: 0,
+      cacheLecture: 0,
+      cacheEcriture: 0,
+      sortie: 0,
+      raisonnement: 0,
+    },
+    cout: tarife
+      ? estimerCoutTranscription(id, audioSecondes)
+      : { eur: 0, usd: 0, version: TARIFS_VERSION },
+    dureeMs: Date.now() - debut,
+    audioSecondes,
+  };
+  const texte = resultat.text.trim();
+  if (!texte || estEchoDuPrompt(texte, options.prompt)) {
+    throw new EchecSollicitation({
+      motif: "audio-vide",
+      sollicitation: options.sollicitation,
+      detail: texte
+        ? `${Math.round(audioSecondes)} s d'audio, le modèle a rendu le prompt au lieu de la dictée`
+        : `${Math.round(audioSecondes)} s d'audio, aucun texte rendu`,
+      mesure,
+    });
+  }
+  return { sortie: texte, mesure };
+}
+
+function normaliserPourComparer(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim();
+}
+
+/**
+ * Sur un silence ou un bruit, un modèle de transcription aligné sur un prompt
+ * ne rend pas une chaîne vide : il RECOPIE le prompt — « Dictée en français
+ * de … » posé dans le composer serait un mensonge. Un texte entièrement
+ * contenu dans le prompt n'est donc jamais une dictée.
+ */
+export function estEchoDuPrompt(
+  texte: string,
+  prompt: string | undefined,
+): boolean {
+  if (!prompt) return false;
+  const t = normaliserPourComparer(texte);
+  if (!t) return true;
+  return normaliserPourComparer(prompt).includes(t);
 }

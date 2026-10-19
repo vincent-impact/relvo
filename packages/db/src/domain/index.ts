@@ -39,3 +39,4 @@ export * from "./echange";
 export * from "./questions";
 export * from "./notifications";
 export * from "./admin";
+export * from "./dictee";

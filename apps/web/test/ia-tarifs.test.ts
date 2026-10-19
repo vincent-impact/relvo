@@ -3,12 +3,14 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
   estimerCout,
+  estimerCoutTranscription,
   FACTEUR_LOT,
   modeleDuTier,
   normaliserUsage,
   TARIFS,
+  TARIFS_TRANSCRIPTION,
   TARIFS_VERSION,
-  TIERS,
+  TIERS_TEXTE,
   USD_PAR_EUR,
 } from "@/server/ia";
 
@@ -25,10 +27,24 @@ import {
 
 describe("table de tarifs", () => {
   it("couvre tous les modèles affectés à un tier", () => {
-    for (const tier of TIERS) {
+    for (const tier of TIERS_TEXTE) {
       const modele = modeleDuTier(tier, {});
       expect(TARIFS[modele], `tier ${tier} → ${modele}`).toBeDefined();
     }
+    // La transcription (M22) se tarife à la minute, dans sa propre table.
+    const transcription = modeleDuTier("transcription", {});
+    expect(TARIFS_TRANSCRIPTION[transcription]).toBeDefined();
+  });
+
+  it("tarife une dictée à la minute, au prorata de la seconde (M22.1)", () => {
+    const cout = estimerCoutTranscription("gpt-4o-mini-transcribe", 90);
+    expect(cout.usd).toBeCloseTo(1.5 * 0.003, 12);
+    expect(cout.eur).toBeCloseTo((1.5 * 0.003) / USD_PAR_EUR, 12);
+    expect(cout.version).toBe(TARIFS_VERSION);
+    expect(estimerCoutTranscription("gpt-transcribe", 0).usd).toBe(0);
+    expect(() => estimerCoutTranscription("gpt-7-inconnu", 10)).toThrow(
+      /Aucun tarif à la minute/,
+    );
   });
 
   it("partage son taux de change avec scripts/cout-iag.py", () => {

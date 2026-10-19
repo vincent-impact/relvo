@@ -54,6 +54,7 @@ function ligne(
     dureeMs: 1_000,
     prefixeStable,
     lot: false,
+    audioSecondes: null,
     reponseId: null,
     subjectId: null,
     messageId: null,
@@ -102,6 +103,54 @@ describe("le journal des sollicitations", () => {
     expect(
       await listAiSolicitations(db, { since: new Date(Date.now() + 60_000) }),
     ).toEqual([]);
+  });
+});
+
+describe("le journal d'une dictée (M22.1)", () => {
+  it("consigne les secondes d'audio, les relit et les somme par sollicitation", async () => {
+    const { db } = await makeAccount("dictee-journal@test.fr");
+    await logAiSolicitation(db, {
+      sollicitation: "dictee",
+      tier: "transcription",
+      modele: "gpt-4o-mini-transcribe",
+      niveau: "none",
+      jetons: {
+        entree: 0,
+        cacheLecture: 0,
+        cacheEcriture: 0,
+        sortie: 0,
+        raisonnement: 0,
+      },
+      cout: { eur: 0.00039, usd: 0.00045, version: "2026-10-19" },
+      dureeMs: 1_800,
+      audioSecondes: 9,
+    });
+    await logAiSolicitation(db, {
+      ...mesure,
+      sollicitation: "dictee",
+      tier: "transcription",
+      jetons: {
+        entree: 0,
+        cacheLecture: 0,
+        cacheEcriture: 0,
+        sortie: 0,
+        raisonnement: 0,
+      },
+      audioSecondes: 21.5,
+    });
+    const lignes = await listAiSolicitations(db, {
+      since: new Date(Date.now() - 60_000),
+    });
+    expect(lignes.map((l) => l.audioSecondes)).toEqual([9, 21.5]);
+    const [synthese] = summarizeAiSolicitations(lignes);
+    expect(synthese.sollicitation).toBe("dictee");
+    expect(synthese.audioSecondes).toBe(30.5);
+    expect(synthese.appels).toBe(2);
+    // Une ligne d'un autre tier n'a pas d'audio : null, et zéro dans la somme.
+    expect(
+      summarizeAiSolicitations([ligne("2026-09-20T08:00:00Z", 0, null)])[0]
+        .audioSecondes,
+    ).toBe(0);
   });
 });
 

@@ -136,7 +136,7 @@ relvo/
 | `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros ; les **Préférences** portent l'assistant et les notifications de cet appareil. Il n'y a **pas** de page Réglages | menu |
 | `/recherche` | Recherche transverse | menu, en dernier |
 | `/sujets/[id]` · `/sujets/nouveau` | Fiche d'une affaire | hors-nav |
-| `/admin` · `/admin/comptes/[id]` | **Backoffice** (M21) — rôle `admin` seulement : les comptes, les demandes à ouvrir, les gestes (assistant, test, suppression) | entrée du menu pour les administrateurs ; retour à l'app par le pictogramme maison |
+| `/admin` · `/admin/comptes/[id]` · `/admin/dictee` | **Backoffice** (M21) — rôle `admin` seulement : les comptes, les demandes à ouvrir, les gestes (assistant, test, suppression), l'**essai de dictée** (M22.1 : le micro en PWA, la mesure, le partage des enregistrements du benchmark) | entrée du menu pour les administrateurs ; retour à l'app par le pictogramme maison |
 | `/(auth)/*` | Tunnel d'authentification — l'inscription est libre, **l'accès s'ouvre quand un administrateur valide la demande** (`/inscription/attente`) | — |
 
 **Navigation** : barre d'onglets basse, fixe, violette, **cinq places** : Accueil · Calendrier ·
@@ -209,6 +209,7 @@ pnpm db:seed         # jeu de démonstration
 pnpm --filter web ia:journal   # le compteur de l'inférence relu : coût, cache, silencieux
 pnpm --filter web push:essai <e-mail>   # pose une question de test et la pousse (M12.9)
 pnpm --filter web admin:role <e-mail> admin|ceo   # donne ou retire le rôle admin, journalisé (M21.1) — effectif à la prochaine connexion
+pnpm --filter web eval:dictee --dossier <hors dépôt> [--compte <e-mail>]   # benchmark de la transcription, dictées HORS dépôt (M22.1)
 ```
 
 Déploiement : pousser sur la branche de production. **Un seul déployable.**

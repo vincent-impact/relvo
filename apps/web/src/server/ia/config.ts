@@ -13,15 +13,18 @@
 // d'inférence »).
 
 /**
- * Les tiers de `05 §10.5`. La transcription (messages vocaux) n'a pas de tier
- * ici : son fournisseur reste à benchmarker (`ecarts-et-propositions.md`,
- * « Benchmarker la transcription vocale et la vision »).
+ * Les tiers TEXTE de `05 §10.5` — ceux qui raisonnent, se plafonnent en
+ * jetons et se cachent. La transcription (M22) est un tier à part : elle se
+ * tarife à la minute, n'a ni niveau de raisonnement ni plafond de jetons.
  */
-export type Tier =
+export type TierTexte =
   | "classification"
   | "extraction"
   | "redaction"
   | "raisonnement";
+
+/** Les tiers de `05 §10.5`, transcription comprise. */
+export type Tier = TierTexte | "transcription";
 
 /**
  * Niveau de raisonnement — POSÉ EXPLICITEMENT à chaque site d'appel, jamais
@@ -45,19 +48,24 @@ export const NIVEAUX_RAISONNEMENT: readonly NiveauRaisonnement[] = [
  * passer, et que le banc d'essai fait varier. Le client refuse un appel sans
  * niveau.
  */
-export const NIVEAU_RETENU: Readonly<Record<Tier, NiveauRaisonnement>> = {
+export const NIVEAU_RETENU: Readonly<Record<TierTexte, NiveauRaisonnement>> = {
   classification: "none",
   extraction: "low",
   redaction: "low",
   raisonnement: "medium",
 };
 
-/** Affectation par défaut, surchargée par l'environnement (cf. `.env.example`). */
+/**
+ * Affectation par défaut, surchargée par l'environnement (cf. `.env.example`).
+ * La transcription : le plus petit modèle qui écrit juste les noms du compte
+ * (`backlog/benchmark-iag.md` §6.12, M22.1).
+ */
 const MODELE_PAR_DEFAUT: Readonly<Record<Tier, string>> = {
   classification: "gpt-5.6-luna",
   extraction: "gpt-5.6-luna",
   redaction: "gpt-5.6-luna",
   raisonnement: "gpt-5.6-terra",
+  transcription: "gpt-4o-mini-transcribe",
 };
 
 const VARIABLE_PAR_TIER: Readonly<Record<Tier, string>> = {
@@ -65,6 +73,7 @@ const VARIABLE_PAR_TIER: Readonly<Record<Tier, string>> = {
   extraction: "RELVO_IA_MODELE_EXTRACTION",
   redaction: "RELVO_IA_MODELE_REDACTION",
   raisonnement: "RELVO_IA_MODELE_RAISONNEMENT",
+  transcription: "RELVO_IA_MODELE_TRANSCRIPTION",
 };
 
 /** Le modèle (identifiant OpenAI) affecté à un tier. */
@@ -76,12 +85,14 @@ export function modeleDuTier(
   return surcharge || MODELE_PAR_DEFAUT[tier];
 }
 
-export const TIERS: readonly Tier[] = [
+export const TIERS_TEXTE: readonly TierTexte[] = [
   "classification",
   "extraction",
   "redaction",
   "raisonnement",
 ];
+
+export const TIERS: readonly Tier[] = [...TIERS_TEXTE, "transcription"];
 
 /**
  * Plafonds par appel (`05 §10.6`, « par appel et par tour ») — jetons de sortie
@@ -101,7 +112,7 @@ export const PLAFONDS = {
     extraction: 3_000,
     redaction: 1_500,
     raisonnement: 4_000,
-  } satisfies Record<Tier, number>,
+  } satisfies Record<TierTexte, number>,
   /**
    * Jetons d'ENTRÉE (estimés, `estimerJetons`) — vérifiés AVANT l'appel, donc
    * à zéro jeton : un contexte qui déborde est refusé et journalisé, pas payé.
@@ -115,9 +126,28 @@ export const PLAFONDS = {
     extraction: 24_000,
     redaction: 24_000,
     raisonnement: 60_000,
-  } satisfies Record<Tier, number>,
+  } satisfies Record<TierTexte, number>,
   /** Allers-retours au modèle par tour d'échange (`05 §11.8`). */
   etapesParTour: 6,
+} as const;
+
+/**
+ * La DICTÉE (M22) : ce que la route de transcription accepte, tranché avec le
+ * dirigeant (`backlog/sprints/2026-10-m22-voix.md`). Une minute : une dictée
+ * à Relvo est une demande, pas un mémo ; l'appareil s'arrête au plafond et
+ * transcrit ce qu'il a. La taille borne le corps AVANT d'appeler le
+ * fournisseur — une minute d'AAC iOS pèse moins d'un mégaoctet, deux
+ * mégaoctets laissent de la marge à un débit plus gourmand ; la limite dure
+ * est celle du corps d'une fonction (4,5 Mo). Sous une seconde, il n'y a rien
+ * à transcrire : rien ne part.
+ */
+export const DICTEE = {
+  dureeMaxS: 60,
+  dureeMinS: 1,
+  tailleMaxOctets: 2 * 1024 * 1024,
+  /** Les conteneurs que `MediaRecorder` donne, dans l'ordre où l'appareil les essaie. */
+  typesAudio: ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"],
+  langue: "fr",
 } as const;
 
 /**

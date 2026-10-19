@@ -6,7 +6,8 @@ titre_client: Parler à Relvo
 resume_client: >
   Dicter votre demande à Relvo plutôt que la taper : un appui sur le micro, vous parlez, le texte
   s'écrit et se corrige avant l'envoi. Pour la cuisine et le chantier, où l'on n'écrit pas.
-statut: a-faire
+statut: en-cours
+debut: 2026-10-19
 ---
 
 # M22 — Parler à Relvo

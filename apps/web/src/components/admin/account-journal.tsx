@@ -62,6 +62,9 @@ export function AccountJournal({
                     sortie {Math.round(s.sortie / s.appels)} (
                     {Math.round(s.raisonnement / s.appels)} raisonnement)
                   </span>
+                  {s.audioSecondes ? (
+                    <span>audio {(s.audioSecondes / 60).toFixed(1)} min</span>
+                  ) : null}
                   <span>{s.dureeMsMoyenne} ms</span>
                   <span>
                     cache relu{" "}
@@ -88,7 +91,7 @@ export function AccountJournal({
         {fiche.nonMesures ? (
           <p className="mt-2 px-4 text-[12px] font-light text-gris">
             {fiche.nonMesures} appel{fiche.nonMesures > 1 ? "s" : ""} sans
-            préfixe mesuré (antérieurs à la mesure, ou brouillons).
+            préfixe mesuré (antérieurs à la mesure, brouillons ou dictées).
           </p>
         ) : null}
       </section>

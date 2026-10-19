@@ -69,12 +69,12 @@ async function main() {
       continue;
     }
     console.log(
-      `\n| sollicitation | appels | € | €/appel | entrée moy. | cache lu | cache attendu | relu / attendu | sortie moy. (dont raisonnement) | latence moy. | silencieux |`,
+      `\n| sollicitation | appels | € | €/appel | entrée moy. | cache lu | cache attendu | relu / attendu | sortie moy. (dont raisonnement) | audio | latence moy. | silencieux |`,
     );
-    console.log(`|---|---|---|---|---|---|---|---|---|---|---|`);
+    console.log(`|---|---|---|---|---|---|---|---|---|---|---|---|`);
     for (const s of synthese) {
       console.log(
-        `| ${s.sollicitation} | ${s.appels} | ${eur(s.coutEur)} | ${eur(s.coutEur / s.appels)} | ${Math.round(s.entree / s.appels)} | ${Math.round(s.cacheLecture / s.appels)} | ${s.mesures ? Math.round(s.prefixeStable / s.mesures) : "—"} | ${s.mesures ? pct(s.cacheLectureMesuree, s.prefixeStable) : "—"} | ${Math.round(s.sortie / s.appels)} (${Math.round(s.raisonnement / s.appels)}) | ${s.dureeMsMoyenne} ms | ${s.mesures ? `${s.silencieux.length}/${s.mesures}` : "non mesuré"} |`,
+        `| ${s.sollicitation} | ${s.appels} | ${eur(s.coutEur)} | ${eur(s.coutEur / s.appels)} | ${Math.round(s.entree / s.appels)} | ${Math.round(s.cacheLecture / s.appels)} | ${s.mesures ? Math.round(s.prefixeStable / s.mesures) : "—"} | ${s.mesures ? pct(s.cacheLectureMesuree, s.prefixeStable) : "—"} | ${Math.round(s.sortie / s.appels)} (${Math.round(s.raisonnement / s.appels)}) | ${s.audioSecondes ? `${(s.audioSecondes / 60).toFixed(1)} min` : "—"} | ${s.dureeMsMoyenne} ms | ${s.mesures ? `${s.silencieux.length}/${s.mesures}` : "non mesuré"} |`,
       );
     }
     const silencieux = synthese
@@ -94,7 +94,7 @@ async function main() {
     const nonMesures = lignes.filter((l) => l.prefixeStable === null).length;
     if (nonMesures) {
       console.log(
-        `\n${nonMesures} appel${nonMesures > 1 ? "s" : ""} sans préfixe mesuré (antérieurs à la tranche 8, ou brouillons).`,
+        `\n${nonMesures} appel${nonMesures > 1 ? "s" : ""} sans préfixe mesuré (antérieurs à la tranche 8, brouillons ou dictées).`,
       );
     }
     console.log("");
