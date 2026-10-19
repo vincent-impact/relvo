@@ -179,6 +179,10 @@
       "date": "2026-10-19",
       "entrees": [
         {
+          "type": "fix",
+          "texte": "Sur iPhone, la zone claire qui apparaissait ou scintillait parfois sous la barre du bas a disparu."
+        },
+        {
           "type": "new",
           "texte": "L'inscription à Relvo reste libre, mais votre accès s'ouvre quand nous validons votre demande : vous recevez alors un e-mail pour vous connecter."
         },
