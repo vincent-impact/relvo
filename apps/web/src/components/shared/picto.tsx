@@ -53,6 +53,9 @@ export const MagnifyingGlass = plein(P.MagnifyingGlass, "MagnifyingGlass");
 export const SignOut = plein(P.SignOut, "SignOut");
 export const DeviceMobile = plein(P.DeviceMobile, "DeviceMobile");
 export const Flask = plein(P.Flask, "Flask");
+/** Le backoffice (M21) : l'entrée du menu pour les administrateurs, et le retour à l'application. */
+export const ShieldCheck = plein(P.ShieldCheck, "ShieldCheck");
+export const House = plein(P.House, "House");
 
 // Les canaux et les contacts
 export const Envelope = plein(P.Envelope, "Envelope");

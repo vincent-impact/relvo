@@ -80,6 +80,11 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   qui se lit **hors** de l'application (le suivi client) et n'hérite d'aucune de ces contraintes.
   Il n'y a **pas** de layout à la racine de `app/` — une page publique se crée dans `(public)`,
   jamais ailleurs (`PITFALLS.md` #48).
+- **La zone d'administration `/admin` vit dans `(shell)`, hors du groupe `(app)`** : pas de dock,
+  pas de menu. Gardée **deux fois** — par le proxy (rôle lu dans le jeton ; le callback `session`
+  vit donc dans `auth.config.ts`, `PITFALLS.md` #64) et par `requireAdmin()` (rôle relu en base).
+  Le rôle se donne **par script** (`admin:role`), jamais par la base. Le backoffice **lit les mêmes
+  fonctions que le produit** et n'a aucun compteur à lui.
 - **Un test qui touche la base vit dans les tests d'intégration**, jamais ailleurs. Les tests
   unitaires sont colocalisés. La ligne de partage n'est pas la taille du test mais **sa
   dépendance**.
@@ -131,7 +136,8 @@ relvo/
 | `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros ; les **Préférences** portent l'assistant et les notifications de cet appareil. Il n'y a **pas** de page Réglages | menu |
 | `/recherche` | Recherche transverse | menu, en dernier |
 | `/sujets/[id]` · `/sujets/nouveau` | Fiche d'une affaire | hors-nav |
-| `/(auth)/*` | Tunnel d'authentification | — |
+| `/admin` · `/admin/comptes/[id]` | **Backoffice** (M21) — rôle `admin` seulement : les comptes, les demandes à ouvrir, les gestes (assistant, test, suppression) | entrée du menu pour les administrateurs ; retour à l'app par le pictogramme maison |
+| `/(auth)/*` | Tunnel d'authentification — l'inscription est libre, **l'accès s'ouvre quand un administrateur valide la demande** (`/inscription/attente`) | — |
 
 **Navigation** : barre d'onglets basse, fixe, violette, **cinq places** : Accueil · Calendrier ·
 **Relvo** (bouton central, disque violet qui déborde du dock des deux côtés, le dock se soulevant autour de lui, badge quand une question attend) ·
@@ -202,6 +208,7 @@ pnpm db:generate     # ⚠️ après TOUTE migration (#33)
 pnpm db:seed         # jeu de démonstration
 pnpm --filter web ia:journal   # le compteur de l'inférence relu : coût, cache, silencieux
 pnpm --filter web push:essai <e-mail>   # pose une question de test et la pousse (M12.9)
+pnpm --filter web admin:role <e-mail> admin|ceo   # donne ou retire le rôle admin, journalisé (M21.1) — effectif à la prochaine connexion
 ```
 
 Déploiement : pousser sur la branche de production. **Un seul déployable.**

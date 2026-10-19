@@ -123,6 +123,7 @@ pnpm db:migrate      # nouvelle migration
 pnpm db:generate     # régénérer le client Prisma — après TOUTE migration
 pnpm db:seed         # jeu de démonstration
 pnpm db:studio       # explorer la base
+pnpm --filter web admin:role <e-mail> admin|ceo   # rôle admin (backoffice /admin), par le domaine
 ```
 
 ## Stack

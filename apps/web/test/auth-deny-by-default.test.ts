@@ -54,7 +54,12 @@ type Autorise = (args: {
 
 const autorise = authConfig.callbacks.authorized as unknown as Autorise;
 
-const SESSION = { user: { id: "00000000-0000-4000-8000-000000000001" } };
+const SESSION = {
+  user: { id: "00000000-0000-4000-8000-000000000001", role: "ceo" },
+};
+const SESSION_ADMIN = {
+  user: { id: "00000000-0000-4000-8000-000000000002", role: "admin" },
+};
 
 function passe(chemin: string, session: { user?: unknown } | null): boolean {
   return (
@@ -93,5 +98,43 @@ describe("refus par défaut du proxy d'authentification", () => {
     const inconnues = ["/admin", "/debug", "/backlog", "/interne", "/api-docs"];
     const ouvertes = inconnues.filter((r) => passe(r, null));
     expect(ouvertes).toEqual([]);
+  });
+
+  // La page d'attente de l'inscription (M21.6) vit sous `/inscription` : elle
+  // passe par le préfixe, sans entrée de plus dans la liste blanche.
+  it("ouvre la page d'attente de l'inscription sans session", () => {
+    expect(passe("/inscription/attente", null)).toBe(true);
+  });
+});
+
+// LA ZONE D'ADMINISTRATION (M21.1) : fermée aux visiteurs, renvoyée à l'accueil
+// pour un compte connecté sans le rôle, ouverte au seul rôle `admin`.
+describe("la zone /admin", () => {
+  const ADMIN = ["/admin", "/admin/comptes/abc", "/admin/invitations"];
+
+  it("exige une session", () => {
+    expect(ADMIN.filter((r) => passe(r, null))).toEqual([]);
+  });
+
+  it("renvoie un compte sans le rôle vers l'accueil, pas vers la connexion", () => {
+    for (const r of ADMIN) {
+      const verdict = autorise({
+        auth: SESSION,
+        request: { nextUrl: new URL(`https://relvo.test${r}`) },
+      });
+      expect(verdict).toBeInstanceOf(Response);
+      const res = verdict as Response;
+      expect(res.status).toBe(302);
+      expect(new URL(res.headers.get("location")!).pathname).toBe("/");
+    }
+  });
+
+  it("laisse passer un administrateur", () => {
+    expect(ADMIN.filter((r) => !passe(r, SESSION_ADMIN))).toEqual([]);
+  });
+
+  it("ne confond pas `/administration` ou `/admins` avec la zone", () => {
+    expect(passe("/administration", SESSION)).toBe(true);
+    expect(passe("/admins", SESSION)).toBe(true);
   });
 });

@@ -64,6 +64,19 @@ Porte l'identité de connexion (adresse, empreinte de mot de passe **nullable** 
 un fournisseur externe n'en a pas), l'identité affichée (prénom, nom), un rôle, un indicateur
 d'activité, et les marqueurs de vérification d'adresse.
 
+Le **rôle** distingue l'administrateur du dirigeant. Un administrateur voit tous les comptes dans
+le backoffice et agit dessus ; le rôle ne change que par une méthode du domaine, journalisée sur
+le compte, jamais par la base.
+
+Il porte la **date d'ouverture de l'accès** : l'inscription est libre, mais un compte qui en
+naît **attend qu'un administrateur valide la demande** — tant que la date est nulle, il ne se
+connecte pas et voit une page d'attente. L'ouverture est une méthode du domaine, journalisée ;
+un compte provisionné par le produit lui-même (la démonstration) naît ouvert.
+
+Il porte une **marque « test »**, posée par un administrateur pour distinguer les comptes
+d'essai des vrais dans les listes et les coûts. Elle ne change rien au comportement du produit.
+Journalisée.
+
 **Un compte = un humain en V1.** Le partage d'un compte entre plusieurs personnes est reporté et
 impliquera une entité `User` distincte.
 

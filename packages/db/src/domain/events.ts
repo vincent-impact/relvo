@@ -95,9 +95,22 @@ export const EVENT_TYPES = {
   waitingForReplySet: "waiting_for_reply_set",
   /** L'attente est levée sans message : le dirigeant a coché la dernière tâche (04 §10). */
   waitingForReplyLifted: "waiting_for_reply_lifted",
-  // Compte — l'assistant activé ou coupé (réglage de l'utilisateur, backoffice demain).
+  // Compte — l'assistant activé ou coupé (réglage de l'utilisateur, ou
+  // l'administrateur depuis le backoffice : acteur `system`, motif en métadonnée).
   assistantEnabled: "assistant_enabled",
   assistantDisabled: "assistant_disabled",
+  // L'administration (M21) — chaque geste sur un compte est journalisé sur le
+  // compte visé ; la suppression, elle, l'est sur le compte de l'administrateur
+  // (celui du compte supprimé disparaît avec lui).
+  /** Le rôle du compte a changé (script `admin:role`) — ancien et nouveau rôle en métadonnée. */
+  roleChanged: "role_changed",
+  /** L'accès a été ouvert par un administrateur (M21.6) : le compte peut se connecter. */
+  accountActivated: "account_activated",
+  /** Le compte est marqué, ou n'est plus marqué, « test » (M21.4). */
+  accountTestMarked: "account_test_marked",
+  accountTestUnmarked: "account_test_unmarked",
+  /** Un compte a été supprimé — définitivement — par un administrateur ; l'e-mail et le bilan en métadonnée. */
+  accountDeleted: "account_deleted",
   // Rattrapage du courrier récent d'un canal (M7.19) — demandé à la connexion,
   // commencé la nuit, clos avec ses compteurs en métadonnée.
   catchupRequested: "catchup_requested",

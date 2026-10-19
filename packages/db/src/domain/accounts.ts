@@ -1,5 +1,10 @@
-import { Actor, type Sector } from "../generated/prisma/enums";
+import {
+  type AccountRole,
+  Actor,
+  type Sector,
+} from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
+import { assertFound } from "./errors";
 import { avecOrigine, EVENT_TYPES, logEvent, type Origine } from "./events";
 
 // Domaine Account — le peu qui se règle sur le compte lui-même. `Account` n'est
@@ -35,6 +40,10 @@ export async function setAssistantEnabled(
   accountId: string,
   enabled: boolean,
   actor: Actor = Actor.user,
+  opts: {
+    /** Pourquoi l'administrateur coupe ou rétablit (M21.4) — en métadonnée, jamais obligatoire. */
+    motif?: string | null;
+  } = {},
 ): Promise<{ assistantEnabled: boolean; changed: boolean }> {
   const current = await isAssistantEnabled(db, accountId);
   if (current === enabled) return { assistantEnabled: enabled, changed: false };
@@ -42,6 +51,7 @@ export async function setAssistantEnabled(
     where: { id: accountId },
     data: { assistantEnabled: enabled },
   });
+  const motif = opts.motif?.trim() || null;
   await logEvent(db as Tx, {
     entityType: "system",
     entityId: accountId,
@@ -50,8 +60,113 @@ export async function setAssistantEnabled(
       : EVENT_TYPES.assistantDisabled,
     title: enabled ? "Assistant Relvo activé" : "Assistant Relvo coupé",
     actor,
+    metadata: motif ? { motif } : null,
   });
   return { assistantEnabled: enabled, changed: true };
+}
+
+// ─────────────────────────────────────────────────────────────
+// L'administration d'un compte (M21) — trois gestes, tous journalisés sur le
+// compte visé, acteur `system` : ils viennent du backoffice ou d'un script,
+// jamais de l'utilisateur lui-même. `Account` n'étant pas scopé, l'appelant
+// tient `accountId` du backoffice (rôle vérifié) ou de la ligne de commande.
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Change le rôle du compte — c'est ainsi, et seulement ainsi, qu'un compte
+ * devient administrateur ou cesse de l'être (M21.1, script `admin:role`).
+ * Idempotent : le même rôle reposé n'écrit rien. ⚠️ Le proxy lit le rôle dans
+ * le jeton de session : le nouveau rôle n'y entre qu'à la prochaine connexion.
+ */
+export async function setAccountRole(
+  db: TenantDb,
+  accountId: string,
+  role: AccountRole,
+): Promise<{ role: AccountRole; changed: boolean }> {
+  const account = assertFound(
+    await db.account.findUnique({
+      where: { id: accountId },
+      select: { role: true },
+    }),
+    "Compte",
+  );
+  if (account.role === role) return { role, changed: false };
+  await db.account.update({ where: { id: accountId }, data: { role } });
+  await logEvent(db as Tx, {
+    entityType: "system",
+    entityId: accountId,
+    eventType: EVENT_TYPES.roleChanged,
+    title: `Rôle : ${account.role} → ${role}`,
+    actor: Actor.system,
+    metadata: { de: account.role, vers: role },
+  });
+  return { role, changed: true };
+}
+
+/**
+ * Marque le compte « test », ou retire la marque (M21.4) : une étiquette pour
+ * les listes et les coûts du backoffice, rien de plus — elle ne change aucun
+ * comportement du produit. Idempotent.
+ */
+export async function setAccountTest(
+  db: TenantDb,
+  accountId: string,
+  isTest: boolean,
+): Promise<{ isTest: boolean; changed: boolean }> {
+  const account = assertFound(
+    await db.account.findUnique({
+      where: { id: accountId },
+      select: { isTest: true },
+    }),
+    "Compte",
+  );
+  if (account.isTest === isTest) return { isTest, changed: false };
+  await db.account.update({ where: { id: accountId }, data: { isTest } });
+  await logEvent(db as Tx, {
+    entityType: "system",
+    entityId: accountId,
+    eventType: isTest
+      ? EVENT_TYPES.accountTestMarked
+      : EVENT_TYPES.accountTestUnmarked,
+    title: isTest ? "Compte marqué « test »" : "Compte retiré des tests",
+    actor: Actor.system,
+  });
+  return { isTest, changed: true };
+}
+
+/**
+ * Ouvre l'accès d'un compte créé par l'inscription (M21.6) : tant que
+ * `activatedAt` est nul, le compte ne se connecte pas et voit la page
+ * d'attente. C'est la validation de la demande par un administrateur.
+ * Idempotent : un compte déjà ouvert ne l'est pas une seconde fois.
+ */
+export async function activateAccount(
+  db: TenantDb,
+  accountId: string,
+  at: Date = new Date(),
+): Promise<{ activatedAt: Date; changed: boolean }> {
+  const account = assertFound(
+    await db.account.findUnique({
+      where: { id: accountId },
+      select: { activatedAt: true, email: true },
+    }),
+    "Compte",
+  );
+  if (account.activatedAt) {
+    return { activatedAt: account.activatedAt, changed: false };
+  }
+  await db.account.update({
+    where: { id: accountId },
+    data: { activatedAt: at },
+  });
+  await logEvent(db as Tx, {
+    entityType: "system",
+    entityId: accountId,
+    eventType: EVENT_TYPES.accountActivated,
+    title: "Accès ouvert",
+    actor: Actor.system,
+  });
+  return { activatedAt: at, changed: true };
 }
 
 /**

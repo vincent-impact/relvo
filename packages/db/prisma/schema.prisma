@@ -350,6 +350,14 @@ model Account {
   /// l'utilisateur les termine ou les passe ; une vue n'est pas une décision,
   /// elle n'est pas journalisée.
   welcomeSeenAt         DateTime?   @map("welcome_seen_at")
+  /// L'accès a été ouvert par un administrateur (M21.6). Null = compte créé par
+  /// l'inscription, en attente de validation : il ne se connecte pas, il voit
+  /// la page d'attente. Posée par la méthode du domaine qui active le compte,
+  /// journalisée ; jamais par l'utilisateur.
+  activatedAt           DateTime?   @map("activated_at")
+  /// Compte de test, marqué depuis le backoffice (M21.4) pour le distinguer des
+  /// vrais dans les listes et les coûts. Journalisé.
+  isTest                Boolean     @default(false) @map("is_test")
   createdAt             DateTime    @default(now()) @map("created_at")
   updatedAt             DateTime    @updatedAt @map("updated_at")
 

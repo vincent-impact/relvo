@@ -111,6 +111,9 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       // Le compte de démonstration a déjà ses boîtes : les diapositives de
       // première connexion (M19.9) n'ont rien à lui promettre.
       welcomeSeenAt: new Date(),
+      // Son accès est ouvert d'emblée : la porte de l'alpha (M21.6) ne vaut
+      // que pour les inscriptions.
+      activatedAt: new Date(),
       // Mot de passe de démo : « demo1234 » (bcrypt, 12 tours). Connexion :
       // demo@tastycrousty.fr / demo1234.
       passwordHash:

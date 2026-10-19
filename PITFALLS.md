@@ -58,6 +58,7 @@ Les autres viennent du kit et sont conservés ici parce qu'ils s'appliquent à c
 | 7 | **Provider conditionnel** | Le fournisseur externe n'est branché que si **les deux** clés sont présentes, sinon le premier démarrage d'un poste non configuré explose. |
 | 21 | **Un fournisseur externe est une inscription publique déguisée** | Hors mode public, le callback de connexion doit **refuser** une adresse inconnue. Le montage par défaut fait entrer n'importe qui. |
 | 30 | **Une Server Action n'est pas protégée par le proxy** | Le proxy raisonne sur des **chemins** ; une action n'en a pas. Toute action sensible revérifie la session **elle-même**, en première ligne. |
+| **64** | **Le proxy ne voit que les callbacks de la configuration edge** | Le callback `session` (jeton → session, pur) vit dans `auth.config.ts`, sinon `auth.user.role` est vide dans `authorized` et la zone d'administration renvoie tout le monde. |
 
 > ✅ **#5b et #5c corrigés le 2026-09-07** : `proxy.ts` déplacé dans `src/` et son export passé
 > en `export default`. Le build affiche `ƒ Proxy (Middleware)`, et la redirection vers la
@@ -479,6 +480,26 @@ distant. Le préfixe caché ne change pas (#49) : les jetons sont les mêmes, se
 diffère. Le test `ia-echange.test.ts` capture le corps réellement envoyé à l'API et vérifie qu'il
 ne contient aucun `item_reference` — c'est lui qui tient la règle, pas la relecture du fournisseur
 à chaque montée de version.
+
+### #64 — Le proxy ne voit que les callbacks de la configuration edge : un rôle posé dans `auth.ts` n'existe pas dans `authorized`
+
+**Symptôme** : la zone d'administration renvoie **tout le monde** à l'accueil, l'administrateur
+compris. `/api/auth/session` montre pourtant `"role": "admin"`, le script de promotion a bien
+écrit en base, la session côté page est juste.
+
+**Cause** : `proxy.ts` instancie Auth.js avec `auth.config.ts` seul — la configuration
+**edge-safe**, sans Prisma. Le `auth` reçu par le callback `authorized` est construit avec **les
+callbacks de cette configuration-là**. Le callback `session`, qui recopie `role` et `accountId`
+du jeton vers `session.user`, vivait dans `auth.ts` : le proxy ne l'exécutait jamais, et
+`auth.user.role` y était `undefined`. Les pages, elles, passent par `auth.ts` et voyaient le rôle.
+Rien ne casse au typage : la session est déclarée avec `role`, le proxy la croit remplie.
+
+**Règle** : tout callback **pur** dont le proxy a besoin — `session` en tête — vit dans
+`auth.config.ts` ; `auth.ts` le reprend par `...authConfig.callbacks`. Seuls les callbacks qui
+touchent la base (`jwt` pour Google, `signIn`) restent dans `auth.ts`. Le test
+`auth-deny-by-default.test.ts` appelle `authorized` avec une session qui porte déjà le rôle : il
+protège la décision, **pas** le remplissage de la session — c'est le `curl` de `/admin` avec un
+vrai cookie qui a attrapé celui-ci.
 
 ## Si une MAJEURE a bougé
 

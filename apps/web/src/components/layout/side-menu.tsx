@@ -11,6 +11,7 @@ import {
   Gauge,
   MagnifyingGlass,
   Plug,
+  ShieldCheck,
   SignOut,
   SlidersHorizontal,
   User,
@@ -104,8 +105,11 @@ function Separator() {
 
 export function SideMenu({
   user,
+  isAdmin = false,
 }: {
   user: { firstName: string; lastName: string; email: string };
+  /** Le compte est administrateur : le menu ouvre aussi le backoffice (M21.1). */
+  isAdmin?: boolean;
 }) {
   const ctx = useContext(SideMenuCtx);
   const pathname = usePathname();
@@ -188,6 +192,19 @@ export function SideMenu({
             label: "Rechercher",
             icon: MagnifyingGlass,
           })}
+          {/* Le backoffice, pour les seuls administrateurs : une entrée après
+              un filet, hors de la zone (app) — on bascule d'un mode à l'autre,
+              et la zone propose le retour. */}
+          {isAdmin ? (
+            <>
+              <Separator />
+              {item({
+                href: "/admin",
+                label: "Backoffice",
+                icon: ShieldCheck,
+              })}
+            </>
+          ) : null}
         </nav>
 
         {/* Se déconnecter : une ligne comme les autres, grise, à 52 px — son

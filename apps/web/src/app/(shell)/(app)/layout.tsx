@@ -50,6 +50,7 @@ export default async function AppLayout({
           lastName: account.lastName,
           email: account.email,
         }}
+        isAdmin={account.role === "admin"}
       />
     </SideMenuProvider>
   );

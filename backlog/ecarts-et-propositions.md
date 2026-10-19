@@ -1016,6 +1016,41 @@ sans la voix et l'image, une part du courrier reste invisible au pipeline. Les a
 sont des dérivés gratuits de ce qui est déjà stocké : la situation structurée, le journal, les
 titres des sujets.
 
+### Le mini backoffice : l'écran des méthodes du domaine, une suppression sans corbeille, une inscription qui attend sa validation
+
+**`tranché`** · Le backoffice (M21) n'ajoute aucune règle au produit : c'est l'écran des méthodes
+qui existaient — `setAssistantEnabled`, `countOpenQuestions`, `listAiSolicitations`,
+`listPushSubscriptions` — et de trois méthodes nouvelles, toutes journalisées : changer un rôle,
+marquer un compte « test », supprimer un compte. **Aucun compteur parallèle** : le coût d'un
+compte est la somme du journal des sollicitations relu compte par compte, une page d'exploitation
+pour une poignée de comptes acceptant des requêtes en nombre de comptes, jamais en nombre
+d'affaires.
+
+- **La zone `/admin` vit dans `(shell)`, hors de `(app)`** : pas de dock, pas de menu ; le menu
+  de l'application y mène pour les administrateurs, la zone propose le retour. Gardée deux fois :
+  le proxy lit le rôle dans le jeton — ce qui oblige le callback `session` à vivre dans la
+  configuration edge (`PITFALLS.md` #64) —, le layout et chaque action le relisent en base. Le
+  rôle `admin` est celui de l'énuméré existant ; il se donne **par script**, journalisé, jamais
+  par la base, et n'entre dans le jeton qu'à la connexion suivante.
+- **La suppression d'un compte est définitive.** Pas de corbeille, pas de « soft delete » : le
+  backoffice sert à maîtriser l'espace et la donnée, un compte de test supprimé n'existe plus.
+  L'agrégateur est déconnecté **d'abord** (best-effort, bilan consigné) ; la base cascade, les
+  triggers enfilent les clés dans l'outbox. Le journal du compte disparaît avec lui : la trace
+  s'écrit **sur le compte de l'administrateur**. Deux comptes ne se suppriment pas d'ici : le sien,
+  et la démonstration, que le build recrée. La confirmation fait **retaper l'adresse**.
+- **L'inscription reste libre, l'accès attend la validation.** Écarté : une liste d'adresses
+  invitées à tenir avant l'inscription — une table de plus pour un geste de plus. Retenu : le
+  compte créé par l'inscription porte une date d'ouverture nulle, ne se connecte pas (la
+  connexion le lui dit en clair, Google compris) et voit une page d'attente ; le backoffice le
+  liste « À ouvrir » et l'ouvre d'un appui, ce qui lui envoie un e-mail. **Le compte en attente
+  est la demande.** Les comptes existants sont ouverts par la migration. Pas d'interrupteur de
+  configuration : la porte est du code, elle se retire par un commit quand l'alpha se ferme.
+- **Le motif d'une coupure** voyage en métadonnée de l'entrée que `setAssistantEnabled` écrit
+  déjà, acteur `system` — pas de nouvelle entrée, pas de nouvelle table.
+
+**Ce qui a tranché** : l'alpha ouvre avec des comptes de test créés et détruits au fil des essais,
+et la première règle du dépôt — jamais de SQL direct — ne tient que si chaque geste a son écran.
+
 ### L'alpha dans deux jours : le mini backoffice et la voix passent devant le rattrapage
 
 **`tranché`** · Le produit entre en alpha deux jours après la livraison du push. Deux épiques

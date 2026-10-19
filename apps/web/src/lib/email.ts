@@ -77,3 +77,21 @@ export async function sendPasswordResetEmail(email: string, token: string) {
     url,
   );
 }
+
+/**
+ * L'administrateur a ouvert l'accès (M21.6) : le compte créé par l'inscription
+ * peut enfin se connecter. Sans ce mot, la personne ne saurait pas revenir.
+ */
+export async function sendAccountActivatedEmail(email: string) {
+  const url = `${baseUrl()}/connexion`;
+  await send(
+    email,
+    "Votre accès à Relvo est ouvert",
+    layout(
+      "Bienvenue sur Relvo",
+      "Votre demande a été validée : vous pouvez vous connecter avec l'adresse et le mot de passe choisis à l'inscription.",
+      { label: "Se connecter", url },
+    ),
+    url,
+  );
+}

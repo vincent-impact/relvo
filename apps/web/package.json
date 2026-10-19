@@ -21,6 +21,7 @@
     "ia:journal": "node --env-file=.env.local --import tsx scripts/ia/journal.ts",
     "ia:assistant": "node --env-file=.env.local --import tsx scripts/ia/activer-assistant.ts",
     "push:essai": "node --env-file=.env.local --import tsx scripts/push/essai.ts",
+    "admin:role": "node --env-file=.env.local --import tsx scripts/admin/role.ts",
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {

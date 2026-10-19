@@ -17,6 +17,13 @@ const PUBLIC_ROUTES = [
   "/suivi",
 ];
 
+// La zone d'administration (M21.1) : réservée au rôle `admin`, lu dans le jeton
+// de session. Un compte connecté sans ce rôle est renvoyé à l'accueil, pas à la
+// connexion — il EST connecté, il n'a juste rien à faire là. Le layout de la
+// zone relit le rôle en base à chaque rendu : ce garde-ci est le premier
+// rideau, pas le seul. ⚠️ Surveillé par `test/auth-deny-by-default.test.ts`.
+const ADMIN_ROUTES = ["/admin"];
+
 const matches = (routes: string[], pathname: string) =>
   routes.some((r) => pathname === r || pathname.startsWith(`${r}/`));
 
@@ -41,7 +48,28 @@ export const authConfig = {
       // d'un utilisateur déjà connecté hors des pages d'entrée est gérée côté
       // page (redirect serveur), plus fiable que depuis ce callback.
       if (matches(PUBLIC_ROUTES, nextUrl.pathname)) return true;
-      return !!auth?.user;
+      if (!auth?.user) return false;
+      if (
+        matches(ADMIN_ROUTES, nextUrl.pathname) &&
+        auth.user.role !== "admin"
+      ) {
+        return Response.redirect(new URL("/", nextUrl));
+      }
+      return true;
+    },
+    // La session lue depuis le jeton — ICI, et pas seulement dans `auth.ts` :
+    // le proxy construit `auth` avec les callbacks de CETTE config. Sans ce
+    // callback, `auth.user.role` n'existe pas dans le proxy et la zone
+    // d'administration renverrait tout le monde à l'accueil, administrateur
+    // compris. Pure (aucune base) : edge-safe. `auth.ts` la reprend par
+    // `...authConfig.callbacks`. Le type JWT d'@auth/core n'étant pas
+    // augmentable proprement avec pnpm, on caste ; la session, elle, est typée
+    // (cf. types/next-auth.d.ts).
+    session({ session, token }) {
+      if (token.accountId) session.user.id = token.accountId as string;
+      if (token.role)
+        session.user.role = token.role as typeof session.user.role;
+      return session;
     },
   },
 } satisfies NextAuthConfig;

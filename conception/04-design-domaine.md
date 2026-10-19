@@ -512,7 +512,10 @@ ouverture d'affaire manuelle sur les deux canaux · écoutes et leurs bornes · 
 date riche, semainier et vue mois avec replanification par glissement · domaines regroupant
 affaires et connaissances · ingestion e-mail **et** messagerie · pièces jointes avec étiquetage
 automatique de premier niveau · échange avec Relvo action-capable et conscient de la page ·
-citations activées avec un affichage minimal.
+citations activées avec un affichage minimal · **administration** : un rôle d'administrateur,
+une inscription libre dont l'accès s'ouvre sur validation, et depuis un backoffice la lecture de
+chaque compte (coût d'inférence compris), la coupure de son assistant et sa **suppression
+définitive** — la seule destruction du produit, l'agrégateur déconnecté d'abord.
 
 ### Ce qui reste manuel en V1
 
