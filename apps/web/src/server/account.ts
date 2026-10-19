@@ -16,6 +16,12 @@ type CreateAccountInput = {
   /** Date de vérification email — renseignée d'emblée pour Google. */
   emailVerified?: Date | null;
   role?: AccountRole;
+  /**
+   * L'accès est-il ouvert d'emblée ? Faux pour une inscription (la porte de
+   * l'alpha, M21.6) : le compte attend qu'un administrateur l'active et ne se
+   * connecte pas avant. Vrai pour un compte qu'on provisionne soi-même.
+   */
+  activated: boolean;
 };
 
 /**
@@ -38,6 +44,7 @@ export async function createAccount(
         image: input.image ?? null,
         emailVerified: input.emailVerified ?? null,
         role: input.role ?? AccountRole.ceo,
+        activatedAt: input.activated ? new Date() : null,
       },
     });
 
@@ -64,6 +71,8 @@ export async function createAccount(
         actor: "system",
         metadata: {
           via: input.googleId ? "google" : "credentials",
+          // En attente de validation (M21.6) ou ouvert d'emblée.
+          acces: input.activated ? "ouvert" : "en_attente",
         },
       },
     });

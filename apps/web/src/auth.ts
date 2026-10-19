@@ -2,6 +2,7 @@ import NextAuth, { type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { authConfig } from "@/auth.config";
+import { AccesEnAttente } from "@/lib/auth-errors";
 import { prisma } from "@/lib/db";
 import { verifyPassword } from "@/lib/password";
 import { loginSchema } from "@/lib/validations";
@@ -40,6 +41,10 @@ const config: NextAuthConfig = {
         const valid = await verifyPassword(password, account.passwordHash);
         if (!valid) return null;
 
+        // La porte de l'alpha (M21.6) : identifiants justes, accès pas encore
+        // ouvert par un administrateur. Une erreur à part, pas « incorrect ».
+        if (!account.activatedAt) throw new AccesEnAttente();
+
         return {
           id: account.id,
           email: account.email,
@@ -55,8 +60,10 @@ const config: NextAuthConfig = {
   ],
   callbacks: {
     ...authConfig.callbacks,
-    // Google : retrouve le compte par email ou le crée (signup public ouvert),
-    // et lie l'identité Google. Refuse un compte désactivé.
+    // Google : retrouve le compte par email ou le crée, et lie l'identité
+    // Google. Refuse un compte désactivé. La porte de l'alpha (M21.6) vaut ici
+    // aussi : un compte dont l'accès n'est pas ouvert — qu'il naisse à l'instant
+    // ou qu'il attende déjà — est renvoyé vers la page d'attente.
     async signIn({ user, account, profile }) {
       if (account?.provider !== "google") return true;
 
@@ -67,6 +74,7 @@ const config: NextAuthConfig = {
 
       if (existing) {
         if (!existing.isActive) return false;
+        if (!existing.activatedAt) return "/inscription/attente";
         await prisma.account.update({
           where: { id: existing.id },
           data: {
@@ -90,8 +98,9 @@ const config: NextAuthConfig = {
         googleId: account.providerAccountId,
         image: user.image,
         emailVerified: new Date(),
+        activated: false,
       });
-      return true;
+      return "/inscription/attente";
     },
     // Au sign-in, on garnit le token avec l'account_id (tenant) et le rôle.
     // Pour Credentials, `user` les porte déjà ; pour Google, on résout par email.
@@ -112,15 +121,8 @@ const config: NextAuthConfig = {
       }
       return token;
     },
-    async session({ session, token }) {
-      // token.accountId/role sont posés dans le callback jwt ci-dessus. Le type
-      // JWT d'@auth/core n'étant pas augmentable proprement avec pnpm, on cast
-      // ici ; la session, elle, est typée (cf. types/next-auth.d.ts).
-      if (token.accountId) session.user.id = token.accountId as string;
-      if (token.role)
-        session.user.role = token.role as typeof session.user.role;
-      return session;
-    },
+    // Le callback `session` (jeton → session) vit dans `auth.config.ts` : le
+    // proxy en a besoin pour lire le rôle (zone d'administration, M21.1).
   },
 };
 

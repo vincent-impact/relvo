@@ -1,7 +1,12 @@
 "use server";
 
-import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
+import { AuthError, CredentialsSignin } from "next-auth";
 import { signIn, signOut } from "@/auth";
+import {
+  CODE_ACCES_EN_ATTENTE,
+  MESSAGE_ACCES_EN_ATTENTE,
+} from "@/lib/auth-errors";
 import { prisma } from "@/lib/db";
 import { sendPasswordResetEmail, sendVerificationEmail } from "@/lib/email";
 import { type FormState } from "@/lib/form";
@@ -43,6 +48,13 @@ export async function loginAction(
       redirectTo: "/",
     });
   } catch (error) {
+    // Identifiants justes, accès pas encore ouvert (M21.6) : la phrase juste.
+    if (
+      error instanceof CredentialsSignin &&
+      error.code === CODE_ACCES_EN_ATTENTE
+    ) {
+      return { status: "error", message: MESSAGE_ACCES_EN_ATTENTE };
+    }
     if (error instanceof AuthError) {
       return { status: "error", message: "Email ou mot de passe incorrect." };
     }
@@ -62,7 +74,7 @@ export async function logoutAction() {
   await signOut({ redirectTo: "/connexion" });
 }
 
-// ── Inscription (signup public ouvert) ───────────────────────────────────────
+// ── Inscription — libre, l'accès s'ouvre sur validation (M21.6) ──────────────
 export async function signupAction(
   _prev: FormState,
   formData: FormData,
@@ -91,7 +103,15 @@ export async function signupAction(
   }
 
   const passwordHash = await hashPassword(password);
-  await createAccount({ email, firstName, lastName, passwordHash });
+  // Le compte existe dès maintenant, l'accès attend un administrateur : c'est
+  // la demande, visible dans le backoffice. Pas de connexion immédiate.
+  await createAccount({
+    email,
+    firstName,
+    lastName,
+    passwordHash,
+    activated: false,
+  });
 
   // Email de vérification (non bloquant pour la connexion en bêta).
   const token = await createVerificationToken(
@@ -100,21 +120,7 @@ export async function signupAction(
   );
   await sendVerificationEmail(email, token);
 
-  // Connexion immédiate puis redirection vers l'accueil.
-  try {
-    await signIn("credentials", { email, password, redirectTo: "/" });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      // Compte créé mais connexion auto échouée → renvoyer vers /connexion.
-      return {
-        status: "error",
-        message: "Compte créé. Connectez-vous pour continuer.",
-      };
-    }
-    throw error;
-  }
-
-  return { status: "idle" };
+  redirect("/inscription/attente");
 }
 
 // ── Mot de passe oublié ──────────────────────────────────────────────────────
