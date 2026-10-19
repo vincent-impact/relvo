@@ -110,6 +110,11 @@ export const EVENT_TYPES = {
   questionDismissed: "question_dismissed",
   // Les secteurs du compte, posés par une réponse de la prise en main.
   sectorsUpdated: "sectors_updated",
+  // Le push (M12.7, M12.9) — un appareil abonné ou retiré, une notification
+  // envoyée (sa nature en métadonnée : bienvenue, brief, question).
+  pushSubscribed: "push_subscribed",
+  pushUnsubscribed: "push_unsubscribed",
+  pushSent: "push_sent",
 } as const;
 
 export type EventInput = {

@@ -169,6 +169,15 @@
   "en_cours": null,
   "journal": [
     {
+      "date": "2026-10-19",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "Dans Préférences, activez les notifications sur votre téléphone : vous recevez le brief du matin — réponses attendues, urgences, tâches du jour — et les questions de Relvo, même application fermée."
+        }
+      ]
+    },
+    {
       "date": "2026-10-15",
       "entrees": [
         {

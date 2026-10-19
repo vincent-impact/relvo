@@ -113,8 +113,8 @@ relvo/
 > ⚠️ **Cette table décrit la cible** tranchée le 2026-09-20 (`ecarts`, « La disposition
 > générale »), livrée par l'épique **M18**. **En place** : le dock, le menu, le header, l'accueil
 > en brief, le Calendrier, le Bilan, la Mémoire, l'Usage, les redirections, le badge du bouton
-> Relvo et la `RelvoQuestion` élargie (M10). **Pas encore** : la notification push, glissée vers
-> M12 faute de socle. ⚠️ Le
+> Relvo et la `RelvoQuestion` élargie (M10), la notification push — un abonnement par appareil
+> dans Préférences, le brief du matin et les questions nées hors écran (M12.7, M12.9). ⚠️ Le
 > **Bilan** et l'**Usage** affichent des **chiffres de démonstration** (`lib/demo-bilan.ts`) et
 > le disent en tête : ils ne sont pas reliés au journal ni au compteur d'inférence.
 
@@ -128,7 +128,7 @@ relvo/
 | `/bilan` | **Bilan** — deux familles de chiffres, séparées | menu |
 | `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Mémoire** — instructions du compte, puis les domaines (Instructions / Documents / Affaires) | menu |
 | `/contacts` · `/contacts/[id]` · `/contacts/nouveau` | **Contacts** — annuaire et fiche | menu |
-| `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros. Il n'y a **pas** de page Réglages | menu |
+| `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros ; les **Préférences** portent l'assistant et les notifications de cet appareil. Il n'y a **pas** de page Réglages | menu |
 | `/recherche` | Recherche transverse | menu, en dernier |
 | `/sujets/[id]` · `/sujets/nouveau` | Fiche d'une affaire | hors-nav |
 | `/(auth)/*` | Tunnel d'authentification | — |
@@ -201,6 +201,7 @@ pnpm db:migrate      # nouvelle migration
 pnpm db:generate     # ⚠️ après TOUTE migration (#33)
 pnpm db:seed         # jeu de démonstration
 pnpm --filter web ia:journal   # le compteur de l'inférence relu : coût, cache, silencieux
+pnpm --filter web push:essai <e-mail>   # pose une question de test et la pousse (M12.9)
 ```
 
 Déploiement : pousser sur la branche de production. **Un seul déployable.**

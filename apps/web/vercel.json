@@ -3,8 +3,8 @@
   "regions": ["fra1"],
   "crons": [
     {
-      "path": "/api/cron/drain-file-deletions",
-      "schedule": "0 4 * * *"
+      "path": "/api/cron/matin",
+      "schedule": "0 6 * * *"
     },
     {
       "path": "/api/cron/catch-up",

@@ -343,3 +343,76 @@ export async function visitHome(
   if (advanced) await markHomeSeen(db, accountId, now);
   return { since, advanced };
 }
+
+/**
+ * Les compteurs du BRIEF DU MATIN (M12.7) — ce que la notification du matin
+ * dit, et rien de plus : un calcul sur les mêmes requêtes que l'accueil et le
+ * Calendrier, aucune génération. Les sujets qui attendent sont comptés UNE
+ * fois chacun, la décision l'emportant sur la réponse, comme sur l'accueil.
+ */
+export type MorningCounters = {
+  /** Sujets ouverts qui attendent une réponse du dirigeant. */
+  awaitingReplies: number;
+  /** Sujets ouverts qui attendent une décision du dirigeant. */
+  awaitingDecisions: number;
+  /** Sujets ouverts marqués urgents. */
+  urgentSubjects: number;
+  /** Tâches ouvertes du jour — rendez-vous et tâches datées. */
+  tasksToday: number;
+  /** Tâches ouvertes dont l'échéance est passée. */
+  overdueTasks: number;
+  /** Questions de Relvo qui attendent une réponse. */
+  openQuestions: number;
+};
+
+export async function getMorningCounters(
+  db: TenantDb,
+  now: Date = new Date(),
+): Promise<MorningCounters> {
+  const start = debutDuJourParis(now);
+  const next = new Date(start.getTime() + 24 * 60 * 60 * 1000);
+  const open = { status: TaskStatus.open };
+  const [waiting, urgentSubjects, tasksToday, overdueTasks, openQuestions] =
+    await Promise.all([
+      db.task.findMany({
+        where: {
+          ...open,
+          kind: { in: [TaskKind.reply, TaskKind.decision] },
+          subject: { is: { status: SubjectStatus.open } },
+        },
+        select: { kind: true, subjectId: true },
+      }),
+      db.subject.count({
+        where: { status: SubjectStatus.open, priority: "urgent" },
+      }),
+      db.task.count({
+        where: { ...open, startDate: { gte: start, lt: next } },
+      }),
+      db.task.count({ where: { ...open, startDate: { lt: start } } }),
+      db.relvoQuestion.count({ where: { status: QuestionStatus.open } }),
+    ]);
+  const bySubject = new Map<string, "reply" | "decision">();
+  for (const t of waiting) {
+    if (!t.subjectId) continue;
+    const current = bySubject.get(t.subjectId);
+    if (t.kind === TaskKind.decision || !current)
+      bySubject.set(
+        t.subjectId,
+        t.kind === TaskKind.decision ? "decision" : "reply",
+      );
+  }
+  let awaitingReplies = 0;
+  let awaitingDecisions = 0;
+  for (const kind of bySubject.values()) {
+    if (kind === "decision") awaitingDecisions += 1;
+    else awaitingReplies += 1;
+  }
+  return {
+    awaitingReplies,
+    awaitingDecisions,
+    urgentSubjects,
+    tasksToday,
+    overdueTasks,
+    openQuestions,
+  };
+}

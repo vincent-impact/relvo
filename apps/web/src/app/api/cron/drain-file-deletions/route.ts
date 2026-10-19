@@ -4,8 +4,10 @@ import { getStorage } from "@relvo/storage";
 
 // Drainage de l'outbox de suppression de fichiers (M4.6).
 //
-// Déclenché par Vercel Cron (cf. vercel.json). Consomme les clés mises en file
-// par le trigger PostgreSQL et supprime les objets correspondants dans R2.
+// Consomme les clés mises en file par le trigger PostgreSQL et supprime les
+// objets correspondants dans R2. Le cron du matin (`/api/cron/matin`) fait ce
+// drainage chaque jour ; cette route reste appelable à la main, avec le même
+// secret, sans attendre le matin.
 //
 // Le report est sans conséquence : un fichier devient INACCESSIBLE dès que sa
 // ligne disparaît, puisqu'une URL de lecture n'est signée qu'à partir d'une clé

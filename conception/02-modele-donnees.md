@@ -519,6 +519,20 @@ tâche artificielle que le produit refuse. Tant qu'une question est ouverte, ell
 du bouton Relvo et la ligne de l'accueil. La réponse devient un champ de la fiche, un objet du
 compte ou une instruction ; la question elle-même n'est jamais injectée dans les prompts.
 
+## PushSubscription
+
+Un **abonnement push** : un appareil qui a accepté de recevoir les notifications de Relvo — le
+brief du matin et une question qui s'ouvre, rien d'autre (`05 §11.12`, invariant 36). Il porte le
+compte, l'adresse donnée par le service de push du navigateur (unique : elle désigne un appareil,
+jamais un compte), les deux clés de chiffrement, l'agent utilisateur, et la date du dernier envoi.
+
+**L'abonnement est le réglage.** L'enregistrer, c'est activer les notifications sur cet appareil ;
+le retirer, c'est les couper. Il n'y a pas d'interrupteur par nature de notification. Il tombe
+avec le compte, quand l'utilisateur coupe, ou quand le service de push répond que l'appareil
+n'existe plus. Un appareil qui change d'utilisateur change de propriétaire : l'ancienne ligne
+tombe. Les envois sont journalisés avec leur nature ; c'est le journal qui tient « un brief par
+jour », pas une colonne.
+
 ## VerificationToken
 
 Jeton à usage unique pour la vérification d'adresse et la réinitialisation de mot de passe. Porte

@@ -37,3 +37,4 @@ export * from "./catchup";
 export * from "./brief";
 export * from "./echange";
 export * from "./questions";
+export * from "./notifications";

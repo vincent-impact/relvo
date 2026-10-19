@@ -4,6 +4,10 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-10-19
+
+- **Nouveau** — Dans Préférences, activez les notifications sur votre téléphone : vous recevez le brief du matin — réponses attendues, urgences, tâches du jour — et les questions de Relvo, même application fermée.
+
 ## 2026-10-15
 
 - **Corrigé** — L'échange avec Relvo ne se bloque plus après quelques messages : vous pouvez enchaîner les questions et les demandes dans un même échange.

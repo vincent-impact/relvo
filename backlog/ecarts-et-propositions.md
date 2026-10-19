@@ -1016,6 +1016,32 @@ sans la voix et l'image, une part du courrier reste invisible au pipeline. Les a
 sont des dérivés gratuits de ce qui est déjà stocké : la situation structurée, le journal, les
 titres des sujets.
 
+### Relvo vous prévient : Web Push, un réglage par appareil, deux notifications et pas une de plus
+
+**`tranché`** · Le socle des notifications (M12.7, M12.9) est le **Web Push standard** avec des
+clés VAPID et la bibliothèque `web-push` : aucun service tiers, le serveur parle directement aux
+services de push des navigateurs. Deux événements seulement font vibrer le téléphone : le **brief
+du matin**, un calcul des compteurs du jour sans génération, et **une question de Relvo qui
+s'ouvre hors écran** — née du tri ou du rattrapage, jamais de la prise en main posée pendant que
+l'échange est ouvert. Pas de notification de message ni d'alerte de tâche.
+
+- **L'abonnement est le réglage.** Une ligne « Notifications sur cet appareil » dans
+  Préférences ; l'autorisation se demande sur ce geste, jamais au chargement ; l'activer envoie
+  une notification de bienvenue — la preuve immédiate que la chaîne marche. Pas d'interrupteur
+  par nature de notification (cf. « Sept extensions de l'IA » : aucune n'ajoute un réglage).
+- **L'heure du brief est fixe** : `0 6 * * *` UTC, 7 h en hiver et 8 h en été. Un champ « heure
+  d'ouverture » aurait été un réglage de plus pour un gain incertain. Le silence est une règle :
+  tout à zéro, rien ne part ; un brief par jour, le journal fait foi.
+- **Deux crons au plus** (plan Hobby) : le drainage des suppressions de fichiers rejoint le cron
+  du matin ; le rattrapage garde le sien, la nuit.
+- **Sur iPhone**, le push n'existe que pour l'application installée depuis Safari : la ligne de
+  Préférences l'explique au lieu de montrer un interrupteur mort.
+- **Le service worker ne fait que le push** — pas de cache, pas de hors-ligne.
+
+**Retenu contre** une notification par message reçu, qui transformerait Relvo en boîte de
+réception de plus, et contre la conservation du raisonnement du modèle côté client pour les
+notifications (sans objet : le brief est un calcul).
+
 ### La disposition générale : quatre vues, Relvo au centre, un menu pour le reste
 
 **`tranché`** · Réponse aux trois questions de « Rouvrir la disposition générale », construite

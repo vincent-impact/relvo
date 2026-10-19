@@ -356,6 +356,7 @@ model Account {
   folders              Folder[]
   labels               Label[]
   relvoQuestions       RelvoQuestion[]
+  pushSubscriptions    PushSubscription[]
   contacts             Contact[]
   channels             Channel[]
   channelConfigs       ChannelConfig[]
@@ -1026,6 +1027,30 @@ model KnowledgeDocument {
 // Volontairement détaché d'Account (pas de FK) : `identifier` porte l'email
 // cible. Un compte peut donc recevoir un jeton avant même d'être pleinement
 // configuré, et le jeton survit indépendamment du cycle de vie du compte.
+
+/// Un ABONNEMENT PUSH (M12.7, M12.9) : un appareil qui a accepté de recevoir les
+/// notifications de Relvo — le brief du matin, une question qui s'ouvre. Un par
+/// navigateur installé ; l'`endpoint` est l'adresse que le service de push du
+/// navigateur a donnée, unique par construction. Retiré dès qu'un envoi revient
+/// 404 ou 410 (l'appareil s'est désabonné), ou quand l'utilisateur coupe les
+/// notifications sur cet appareil. L'abonnement EST le réglage : il n'y a pas
+/// d'interrupteur par type de notification.
+model PushSubscription {
+  id         String    @id @default(uuid()) @db.Uuid
+  accountId  String    @map("account_id") @db.Uuid
+  endpoint   String    @unique
+  p256dh     String
+  auth       String
+  userAgent  String?   @map("user_agent")
+  lastSentAt DateTime? @map("last_sent_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+  @@map("push_subscriptions")
+}
 
 model VerificationToken {
   id         String                @id @default(uuid()) @db.Uuid
