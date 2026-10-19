@@ -1,5 +1,6 @@
 import type { ModelMessage } from "ai";
 import type { CreateTaskInput } from "@relvo/db";
+import { dimancheParis, jourDecale, jourParis } from "@relvo/db/temps";
 
 // Les CONVERSIONS de l'échange (M10) — module PUR, sans base ni modèle :
 // ce qu'un argument d'outil devient pour le domaine, et comment le bloc
@@ -80,6 +81,113 @@ export function versCreateTaskInput(
     endDate: null,
     endTime: heureNue(date, fin),
   };
+}
+
+/** Les périodes toutes faites de `list_tasks` — le reste se dit en jours explicites. */
+export const PERIODES_TACHES = [
+  "aujourd_hui",
+  "demain",
+  "semaine",
+  "en_retard",
+  "sans_date",
+  "affaire",
+] as const;
+export type PeriodeTaches = (typeof PERIODES_TACHES)[number];
+
+export type BornesTaches = {
+  depuis: string | null;
+  jusquAu: string | null;
+  sansDate: boolean;
+  enRetard: boolean;
+};
+
+function jourNu(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/**
+ * Ce qu'une période toute faite devient pour la recherche de tâches, en jours
+ * civils FRANÇAIS (#55) : « aujourd'hui » et « demain » sont un jour ; « la
+ * semaine » va d'aujourd'hui au dimanche inclus — la semaine civile, pas sept
+ * jours glissants ; « en retard » et « sans date » sont des filtres ;
+ * « affaire » et l'absence de période ne bornent rien. Des jours explicites
+ * (`depuis`, `jusquAu`) l'emportent sur la période.
+ */
+export function bornesPeriode(
+  periode: PeriodeTaches | null,
+  now: Date,
+  explicites: { depuis?: string | null; jusquAu?: string | null } = {},
+): BornesTaches {
+  const rien: BornesTaches = {
+    depuis: null,
+    jusquAu: null,
+    sansDate: false,
+    enRetard: false,
+  };
+  let bornes = rien;
+  switch (periode) {
+    case "aujourd_hui": {
+      const j = jourParis(now);
+      bornes = { ...rien, depuis: j, jusquAu: j };
+      break;
+    }
+    case "demain": {
+      const j = jourNu(jourDecale(now, 1));
+      bornes = { ...rien, depuis: j, jusquAu: j };
+      break;
+    }
+    case "semaine":
+      bornes = {
+        ...rien,
+        depuis: jourParis(now),
+        jusquAu: jourNu(dimancheParis(now)),
+      };
+      break;
+    case "en_retard":
+      bornes = { ...rien, enRetard: true };
+      break;
+    case "sans_date":
+      bornes = { ...rien, sansDate: true };
+      break;
+    default:
+      break;
+  }
+  const depuis =
+    explicites.depuis && DATE_NUE.test(explicites.depuis)
+      ? explicites.depuis
+      : null;
+  const jusquAu =
+    explicites.jusquAu && DATE_NUE.test(explicites.jusquAu)
+      ? explicites.jusquAu
+      : null;
+  if (depuis || jusquAu) {
+    return { ...bornes, depuis, jusquAu, sansDate: false, enRetard: false };
+  }
+  return bornes;
+}
+
+/** Le titre du bloc de tâches rendu dans le fil. */
+export function titreTaches(
+  periode: PeriodeTaches | null,
+  statut: "ouvertes" | "faites" | null,
+): string {
+  if (statut === "faites") return "Tâches faites";
+  switch (periode) {
+    case "aujourd_hui":
+      return "Tâches d'aujourd'hui";
+    case "demain":
+      return "Tâches de demain";
+    case "semaine":
+      return "Tâches de la semaine";
+    case "en_retard":
+      return "Tâches en retard";
+    case "sans_date":
+      return "Tâches sans date";
+    case "affaire":
+      return "Tâches de l'affaire";
+    default:
+      return "Tâches";
+  }
 }
 
 /** Les délimiteurs du bloc volatil, pour que le modèle le lise comme une donnée. */

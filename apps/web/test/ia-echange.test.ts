@@ -20,11 +20,13 @@ import {
   SOCLE_ECHANGE,
 } from "@/server/ia/produit";
 import {
+  bornesPeriode,
   DEBUT_CONTEXTE,
   FIN_CONTEXTE,
   heureNue,
   injecterVolatil,
   lirePage,
+  titreTaches,
   versCreateTaskInput,
 } from "@/server/ia/echange/conversions";
 
@@ -281,6 +283,52 @@ describe("les arguments d'un outil deviennent une entrée du domaine", () => {
     expect(fin.startDate).not.toBeNull();
     expect(fin.endTime).toBeNull();
     expect(heureNue("demain", "10h")).toBeNull();
+  });
+
+  it("une période de tâches devient des jours français ; des jours explicites l'emportent", () => {
+    // Lundi 19 octobre 2026, 10 h 58 à Paris.
+    const now = new Date("2026-10-19T08:58:00.000Z");
+    expect(bornesPeriode("aujourd_hui", now)).toEqual({
+      depuis: "2026-10-19",
+      jusquAu: "2026-10-19",
+      sansDate: false,
+      enRetard: false,
+    });
+    expect(bornesPeriode("demain", now).depuis).toBe("2026-10-20");
+    // « La semaine » va d'aujourd'hui à dimanche — pas sept jours glissants.
+    expect(bornesPeriode("semaine", now)).toMatchObject({
+      depuis: "2026-10-19",
+      jusquAu: "2026-10-25",
+    });
+    // Après minuit à Paris, « aujourd'hui » est déjà le nouveau jour (#55).
+    expect(
+      bornesPeriode("aujourd_hui", new Date("2026-10-18T22:30:00.000Z")).depuis,
+    ).toBe("2026-10-19");
+    expect(bornesPeriode("en_retard", now)).toMatchObject({
+      enRetard: true,
+      depuis: null,
+    });
+    expect(bornesPeriode("sans_date", now).sansDate).toBe(true);
+    expect(bornesPeriode("affaire", now)).toEqual(bornesPeriode(null, now));
+    // « Lundi prochain » : des jours explicites, qui l'emportent sur la période.
+    expect(
+      bornesPeriode("semaine", now, {
+        depuis: "2026-10-26",
+        jusquAu: "2026-10-26",
+      }),
+    ).toEqual({
+      depuis: "2026-10-26",
+      jusquAu: "2026-10-26",
+      sansDate: false,
+      enRetard: false,
+    });
+    // Un jour mal formé est ignoré, pas deviné.
+    expect(bornesPeriode("demain", now, { depuis: "lundi" }).depuis).toBe(
+      "2026-10-20",
+    );
+    expect(titreTaches("semaine", null)).toBe("Tâches de la semaine");
+    expect(titreTaches("semaine", "faites")).toBe("Tâches faites");
+    expect(titreTaches(null, null)).toBe("Tâches");
   });
 
   it("la page d'origine désigne l'affaire ou le contact ouvert, et rien d'autre", () => {

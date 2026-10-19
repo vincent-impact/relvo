@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { getToolName, isToolUIPart, type UIMessagePart } from "ai";
 import { toast } from "sonner";
-import type { MessageTrouve } from "@relvo/db";
+import type { ConnaissanceTrouvee, MessageTrouve } from "@relvo/db";
 import {
   RelvoBlock,
   RelvoSentence,
@@ -17,6 +17,7 @@ import {
 } from "@/components/shared/subject-row";
 import { TaskItem, type TaskItemData } from "@/components/subject/task-item";
 import type {
+  ConversationLigne,
   OutilsRelvoUI,
   RelvoUIMessage,
   SortieOutil,
@@ -95,6 +96,8 @@ const EN_COURS: Record<keyof OutilsRelvoUI, string> = {
   list_contacts: "Je cherche dans l'annuaire",
   get_contact: "Je cherche dans l'annuaire",
   search_messages: "Je cherche dans vos messages",
+  list_conversations: "Je regarde vos conversations",
+  search_knowledge: "Je cherche dans la Mémoire",
   create_task: "Je crée la tâche",
   update_task: "Je modifie la tâche",
   mark_task_done: "Je coche la tâche",
@@ -206,6 +209,83 @@ function Messages({ messages }: { messages: MessageTrouve[] }) {
   );
 }
 
+function Conversations({
+  conversations,
+}: {
+  conversations: ConversationLigne[];
+}) {
+  if (conversations.length === 0) return null;
+  return (
+    <SousCarte>
+      {conversations.map((c) => (
+        <Link
+          key={c.id}
+          href={`/conversations/${c.id}`}
+          data-list-row
+          className="block border-b border-(--filet) px-3.5 py-2.5 active:bg-(--fond-enfonce)"
+        >
+          <span className="flex items-baseline justify-between gap-2">
+            <span className="truncate text-[14.5px] font-medium text-noir">
+              {c.titre}
+            </span>
+            <span className="flex flex-none items-center gap-1.5 text-[12px] font-normal text-gris">
+              {c.nonLus > 0 ? (
+                <span className="chiffre rounded-full bg-relvo px-1.5 text-[11px] leading-4 text-white tabular-nums">
+                  {c.nonLus}
+                </span>
+              ) : null}
+              {c.dernierMessageLe ? jourCourt(c.dernierMessageLe) : null}
+            </span>
+          </span>
+          {c.interlocuteur ? (
+            <span className="block truncate text-[13px] font-normal text-noir">
+              {c.interlocuteur}
+              <span className="text-gris">
+                {" · "}
+                {c.canal === "whatsapp" ? "WhatsApp" : "E-mail"}
+              </span>
+            </span>
+          ) : null}
+          <span className="line-clamp-2 text-[12.5px] leading-4 font-normal text-gris">
+            {c.apercu}
+          </span>
+        </Link>
+      ))}
+    </SousCarte>
+  );
+}
+
+function Memoire({ connaissances }: { connaissances: ConnaissanceTrouvee[] }) {
+  if (connaissances.length === 0) return null;
+  return (
+    <SousCarte>
+      {connaissances.map((k) => (
+        <Link
+          key={k.id}
+          href={`/memoire/${k.folderId}`}
+          data-list-row
+          className="block border-b border-(--filet) px-3.5 py-2.5 active:bg-(--fond-enfonce)"
+        >
+          <span className="flex items-baseline justify-between gap-2">
+            <span className="truncate text-[14.5px] font-medium text-noir">
+              {k.titre}
+            </span>
+            <span className="flex-none text-[12px] font-normal text-gris">
+              {k.domaine}
+              {!k.active ? " · désactivée" : ""}
+            </span>
+          </span>
+          {k.contenu ? (
+            <span className="line-clamp-2 text-[12.5px] leading-4 font-normal text-gris">
+              {k.contenu}
+            </span>
+          ) : null}
+        </Link>
+      ))}
+    </SousCarte>
+  );
+}
+
 function Affaires({ affaires }: { affaires: SubjectRowData[] }) {
   if (affaires.length === 0) return null;
   return (
@@ -302,6 +382,10 @@ function Sortie({ sortie }: { sortie: SortieOutil }) {
       );
     case "messages":
       return <Messages messages={sortie.messages} />;
+    case "conversations":
+      return <Conversations conversations={sortie.conversations} />;
+    case "memoire":
+      return <Memoire connaissances={sortie.connaissances} />;
     case "tache-creee":
     case "tache-modifiee":
     case "tache-cochee": {

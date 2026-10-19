@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calendrierParis,
   debutDuJourParis,
+  dimancheParis,
   heureParis,
   horodatageParis,
   jourDecale,
@@ -79,6 +80,24 @@ describe("le jour civil français", () => {
     );
     expect(jourDecale(SOIR_ETE, 1).toISOString()).toBe(
       "2026-09-22T00:00:00.000Z",
+    );
+  });
+
+  it("« cette semaine » finit dimanche — la semaine civile, pas sept jours glissants", () => {
+    // Le 19 octobre 2026 est un lundi ; le 25, un dimanche.
+    expect(dimancheParis(new Date("2026-10-19T08:00:00Z")).toISOString()).toBe(
+      "2026-10-25T00:00:00.000Z",
+    );
+    expect(dimancheParis(new Date("2026-10-24T08:00:00Z")).toISOString()).toBe(
+      "2026-10-25T00:00:00.000Z",
+    );
+    // Un dimanche rend le jour même, y compris après minuit à Paris quand
+    // Greenwich est encore samedi.
+    expect(dimancheParis(new Date("2026-10-24T22:30:00Z")).toISOString()).toBe(
+      "2026-10-25T00:00:00.000Z",
+    );
+    expect(dimancheParis(new Date("2026-10-25T12:00:00Z")).toISOString()).toBe(
+      "2026-10-25T00:00:00.000Z",
     );
   });
 

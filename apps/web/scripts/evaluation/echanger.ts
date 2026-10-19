@@ -45,7 +45,7 @@ function lireCas(chemin: string): Cas[] {
     .map((l) => JSON.parse(l) as Cas);
 }
 
-/** « {{lundi}} », « {{demain}} », « {{sujet:DDPP}} » → des valeurs du jour et du compte. */
+/** « {{lundi}} », « {{demain}} », « {{hier}} », « {{aujourdhui}} », « {{sujet:DDPP}} » → des valeurs du jour et du compte. */
 async function resoudre(
   db: TenantDb,
   texte: string,
@@ -61,6 +61,10 @@ async function resoudre(
   })();
   out = out.replace(/\{\{lundi\}\}/g, prochainLundi);
   out = out.replace(/\{\{aujourdhui\}\}/g, jourParis(now));
+  out = out.replace(
+    /\{\{hier\}\}/g,
+    jourDecale(now, -1).toISOString().slice(0, 10),
+  );
   out = out.replace(
     /\{\{demain\}\}/g,
     jourDecale(now, 1).toISOString().slice(0, 10),

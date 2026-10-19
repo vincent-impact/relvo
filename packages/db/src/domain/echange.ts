@@ -1,12 +1,16 @@
 import { z } from "zod";
 import {
+  AbsorptionStatus,
   Actor,
+  ChannelType,
+  KnowledgeKind,
   Priority,
   SubjectStatus,
   TaskKind,
   TaskStatus,
 } from "../generated/prisma/enums";
 import { MessageDirection } from "../generated/prisma/enums";
+import type { Prisma, Subject, Task } from "../generated/prisma/client";
 import type { TenantDb } from "../tenant";
 import { cancelAction } from "./actions";
 import type { Origine } from "./events";
@@ -33,6 +37,7 @@ import {
   debutDuJourParis,
   horodatageParis,
   instantDebutJourParis,
+  instantFinJourParis,
   jourParis,
 } from "./temps";
 import type { TriageAccountProjection } from "./triage";
@@ -45,6 +50,12 @@ import type { TriageAccountProjection } from "./triage";
 //
 // Mêmes règles que le tri et la structuration : des projections explicites,
 // champ par champ, miroirs des types du module de contexte de l'application.
+//
+// LES RECHERCHES DE L'ÉCHANGE PRENNENT LES CRITÈRES QUE LE DIRIGEANT DIT — un
+// jour, une personne, un domaine, un canal, un état —, jamais seulement un
+// mot-clé (PITFALLS #68) : un outil à filtres figés pousse le modèle à inventer
+// un mot (« 2026-10-19 », « email ») et à conclure qu'il n'y a rien. Chaque
+// critère RÉDUIT ce qui remonte ; sans critère, les derniers éléments.
 
 /** Miroir structurel de `BriefCompte` (application) : les compteurs du jour, pour l'échange seulement. */
 export type BriefProjection = {
@@ -239,8 +250,26 @@ export type RechercheMessages = {
   /** Un nom ou une adresse d'expéditeur. */
   expediteur?: string | null;
   sens?: "entrant" | "sortant" | null;
+  /** Le canal : e-mail ou WhatsApp. */
+  canal?: "email" | "whatsapp" | null;
+  /** Les messages d'UNE affaire. */
+  subjectId?: string | null;
+  /** true : seulement les messages reçus non lus. */
+  nonLus?: boolean | null;
   limite?: number;
 };
+
+/** Les mots d'une recherche : chacun doit se trouver quelque part, pas la phrase entière. */
+function motsDe(recherche: string | null | undefined): string[] {
+  return (recherche ?? "")
+    .trim()
+    .split(/\s+/)
+    .filter((m) => m.length > 1);
+}
+
+function contient(mot: string) {
+  return { contains: mot, mode: "insensitive" as const };
+}
 
 /** L'instant d'un message : reçu, sinon envoyé, sinon ingéré. */
 function instantDuMessage(m: {
@@ -266,10 +295,7 @@ export async function searchMessages(
   // Chaque mot doit se trouver quelque part — objet, texte ou expéditeur —,
   // pas la phrase entière : « Karim sauce blanche » retrouve le message de
   // Karim qui parle de sauce blanche.
-  const mots = (args.recherche ?? "")
-    .trim()
-    .split(/\s+/)
-    .filter((m) => m.length > 1);
+  const mots = motsDe(args.recherche);
   const take = Math.min(Math.max(args.limite ?? 10, 1), SEARCH_MESSAGES_MAX);
   const plage =
     args.depuis || args.jusquA
@@ -318,6 +344,24 @@ export async function searchMessages(
                     : MessageDirection.incoming,
               },
             ]
+          : []),
+        ...(args.canal
+          ? [
+              {
+                channel: {
+                  is: {
+                    type:
+                      args.canal === "whatsapp"
+                        ? ChannelType.whatsapp
+                        : ChannelType.email,
+                  },
+                },
+              },
+            ]
+          : []),
+        ...(args.subjectId ? [{ subjectId: args.subjectId }] : []),
+        ...(args.nonLus
+          ? [{ readAt: null, direction: MessageDirection.incoming }]
           : []),
         // La plage porte sur l'instant du message : reçu, sinon envoyé, sinon ingéré.
         ...(plage
@@ -374,6 +418,262 @@ export async function searchMessages(
             : texte,
       };
     });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Les tâches, les affaires et la Mémoire, par critères (05 §11.6)
+// ─────────────────────────────────────────────────────────────
+
+/** Tâches rendues au plus par une recherche de l'échange. */
+export const SEARCH_TASKS_MAX = 30;
+
+export type RechercheTaches = {
+  /** Des mots du titre ou de la description. */
+  recherche?: string | null;
+  /**
+   * Des jours civils français « AAAA-MM-JJ », bornes incluses : sur
+   * l'ÉCHÉANCE (date nue) d'une tâche ouverte, sur l'INSTANT où une tâche
+   * faite a été cochée.
+   */
+  depuis?: string | null;
+  jusquAu?: string | null;
+  /** true : seulement les tâches sans échéance (flottantes). */
+  sansDate?: boolean | null;
+  /** true : les ouvertes dont l'échéance est passée, la plus récente d'abord. */
+  enRetard?: boolean | null;
+  type?: TaskKind | null;
+  /** `ouvertes` (défaut) ou `faites`. */
+  statut?: "ouvertes" | "faites" | null;
+  subjectId?: string | null;
+  limite?: number;
+};
+
+/**
+ * Les tâches de l'échange (`list_tasks`) : une plage de jours que le modèle
+ * calcule depuis la date du jour (« lundi », « la semaine prochaine »), les
+ * tâches sans date — invisibles à tout filtre sur l'échéance —, un type, des
+ * mots, les tâches faites. Les ouvertes se rendent par échéance, les
+ * flottantes en dernier ; les faites, la plus récente d'abord.
+ */
+export async function searchTasks(
+  db: TenantDb,
+  args: RechercheTaches,
+  now: Date = new Date(),
+): Promise<Task[]> {
+  const faites = args.statut === "faites";
+  const take = Math.min(Math.max(args.limite ?? 20, 1), SEARCH_TASKS_MAX);
+  const plage: Prisma.TaskWhereInput[] = [];
+  if (args.depuis || args.jusquAu) {
+    plage.push(
+      faites
+        ? {
+            completedAt: {
+              ...(args.depuis
+                ? { gte: instantDebutJourParis(args.depuis) }
+                : {}),
+              ...(args.jusquAu
+                ? { lte: instantFinJourParis(args.jusquAu) }
+                : {}),
+            },
+          }
+        : {
+            startDate: {
+              ...(args.depuis ? { gte: dateNue(args.depuis) } : {}),
+              ...(args.jusquAu ? { lte: dateNue(args.jusquAu) } : {}),
+            },
+          },
+    );
+  }
+  const enRetard = !faites && args.enRetard === true;
+  const rows = await db.task.findMany({
+    where: {
+      status: faites ? TaskStatus.done : TaskStatus.open,
+      ...(args.subjectId ? { subjectId: args.subjectId } : {}),
+      ...(args.type ? { kind: args.type } : {}),
+      AND: [
+        ...motsDe(args.recherche).map((mot) => ({
+          OR: [{ title: contient(mot) }, { description: contient(mot) }],
+        })),
+        ...plage,
+        ...(!faites && args.sansDate ? [{ startDate: null }] : []),
+        ...(enRetard ? [{ startDate: { lt: debutDuJourParis(now) } }] : []),
+      ],
+    },
+    orderBy: faites
+      ? [{ completedAt: "desc" }]
+      : enRetard
+        ? [{ startDate: "desc" }, { startTime: "desc" }]
+        : [
+            { startDate: { sort: "asc", nulls: "last" } },
+            { startTime: { sort: "asc", nulls: "last" } },
+            { createdAt: "desc" },
+          ],
+    take,
+  });
+  return rows;
+}
+
+/** Affaires rendues au plus par une recherche de l'échange. */
+export const SEARCH_SUBJECTS_MAX = 20;
+
+export type RechercheAffaires = {
+  /** Des mots du titre, du descriptif, du résumé ou de la situation. */
+  recherche?: string | null;
+  /** `ouvertes` (défaut), `validees`, `fermees`, ou `toutes`. */
+  statut?: "ouvertes" | "validees" | "fermees" | "toutes" | null;
+  urgentes?: boolean | null;
+  /** Celles qui attendent une réponse (marqueur « en attente »). */
+  enAttente?: boolean | null;
+  folderId?: string | null;
+  contactId?: string | null;
+  /** Des jours civils français, bornes incluses, sur la DERNIÈRE ACTIVITÉ. */
+  depuis?: string | null;
+  jusquAu?: string | null;
+  limite?: number;
+};
+
+/**
+ * Les affaires de l'échange (`list_subjects`) : par état, urgence, attente,
+ * domaine, contact, mots, et par jours de dernière activité (« ce qui a bougé
+ * cette semaine »). Les urgentes d'abord, puis la plus récente activité.
+ */
+export async function searchSubjects(
+  db: TenantDb,
+  args: RechercheAffaires,
+): Promise<Subject[]> {
+  const take = Math.min(Math.max(args.limite ?? 10, 1), SEARCH_SUBJECTS_MAX);
+  const statut = args.statut ?? "ouvertes";
+  const status =
+    statut === "validees"
+      ? SubjectStatus.validated
+      : statut === "fermees"
+        ? SubjectStatus.closed
+        : statut === "toutes"
+          ? undefined
+          : SubjectStatus.open;
+  return db.subject.findMany({
+    where: {
+      ...(status ? { status } : {}),
+      ...(args.urgentes ? { priority: Priority.urgent } : {}),
+      ...(args.enAttente ? { waitingForReply: true } : {}),
+      ...(args.folderId ? { folderId: args.folderId } : {}),
+      ...(args.contactId ? { contactIds: { has: args.contactId } } : {}),
+      ...(args.depuis || args.jusquAu
+        ? {
+            lastActivityAt: {
+              ...(args.depuis
+                ? { gte: instantDebutJourParis(args.depuis) }
+                : {}),
+              ...(args.jusquAu
+                ? { lte: instantFinJourParis(args.jusquAu) }
+                : {}),
+            },
+          }
+        : {}),
+      AND: motsDe(args.recherche).map((mot) => ({
+        OR: [
+          { title: contient(mot) },
+          { description: contient(mot) },
+          { summary: contient(mot) },
+          { situationWhere: contient(mot) },
+        ],
+      })),
+    },
+    orderBy: [{ priority: "desc" }, { lastActivityAt: "desc" }],
+    take,
+  });
+}
+
+/** Connaissances rendues au plus par une recherche de l'échange. */
+export const SEARCH_KNOWLEDGE_MAX = 20;
+const EXTRAIT_MEMOIRE_MAX = 600;
+
+export type RechercheMemoire = {
+  /** Des mots du titre, du contenu, du résumé ou de l'étiquette. */
+  recherche?: string | null;
+  folderId?: string | null;
+  /** `instructions` (les règles du dirigeant), `documents` (ce qu'il a déposé), ou les deux. */
+  genre?: "instructions" | "documents" | null;
+  limite?: number;
+};
+
+export type ConnaissanceTrouvee = {
+  id: string;
+  genre: "instruction" | "document";
+  titre: string;
+  domaine: string;
+  folderId: string;
+  /** false : l'instruction est désactivée, Relvo ne l'applique pas. */
+  active: boolean;
+  /** Le contenu d'une instruction (borné) ; le résumé de Relvo pour un document. */
+  contenu: string | null;
+  /** L'étiquette posée par Relvo sur un document, ou null. */
+  etiquette: string | null;
+};
+
+/**
+ * La Mémoire, par mots et par domaine (`search_knowledge`) : ce que le
+ * contexte du tour ne porte qu'en partie — ses instructions sont plafonnées
+ * et les documents d'un domaine ne s'y lisent que depuis une fiche. Une
+ * instruction désactivée est rendue avec son état : le modèle ne l'applique
+ * pas, mais il peut dire qu'elle existe.
+ */
+export async function searchKnowledge(
+  db: TenantDb,
+  args: RechercheMemoire,
+): Promise<ConnaissanceTrouvee[]> {
+  const take = Math.min(Math.max(args.limite ?? 10, 1), SEARCH_KNOWLEDGE_MAX);
+  const rows = await db.knowledgeDocument.findMany({
+    where: {
+      folder: { is: { isActive: true } },
+      ...(args.folderId ? { folderId: args.folderId } : {}),
+      ...(args.genre === "instructions"
+        ? { kind: KnowledgeKind.note }
+        : args.genre === "documents"
+          ? { kind: KnowledgeKind.file }
+          : {}),
+      AND: motsDe(args.recherche).map((mot) => ({
+        OR: [
+          { name: contient(mot) },
+          { content: contient(mot) },
+          { description: contient(mot) },
+          { aiSummary: contient(mot) },
+          { aiLabel: contient(mot) },
+        ],
+      })),
+    },
+    orderBy: [{ updatedAt: "desc" }],
+    take,
+    select: {
+      id: true,
+      kind: true,
+      name: true,
+      content: true,
+      aiSummary: true,
+      aiLabel: true,
+      absorptionStatus: true,
+      folderId: true,
+      folder: { select: { name: true } },
+    },
+  });
+  return rows.map((k) => {
+    const note = k.kind === KnowledgeKind.note;
+    const texte = (note ? k.content : k.aiSummary)?.replace(/\s+/g, " ").trim();
+    return {
+      id: k.id,
+      genre: note ? "instruction" : "document",
+      titre: k.name,
+      domaine: k.folder.name,
+      folderId: k.folderId,
+      active: k.absorptionStatus === AbsorptionStatus.read,
+      contenu: texte
+        ? texte.length > EXTRAIT_MEMOIRE_MAX
+          ? `${texte.slice(0, EXTRAIT_MEMOIRE_MAX)}…`
+          : texte
+        : null,
+      etiquette: k.aiLabel,
+    };
+  });
 }
 
 // ─────────────────────────────────────────────────────────────

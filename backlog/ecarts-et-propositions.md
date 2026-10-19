@@ -1056,6 +1056,34 @@ l'appareil que pour être transcrit et n'est conservé nulle part.
 **Ce qui a tranché** : le public dicte plus qu'il n'écrit, et une alpha sans voix teste un
 produit que personne n'utilisera ainsi.
 
+### Les outils de lecture de l'échange prennent les critères que le dirigeant dit
+
+**`tranché`** · Un outil de lecture de l'échange accepte **ce que le dirigeant dit
+naturellement** — un jour ou une plage de jours en heure française, une personne, un domaine,
+un canal, un état, un type —, jamais seulement un mot-clé ni une poignée de périodes figées.
+Sans critère, il rend les derniers éléments plutôt que rien. Un nom qui désigne plusieurs
+contacts est rendu **en candidats**, jamais tranché en silence.
+
+- **Le constat** : « ai-je reçu un e-mail aujourd'hui ? » répondu « non » alors qu'un message
+  venait d'arriver — la recherche de messages ne prenait qu'un mot, le modèle y avait mis la
+  date. Même défaut sur les tâches (quatre périodes figées, les tâches sans date invisibles,
+  « cette semaine » qui valait sept jours glissants), sur les affaires (ni domaine, ni contact,
+  ni état, ni mots), sur la Mémoire (aucun outil de lecture : le contexte n'en porte qu'une
+  partie, plafonnée) et sur les conversations (« à trier » rendait un compte, pas une liste).
+- **L'alternative écartée** : laisser le modèle ramener large et trier dans sa fenêtre — c'est
+  ce qui fait exploser les jetons, et ce qui ferme des questions. Chaque critère **réduit** ce
+  qui remonte ; les plafonds par appel restent.
+- **Ce que ça change** : `list_tasks` (période ou jours explicites, sans date, type, mots,
+  faites), `list_subjects` (état, urgence, attente, domaine, contact, mots, jours d'activité),
+  `search_messages` (canal, non lus, affaire en plus des jours, de l'expéditeur et du sens),
+  `get_contact` (nom, adresse ou entreprise ; candidats rendus), deux outils nouveaux
+  `list_conversations` et `search_knowledge`. « Cette semaine » finit dimanche. Chaque
+  critère est entré dans le jeu d'évaluation avec la question qui l'a motivé (`PITFALLS.md`
+  #68).
+
+**Ce qui a tranché** : la capture d'écran du dirigeant — Relvo qui affirme qu'il n'y a pas
+d'e-mail alors qu'il y en a un — et le coût en jetons de l'alternative.
+
 ### Le mini backoffice : l'écran des méthodes du domaine, une suppression sans corbeille, une inscription qui attend sa validation
 
 **`tranché`** · Le backoffice (M21) n'ajoute aucune règle au produit : c'est l'écran des méthodes

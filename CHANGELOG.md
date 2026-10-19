@@ -6,6 +6,7 @@
 
 ## 2026-10-19
 
+- **Nouveau** — Dans l'échange, Relvo répond désormais à « qu'est-ce que j'ai lundi prochain ? », « mes affaires avec Karim », « qu'est-ce que je t'ai dit sur les livraisons ? », « qu'est-ce qui est à trier ? » ou « qu'est-ce que Karim m'a envoyé sur WhatsApp ? » : il cherche par jour, par personne, par domaine, par canal, et il vous demande de préciser quand un nom désigne plusieurs contacts.
 - **Corrigé** — Dans l'échange, Relvo retrouve vos messages par jour (« ai-je reçu un e-mail aujourd'hui ? »), par expéditeur ou sans critère, et il vous donne l'heure de réception à l'heure française.
 - **Nouveau** — Dans l'échange avec Relvo, maintenez le micro, parlez, relâchez : votre demande part aussitôt, sans étape de relecture. Dès que vous tapez, le micro laisse la place au bouton d'envoi.
 - **Nouveau** — Dans l'échange avec Relvo, vous pouvez dicter votre demande : un appui sur le micro, vous parlez, le texte s'écrit dans le champ, et vous le relisez ou le corrigez avant d'envoyer.

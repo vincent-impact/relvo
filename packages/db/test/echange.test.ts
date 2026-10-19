@@ -11,13 +11,18 @@ import {
   EVENT_TYPES,
   getEchangeProjection,
   ingestInboundEmail,
+  ingestInboundWhatsApp,
   prisma,
   reopenTask,
   resolveSubject,
   getBriefProjection,
   instantDebutJourParis,
   instantFinJourParis,
+  searchKnowledge,
   searchMessages,
+  searchSubjects,
+  searchTasks,
+  setNoteActive,
   tenantDb,
   updateNote,
   updateSubject,
@@ -303,6 +308,68 @@ describe("la recherche de messages de l'échange", () => {
     expect(await searchMessages(db, { sens: "sortant" })).toHaveLength(0);
   });
 
+  it("se filtre par canal, par affaire et sur les non-lus", async () => {
+    const { account, db } = await makeAccount("echange-canal@test.fr");
+    const email = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "Boîte email",
+        type: "email",
+        identifier: "contact@tastycrousty.fr",
+      },
+    });
+    const whatsapp = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "WhatsApp",
+        type: "whatsapp",
+        identifier: "+33600000000",
+      },
+    });
+    const { message: mail } = await ingestInboundEmail(db, {
+      channelId: email.id,
+      externalId: "mail-canal",
+      senderRaw: "karim@sogood.fr",
+      senderName: "Karim Benali",
+      subjectLine: "Livraison",
+      content: "Par e-mail.",
+    });
+    await ingestInboundWhatsApp(db, {
+      channelId: whatsapp.id,
+      externalId: "wa-canal",
+      externalThreadId: "chat-karim",
+      senderRaw: "+33611111111",
+      senderName: "Karim Benali",
+      content: "Par WhatsApp.",
+    });
+    expect(
+      (await searchMessages(db, { canal: "whatsapp" })).map((m) => m.extrait),
+    ).toEqual(["Par WhatsApp."]);
+    expect(
+      (await searchMessages(db, { canal: "email" })).map((m) => m.extrait),
+    ).toEqual(["Par e-mail."]);
+
+    // Les messages d'UNE affaire : ceux que sa fenêtre couvre.
+    const sujet = await createSubject(db, { title: "Livraison Sogood" });
+    await prisma.message.update({
+      where: { id: mail.id },
+      data: { subjectId: sujet.id },
+    });
+    expect(
+      (await searchMessages(db, { subjectId: sujet.id })).map((m) => m.extrait),
+    ).toEqual(["Par e-mail."]);
+
+    // Les non-lus : reçus, jamais ouverts.
+    expect(await searchMessages(db, { nonLus: true })).toHaveLength(2);
+    await prisma.message.update({
+      where: { id: mail.id },
+      data: { readAt: new Date() },
+    });
+    expect(
+      (await searchMessages(db, { nonLus: true })).map((m) => m.extrait),
+    ).toEqual(["Par WhatsApp."]);
+  });
+
   it("le brief compte les messages reçus depuis minuit à Paris, et sur sept jours", async () => {
     const { account, db } = await makeAccount("echange-brief-messages@test.fr");
     const channel = await prisma.channel.create({
@@ -338,6 +405,218 @@ describe("la recherche de messages de l'échange", () => {
     const brief = await getBriefProjection(db, now);
     expect(brief.messagesRecusAujourdhui).toBe(2);
     expect(brief.messagesRecus7j).toBe(3);
+  });
+});
+
+describe("les tâches de l'échange, par critères", () => {
+  it("par jours sur l'échéance, sans date, en retard, par type et par mots ; les faites sur le jour où elles l'ont été", async () => {
+    const { db } = await makeAccount("echange-taches@test.fr");
+    // Lundi 19 octobre 2026, 10 h 58 à Paris.
+    const now = new Date("2026-10-19T08:58:00.000Z");
+    const jour = (j: string) => new Date(`${j}T00:00:00.000Z`);
+    const sujet = await createSubject(db, { title: "Chambre froide" });
+    const lundi = await createTask(db, {
+      subjectId: sujet.id,
+      title: "Rappeler Karim",
+      kind: "call",
+      startDate: jour("2026-10-19"),
+    });
+    await createTask(db, {
+      subjectId: sujet.id,
+      title: "Relancer le devis",
+      kind: "follow_up",
+      startDate: jour("2026-10-22"),
+    });
+    await createTask(db, {
+      title: "Vérifier le camion",
+      kind: "check",
+      startDate: jour("2026-10-26"),
+    });
+    await createTask(db, {
+      title: "Payer la facture",
+      startDate: jour("2026-10-15"),
+    });
+    const flottante = await createTask(db, { title: "Trouver un plombier" });
+
+    const titres = async (args: Parameters<typeof searchTasks>[1]) =>
+      (await searchTasks(db, args, now)).map((t) => t.title);
+
+    // Un jour, une plage : sur l'échéance, bornes incluses.
+    expect(
+      await titres({ depuis: "2026-10-19", jusquAu: "2026-10-19" }),
+    ).toEqual(["Rappeler Karim"]);
+    expect(
+      await titres({ depuis: "2026-10-19", jusquAu: "2026-10-25" }),
+    ).toEqual(["Rappeler Karim", "Relancer le devis"]);
+    expect(await titres({ depuis: "2026-10-26" })).toEqual([
+      "Vérifier le camion",
+    ]);
+    // Sans critère : toutes les ouvertes par échéance, la flottante en dernier.
+    expect(await titres({})).toEqual([
+      "Payer la facture",
+      "Rappeler Karim",
+      "Relancer le devis",
+      "Vérifier le camion",
+      "Trouver un plombier",
+    ]);
+    // Les sans-date, invisibles à tout filtre sur l'échéance.
+    expect(await titres({ sansDate: true })).toEqual(["Trouver un plombier"]);
+    expect(await titres({ enRetard: true })).toEqual(["Payer la facture"]);
+    expect(await titres({ type: "call" })).toEqual(["Rappeler Karim"]);
+    expect(await titres({ recherche: "devis" })).toEqual(["Relancer le devis"]);
+    expect(await titres({ subjectId: sujet.id })).toHaveLength(2);
+    expect(await titres({ recherche: "karim", limite: 1 })).toEqual([
+      "Rappeler Karim",
+    ]);
+
+    // « Qu'est-ce que j'ai fait hier ? » : les faites, sur l'INSTANT où elles
+    // ont été cochées — le 18 à 23 h 30 à Paris, c'est encore hier.
+    await completeTask(db, lundi.id);
+    await completeTask(db, flottante.id);
+    await prisma.task.update({
+      where: { id: lundi.id },
+      data: { completedAt: new Date("2026-10-18T21:30:00.000Z") },
+    });
+    await prisma.task.update({
+      where: { id: flottante.id },
+      data: { completedAt: new Date("2026-10-19T07:00:00.000Z") },
+    });
+    expect(
+      await titres({
+        statut: "faites",
+        depuis: "2026-10-18",
+        jusquAu: "2026-10-18",
+      }),
+    ).toEqual(["Rappeler Karim"]);
+    expect(await titres({ statut: "faites" })).toEqual([
+      "Trouver un plombier",
+      "Rappeler Karim",
+    ]);
+    expect(await titres({})).toHaveLength(3);
+  });
+});
+
+describe("les affaires de l'échange, par critères", () => {
+  it("par état, urgence, attente, domaine, contact, mots et jours de dernière activité", async () => {
+    const { account, db } = await makeAccount("echange-affaires@test.fr");
+    const cuisine = await prisma.folder.create({
+      data: { accountId: account.id, name: "Cuisine", slug: "cuisine" },
+    });
+    const karim = await createContact(db, {
+      firstName: "Karim",
+      lastName: "Benali",
+      company: "Sogood",
+    });
+    const sauce = await createSubject(db, {
+      title: "Sauce blanche",
+      folderId: cuisine.id,
+      contactIds: [karim.id],
+      priority: "urgent",
+    });
+    const renfort = await createSubject(db, {
+      title: "Renfort samedi soir",
+      waitingForReply: true,
+      description: "Un extra pour le service.",
+    });
+    const close = await createSubject(db, { title: "Ancien devis" });
+    await updateSubjectStatus(db, close.id, "validated", "user");
+    const activite = async (id: string, at: string) =>
+      prisma.subject.update({
+        where: { id },
+        data: { lastActivityAt: new Date(at) },
+      });
+    await activite(sauce.id, "2026-10-19T07:00:00.000Z");
+    await activite(renfort.id, "2026-10-12T07:00:00.000Z");
+    await activite(close.id, "2026-10-01T07:00:00.000Z");
+
+    const titres = async (args: Parameters<typeof searchSubjects>[1]) =>
+      (await searchSubjects(db, args)).map((s) => s.title);
+
+    expect(await titres({})).toEqual(["Sauce blanche", "Renfort samedi soir"]);
+    expect(await titres({ urgentes: true })).toEqual(["Sauce blanche"]);
+    expect(await titres({ enAttente: true })).toEqual(["Renfort samedi soir"]);
+    expect(await titres({ statut: "validees" })).toEqual(["Ancien devis"]);
+    expect(await titres({ statut: "toutes" })).toHaveLength(3);
+    expect(await titres({ folderId: cuisine.id })).toEqual(["Sauce blanche"]);
+    expect(await titres({ contactId: karim.id })).toEqual(["Sauce blanche"]);
+    // Des mots, dans le titre ou le descriptif.
+    expect(await titres({ recherche: "extra service" })).toEqual([
+      "Renfort samedi soir",
+    ]);
+    // « Ce qui a bougé cette semaine » : la dernière activité, en jours français.
+    expect(await titres({ depuis: "2026-10-19" })).toEqual(["Sauce blanche"]);
+    expect(
+      await titres({ depuis: "2026-10-12", jusquAu: "2026-10-18" }),
+    ).toEqual(["Renfort samedi soir"]);
+  });
+});
+
+describe("la Mémoire de l'échange, par critères", () => {
+  it("instructions et documents, par mots et par domaine ; une instruction désactivée est rendue avec son état", async () => {
+    const { account, db } = await makeAccount("echange-memoire@test.fr");
+    const general = await prisma.folder.create({
+      data: {
+        accountId: account.id,
+        name: "Général",
+        slug: "general",
+        isDefault: true,
+      },
+    });
+    const cuisine = await prisma.folder.create({
+      data: { accountId: account.id, name: "Cuisine", slug: "cuisine" },
+    });
+    const livraisons = await createNote(db, {
+      folderId: general.id,
+      name: "Livraisons du lundi",
+      content: "Les livraisons du lundi se font avant 9h.",
+    });
+    await createNote(db, {
+      folderId: cuisine.id,
+      name: "Ton avec les fournisseurs",
+      content: "Toujours vouvoyer.",
+    });
+    await prisma.knowledgeDocument.create({
+      data: {
+        accountId: account.id,
+        folderId: cuisine.id,
+        kind: "file",
+        name: "Fiche technique sauce blanche.pdf",
+        aiLabel: "fiche technique",
+        aiSummary: "Les proportions de la sauce blanche et sa conservation.",
+        createdByActor: "user",
+      },
+    });
+
+    const titres = async (args: Parameters<typeof searchKnowledge>[1]) =>
+      (await searchKnowledge(db, args)).map((k) => k.titre);
+
+    expect(await titres({})).toHaveLength(3);
+    expect(await titres({ recherche: "livraison" })).toEqual([
+      "Livraisons du lundi",
+    ]);
+    // Un mot du résumé de Relvo retrouve un document.
+    expect(await titres({ recherche: "conservation" })).toEqual([
+      "Fiche technique sauce blanche.pdf",
+    ]);
+    expect(
+      await titres({ folderId: cuisine.id, genre: "instructions" }),
+    ).toEqual(["Ton avec les fournisseurs"]);
+    expect(await titres({ genre: "documents" })).toHaveLength(1);
+    const [doc] = await searchKnowledge(db, { genre: "documents" });
+    expect(doc).toMatchObject({
+      genre: "document",
+      domaine: "Cuisine",
+      etiquette: "fiche technique",
+      contenu: "Les proportions de la sauce blanche et sa conservation.",
+    });
+
+    await setNoteActive(db, livraisons.id, false);
+    const [note] = await searchKnowledge(db, { recherche: "livraison" });
+    expect(note).toMatchObject({
+      genre: "instruction",
+      active: false,
+      contenu: "Les livraisons du lundi se font avant 9h.",
+    });
   });
 });
 

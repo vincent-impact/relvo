@@ -129,6 +129,16 @@ export function jourDecale(at: Date, jours: number): Date {
 }
 
 /**
+ * Le dimanche qui clôt la semaine civile française d'un instant, en date nue —
+ * « cette semaine » va d'aujourd'hui à ce dimanche inclus, pas sept jours
+ * glissants. Un dimanche rend le jour même.
+ */
+export function dimancheParis(at: Date = new Date()): Date {
+  const d = debutDuJourParis(at);
+  return jourDecale(at, (7 - d.getUTCDay()) % 7);
+}
+
+/**
  * L'INSTANT RÉEL du minuit parisien qui ouvre le mois civil d'un instant —
  * à comparer à un `createdAt`, pas à une date nue. On part du minuit UTC du
  * 1er et on retranche ce que Paris a d'avance à cet instant (une heure en

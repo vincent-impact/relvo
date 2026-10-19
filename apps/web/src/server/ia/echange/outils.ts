@@ -8,29 +8,34 @@ import {
 import { z } from "zod";
 import {
   completeTask,
+  contactDisplayName,
   createNote,
   createSubject,
   createTask,
-  debutDuJourParis,
   deleteNote,
   deleteTask,
   enrichSubjects,
   enrichTasks,
   getBriefProjection,
-  getOverdueTasks,
+  horodatageParis,
   isDomainError,
-  jourDecale,
+  listConversationItems,
   listFolders,
   listTasks,
   loadSubjectSheet,
   resolveSubject,
+  searchKnowledge,
   searchMessages,
+  searchSubjects,
+  searchTasks,
   updateNote,
   updateSubject,
   updateSubjectPriority,
   updateSubjectStatus,
   updateTask,
   type Annulation,
+  type ConnaissanceTrouvee,
+  type Contact,
   type MessageTrouve,
   type Origine,
   type TacheSnapshot,
@@ -46,10 +51,13 @@ import type { ResultatBrouillon } from "../pipeline/brouillon";
 import { instantDebutJourParis, instantFinJourParis } from "@relvo/db/temps";
 import { ficheSujet } from "../contexte";
 import {
+  bornesPeriode,
   DATE_NUE,
   dateNueVersDate,
   HEURE_NUE,
   heureNue,
+  PERIODES_TACHES,
+  titreTaches,
   TYPES_TACHE,
   versCreateTaskInput,
 } from "./conversions";
@@ -70,6 +78,13 @@ import {
 // Les noms sont ceux de la conception, les descriptions parlent au modèle. Les
 // arguments optionnels sont `nullable`, pas `optional` : c'est ce que le mode
 // strict du fournisseur accepte.
+//
+// Un outil de LECTURE prend les critères que le dirigeant dit — un jour, une
+// personne, un domaine, un canal, un état — jamais seulement un mot-clé
+// (PITFALLS #68) : à filtres figés, le modèle invente un mot (« 2026-10-19 »,
+// « email »), ne trouve rien, et le dit. Chaque critère réduit ce qui remonte.
+// Un nom qui désigne PLUSIEURS contacts n'est jamais tranché en silence :
+// l'outil rend les candidats, le modèle demande.
 
 export type ContactLigne = {
   id: string;
@@ -78,6 +93,19 @@ export type ContactLigne = {
   role: string | null;
   email: string | null;
   telephone: string | null;
+};
+
+export type ConversationLigne = {
+  id: string;
+  titre: string;
+  canal: "email" | "whatsapp";
+  interlocuteur: string | null;
+  /** Heure française « AAAA-MM-JJ HH:MM », ou null. */
+  dernierMessageLe: string | null;
+  apercu: string;
+  nonLus: number;
+  /** Les affaires qui écoutent encore ce fil. */
+  affaires: string[];
 };
 
 export type SortieOutil =
@@ -91,9 +119,20 @@ export type SortieOutil =
     }
   | { type: "taches"; titre: string; taches: TaskItemData[] }
   | { type: "indicateurs"; lignes: { libelle: string; valeur: number }[] }
-  | { type: "contacts"; contacts: ContactLigne[] }
+  | {
+      type: "contacts";
+      contacts: ContactLigne[];
+      /** Posée quand un nom désigne plusieurs contacts : le modèle demande lequel. */
+      precision?: string;
+    }
   | { type: "contact"; contact: ContactLigne; affaires: SubjectRowData[] }
   | { type: "messages"; messages: MessageTrouve[] }
+  | {
+      type: "conversations";
+      titre: string;
+      conversations: ConversationLigne[];
+    }
+  | { type: "memoire"; connaissances: ConnaissanceTrouvee[] }
   // Les gestes — une phrase signée ✦, l'objet rendu, et ce que « Annuler » défait.
   | { type: "tache-creee"; tache: TaskItemData; annulation: Annulation }
   | { type: "tache-modifiee"; tache: TaskItemData; annulation: Annulation }
@@ -285,87 +324,199 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     );
   }
 
+  /** Le domaine nommé, sinon « Général » — pour y ÉCRIRE. */
   async function domaine(nom: string | null) {
-    const folders = await listFolders(db);
-    const q = nom?.trim().toLowerCase();
     return (
-      (q
-        ? (folders.find((f) => f.name.toLowerCase() === q) ??
-          folders.find((f) => f.name.toLowerCase().includes(q)))
-        : null) ??
-      folders.find((f) => f.isDefault) ??
+      (await domaineNomme(nom)) ??
+      (await listFolders(db)).find((f) => f.isDefault) ??
       null
     );
   }
 
-  async function contact(nom: string) {
-    const q = nom.trim();
-    return db.contact.findFirst({
+  /** Le domaine nommé, ou null — pour y CHERCHER : un repli silencieux fausserait la réponse. */
+  async function domaineNomme(nom: string | null) {
+    const q = nom?.trim().toLowerCase();
+    if (!q) return null;
+    const folders = await listFolders(db);
+    return (
+      folders.find((f) => f.name.toLowerCase() === q) ??
+      folders.find((f) => f.name.toLowerCase().includes(q)) ??
+      null
+    );
+  }
+
+  async function nomsDesDomaines(): Promise<string> {
+    return (await listFolders(db)).map((f) => f.name).join(", ");
+  }
+
+  /**
+   * Les contacts qu'une désignation peut viser : chaque mot du nom dans le
+   * prénom, le nom ou l'entreprise (« Karim Benali » trouve Karim Benali,
+   * pas tous les Karim), une adresse, une entreprise. Les plus récents d'abord.
+   */
+  async function contactsCandidats(args: {
+    nom?: string | null;
+    email?: string | null;
+    entreprise?: string | null;
+  }): Promise<Contact[]> {
+    const mots = (args.nom ?? "")
+      .trim()
+      .split(/\s+/)
+      .filter((m) => m.length > 1);
+    const email = args.email?.trim() || null;
+    const entreprise = args.entreprise?.trim() || null;
+    if (mots.length === 0 && !email && !entreprise) return [];
+    return db.contact.findMany({
       where: {
-        OR: [
-          { firstName: { contains: q, mode: "insensitive" } },
-          { lastName: { contains: q, mode: "insensitive" } },
-          { company: { contains: q, mode: "insensitive" } },
+        AND: [
+          ...mots.map((mot) => ({
+            OR: [
+              { firstName: { contains: mot, mode: "insensitive" as const } },
+              { lastName: { contains: mot, mode: "insensitive" as const } },
+              { company: { contains: mot, mode: "insensitive" as const } },
+            ],
+          })),
+          ...(email
+            ? [
+                {
+                  OR: [
+                    {
+                      email: { contains: email, mode: "insensitive" as const },
+                    },
+                    { additionalEmails: { has: email.toLowerCase() } },
+                  ],
+                },
+              ]
+            : []),
+          ...(entreprise
+            ? [
+                {
+                  company: {
+                    contains: entreprise,
+                    mode: "insensitive" as const,
+                  },
+                },
+              ]
+            : []),
         ],
       },
       orderBy: { updatedAt: "desc" },
+      take: 6,
     });
   }
 
+  /**
+   * UN contact, ou ce qui empêche de le choisir : aucun, ou plusieurs — un
+   * nom complet qui correspond exactement à un seul candidat tranche.
+   */
+  async function contactUnique(args: {
+    nom?: string | null;
+    email?: string | null;
+    entreprise?: string | null;
+  }): Promise<
+    | { contact: Contact }
+    | { contact: null; candidats: Contact[]; message: string }
+  > {
+    const candidats = await contactsCandidats(args);
+    if (candidats.length === 1) return { contact: candidats[0]! };
+    const nom = args.nom?.trim().toLowerCase();
+    const exacts = nom
+      ? candidats.filter((c) => contactDisplayName(c).toLowerCase() === nom)
+      : [];
+    if (exacts.length === 1) return { contact: exacts[0]! };
+    if (candidats.length === 0) {
+      const dit = args.nom ?? args.email ?? args.entreprise ?? "";
+      return {
+        contact: null,
+        candidats,
+        message: `Aucun contact « ${dit.trim()} ».`,
+      };
+    }
+    return {
+      contact: null,
+      candidats,
+      message: `Plusieurs contacts correspondent : ${candidats
+        .map(
+          (c) => contactDisplayName(c) + (c.company ? ` (${c.company})` : ""),
+        )
+        .join(", ")}. Demander lequel.`,
+    };
+  }
+
+  /** Une instruction, par son titre d'abord, sinon par son contenu. */
   async function note(titre: string) {
-    return db.knowledgeDocument.findFirst({
-      where: {
-        kind: "note",
-        name: { contains: titre.trim(), mode: "insensitive" },
-      },
-      include: { folder: { select: { id: true, name: true } } },
-      orderBy: { updatedAt: "desc" },
-    });
+    const q = titre.trim();
+    const include = { folder: { select: { id: true, name: true } } };
+    return (
+      (await db.knowledgeDocument.findFirst({
+        where: { kind: "note", name: { contains: q, mode: "insensitive" } },
+        include,
+      })) ??
+      (await db.knowledgeDocument.findFirst({
+        where: {
+          kind: "note",
+          content: { contains: q, mode: "insensitive" },
+        },
+        include,
+        orderBy: { updatedAt: "desc" },
+      }))
+    );
   }
 
   return {
     // ── Lecture ──────────────────────────────────────────────────────────
     list_subjects: tool({
       description:
-        "Liste les affaires du dirigeant : ouvertes, urgentes, en attente d'une réponse. À utiliser pour « qu'est-ce qui est urgent », « mes affaires », « qu'est-ce qui attend ».",
+        "Liste les affaires du dirigeant. `filtre` : urgentes, ou en_attente (celles qui attendent une réponse). `statut` : ouvertes (défaut), validees, fermees, toutes. `recherche` : des mots du titre ou du résumé. `domaine` : le nom d'un domaine du compte. `contact` : le nom d'un contact (« mes affaires avec Karim »). `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française sur la dernière activité (« ce qui a bougé cette semaine » ; la date du jour est dans le contexte). Sans critère : les affaires ouvertes, urgentes d'abord. Ce qui est à trier : list_conversations.",
       inputSchema: z.object({
-        filtre: z
-          .enum(["ouvertes", "urgentes", "en_attente", "a_trier"])
-          .describe(
-            "ouvertes = toutes les affaires en cours ; urgentes ; en_attente = celles qui attendent une réponse du dirigeant ou d'un tiers ; a_trier = aucune, le compte des conversations sans affaire.",
-          ),
+        filtre: z.enum(["urgentes", "en_attente"]).nullable(),
+        statut: z
+          .enum(["ouvertes", "validees", "fermees", "toutes"])
+          .nullable(),
+        recherche: z.string().nullable(),
+        domaine: z.string().nullable(),
+        contact: z.string().nullable(),
+        depuis: z.string().regex(DATE_NUE).nullable(),
+        jusquAu: z.string().regex(DATE_NUE).nullable(),
         limite: z.number().int().min(1).max(20).nullable(),
       }),
-      execute: async ({ filtre, limite }): Promise<SortieOutil> => {
+      execute: async (args): Promise<SortieOutil> => {
         try {
-          const take = limite ?? 10;
-          if (filtre === "a_trier") {
-            const brief = await getBriefProjection(db, ctx.now);
-            return {
-              type: "indicateurs",
-              lignes: [
-                {
-                  libelle: "Conversations à trier",
-                  valeur: brief.conversationsATrier,
-                },
-              ],
-            };
+          const f = args.domaine ? await domaineNomme(args.domaine) : null;
+          if (args.domaine && !f) {
+            return introuvable(
+              `Aucun domaine « ${args.domaine.trim()} ». Les domaines : ${await nomsDesDomaines()}.`,
+            );
           }
-          const rows = await db.subject.findMany({
-            where: {
-              status: "open",
-              ...(filtre === "urgentes" ? { priority: "urgent" } : {}),
-              ...(filtre === "en_attente" ? { waitingForReply: true } : {}),
-            },
-            orderBy: [{ priority: "desc" }, { lastActivityAt: "desc" }],
-            take,
+          let contactId: string | null = null;
+          if (args.contact) {
+            const c = await contactUnique({ nom: args.contact });
+            if (!c.contact) return introuvable(c.message);
+            contactId = c.contact.id;
+          }
+          const rows = await searchSubjects(db, {
+            recherche: args.recherche,
+            statut: args.statut,
+            urgentes: args.filtre === "urgentes",
+            enAttente: args.filtre === "en_attente",
+            folderId: f?.id ?? null,
+            contactId,
+            depuis: args.depuis,
+            jusquAu: args.jusquAu,
+            limite: args.limite ?? 10,
           });
           const titre =
-            filtre === "urgentes"
+            args.filtre === "urgentes"
               ? "Affaires urgentes"
-              : filtre === "en_attente"
+              : args.filtre === "en_attente"
                 ? "Affaires en attente"
-                : "Affaires ouvertes";
+                : args.statut === "validees"
+                  ? "Affaires validées"
+                  : args.statut === "fermees"
+                    ? "Affaires fermées"
+                    : args.statut === "toutes"
+                      ? "Affaires"
+                      : "Affaires ouvertes";
           return {
             type: "affaires",
             titre,
@@ -407,58 +558,50 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     list_tasks: tool({
       description:
-        "Liste les tâches du dirigeant : celles d'aujourd'hui, de la semaine, en retard, ou celles d'une affaire. Les identifiants rendus servent à modifier, cocher ou supprimer une tâche ensuite.",
+        "Les tâches du dirigeant et ses rendez-vous. `periode` : aujourd_hui, demain, semaine (d'aujourd'hui à dimanche), en_retard, sans_date (les tâches sans échéance), affaire (toutes celles d'une affaire). Pour « lundi », « la semaine prochaine », « en novembre » : des jours explicites `depuis` / `jusquAu` (AAAA-MM-JJ, calculés depuis la date du jour du contexte), qui l'emportent sur la période. Sans période ni jours : toutes les tâches ouvertes, par échéance, les sans-date en dernier. `statut` faites : ce qui a été coché, les jours portant alors sur le jour où la tâche a été faite (« qu'est-ce que j'ai fait hier »). `type` : call = appeler, reply = répondre, decision, check = vérifier, follow_up = relancer, inform, other. `recherche` : des mots du titre. Une affaire désignée (référence ou titre) limite à ses tâches. Les identifiants rendus servent à modifier, cocher ou supprimer une tâche ensuite.",
       inputSchema: z.object({
-        periode: z
-          .enum(["aujourd_hui", "semaine", "en_retard", "affaire"])
-          .describe(
-            "affaire = les tâches d'une affaire désignée (référence ou titre), sinon celle de la page.",
-          ),
+        periode: z.enum(PERIODES_TACHES).nullable(),
+        depuis: z.string().regex(DATE_NUE).nullable(),
+        jusquAu: z.string().regex(DATE_NUE).nullable(),
+        statut: z.enum(["ouvertes", "faites"]).nullable(),
+        type: z.enum(TYPES_TACHE).nullable(),
+        recherche: z.string().nullable(),
         ...designation,
+        limite: z.number().int().min(1).max(30).nullable(),
       }),
-      execute: async ({ periode, ...args }): Promise<SortieOutil> => {
+      execute: async ({
+        periode,
+        depuis,
+        jusquAu,
+        statut,
+        type,
+        recherche,
+        limite,
+        ...args
+      }): Promise<SortieOutil> => {
         try {
-          if (periode === "affaire") {
+          let subjectId: string | null = null;
+          if (periode === "affaire" || args.reference || args.titre) {
             const cible = await affaire(args);
             if ("message" in cible) return introuvable(cible.message);
-            const page = await listTasks(db, {
-              subjectId: cible.id,
-              limit: 50,
-            });
-            const ouvertes = page.items.filter((t) => t.status === "open");
-            return {
-              type: "taches",
-              titre: "Tâches de l'affaire",
-              taches: (await enrichTasks(db, ouvertes, ctx.now)).map(
-                toTaskItemData,
-              ),
-            };
+            subjectId = cible.id;
           }
-          // Les mêmes bornes que l'agenda : le jour civil FRANÇAIS (#55).
-          const debut = debutDuJourParis(ctx.now);
-          const rows =
-            periode === "en_retard"
-              ? await getOverdueTasks(db, { now: ctx.now, limit: 30 })
-              : await db.task.findMany({
-                  where: {
-                    status: "open",
-                    startDate: {
-                      gte: debut,
-                      lt: jourDecale(ctx.now, periode === "semaine" ? 7 : 1),
-                    },
-                  },
-                  orderBy: [{ startDate: "asc" }, { startTime: "asc" }],
-                  take: 30,
-                });
-          const titre =
-            periode === "en_retard"
-              ? "Tâches en retard"
-              : periode === "semaine"
-                ? "Tâches de la semaine"
-                : "Tâches d'aujourd'hui";
+          const bornes = bornesPeriode(periode, ctx.now, { depuis, jusquAu });
+          const rows = await searchTasks(
+            db,
+            {
+              recherche,
+              ...bornes,
+              type,
+              statut,
+              subjectId,
+              limite: limite ?? 20,
+            },
+            ctx.now,
+          );
           return {
             type: "taches",
-            titre,
+            titre: titreTaches(periode, statut),
             taches: (await enrichTasks(db, rows, ctx.now)).map(toTaskItemData),
           };
         } catch (e) {
@@ -503,7 +646,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     list_contacts: tool({
       description:
-        "Cherche dans l'annuaire : par nom, entreprise ou adresse. Sans recherche, les contacts récents.",
+        "Cherche dans l'annuaire : par nom, entreprise, adresse ou numéro. Sans recherche, les contacts récents.",
       inputSchema: z.object({
         recherche: z.string().nullable(),
         limite: z.number().int().min(1).max(20).nullable(),
@@ -519,6 +662,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
                     { lastName: { contains: q, mode: "insensitive" } },
                     { company: { contains: q, mode: "insensitive" } },
                     { email: { contains: q, mode: "insensitive" } },
+                    { phone: { contains: q, mode: "insensitive" } },
                   ],
                 }
               : undefined,
@@ -534,12 +678,24 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     get_contact: tool({
       description:
-        "La fiche d'un contact et ses affaires ouvertes, par son nom.",
-      inputSchema: z.object({ nom: z.string() }),
-      execute: async ({ nom }): Promise<SortieOutil> => {
+        "La fiche d'un contact et ses affaires ouvertes : par son nom (prénom, nom, ou les deux), son adresse ou son entreprise — au moins l'un des trois. Si plusieurs contacts correspondent, l'outil les rend tous : demander lequel, ne pas choisir.",
+      inputSchema: z.object({
+        nom: z.string().nullable(),
+        email: z.string().nullable(),
+        entreprise: z.string().nullable(),
+      }),
+      execute: async (args): Promise<SortieOutil> => {
         try {
-          const c = await contact(nom);
-          if (!c) return introuvable(`Aucun contact « ${nom.trim()} ».`);
+          const r = await contactUnique(args);
+          if (!r.contact) {
+            if (r.candidats.length === 0) return introuvable(r.message);
+            return {
+              type: "contacts",
+              contacts: r.candidats.map(contactLigne),
+              precision: r.message,
+            };
+          }
+          const c = r.contact;
           const sujets = await db.subject.findMany({
             where: { status: "open", contactIds: { has: c.id } },
             orderBy: { lastActivityAt: "desc" },
@@ -558,19 +714,17 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     search_messages: tool({
       description:
-        "Les messages reçus et envoyés, les plus récents d'abord. Sans aucun critère : les derniers messages. `recherche` : des mots de l'objet, du texte ou de l'expéditeur — jamais une date ni « email ». `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française, pour « aujourd'hui », « hier », « cette semaine » (la date du jour est dans le contexte). `expediteur` : un nom ou une adresse. `sens` : entrant ou sortant. Les horodatages rendus sont à l'heure française.",
+        "Les messages reçus et envoyés, les plus récents d'abord. Sans aucun critère : les derniers messages. `recherche` : des mots de l'objet, du texte ou de l'expéditeur — jamais une date ni « email ». `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française, pour « aujourd'hui », « hier », « cette semaine » (la date du jour est dans le contexte). `expediteur` : un nom ou une adresse. `sens` : entrant ou sortant. `canal` : email ou whatsapp. `non_lus` : seulement les messages reçus non lus. Une affaire désignée (référence ou titre) limite à ses messages. Les horodatages rendus sont à l'heure française.",
       inputSchema: z.object({
         recherche: z.string().nullable(),
-        depuis: z
-          .string()
-          .regex(/^\d{4}-\d{2}-\d{2}$/)
-          .nullable(),
-        jusquAu: z
-          .string()
-          .regex(/^\d{4}-\d{2}-\d{2}$/)
-          .nullable(),
+        depuis: z.string().regex(DATE_NUE).nullable(),
+        jusquAu: z.string().regex(DATE_NUE).nullable(),
         expediteur: z.string().nullable(),
         sens: z.enum(["entrant", "sortant"]).nullable(),
+        canal: z.enum(["email", "whatsapp"]).nullable(),
+        non_lus: z.boolean().nullable(),
+        affaire_reference: designation.reference,
+        affaire_titre: designation.titre,
         limite: z.number().int().min(1).max(20).nullable(),
       }),
       execute: async ({
@@ -579,9 +733,23 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
         jusquAu,
         expediteur,
         sens,
+        canal,
+        non_lus: nonLus,
+        affaire_reference: reference,
+        affaire_titre: titre,
         limite,
       }): Promise<SortieOutil> => {
         try {
+          let subjectId: string | null = null;
+          if (reference || titre) {
+            const cible = await resolveSubject(db, { reference, titre });
+            if (!cible) {
+              return introuvable(
+                "Aucune affaire ne correspond : demander laquelle.",
+              );
+            }
+            subjectId = cible.id;
+          }
           return {
             type: "messages",
             messages: await searchMessages(db, {
@@ -590,6 +758,94 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
               jusquA: jusquAu ? instantFinJourParis(jusquAu) : null,
               expediteur,
               sens,
+              canal,
+              subjectId,
+              nonLus,
+              limite: limite ?? 10,
+            }),
+          };
+        } catch (e) {
+          return erreur(e);
+        }
+      },
+    }),
+
+    list_conversations: tool({
+      description:
+        "Les conversations du dirigeant, la plus récente d'abord. `filtre` : a_trier (défaut — aucune affaire ne couvre leur dernier message : c'est ce que « à trier » veut dire), suivies (couvertes par une affaire), ignorees. `canal` : email ou whatsapp. Pour « qu'est-ce qui est à trier », « mes conversations WhatsApp ». Pour chercher dans le contenu : search_messages.",
+      inputSchema: z.object({
+        filtre: z.enum(["a_trier", "suivies", "ignorees"]).nullable(),
+        canal: z.enum(["email", "whatsapp"]).nullable(),
+        limite: z.number().int().min(1).max(20).nullable(),
+      }),
+      execute: async ({ filtre, canal, limite }): Promise<SortieOutil> => {
+        try {
+          const filter =
+            filtre === "suivies"
+              ? "followed"
+              : filtre === "ignorees"
+                ? "ignored"
+                : "unsorted";
+          const page = await listConversationItems(db, {
+            filter,
+            ...(canal ? { channelType: canal } : {}),
+            limit: limite ?? 10,
+          });
+          return {
+            type: "conversations",
+            titre:
+              filtre === "suivies"
+                ? "Conversations suivies"
+                : filtre === "ignorees"
+                  ? "Conversations ignorées"
+                  : "Conversations à trier",
+            conversations: page.items.map((c) => ({
+              id: c.id,
+              titre: c.title,
+              canal: c.channelType,
+              interlocuteur: c.interlocutorName ?? c.interlocutorRaw,
+              dernierMessageLe: c.lastMessageAt
+                ? horodatageParis(c.lastMessageAt)
+                : null,
+              apercu: c.preview,
+              nonLus: c.unreadCount,
+              affaires: c.listeningSubjects.map((s) => s.title),
+            })),
+          };
+        } catch (e) {
+          return erreur(e);
+        }
+      },
+    }),
+
+    search_knowledge: tool({
+      description:
+        "Cherche dans la Mémoire de Relvo : les instructions du dirigeant (ses règles) et les documents qu'il a déposés. `recherche` : des mots. `domaine` : le nom d'un domaine du compte. `genre` : instructions ou documents. Sans critère : toute la Mémoire, la plus récente d'abord. Pour « qu'est-ce que je t'ai dit sur… », « quelles sont mes règles », « le document sur… ». Une instruction désactivée est rendue avec `active: false` : elle existe mais ne s'applique pas.",
+      inputSchema: z.object({
+        recherche: z.string().nullable(),
+        domaine: z.string().nullable(),
+        genre: z.enum(["instructions", "documents"]).nullable(),
+        limite: z.number().int().min(1).max(20).nullable(),
+      }),
+      execute: async ({
+        recherche,
+        domaine: nomDomaine,
+        genre,
+        limite,
+      }): Promise<SortieOutil> => {
+        try {
+          const f = nomDomaine ? await domaineNomme(nomDomaine) : null;
+          if (nomDomaine && !f) {
+            return introuvable(
+              `Aucun domaine « ${nomDomaine.trim()} ». Les domaines : ${await nomsDesDomaines()}.`,
+            );
+          }
+          return {
+            type: "memoire",
+            connaissances: await searchKnowledge(db, {
+              recherche,
+              folderId: f?.id ?? null,
+              genre,
               limite: limite ?? 10,
             }),
           };
@@ -793,7 +1049,14 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
       execute: async (args): Promise<SortieOutil> => {
         try {
           const f = args.domaine ? await domaine(args.domaine) : null;
-          const c = args.contact ? await contact(args.contact) : null;
+          let c: Contact | null = null;
+          if (args.contact) {
+            const r = await contactUnique({ nom: args.contact });
+            if (!r.contact && r.candidats.length > 0) {
+              return introuvable(r.message);
+            }
+            c = r.contact;
+          }
           const s = await createSubject(
             db,
             {

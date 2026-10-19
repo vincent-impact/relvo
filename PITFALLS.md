@@ -556,6 +556,27 @@ script posé par CDP avant la navigation (`Page.addScriptToEvaluateOnNewDocument
 main et le geste reste au repos. Vérifier la **taille** de l'enregistrement produit avant de
 conclure quoi que ce soit sur la transcription.
 
+### #68 — Un outil de lecture à filtres figés fait INVENTER un mot-clé au modèle, qui conclut qu'il n'y a rien
+
+**Symptôme** : « Est-ce que j'ai reçu un e-mail aujourd'hui ? » → « Non, aucun » alors qu'un
+message est arrivé une heure plus tôt. Le journal montre l'appel : `search_messages` avec
+`recherche: "2026-10-19"` — une date cherchée comme un mot, qu'aucun e-mail ne contient. Même
+famille : « qu'est-ce que j'ai lundi ? » répondu avec les tâches de la semaine, « mes affaires
+avec Karim » impossible, les tâches sans date invisibles à tout filtre sur l'échéance.
+
+**Cause** : l'outil ne prenait qu'un mot-clé (ou quatre périodes figées). Le modèle ne refuse
+pas une question qu'un outil ne sait pas poser : il la **traduit** dans ce que l'outil accepte,
+et le résultat vide devient une réponse. L'alternative — ramener large et trier dans le
+contexte — explose les jetons.
+
+**Règle** : un outil de lecture prend **les critères que le dirigeant dit** — un jour ou une
+plage de jours en heure française, une personne, un domaine, un canal, un état, un type —, et
+sa description dit au modèle ce qu'il ne faut **pas** mettre dans le mot-clé (une date,
+« email »). Sans critère, l'outil rend les derniers éléments plutôt que rien. Un nom qui
+désigne plusieurs contacts est rendu en candidats, jamais tranché en silence. Chaque critère
+nouveau entre dans le jeu d'évaluation (`eval:echange`) avec la question qui l'a motivé :
+c'est le jeu, pas la vigilance, qui tient la palette (`05 §10.3`, §11.6).
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -579,7 +600,7 @@ d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revér
 documentation de la plateforme, jamais de mémoire. Le piège **#54** relève du **navigateur du
 téléphone** : il se périme avec la version de Chrome, dans le bon sens.
 
-Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58, #59** sont des **règles de conception ou d'hygiène** :
+Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58, #59, #68** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
 
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et
