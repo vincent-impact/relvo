@@ -343,11 +343,14 @@ export async function attachEmailConversationToSubject(
  * (« Lier à un sujet », 2026-07-23) — l'écoute démarre à cette ANCRE et balaie
  * tout l'aval. Symétrique de `attachEmailConversationToSubject`, mais avec une
  * borne de départ (le WhatsApp n'a pas d'objet, il faut dire où l'écoute commence).
+ * C'est aussi la fonction par laquelle le tri (M7, tranche 11) rattache un fil
+ * direct à l'affaire qu'il prolonge : même geste, acteur Relvo.
  */
 export async function attachConversationToSubjectFromMessage(
   db: TenantDb,
   subjectId: string,
   messageId: string,
+  actor: Actor = Actor.user,
 ) {
   const message = assertFound(
     await db.message.findFirst({
@@ -360,6 +363,7 @@ export async function attachConversationToSubjectFromMessage(
     subjectId,
     conversationId: message.conversationId,
     anchorMessageId: message.id,
+    actor,
   });
   await sweepConversationIntoSubject(db, {
     conversationId: message.conversationId,

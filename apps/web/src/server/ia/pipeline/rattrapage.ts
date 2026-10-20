@@ -32,7 +32,7 @@ import {
 import { stockerPiecesJointes } from "@/server/unipile/attachments";
 import { getEmail, listInboxEmails } from "@/server/unipile/client";
 import { apiMailToWebhook, toInboundEmail } from "@/server/unipile/map";
-import { trierConversationEmail } from "./tri";
+import { trierConversation } from "./tri";
 
 // LE RATTRAPAGE DU COURRIER RÉCENT (M7.19) : « Relvo lit le courrier récent
 // DÈS LA CONNEXION ». Demandé à la connexion d'un canal e-mail (webhook de fin
@@ -48,7 +48,7 @@ import { trierConversationEmail } from "./tri";
 //      sait pas en combien de temps l'agrégateur synchronise l'historique.
 //   2. TRI — les conversations orphelines de la fenêtre, du plus récent au
 //      plus ancien, par le MÊME pipeline qu'au fil de l'eau
-//      (`trierConversationEmail`) : la première seule (elle chauffe le cache,
+//      (`trierConversation`) : la première seule (elle chauffe le cache,
 //      PITFALLS #49), puis plusieurs en parallèle. En direct, au niveau de
 //      service standard — le dirigeant regarde ; la nuit, en lot, à moitié prix.
 //   3. CLÔTURE ou ENCHAÎNEMENT — courrier épuisé (deux passes vides, assez
@@ -230,7 +230,7 @@ export async function executerTranche(
       const salve = { tries: 0, ouverts: 0, ignores: 0, cout: 0 };
       const trier = async (c: (typeof candidats)[number]) => {
         vues.push(c.conversationId);
-        const r = await trierConversationEmail({
+        const r = await trierConversation({
           accountId: due.accountId,
           conversationId: c.conversationId,
           messageId: c.messageId,

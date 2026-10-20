@@ -6,6 +6,7 @@ import {
   ChannelType,
   IgnoreReason,
   MessageDirection,
+  MessageStatus,
   Priority,
   SubjectStatus,
   TriageConfidence,
@@ -21,7 +22,10 @@ import {
 import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { openSubjectOnConversation } from "./messages";
-import { attachEmailConversationToSubject } from "./subject-conversations";
+import {
+  attachConversationToSubjectFromMessage,
+  attachEmailConversationToSubject,
+} from "./subject-conversations";
 
 // Domaine TRI (M7, tranche 4) — ce que le pipeline LIT et ÉCRIT en base autour
 // d'un verdict de tri. Le pipeline lui-même (filtre déterministe, appel au
@@ -34,8 +38,9 @@ import { attachEmailConversationToSubject } from "./subject-conversations";
 //      contexte, côté application). Un champ ajouté en base n'entre pas dans un
 //      prompt par accident.
 //   2. Ouvrir ou rattacher passe par les primitives du domaine —
-//      `openSubjectOnConversation`, `attachEmailConversationToSubject` — jamais
-//      par un chemin parallèle. Relvo n'a pas de raccourci.
+//      `openSubjectOnConversation`, `attachEmailConversationToSubject`,
+//      `attachConversationToSubjectFromMessage` — jamais par un chemin
+//      parallèle. Relvo n'a pas de raccourci.
 //   3. Le journal est écrit à chaque sous-action (M7.14) et à chaque
 //      sollicitation (M7.16), avec les clés de métadonnées posées ici, premier
 //      écrivain (02, EventLog).
@@ -53,7 +58,7 @@ export type TriageAccountProjection = {
   dirigeant: string;
   /** Raison sociale ; le compte n'en porte pas encore. */
   entreprise: string | null;
-  /** Adresses des canaux e-mail actifs : ce sur quoi le fil a été REÇU. */
+  /** Adresses des boîtes et numéros des messageries actifs : ce sur quoi le fil a été REÇU. */
   messageries: string[];
   secteurs: ("food" | "construction" | "other")[];
   domaines: { nom: string; description: string | null }[];
@@ -71,6 +76,17 @@ export type TriageMessageProjection = {
   objet: string | null;
   contenu: string;
   sens: "entrant" | "sortant";
+};
+
+/**
+ * Un message du fil à trier : le miroir poussé au modèle, plus ce que le
+ * pipeline de la messagerie lit sans le pousser — l'identifiant et
+ * l'orphelinat, pour poser l'ancre d'une écoute au début de la salve.
+ */
+export type TriageThreadMessage = TriageMessageProjection & {
+  id: string;
+  /** Sans affaire et non ignoré : ce qu'une écoute ouverte par le tri peut emporter. */
+  orphelin: boolean;
 };
 
 /**
@@ -114,11 +130,18 @@ export type TriageProjection = {
   orpheline: boolean;
   statut: ConversationStatus;
   type: ConversationType;
+  /**
+   * Quand le canal du fil a été connecté chez l'agrégateur (`ChannelConfig.lastSyncAt`,
+   * reposée à chaque reconnexion) : un message de messagerie daté d'avant est
+   * de l'historique rejoué, pas du courrier vivant. Null tant que le canal n'a
+   * jamais été connecté — alors rien ne se trie sur la messagerie.
+   */
+  connecteLe: Date | null;
   compte: TriageAccountProjection;
   expediteur: TriageSenderProfile;
   conversation: {
     canal: "email" | "whatsapp";
-    messages: TriageMessageProjection[];
+    messages: TriageThreadMessage[];
   };
   /** Le dernier message ENTRANT, brut, pour le filtre déterministe du bruit. */
   dernierEntrant: {
@@ -313,6 +336,7 @@ export async function getTriageProjection(
         contact: {
           select: { firstName: true, lastName: true, company: true },
         },
+        channel: { select: { config: { select: { lastSyncAt: true } } } },
       },
     }),
     "Conversation",
@@ -349,7 +373,10 @@ export async function getTriageProjection(
         take: TRIAGE_OPEN_SUBJECTS_MAX,
       }),
       db.channel.findMany({
-        where: { type: ChannelType.email, isActive: true },
+        where: {
+          type: { in: [ChannelType.email, ChannelType.whatsapp] },
+          isActive: true,
+        },
         select: { identifier: true },
         orderBy: { identifier: "asc" },
       }),
@@ -402,7 +429,7 @@ export async function getTriageProjection(
       ? conversation.participantsRaw.join(", ")
       : (conversation.interlocutorRaw ?? conversation.title);
 
-  const projected: TriageMessageProjection[] = messages.map((m) => {
+  const projected: TriageThreadMessage[] = messages.map((m) => {
     const sortant = m.direction === MessageDirection.outgoing;
     const nom =
       m.senderName ??
@@ -412,11 +439,13 @@ export async function getTriageProjection(
       : `${nom ?? ""}${nom && m.senderRaw ? " " : ""}${m.senderRaw ? `<${m.senderRaw}>` : ""}`.trim() ||
         "inconnu";
     return {
+      id: m.id,
       expediteur,
       recuLe: (m.receivedAt ?? m.sentAt ?? m.createdAt).toISOString(),
       objet: m.subjectLine,
       contenu: m.content ?? "",
       sens: sortant ? "sortant" : "entrant",
+      orphelin: m.subjectId === null && m.status !== MessageStatus.ignored,
     };
   });
 
@@ -467,6 +496,7 @@ export async function getTriageProjection(
       conversation.status === ConversationStatus.active && listening === null,
     statut: conversation.status,
     type: conversation.type,
+    connecteLe: conversation.channel.config?.lastSyncAt ?? null,
     compte: {
       dirigeant: `${account.firstName} ${account.lastName}`.trim(),
       // Le compte ne porte pas encore de raison sociale.
@@ -632,6 +662,12 @@ export const applyTriageMatterSchema = z.object({
   /** Référence d'un sujet ouvert que ce fil prolonge, ou null. */
   existingSubjectReference: z.string().trim().max(40).optional().nullable(),
   priority: z.enum(Priority).optional(),
+  /**
+   * Le DÉBUT de l'écoute sur un fil de messagerie directe — le premier message
+   * de la salve que le tri a lue. Obligatoire sur `whatsapp_direct`, sans objet
+   * sur un fil e-mail (le sujet EST le fil, 04 §4).
+   */
+  anchorMessageId: z.uuid().optional().nullable(),
 });
 
 export type ApplyTriageMatterInput = z.input<typeof applyTriageMatterSchema>;
@@ -646,14 +682,22 @@ export type ApplyTriageMatterResult = {
 
 /**
  * Le tri a conclu « affaire » avec assez de confiance : ouvrir un sujet sur le
- * fil, ou le rattacher au sujet ouvert qu'il prolonge. E-MAIL SEULEMENT en
- * tranche 4 : le sujet EST le fil, ancre nulle (04 §3).
+ * fil, ou le rattacher au sujet ouvert qu'il prolonge. La logique teste
+ * l'ANCRE, jamais le canal (04 §4) — c'est l'ancre que le canal décide :
+ *
+ *   • fil e-mail → ancre nulle : le sujet EST le fil, amont compris ;
+ *   • fil WhatsApp DIRECT → ancre obligatoire, le premier message de la salve
+ *     lue par le tri : l'écoute commence là (M7 tranche 11), et RATTACHER
+ *     ouvre une écoute sur le sujet existant par la fonction de la fiche
+ *     (« Lier à une affaire »), avec la même ancre — jamais le rattachement
+ *     permanent de l'e-mail ;
+ *   • un GROUPE n'est jamais trié : l'écoute s'y pose à la main (05 §9.5).
  *
  *   • Le domaine est résolu par son NOM, parmi les domaines actifs du compte —
  *     jamais « Général », purement documentaire (invariant n°17) : un nom
  *     inconnu ou refusé laisse le sujet sans domaine, avec le domaine proposé.
- *   • Le domaine résolu est posé sur les messages du fil (05 §1.1 ter) : c'est
- *     lui qui donne son domaine au sujet.
+ *   • Le domaine résolu est posé sur les messages que l'écoute couvre
+ *     (05 §1.1 ter) : c'est lui qui donne son domaine au sujet.
  *   • Un sujet existant introuvable ou fermé n'est pas une erreur : on ouvre.
  */
 export async function applyTriageMatter(
@@ -669,12 +713,29 @@ export async function applyTriageMatter(
     }),
     "Conversation",
   );
-  if (conversation.type !== ConversationType.email_subject) {
+  if (conversation.type === ConversationType.whatsapp_group) {
     throw new DomainError(
       "VALIDATION",
-      "Le tri automatique n'ouvre d'affaire que sur un fil e-mail.",
+      "Le tri automatique n'ouvre pas d'affaire sur un groupe.",
     );
   }
+  const direct = conversation.type === ConversationType.whatsapp_direct;
+  if (direct && !data.anchorMessageId) {
+    throw new DomainError(
+      "VALIDATION",
+      "Le tri d'un fil de messagerie directe exige le message où l'écoute commence.",
+    );
+  }
+  const anchorMessageId = direct ? data.anchorMessageId! : null;
+  const anchor = anchorMessageId
+    ? assertFound(
+        await db.message.findFirst({
+          where: { id: anchorMessageId, conversationId: conversation.id },
+          select: { id: true, createdAt: true },
+        }),
+        "Message d'ancrage",
+      )
+    : null;
 
   const folder = data.folderName
     ? await db.folder.findFirst({
@@ -698,12 +759,21 @@ export async function applyTriageMatter(
       select: { id: true, reference: true, folderId: true },
     });
     if (existing) {
-      await attachEmailConversationToSubject(
-        db,
-        existing.id,
-        conversation.id,
-        Actor.ai,
-      );
+      if (anchor) {
+        await attachConversationToSubjectFromMessage(
+          db,
+          existing.id,
+          anchor.id,
+          Actor.ai,
+        );
+      } else {
+        await attachEmailConversationToSubject(
+          db,
+          existing.id,
+          conversation.id,
+          Actor.ai,
+        );
+      }
       await db.subject.updateMany({
         where: { id: existing.id },
         data: { lastActivityAt: new Date() },
@@ -720,14 +790,19 @@ export async function applyTriageMatter(
 
   if (folderId) {
     await db.message.updateMany({
-      where: { conversationId: conversation.id, folderId: null },
+      where: {
+        conversationId: conversation.id,
+        folderId: null,
+        // Avec une ancre, seuls les messages que l'écoute couvre sont classés.
+        ...(anchor ? { createdAt: { gte: anchor.createdAt } } : {}),
+      },
       data: { folderId },
     });
   }
 
   const subject = await openSubjectOnConversation(db, {
     conversationId: conversation.id,
-    anchorMessageId: null,
+    anchorMessageId,
     title: data.title ?? undefined,
     folderId,
     createdByActor: Actor.ai,

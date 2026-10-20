@@ -29,7 +29,7 @@ tâches, son brouillon et son journal.
 | M7.1  | Orchestrateur en **exécution de fond serverless** — le choix de l'orchestration se tranche ici                                                                         |
 | M7.2  | Prompt système : rôle, ton, **règles de non-création**, format de sortie                                                                                               |
 | M7.3  | Assemblage du contexte en cinq couches — secteurs du compte et socles métier pour la couche Produit —, un profil par sollicitation, budget par couche tenu par un test |
-| M7.4  | Appel au modèle : comprendre, classer, rattacher ou ouvrir, créer le contact si nécessaire                                                                             |
+| M7.4  | Appel au modèle : comprendre, classer, rattacher ou ouvrir, créer le contact si nécessaire — e-mail et messagerie directe (par salve, l'écoute posée par le tri)      |
 | M7.5  | Titre et résumé du sujet                                                                                                                                               |
 | M7.6  | Tâches déductibles + extraction de date                                                                                                                                |
 | M7.7  | Brouillon de réponse à la première ouverture de la zone de rédaction sur une tâche de réponse                                                                          |
@@ -60,6 +60,9 @@ Plutôt que d'implémenter les seize items en couche, ouvrir des sprints qui liv
 5. **Durcissement** — M7.12, M7.13, M7.15, M7.16.
 6. **« Relvo lit le courrier récent dès la connexion »** — M7.19. C'est la démonstration
    que les clients réclament, sur leur propre courrier, sans rien configurer.
+7. **« Le fil WhatsApp direct se trie à réception »** — M7.4 côté messagerie (A8) : la salve,
+   l'écoute posée par le tri, les groupes à la main ; l'historique de la messagerie à la
+   connexion est la tranche d'après.
 
 Ce qui nourrit Relvo en retour — étiquettes, raisons, questions, préférences — est une épique à
 part : [`M17-memoire-apprentissage.md`](M17-memoire-apprentissage.md). M7 produit ; M17 apprend.

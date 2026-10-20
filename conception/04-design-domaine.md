@@ -547,9 +547,11 @@ domaine et cherchera à les préserver.
 
 **1. L'écoute est la prothèse d'un objet manquant.** Là où l'objet existe, il n'y a rien à
 écouter. Là où il manque, l'écoute est indispensable — sans elle, ouvrir une affaire embarquerait
-des mois de bavardage. Le jour où le pipeline saura découper un flux **par le sens**, il
-produira ce que l'objet d'e-mail donne gratuitement, et l'écoute **tombera** : sans migration,
-l'ancre étant déjà optionnelle.
+des mois de bavardage. L'échafaudage commence à tomber : sur un fil direct, c'est le **pipeline**
+qui pose l'écoute, ancrée au premier message de la salve qu'il a lue (`05-ia.md` §1.2) — le
+dirigeant ne désigne plus le message, Relvo le fait. Le jour où le pipeline saura découper un
+flux **par le sens**, il produira ce que l'objet d'e-mail donne gratuitement, et l'écoute
+**tombera** : sans migration, l'ancre étant déjà optionnelle.
 
 **2. « Au plus une affaire ouverte par conversation » est une règle métier, pas une contrainte de
 schéma.** La table de liaison est **déjà** plusieurs-à-plusieurs. Lever la règle ne demande

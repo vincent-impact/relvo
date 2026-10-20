@@ -23,6 +23,7 @@ import {
   recordTriageVerdict,
   setAssistantEnabled,
   tenantDb,
+  upsertChannelConfig,
 } from "../src/index";
 
 // M7 tranche 4 — ce que le TRI lit et écrit en base. Le pipeline (filtre,
@@ -468,10 +469,280 @@ describe("ouvrir ou rattacher depuis le tri", () => {
     });
     expect(r3.action).toBe("opened");
   });
+});
 
-  it("refuse un fil qui n'est pas un e-mail", async () => {
-    const { account, db } = await makeAccount("j@test.fr");
+// M7 tranche 11 (A8) — le fil WhatsApp DIRECT se trie à réception. Le domaine
+// teste l'ANCRE, jamais le canal : ouvrir emporte la salve depuis l'ancre et
+// pas le bavardage d'avant ; rattacher ouvre une ÉCOUTE sur l'affaire
+// existante, par la fonction de la fiche ; un groupe reste refusé ; la
+// projection dit le canal, le numéro du compte et la date de connexion.
+describe("le fil WhatsApp direct, ancré", () => {
+  async function makeWhatsApp(email: string) {
+    const base = await makeAccount(email);
     const wa = await prisma.channel.create({
+      data: {
+        accountId: base.account.id,
+        name: "WhatsApp Gérant",
+        type: ChannelType.whatsapp,
+        identifier: "+33600000000",
+      },
+    });
+    await upsertChannelConfig(base.db, wa.id, {
+      provider: "unipile",
+      status: "connected",
+      lastSyncAt: new Date("2026-10-20T10:00:00Z"),
+    });
+    return { ...base, wa };
+  }
+
+  function wa(
+    db: ReturnType<typeof tenantDb>,
+    channelId: string,
+    externalId: string,
+    content: string,
+    receivedAt: string,
+    overrides: Partial<Parameters<typeof ingestInboundWhatsApp>[1]> = {},
+  ) {
+    return ingestInboundWhatsApp(db, {
+      channelId,
+      externalId,
+      externalThreadId: "chat-bruno",
+      senderRaw: "+33612345678",
+      senderName: "Bruno Lefèvre",
+      content,
+      receivedAt: new Date(receivedAt),
+      ...overrides,
+    });
+  }
+
+  it("la projection d'un fil direct dit le canal, le numéro du compte, la date de connexion, et marque les messages orphelins", async () => {
+    const { db, wa: canal } = await makeWhatsApp("q@test.fr");
+    const { message: m1 } = await wa(
+      db,
+      canal.id,
+      "w1",
+      "Bonjour",
+      "2026-10-20T14:02:00Z",
+    );
+    const { message: m2 } = await wa(
+      db,
+      canal.id,
+      "w2",
+      "c'est pour le devis de la terrasse",
+      "2026-10-20T14:02:40Z",
+    );
+    expect(m2.conversationId).toBe(m1.conversationId);
+
+    const p = await getTriageProjection(db, m1.conversationId);
+    expect(p.type).toBe("whatsapp_direct");
+    expect(p.orpheline).toBe(true);
+    expect(p.conversation.canal).toBe("whatsapp");
+    expect(p.connecteLe?.toISOString()).toBe("2026-10-20T10:00:00.000Z");
+    // Les messageries du compte : la boîte ET le numéro connecté.
+    expect(p.compte.messageries).toEqual(["+33600000000", "q@test.fr"]);
+    expect(p.conversation.messages).toEqual([
+      expect.objectContaining({
+        id: m1.id,
+        expediteur: "Bruno Lefèvre <+33612345678>",
+        objet: null,
+        orphelin: true,
+        sens: "entrant",
+      }),
+      expect.objectContaining({ id: m2.id, orphelin: true }),
+    ]);
+    expect(p.dernierEntrant?.id).toBe(m2.id);
+    expect(p.expediteur).toMatchObject({
+      adresse: "+33612345678",
+      connu: false,
+    });
+  });
+
+  it("ouvrir ancré emporte la salve depuis l'ancre, pas le message antérieur ; le contact naît du numéro et du nom de profil, automatique", async () => {
+    const { db, wa: canal, fournisseurs } = await makeWhatsApp("r@test.fr");
+    const { message: vieux } = await wa(
+      db,
+      canal.id,
+      "w0",
+      "Bonne année 🎉",
+      "2026-10-10T09:00:00Z",
+    );
+    const { message: m1 } = await wa(
+      db,
+      canal.id,
+      "w1",
+      "Bonjour",
+      "2026-10-20T14:02:00Z",
+    );
+    const { message: m2 } = await wa(
+      db,
+      canal.id,
+      "w2",
+      "c'est pour le devis de la terrasse, 40 m² environ",
+      "2026-10-20T14:02:40Z",
+    );
+    const { message: m3 } = await wa(
+      db,
+      canal.id,
+      "w3",
+      "je peux passer jeudi ?",
+      "2026-10-20T14:03:10Z",
+    );
+
+    const r = await applyTriageMatter(db, {
+      conversationId: m3.conversationId,
+      messageId: m3.id,
+      anchorMessageId: m1.id,
+      title: "Devis de terrasse",
+      folderName: "Fournisseurs",
+      priority: "normal",
+    });
+    expect(r.action).toBe("opened");
+    expect(r.folderId).toBe(fournisseurs.id);
+
+    const subject = await db.subject.findFirstOrThrow({
+      where: { id: r.subjectId },
+    });
+    expect(subject.title).toBe("Devis de terrasse");
+    expect(subject.createdByActor).toBe(Actor.ai);
+    expect(subject.contactIds).toHaveLength(1);
+    const contact = await db.contact.findFirstOrThrow({
+      where: { id: subject.contactIds[0] },
+    });
+    expect(contact.status).toBe(ContactStatus.auto);
+    expect(contact.sourceActor).toBe(Actor.ai);
+    expect(contact.phone).toBe("+33612345678");
+    expect(contact.firstName).toBe("Bruno");
+    expect(contact.lastName).toBe("Lefèvre");
+
+    // L'écoute commence à l'ancre : la salve est dans l'affaire, le message
+    // d'avant reste orphelin et sans domaine.
+    const parId = new Map(
+      (
+        await db.message.findMany({
+          where: { conversationId: m3.conversationId },
+        })
+      ).map((m) => [m.id, m]),
+    );
+    for (const id of [m1.id, m2.id, m3.id]) {
+      expect(parId.get(id)?.subjectId).toBe(r.subjectId);
+      expect(parId.get(id)?.folderId).toBe(fournisseurs.id);
+    }
+    expect(parId.get(vieux.id)?.subjectId).toBeNull();
+    expect(parId.get(vieux.id)?.folderId).toBeNull();
+    const link = await db.subjectConversation.findFirstOrThrow({
+      where: { subjectId: r.subjectId },
+    });
+    expect(link.anchorMessageId).toBe(m1.id);
+    expect(link.closingMessageId).toBeNull();
+
+    // Le fil n'est plus orphelin : un message suivant est capté par l'écoute.
+    expect((await getTriageProjection(db, m3.conversationId)).orpheline).toBe(
+      false,
+    );
+    const { message: m4 } = await wa(
+      db,
+      canal.id,
+      "w4",
+      "et samedi sinon ?",
+      "2026-10-20T15:00:00Z",
+    );
+    expect(m4.subjectId).toBe(r.subjectId);
+  });
+
+  it("rattacher ouvre une écoute ancrée sur l'affaire existante, par Relvo, et n'emporte que la salve", async () => {
+    const { db, wa: canal } = await makeWhatsApp("s@test.fr");
+    const existant = await createSubject(db, {
+      title: "Rupture sauce blanche",
+    });
+    await wa(db, canal.id, "w0", "Bonne année 🎉", "2026-10-10T09:00:00Z");
+    const { message: m1 } = await wa(
+      db,
+      canal.id,
+      "w1",
+      "Pour la sauce blanche, c'est bon pour la SB-210",
+      "2026-10-20T14:02:00Z",
+    );
+    const { message: m2 } = await wa(
+      db,
+      canal.id,
+      "w2",
+      "livrez jeudi",
+      "2026-10-20T14:02:30Z",
+    );
+
+    const r = await applyTriageMatter(db, {
+      conversationId: m2.conversationId,
+      messageId: m2.id,
+      anchorMessageId: m1.id,
+      existingSubjectReference: existant.reference,
+    });
+    expect(r.action).toBe("attached");
+    expect(r.subjectId).toBe(existant.id);
+    expect(await db.subject.count()).toBe(1);
+
+    const link = await db.subjectConversation.findFirstOrThrow({
+      where: { subjectId: existant.id, conversationId: m2.conversationId },
+    });
+    expect(link.anchorMessageId).toBe(m1.id);
+    expect(link.closingMessageId).toBeNull();
+    const messages = await db.message.findMany({
+      where: { conversationId: m2.conversationId },
+      orderBy: { createdAt: "asc" },
+    });
+    expect(messages.map((m) => m.subjectId)).toEqual([
+      null,
+      existant.id,
+      existant.id,
+    ]);
+    const ev = await db.eventLog.findFirstOrThrow({
+      where: {
+        eventType: EVENT_TYPES.conversationAttached,
+        subjectId: existant.id,
+      },
+    });
+    expect(ev.actor).toBe(Actor.ai);
+  });
+
+  it("refuse un groupe, et un fil direct sans ancre", async () => {
+    const { db, wa: canal } = await makeWhatsApp("t@test.fr");
+    const { message: groupe } = await ingestInboundWhatsApp(db, {
+      channelId: canal.id,
+      externalId: "g1",
+      externalThreadId: "chat-equipe",
+      isGroup: true,
+      senderRaw: "+33600000010",
+      content: "Salut la team",
+    });
+    await expect(
+      applyTriageMatter(db, {
+        conversationId: groupe.conversationId,
+        messageId: groupe.id,
+        anchorMessageId: groupe.id,
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
+    expect((await getTriageProjection(db, groupe.conversationId)).type).toBe(
+      "whatsapp_group",
+    );
+
+    const { message: direct } = await wa(
+      db,
+      canal.id,
+      "w1",
+      "Bonjour",
+      "2026-10-20T14:02:00Z",
+    );
+    await expect(
+      applyTriageMatter(db, {
+        conversationId: direct.conversationId,
+        messageId: direct.id,
+      }),
+    ).rejects.toMatchObject({ code: "VALIDATION" });
+    expect(await db.subject.count()).toBe(0);
+  });
+
+  it("sans canal jamais connecté, la projection ne porte aucune date de connexion", async () => {
+    const { account, db } = await makeAccount("u@test.fr");
+    const canal = await prisma.channel.create({
       data: {
         accountId: account.id,
         name: "WhatsApp",
@@ -479,19 +750,16 @@ describe("ouvrir ou rattacher depuis le tri", () => {
         identifier: "+33600000000",
       },
     });
-    const { message } = await ingestInboundWhatsApp(db, {
-      channelId: wa.id,
-      externalId: "w1",
-      externalThreadId: "chat-1",
-      senderRaw: "+33600000010",
-      content: "Salut",
-    });
-    await expect(
-      applyTriageMatter(db, {
-        conversationId: message.conversationId,
-        messageId: message.id,
-      }),
-    ).rejects.toMatchObject({ code: "VALIDATION" });
+    const { message } = await wa(
+      db,
+      canal.id,
+      "w1",
+      "Bonjour",
+      "2026-10-20T14:02:00Z",
+    );
+    expect(
+      (await getTriageProjection(db, message.conversationId)).connecteLe,
+    ).toBeNull();
   });
 });
 

@@ -21,7 +21,7 @@ import {
   fenetreDeRattrapage,
 } from "@/server/ia/pipeline/rattrapage-regles";
 import { relireSujet } from "@/server/ia/pipeline/relecture";
-import { trierConversationEmail } from "@/server/ia/pipeline/tri";
+import { trierConversation } from "@/server/ia/pipeline/tri";
 import { stockerPiecesJointes } from "@/server/unipile/attachments";
 import {
   toEmailHeaders,
@@ -55,7 +55,9 @@ import { setChannelConfigStatus } from "@relvo/db";
 // même schéma que le cron M4.6.
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+// Le tri d'un fil WhatsApp direct attend la fin de la salve après la réponse
+// (M7 tranche 11), puis trie et structure : le budget de la fonction le couvre.
+export const maxDuration = 120;
 
 // Défense en profondeur : une route qui touche de la donnée tenant ne doit
 // jamais être mise en cache CDN (clé = méthode+URL, identique pour tous).
@@ -278,7 +280,7 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
   if (created && !message.subjectId) {
     const entetes = toEmailHeaders(mail);
     after(async () => {
-      const resultat = await trierConversationEmail({
+      const resultat = await trierConversation({
         accountId: config.accountId,
         conversationId: message.conversationId,
         messageId: message.id,
@@ -414,6 +416,29 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   }
 
   if (created) expireTenantData();
+
+  // Tri automatique d'un fil DIRECT (M7, tranche 11 — A8) : APRÈS la réponse
+  // HTTP, une fois par message (`created`), et seulement si aucun sujet n'a
+  // capté le message au rangement (une écoute l'aurait pris). Le pipeline
+  // décide seul du reste — un groupe n'est pas trié, un message daté d'avant
+  // la connexion du numéro est de l'historique, la salve se laisse arriver et
+  // seul son dernier message porte le tri — et n'échoue jamais vers
+  // l'appelant : un échec laisse la conversation orpheline, journalisé. La
+  // réception des e-mails garde son chemin, rien ici ne la touche.
+  if (created && !message.subjectId) {
+    after(async () => {
+      const resultat = await trierConversation({
+        accountId: config.accountId,
+        conversationId: message.conversationId,
+        messageId: message.id,
+      });
+      console.info("[ia] tri", {
+        accountId: config.accountId,
+        messageId: message.id,
+        ...resultat,
+      });
+    });
+  }
 
   return ok({ ok: true, messageId: message.id, created, attachments: stored });
 }

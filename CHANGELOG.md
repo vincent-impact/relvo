@@ -6,6 +6,8 @@
 
 ## 2026-10-20
 
+- **Nouveau** — Relvo lit vos conversations WhatsApp directes comme vos e-mails : une affaire s'ouvre à réception, avec ses tâches. Les groupes restent à votre main.
+- **Nouveau** — Pendant que Relvo lit votre courrier, il vous propose les domaines habituels de votre métier à garder d'une coche, et dès que plusieurs affaires parlent de la même chose, il vous propose d'en faire un domaine et de les y ranger.
 - **Nouveau** — Pendant que Relvo lit votre courrier, l'échange vous montre les affaires qu'il ouvre et vous explique en deux phrases ce qu'est une affaire et une tâche ; quand il a fini, il vous le dit et vous demande si cela ressemble à votre activité. Vous pouvez aussi lui demander où il en est.
 - **Nouveau** — Dès que vous reliez une boîte, Relvo lit le courrier des deux dernières semaines tout de suite et en entier : vous voyez les affaires s'ouvrir à mesure, dans l'échange comme dans Canaux.
 

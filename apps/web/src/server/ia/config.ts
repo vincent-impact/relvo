@@ -230,3 +230,20 @@ export const RATTRAPAGE = {
   /** Une ligne ouverte sans tranche depuis ce délai est en panne : une page ou le filet la relance. */
   relanceApresMs: 6 * 60 * 1000,
 } as const;
+
+/**
+ * Le TRI DE LA MESSAGERIE DIRECTE (M7, tranche 11 ; `05 §1.2`, §9.5) : une
+ * conversation WhatsApp directe se trie par SALVE — l'interlocuteur écrit trois
+ * messages en trente secondes, un tri sur le premier ne verrait qu'une ligne.
+ * Le tri d'un message attend `attenteSalveMs` après la réponse du webhook,
+ * puis ne se joue que si ce message est toujours le dernier entrant du fil ;
+ * sinon il s'efface, et le webhook du message suivant portera le tri. L'affaire
+ * ouverte écoute depuis le début de la salve : le plus ancien message orphelin
+ * daté de moins de `fenetreSalveMs` avant le déclencheur — jamais un
+ * bavardage d'il y a dix jours que le tri avait laissé sans affaire. Arrêté
+ * avec le dirigeant (`ecarts`, « Le fil WhatsApp direct se trie à réception »).
+ */
+export const MESSAGERIE = {
+  attenteSalveMs: 45 * 1000,
+  fenetreSalveMs: 2 * 60 * 60 * 1000,
+} as const;

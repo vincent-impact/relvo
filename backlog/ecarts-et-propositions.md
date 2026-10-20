@@ -561,6 +561,42 @@ mécanisme par tranches de « Le rattrapage commence à la connexion, pas la nui
 - **Le cache se chauffe avant le parallélisme** (`PITFALLS.md` #49) : la première conversation
   d'une tranche se trie seule, les suivantes trois par trois.
 
+### Le fil WhatsApp direct se trie à réception, par salve ; les groupes attendent
+
+**`tranché`** · Tranche 11 du sprint M7 (M7.4 côté messagerie), avec le dirigeant. Lève la
+réserve « e-mail seulement (A8) » des entrées précédentes pour les conversations WhatsApp
+**directes** ; les mentions qui la portent restent, elles datent une décision.
+
+- **Les conversations directes seulement.** Un groupe WhatsApp n'est jamais trié
+  automatiquement : c'est le « groupe bavard », l'écoute s'y pose à la main depuis la fiche. Au
+  client, c'est un choix à présenter, pas un manque.
+- **La salve se laisse arriver.** WhatsApp envoie trois messages en trente secondes ; un tri sur
+  le premier ne verrait qu'une ligne et le suivant coûterait un tour pour « ok merci ». Le tri
+  d'un message attend **quarante-cinq secondes** après la réponse du webhook, puis ne se joue que
+  si ce message est toujours le dernier entrant de la conversation — sinon il s'efface, à zéro
+  jeton, et le webhook du message suivant porte le tri. Une salve, un tour. Le webhook de
+  messagerie passe à deux minutes de budget.
+- **L'affaire écoute depuis le début de la salve.** L'ancre est le plus ancien message orphelin
+  parmi ceux que le modèle a lus, daté de moins de **deux heures** avant le déclencheur — jamais
+  un bavardage d'il y a dix jours que le tri avait laissé sans affaire. Rattacher à une affaire
+  existante ouvre une écoute sur elle, par la fonction de la fiche, avec la même ancre — jamais le
+  rattachement permanent de l'e-mail.
+- **Sur la messagerie, « rien à faire » ne fait pas taire un interlocuteur.** La règle « un
+  rien à faire sûr met la source en sourdine » vaut pour les newsletters ; sur un fil direct,
+  seules la publicité et l'automatique en confiance haute mettent en sourdine ; le professionnel
+  et le personnel n'écrivent que l'avis. La règle de l'expéditeur déjà écarté reste telle quelle.
+- **Un message d'historique n'est pas trié.** On ignore si l'agrégateur rejoue, à la connexion
+  d'un numéro, des messages anciens par le webhook. Un message daté d'avant la date de connexion
+  du canal (`ChannelConfig.lastSyncAt`, reposée à chaque reconnexion ou guérison du canal : ce
+  qui est arrivé pendant la coupure est de l'historique) est rangé et laissé à la future lecture
+  de la messagerie ; sans date connue, rien n'est trié. Pas de colonne nouvelle.
+- **Ce que la tranche ne fait pas, et pourquoi** : la relecture d'une affaire qui écoute déjà, à
+  chaque message capté (reportée pour mesurer d'abord ce que coûte le tri seul sur un vrai
+  numéro) ; la lecture de l'historique de la messagerie à la connexion (import des chats par
+  l'agrégateur, sur la mécanique par tranches de la tranche 10 — la tranche d'après) ; les
+  groupes ; l'entrelacement de deux affaires dans un même fil direct (une seule écoute ouverte à
+  la fois).
+
 ### La prise en main est une conversation avec Relvo
 
 **`tranché`** · Avec le dirigeant. Remplace les « trois écrans » de M13.2 par le **premier

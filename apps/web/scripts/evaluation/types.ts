@@ -6,10 +6,10 @@ import type {
 /** Le compte au moment de l'extraction — devient la couche Compte du tri. */
 export type CompteEvaluation = CompteContexte;
 
-/** Un cas d'évaluation : un fil e-mail et la vérité terrain du tri manuel. */
+/** Un cas d'évaluation : un fil — e-mail, ou WhatsApp direct en salve — et la vérité terrain du tri manuel. */
 export type Cas = {
   id: string;
-  canal: "email";
+  canal: "email" | "whatsapp";
   messages: MessageContexte[];
   verite: {
     /** L'ACTION attendue — « a_considerer » n'est jamais une vérité : c'est un renvoi au dirigeant. */

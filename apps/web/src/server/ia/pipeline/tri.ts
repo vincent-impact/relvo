@@ -10,10 +10,12 @@ import {
   logTriageFailure,
   recordTriageVerdict,
   tenantDb,
+  type TenantDb,
+  type TriageProjection,
 } from "@relvo/db";
 import { expireTenantData } from "@/server/cached";
 import { EchecSollicitation, extract } from "../client";
-import { inferenceDisponible, NIVEAU_RETENU } from "../config";
+import { inferenceDisponible, MESSAGERIE, NIVEAU_RETENU } from "../config";
 import { contexteTri, prefixeStable } from "../contexte";
 import { SortieTri } from "../schemas";
 import { detecterBruitDeterministe, signauxAutomatiques } from "./bruit";
@@ -24,17 +26,34 @@ import {
   deciderTri,
   type Nature,
 } from "./decision";
+import {
+  ancreDeLaSalve,
+  estDernierDeLaSalve,
+  peutFaireTaire,
+} from "./messagerie-regles";
+import { estHistorique } from "./rattrapage-regles";
 import { relireSujet, type IssueRelecture } from "./relecture";
 import { structurerSujet, type IssueStructuration } from "./structuration";
 
-// LE TRI EN PRODUCTION (M7, tranche 4 — M7.1, M7.4, M7.5, M7.14 à M7.16) :
-// « un e-mail entrant devient un sujet titré et classé ». Déclenché par le
-// webhook APRÈS sa réponse HTTP, une fois par message, sur une conversation
-// orpheline. E-mail seul ; WhatsApp attend.
+// LE TRI EN PRODUCTION (M7, tranche 4 — M7.1, M7.4, M7.5, M7.14 à M7.16 ;
+// tranche 11 — la messagerie directe, A8) : « un fil entrant devient un sujet
+// titré et classé ». Déclenché par le webhook APRÈS sa réponse HTTP, une fois
+// par message, sur une conversation orpheline. Un fil e-mail et un fil
+// WhatsApp DIRECT passent par le MÊME pipeline ; un groupe n'est jamais trié
+// (l'écoute s'y pose à la main, 05 §9.5).
 //
 // Ordre, et ce que chaque étape garantit :
 //   1. Assistant actif sur le compte, inférence joignable, idempotence — sinon rien.
-//   2. Projection depuis la base, par le domaine (`getTriageProjection`).
+//   2. Projection depuis la base, par le domaine (`getTriageProjection`) :
+//      type du fil, orphelinat, dernier entrant, date de connexion du canal.
+//   2 bis. MESSAGERIE SEULEMENT (`./messagerie-regles`) : un message daté
+//      d'avant la connexion du numéro est de l'HISTORIQUE rejoué par
+//      l'agrégateur — rangé, laissé à la future lecture de la messagerie, zéro
+//      jeton ; sans date de connexion connue, rien ne se trie. Puis le tri
+//      ATTEND la fin de la salve et ne se joue que si le message qui l'a
+//      déclenché est toujours le DERNIER ENTRANT du fil, encore orphelin —
+//      sinon il s'efface, le webhook du message suivant portera le tri : une
+//      salve, un tour.
 //   3. Filtre déterministe de la publicité : avis sans appel, zéro jeton
 //      (05 §9.5), et la source est mise en sourdine — la règle est sûre. Les
 //      signaux d'automate, eux, sont relevés et poussés au modèle.
@@ -46,8 +65,13 @@ import { structurerSujet, type IssueStructuration } from "./structuration";
 //   5. Action, nature, confiance et raison écrites sur la conversation. Puis
 //      la décision (`./decision`) : le rattachement prime ; « à traiter »
 //      au-dessus de la frontière ouvre ; « rien à faire » en confiance haute
-//      fait taire ; sinon l'avis seul (05 §1.1, §1.2, §9.5).
-//   6. Ouverture ou rattachement par les primitives du domaine.
+//      fait taire — SELON LE CANAL (`peutFaireTaire`) : sur un fil direct,
+//      un « merci » professionnel n'est pas une raison de ne plus écouter un
+//      client, seules la publicité et l'automatique mettent en sourdine ;
+//      sinon l'avis seul (05 §1.1, §1.2, §9.5).
+//   6. Ouverture ou rattachement par les primitives du domaine — sur un fil
+//      direct, ANCRÉS au début de la salve (`ancreDeLaSalve`) : l'affaire
+//      écoute depuis là, et rattacher ouvre une écoute sur l'affaire existante.
 //   7. Cache de données invalidé après toute écriture (PITFALLS.md #45).
 //   8. Un sujet OUVERT enchaîne sur la STRUCTURATION (`./structuration`,
 //      tranche 5) : le second appel, qui apporte les tâches et la date. Son
@@ -67,6 +91,8 @@ export type IssueTri =
   | "canal-non-couvert"
   | "non-orpheline"
   | "sans-message-entrant"
+  | "historique"
+  | "salve-en-cours"
   | "bruit-deterministe"
   | "source-ecartee"
   | "sujet-en-attente"
@@ -89,7 +115,9 @@ export type ResultatTri = {
   coutEur: number;
 };
 
-export async function trierConversationEmail(args: {
+const dormir = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+export async function trierConversation(args: {
   accountId: string;
   conversationId: string;
   /** Le message entrant qui déclenche le tri — clé de l'idempotence. */
@@ -98,6 +126,8 @@ export async function trierConversationEmail(args: {
   entetes?: Record<string, string>;
   /** En LOT (rattrapage, M7.19) : niveau de service « flex », moitié prix, latence libre. */
   lot?: boolean;
+  /** L'attente de la salve, remplaçable par un test ; par défaut, celle de la configuration. */
+  attendre?: (ms: number) => Promise<void>;
 }): Promise<ResultatTri> {
   const { accountId, conversationId, messageId } = args;
   const lot = args.lot ?? false;
@@ -111,12 +141,85 @@ export async function trierConversationEmail(args: {
     return { issue: "deja-traite", coutEur: 0 };
   }
 
-  const projection = await getTriageProjection(db, conversationId);
-  if (projection.type !== "email_subject")
+  let projection = await getTriageProjection(db, conversationId);
+  if (
+    projection.type !== "email_subject" &&
+    projection.type !== "whatsapp_direct"
+  ) {
     return { issue: "canal-non-couvert", coutEur: 0 };
+  }
   if (!projection.orpheline) return { issue: "non-orpheline", coutEur: 0 };
-  const entrant = projection.dernierEntrant;
-  if (!entrant) return { issue: "sans-message-entrant", coutEur: 0 };
+  if (!projection.dernierEntrant)
+    return { issue: "sans-message-entrant", coutEur: 0 };
+
+  let ancre: string | null = null;
+  if (projection.type === "whatsapp_direct") {
+    // L'historique rejoué à la connexion d'un numéro n'est pas du courrier
+    // vivant ; sans date de connexion connue, rien ne se trie — le dirigeant
+    // qui connecte un numéro avec des années de fils ne paie jamais
+    // l'historique à contretemps.
+    const declencheur = projection.conversation.messages.find(
+      (m) => m.id === messageId,
+    );
+    if (
+      !projection.connecteLe ||
+      !declencheur ||
+      estHistorique(declencheur.recuLe, projection.connecteLe)
+    ) {
+      return { issue: "historique", coutEur: 0 };
+    }
+    // La salve se laisse arriver : le tri ne se joue que sur son dernier
+    // message. Un message déjà dépassé s'efface sans attendre.
+    const dernier = (p: TriageProjection) =>
+      estDernierDeLaSalve({
+        declencheurId: messageId,
+        dernierEntrantId: p.dernierEntrant?.id ?? null,
+      });
+    if (!dernier(projection)) return { issue: "salve-en-cours", coutEur: 0 };
+    await (args.attendre ?? dormir)(MESSAGERIE.attenteSalveMs);
+    projection = await getTriageProjection(db, conversationId);
+    if (!projection.orpheline) return { issue: "non-orpheline", coutEur: 0 };
+    if (!projection.dernierEntrant)
+      return { issue: "sans-message-entrant", coutEur: 0 };
+    if (!dernier(projection)) return { issue: "salve-en-cours", coutEur: 0 };
+    ancre = ancreDeLaSalve(projection.conversation.messages, {
+      id: messageId,
+      recuLe: declencheur.recuLe,
+    });
+  }
+
+  return trierFil({
+    db,
+    accountId,
+    conversationId,
+    messageId,
+    projection,
+    entetes: args.entetes,
+    lot,
+    ancre,
+  });
+}
+
+/**
+ * Le tri d'un fil orphelin, du filtre déterministe à l'ouverture ou au
+ * rattachement — commun à l'e-mail (ancre nulle) et à la messagerie directe
+ * (ancre au début de la salve). C'est le canal du fil qui dit ce qu'un « rien
+ * à faire » sûr a le droit de faire taire.
+ */
+async function trierFil(p: {
+  db: TenantDb;
+  accountId: string;
+  conversationId: string;
+  messageId: string;
+  projection: TriageProjection;
+  entetes?: Record<string, string>;
+  lot: boolean;
+  ancre: string | null;
+}): Promise<ResultatTri> {
+  const { db, accountId, conversationId, messageId, projection, lot, ancre } =
+    p;
+  const canal = projection.conversation.canal;
+  const entrant = projection.dernierEntrant!;
 
   // Faire taire la source sur un « rien à faire » sûr (05 §9.5) : la nature
   // donne la raison d'ignorance, la phrase de Relvo la note. Réversible d'un
@@ -128,12 +231,14 @@ export async function trierConversationEmail(args: {
       actor: "ai",
     });
 
+  // Le filtre ne lit que ce qu'il a : sur la messagerie, ni en-têtes ni objet
+  // — le lien de désabonnement dans le texte reste lisible.
   const entree = {
     adresse: entrant.adresse,
     nom: entrant.nom,
     objet: entrant.objet,
     contenu: entrant.contenu,
-    entetes: args.entetes,
+    entetes: p.entetes,
   };
 
   try {
@@ -192,6 +297,7 @@ export async function trierConversationEmail(args: {
         conversationId,
         messageId,
         existingSubjectReference: parExpediteur.reference,
+        anchorMessageId: ancre,
       });
       expireTenantData();
       const relecture = await relireSujet({
@@ -212,7 +318,8 @@ export async function trierConversationEmail(args: {
     const contexte = contexteTri({
       compte: projection.compte,
       conversation: {
-        ...projection.conversation,
+        canal,
+        messages: projection.conversation.messages,
         expediteur: projection.expediteur,
         signaux: signauxAutomatiques(entree),
       },
@@ -246,6 +353,18 @@ export async function trierConversationEmail(args: {
       return { issue: "avis-seul", detail: decision.motif, coutEur: coutTri };
     }
     if (decision.type === "ignorer") {
+      if (
+        !peutFaireTaire({
+          canal,
+          nature: decision.nature,
+          confiance: sortie.confiance,
+        })
+      ) {
+        // Sur un fil direct, « merci, bonne journée » n'éteint pas un client :
+        // l'avis est écrit, la conversation reste vivante.
+        expireTenantData();
+        return { issue: "avis-seul", detail: "rien-a-faire", coutEur: coutTri };
+      }
       await ignorer(decision.nature, decision.raison);
       expireTenantData();
       return { issue: "ignore", detail: decision.nature, coutEur: coutTri };
@@ -260,6 +379,7 @@ export async function trierConversationEmail(args: {
       existingSubjectReference:
         decision.type === "rattacher" ? decision.sujetExistant : null,
       priority: decision.priorite,
+      anchorMessageId: ancre,
     });
     expireTenantData();
     if (applied.action === "attached") {
