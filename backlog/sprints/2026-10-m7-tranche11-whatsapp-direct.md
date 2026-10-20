@@ -277,7 +277,8 @@ Lancer avec `--cas demo-026,demo-027,demo-028` ; annoncer avant de jouer.
 - [x] Conception récrite en place (`05 §1.2`, §9.5, §9.6 ; `04 §13`) ; `ecarts` (« Le fil
       WhatsApp direct se trie à réception, par salve ; les groupes attendent ») ; épique M7
       (M7.4, tranche 7 du découpage) ; aucun piège nouveau.
-- [ ] Gate ; push ; Ready.
+- [x] Gate (typage, lint, format, 215 tests base, 204 tests web, build avec la ligne du proxy) ;
+      push `512dfd7` ; déploiement Ready en production.
 - [ ] **Clôture** : vérification en production sur le numéro du dirigeant — l'affaire qui
       s'ouvre, le coût ; M7 passe en `termine` dès que les tranches 8 à 11 sont vues sur son
       compte.
