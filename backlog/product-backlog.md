@@ -30,7 +30,7 @@ frontmatter l'est.
 | [M3 — Modèle de données et accès](epics/M3-modele-et-acces.md)             | ✅                                               | M4, M5, M6, M9                  |
 | [M4 — Stockage fichiers](epics/M4-stockage-fichiers.md)                    | ✅                                               | M11                             |
 | [M5 — Ingestion e-mail](epics/M5-ingestion-email.md)                       | ✅                                               | M6                              |
-| [M6 — Ingestion messagerie](epics/M6-ingestion-messagerie.md)              | 🟡 code livré, **validation production à faire** | M7                              |
+| [M6 — Ingestion messagerie](epics/M6-ingestion-messagerie.md)              | ✅                                               | M7                              |
 | [M6bis — Entité Conversation](epics/M6bis-conversation.md)                 | ✅                                               | M6ter                           |
 | [M6ter — Divergence par canal](epics/M6ter-divergence-par-canal.md)        | ✅                                               | M6quater                        |
 | [M6quater — Sous-typage de la conversation](epics/M6quater-sous-typage.md) | ✅                                               | M7                              |

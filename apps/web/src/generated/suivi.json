@@ -80,9 +80,9 @@
     {
       "titre": "Réception WhatsApp",
       "resume": "Faire entrer WhatsApp par le même chemin que l'e-mail : vos messages, vos photos et vos documents arrivent dans Relvo, et vous répondez sans changer d'application.",
-      "statut": "partiel",
+      "statut": "termine",
       "gauche": 21.96,
-      "largeur": 0.94
+      "largeur": 43.93
     },
     {
       "titre": "Regroupement en conversations",

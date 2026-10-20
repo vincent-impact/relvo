@@ -6,9 +6,9 @@ titre_client: Réception WhatsApp
 resume_client: >
   Faire entrer WhatsApp par le même chemin que l'e-mail : vos messages, vos photos et vos
   documents arrivent dans Relvo, et vous répondez sans changer d'application.
-statut: partiel
+statut: termine
 debut: 2026-07-18
-fin: 2026-07-20
+fin: 2026-10-20
 ---
 
 # M6 — Ingestion messagerie
@@ -31,13 +31,14 @@ l'e-mail. **Dépendances** : M3, M4, **M5** (client, route de webhook, résoluti
 
 **Écrire à un numéro sans échange préalable** est reporté après la V1.
 
-## ⚠️ Ce qui bloque la clôture
+## Clôture
 
-- [ ] **Déclarer le webhook de messagerie** côté fournisseur.
-- [ ] **Valider de bout en bout en production** : connexion sur un appareil réel, réception d'un
-      message et d'un média, réponse depuis l'app.
-- [ ] **Confirmer l'anti-boucle de l'écho de nos propres envois** contre un vrai payload — la
-      leçon de M5 est que cette vérification ne se fait pas de tête.
+Validée en production par le dirigeant le 2026-10-20, sur son numéro :
 
-C'est **le seul reste de travail sur les épiques livrées**, et il bloque la confiance dans tout
-le canal.
+- [x] **Le webhook de messagerie** déclaré côté fournisseur.
+- [x] **De bout en bout** : connexion sur un appareil réel, réception d'un message et d'un
+      média, réponse depuis l'app.
+- [x] **L'anti-boucle de l'écho de nos propres envois**, contre un vrai payload.
+
+Ce que Relvo **fait** des messages reçus sur un fil direct — le tri à réception — est la
+tranche 11 de M7 (`../sprints/2026-10-m7-tranche11-whatsapp-direct.md`).
