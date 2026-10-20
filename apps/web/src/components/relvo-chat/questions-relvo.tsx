@@ -29,6 +29,8 @@ function phraseOutcome(o: QuestionOutcome): string {
       return "C’est noté : je lirai votre courrier avec les mots de votre métier.";
     case "instruction":
       return `C’est noté dans votre Mémoire, dans ${o.folderName} : je l’appliquerai.`;
+    case "lecture-etendue":
+      return "C’est parti : je lis deux semaines de plus. Les affaires apparaîtront à mesure.";
     case "noted":
       return "C’est noté, merci.";
   }
@@ -39,6 +41,8 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
   const [index, setIndex] = useState(0);
   const [reponduEn, setReponduEn] = useState<string | null>(null);
   const [libre, setLibre] = useState(false);
+  /** La clé sous laquelle la réponse libre part : « Autre… », ou une réponse qui s'écrit. */
+  const [cleLibre, setCleLibre] = useState<string>(CLE_AUTRE);
   const [texte, setTexte] = useState("");
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +53,7 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
 
   function suivante() {
     setLibre(false);
+    setCleLibre(CLE_AUTRE);
     setTexte("");
     setIndex((i) => i + 1);
   }
@@ -87,8 +92,11 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
       });
       return;
     }
-    if (key === CLE_AUTRE) return setLibre(true);
     const option = question.proposedAnswers.find((p) => p.key === key);
+    if (key === CLE_AUTRE || option?.libre) {
+      setCleLibre(key);
+      return setLibre(true);
+    }
     repondre(key, option?.label ?? key);
   }
 
@@ -135,7 +143,7 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
               className="mt-2.5 flex items-end gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (texte.trim()) repondre(CLE_AUTRE, texte.trim());
+                if (texte.trim()) repondre(cleLibre, texte.trim());
               }}
             >
               <textarea

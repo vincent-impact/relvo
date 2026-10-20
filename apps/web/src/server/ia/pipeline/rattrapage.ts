@@ -10,6 +10,7 @@ import {
   listDueCatchups,
   listKnownExternalIds,
   listOpenCatchups,
+  poserFinDeLecture,
   recordCatchupError,
   recordCatchupProgress,
   releaseCatchupTranche,
@@ -19,6 +20,7 @@ import {
   type TenantDb,
 } from "@relvo/db";
 import { expireTenantData } from "@/server/cached";
+import { notifierQuestion } from "@/server/push/questions";
 import { inferenceDisponible, RATTRAPAGE } from "../config";
 import {
   estEnPanne,
@@ -271,8 +273,26 @@ export async function executerTranche(
     }
 
     // ── 3. Clôture ou enchaînement ───────────────────────────────────────
+    // Une ligne qui se clôt POUR DE BON (le courrier est lu, ou plus rien ne
+    // la reprendra) pose la question de fin de lecture, qui rappelle le
+    // dirigeant (badge, notification — 05 §11.11, invariant 36).
+    const finDeLecture = async (ligne: {
+      subjectsOpened: number;
+      conversationsIgnored: number;
+    }) => {
+      const q = await poserFinDeLecture(db, { id: due.id, ...ligne });
+      if (q) {
+        await notifierQuestion(due.accountId, { id: q.id, text: q.text }).catch(
+          (e) => console.error("[push] fin de lecture non notifiée", e),
+        );
+      }
+    };
     if (arret) {
-      await finishCatchup(db, due.id, { status: "capped", reason: arret });
+      const fini = await finishCatchup(db, due.id, {
+        status: "capped",
+        reason: arret,
+      });
+      if (arret === "tranches-epuisees") await finDeLecture(fini);
       bilan.fin = arret;
       bilan.clos = true;
     } else {
@@ -284,18 +304,20 @@ export async function executerTranche(
         ? peutClore({ emptyRounds, requestedAt: due.requestedAt, restants })
         : restants === 0;
       if (importDone && cloturable) {
-        await finishCatchup(db, due.id, {
+        const fini = await finishCatchup(db, due.id, {
           status: "done",
           reason: "courrier-epuise",
         });
+        await finDeLecture(fini);
         bilan.fin = "courrier-epuise";
         bilan.clos = true;
       } else if (opts.nuit && catchup.nightRuns >= RATTRAPAGE.nuitsMax) {
         // Dernière nuit permise : ce qui reste est laissé à la main.
-        await finishCatchup(db, due.id, {
+        const fini = await finishCatchup(db, due.id, {
           status: "capped",
           reason: "nuits-epuisees",
         });
+        await finDeLecture(fini);
         bilan.fin = "nuits-epuisees";
         bilan.clos = true;
       } else {

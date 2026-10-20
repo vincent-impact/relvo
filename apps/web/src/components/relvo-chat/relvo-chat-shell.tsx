@@ -16,11 +16,10 @@ import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
 import { RelvoFil } from "@/components/relvo-chat/relvo-fil";
 import { QuestionsRelvo } from "@/components/relvo-chat/questions-relvo";
-import {
-  CarteVivante,
-  type CarteVivanteData,
-} from "@/components/shared/carte-vivante";
+import { PriseEnMain } from "@/components/relvo-chat/prise-en-main";
+import type { CarteVivanteData } from "@/components/shared/carte-vivante";
 import { PollRefresh } from "@/components/shared/poll-refresh";
+import type { SubjectRowData } from "@/components/shared/subject-row";
 import type { OpenQuestion } from "@relvo/db";
 import type { RelvoUIMessage } from "@/server/ia/echange/outils";
 import { doitReprendre, titreParDefaut } from "@/lib/echanges-regles";
@@ -63,6 +62,7 @@ export function RelvoChatShell({
   reprendre = null,
   questions = [],
   lecture = null,
+  affaires = [],
 }: {
   backHref: string;
   /** La page d'origine, transmise à chaque tour. */
@@ -80,6 +80,8 @@ export function RelvoChatShell({
   questions?: OpenQuestion[];
   /** La lecture du courrier en cours, ou null. */
   lecture?: CarteVivanteData | null;
+  /** Les affaires nées de cette lecture, sous la carte. */
+  affaires?: SubjectRowData[];
 }) {
   // Ce que l'appareil sait de l'échange à ouvrir — lu AVANT de monter le fil,
   // parce que les messages initiaux du hook ne se posent qu'une fois.
@@ -132,6 +134,7 @@ export function RelvoChatShell({
       initialText={initialText}
       questions={questions}
       lecture={lecture}
+      affaires={affaires}
     />
   );
 }
@@ -145,6 +148,7 @@ function RelvoSession({
   initialText,
   questions,
   lecture,
+  affaires,
 }: {
   initial: Initial;
   backHref: string;
@@ -154,6 +158,7 @@ function RelvoSession({
   initialText: string;
   questions: OpenQuestion[];
   lecture: CarteVivanteData | null;
+  affaires: SubjectRowData[];
 }) {
   // Une invite touchée se pose dans le composer : le composant repart avec
   // ce texte (la clé change), l'utilisateur l'envoie ou le corrige.
@@ -277,8 +282,10 @@ function RelvoSession({
 
         {lecture ? (
           <>
-            <CarteVivante data={lecture} className="mb-3" />
-            <PollRefresh intervalMs={20_000} />
+            <PriseEnMain lecture={lecture} affaires={affaires} />
+            {lecture.status === "pending" || lecture.status === "running" ? (
+              <PollRefresh intervalMs={20_000} />
+            ) : null}
           </>
         ) : null}
         <QuestionsRelvo questions={questions} />

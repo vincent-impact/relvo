@@ -176,6 +176,15 @@
   "en_cours": "Tri automatique des messages",
   "journal": [
     {
+      "date": "2026-10-20",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "Dès que vous reliez une boîte, Relvo lit le courrier des deux dernières semaines tout de suite et en entier : vous voyez les affaires s'ouvrir à mesure, dans l'échange comme dans Canaux."
+        }
+      ]
+    },
+    {
       "date": "2026-10-19",
       "entrees": [
         {

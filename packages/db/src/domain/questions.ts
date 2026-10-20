@@ -30,6 +30,8 @@ export const proposedAnswerSchema = z.object({
   key: z.string().trim().min(1).max(40),
   label: z.string().trim().min(1).max(80),
   hint: z.string().trim().max(120).optional(),
+  /** La réponse s'écrit : le formulaire ouvre un champ libre sous cette clé. */
+  libre: z.boolean().optional(),
 });
 export type ProposedAnswer = z.infer<typeof proposedAnswerSchema>;
 
@@ -42,7 +44,7 @@ export const askQuestionSchema = z
     text: z.string().trim().min(1).max(500),
     proposedAnswers: z.array(proposedAnswerSchema).max(6).optional(),
     /** L'étape de script d'origine — une seule question ouverte par étape. */
-    originStep: z.string().trim().max(60).optional().nullable(),
+    originStep: z.string().trim().max(80).optional().nullable(),
     originSubjectId: z.uuid().optional().nullable(),
   })
   .refine(
@@ -119,6 +121,8 @@ export type AnswerQuestionInput = z.input<typeof answerQuestionSchema>;
 export type QuestionOutcome =
   | { kind: "sectors"; sectors: Sector[] }
   | { kind: "instruction"; noteId: string; folderName: string }
+  /** « Lisez deux semaines de plus » : l'application ouvre la lecture suivante sur ce canal. */
+  | { kind: "lecture-etendue"; channelId: string; since: Date }
   | { kind: "noted" };
 
 /**
@@ -199,12 +203,34 @@ async function appliquerDestination(
     // Une réponse libre sur les secteurs : on la note, rien de plus.
     return { kind: "noted" };
   }
+  if (q.originStep?.startsWith(`${ETAPES.finDeLecture}/`)) {
+    return appliquerFinDeLecture(db, q, data, origine);
+  }
   if (data.key && data.key !== CLE_AUTRE) {
     // Une réponse fermée hors script : notée, c'est tout — sa destination
     // appartient à celui qui a posé la question (M17).
     return { kind: "noted" };
   }
-  // Une réponse libre devient une instruction, en couche Compte ou Domaine.
+  return instruireDepuisReponse(
+    db,
+    q,
+    titreInstruction(q.text),
+    data.answer,
+    origine,
+  );
+}
+
+/**
+ * Une réponse libre devient une INSTRUCTION, en couche Compte ou Domaine
+ * (05 §11.11) : le domaine de la portée, celui de l'affaire, sinon Général.
+ */
+async function instruireDepuisReponse(
+  db: TenantDb,
+  q: { folderId: string | null; subjectId: string | null },
+  name: string,
+  content: string,
+  origine?: Origine,
+): Promise<QuestionOutcome> {
   const folderId =
     q.folderId ??
     (q.subjectId
@@ -218,15 +244,7 @@ async function appliquerDestination(
     (await getDefaultFolder(db))?.id ??
     null;
   if (!folderId) return { kind: "noted" };
-  const note = await createNote(
-    db,
-    {
-      folderId,
-      name: titreInstruction(q.text),
-      content: data.answer,
-    },
-    origine,
-  );
+  const note = await createNote(db, { folderId, name, content }, origine);
   const folder = await db.folder.findFirst({
     where: { id: folderId },
     select: { name: true },
@@ -237,6 +255,61 @@ async function appliquerDestination(
     folderName: folder?.name ?? "Général",
   };
 }
+
+/**
+ * La FIN DE LECTURE (05 §11.11) : « Oui, c'est ça » est noté ; « Il en
+ * manque » et « Il y en a trop » s'écrivent et deviennent une instruction de
+ * Général — ce que Relvo doit ouvrir, ou laisser ; « Lisez deux semaines de
+ * plus » demande la lecture suivante sur le même canal, que l'application lance.
+ */
+async function appliquerFinDeLecture(
+  db: TenantDb,
+  q: {
+    originStep: string | null;
+    folderId: string | null;
+    subjectId: string | null;
+  },
+  data: z.infer<typeof answerQuestionSchema>,
+  origine?: Origine,
+): Promise<QuestionOutcome> {
+  if (data.key === "manque") {
+    return instruireDepuisReponse(
+      db,
+      q,
+      "Ce qui manquait à la première lecture",
+      data.answer,
+      origine,
+    );
+  }
+  if (data.key === "trop") {
+    return instruireDepuisReponse(
+      db,
+      q,
+      "Ce qui était en trop à la première lecture",
+      data.answer,
+      origine,
+    );
+  }
+  if (data.key === "deux-semaines") {
+    const catchupId = q.originStep!.slice(`${ETAPES.finDeLecture}/`.length);
+    const lecture = assertFound(
+      await db.channelCatchup.findFirst({
+        where: { id: catchupId },
+        select: { channelId: true, since: true },
+      }),
+      "Rattrapage",
+    );
+    return {
+      kind: "lecture-etendue",
+      channelId: lecture.channelId,
+      since: new Date(lecture.since.getTime() - FENETRE_SUIVANTE_MS),
+    };
+  }
+  return { kind: "noted" };
+}
+
+/** La lecture suivante remonte d'autant que la première : deux semaines de plus. */
+const FENETRE_SUIVANTE_MS = 14 * 86_400_000;
 
 /** Le titre d'une instruction née d'une question : la question, sans son point d'interrogation ni son exemple. */
 export function titreInstruction(question: string): string {
@@ -337,6 +410,8 @@ export const CLE_AUTRE = "autre";
 export const ETAPES = {
   secteurs: "prise-en-main/secteurs",
   premiereInstruction: "prise-en-main/premiere-instruction",
+  /** Préfixe : l'étape porte l'identifiant du rattrapage — une par lecture. */
+  finDeLecture: "prise-en-main/fin-de-lecture",
 } as const;
 
 const SECTEURS_PAR_CLE: Record<string, readonly Sector[]> = {
@@ -376,7 +451,7 @@ export const SCRIPT_PRISE_EN_MAIN: readonly EtapeScript[] = [
   },
   {
     step: ETAPES.premiereInstruction,
-    text: "Y a-t-il une règle que je dois toujours suivre ? Par exemple « les devis au-dessus de 5 000 € passent par moi ».",
+    text: "Y a-t-il une règle que je dois toujours suivre ? Par exemple « Crée automatiquement une affaire urgente quand un client demande la réalisation d'un devis ».",
     proposedAnswers: [{ key: CLE_AUTRE, label: "Je vous l'écris…" }],
     applicable: (c) => c.instructionsGenerales === 0,
   },
@@ -424,4 +499,64 @@ export async function ensureOnboardingQuestions(
     n++;
   }
   return n;
+}
+
+/** Le pluriel d'un compteur de la fin de lecture, en langage client. */
+function compte(n: number, un: string, plusieurs: string): string {
+  return `${n} ${n > 1 ? plusieurs : un}`;
+}
+
+/**
+ * La FIN DE LECTURE du courrier (05 §11.11) : quand une ligne de rattrapage se
+ * clôt avec au moins une affaire ouverte, Relvo le dit et demande si ça
+ * ressemble à l'activité du dirigeant — c'est cette question qui porte le
+ * badge et la notification (invariant 36). Une par lecture ; rien pour une
+ * lecture vide. Rend la question, ou null.
+ */
+export async function poserFinDeLecture(
+  db: TenantDb,
+  lecture: {
+    id: string;
+    subjectsOpened: number;
+    conversationsIgnored: number;
+  },
+) {
+  if (lecture.subjectsOpened < 1) return null;
+  const compteurs = [
+    compte(lecture.subjectsOpened, "affaire ouverte", "affaires ouvertes"),
+    ...(lecture.conversationsIgnored > 0
+      ? [
+          compte(
+            lecture.conversationsIgnored,
+            "message mis de côté",
+            "messages mis de côté",
+          ),
+        ]
+      : []),
+  ].join(", ");
+  return askQuestion(db, {
+    scope: QuestionScope.account,
+    text: `J'ai fini de lire votre courrier : ${compteurs}. Est-ce que ça ressemble à votre activité ?`,
+    proposedAnswers: [
+      { key: "oui", label: "Oui, c'est ça" },
+      {
+        key: "manque",
+        label: "Il en manque",
+        hint: "Dites-moi ce que j'aurais dû ouvrir",
+        libre: true,
+      },
+      {
+        key: "trop",
+        label: "Il y en a trop",
+        hint: "Dites-moi ce que je dois laisser",
+        libre: true,
+      },
+      {
+        key: "deux-semaines",
+        label: "Lisez deux semaines de plus",
+        hint: "Le courrier des jours quatorze à vingt-huit",
+      },
+    ],
+    originStep: `${ETAPES.finDeLecture}/${lecture.id}`,
+  });
 }

@@ -16,3 +16,4 @@
 {"id":"E16","question":"Qu'est-ce qui est à trier ?","from":"/","attendu":{"outil":"list_conversations","tier":"extraction","note":"une liste, pas un compte"}}
 {"id":"E17","question":"Qu'est-ce que Karim m'a envoyé sur WhatsApp ?","from":"/","attendu":{"outil":"search_messages","args":{"expediteur":"~karim","canal":"whatsapp"},"tier":"extraction"}}
 {"id":"E18","question":"Qu'est-ce que j'ai fait hier ?","from":"/","attendu":{"outil":"list_tasks","args":{"statut":"faites","depuis":"{{hier}}","jusquAu":"{{hier}}"},"tier":"extraction","note":"les tâches cochées, sur le jour où elles l'ont été"}}
+{"id":"E19","question":"Où en es-tu de la lecture de mon courrier ?","from":"/","attendu":{"outil":"get_mail_reading","tier":"extraction","note":"la lecture du courrier récent (M7.19) se demande par outil : l’état, les compteurs, la fraction, la raison d’arrêt — par boîte si le dirigeant la nomme"}}

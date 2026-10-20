@@ -591,9 +591,15 @@ qui suit est ce qui a tenu.
   utilisateur ; M13.2 dépend donc de M10, qui reçoit un item « échange scripté ». Et un échange
   qui montre l'interface se remplir pendant qu'il parle pose la question de sa place — plein
   écran ou non —, rouverte dans « Rouvrir la disposition générale ».
-- **Ce qui reste ouvert** : le contenu exact du script — le nombre de questions, leur ordre —, à
-  écrire avec les premiers retours ; et ce que l'agrégateur synchronise, en combien de temps,
-  que le script doit traverser sans impasse.
+- **Le script, écrit et livré avec la tranche 10 de M7** (M13.2 y est livré, parce que le script
+  ne peut naître qu'avec la lecture dès la connexion) : le métier, les domaines typiques du
+  secteur, les domaines proposés par le courrier (M17.10), la première règle — avec pour exemple
+  « Crée automatiquement une affaire urgente quand un client demande la réalisation d'un
+  devis » —, et la fin de lecture, qui porte le badge et la notification et offre de lire deux
+  semaines de plus. Les explications (affaire, domaine, tâche) sont du texte fixe au fil de la
+  carte. Le script naît au webhook de connexion, avant même que l'échange ne s'ouvre ; quitter
+  l'échange laisse sur l'accueil la ligne « Je lis encore votre courrier ». Ce que l'agrégateur
+  synchronise, en combien de temps, se mesure sur le compte du dirigeant.
 
 ### Le durcissement : un appel raté coûte, un cache s'adresse, un brouillon cite
 

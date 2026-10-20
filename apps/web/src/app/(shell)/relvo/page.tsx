@@ -1,16 +1,29 @@
 import { after } from "next/server";
-import { ensureOnboardingQuestions, listOpenQuestions } from "@relvo/db";
+import {
+  enrichSubjects,
+  ensureOnboardingQuestions,
+  listOpenQuestions,
+} from "@relvo/db";
 import { RelvoChatShell } from "@/components/relvo-chat/relvo-chat-shell";
 import {
   carteDepuisRattrapage,
   type CarteVivanteData,
 } from "@/components/shared/carte-vivante";
+import {
+  toSubjectRowData,
+  type SubjectRowData,
+} from "@/components/shared/subject-row";
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
 import { relancerLignesEnPanne } from "@/server/ia/pipeline/rattrapage";
 import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
 
 // Échange avec Relvo, plein écran (coquille M9). Page-aware : `from` porte la
 // page d'origine pour le bouton retour, le chip de contexte et les prompts.
+
+/** Une lecture finie reste montrée dans l'échange pendant ce délai. */
+const LECTURE_FINIE_MS = 2 * 60 * 60 * 1000;
+/** Affaires montrées sous la carte ; « Toutes les affaires » pour le reste. */
+const AFFAIRES_DU_MOMENT = 5;
 
 const PROMPTS = {
   general: [
@@ -57,10 +70,19 @@ export default async function ConversationPage({
   // ligne dont plus aucune tranche ne s'occupe est RELANCÉE après la réponse —
   // c'est la reprise quand l'application se rouvre (M7.19).
   await ensureOnboardingQuestions(db, accountId);
+  const now = new Date();
   const [questions, rattrapage] = await Promise.all([
     listOpenQuestions(db, { limit: 5 }),
+    // La lecture en cours — ou, un moment encore après sa fin, la lecture
+    // finie : le temps que la question de fin de lecture se pose avec ses
+    // affaires sous les yeux (05 §11.11).
     db.channelCatchup.findFirst({
-      where: { status: { in: ["pending", "running"] } },
+      where: {
+        OR: [
+          { status: { in: ["pending", "running"] } },
+          { finishedAt: { gte: new Date(now.getTime() - LECTURE_FINIE_MS) } },
+        ],
+      },
       orderBy: { requestedAt: "desc" },
       include: { channel: { select: { name: true } } },
     }),
@@ -70,6 +92,20 @@ export default async function ConversationPage({
     : null;
   if (rattrapage && estEnPanne(rattrapage)) {
     after(() => relancerLignesEnPanne(db));
+  }
+  // Les affaires du moment : nées depuis la demande de lecture, les plus
+  // récentes d'abord, rendues par la ligne ordinaire du produit.
+  let affaires: SubjectRowData[] = [];
+  if (rattrapage) {
+    const nees = await db.subject.findMany({
+      where: {
+        createdAt: { gte: rattrapage.requestedAt },
+        status: { in: ["open", "validated"] },
+      },
+      orderBy: { createdAt: "desc" },
+      take: AFFAIRES_DU_MOMENT,
+    });
+    affaires = (await enrichSubjects(db, nees)).map(toSubjectRowData);
   }
 
   let contextLabel: string | null = null;
@@ -104,6 +140,7 @@ export default async function ConversationPage({
       reprendre={reprendre?.trim() || null}
       questions={questions}
       lecture={lecture}
+      affaires={affaires}
     />
   );
 }

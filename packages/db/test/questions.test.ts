@@ -10,7 +10,9 @@ import {
   ETAPES,
   EVENT_TYPES,
   listOpenQuestions,
+  poserFinDeLecture,
   prisma,
+  requestChannelCatchup,
   SCRIPT_PRISE_EN_MAIN,
   tenantDb,
   titreInstruction,
@@ -216,5 +218,117 @@ describe("le script de la prise en main", () => {
     );
     await createNote(db, { folderId: general.id, name: "Règle", content: "x" });
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(0);
+  });
+});
+
+describe("la fin de lecture (M13.2, 05 §11.11)", () => {
+  async function lecture(db: ReturnType<typeof tenantDb>, accountId: string) {
+    const channel = await prisma.channel.create({
+      data: {
+        accountId,
+        name: "Boîte pro",
+        type: "email",
+        identifier: `pro-${accountId.slice(0, 8)}@test.fr`,
+      },
+    });
+    const since = new Date(Date.now() - 14 * 86_400_000);
+    const c = await requestChannelCatchup(db, { channelId: channel.id, since });
+    await prisma.channelCatchup.update({
+      where: { id: c.id },
+      data: { status: "done", subjectsOpened: 6, conversationsIgnored: 14 },
+    });
+    return { channel, catchup: c, since };
+  }
+
+  it("se pose une fois par lecture, avec ses compteurs, jamais pour une lecture vide", async () => {
+    const { account, db } = await makeAccount("q-fin@test.fr", ["food"]);
+    const { catchup } = await lecture(db, account.id);
+    expect(
+      await poserFinDeLecture(db, {
+        id: catchup.id,
+        subjectsOpened: 0,
+        conversationsIgnored: 3,
+      }),
+    ).toBeNull();
+    const q = await poserFinDeLecture(db, {
+      id: catchup.id,
+      subjectsOpened: 6,
+      conversationsIgnored: 14,
+    });
+    expect(q?.text).toBe(
+      "J'ai fini de lire votre courrier : 6 affaires ouvertes, 14 messages mis de côté. Est-ce que ça ressemble à votre activité ?",
+    );
+    expect(q?.originStep).toBe(`${ETAPES.finDeLecture}/${catchup.id}`);
+    const encore = await poserFinDeLecture(db, {
+      id: catchup.id,
+      subjectsOpened: 6,
+      conversationsIgnored: 14,
+    });
+    expect(encore?.id).toBe(q?.id);
+    const [ouverte] = await listOpenQuestions(db);
+    expect(ouverte?.proposedAnswers.map((p) => p.key)).toEqual([
+      "oui",
+      "manque",
+      "trop",
+      "deux-semaines",
+    ]);
+    expect(
+      ouverte?.proposedAnswers.find((p) => p.key === "manque")?.libre,
+    ).toBe(true);
+    // Une seule affaire, aucun message mis de côté : le singulier, sans virgule.
+    const q1 = await poserFinDeLecture(db, {
+      id: "00000000-0000-4000-8000-000000000001",
+      subjectsOpened: 1,
+      conversationsIgnored: 0,
+    });
+    expect(q1?.text).toContain(": 1 affaire ouverte. Est-ce");
+  });
+
+  it("« Oui » est noté ; « Il en manque » devient une instruction de Général ; « deux semaines de plus » demande la lecture suivante sur le même canal", async () => {
+    const { account, general, db } = await makeAccount("q-fin-dest@test.fr", [
+      "food",
+    ]);
+    const { channel, catchup, since } = await lecture(db, account.id);
+    const poser = () =>
+      poserFinDeLecture(db, {
+        id: catchup.id,
+        subjectsOpened: 2,
+        conversationsIgnored: 0,
+      });
+    const q1 = (await poser())!;
+    expect(
+      (await answerQuestion(db, q1.id, { key: "oui", answer: "Oui, c'est ça" }))
+        .outcome,
+    ).toEqual({ kind: "noted" });
+
+    await dismissQuestion(db, q1.id);
+    await prisma.relvoQuestion.deleteMany({ where: { id: q1.id } });
+    const q2 = (await poser())!;
+    const r2 = await answerQuestion(db, q2.id, {
+      key: "manque",
+      answer: "Le devis de la chambre froide avec ClimaPro.",
+    });
+    expect(r2.outcome.kind).toBe("instruction");
+    const notes = await db.knowledgeDocument.findMany({
+      where: { folderId: general.id },
+    });
+    expect(notes.map((n) => n.name)).toEqual([
+      "Ce qui manquait à la première lecture",
+    ]);
+    expect(notes[0]!.content).toBe(
+      "Le devis de la chambre froide avec ClimaPro.",
+    );
+
+    await prisma.relvoQuestion.deleteMany({ where: { id: q2.id } });
+    const q3 = (await poser())!;
+    const r3 = await answerQuestion(db, q3.id, {
+      key: "deux-semaines",
+      answer: "Lisez deux semaines de plus",
+    });
+    expect(r3.outcome).toEqual({
+      kind: "lecture-etendue",
+      channelId: channel.id,
+      since: new Date(since.getTime() - 14 * 86_400_000),
+    });
   });
 });

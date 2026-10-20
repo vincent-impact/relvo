@@ -42,7 +42,8 @@ export type BriefActivity = {
  * Relvo en attente, qui passe toujours en premier.
  */
 export type BriefSuggestion = {
-  kind: "question" | "rule";
+  /** `lecture` : Relvo lit encore le courrier — la ligne ouvre l'échange sans premier tour. */
+  kind: "question" | "rule" | "lecture";
   text: string;
   /** Identifiant de la RelvoQuestion, pour une suggestion de nature question. */
   questionId?: string;
@@ -153,26 +154,46 @@ export async function getBriefSuggestions(
   now: Date = new Date(),
 ): Promise<BriefSuggestion[]> {
   const { start } = dayStart(now);
-  const [question, staleReplies, overdue, unsorted] = await Promise.all([
-    db.relvoQuestion.findFirst({
-      where: { status: QuestionStatus.open },
-      orderBy: { askedAt: "asc" },
-      select: { id: true, text: true },
-    }),
-    db.subject.count({
-      where: {
-        status: SubjectStatus.open,
-        waitingForReply: true,
-        lastActivityAt: { lt: daysAgo(now, STALE_REPLY_DAYS) },
-      },
-    }),
-    db.task.count({
-      where: { status: TaskStatus.open, startDate: { lt: start } },
-    }),
-    countUnsortedConversations(db),
-  ]);
+  const [lecture, question, staleReplies, overdue, unsorted] =
+    await Promise.all([
+      // La lecture du courrier en cours (05 §11.11) : quitter l'échange avant
+      // la fin laisse ici une ligne discrète qui dit que Relvo lit encore, et
+      // par où reprendre.
+      db.channelCatchup.findFirst({
+        where: { status: { in: ["pending", "running"] } },
+        orderBy: { requestedAt: "desc" },
+        select: { messagesImported: true, subjectsOpened: true },
+      }),
+      db.relvoQuestion.findFirst({
+        where: { status: QuestionStatus.open },
+        orderBy: { askedAt: "asc" },
+        select: { id: true, text: true },
+      }),
+      db.subject.count({
+        where: {
+          status: SubjectStatus.open,
+          waitingForReply: true,
+          lastActivityAt: { lt: daysAgo(now, STALE_REPLY_DAYS) },
+        },
+      }),
+      db.task.count({
+        where: { status: TaskStatus.open, startDate: { lt: start } },
+      }),
+      countUnsortedConversations(db),
+    ]);
 
   const out: BriefSuggestion[] = [];
+  if (lecture) {
+    const lus = lecture.messagesImported;
+    const ouvertes = lecture.subjectsOpened;
+    out.push({
+      kind: "lecture",
+      text:
+        lus === 0
+          ? "Je lis encore votre courrier."
+          : `Je lis encore votre courrier : ${lus} message${lus > 1 ? "s" : ""} lu${lus > 1 ? "s" : ""}, ${ouvertes} affaire${ouvertes > 1 ? "s" : ""} ouverte${ouvertes > 1 ? "s" : ""}.`,
+    });
+  }
   if (question) {
     out.push({
       kind: "question",

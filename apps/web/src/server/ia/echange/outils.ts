@@ -133,6 +133,8 @@ export type SortieOutil =
       conversations: ConversationLigne[];
     }
   | { type: "memoire"; connaissances: ConnaissanceTrouvee[] }
+  /** La lecture du courrier récent (M7.19), une ligne par boîte — rendue en carte vivante. */
+  | { type: "lecture"; lectures: LectureLigne[] }
   // Les gestes — une phrase signée ✦, l'objet rendu, et ce que « Annuler » défait.
   | { type: "tache-creee"; tache: TaskItemData; annulation: Annulation }
   | { type: "tache-modifiee"; tache: TaskItemData; annulation: Annulation }
@@ -165,6 +167,21 @@ export type SortieOutil =
     }
   | { type: "introuvable"; message: string }
   | { type: "erreur"; message: string };
+
+/** Une lecture du courrier récent, telle que la carte vivante la rend. */
+export type LectureLigne = {
+  boite: string;
+  status: string;
+  messagesImported: number;
+  messagesTriaged: number;
+  subjectsOpened: number;
+  conversationsIgnored: number;
+  candidatesTotal: number | null;
+  importDone: boolean;
+  stopReason: string | null;
+  /** Le jour de la demande, en heure française. */
+  demandeeLe: string;
+};
 
 export type ContexteOutils = {
   accountId: string;
@@ -849,6 +866,68 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
               limite: limite ?? 10,
             }),
           };
+        } catch (e) {
+          return erreur(e);
+        }
+      },
+    }),
+
+    get_mail_reading: tool({
+      description:
+        "Où en est la lecture du courrier récent d'une boîte e-mail (celle que Relvo fait dès qu'une boîte est reliée) : en attente, en cours, terminée, arrêtée au garde-fou ; messages lus, fils lus sur le total, affaires ouvertes, messages mis de côté. `boite` : le nom ou l'adresse d'une boîte, si le dirigeant la nomme ; sans critère, la dernière lecture de chaque boîte. Pour « où en es-tu de la lecture », « tu as fini de lire mes mails ? », « combien d'affaires tu as ouvertes en lisant ».",
+      inputSchema: z.object({
+        boite: z.string().nullable(),
+      }),
+      execute: async ({ boite }): Promise<SortieOutil> => {
+        try {
+          const canaux = await db.channel.findMany({
+            where: {
+              type: "email",
+              ...(boite?.trim()
+                ? {
+                    OR: [
+                      { name: { contains: boite.trim(), mode: "insensitive" } },
+                      {
+                        identifier: {
+                          contains: boite.trim(),
+                          mode: "insensitive",
+                        },
+                      },
+                    ],
+                  }
+                : {}),
+            },
+            orderBy: { createdAt: "asc" },
+            include: {
+              catchups: { orderBy: { requestedAt: "desc" }, take: 1 },
+            },
+          });
+          if (boite?.trim() && canaux.length === 0) {
+            return introuvable(`Aucune boîte « ${boite.trim()} ».`);
+          }
+          const lectures: LectureLigne[] = canaux
+            .filter((c) => c.catchups[0])
+            .map((c) => {
+              const r = c.catchups[0]!;
+              return {
+                boite: c.name,
+                status: r.status,
+                messagesImported: r.messagesImported,
+                messagesTriaged: r.messagesTriaged,
+                subjectsOpened: r.subjectsOpened,
+                conversationsIgnored: r.conversationsIgnored,
+                candidatesTotal: r.candidatesTotal,
+                importDone: r.importDone,
+                stopReason: r.stopReason,
+                demandeeLe: horodatageParis(r.requestedAt),
+              };
+            });
+          if (lectures.length === 0) {
+            return introuvable(
+              "Aucune lecture du courrier : aucune boîte e-mail reliée, ou pas encore lue.",
+            );
+          }
+          return { type: "lecture", lectures };
         } catch (e) {
           return erreur(e);
         }

@@ -10,6 +10,7 @@ import {
   RelvoSentence,
   RELVO_LINK,
 } from "@/components/shared/relvo-block";
+import { CarteVivante } from "@/components/shared/carte-vivante";
 import { MessageBubble } from "@/components/shared/message-bubble";
 import {
   SubjectRow,
@@ -98,6 +99,7 @@ const EN_COURS: Record<keyof OutilsRelvoUI, string> = {
   search_messages: "Je cherche dans vos messages",
   list_conversations: "Je regarde vos conversations",
   search_knowledge: "Je cherche dans la Mémoire",
+  get_mail_reading: "Je regarde où j'en suis",
   create_task: "Je crée la tâche",
   update_task: "Je modifie la tâche",
   mark_task_done: "Je coche la tâche",
@@ -330,6 +332,22 @@ function Sortie({ sortie }: { sortie: SortieOutil }) {
       );
     case "taches":
       return <Taches taches={sortie.taches} />;
+    case "lecture":
+      // La même carte que l'échange et Canaux (01 §11 : Relvo rend les
+      // composants du produit), le nom de la boîte quand il y en a plusieurs.
+      return (
+        <div className="mt-2.5 space-y-2">
+          {sortie.lectures.map((l) => (
+            <CarteVivante
+              key={l.boite}
+              data={{
+                ...l,
+                channelName: sortie.lectures.length > 1 ? l.boite : null,
+              }}
+            />
+          ))}
+        </div>
+      );
     case "indicateurs":
       return (
         <SousCarte>

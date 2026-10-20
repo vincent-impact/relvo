@@ -1,4 +1,5 @@
 import {
+  ensureOnboardingQuestions,
   getOpenCatchup,
   ingestInboundEmail,
   ingestInboundWhatsApp,
@@ -158,10 +159,16 @@ async function handleHostedAuthNotify(notify: UnipileHostedAuthNotify) {
   // lancement échoue, une page ou le filet relancera la ligne.
   if (channel.type === "email") {
     try {
-      const catchup = await requestChannelCatchup(tenantDb(channel.accountId), {
+      const db = tenantDb(channel.accountId);
+      const catchup = await requestChannelCatchup(db, {
         channelId,
         since: fenetreDeRattrapage(),
       });
+      // Le premier échange naît ICI (05 §11.11) : les étapes du script qui
+      // restent à poser sont posées, le badge s'allume avant même que le
+      // dirigeant n'ouvre l'échange ; le même script rejoue, plus court, à
+      // chaque canal.
+      await ensureOnboardingQuestions(db, channel.accountId);
       await lancerTranche(catchup.id);
     } catch (err) {
       console.error("[unipile] rattrapage non lancé", { channelId }, err);

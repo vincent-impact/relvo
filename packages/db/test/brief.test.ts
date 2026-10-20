@@ -5,6 +5,7 @@ import {
   createSubject,
   getBriefNews,
   getBriefSuggestions,
+  requestChannelCatchup,
   getSubjectsAwaitingUser,
   logEvent,
   prisma,
@@ -124,6 +125,43 @@ describe("suggestions par règles", () => {
       text: "Le devis de friteuse, je le range où ?",
     });
     expect(suggestions[1]!.text).toMatch(/attend une réponse/);
+  });
+
+  it("dit que Relvo lit encore le courrier, en premier, tant qu'une lecture est ouverte", async () => {
+    const { account, db } = await makeAccount("brief-lecture@test.fr");
+    const channel = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "Boîte pro",
+        type: "email",
+        identifier: "pro-lecture@test.fr",
+      },
+    });
+    const since = new Date(Date.now() - 14 * 86_400_000);
+    const c = await requestChannelCatchup(db, { channelId: channel.id, since });
+    expect(await getBriefSuggestions(db)).toEqual([
+      { kind: "lecture", text: "Je lis encore votre courrier." },
+    ]);
+    await prisma.channelCatchup.update({
+      where: { id: c.id },
+      data: { status: "running", messagesImported: 12, subjectsOpened: 1 },
+    });
+    await db.relvoQuestion.create({
+      data: { scope: "account", text: "Votre métier ?" },
+    });
+    const s = await getBriefSuggestions(db);
+    expect(s.map((x) => x.kind)).toEqual(["lecture", "question"]);
+    expect(s[0]!.text).toBe(
+      "Je lis encore votre courrier : 12 messages lus, 1 affaire ouverte.",
+    );
+    // Close : la ligne disparaît.
+    await prisma.channelCatchup.update({
+      where: { id: c.id },
+      data: { status: "done" },
+    });
+    expect((await getBriefSuggestions(db)).map((x) => x.kind)).toEqual([
+      "question",
+    ]);
   });
 
   it("ne suggère rien quand rien ne le réclame", async () => {

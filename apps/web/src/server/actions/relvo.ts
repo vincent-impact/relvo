@@ -7,9 +7,12 @@ import {
   answerQuestion,
   defaireGeste,
   dismissQuestion,
+  requestChannelCatchup,
 } from "@relvo/db";
 import { domainAction } from "@/lib/action-result";
+import { getTenantDb } from "@/server/auth-context";
 import { revalidateTenantData } from "@/server/cached";
+import { lancerTranche } from "@/server/ia/pipeline/rattrapage";
 
 // Server Actions de l'ÉCHANGE avec Relvo : défaire un geste depuis son bloc
 // dans le fil (M10.10), répondre à une question de Relvo ou l'écarter (M18.9).
@@ -39,6 +42,16 @@ export async function repondreQuestionAction(
   const result = await domainAction((db) =>
     answerQuestion(db, id, input, CHAT),
   );
+  if (result.ok && result.data.outcome.kind === "lecture-etendue") {
+    // « Lisez deux semaines de plus » (05 §11.11) : la lecture suivante sur
+    // le même canal, même mécanique ; la carte vivante repart dans l'échange.
+    const { channelId, since } = result.data.outcome;
+    const db = await getTenantDb();
+    const catchup = await requestChannelCatchup(db, { channelId, since });
+    await lancerTranche(catchup.id).catch((e) =>
+      console.error("[ia] lecture étendue non lancée", e),
+    );
+  }
   if (result.ok) {
     revalidatePath("/");
     revalidatePath("/memoire");

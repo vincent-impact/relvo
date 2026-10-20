@@ -343,5 +343,25 @@ relue) ; les pièges remontés ; `conception/` sans phrase datée.
       sourdine), ligne close « courrier épuisé », verrou levé, aucune tranche enchaînée, journal
       demandé → commencé → terminé. **À vérifier en production sur le compte du dirigeant** :
       ce qu'Unipile synchronise et en combien de temps, la carte qui monte, le coût au journal.
-- [ ] Tranche 2 — le premier échange scripté.
+- [x] **Tranche 2 livrée** — le script : l'exemple de la première règle changé ; l'étape de
+      **fin de lecture** (`prise-en-main/fin-de-lecture/<rattrapage>`, posée par le pipeline à
+      la clôture d'une ligne avec au moins une affaire, notifiée par `notifierQuestion`) avec ses
+      quatre destinations (noté ; « Il en manque » et « Il y en a trop » s'écrivent — réponses
+      `libre` — et deviennent une instruction de Général ; « Lisez deux semaines de plus » rend
+      `lecture-etendue`, l'action demande et lance la lecture suivante sur le même canal) ; le
+      script naît au webhook de connexion (`ensureOnboardingQuestions` avant la première
+      tranche) ; `PriseEnMain` (carte vivante, explication en texte fixe selon l'état, les
+      affaires nées depuis la demande rendues par `SubjectRow`, « Toutes les affaires ») dans
+      l'échange, une lecture finie restant montrée deux heures ; la ligne « Je lis encore votre
+      courrier » de l'accueil (`getBriefSuggestions`, `kind: "lecture"`, ouvre l'échange sans
+      premier tour) ; l'outil `get_mail_reading` (critère : la boîte), rendu en carte vivante
+      dans le fil ; cas **E19** dans `eval:echange` — **1/1** sur le compte de démonstration
+      (`get_mail_reading`, `{"boite":null}`, tier extraction, 0,0014 €). Tests :
+      `questions.test.ts` (la fin de lecture : une par lecture, ses compteurs, jamais vide, ses
+      destinations), `brief.test.ts` (la ligne de lecture, en premier, disparaît à la clôture).
+      **Vérifié en headless** (démonstration, états posés par le domaine) : l'accueil avec la
+      ligne de lecture ; l'échange avec la carte finie, l'explication, les deux affaires, la
+      question de fin de lecture et son champ libre ouvert par « Il en manque ». Registre
+      interrogé avant `PriseEnMain` : composé de `CarteVivante`, `RelvoBlock`, `SubjectRow`.
+      **En production** : la notification de fin de lecture et le script posé au webhook.
 - [ ] Tranche 3 — les domaines.
