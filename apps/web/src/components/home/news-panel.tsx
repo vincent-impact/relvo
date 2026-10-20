@@ -50,12 +50,13 @@ export function newsSentence(news: CachedNews, hasChannels = true): string {
   if (parts.length === 0) {
     // Sans boîte reliée, rien n'est encore arrivé : Relvo le dit et GUIDE vers
     // la première adresse (01 §11, M19.9) — c'est le pas qui suit les
-    // diapositives. Avec une boîte, la nuit fera le reste.
+    // diapositives. Avec une boîte, la lecture est en cours : elle se suit
+    // dans l'échange (M7.19).
     if (!hasChannels)
       return "Je n’ai encore rien à lire. Reliez la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des dernières semaines et j’ouvre vos premières affaires.";
     return news.since
       ? "Rien de nouveau de mon côté depuis votre dernière visite."
-      : "Je lirai le courrier des dernières semaines cette nuit : vos premières affaires seront là demain matin.";
+      : "Je lis le courrier des deux dernières semaines : vos premières affaires arrivent au fil de la lecture.";
   }
   const list =
     parts.length === 1

@@ -1,4 +1,5 @@
 import {
+  getOpenCatchup,
   ingestInboundEmail,
   ingestInboundWhatsApp,
   requestChannelCatchup,
@@ -13,7 +14,7 @@ import { prisma } from "@/lib/db";
 import { tenantDb } from "@/lib/tenant-db";
 import { expireTenantData } from "@/server/cached";
 import { createAttachment } from "@relvo/db";
-import { RATTRAPAGE } from "@/server/ia/config";
+import { lancerTranche } from "@/server/ia/pipeline/rattrapage";
 import {
   estHistorique,
   fenetreDeRattrapage,
@@ -151,16 +152,19 @@ async function handleHostedAuthNotify(notify: UnipileHostedAuthNotify) {
   }
 
   // Le rattrapage du courrier récent (M7.19) : demandé à la connexion d'un
-  // canal e-mail, exécuté la nuit par le cron. Idempotent côté domaine — une
-  // reconnexion ne redemande rien tant qu'un rattrapage est ouvert.
+  // canal e-mail, et la PREMIÈRE TRANCHE part aussitôt — la route de tranche
+  // répond 202 et travaille après sa réponse. Idempotent côté domaine — une
+  // reconnexion ne redemande rien tant qu'un rattrapage est ouvert ; si le
+  // lancement échoue, une page ou le filet relancera la ligne.
   if (channel.type === "email") {
     try {
-      await requestChannelCatchup(tenantDb(channel.accountId), {
+      const catchup = await requestChannelCatchup(tenantDb(channel.accountId), {
         channelId,
         since: fenetreDeRattrapage(),
       });
+      await lancerTranche(catchup.id);
     } catch (err) {
-      console.error("[unipile] rattrapage non demandé", { channelId }, err);
+      console.error("[unipile] rattrapage non lancé", { channelId }, err);
     }
   }
 
@@ -240,12 +244,17 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
         })
       : 0;
 
-  // Un message d'HISTORIQUE — synchronisé à la connexion, bien plus vieux que
-  // l'instant — est rangé mais laissé au rattrapage nocturne (M7.19) : il ne
-  // se trie pas plein tarif à la volée, ni ne relit un sujet à contretemps.
-  if (created && estHistorique(mail.date, RATTRAPAGE.delaiWebhookMs)) {
-    expireTenantData();
-    return ok({ ok: true, messageId: message.id, historique: true, stored });
+  // Un message d'HISTORIQUE — synchronisé à la connexion, daté d'avant la
+  // demande d'un rattrapage encore ouvert sur le canal — est rangé mais laissé
+  // à la tranche en cours (M7.19) : il ne se trie pas plein tarif à la volée,
+  // ni ne relit un sujet à contretemps. Sans rattrapage ouvert, ou daté
+  // d'après la demande, c'est du courrier vivant : trié à réception.
+  if (created) {
+    const ouvert = await getOpenCatchup(db, config.channelId);
+    if (ouvert && estHistorique(mail.date, ouvert.requestedAt)) {
+      expireTenantData();
+      return ok({ ok: true, messageId: message.id, historique: true, stored });
+    }
   }
 
   // Nouveau message → purge le Data Cache du tenant, sinon les KPI/fil (servis

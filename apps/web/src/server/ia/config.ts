@@ -194,26 +194,39 @@ export function inferenceDisponible(
 
 /**
  * Le RATTRAPAGE du courrier récent (M7.19, `05 §9.6`) : la fenêtre lue à la
- * connexion d'un canal, et les plafonds durs d'un rattrapage — en messages et
- * en euros —, au-delà desquels Relvo s'arrête et le dit. Arrêté avec le
- * dirigeant (`ecarts`, « Le rattrapage du courrier récent ») : trente jours
- * suffisent à voir les affaires en cours ; trois cents messages et deux euros
- * tiennent dans le plafond mensuel d'un compte même à plusieurs canaux. Le
- * tri du rattrapage passe au niveau de service « flex » du fournisseur —
- * moitié prix, sans latence exigée. Un message plus vieux que
- * `delaiWebhookMs` arrivant par le webhook est un message d'historique : il
- * est rangé mais laissé au rattrapage, jamais trié plein tarif à la volée.
+ * connexion d'un canal, le garde-fou d'un rattrapage — en messages et en
+ * euros, loin au-dessus d'une boîte réelle — et le rythme des tranches.
+ * Arrêté avec le dirigeant (`ecarts`, « La première lecture est large ») : la
+ * première lecture convainc au premier usage, on ne la bride pas, on la
+ * mesure au journal ; le garde-fou n'arrête qu'un emballement. En direct, le
+ * tri est au niveau de service standard — le dirigeant regarde ; la nuit, le
+ * filet reprend une ligne arrêtée au garde-fou au niveau « flex », à moitié
+ * prix. Un message daté d'avant la demande d'un rattrapage ouvert est de
+ * l'historique synchronisé : rangé, laissé à la tranche, jamais trié plein
+ * tarif à la volée.
  */
 export const RATTRAPAGE = {
-  fenetreJours: 30,
-  plafondMessages: 300,
-  plafondEuros: 2,
-  /** Nuits au plus sur un même rattrapage : au-delà, ce qui reste est laissé à la main. */
+  fenetreJours: 14,
+  plafondMessages: 5_000,
+  plafondEuros: 10,
+  /** Tranches au plus sur une même ligne : un coupe-circuit de boucle, pas le mécanisme attendu. */
+  tranchesMax: 120,
+  /** Nuits au plus pour reprendre une ligne arrêtée au garde-fou. */
   nuitsMax: 3,
-  /** Un webhook plus ancien que ça est de l'historique synchronisé, pas du courrier vivant. */
-  delaiWebhookMs: 6 * 60 * 60 * 1000,
   /** Messages lus par page chez l'agrégateur. */
   pageImport: 50,
   /** Conversations triées par salve, entre deux points d'avancement. */
   salveTri: 10,
+  /** Conversations triées en parallèle, une fois le cache chauffé par la première (#49). */
+  parallele: 3,
+  /** Sous cette durée depuis la demande, deux passes vides ne closent pas : l'agrégateur synchronise encore. */
+  attenteSyncMs: 10 * 60 * 1000,
+  /** Passes d'import vides consécutives pour clore une ligne. */
+  passesVidesPourClore: 2,
+  /** Entre deux passes d'import vides, dans la même tranche. */
+  attenteImportMs: 60 * 1000,
+  /** Durée maximale d'une tranche : au-delà, un verrou est celui d'une tranche morte. */
+  trancheMaxMs: 5 * 60 * 1000,
+  /** Une ligne ouverte sans tranche depuis ce délai est en panne : une page ou le filet la relance. */
+  relanceApresMs: 6 * 60 * 1000,
 } as const;

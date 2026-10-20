@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { after } from "next/server";
 import { Envelope, WhatsappLogo } from "@/components/shared/picto";
-import { CarteVivante } from "@/components/shared/carte-vivante";
+import {
+  CarteVivante,
+  carteDepuisRattrapage,
+} from "@/components/shared/carte-vivante";
 import { PollRefresh } from "@/components/shared/poll-refresh";
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { ConnectEmailButton } from "@/components/settings/connect-email-button";
@@ -14,6 +18,8 @@ import { Screen } from "@/components/layout/screen";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
 import { getTenantDb } from "@/server/auth-context";
 import { getAccount } from "@/server/unipile";
+import { relancerLignesEnPanne } from "@/server/ia/pipeline/rattrapage";
+import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
 import { type ChannelConfigStatus, setChannelConfigStatus } from "@relvo/db";
 import type { TenantDb } from "@relvo/db";
 
@@ -54,8 +60,8 @@ async function ChannelList() {
       config: {
         select: { status: true, lastSyncAt: true, externalAccountId: true },
       },
-      // Le dernier rattrapage du courrier récent (M7.19) : ce que Relvo a lu
-      // la nuit de la connexion, ou ce qu'il s'apprête à lire.
+      // Le dernier rattrapage du courrier récent (M7.19) : ce que Relvo lit
+      // depuis la connexion, ou ce qu'il a lu.
       catchups: { orderBy: { requestedAt: "desc" }, take: 1 },
     },
   });
@@ -82,12 +88,16 @@ async function ChannelList() {
   const avecRattrapage = channels.filter((ch) => ch.catchups[0]);
   const rattrapages = avecRattrapage.map((ch) => ({
     channelId: ch.id,
-    status: ch.catchups[0].status,
-    messagesImported: ch.catchups[0].messagesImported,
-    subjectsOpened: ch.catchups[0].subjectsOpened,
-    conversationsIgnored: ch.catchups[0].conversationsIgnored,
-    channelName: avecRattrapage.length > 1 ? ch.name : null,
+    ...carteDepuisRattrapage(
+      ch.catchups[0],
+      avecRattrapage.length > 1 ? ch.name : null,
+    ),
   }));
+  // Une ligne dont plus aucune tranche ne s'occupe est relancée après la
+  // réponse (M7.19) : la reprise, sans attendre la nuit.
+  if (avecRattrapage.some((ch) => estEnPanne(ch.catchups[0]))) {
+    after(() => relancerLignesEnPanne(db));
+  }
 
   return (
     <div className="apparait pt-3">

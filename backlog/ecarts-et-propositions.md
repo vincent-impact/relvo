@@ -480,6 +480,7 @@ deviennent un formulaire ».
   s'arrête et le dit. Tient dans les vingt euros mensuels d'un compte même à plusieurs canaux ;
   c'est le cas « import massif » du disjoncteur, borné avant qu'il n'existe (M14.5). Trois nuits
   au plus sur un même rattrapage ; ce qui reste ensuite se trie à la main ou au fil de l'eau.
+  **Révisé par la tranche 10** : voir « La première lecture est large ».
 - **Le niveau de service « flex » plutôt que la file de lots du fournisseur.** Même remise de
   moitié, mais zéro mécanisme nouveau : un message rattrapé suit exactement le chemin d'un
   message reçu, tri puis structuration, avec une seule option de plus sur l'appel. Le compteur
@@ -523,6 +524,42 @@ pas.
   paquets plutôt que message par message ; ce sont ces tranches en lot qui y serviront.
 - **Pas avant la présentation du produit** du jour : la tranche 9 reste en production telle que
   livrée, nocturne ; la révision est la tranche 10 du sprint M7.
+
+### La première lecture est large : quatorze jours, le garde-fou loin au-dessus d'une boîte
+
+**`tranché`** · Tranche 10 du sprint M7 (M7.19), avec le dirigeant. Révise les plafonds
+consignés dans « Le rattrapage du courrier récent : trente jours, en lot, sous plafond » ; le
+mécanisme par tranches de « Le rattrapage commence à la connexion, pas la nuit » est livré ici.
+
+- **La première lecture convainc au premier usage : on ne la bride pas, on la mesure.** Les
+  trois plafonds de la tranche 9 — trois cents messages, deux euros, trois nuits — arrêtaient une
+  boîte réelle avant la fin. Le garde-fou devient **cinq mille messages et dix euros** par
+  rattrapage, plus cent vingt tranches comme coupe-circuit de boucle : aux coûts mesurés au
+  niveau standard, cinq mille messages lus en entier coûtent deux à quatre euros ; un rattrapage
+  qui atteint dix euros est un emballement, pas une boîte. Le journal d'inférence mesure ce que
+  la première lecture coûte sur le compte du dirigeant — la première mesure réelle que le dépôt
+  attend (« Mesurer le compte réel du premier utilisateur »).
+- **Quatorze jours, pas trente.** Les tranches trient du plus récent au plus ancien : la
+  première impression est la même, la fenêtre ne décide que de la queue, et la queue de la
+  troisième et quatrième semaine est plus souvent réglée qu'en cours — ouverte par Relvo, elle
+  ressemble à du bruit au moment où le dirigeant juge le produit. Ce qu'il manquerait (un devis
+  de trois semaines sans réponse, en bâtiment) passe par une porte, la réponse « Lisez deux
+  semaines de plus » de la question de fin de lecture (M13.2), qui ouvre un second rattrapage sur
+  les jours quatorze à vingt-huit.
+- **Standard en direct, « flex » la nuit.** Le dirigeant regarde : les tranches lancées par la
+  connexion trient au niveau de service standard, deux fois plus vite. La nuit reste pour ce qui
+  dépasse le garde-fou : le cron reprend une ligne arrêtée au plafond au niveau « flex », à
+  moitié prix, avec le même garde-fou compté par nuit, trois nuits au plus.
+- **L'historique se reconnaît à la date de la demande.** La règle des six heures du webhook
+  disparaît : un message daté d'avant la demande d'un rattrapage ouvert est laissé à la tranche ;
+  tout autre message est trié à réception. Le courrier vivant n'attend jamais.
+- **Une tranche à la fois par ligne**, par un verrou en base pris en une mise à jour
+  conditionnelle ; une tranche morte expire et la suivante la reprend. Une page qui voit une
+  ligne en panne la relance ; le cron n'est qu'un filet. La clôture « courrier épuisé » attend
+  deux passes d'import vides espacées d'au moins dix minutes, parce qu'on ignore en combien de
+  temps l'agrégateur synchronise l'historique.
+- **Le cache se chauffe avant le parallélisme** (`PITFALLS.md` #49) : la première conversation
+  d'une tranche se trie seule, les suivantes trois par trois.
 
 ### La prise en main est une conversation avec Relvo
 

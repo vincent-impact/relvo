@@ -210,6 +210,7 @@ pnpm --filter web ia:journal   # le compteur de l'inférence relu : coût, cache
 pnpm --filter web push:essai <e-mail>   # pose une question de test et la pousse (M12.9)
 pnpm --filter web admin:role <e-mail> admin|ceo   # donne ou retire le rôle admin, journalisé (M21.1) — effectif à la prochaine connexion
 pnpm --filter web eval:dictee --dossier <hors dépôt> [--compte <e-mail>]   # benchmark de la transcription, dictées HORS dépôt (M22.1)
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' -d '{"catchupId":"…"}' <app>/api/rattrapage/tranche   # relance une tranche de lecture du courrier (M7.19) ; le cron /api/cron/catch-up n'est qu'un filet
 ```
 
 Déploiement : pousser sur la branche de production. **Un seul déployable.**

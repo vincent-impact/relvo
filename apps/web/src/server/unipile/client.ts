@@ -184,14 +184,14 @@ export async function createEmailHostedAuthLink(
     providers: input.provider
       ? [input.provider]
       : ["GOOGLE", "OUTLOOK", "MAIL"],
-    // L'HISTORIQUE EST SYNCHRONISÉ à la connexion (M7.19, tranche 9) : c'est ce
-    // qui rend possible le rattrapage du courrier récent — Relvo lit les
-    // dernières semaines la nuit de la connexion (`ecarts`, « Le rattrapage du
-    // courrier récent »). L'arbitrage antérieur « nouveau courrier seulement »
+    // L'HISTORIQUE EST SYNCHRONISÉ à la connexion (M7.19) : c'est ce qui rend
+    // possible le rattrapage du courrier récent — Relvo lit les deux dernières
+    // semaines dès la connexion, par tranches (`ecarts`, « La première lecture
+    // est large »). L'arbitrage antérieur « nouveau courrier seulement »
     // (`sync_limit.MAILING = NO_HISTORY_SYNC`) est levé ; le rattrapage borne
-    // lui-même sa fenêtre et ses plafonds. ⚠️ Un message d'historique qui
-    // arriverait par le webhook est rangé mais laissé au rattrapage : jamais
-    // trié plein tarif à la volée (`RATTRAPAGE.delaiWebhookMs`).
+    // lui-même sa fenêtre et son garde-fou. ⚠️ Un message d'historique qui
+    // arrive par le webhook — daté d'avant la demande d'un rattrapage ouvert —
+    // est rangé mais laissé à la tranche : jamais trié plein tarif à la volée.
   });
 }
 

@@ -101,9 +101,9 @@
     {
       "titre": "Tri automatique des messages",
       "resume": "Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent, ouvre l'affaire correspondant, propose les tâches à faire et prépare un brouillon de réponse. C'est la fin du tri à la main.",
-      "statut": "partiel",
+      "statut": "en-cours",
       "gauche": 49.53,
-      "largeur": 9.35
+      "largeur": 17.76
     },
     {
       "titre": "Nouvel accueil et navigation simplifiée",
@@ -173,7 +173,7 @@
     "date": "2026-12-23",
     "gauche": 95.79
   },
-  "en_cours": null,
+  "en_cours": "Tri automatique des messages",
   "journal": [
     {
       "date": "2026-10-19",

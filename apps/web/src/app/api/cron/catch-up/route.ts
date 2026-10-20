@@ -1,14 +1,15 @@
 import { NextResponse } from "next/server";
 import { rattraperLesCanauxDus } from "@/server/ia/pipeline/rattrapage";
 
-// Le rattrapage du courrier récent (M7.19), la nuit.
+// Le FILET du rattrapage du courrier récent (M7.19), la nuit.
 //
-// Déclenché par Vercel Cron (cf. vercel.json), une fois par nuit. Reprend
-// chaque rattrapage demandé à la connexion d'un canal e-mail et non encore
-// clos : import du courrier de la fenêtre, tri en lot, sous le budget de temps
-// de la fonction ; ce qui n'a pas eu son tour reprend la nuit suivante, dans
-// la limite des nuits permises. Appelable à la main avec le même secret pour
-// ne pas attendre la nuit :
+// Déclenché par Vercel Cron (cf. vercel.json), une fois par nuit. Le
+// rattrapage part dès la connexion, par tranches enchaînées ; le cron ne fait
+// rien dans le cas normal. Il reprend une ligne restée ouverte (une tranche
+// est morte sans relancer la suivante) et continue, en lot et à moitié prix,
+// une ligne arrêtée au garde-fou en direct — sous le budget de temps de la
+// fonction, dans la limite des nuits permises. Appelable à la main avec le
+// même secret :
 //   curl -H "Authorization: Bearer $CRON_SECRET" https://<app>/api/cron/catch-up
 
 export const dynamic = "force-dynamic";

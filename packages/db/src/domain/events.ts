@@ -114,10 +114,12 @@ export const EVENT_TYPES = {
   /** Un compte a été supprimé — définitivement — par un administrateur ; l'e-mail et le bilan en métadonnée. */
   accountDeleted: "account_deleted",
   // Rattrapage du courrier récent d'un canal (M7.19) — demandé à la connexion,
-  // commencé la nuit, clos avec ses compteurs en métadonnée.
+  // commencé aussitôt, repris la nuit s'il s'est arrêté au garde-fou, clos
+  // avec ses compteurs en métadonnée.
   catchupRequested: "catchup_requested",
   catchupStarted: "catchup_started",
   catchupFinished: "catchup_finished",
+  catchupResumed: "catchup_resumed",
   // Les questions de Relvo (M18.9, 05 §11.12) — posée, répondue, écartée ; la
   // réponse et sa destination en métadonnée.
   questionAsked: "question_asked",

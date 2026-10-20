@@ -1,7 +1,13 @@
+import { after } from "next/server";
 import { ensureOnboardingQuestions, listOpenQuestions } from "@relvo/db";
 import { RelvoChatShell } from "@/components/relvo-chat/relvo-chat-shell";
-import type { CarteVivanteData } from "@/components/shared/carte-vivante";
+import {
+  carteDepuisRattrapage,
+  type CarteVivanteData,
+} from "@/components/shared/carte-vivante";
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
+import { relancerLignesEnPanne } from "@/server/ia/pipeline/rattrapage";
+import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
 
 // Échange avec Relvo, plein écran (coquille M9). Page-aware : `from` porte la
 // page d'origine pour le bouton retour, le chip de contexte et les prompts.
@@ -47,7 +53,9 @@ export default async function ConversationPage({
   // Relvo parle en premier (invariant 36, 05 §11.12) : les étapes du script
   // qui restent à poser naissent ici, puis les questions ouvertes — toutes
   // origines confondues — se posent en tête de l'échange, en formulaire. La
-  // lecture du courrier en cours (rattrapage) se montre en carte vivante.
+  // lecture du courrier en cours (rattrapage) se montre en carte vivante ; une
+  // ligne dont plus aucune tranche ne s'occupe est RELANCÉE après la réponse —
+  // c'est la reprise quand l'application se rouvre (M7.19).
   await ensureOnboardingQuestions(db, accountId);
   const [questions, rattrapage] = await Promise.all([
     listOpenQuestions(db, { limit: 5 }),
@@ -58,14 +66,11 @@ export default async function ConversationPage({
     }),
   ]);
   const lecture: CarteVivanteData | null = rattrapage
-    ? {
-        status: rattrapage.status,
-        messagesImported: rattrapage.messagesImported,
-        subjectsOpened: rattrapage.subjectsOpened,
-        conversationsIgnored: rattrapage.conversationsIgnored,
-        channelName: rattrapage.channel.name,
-      }
+    ? carteDepuisRattrapage(rattrapage, rattrapage.channel.name)
     : null;
+  if (rattrapage && estEnPanne(rattrapage)) {
+    after(() => relancerLignesEnPanne(db));
+  }
 
   let contextLabel: string | null = null;
   let prompts = PROMPTS.general;

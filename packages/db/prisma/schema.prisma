@@ -85,6 +85,13 @@ enum CatchupStatus {
   failed
 }
 
+/// Niveau de service du tri d'un rattrapage (M7.19) : standard en direct —
+/// le dirigeant regarde —, « flex » la nuit, à moitié prix, latence libre.
+enum ServiceLevel {
+  standard
+  flex
+}
+
 /// Cycle de vie d'un Subject — exclusif, 3 valeurs (M6bis, 2026-07-20).
 /// Un sujet est une FENÊTRE DE TRAVAIL temporaire ouverte sur des conversations :
 /// `open` (ouverte, défaut) → `validated` (travail fait) ou `closed` (écarté).
@@ -528,8 +535,23 @@ model ChannelCatchup {
   requestedAt          DateTime      @default(now()) @map("requested_at")
   startedAt            DateTime?     @map("started_at")
   finishedAt           DateTime?     @map("finished_at")
-  /// Nombre de nuits déjà passées dessus : borne la reprise d'un import incomplet.
+  /// Nombre de TRANCHES déjà exécutées sur la ligne (M7.19) : un coupe-circuit
+  /// de boucle, jamais le mécanisme d'arrêt attendu.
   runs                 Int           @default(0)
+  /// Reprises NOCTURNES d'une ligne arrêtée au garde-fou : le filet, borné.
+  nightRuns            Int           @default(0) @map("night_runs")
+  /// Le VERROU d'une tranche : posé par une mise à jour conditionnelle quand une
+  /// tranche commence, levé quand elle finit ; une tranche à la fois par ligne.
+  /// Plus vieux que la durée maximale d'une fonction = tranche morte.
+  trancheStartedAt     DateTime?     @map("tranche_started_at")
+  /// Fin de la dernière tranche : ce que la reprise et le filet regardent.
+  lastTrancheAt        DateTime?     @map("last_tranche_at")
+  /// Passes d'import VIDES consécutives : deux, espacées, closent la ligne.
+  emptyRounds          Int           @default(0) @map("empty_rounds")
+  /// Les candidats au tri quand l'import s'est fermé : l'avancement en fraction.
+  candidatesTotal      Int?          @map("candidates_total")
+  /// Le niveau de service du tri en cours : standard en direct, « flex » la nuit.
+  serviceLevel         ServiceLevel  @default(standard) @map("service_level")
   /// L'import du courrier est terminé (le fournisseur n'a plus rien dans la fenêtre).
   importDone           Boolean       @default(false) @map("import_done")
   messagesImported     Int           @default(0) @map("messages_imported")

@@ -2,22 +2,28 @@ import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 
 // CarteVivante — l'avancement de Relvo qui lit le courrier d'une boîte (05-ia
 // §11.11, « l'avancement est une carte vivante, pas une suite de messages ») :
-// UNE carte qui se met à jour — messages lus, sujets ouverts, conversations
-// ignorées — et dit dans ses mots où elle en est. Tant que la lecture n'est
-// pas finie, le total n'est pas connu et la carte le dit ; « rien trouvé
-// encore » est une étape, jamais une impasse.
+// UNE carte qui se met à jour — messages lus, affaires ouvertes, conversations
+// ignorées — et dit dans ses mots où elle en est. Tant que l'import n'est pas
+// fermé, le total n'est pas connu et la carte le dit ; dès qu'il l'est,
+// l'avancement se lit en fraction ; « rien trouvé encore » est une étape,
+// jamais une impasse.
 //
 // M19.9 lui donne son rendu et son mouvement — un chiffre qui change SE POSE
 // (`.arrive`, la durée d'accompagnement : c'est le seul mouvement qu'on a le
-// droit de voir), Relvo qui travaille RESPIRE (`.respire`) — et un premier
-// consommateur, la page des canaux. M10.16 la posera dans l'échange ; sa
-// logique (le rattrapage, `channel_catchups`) ne vit pas ici.
+// droit de voir), Relvo qui travaille RESPIRE (`.respire`). Deux consommateurs,
+// la page des canaux et l'échange ; sa logique (le rattrapage,
+// `channel_catchups`) ne vit pas ici.
 
 export type CarteVivanteData = {
   status: string;
   messagesImported: number;
+  messagesTriaged: number;
   subjectsOpened: number;
   conversationsIgnored: number;
+  /** Les candidats au tri quand l'import s'est fermé ; null tant qu'on ne les connaît pas. */
+  candidatesTotal?: number | null;
+  importDone?: boolean;
+  stopReason?: string | null;
   /** Le nom de la boîte, quand plusieurs cartes se suivent. */
   channelName?: string | null;
 };
@@ -26,15 +32,31 @@ function phrase(c: CarteVivanteData): string {
   const ou = c.channelName ? ` de ${c.channelName}` : "";
   switch (c.status) {
     case "pending":
-      return `Je lirai le courrier des dernières semaines${ou} cette nuit : vos premières affaires seront là demain matin.`;
-    case "running":
-      return `Je lis le courrier des dernières semaines${ou}. Je ne connais pas encore le total : les chiffres montent à mesure.`;
+      return `Je commence à lire le courrier des deux dernières semaines${ou}.`;
+    case "running": {
+      if (c.messagesImported === 0) {
+        return `Je lis le courrier des deux dernières semaines${ou}. Je n’ai rien trouvé encore : la boîte se synchronise.`;
+      }
+      if (c.importDone && c.candidatesTotal != null && c.candidatesTotal > 0) {
+        return `Je lis le courrier des deux dernières semaines${ou} : ${Math.min(c.messagesTriaged, c.candidatesTotal)} fils lus sur ${c.candidatesTotal}.`;
+      }
+      return `Je lis le courrier des deux dernières semaines${ou}. Je ne connais pas encore le total : les chiffres montent à mesure.`;
+    }
     case "done":
+      if (c.subjectsOpened === 0) {
+        return `J’ai lu le courrier récent${ou} : rien à ouvrir pour l’instant. Je lirai chaque message qui arrive ; reliez une autre adresse si votre courrier arrive ailleurs.`;
+      }
       return `J’ai lu le courrier récent${ou}. Le reste arrive au fil de l’eau.`;
     case "capped":
-      return `J’ai lu le courrier récent${ou} jusqu’au plafond de la nuit. Le reste se trie au fil de l’eau.`;
+      if (
+        c.stopReason === "nuits-epuisees" ||
+        c.stopReason === "tranches-epuisees"
+      ) {
+        return `J’ai lu le courrier récent${ou} jusqu’où je pouvais. Le reste se trie au fil de l’eau.`;
+      }
+      return `J’ai lu le courrier récent${ou} jusqu’au garde-fou. Je continuerai cette nuit.`;
     default:
-      return `La lecture du courrier${ou} s’est interrompue. Je reprendrai la nuit prochaine.`;
+      return `La lecture du courrier${ou} s’est interrompue. Je reprends dans quelques minutes.`;
   }
 }
 
@@ -62,7 +84,7 @@ export function CarteVivante({
   data: CarteVivanteData;
   className?: string;
 }) {
-  const running = data.status === "running";
+  const running = data.status === "running" || data.status === "pending";
   const counting = data.status !== "pending";
   return (
     <RelvoBlock className={className} label="Relvo lit le courrier">
@@ -99,4 +121,31 @@ export function CarteVivante({
       ) : null}
     </RelvoBlock>
   );
+}
+
+/** La projection d'une ligne de rattrapage vers la carte — la même pour l'échange et Canaux. */
+export function carteDepuisRattrapage(
+  r: {
+    status: string;
+    messagesImported: number;
+    messagesTriaged: number;
+    subjectsOpened: number;
+    conversationsIgnored: number;
+    candidatesTotal: number | null;
+    importDone: boolean;
+    stopReason: string | null;
+  },
+  channelName: string | null,
+): CarteVivanteData {
+  return {
+    status: r.status,
+    messagesImported: r.messagesImported,
+    messagesTriaged: r.messagesTriaged,
+    subjectsOpened: r.subjectsOpened,
+    conversationsIgnored: r.conversationsIgnored,
+    candidatesTotal: r.candidatesTotal,
+    importDone: r.importDone,
+    stopReason: r.stopReason,
+    channelName,
+  };
 }

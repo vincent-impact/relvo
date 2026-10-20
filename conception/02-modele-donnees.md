@@ -170,12 +170,17 @@ l'agrégateur. Elle est séparée pour ne pas alourdir `Channel` de secrets et d
 simplicité d'usage, et facturation à l'usage chez l'agrégateur.
 
 **`ChannelCatchup`** porte le **rattrapage du courrier récent** d'un canal (cf. `05-ia.md`
-§9.6) : la fenêtre lue, l'état — demandé, en cours, terminé, arrêté au plafond, en échec —,
+§9.6) : la fenêtre lue, l'état — demandé, en cours, terminé, arrêté au garde-fou, en échec —,
 l'avancement de l'import et du tri, ce que Relvo en a fait (messages lus, affaires ouvertes,
-conversations mises en sourdine), le coût en euros, et la raison de l'arrêt. Une ligne par
-rattrapage demandé ; la demande naît à la connexion d'un canal, l'exécution commence aussitôt,
-par tranches, et reprend tant que la ligne n'est pas close. C'est ce que le premier échange avec
-Relvo raconte pendant qu'il lit, et ce que l'écran des canaux montre ensuite.
+conversations mises en sourdine), le coût en euros, la raison de l'arrêt, et ce que la lecture par
+tranches exige : le **verrou** de la tranche en cours (une seule à la fois, pris par une mise à
+jour conditionnelle, expiré quand une tranche meurt), la fin de la dernière tranche, le compte
+des passes d'import vides, le total des candidats quand l'import se ferme (l'avancement en
+fraction), le niveau de service du tri — standard en direct, en lot la nuit — et le nombre de
+reprises nocturnes. Une ligne par rattrapage demandé ; la demande naît à la connexion d'un canal,
+l'exécution commence aussitôt, par tranches, et reprend tant que la ligne n'est pas close. C'est
+ce que le premier échange avec Relvo raconte pendant qu'il lit, et ce que l'écran des canaux
+montre ensuite.
 
 ## Conversation
 
