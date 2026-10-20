@@ -4,6 +4,11 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-10-20
+
+- **Nouveau** — Pendant que Relvo lit votre courrier, l'échange vous montre les affaires qu'il ouvre et vous explique en deux phrases ce qu'est une affaire et une tâche ; quand il a fini, il vous le dit et vous demande si cela ressemble à votre activité. Vous pouvez aussi lui demander où il en est.
+- **Nouveau** — Dès que vous reliez une boîte, Relvo lit le courrier des deux dernières semaines tout de suite et en entier : vous voyez les affaires s'ouvrir à mesure, dans l'échange comme dans Canaux.
+
 ## 2026-10-19
 
 - **Nouveau** — Dans l'échange, Relvo répond désormais à « qu'est-ce que j'ai lundi prochain ? », « mes affaires avec Karim », « qu'est-ce que je t'ai dit sur les livraisons ? », « qu'est-ce qui est à trier ? » ou « qu'est-ce que Karim m'a envoyé sur WhatsApp ? » : il cherche par jour, par personne, par domaine, par canal, et il vous demande de préciser quand un nom désigne plusieurs contacts.

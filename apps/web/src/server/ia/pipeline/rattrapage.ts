@@ -2,6 +2,7 @@ import "server-only";
 import {
   claimCatchupTranche,
   countCatchupCandidates,
+  ensureFolderProposalQuestions,
   findCatchupForTranche,
   finishCatchup,
   ingestInboundEmail,
@@ -269,6 +270,13 @@ export async function executerTranche(
         conversationsIgnored: salve.ignores,
         costEur: salve.cout,
       });
+      // Les domaines que le courrier propose (M17.10) : dès que deux affaires
+      // partagent un nom, la question se pose dans l'échange — sans appel.
+      if (salve.ouverts > 0) {
+        await ensureFolderProposalQuestions(db).catch((e) =>
+          console.error("[ia] propositions de domaine", e),
+        );
+      }
       expireTenantData();
     }
 

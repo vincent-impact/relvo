@@ -2,8 +2,9 @@ import { z } from "zod";
 import { Prisma } from "../generated/prisma/client";
 import type { TenantDb, Tx } from "../tenant";
 import { DomainError, assertFound } from "./errors";
-import { EVENT_TYPES, logEvent } from "./events";
+import { EVENT_TYPES, logEvent, type Origine } from "./events";
 import { ensureAffected, slugify } from "./helpers";
+import { updateSubject } from "./subjects";
 
 // Domaine Folders (M3.4). Invariants : slug unique par compte, suppression du
 // Folder « Général » (is_default) interdite, jamais plus d'un is_default.
@@ -136,4 +137,118 @@ export async function deleteFolder(db: TenantDb, id: string) {
 /** Retourne le Folder « Général » (is_default) du compte, ou null. */
 export function getDefaultFolder(db: TenantDb) {
   return db.folder.findFirst({ where: { isDefault: true } });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Les domaines PROPOSÉS PAR LE COURRIER (M17.10, 05 §9.6, 04 §10)
+// ─────────────────────────────────────────────────────────────
+//
+// Relvo ne crée jamais un domaine : quand aucun ne convient, la structuration
+// pose un `proposedFolder` sur l'affaire. Dès que plusieurs affaires partagent
+// la même proposition, Relvo suggère de créer le domaine et d'y ranger ces
+// affaires — un geste, par la même fonction que la Mémoire. La proposition
+// RESTE sur l'affaire : supprimer le domaine la fait réapparaître.
+
+/** Deux affaires au moins pour qu'une proposition vaille une question. */
+export const PROPOSITION_MIN_AFFAIRES = 2;
+
+/** L'étape d'origine d'une question de domaine proposé : le préfixe, puis le slug. */
+export const ETAPE_DOMAINE_PROPOSE = "domaine-propose";
+
+export type FolderProposal = {
+  /** Le nom le plus fréquent parmi les graphies rencontrées. */
+  name: string;
+  slug: string;
+  count: number;
+  subjectIds: string[];
+};
+
+/**
+ * Les propositions de domaine que plusieurs affaires partagent — affaires
+ * ouvertes ou validées, sans domaine —, groupées par slug (la casse et les
+ * accents ne séparent pas deux propositions), les plus portées d'abord. Une
+ * proposition déjà tranchée — question répondue ou écartée — n'est jamais
+ * reproposée.
+ */
+export async function listFolderProposals(
+  db: TenantDb,
+): Promise<FolderProposal[]> {
+  const [rows, tranchees] = await Promise.all([
+    db.subject.findMany({
+      where: {
+        folderId: null,
+        proposedFolder: { not: null },
+        status: { in: ["open", "validated"] },
+      },
+      select: { id: true, proposedFolder: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    db.relvoQuestion.findMany({
+      where: {
+        originStep: { startsWith: `${ETAPE_DOMAINE_PROPOSE}/` },
+        status: { not: "open" },
+      },
+      select: { originStep: true },
+    }),
+  ]);
+  const exclus = new Set(
+    tranchees.map((t) => t.originStep!.slice(ETAPE_DOMAINE_PROPOSE.length + 1)),
+  );
+  const groupes = new Map<
+    string,
+    { graphies: Map<string, number>; subjectIds: string[] }
+  >();
+  for (const r of rows) {
+    const nom = r.proposedFolder!.trim();
+    const slug = slugify(nom);
+    if (!slug || exclus.has(slug)) continue;
+    const g = groupes.get(slug) ?? {
+      graphies: new Map<string, number>(),
+      subjectIds: [] as string[],
+    };
+    g.graphies.set(nom, (g.graphies.get(nom) ?? 0) + 1);
+    g.subjectIds.push(r.id);
+    groupes.set(slug, g);
+  }
+  return [...groupes.entries()]
+    .filter(([, g]) => g.subjectIds.length >= PROPOSITION_MIN_AFFAIRES)
+    .map(([slug, g]) => ({
+      slug,
+      name: [...g.graphies.entries()].sort((a, b) => b[1] - a[1])[0]![0],
+      count: g.subjectIds.length,
+      subjectIds: g.subjectIds,
+    }))
+    .sort((a, b) => b.count - a.count || a.slug.localeCompare(b.slug));
+}
+
+/**
+ * CRÉE le domaine d'une proposition — ou reprend celui qui porte déjà ce
+ * slug — et y range toutes les affaires sans domaine qui partagent la
+ * proposition, par `updateSubject` (la fonction de la fiche), journalisé.
+ */
+export async function createFolderFromProposal(
+  db: TenantDb,
+  input: { name: string },
+  origine?: Origine,
+): Promise<{ folderId: string; name: string; reclassees: number }> {
+  const name = input.name.trim();
+  const slug = slugify(name);
+  if (!slug) throw new DomainError("VALIDATION", "Nom de domaine invalide.");
+  const existant = await db.folder.findFirst({ where: { slug } });
+  const folder = existant ?? (await createFolder(db, { name }));
+  const affaires = await db.subject.findMany({
+    where: {
+      folderId: null,
+      proposedFolder: { not: null },
+      status: { in: ["open", "validated"] },
+    },
+    select: { id: true, proposedFolder: true },
+  });
+  let reclassees = 0;
+  for (const a of affaires) {
+    if (slugify(a.proposedFolder!.trim()) !== slug) continue;
+    await updateSubject(db, a.id, { folderId: folder.id }, origine);
+    reclassees += 1;
+  }
+  return { folderId: folder.id, name: folder.name, reclassees };
 }

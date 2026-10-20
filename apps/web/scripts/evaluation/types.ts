@@ -20,6 +20,8 @@ export type Cas = {
     /** Référence d'un sujet ouvert PRÉEXISTANT que ce fil prolonge et doit rejoindre, sinon null. */
     rattache: string | null;
     domaine: string | null;
+    /** Vrai quand aucun domaine du compte ne convient : un nom PROPOSÉ est attendu, et aucun domaine. */
+    domaine_propose?: boolean;
     titre: string | null;
     priorite: "normal" | "urgent" | null;
     taches: { titre: string; type: string; date: string | null }[];

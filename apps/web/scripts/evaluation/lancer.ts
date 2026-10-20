@@ -9,7 +9,7 @@
 // Usage :
 //   node --env-file=.env.local --import tsx scripts/evaluation/lancer.ts \
 //     --jeu demo [--configs gpt-5.6-luna:none,gpt-5.6-luna:low,gpt-5.6-terra:low] \
-//     [--parallele 4] [--sortie /chemin/rapport.json] [--limite 5] [--cache <cle>] [--flex]
+//     [--parallele 4] [--sortie /chemin/rapport.json] [--limite 5] [--cas demo-025] [--cache <cle>] [--flex]
 //
 // `--flex` passe les appels EN LOT (niveau de service « flex » du fournisseur,
 // tranche 9) : le prix du rattrapage nocturne, et sa latence.
@@ -113,9 +113,14 @@ async function trier(
     const accordRattachement = cas.verite.rattache
       ? (sortie.sujet_existant ?? "").trim() === cas.verite.rattache
       : null;
+    // Quand aucun domaine ne convient (04 §10), le juste est : aucun domaine,
+    // et un nom proposé — c'est ce que la question de domaine proposé relit.
     const accordDomaine =
       cas.verite.action === "a_traiter" && sortie.action === "a_traiter"
-        ? (sortie.domaine ?? null) === cas.verite.domaine
+        ? cas.verite.domaine_propose
+          ? (sortie.domaine ?? null) === null &&
+            Boolean(sortie.domaine_propose?.trim())
+          : (sortie.domaine ?? null) === cas.verite.domaine
         : null;
     return {
       cas: cas.id,
@@ -169,6 +174,9 @@ async function main() {
     .filter(Boolean)
     .map((l) => JSON.parse(l) as Cas);
   if (limite > 0) cas = cas.slice(0, limite);
+  // `--cas demo-025,demo-003` : un ou plusieurs cas, comme `eval:echange`.
+  const filtre = arg("cas", "");
+  if (filtre) cas = cas.filter((c) => filtre.split(",").includes(c.id));
 
   const rapport: Record<
     string,
@@ -252,7 +260,7 @@ async function main() {
       const rat = r.accordRattachement === false ? " ❌" : "";
       const dom = r.accordDomaine === false ? " ❌" : "";
       console.log(
-        `| ${r.cas} | ${c.verite.action} · ${c.verite.nature} | ${r.sortie.action}${marque} · ${r.sortie.nature}${nat} | ${r.sortie.confiance} | ${r.sortie.sujet_existant ?? "∅"}${rat} (${c.verite.rattache ?? "∅"}) | ${r.sortie.domaine ?? "∅"}${dom} (${c.verite.domaine ?? "∅"}) | ${r.sortie.titre ?? ""} | ${r.sortie.raison} |`,
+        `| ${r.cas} | ${c.verite.action} · ${c.verite.nature} | ${r.sortie.action}${marque} · ${r.sortie.nature}${nat} | ${r.sortie.confiance} | ${r.sortie.sujet_existant ?? "∅"}${rat} (${c.verite.rattache ?? "∅"}) | ${r.sortie.domaine ?? "∅"}${r.sortie.domaine_propose ? ` → « ${r.sortie.domaine_propose} »` : ""}${dom} (${c.verite.domaine_propose ? "proposé" : (c.verite.domaine ?? "∅")}) | ${r.sortie.titre ?? ""} | ${r.sortie.raison} |`,
       );
     }
     console.log("");

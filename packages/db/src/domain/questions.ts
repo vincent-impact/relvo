@@ -11,8 +11,15 @@ import type { TenantDb, Tx } from "../tenant";
 import { setSectors } from "./accounts";
 import { assertFound, DomainError } from "./errors";
 import { avecOrigine, EVENT_TYPES, logEvent, type Origine } from "./events";
-import { getDefaultFolder } from "./folders";
+import {
+  createFolder,
+  createFolderFromProposal,
+  ETAPE_DOMAINE_PROPOSE,
+  getDefaultFolder,
+  listFolderProposals,
+} from "./folders";
 import { createNote } from "./knowledge";
+import { domainesTypiquesDe } from "./prise-en-main";
 
 // Domaine QUESTIONS DE RELVO (M18.9, livré par M10 — 02 RelvoQuestion, 05
 // §11.12) : l'objet par lequel Relvo parle en premier. Une question porte une
@@ -112,6 +119,8 @@ export async function askQuestion(db: TenantDb, input: AskQuestionInput) {
 export const answerQuestionSchema = z.object({
   /** La clé d'une réponse proposée, ou null pour une réponse libre. */
   key: z.string().trim().max(40).optional().nullable(),
+  /** Les clés cochées d'une réponse à choix multiples (les domaines typiques). */
+  keys: z.array(z.string().trim().min(1).max(40)).max(12).optional(),
   /** La réponse en clair — le libellé de la clé, ou le texte libre. */
   answer: z.string().trim().min(1).max(2_000),
 });
@@ -123,6 +132,10 @@ export type QuestionOutcome =
   | { kind: "instruction"; noteId: string; folderName: string }
   /** « Lisez deux semaines de plus » : l'application ouvre la lecture suivante sur ce canal. */
   | { kind: "lecture-etendue"; channelId: string; since: Date }
+  /** Des domaines typiques cochés et créés. */
+  | { kind: "folders"; names: string[] }
+  /** Un domaine proposé par le courrier, créé, et ses affaires rangées. */
+  | { kind: "folder-created"; name: string; reclassees: number }
   | { kind: "noted" };
 
 /**
@@ -205,6 +218,18 @@ async function appliquerDestination(
   }
   if (q.originStep?.startsWith(`${ETAPES.finDeLecture}/`)) {
     return appliquerFinDeLecture(db, q, data, origine);
+  }
+  if (q.originStep === ETAPES.domainesTypiques) {
+    return appliquerDomainesTypiques(db, q.accountId, data);
+  }
+  if (q.originStep?.startsWith(`${ETAPE_DOMAINE_PROPOSE}/`)) {
+    if (data.key !== "oui") return { kind: "noted" };
+    const r = await createFolderFromProposal(
+      db,
+      { name: nomProposeDe(q.text) },
+      origine,
+    );
+    return { kind: "folder-created", name: r.name, reclassees: r.reclassees };
   }
   if (data.key && data.key !== CLE_AUTRE) {
     // Une réponse fermée hors script : notée, c'est tout — sa destination
@@ -311,6 +336,49 @@ async function appliquerFinDeLecture(
 /** La lecture suivante remonte d'autant que la première : deux semaines de plus. */
 const FENETRE_SUIVANTE_MS = 14 * 86_400_000;
 
+/**
+ * Les DOMAINES TYPIQUES cochés (05 §9.6) : chaque clé crée son domaine par la
+ * fonction de la Mémoire, avec son logo curé ; un domaine qui existe déjà est
+ * laissé tel quel. « Aucun pour l'instant » ne crée rien.
+ */
+async function appliquerDomainesTypiques(
+  db: TenantDb,
+  accountId: string,
+  data: z.infer<typeof answerQuestionSchema>,
+): Promise<QuestionOutcome> {
+  const cles = new Set(data.keys ?? (data.key ? [data.key] : []));
+  if (cles.size === 0 || cles.has("aucun")) return { kind: "noted" };
+  const account = await db.account.findUnique({
+    where: { id: accountId },
+    select: { sectors: true },
+  });
+  const typiques = domainesTypiquesDe(account?.sectors ?? []);
+  const names: string[] = [];
+  for (const d of typiques) {
+    if (!cles.has(d.key)) continue;
+    const existe = await db.folder.findFirst({ where: { slug: d.key } });
+    if (existe) {
+      names.push(existe.name);
+      continue;
+    }
+    const f = await createFolder(db, {
+      name: d.name,
+      slug: d.key,
+      description: d.description,
+      color: d.color,
+      icon: d.icon,
+    });
+    names.push(f.name);
+  }
+  return names.length ? { kind: "folders", names } : { kind: "noted" };
+}
+
+/** Le nom proposé, tel que la question le cite entre guillemets. */
+export function nomProposeDe(question: string): string {
+  const m = question.match(/«\s*([^»]+?)\s*»/);
+  return (m?.[1] ?? question).trim();
+}
+
 /** Le titre d'une instruction née d'une question : la question, sans son point d'interrogation ni son exemple. */
 export function titreInstruction(question: string): string {
   const t = question
@@ -355,6 +423,8 @@ export type OpenQuestion = {
   text: string;
   proposedAnswers: ProposedAnswer[];
   originStep: string | null;
+  /** Plusieurs réponses se gardent (les domaines typiques) : le formulaire se coche. */
+  multiple: boolean;
   /** La fiche concernée, pour la nommer dans l'échange. */
   about: { kind: "subject" | "contact" | "folder"; label: string } | null;
   askedAt: string;
@@ -381,6 +451,7 @@ export async function listOpenQuestions(
     text: r.text,
     proposedAnswers: readProposedAnswers(r.proposedAnswers),
     originStep: r.originStep,
+    multiple: r.originStep === ETAPES.domainesTypiques,
     about: r.subject
       ? { kind: "subject", label: r.subject.title }
       : r.contact
@@ -409,6 +480,8 @@ export const CLE_AUTRE = "autre";
 
 export const ETAPES = {
   secteurs: "prise-en-main/secteurs",
+  /** À choix multiples (`keys`) : l'échange le sait par l'étape. */
+  domainesTypiques: "prise-en-main/domaines-typiques",
   premiereInstruction: "prise-en-main/premiere-instruction",
   /** Préfixe : l'étape porte l'identifiant du rattrapage — une par lecture. */
   finDeLecture: "prise-en-main/fin-de-lecture",
@@ -421,15 +494,22 @@ const SECTEURS_PAR_CLE: Record<string, readonly Sector[]> = {
   other: ["other"],
 };
 
+export type CompteScript = {
+  sectors: Sector[];
+  instructionsGenerales: number;
+  /** Les domaines du compte hors Général. */
+  domaines: number;
+};
+
 export type EtapeScript = {
   step: (typeof ETAPES)[keyof typeof ETAPES];
   text: string;
-  proposedAnswers: ProposedAnswer[];
+  /** Les réponses, fixes ou calculées depuis le compte (les domaines typiques des secteurs). */
+  proposedAnswers:
+    | ProposedAnswer[]
+    | ((compte: CompteScript) => ProposedAnswer[]);
   /** L'étape ne se pose que si elle a encore quelque chose à apprendre. */
-  applicable: (compte: {
-    sectors: Sector[];
-    instructionsGenerales: number;
-  }) => boolean;
+  applicable: (compte: CompteScript) => boolean;
 };
 
 /**
@@ -450,6 +530,25 @@ export const SCRIPT_PRISE_EN_MAIN: readonly EtapeScript[] = [
     applicable: (c) => c.sectors.length === 0,
   },
   {
+    step: ETAPES.domainesTypiques,
+    text: "Je range vos affaires par domaine. Dans votre métier, on trouve souvent ceux-ci. Lesquels gardez-vous ?",
+    proposedAnswers: (c) => [
+      ...domainesTypiquesDe(c.sectors).map((d) => ({
+        key: d.key,
+        label: d.name,
+        hint: d.description,
+      })),
+      {
+        key: "aucun",
+        label: "Aucun pour l'instant, on verra avec le courrier",
+      },
+    ],
+    // Après le métier (il faut connaître les secteurs), et seulement tant que
+    // le compte n'a que Général : les domaines émergent du courrier ensuite.
+    applicable: (c) =>
+      c.domaines === 0 && domainesTypiquesDe(c.sectors).length > 0,
+  },
+  {
     step: ETAPES.premiereInstruction,
     text: "Y a-t-il une règle que je dois toujours suivre ? Par exemple « Crée automatiquement une affaire urgente quand un client demande la réalisation d'un devis ».",
     proposedAnswers: [{ key: CLE_AUTRE, label: "Je vous l'écris…" }],
@@ -467,7 +566,7 @@ export async function ensureOnboardingQuestions(
   db: TenantDb,
   accountId: string,
 ): Promise<number> {
-  const [account, general, deja] = await Promise.all([
+  const [account, general, deja, domaines] = await Promise.all([
     db.account.findUnique({
       where: { id: accountId },
       select: { sectors: true },
@@ -477,6 +576,7 @@ export async function ensureOnboardingQuestions(
       where: { originStep: { not: null } },
       select: { originStep: true },
     }),
+    db.folder.count({ where: { isDefault: false } }),
   ]);
   if (!account) return 0;
   const instructionsGenerales = general
@@ -484,17 +584,62 @@ export async function ensureOnboardingQuestions(
         where: { folderId: general.id, kind: KnowledgeKind.note },
       })
     : 0;
+  const compte: CompteScript = {
+    sectors: account.sectors,
+    instructionsGenerales,
+    domaines,
+  };
   const posees = new Set(deja.map((d) => d.originStep));
   let n = 0;
   for (const etape of SCRIPT_PRISE_EN_MAIN) {
     if (posees.has(etape.step)) continue;
-    if (!etape.applicable({ sectors: account.sectors, instructionsGenerales }))
-      continue;
+    if (!etape.applicable(compte)) continue;
     await askQuestion(db, {
       scope: QuestionScope.account,
       text: etape.text,
-      proposedAnswers: etape.proposedAnswers,
+      proposedAnswers:
+        typeof etape.proposedAnswers === "function"
+          ? etape.proposedAnswers(compte)
+          : etape.proposedAnswers,
       originStep: etape.step,
+    });
+    n++;
+  }
+  n += await ensureFolderProposalQuestions(db);
+  return n;
+}
+
+/**
+ * Les DOMAINES PROPOSÉS PAR LE COURRIER (M17.10) : une question par
+ * proposition que plusieurs affaires partagent — posée par la lecture après
+ * chaque salve, et à l'ouverture de l'échange pour celles du fil de l'eau.
+ * Idempotente : une proposition ouverte, répondue ou écartée ne revient pas.
+ * Rend le nombre de questions posées.
+ */
+export async function ensureFolderProposalQuestions(
+  db: TenantDb,
+): Promise<number> {
+  const propositions = await listFolderProposals(db);
+  let n = 0;
+  for (const p of propositions) {
+    const step = `${ETAPE_DOMAINE_PROPOSE}/${p.slug}`;
+    const deja = await db.relvoQuestion.findFirst({
+      where: { originStep: step },
+      select: { id: true },
+    });
+    if (deja) continue;
+    await askQuestion(db, {
+      scope: QuestionScope.account,
+      text: `Plusieurs affaires parlent de « ${p.name} » (${p.count}). J'en fais un domaine et je les y range ?`,
+      proposedAnswers: [
+        { key: "oui", label: "Oui, créez-le" },
+        {
+          key: "non",
+          label: "Non, pas celui-là",
+          hint: "Je ne le proposerai plus",
+        },
+      ],
+      originStep: step,
     });
     n++;
   }

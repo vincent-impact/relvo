@@ -189,9 +189,10 @@ describe("répondre, écarter", () => {
 describe("le script de la prise en main", () => {
   it("pose les étapes qui ont quelque chose à apprendre, une fois, jamais après une réponse ou un écart", async () => {
     const { account, db } = await makeAccount("q-script@test.fr");
-    expect(await ensureOnboardingQuestions(db, account.id)).toBe(
-      SCRIPT_PRISE_EN_MAIN.length,
-    );
+    // Sans métier connu, les domaines typiques ne se proposent pas encore :
+    // deux étapes sur les trois du script.
+    expect(SCRIPT_PRISE_EN_MAIN).toHaveLength(3);
+    expect(await ensureOnboardingQuestions(db, account.id)).toBe(2);
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(0);
     const ouvertes = await listOpenQuestions(db);
     expect(ouvertes.map((o) => o.originStep)).toEqual([
@@ -207,16 +208,23 @@ describe("le script de la prise en main", () => {
       answer: "La restauration",
     });
     await dismissQuestion(db, ouvertes[1]!.id);
+    // Le métier connu, les domaines typiques se proposent — une fois.
+    expect(await ensureOnboardingQuestions(db, account.id)).toBe(1);
+    expect((await listOpenQuestions(db)).map((o) => o.originStep)).toEqual([
+      ETAPES.domainesTypiques,
+    ]);
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(0);
-    expect(await countOpenQuestions(db)).toBe(0);
   });
 
-  it("un compte qui a déjà ses secteurs et une instruction n'a rien à répondre", async () => {
+  it("un compte qui a déjà ses secteurs, un domaine et une instruction n'a rien à répondre", async () => {
     const { account, general, db } = await makeAccount(
       "q-script-rien@test.fr",
       ["food"],
     );
     await createNote(db, { folderId: general.id, name: "Règle", content: "x" });
+    await db.folder.create({
+      data: { name: "Fournisseurs", slug: "fournisseurs" },
+    });
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(0);
   });
 });

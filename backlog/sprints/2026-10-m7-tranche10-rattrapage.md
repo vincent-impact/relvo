@@ -364,4 +364,32 @@ relue) ; les pièges remontés ; `conception/` sans phrase datée.
       question de fin de lecture et son champ libre ouvert par « Il en manque ». Registre
       interrogé avant `PriseEnMain` : composé de `CarteVivante`, `RelvoBlock`, `SubjectRow`.
       **En production** : la notification de fin de lecture et le script posé au webhook.
-- [ ] Tranche 3 — les domaines.
+- [x] **Tranche 3 livrée** — les domaines typiques des secteurs dans le domaine
+      (`prise-en-main.ts` : cinq par secteur, description d'une ligne, logo curé ;
+      `domainesTypiquesDe` sans doublon), l'étape `prise-en-main/domaines-typiques` du script
+      (après le métier, tant que le compte n'a que Général ; réponses calculées depuis les
+      secteurs ; `keys[]` dans la réponse ; chaque domaine coché naît par `createFolder` ;
+      « Aucun pour l'instant » ne crée rien ; `OpenQuestion.multiple`) ; le formulaire à choix
+      multiples `EtapeChoixMultiples` (registre interrogé : `checkbox` et `toggle-group`
+      existent, composé sur l'option d'`EtapeFormulaire` avec la coche à la place du chevron,
+      « Garder ceux-là (n) ») ; les propositions du courrier (`listFolderProposals` : groupées
+      par slug, deux affaires au moins, les tranchées exclues ; `createFolderFromProposal` :
+      crée ou reprend le domaine, range par `updateSubject`, la proposition reste sur
+      l'affaire) ; `ensureFolderProposalQuestions` posée par la lecture après chaque salve qui
+      ouvre et à l'ouverture de l'échange ; destinations « Oui, créez-le » /
+      « Non, pas celui-là ». Lanceur du tri : `--cas` et l'attente `domaine_propose` ; cas
+      **demo-025** (le garage, le contrôle technique de l'utilitaire — aucun domaine du
+      compte ne convient) → « Véhicules et entretien » proposé, 1/1, un appel réel sur le jeu
+      de démonstration. Tests : `domaines.test.ts` (6), `questions.test.ts` relu.
+      **Vérifié en headless** (compte admin local, remis à neuf ensuite) : le métier répondu,
+      la proposition « Assurances » (2) acceptée → domaine créé, deux affaires rangées ; les
+      domaines typiques cochés deux à deux → Fournisseurs et Équipe dans la Mémoire.
+      ⚠️ Piège évité : un composant client qui importe une **valeur** de `@relvo/db` embarque
+      Prisma dans le navigateur et rend un 500 sur toute l'application (`pg` dans le bundle) ;
+      `multiple` est posé par la projection du domaine, le client n'importe que des types.
+- [x] Migration `20261020100100_m7_rattrapage_anciennes_lignes` : les lignes de la tranche 9
+      arrêtées au plafond ont eu leurs nuits — **le déploiement ne relance aucune lecture** sur
+      un compte réel ; seule une nouvelle connexion de boîte démarre une lecture.
+- [ ] **Clôture** : vérification en production sur le compte du dirigeant (connecter une
+      boîte, la carte qui monte, le coût au journal, la question de fin de lecture et sa
+      notification, les domaines proposés) ; alors M7 passe en `termine`.

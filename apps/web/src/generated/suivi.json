@@ -180,6 +180,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Pendant que Relvo lit votre courrier, l'échange vous montre les affaires qu'il ouvre et vous explique en deux phrases ce qu'est une affaire et une tâche ; quand il a fini, il vous le dit et vous demande si cela ressemble à votre activité. Vous pouvez aussi lui demander où il en est."
+        },
+        {
+          "type": "new",
           "texte": "Dès que vous reliez une boîte, Relvo lit le courrier des deux dernières semaines tout de suite et en entier : vous voyez les affaires s'ouvrir à mesure, dans l'échange comme dans Canaux."
         }
       ]

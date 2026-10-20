@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import type { OpenQuestion, QuestionOutcome } from "@relvo/db";
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
+import { EtapeChoixMultiples } from "@/components/relvo-chat/etape-choix-multiples";
 import { EtapeFormulaire } from "@/components/relvo-chat/etape-formulaire";
 import {
   ecarterQuestionAction,
@@ -29,6 +30,12 @@ function phraseOutcome(o: QuestionOutcome): string {
       return "C’est noté : je lirai votre courrier avec les mots de votre métier.";
     case "instruction":
       return `C’est noté dans votre Mémoire, dans ${o.folderName} : je l’appliquerai.`;
+    case "folders":
+      return o.names.length === 1
+        ? `C’est fait : le domaine ${o.names[0]} est dans votre Mémoire. J’y rangerai les affaires qui s’y rapportent.`
+        : `C’est fait : ${o.names.join(", ")} sont dans votre Mémoire. J’y rangerai les affaires qui s’y rapportent.`;
+    case "folder-created":
+      return `C’est fait : le domaine « ${o.name} » existe, ${o.reclassees} affaire${o.reclassees > 1 ? "s y sont rangées" : " y est rangée"}.`;
     case "lecture-etendue":
       return "C’est parti : je lis deux semaines de plus. Les affaires apparaîtront à mesure.";
     case "noted":
@@ -58,12 +65,16 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
     setIndex((i) => i + 1);
   }
 
-  function repondre(key: string | null, answer: string) {
+  function repondre(key: string | null, answer: string, keys?: string[]) {
     if (!question) return;
     setBusyKey(key ?? CLE_AUTRE);
     setError(null);
     start(async () => {
-      const res = await repondreQuestionAction(question.id, { key, answer });
+      const res = await repondreQuestionAction(question.id, {
+        key,
+        keys,
+        answer,
+      });
       setBusyKey(null);
       if (!res.ok) {
         setError(res.message);
@@ -114,30 +125,60 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
               À propos de {question.about.label}
             </p>
           ) : null}
-          <EtapeFormulaire
-            question={question.text}
-            options={[
-              ...question.proposedAnswers
-                .filter((p) => p.key !== CLE_AUTRE)
-                .map((p) => ({ key: p.key, label: p.label, hint: p.hint })),
-              {
-                key: CLE_AUTRE,
-                label:
-                  question.proposedAnswers.find((p) => p.key === CLE_AUTRE)
-                    ?.label ?? "Autre…",
-                hint: libre ? undefined : "Une réponse en quelques mots",
-              },
-              { key: PLUS_TARD, label: "Plus tard", secondary: true },
-              {
-                key: ECARTER,
-                label: "Ne plus me le demander",
-                secondary: true,
-              },
-            ]}
-            onChoose={choisir}
-            busyKey={busyKey}
-            error={error}
-          />
+          {question.multiple ? (
+            // Les domaines typiques se GARDENT à plusieurs (05 §9.6) : la
+            // même forme, qui se coche ; « Plus tard » laisse la question.
+            <EtapeChoixMultiples
+              question={question.text}
+              options={[
+                ...question.proposedAnswers
+                  .filter((p) => p.key !== "aucun")
+                  .map((p) => ({ key: p.key, label: p.label, hint: p.hint })),
+                ...question.proposedAnswers
+                  .filter((p) => p.key === "aucun")
+                  .map((p) => ({
+                    key: p.key,
+                    label: p.label,
+                    secondary: true,
+                  })),
+                { key: PLUS_TARD, label: "Plus tard", secondary: true },
+              ]}
+              onChoose={(keys) => {
+                if (keys.includes(PLUS_TARD)) return suivante();
+                const labels = question.proposedAnswers
+                  .filter((p) => keys.includes(p.key))
+                  .map((p) => p.label);
+                repondre(keys[0] ?? null, labels.join(", "), keys);
+              }}
+              busy={busyKey !== null}
+              error={error}
+            />
+          ) : (
+            <EtapeFormulaire
+              question={question.text}
+              options={[
+                ...question.proposedAnswers
+                  .filter((p) => p.key !== CLE_AUTRE)
+                  .map((p) => ({ key: p.key, label: p.label, hint: p.hint })),
+                {
+                  key: CLE_AUTRE,
+                  label:
+                    question.proposedAnswers.find((p) => p.key === CLE_AUTRE)
+                      ?.label ?? "Autre…",
+                  hint: libre ? undefined : "Une réponse en quelques mots",
+                },
+                { key: PLUS_TARD, label: "Plus tard", secondary: true },
+                {
+                  key: ECARTER,
+                  label: "Ne plus me le demander",
+                  secondary: true,
+                },
+              ]}
+              onChoose={choisir}
+              busyKey={busyKey}
+              error={error}
+            />
+          )}
           {libre ? (
             <form
               className="mt-2.5 flex items-end gap-2"

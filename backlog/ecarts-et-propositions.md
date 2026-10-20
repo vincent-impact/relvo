@@ -974,13 +974,21 @@ devienne la raison d'ignorance. Aucune configuration, aucun domaine parasite dan
 
 ### Suggérer les domaines à la prise en main
 
-**`proposé`** · Pour une prise en main rapide, proposer à l'utilisateur des domaines typiques de
-ses secteurs, à cocher. C'est déjà l'esprit de M13.2 et M17.10 ; la matière peut vivre dans les
-socles de la couche Produit (une liste de domaines typiques par secteur, avec une description
-d'une ligne chacun), et le rattrapage du courrier récent (M7.19) reste le moyen le plus juste :
-les domaines qu'il propose viennent du courrier réel, pas d'une liste générique. À dessiner avec
-les premiers retours des bêta-testeurs. Le lieu est arrêté depuis : le premier échange avec Relvo
-(« La prise en main est une conversation avec Relvo »).
+**`tranché`** · Livré par la tranche 10 de M7 (M17.10 y est livré, parce que les propositions
+naissent de la lecture dès la connexion). Deux voies, dans le premier échange avec Relvo :
+
+- **Les domaines typiques des secteurs**, à cocher, pendant la lecture — cinq par secteur, avec
+  une description d'une ligne et un logo curé, dans le **domaine** (`prise-en-main.ts`), pas dans
+  les socles de la couche Produit : c'est une donnée de création, jamais une consigne au modèle.
+  La question ne se pose qu'un métier connu et tant que le compte n'a que Général ; chaque
+  domaine coché naît par la fonction de la Mémoire. « Aucun pour l'instant » ne crée rien.
+- **Les domaines proposés par le courrier** : dès que deux affaires sans domaine partagent la
+  même proposition — groupées par slug, casse et accents confondus —, une question se pose dans
+  l'échange, par la lecture après chaque salve et à l'ouverture de l'échange. « Oui » crée le
+  domaine (ou reprend celui qui porte ce slug) et y range les affaires par la fonction de la
+  fiche ; « Non » n'est jamais reproposé. La proposition reste sur l'affaire : supprimer le
+  domaine la fait réapparaître. Aucun encart nouveau dans la Mémoire : la question et le badge
+  suffisent, la Mémoire montre le résultat.
 
 ### Le contexte du modèle est assemblé en cinq couches
 

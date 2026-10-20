@@ -34,6 +34,7 @@ export * from "./reply-match";
 export * from "./decisions";
 export * from "./accounts";
 export * from "./catchup";
+export * from "./prise-en-main";
 export * from "./brief";
 export * from "./echange";
 export * from "./questions";
