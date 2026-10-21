@@ -15,9 +15,12 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 
 export function AppDock({
   pendingQuestions = 0,
+  reading = false,
 }: {
   /** Questions de Relvo en attente — le badge du bouton central. */
   pendingQuestions?: number;
+  /** Relvo lit le courrier : le disque respire. */
+  reading?: boolean;
 }) {
   const pathname = usePathname();
   if (/^\/conversations\/[^/]+$/.test(pathname)) return null;
@@ -29,7 +32,7 @@ export function AppDock({
         bottom: "calc(var(--dock-marge) + env(safe-area-inset-bottom))",
       }}
     >
-      <BottomTabBar pendingQuestions={pendingQuestions} />
+      <BottomTabBar pendingQuestions={pendingQuestions} reading={reading} />
     </div>
   );
 }

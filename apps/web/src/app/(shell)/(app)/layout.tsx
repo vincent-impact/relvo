@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { AppDock } from "@/components/layout/app-dock";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { SideMenu, SideMenuProvider } from "@/components/layout/side-menu";
-import { countOpenQuestions, tenantDb } from "@relvo/db";
+import { countActiveCatchups, countOpenQuestions, tenantDb } from "@relvo/db";
 import { getSession, requireAccount } from "@/server/auth-context";
 
 // Chrome mobile-first commun aux vues structurées : colonne unique pleine
@@ -32,7 +32,13 @@ export default async function AppLayout({
   // (invariant 36). Compté à chaque rendu, sans cache : une question naît
   // aussi hors de toute action de l'écran (une structuration, le rattrapage),
   // et un badge en retard est un badge faux. Un décompte indexé, rien de plus.
-  const pendingQuestions = await countOpenQuestions(tenantDb(account.id));
+  const db = tenantDb(account.id);
+  // Relvo lit le courrier : le disque du dock RESPIRE, d'où qu'on soit — le
+  // travail se voit sans ouvrir la page des canaux. Un décompte indexé aussi.
+  const [pendingQuestions, lecturesActives] = await Promise.all([
+    countOpenQuestions(db),
+    countActiveCatchups(db),
+  ]);
 
   // L'entrée « Backoffice » du menu ne se montre que si le clic marchera : le
   // proxy lit le rôle dans le JETON, qui ne le reçoit qu'à la connexion suivant
@@ -47,7 +53,10 @@ export default async function AppLayout({
     <SideMenuProvider>
       <MobileFrame>
         {children}
-        <AppDock pendingQuestions={pendingQuestions} />
+        <AppDock
+          pendingQuestions={pendingQuestions}
+          reading={lecturesActives > 0}
+        />
       </MobileFrame>
       {/* Projection explicite (PITFALLS #41) : jamais l'objet compte entier
           vers un composant client. */}

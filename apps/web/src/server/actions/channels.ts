@@ -10,6 +10,8 @@ import {
   deleteChannel,
   err,
   isDomainError,
+  isNeverConnected,
+  mailProviderOf,
   ok,
   updateChannel,
   upsertChannelConfig,
@@ -18,10 +20,13 @@ import { revalidatePath } from "next/cache";
 import { revalidateTenantData } from "@/server/cached";
 import { domainAction } from "@/lib/action-result";
 import {
-  appBaseUrl,
+  createEmailHostedAuthLink,
   createReconnectHostedAuthLink,
+  createWhatsAppHostedAuthLink,
   deleteUnipileAccount,
+  type MailProvider,
 } from "@/server/unipile";
+import { urlsDeConnexion } from "@/server/unipile/retour";
 
 // Server Actions Channels (M3.6) — onglet Paramètres → Canaux (M5/M6).
 
@@ -93,16 +98,11 @@ export async function reconnectChannelAction(
   });
   if (!found.ok) return found;
 
-  const base = appBaseUrl();
-  const secret = process.env.UNIPILE_WEBHOOK_SECRET ?? "";
-  const notifyUrl = `${base}/api/webhooks/unipile?secret=${encodeURIComponent(secret)}`;
   try {
     const url = await createReconnectHostedAuthLink({
       channelId,
       accountId: found.data.externalAccountId,
-      notifyUrl,
-      successRedirectUrl: `${base}/canaux?connected=1`,
-      failureRedirectUrl: `${base}/canaux?error=1`,
+      ...urlsDeConnexion("canaux"),
     });
     if (!url) {
       return err(
@@ -116,6 +116,61 @@ export async function reconnectChannelAction(
     // Erreur remontée du fournisseur (ex. 401 identifiants Unipile) → toast, pas 500.
     if (isDomainError(error)) return err(error.code, error.message);
     return err("INVALID_STATE", "La reconnexion du canal a échoué.");
+  }
+}
+
+const MAIL_PROVIDERS: readonly MailProvider[] = ["GOOGLE", "OUTLOOK", "MAIL"];
+
+/**
+ * REPREND la connexion d'un canal JAMAIS CONNECTÉ (PITFALLS #70) : l'utilisateur
+ * est revenu en arrière de la page du fournisseur, le canal est resté « en
+ * attente » sans compte externe. On rouvre la page du fournisseur sur le MÊME
+ * canal, avec le fournisseur de messagerie choisi la première fois s'il est
+ * connu — sinon Unipile propose les siens. Rien n'est supprimé, rien n'est
+ * créé ; le webhook `notify` finalise comme pour une première connexion.
+ */
+export async function reprendreConnexionAction(
+  channelId: string,
+): Promise<ActionResult<{ url: string }>> {
+  const found = await domainAction(async (db) => {
+    const channel = await db.channel.findFirst({
+      where: { id: channelId },
+      include: { config: true },
+    });
+    if (!channel) throw new DomainError("NOT_FOUND", "Canal introuvable.");
+    if (!isNeverConnected(channel)) {
+      throw new DomainError(
+        "INVALID_STATE",
+        "Ce canal est déjà connecté — utilisez « Reconnecter ».",
+      );
+    }
+    const stocke = mailProviderOf(channel.config);
+    const mailProvider = MAIL_PROVIDERS.find((p) => p === stocke);
+    return { type: channel.type, mailProvider };
+  });
+  if (!found.ok) return found;
+
+  try {
+    const urls = urlsDeConnexion("canaux");
+    const url =
+      found.data.type === "whatsapp"
+        ? await createWhatsAppHostedAuthLink({ channelId, ...urls })
+        : await createEmailHostedAuthLink({
+            channelId,
+            ...urls,
+            provider: found.data.mailProvider,
+          });
+    if (!url) {
+      return err(
+        "INVALID_STATE",
+        "Intégration non configurée (UNIPILE_DSN / UNIPILE_API_KEY).",
+      );
+    }
+    revalidateChannels();
+    return ok({ url });
+  } catch (error) {
+    if (isDomainError(error)) return err(error.code, error.message);
+    return err("INVALID_STATE", "La connexion du canal a échoué.");
   }
 }
 

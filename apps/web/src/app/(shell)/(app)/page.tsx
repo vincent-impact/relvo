@@ -7,6 +7,7 @@ import {
   TodayPanel,
 } from "@/components/home/brief-panels";
 import { NewsPanel } from "@/components/home/news-panel";
+import { carteDepuisRattrapage } from "@/components/shared/carte-vivante";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { PollRefresh } from "@/components/shared/poll-refresh";
@@ -19,6 +20,7 @@ import {
   cachedChannelCount,
 } from "@/server/cached";
 import { getTenantDb, requireAccount } from "@/server/auth-context";
+import { boiteEnMiseEnRoute, carteEnAttente } from "@/server/lecture-en-cours";
 import { FUSEAU, calendrierParis, jourParis } from "@relvo/db/temps";
 
 // Accueil — un BRIEF en quatre zones (01 §11, invariant 34), le premier tour de
@@ -48,18 +50,46 @@ async function News({
   sinceISO: string | null;
   todayKey: string;
 }) {
-  const [news, suggestions, channels] = await Promise.all([
+  const [news, suggestions, channels, lecture] = await Promise.all([
     cachedBriefNews(accountId, sinceISO),
     cachedBriefSuggestions(accountId, todayKey),
     cachedChannelCount(accountId),
+    lectureEnDirect(),
   ]);
   return (
     <NewsPanel
       news={news}
       suggestions={suggestions}
       hasChannels={channels > 0}
+      lecture={lecture}
     />
   );
+}
+
+/**
+ * La lecture du courrier EN CE MOMENT — lue en direct, hors cache : une
+ * lecture avance toutes les quelques secondes, et le dirigeant doit voir
+ * qu'elle tourne d'où qu'il soit (recette du 2026-10-21). Une boîte connectée
+ * à l'instant, sans encore sa ligne, compte comme une lecture qui commence.
+ */
+async function lectureEnDirect() {
+  const db = await getTenantDb();
+  const enCours = await db.channelCatchup.findFirst({
+    where: { status: { in: ["pending", "running"] } },
+    orderBy: { requestedAt: "desc" },
+    include: { channel: { select: { name: true } } },
+  });
+  if (enCours) return carteDepuisRattrapage(enCours, null);
+  const boites = await db.channel.findMany({
+    where: { type: "email", config: { externalAccountId: { not: null } } },
+    include: {
+      config: { select: { externalAccountId: true, updatedAt: true } },
+      catchups: { select: { id: true }, take: 1 },
+    },
+  });
+  return boites.some((b) => boiteEnMiseEnRoute(b))
+    ? carteEnAttente(null)
+    : null;
 }
 
 async function Brief({

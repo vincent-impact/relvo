@@ -21,20 +21,32 @@ import { cn } from "@/lib/utils";
 // Page-aware (invariant 26) : le bouton ouvre l'échange plein écran en
 // transmettant la page d'origine (`?from=`) pour le chip de contexte, les
 // prompts et le retour.
+//
+// Quand Relvo LIT le courrier (rattrapage en cours), les étoiles RESPIRENT
+// (`.respire`, le seul mouvement qui dit « Relvo travaille ») : le travail se
+// voit d'où qu'on soit, sans ouvrir la page des canaux. Le disque, lui, ne
+// change pas — c'est sa couleur qui le désigne, pas un mouvement.
 
 export function RelvoDockButton({
   pending = 0,
+  reading = false,
   className,
 }: {
   /** Questions de Relvo en attente d'une réponse — 0 = pas de badge. */
   pending?: number;
+  /** Relvo lit le courrier en ce moment : les étoiles respirent. */
+  reading?: boolean;
   className?: string;
 }) {
   const pathname = usePathname();
-  const label =
+  const label = [
     pending > 0
       ? `Parler à Relvo, ${pending} question${pending > 1 ? "s" : ""} en attente`
-      : "Parler à Relvo";
+      : "Parler à Relvo",
+    reading ? "Relvo lit votre courrier" : null,
+  ]
+    .filter(Boolean)
+    .join(" — ");
 
   return (
     <Link
@@ -47,7 +59,7 @@ export function RelvoDockButton({
       style={{ background: "var(--degrade-disque)" }}
     >
       <svg viewBox="116 104 296 296" width="30" height="30" aria-hidden="true">
-        <g fill="currentColor">
+        <g fill="currentColor" className={cn(reading && "respire")}>
           {RELVO_LOGO_PATHS.stars.map((d) => (
             <path key={d} d={d} />
           ))}

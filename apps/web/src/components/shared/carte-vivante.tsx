@@ -28,7 +28,8 @@ export type CarteVivanteData = {
   channelName?: string | null;
 };
 
-function phrase(c: CarteVivanteData): string {
+/** Ce que Relvo dit de la lecture, selon son état — la même phrase sur l'accueil. */
+export function phraseLecture(c: CarteVivanteData): string {
   const ou = c.channelName ? ` de ${c.channelName}` : "";
   switch (c.status) {
     case "pending":
@@ -60,6 +61,20 @@ function phrase(c: CarteVivanteData): string {
   }
 }
 
+/** Relvo travaille : trois points qui respirent, en fin de phrase. */
+export function PointsQuiRespirent() {
+  return (
+    <span
+      className="respire ml-1 inline-flex items-center gap-[3px] align-middle text-relvo"
+      aria-hidden
+    >
+      {[0, 1, 2].map((i) => (
+        <span key={i} className="size-[4px] rounded-full bg-current" />
+      ))}
+    </span>
+  );
+}
+
 function Compteur({ n, label }: { n: number; label: string }) {
   return (
     <div className="min-w-0">
@@ -89,17 +104,8 @@ export function CarteVivante({
   return (
     <RelvoBlock className={className} label="Relvo lit le courrier">
       <RelvoSentence>
-        {phrase(data)}
-        {running ? (
-          <span
-            className="respire ml-1 inline-flex items-center gap-[3px] align-middle text-relvo"
-            aria-hidden
-          >
-            {[0, 1, 2].map((i) => (
-              <span key={i} className="size-[4px] rounded-full bg-current" />
-            ))}
-          </span>
-        ) : null}
+        {phraseLecture(data)}
+        {running ? <PointsQuiRespirent /> : null}
       </RelvoSentence>
       {counting ? (
         <div className="mt-3 grid grid-cols-3 gap-2 rounded-(--rayon-sous-carte) border border-(--filet) bg-white px-3.5 py-2.5">

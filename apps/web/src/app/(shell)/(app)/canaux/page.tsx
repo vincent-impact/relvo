@@ -9,6 +9,7 @@ import {
 import { PollRefresh } from "@/components/shared/poll-refresh";
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { ConnectEmailButton } from "@/components/settings/connect-email-button";
+import { ChannelConnectButton } from "@/components/settings/channel-connect-button";
 import { ChannelRemoveLink } from "@/components/settings/channel-delete-button";
 import { ListPanel } from "@/components/shared/list-panel";
 import { ZoneHeading } from "@/components/shared/zone-heading";
@@ -20,7 +21,12 @@ import { getTenantDb } from "@/server/auth-context";
 import { getAccount } from "@/server/unipile";
 import { relancerLignesEnPanne } from "@/server/ia/pipeline/rattrapage";
 import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
-import { type ChannelConfigStatus, setChannelConfigStatus } from "@relvo/db";
+import { boiteEnMiseEnRoute, carteEnAttente } from "@/server/lecture-en-cours";
+import {
+  type ChannelConfigStatus,
+  isNeverConnected,
+  setChannelConfigStatus,
+} from "@relvo/db";
 import type { TenantDb } from "@relvo/db";
 
 export const metadata: Metadata = { title: "Canaux — Relvo" };
@@ -33,7 +39,8 @@ export const metadata: Metadata = { title: "Canaux — Relvo" };
 
 // L'état se lit à la forme avant la couleur (01-tokens) : connecté = pastille
 // pleine verte, en attente = pastille cerclée ambre, erreur = pleine rouge,
-// désactivé = cerclée grise.
+// désactivé = cerclée grise. « Connexion… » : le retour de la page du
+// fournisseur, le temps que son webhook passe.
 const CHANNEL_STATUS: Record<
   string,
   { label: string; cls: string; dot: string }
@@ -41,6 +48,11 @@ const CHANNEL_STATUS: Record<
   connected: { label: "Connecté", cls: "text-fait", dot: "bg-fait" },
   pending: {
     label: "En attente",
+    cls: "text-attente-texte",
+    dot: "border-2 border-(--attente)",
+  },
+  connecting: {
+    label: "Connexion…",
     cls: "text-attente-texte",
     dot: "border-2 border-(--attente)",
   },
@@ -52,13 +64,24 @@ const CHANNEL_STATUS: Record<
   },
 };
 
-async function ChannelList() {
+/** Après le retour du fournisseur, un canal encore sans compte est « en connexion » ce temps-là, pas « à connecter ». */
+const RETOUR_FOURNISSEUR_MS = 2 * 60 * 1000;
+
+async function ChannelList({ connected }: { connected: boolean }) {
   const db = await getTenantDb();
+  // `new Date()` et pas `Date.now()` : la règle de pureté du compilateur React
+  // tient ce composant serveur pour un composant comme un autre.
+  const now = new Date().getTime();
   const channels = await db.channel.findMany({
     orderBy: { createdAt: "asc" },
     include: {
       config: {
-        select: { status: true, lastSyncAt: true, externalAccountId: true },
+        select: {
+          status: true,
+          lastSyncAt: true,
+          externalAccountId: true,
+          updatedAt: true,
+        },
       },
       // Le dernier rattrapage du courrier récent (M7.19) : ce que Relvo lit
       // depuis la connexion, ou ce qu'il a lu.
@@ -85,14 +108,31 @@ async function ChannelList() {
   const hasWhatsApp = channels.some((c) => c.type === "whatsapp");
 
   // Le nom de la boîte n'est dit que s'il y a plusieurs cartes à distinguer.
+  // Une boîte connectée à l'instant, sans encore sa lecture, a déjà sa carte —
+  // « en attente » — pour que le travail se voie dès le retour du fournisseur.
   const avecRattrapage = channels.filter((ch) => ch.catchups[0]);
-  const rattrapages = avecRattrapage.map((ch) => ({
-    channelId: ch.id,
-    ...carteDepuisRattrapage(
-      ch.catchups[0],
-      avecRattrapage.length > 1 ? ch.name : null,
-    ),
-  }));
+  const enMiseEnRoute = channels.filter((ch) => boiteEnMiseEnRoute(ch, now));
+  const plusieurs = avecRattrapage.length + enMiseEnRoute.length > 1;
+  const rattrapages = [
+    ...avecRattrapage.map((ch) => ({
+      channelId: ch.id,
+      ...carteDepuisRattrapage(ch.catchups[0], plusieurs ? ch.name : null),
+    })),
+    ...enMiseEnRoute.map((ch) => ({
+      channelId: ch.id,
+      ...carteEnAttente(plusieurs ? ch.name : null),
+    })),
+  ];
+  // Au retour de la page du fournisseur (`connected=1`), la page se rafraîchit
+  // tant qu'un canal n'a pas fini de se mettre en route : le webhook de
+  // connexion, puis la première tranche de lecture.
+  const miseEnRouteEnCours =
+    connected &&
+    channels.some((ch) =>
+      ch.type === "email"
+        ? !ch.catchups[0]
+        : statuts[channels.indexOf(ch)] !== "connected",
+    );
   // Une ligne dont plus aucune tranche ne s'occupe est relancée après la
   // réponse (M7.19) : la reprise, sans attendre la nuit.
   if (avecRattrapage.some((ch) => estEnPanne(ch.catchups[0]))) {
@@ -121,13 +161,25 @@ async function ChannelList() {
       ) : (
         <ListPanel>
           {channels.map((ch, i) => {
-            const st = CHANNEL_STATUS[statuts[i]] ?? CHANNEL_STATUS.pending;
             const Icon = ch.type === "whatsapp" ? WhatsappLogo : Envelope;
+            // Jamais connecté chez le fournisseur — l'utilisateur est revenu
+            // en arrière de sa page : « Connecter » remplace le badge, le
+            // geste reprend le même canal (PITFALLS #70). Sauf juste au retour
+            // du fournisseur, où son webhook est peut-être en route.
+            const jamaisConnecte = isNeverConnected(ch);
+            const enConnexion =
+              jamaisConnecte &&
+              connected &&
+              ch.config != null &&
+              now - ch.config.updatedAt.getTime() < RETOUR_FOURNISSEUR_MS;
+            const st =
+              CHANNEL_STATUS[enConnexion ? "connecting" : statuts[i]] ??
+              CHANNEL_STATUS.pending;
             // Reconnecter remplace le badge quand le compte existe chez le
             // fournisseur et que le canal n'est pas connecté : l'état devient
             // le geste (PITFALLS #53).
             const reconnect =
-              ch.config?.externalAccountId && statuts[i] !== "connected";
+              !!ch.config?.externalAccountId && statuts[i] !== "connected";
             return (
               <div
                 key={ch.id}
@@ -145,7 +197,12 @@ async function ChannelList() {
                     {ch.identifier}
                   </div>
                 </div>
-                {reconnect ? (
+                {jamaisConnecte && !enConnexion ? (
+                  <ChannelConnectButton
+                    channelId={ch.id}
+                    channelName={ch.name}
+                  />
+                ) : reconnect ? (
                   <ChannelReconnectButton
                     channelId={ch.id}
                     channelName={ch.name}
@@ -173,7 +230,8 @@ async function ChannelList() {
       {rattrapages.map((r) => (
         <CarteVivante key={r.channelId} data={r} className="mx-4 mt-3" />
       ))}
-      {rattrapages.some(
+      {miseEnRouteEnCours ||
+      rattrapages.some(
         (r) => r.status === "pending" || r.status === "running",
       ) ? (
         <PollRefresh />
@@ -192,7 +250,14 @@ async function ChannelList() {
   );
 }
 
-export default function CanauxPage() {
+export default async function CanauxPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ connected?: string }>;
+}) {
+  // `connected=1` : le retour de la page du fournisseur — la liste se
+  // rafraîchit jusqu'à voir la lecture commencer.
+  const { connected } = await searchParams;
   return (
     <Screen>
       <RelvoHeader
@@ -201,7 +266,7 @@ export default function CanauxPage() {
         className="pb-5"
       />
       <Suspense fallback={<RowsSkeleton count={2} className="mt-8" />}>
-        <ChannelList />
+        <ChannelList connected={connected === "1"} />
       </Suspense>
     </Screen>
   );

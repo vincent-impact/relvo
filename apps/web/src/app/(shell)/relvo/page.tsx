@@ -16,6 +16,7 @@ import {
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
 import { relancerLignesEnPanne } from "@/server/ia/pipeline/rattrapage";
 import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
+import { boiteEnMiseEnRoute, carteEnAttente } from "@/server/lecture-en-cours";
 
 // Échange avec Relvo, plein écran (coquille M9). Page-aware : `from` porte la
 // page d'origine pour le bouton retour, le chip de contexte et les prompts.
@@ -52,13 +53,16 @@ export default async function ConversationPage({
     q?: string;
     nouveau?: string;
     reprendre?: string;
+    connected?: string;
   }>;
 }) {
   // `q` : une suggestion de l'accueil, posée comme premier tour (05 §11.12) —
   // le texte arrive dans le composer, l'utilisateur l'envoie ou le corrige.
   // `nouveau` force un nouvel échange ; `reprendre` rouvre un échange de
-  // l'historique de l'appareil (M10.3, M10.4).
-  const { from, q, nouveau, reprendre } = await searchParams;
+  // l'historique de l'appareil (M10.3, M10.4). `connected` : le retour de la
+  // page du fournisseur, la boîte confiée à la dernière étape de la prise en
+  // main — la lecture se suit ici.
+  const { from, q, nouveau, reprendre, connected } = await searchParams;
   const backHref = from && from !== "/relvo" ? from : "/";
   const accountId = await requireAccountId();
   const db = await getTenantDb();
@@ -87,9 +91,28 @@ export default async function ConversationPage({
       include: { channel: { select: { name: true } } },
     }),
   ]);
-  const lecture: CarteVivanteData | null = rattrapage
+  let lecture: CarteVivanteData | null = rattrapage
     ? carteDepuisRattrapage(rattrapage, rattrapage.channel.name)
     : null;
+  if (!lecture) {
+    // Une boîte connectée à l'instant, sans encore sa lecture — le webhook de
+    // connexion ou la première tranche n'est pas passé — : la carte « en
+    // attente » se montre déjà, et la page se rafraîchit jusqu'à la lecture.
+    const boites = await db.channel.findMany({
+      where: { type: "email", config: { externalAccountId: { not: null } } },
+      include: {
+        config: { select: { externalAccountId: true, updatedAt: true } },
+        catchups: { select: { id: true }, take: 1 },
+      },
+    });
+    const enRoute = boites.find((b) => boiteEnMiseEnRoute(b));
+    if (enRoute) lecture = carteEnAttente(enRoute.name);
+    else if (connected === "1" && boites.length === 0) {
+      // Revenu du fournisseur avant son webhook : rien en base encore, la
+      // carte dit que ça commence, le rafraîchissement fera le reste.
+      lecture = carteEnAttente(null);
+    }
+  }
   if (rattrapage && estEnPanne(rattrapage)) {
     after(() => relancerLignesEnPanne(db));
   }

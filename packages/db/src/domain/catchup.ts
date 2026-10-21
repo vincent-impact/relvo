@@ -139,6 +139,13 @@ export function getOpenCatchup(db: TenantDb, channelId: string) {
   });
 }
 
+/** Relvo LIT en ce moment : au moins une ligne en attente ou en cours — ce que le dock respire. */
+export function countActiveCatchups(db: TenantDb): Promise<number> {
+  return db.channelCatchup.count({
+    where: { status: { in: [...CATCHUP_OPEN_STATUSES] } },
+  });
+}
+
 /** Les rattrapages ouverts ou reprenables du compte, le plus récent d'abord — pour la reprise depuis une page. */
 export function listOpenCatchups(db: TenantDb) {
   return db.channelCatchup.findMany({

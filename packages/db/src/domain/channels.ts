@@ -2,7 +2,7 @@ import { z } from "zod";
 import { Prisma } from "../generated/prisma/client";
 import { ChannelConfigStatus, ChannelType } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
-import { assertFound } from "./errors";
+import { assertFound, DomainError } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import { ensureAffected } from "./helpers";
 
@@ -71,6 +71,96 @@ export async function createChannel(db: TenantDb, input: CreateChannelInput) {
     });
     return channel;
   });
+}
+
+/**
+ * Un canal JAMAIS CONNECTÉ chez le fournisseur : pré-créé pour la page de
+ * connexion, avec sa configuration mais sans compte externe. C'est l'état
+ * d'un canal dont l'utilisateur est revenu en arrière avant la fin — un geste
+ * à reprendre, jamais une boîte qui compte (PITFALLS #70). Un canal SANS
+ * configuration (le jeu de démonstration) n'a rien à reprendre : il n'en est
+ * pas un.
+ */
+export function isNeverConnected(ch: {
+  config: { externalAccountId: string | null } | null;
+}): boolean {
+  return ch.config != null && !ch.config.externalAccountId;
+}
+
+export const prepareChannelConnectionSchema = z.object({
+  type: z.enum(ChannelType),
+  name: z.string().trim().min(1).max(120),
+  /** Le fournisseur de messagerie choisi dans l'application, pour reprendre la même page. */
+  mailProvider: z.string().trim().min(1).max(40).optional(),
+});
+export type PrepareChannelConnectionInput = z.input<
+  typeof prepareChannelConnectionSchema
+>;
+
+/**
+ * PRÉPARE la connexion d'un canal avant d'ouvrir la page du fournisseur : un
+ * seul canal par type en V1. S'il en existe un déjà connecté, c'est un
+ * conflit ; s'il en existe un jamais connecté — l'utilisateur est revenu en
+ * arrière —, c'est LUI qu'on reprend, sous le nom et le fournisseur choisis
+ * cette fois, jamais un second à côté (PITFALLS #70). Sinon, le canal et sa
+ * configuration `pending` sont créés. Rend le canal et si c'est une reprise.
+ */
+export async function prepareChannelConnection(
+  db: TenantDb,
+  input: PrepareChannelConnectionInput,
+): Promise<{ channel: { id: string; name: string }; reprise: boolean }> {
+  const data = prepareChannelConnectionSchema.parse(input);
+  const existants = await db.channel.findMany({
+    where: { type: data.type },
+    include: { config: { select: { externalAccountId: true } } },
+    orderBy: { createdAt: "asc" },
+  });
+  const connecte = existants.find((c) => !isNeverConnected(c));
+  if (connecte) {
+    throw new DomainError(
+      "CONFLICT",
+      data.type === ChannelType.whatsapp
+        ? "Un canal WhatsApp est déjà connecté. Supprimez-le pour en connecter un autre."
+        : "Une boîte e-mail est déjà connectée. Supprimez-la pour en connecter une autre.",
+    );
+  }
+  const connectionData = data.mailProvider
+    ? { mailProvider: data.mailProvider }
+    : null;
+  const orphelin = existants[0];
+  if (orphelin) {
+    await db.channel.updateMany({
+      where: { id: orphelin.id },
+      data: { name: data.name },
+    });
+    await upsertChannelConfig(db, orphelin.id, {
+      provider: "unipile",
+      status: ChannelConfigStatus.pending,
+      connectionData,
+    });
+    return { channel: { id: orphelin.id, name: data.name }, reprise: true };
+  }
+  const channel = await createChannel(db, {
+    name: data.name,
+    type: data.type,
+    identifier: "En attente de connexion…",
+  });
+  await upsertChannelConfig(db, channel.id, {
+    provider: "unipile",
+    status: ChannelConfigStatus.pending,
+    connectionData,
+  });
+  return { channel: { id: channel.id, name: channel.name }, reprise: false };
+}
+
+/** Le fournisseur de messagerie retenu à la préparation d'un canal, s'il y en a un. */
+export function mailProviderOf(
+  config: { connectionData: unknown } | null,
+): string | null {
+  const d = config?.connectionData;
+  if (!d || typeof d !== "object") return null;
+  const v = (d as { mailProvider?: unknown }).mailProvider;
+  return typeof v === "string" && v ? v : null;
 }
 
 export async function updateChannel(

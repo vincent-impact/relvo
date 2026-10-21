@@ -3,69 +3,45 @@
 import {
   type ActionResult,
   type SendWhatsAppReplyInput,
-  DomainError,
-  createChannel,
   err,
   isDomainError,
   ok,
+  prepareChannelConnection,
   sendWhatsAppReply,
-  upsertChannelConfig,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { revalidateTenantData } from "@/server/cached";
 import { domainAction } from "@/lib/action-result";
 import { relireApresEnvoi } from "@/server/actions/email";
 import {
-  appBaseUrl,
   createWhatsAppHostedAuthLink,
   unipileWhatsAppSender,
 } from "@/server/unipile";
+import { urlsDeConnexion } from "@/server/unipile/retour";
 
 // Server Actions M6 — connexion d'un compte WhatsApp (hosted auth QR Unipile) et
 // envoi sortant dans un fil existant. Calque `actions/email.ts`.
 
 /**
- * Démarre la connexion d'un compte WhatsApp : pré-crée un Channel `whatsapp` + sa
- * config `pending`, puis génère un lien de hosted auth Unipile (écran QR code). Le
- * client redirige vers l'URL renvoyée ; le webhook `notify` finalisera la
- * connexion (externalAccountId + statut connected), comme pour l'email.
+ * Démarre la connexion d'un compte WhatsApp : prépare un Channel `whatsapp` +
+ * sa config `pending` — ou reprend celui qu'un retour en arrière a laissé sans
+ * compte (PITFALLS #70) —, puis génère un lien de hosted auth Unipile (écran
+ * QR code). Le client redirige vers l'URL renvoyée ; le webhook `notify`
+ * finalisera la connexion (externalAccountId + statut connected), comme pour
+ * l'email.
  */
 export async function connectWhatsAppChannelAction(): Promise<
   ActionResult<{ url: string }>
 > {
-  const created = await domainAction(async (db) => {
-    // V1 : un seul canal WhatsApp par utilisateur (garde serveur en renfort de
-    // l'UI qui masque déjà la tuile).
-    if ((await db.channel.count({ where: { type: "whatsapp" } })) > 0) {
-      throw new DomainError(
-        "CONFLICT",
-        "Un canal WhatsApp est déjà connecté. Supprimez-le pour en connecter un autre.",
-      );
-    }
-    const channel = await createChannel(db, {
-      name: "WhatsApp",
-      type: "whatsapp",
-      identifier: "En attente de connexion…",
-    });
-    await upsertChannelConfig(db, channel.id, {
-      provider: "unipile",
-      status: "pending",
-    });
-    return channel;
-  });
+  const created = await domainAction((db) =>
+    prepareChannelConnection(db, { type: "whatsapp", name: "WhatsApp" }),
+  );
   if (!created.ok) return created;
 
-  const base = appBaseUrl();
-  // Le callback notify_url ne porte pas le header custom d'Unipile → on le
-  // sécurise par un token en query-string (même secret que les webhooks managés).
-  const secret = process.env.UNIPILE_WEBHOOK_SECRET ?? "";
-  const notifyUrl = `${base}/api/webhooks/unipile?secret=${encodeURIComponent(secret)}`;
   try {
     const url = await createWhatsAppHostedAuthLink({
-      channelId: created.data.id,
-      notifyUrl,
-      successRedirectUrl: `${base}/canaux?connected=1`,
-      failureRedirectUrl: `${base}/canaux?error=1`,
+      channelId: created.data.channel.id,
+      ...urlsDeConnexion("canaux"),
     });
     if (!url) {
       return err(

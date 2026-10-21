@@ -4,6 +4,11 @@ import {
   RelvoBlock,
   RelvoSentence,
 } from "@/components/shared/relvo-block";
+import {
+  type CarteVivanteData,
+  PointsQuiRespirent,
+  phraseLecture,
+} from "@/components/shared/carte-vivante";
 import type { CachedNews } from "@/server/cached";
 import type { BriefSuggestion } from "@relvo/db";
 
@@ -72,22 +77,52 @@ function suggestionHref(s: BriefSuggestion): string {
   return `/relvo?from=%2F&q=${encodeURIComponent(s.text)}`;
 }
 
+/** Les compteurs de la lecture, en une ligne — rien tant qu'il n'y a rien à compter. */
+function compteursLecture(l: CarteVivanteData): string | null {
+  if (l.messagesImported === 0 && l.subjectsOpened === 0) return null;
+  const lus = `${l.messagesImported} message${l.messagesImported > 1 ? "s" : ""} lu${l.messagesImported > 1 ? "s" : ""}`;
+  const ouvertes = `${l.subjectsOpened} affaire${l.subjectsOpened > 1 ? "s" : ""} ouverte${l.subjectsOpened > 1 ? "s" : ""}`;
+  return `${lus}, ${ouvertes}`;
+}
+
 export function NewsPanel({
   news,
   suggestions,
   hasChannels = true,
+  lecture = null,
 }: {
   news: CachedNews;
   suggestions: BriefSuggestion[];
   /** Aucune boîte reliée : le bloc guide vers Canaux au lieu de résumer. */
   hasChannels?: boolean;
+  /** Relvo lit le courrier EN CE MOMENT (lu en direct, jamais du cache) : le
+   * bloc le dit en premier, avec ses compteurs, et mène à l'échange où la
+   * lecture se suit. Le travail doit se voir d'où qu'on soit. */
+  lecture?: CarteVivanteData | null;
 }) {
   const questions = suggestions.filter((s) => s.kind === "question");
-  const others = suggestions.filter((s) => s.kind !== "question");
+  // La ligne « je lis encore » du brief vient du cache : la lecture en direct
+  // la remplace quand on l'a.
+  const others = suggestions.filter(
+    (s) => s.kind !== "question" && !(lecture && s.kind === "lecture"),
+  );
+  const compteurs = lecture ? compteursLecture(lecture) : null;
   return (
     <RelvoBlock label="Dernières nouvelles" className="apparait pb-2">
-      <RelvoSentence>{newsSentence(news, hasChannels)}</RelvoSentence>
-      {!hasChannels ? (
+      {lecture ? (
+        <>
+          <RelvoSentence>
+            {phraseLecture(lecture)}
+            <PointsQuiRespirent />
+          </RelvoSentence>
+          <Link href="/relvo?from=%2F" className={RELVO_LINK}>
+            → Suivre la lecture{compteurs ? ` : ${compteurs}` : ""}
+          </Link>
+        </>
+      ) : (
+        <RelvoSentence>{newsSentence(news, hasChannels)}</RelvoSentence>
+      )}
+      {!hasChannels && !lecture ? (
         <Link href="/canaux" className={RELVO_LINK}>
           → Relier ma boîte e-mail
         </Link>

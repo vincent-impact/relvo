@@ -597,6 +597,28 @@ réception → un envoi (`ingestOutboundEmail`) ; le reste → reçu. Tout webho
 par là avant d'ingérer quoi que ce soit, et l'ignoré se lit dans la réponse du webhook
 (`ignored: "brouillon"`).
 
+### #70 — Un canal pré-créé pour la page du fournisseur reste « En attente » si l'utilisateur en revient : l'état doit redevenir un geste
+
+**Symptôme** : en recette, un testeur ajoute une boîte, la page du fournisseur s'ouvre, il
+revient en arrière avec son navigateur. Dans Canaux, la ligne dit « En attente », n'est pas
+cliquable, le bouton « Connecter ma boîte e-mail » a disparu (une boîte existe), et
+« Reconnecter » ne vient pas (aucun compte chez le fournisseur). Seule issue : supprimer le canal.
+
+**Cause** : la connexion pré-crée le canal et sa configuration `pending` AVANT d'ouvrir la page
+du fournisseur — c'est son identifiant qui revient dans le webhook `notify`. Si l'utilisateur ne
+va pas au bout, rien ne revient, et le canal est un orphelin : ni connecté, ni reconnectable, et
+il occupe la place unique de son type.
+
+**Règle** : un canal **jamais connecté** (`isNeverConnected` : pas de compte externe) n'est pas
+une boîte, c'est un geste à reprendre. La ligne porte « Connecter » (`reprendreConnexionAction`),
+qui rouvre la page du fournisseur sur le **même** canal et le fournisseur de messagerie choisi
+la première fois (`connectionData.mailProvider`) ; et toute nouvelle connexion du même type
+**reprend** l'orphelin au lieu d'en créer un second ou de refuser (`prepareChannelConnection`).
+Juste au retour du fournisseur (`?connected=1`, deux minutes), la ligne dit « Connexion… » le
+temps que son webhook passe — jamais « Connecter » sous les yeux de quelqu'un qui vient de le
+faire. Même famille que #53 : l'état stocké n'est jamais la vérité, et un état sans issue est un
+bug de parcours, pas un état.
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |
@@ -620,7 +642,7 @@ d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revér
 documentation de la plateforme, jamais de mémoire. Le piège **#54** relève du **navigateur du
 téléphone** : il se périme avec la version de Chrome, dans le bon sens.
 
-Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58, #59, #68** sont des **règles de conception ou d'hygiène** :
+Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58, #59, #68, #70** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
 
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et

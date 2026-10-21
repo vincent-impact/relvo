@@ -169,8 +169,11 @@ function DockFabric() {
 
 export function BottomTabBar({
   pendingQuestions = 0,
+  reading = false,
 }: {
   pendingQuestions?: number;
+  /** Relvo lit le courrier : le disque respire. */
+  reading?: boolean;
 }) {
   const pathname = usePathname();
 
@@ -186,7 +189,7 @@ export function BottomTabBar({
       {/* La place centrale : le disque dans l'axe de la pilule, plus grand
           qu'elle ; la pilule se soulève autour de lui (DockFabric). */}
       <div className="relative flex flex-1 items-center justify-center">
-        <RelvoDockButton pending={pendingQuestions} />
+        <RelvoDockButton pending={pendingQuestions} reading={reading} />
       </div>
       {RIGHT.map((tab) => (
         <TabLink key={tab.href} tab={tab} pathname={pathname} />

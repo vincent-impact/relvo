@@ -3,13 +3,11 @@
 import {
   type ActionResult,
   type SendEmailReplyInput,
-  DomainError,
-  createChannel,
   err,
   isDomainError,
   ok,
+  prepareChannelConnection,
   sendEmailReply,
-  upsertChannelConfig,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { after } from "next/server";
@@ -18,11 +16,11 @@ import { revalidateTenantData } from "@/server/cached";
 import { getCurrentAccountId } from "@/server/auth-context";
 import { relireSujet } from "@/server/ia/pipeline/relecture";
 import {
-  appBaseUrl,
   createEmailHostedAuthLink,
   type MailProvider,
   unipileEmailSender,
 } from "@/server/unipile";
+import { type RetourConnexion, urlsDeConnexion } from "@/server/unipile/retour";
 
 // Libellé de canal par provider (le vrai nom sera remplacé par l'adresse réelle
 // une fois la connexion finalisée par le webhook `notify`).
@@ -36,47 +34,31 @@ const PROVIDER_LABEL: Record<MailProvider, string> = {
 // sortant depuis la vraie adresse de l'utilisateur.
 
 /**
- * Démarre la connexion d'une boîte email : pré-crée un Channel `email` + sa
- * config `pending`, puis génère un lien de hosted auth Unipile. Le client
- * redirige vers l'URL renvoyée ; le webhook `notify` finalisera la connexion
- * (externalAccountId + statut connected + adresse réelle).
+ * Démarre la connexion d'une boîte email : prépare un Channel `email` + sa
+ * config `pending` — ou REPREND celui qu'un retour en arrière a laissé sans
+ * compte (PITFALLS #70), jamais un second —, puis génère un lien de hosted
+ * auth Unipile. Le client redirige vers l'URL renvoyée ; le webhook `notify`
+ * finalisera la connexion (externalAccountId + statut connected + adresse
+ * réelle). `retour` : la page où l'utilisateur revient — Canaux, ou l'échange
+ * quand c'est la prise en main qui demande la boîte (05 §11.11).
  */
 export async function connectEmailChannelAction(
   provider?: MailProvider,
+  retour: RetourConnexion = "canaux",
 ): Promise<ActionResult<{ url: string }>> {
-  const created = await domainAction(async (db) => {
-    // V1 : une seule boîte e-mail par utilisateur (garde serveur en renfort de
-    // l'UI qui masque déjà la tuile).
-    if ((await db.channel.count({ where: { type: "email" } })) > 0) {
-      throw new DomainError(
-        "CONFLICT",
-        "Une boîte e-mail est déjà connectée. Supprimez-la pour en connecter une autre.",
-      );
-    }
-    const channel = await createChannel(db, {
-      name: provider ? PROVIDER_LABEL[provider] : "Boîte email",
+  const created = await domainAction((db) =>
+    prepareChannelConnection(db, {
       type: "email",
-      identifier: "En attente de connexion…",
-    });
-    await upsertChannelConfig(db, channel.id, {
-      provider: "unipile",
-      status: "pending",
-    });
-    return channel;
-  });
+      name: provider ? PROVIDER_LABEL[provider] : "Boîte email",
+      mailProvider: provider,
+    }),
+  );
   if (!created.ok) return created;
 
-  const base = appBaseUrl();
-  // Le callback notify_url ne porte pas le header custom d'Unipile → on le
-  // sécurise par un token en query-string (même secret que les webhooks managés).
-  const secret = process.env.UNIPILE_WEBHOOK_SECRET ?? "";
-  const notifyUrl = `${base}/api/webhooks/unipile?secret=${encodeURIComponent(secret)}`;
   try {
     const url = await createEmailHostedAuthLink({
-      channelId: created.data.id,
-      notifyUrl,
-      successRedirectUrl: `${base}/canaux?connected=1`,
-      failureRedirectUrl: `${base}/canaux?error=1`,
+      channelId: created.data.channel.id,
+      ...urlsDeConnexion(retour),
       provider,
     });
     if (!url) {
