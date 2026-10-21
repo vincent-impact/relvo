@@ -26,6 +26,7 @@ import { relireApresSalve, relireSujet } from "@/server/ia/pipeline/relecture";
 import { trierConversation } from "@/server/ia/pipeline/tri";
 import { stockerPiecesJointes } from "@/server/unipile/attachments";
 import {
+  natureDuCourrier,
   toEmailHeaders,
   toInboundEmail,
   toInboundWhatsApp,
@@ -101,13 +102,8 @@ export async function POST(request: Request) {
     return handleHostedAuthNotify(payload);
   }
 
-  // 2) Email reçu, ou envoyé depuis un client de messagerie.
-  if (isMailWebhook(payload)) {
-    if (payload.event === "mail_received") return handleMailReceived(payload);
-    if (payload.event === "mail_sent") return handleMailSent(payload);
-    // `mail_moved` : rien à faire.
-    return ok({ ok: true, ignored: payload.event });
-  }
+  // 2) Courrier : reçu, envoyé depuis un client de messagerie, brouillon…
+  if (isMailWebhook(payload)) return handleMail(payload);
 
   // 3) Messagerie (WhatsApp) entrante.
   if (isMessagingWebhook(payload)) {
@@ -224,14 +220,50 @@ async function handleAccountStatus(evt: UnipileAccountStatusWebhook) {
   return ok({ ok: true, status });
 }
 
-async function handleMailReceived(mail: UnipileMailWebhook) {
-  // Résolution du tenant depuis le compte Unipile.
+type CourrierConfig = { accountId: string; channelId: string };
+
+/**
+ * Le courrier se range d'après ce qu'il EST, pas d'après l'événement : Gmail
+ * pousse chaque enregistrement de brouillon en `mail_received`, et un e-mail
+ * en cours d'écriture entrait en quatre messages « reçus » de soi-même, dans
+ * l'affaire, relus quatre fois. Un brouillon n'est jamais rangé ; l'indésirable
+ * et la corbeille non plus ; un courrier du dossier des envoyés — ou venu de
+ * l'une de nos adresses hors boîte de réception — est un envoi, quel que soit
+ * l'événement ; le reste est reçu. `mail_moved` ne porte rien.
+ */
+async function handleMail(mail: UnipileMailWebhook) {
+  if (mail.event === "mail_moved") return ok({ ok: true, ignored: mail.event });
+  // Résolution du tenant depuis le compte Unipile — avec nos adresses, pour
+  // reconnaître un envoi qui ne dit pas son nom.
   const config = await prisma.channelConfig.findUnique({
     where: { externalAccountId: mail.account_id },
-    select: { accountId: true, channelId: true },
+    select: {
+      accountId: true,
+      channelId: true,
+      channel: {
+        select: { identifier: true, account: { select: { email: true } } },
+      },
+    },
   });
   if (!config) return ok({ ok: true, ignored: "unknown_account" });
 
+  const nature = natureDuCourrier(mail, [
+    config.channel.identifier,
+    config.channel.account?.email,
+  ]);
+  if (nature === "brouillon" || nature === "ecarte") {
+    return ok({ ok: true, ignored: nature, role: mail.role ?? null });
+  }
+  const resolved = { accountId: config.accountId, channelId: config.channelId };
+  return nature === "envoye"
+    ? handleMailSent(mail, resolved)
+    : handleMailReceived(mail, resolved);
+}
+
+async function handleMailReceived(
+  mail: UnipileMailWebhook,
+  config: CourrierConfig,
+) {
   const db = tenantDb(config.accountId);
 
   // Ingestion idempotente → Message rangé dans sa conversation (M6bis), rattaché
@@ -331,13 +363,10 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
  * d'ailleurs compte autant. Les pièces jointes d'un envoi ne sont pas
  * rapatriées : l'affaire se lit, elle ne stocke pas ce que le dirigeant a déjà.
  */
-async function handleMailSent(mail: UnipileMailWebhook) {
-  const config = await prisma.channelConfig.findUnique({
-    where: { externalAccountId: mail.account_id },
-    select: { accountId: true, channelId: true },
-  });
-  if (!config) return ok({ ok: true, ignored: "unknown_account" });
-
+async function handleMailSent(
+  mail: UnipileMailWebhook,
+  config: CourrierConfig,
+) {
   const db = tenantDb(config.accountId);
   const { message, created } = await ingestOutboundEmail(
     db,

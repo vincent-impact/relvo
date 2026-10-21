@@ -615,6 +615,14 @@ réserve « e-mail seulement (A8) » des entrées précédentes pour les convers
   triera avec lui. Le webhook e-mail s'abonne aux envoyés ; sur une instance déjà équipée, un
   second webhook ne porte que les envoyés, le premier reste en place. Les pièces jointes d'un
   envoi ne sont pas rapatriées.
+- **Le courrier se range d'après ce qu'il est, pas d'après l'événement.** Constaté sur le
+  compte du dirigeant : un e-mail qu'il écrivait dans Gmail est entré en quatre messages
+  « reçus » de lui-même, de plus en plus longs, dans l'affaire — chaque enregistrement
+  automatique du brouillon arrive par le webhook des reçus, et chacun a coûté une relecture.
+  Désormais un brouillon (rôle ou dossier de brouillons) n'est jamais rangé, l'indésirable et
+  la corbeille non plus, et un courrier du dossier des envoyés — ou venu de l'une de nos
+  adresses hors boîte de réception — est traité comme un envoi quel que soit l'événement.
+  Rien n'est inféré : c'est le dossier que le fournisseur annonce (`PITFALLS.md`).
 - **Ce que la tranche ne fait pas, et pourquoi** : la lecture de l'historique de la messagerie
   à la connexion (import des chats par l'agrégateur, sur la mécanique par tranches de la
   tranche 10 — la tranche d'après) ; les groupes ; l'entrelacement de deux affaires dans un même

@@ -577,6 +577,26 @@ désigne plusieurs contacts est rendu en candidats, jamais tranché en silence. 
 nouveau entre dans le jeu d'évaluation (`eval:echange`) avec la question qui l'a motivé :
 c'est le jeu, pas la vigilance, qui tient la palette (`05 §10.3`, §11.6).
 
+### #69 — Un `mail_received` de l'agrégateur n'est pas toujours une réception : les brouillons Gmail arrivent par là
+
+**Symptôme** : le dirigeant écrit un e-mail dans Gmail ; dans Relvo, la conversation montre
+quatre messages « reçus » de lui-même, de plus en plus longs (« Hello Carole, » puis « …Ce sont
+des bonnes nouvelles » puis « …Alors »), rangés dans l'affaire, chacun relu par le modèle.
+
+**Cause** : Gmail enregistre le brouillon à chaque pause de frappe, et chaque enregistrement
+est un nouvel e-mail pour le fournisseur, poussé par le webhook `mail_received` — avec
+`role: "drafts"` et le dossier des brouillons, que le webhook ne lisait pas. L'expéditeur est
+notre propre adresse, retirée du set de la conversation : la clé retombe sur le fil de
+l'interlocuteur, l'écoute de l'affaire capte, la relecture part. Un courrier du dossier des
+envoyés peut arriver par le même chemin.
+
+**Règle** : le courrier se range d'après **ce qu'il est**, lu dans `role` et `folders`, jamais
+d'après le seul événement (`natureDuCourrier`, `server/unipile/map.ts`) : brouillon → jamais
+rangé ; indésirable, corbeille → écartés ; dossier des envoyés, ou notre adresse hors boîte de
+réception → un envoi (`ingestOutboundEmail`) ; le reste → reçu. Tout webhook de courrier passe
+par là avant d'ingérer quoi que ce soit, et l'ignoré se lit dans la réponse du webhook
+(`ignored: "brouillon"`).
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |

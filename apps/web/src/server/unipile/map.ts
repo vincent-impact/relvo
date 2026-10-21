@@ -204,6 +204,53 @@ export function toInboundEmail(
   };
 }
 
+export type NatureDuCourrier = "recu" | "envoye" | "brouillon" | "ecarte";
+
+/**
+ * Ce qu'un webhook de courrier porte VRAIMENT — l'événement ne suffit pas.
+ * Gmail enregistre un brouillon à chaque pause de frappe, et chacun arrive en
+ * `mail_received` : sans ce tri, un e-mail en cours d'écriture entrait en
+ * quatre messages « reçus » de soi-même, dans l'affaire, relus quatre fois.
+ *
+ *   - `brouillon` : rôle ou dossier de brouillons — jamais rangé, jamais lu ;
+ *   - `ecarte`    : indésirable ou corbeille — ce que la boîte a déjà écarté ;
+ *   - `envoye`    : `mail_sent`, ou un courrier du dossier des envoyés, ou un
+ *                   courrier qui vient de l'une de NOS adresses hors de la boîte
+ *                   de réception — c'est un envoi, d'où qu'il parte ;
+ *   - `recu`      : le reste.
+ */
+export function natureDuCourrier(
+  mail: UnipileMailWebhook,
+  nosAdresses: readonly (string | null | undefined)[],
+): NatureDuCourrier {
+  const role = (mail.role ?? "").trim().toLowerCase();
+  const dossiers = (mail.folders ?? []).map((f) => f.toLowerCase());
+  const dansUnDossier = (motif: RegExp) => dossiers.some((f) => motif.test(f));
+  if (
+    role === "drafts" ||
+    role === "draft" ||
+    dansUnDossier(/draft|brouillon/)
+  ) {
+    return "brouillon";
+  }
+  if (
+    role === "spam" ||
+    role === "trash" ||
+    dansUnDossier(/spam|junk|trash|corbeille|ind[ée]sirable/)
+  ) {
+    return "ecarte";
+  }
+  if (mail.event === "mail_sent" || role === "sent") return "envoye";
+  const expediteur = mail.from_attendee?.identifier?.trim().toLowerCase();
+  const nous = new Set(
+    nosAdresses
+      .filter((a): a is string => Boolean(a))
+      .map((a) => a.trim().toLowerCase()),
+  );
+  if (expediteur && nous.has(expediteur) && role !== "inbox") return "envoye";
+  return "recu";
+}
+
 /**
  * Convertit un `mail_sent` — un e-mail que le dirigeant a envoyé depuis un
  * client de messagerie, ou l'écho d'un envoi depuis Relvo — en entrée

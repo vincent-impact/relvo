@@ -180,6 +180,10 @@
       "entrees": [
         {
           "type": "fix",
+          "texte": "Un e-mail que vous êtes en train d'écrire dans Gmail n'apparaît plus dans Relvo en plusieurs morceaux ; seul l'e-mail envoyé compte."
+        },
+        {
+          "type": "fix",
           "texte": "Quand vous répondez depuis Gmail, Outlook ou WhatsApp plutôt que depuis Relvo, votre réponse rejoint l'affaire, et le rendez-vous que vous proposez ou la décision que vous prenez sont pris en compte."
         },
         {

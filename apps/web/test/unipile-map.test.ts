@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toOutboundEmail } from "@/server/unipile/map";
+import { natureDuCourrier, toOutboundEmail } from "@/server/unipile/map";
 import type { UnipileMailWebhook } from "@/server/unipile/types";
 
 // Un `mail_sent` — un e-mail que le dirigeant a envoyé depuis son client de
@@ -47,5 +47,106 @@ describe("toOutboundEmail", () => {
     expect(out.recipients).toEqual(["karim@sogood.fr"]);
     expect(out.sentAt).toBeNull();
     expect(out.externalThreadId).toBe("parent-1");
+  });
+});
+
+// La nature d'un courrier ne se lit pas dans l'événement seul : Gmail pousse
+// chaque enregistrement de brouillon en « reçu ».
+describe("natureDuCourrier", () => {
+  const nous = ["moi@tastycrousty.fr", "Contact@TastyCrousty.fr"];
+  it("un brouillon est un brouillon, quel que soit l'événement", () => {
+    expect(
+      natureDuCourrier(
+        { ...base, event: "mail_received", role: "drafts" },
+        nous,
+      ),
+    ).toBe("brouillon");
+    expect(
+      natureDuCourrier(
+        {
+          ...base,
+          event: "mail_received",
+          role: null,
+          folders: ["[Gmail]/Brouillons"],
+        },
+        nous,
+      ),
+    ).toBe("brouillon");
+    expect(
+      natureDuCourrier(
+        {
+          ...base,
+          event: "mail_received",
+          role: "unknown",
+          folders: ["Drafts"],
+        },
+        nous,
+      ),
+    ).toBe("brouillon");
+  });
+  it("l'indésirable et la corbeille sont écartés", () => {
+    expect(
+      natureDuCourrier({ ...base, event: "mail_received", role: "spam" }, nous),
+    ).toBe("ecarte");
+    expect(
+      natureDuCourrier(
+        { ...base, event: "mail_received", role: "trash" },
+        nous,
+      ),
+    ).toBe("ecarte");
+  });
+  it("un envoi se reconnaît à l'événement, au dossier, ou à notre adresse hors boîte de réception", () => {
+    expect(
+      natureDuCourrier({ ...base, event: "mail_sent", role: null }, nous),
+    ).toBe("envoye");
+    expect(
+      natureDuCourrier({ ...base, event: "mail_received", role: "sent" }, nous),
+    ).toBe("envoye");
+    expect(
+      natureDuCourrier(
+        {
+          ...base,
+          event: "mail_received",
+          role: "unknown",
+          from_attendee: { identifier: "contact@tastycrousty.fr" },
+        },
+        nous,
+      ),
+    ).toBe("envoye");
+  });
+  it("un courrier reçu reste reçu — même de nous-mêmes dans la boîte de réception", () => {
+    expect(
+      natureDuCourrier(
+        {
+          ...base,
+          event: "mail_received",
+          role: "inbox",
+          from_attendee: { identifier: "karim@sogood.fr" },
+        },
+        nous,
+      ),
+    ).toBe("recu");
+    expect(
+      natureDuCourrier(
+        {
+          ...base,
+          event: "mail_received",
+          role: "inbox",
+          from_attendee: { identifier: "moi@tastycrousty.fr" },
+        },
+        nous,
+      ),
+    ).toBe("recu");
+    expect(
+      natureDuCourrier(
+        {
+          ...base,
+          event: "mail_received",
+          role: null,
+          from_attendee: { identifier: "karim@sogood.fr" },
+        },
+        nous,
+      ),
+    ).toBe("recu");
   });
 });

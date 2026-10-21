@@ -58,6 +58,12 @@ export type UnipileMailWebhook = {
   /** `unipile` : parti par l'agrégateur ; `external` : parti d'un client de
    *  messagerie (Gmail, Outlook, le téléphone). */
   origin?: string | null;
+  /** Rôle du dossier où l'e-mail se trouve : `inbox`, `sent`, `drafts`, `spam`,
+   *  `trash`, `archive`… Un `mail_received` n'est pas toujours une réception :
+   *  un BROUILLON enregistré par Gmail arrive aussi par là. */
+  role?: string | null;
+  /** Dossiers de l'e-mail, tels que le fournisseur les nomme. */
+  folders?: string[] | null;
 };
 
 /**

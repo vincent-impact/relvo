@@ -298,6 +298,12 @@ Lancer avec `--cas demo-026,demo-027,demo-028` ; annoncer avant de jouer.
       suites « envoi » : terminé, attente, priorité et tâches ajoutées justes à 100 % —
       suite-013 pose désormais la visite de jeudi 10h sur l'envoi lui-même. Tests : trois en
       base sur l'e-mail sortant, deux sur le mapper.
+- [x] **Bug du brouillon Gmail** (capture du dirigeant) : un e-mail en cours d'écriture entré
+      en quatre messages reçus de lui-même dans l'affaire. Cause : chaque enregistrement
+      automatique du brouillon arrive en `mail_received`. Livré : `natureDuCourrier`
+      (brouillon / écarté / envoyé / reçu, d'après le rôle et les dossiers du fournisseur, et
+      nos adresses), le webhook courrier passe par elle avant tout rangement ; tests unitaires ;
+      piège écrit. Les quatre messages déjà rangés sur son compte restent à retirer à la main.
 - [x] Conception récrite en place (`05 §1.2`, §9.5, §9.6 ; `04 §13`) ; `ecarts` (« Le fil
       WhatsApp direct se trie à réception, par salve ; les groupes attendent ») ; épique M7
       (M7.4, tranche 7 du découpage) ; aucun piège nouveau.
