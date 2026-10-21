@@ -1,6 +1,7 @@
 import type {
   IngestInboundEmailInput,
   IngestInboundWhatsAppInput,
+  IngestOutboundEmailInput,
 } from "@relvo/db";
 import type {
   UnipileMailApi,
@@ -200,6 +201,37 @@ export function toInboundEmail(
     contentHtml: htmlContent(mail),
     receivedAt:
       receivedAt && !Number.isNaN(receivedAt.getTime()) ? receivedAt : null,
+  };
+}
+
+/**
+ * Convertit un `mail_sent` — un e-mail que le dirigeant a envoyé depuis un
+ * client de messagerie, ou l'écho d'un envoi depuis Relvo — en entrée
+ * `ingestOutboundEmail`. Les destinataires To puis Cc, dans cet ordre : le
+ * premier To est l'interlocuteur ; l'ensemble forme le set de la conversation.
+ */
+export function toOutboundEmail(
+  mail: UnipileMailWebhook,
+  channelId: string,
+): IngestOutboundEmailInput {
+  const sentAt = mail.date ? new Date(mail.date) : null;
+  const recipients = [
+    ...(mail.to_attendees ?? []),
+    ...(mail.cc_attendees ?? []),
+  ]
+    .map((a) => a?.identifier)
+    .filter((id): id is string => Boolean(id));
+  return {
+    channelId,
+    externalId: mail.email_id,
+    trackingId: mail.tracking_id ?? null,
+    origin: mail.origin ?? null,
+    externalThreadId: threadHint(mail.in_reply_to),
+    recipients,
+    subjectLine: mail.subject ?? null,
+    content: plainContent(mail),
+    contentHtml: htmlContent(mail),
+    sentAt: sentAt && !Number.isNaN(sentAt.getTime()) ? sentAt : null,
   };
 }
 

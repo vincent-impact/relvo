@@ -29,7 +29,7 @@ tâches, son brouillon et son journal.
 | M7.1  | Orchestrateur en **exécution de fond serverless** — le choix de l'orchestration se tranche ici                                                                         |
 | M7.2  | Prompt système : rôle, ton, **règles de non-création**, format de sortie                                                                                               |
 | M7.3  | Assemblage du contexte en cinq couches — secteurs du compte et socles métier pour la couche Produit —, un profil par sollicitation, budget par couche tenu par un test |
-| M7.4  | Appel au modèle : comprendre, classer, rattacher ou ouvrir, créer le contact si nécessaire — e-mail et messagerie directe (par salve, l'écoute posée par le tri)      |
+| M7.4  | Appel au modèle : comprendre, classer, rattacher ou ouvrir, créer le contact si nécessaire — e-mail et messagerie directe (par salve, l'écoute posée par le tri) ; ce que le dirigeant envoie compte d'où qu'il parte (téléphone, client e-mail) |
 | M7.5  | Titre et résumé du sujet                                                                                                                                               |
 | M7.6  | Tâches déductibles + extraction de date                                                                                                                                |
 | M7.7  | Brouillon de réponse à la première ouverture de la zone de rédaction sur une tâche de réponse                                                                          |

@@ -4,9 +4,12 @@ import {
   MessageStatus,
   SubjectStatus,
   assignMessageToSubject,
+  createMessage,
   createSubject,
   createSubjectFromMessage,
+  createTask,
   ingestInboundEmail,
+  ingestOutboundEmail,
   normalizeSubjectLine,
   prisma,
   tenantDb,
@@ -265,5 +268,149 @@ describe("normalizeSubjectLine", () => {
     expect(normalizeSubjectLine("Fwd: Livraison sauce blanche")).toBe(base);
     expect(normalizeSubjectLine("TR: Livraison sauce blanche")).toBe(base);
     expect(normalizeSubjectLine("Re[2]: Livraison sauce blanche")).toBe(base);
+  });
+});
+
+// Un e-mail envoyé DEPUIS UN CLIENT DE MESSAGERIE (M7, suite de la tranche 11) :
+// l'agrégateur le rejoue en `mail_sent`. Il entre comme un envoi — même
+// conversation, l'affaire qui l'écoute, la tâche de réponse cochée — ; l'écho
+// d'un envoi depuis Relvo, en base sous sa référence de suivi, ne se duplique
+// jamais ; un e-mail que le dirigeant écrit le premier ouvre sa conversation.
+describe("ingestOutboundEmail — l'e-mail envoyé depuis un client de messagerie", () => {
+  it("rejoint la conversation du fil et l'affaire qui l'écoute, et coche la tâche de réponse", async () => {
+    const { channel, db } = await makeAccountWithChannel("out@test.fr");
+    const { message: entrant } = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "in-1",
+      senderRaw: "karim@sogood.fr",
+      senderName: "Karim Benali",
+      recipients: ["out@test.fr"],
+      subjectLine: "Rupture sauce blanche",
+      content: "On vous remplace la SB-200 par la SB-210 ?",
+    });
+    const subject = await createSubjectFromMessage(db, entrant.id);
+    const tache = await createTask(db, {
+      subjectId: subject.id,
+      title: "Répondre à Karim sur le remplacement",
+      kind: "reply",
+    });
+
+    const { message, created } = await ingestOutboundEmail(db, {
+      channelId: channel.id,
+      externalId: "sent-gmail-1",
+      origin: "external",
+      recipients: ["karim@sogood.fr"],
+      subjectLine: "Re: Rupture sauce blanche",
+      content: "OK pour la SB-210, livrez-la jeudi.",
+    });
+    expect(created).toBe(true);
+    expect(message?.direction).toBe(MessageDirection.outgoing);
+    expect(message?.status).toBe(MessageStatus.sent);
+    expect(message?.conversationId).toBe(entrant.conversationId);
+    expect(message?.subjectId).toBe(subject.id);
+    expect(message?.recipientContactId).toBe(subject.contactIds[0]);
+    expect(await db.conversation.count()).toBe(1);
+    const t = await db.task.findFirstOrThrow({ where: { id: tache.id } });
+    expect(t.status).toBe("done");
+    const s = await db.subject.findFirstOrThrow({ where: { id: subject.id } });
+    expect(s.waitingForReply).toBe(true);
+  });
+
+  it("ne duplique jamais l'écho d'un envoi fait depuis Relvo, ni un rejeu, ni un envoi de l'agrégateur inconnu", async () => {
+    const { channel, db } = await makeAccountWithChannel("echo@test.fr");
+    const { message: entrant } = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "in-1",
+      senderRaw: "karim@sogood.fr",
+      recipients: ["echo@test.fr"],
+      subjectLine: "Rupture sauce blanche",
+      content: "Bonjour",
+    });
+    const subject = await createSubjectFromMessage(db, entrant.id);
+    // Un envoi depuis Relvo : en base sous la référence de suivi de l'agrégateur.
+    await createMessage(db, {
+      channelId: channel.id,
+      direction: MessageDirection.outgoing,
+      subjectId: subject.id,
+      recipientContactId: subject.contactIds[0],
+      recipients: ["karim@sogood.fr"],
+      externalId: "tracking-relvo",
+      subjectLine: "Re: Rupture sauce blanche",
+      content: "Oui",
+    });
+    const echo = await ingestOutboundEmail(db, {
+      channelId: channel.id,
+      externalId: "email-id-of-echo",
+      trackingId: "tracking-relvo",
+      origin: "unipile",
+      recipients: ["karim@sogood.fr"],
+      subjectLine: "Re: Rupture sauce blanche",
+      content: "Oui",
+    });
+    expect(echo.created).toBe(false);
+    expect(echo.message?.externalId).toBe("tracking-relvo");
+    // Parti par l'agrégateur sans que Relvo le connaisse : rien n'est inventé.
+    const inconnu = await ingestOutboundEmail(db, {
+      channelId: channel.id,
+      externalId: "email-id-unknown",
+      trackingId: "tracking-unknown",
+      origin: "unipile",
+      recipients: ["karim@sogood.fr"],
+      subjectLine: "Re: Rupture sauce blanche",
+      content: "?",
+    });
+    expect(inconnu.created).toBe(false);
+    expect(inconnu.message).toBeNull();
+    const once = await ingestOutboundEmail(db, {
+      channelId: channel.id,
+      externalId: "sent-gmail-2",
+      origin: "external",
+      recipients: ["karim@sogood.fr"],
+      subjectLine: "Re: Rupture sauce blanche",
+      content: "À jeudi",
+    });
+    const twice = await ingestOutboundEmail(db, {
+      channelId: channel.id,
+      externalId: "sent-gmail-2",
+      origin: "external",
+      recipients: ["karim@sogood.fr"],
+      subjectLine: "Re: Rupture sauce blanche",
+      content: "À jeudi",
+    });
+    expect(once.created).toBe(true);
+    expect(twice.created).toBe(false);
+    expect(await db.message.count()).toBe(3);
+  });
+
+  it("un e-mail que le dirigeant écrit le premier ouvre sa conversation, orpheline", async () => {
+    const { channel, db } = await makeAccountWithChannel("first@test.fr");
+    const { message, created } = await ingestOutboundEmail(db, {
+      channelId: channel.id,
+      externalId: "sent-gmail-3",
+      origin: "external",
+      recipients: ["plombier@exemple.fr", "first@test.fr"],
+      subjectLine: "Fuite en cuisine",
+      content: "Bonjour, pouvez-vous passer cette semaine ?",
+    });
+    expect(created).toBe(true);
+    expect(message?.subjectId).toBeNull();
+    expect(message?.status).toBe(MessageStatus.sent);
+    const conversation = await db.conversation.findFirstOrThrow({
+      where: { id: message!.conversationId },
+    });
+    // Notre propre adresse ne fait jamais partie du set : la réponse du
+    // plombier retombera dans cette même conversation.
+    expect(conversation.participantsRaw).toEqual(["plombier@exemple.fr"]);
+    expect(conversation.interlocutorRaw).toBe("plombier@exemple.fr");
+    // La réponse arrive : même conversation, le fil est entier pour le tri.
+    const { message: reponse } = await ingestInboundEmail(db, {
+      channelId: channel.id,
+      externalId: "in-plombier",
+      senderRaw: "plombier@exemple.fr",
+      recipients: ["first@test.fr"],
+      subjectLine: "Re: Fuite en cuisine",
+      content: "Jeudi 9h ?",
+    });
+    expect(reponse.conversationId).toBe(message!.conversationId);
   });
 });

@@ -130,8 +130,10 @@ n'a pas été envoyé.
 
 Il modifie le brouillon et envoie. Le message part depuis **sa vraie adresse** et atterrit dans
 ses envoyés ; il rejoint la conversation et l'affaire ; la tâche de réponse se coche toute seule.
-S'il répond plutôt depuis WhatsApp sur son téléphone, c'est pareil : la réponse rejoint la
-conversation et l'affaire, et Relvo la lit comme s'il l'avait envoyée depuis l'application.
+S'il répond plutôt depuis WhatsApp sur son téléphone, ou depuis Gmail, c'est pareil : la réponse
+rejoint la conversation et l'affaire, et Relvo la lit comme s'il l'avait envoyée depuis
+l'application — ce qu'il a décidé est acquis, le rendez-vous qu'il propose est dans son
+calendrier.
 
 **Ce qui le surprendrait — et qui n'arrive pas.** Que le message parte d'une adresse générique
 inconnue de son interlocuteur.

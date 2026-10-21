@@ -3,6 +3,7 @@ import {
   getOpenCatchup,
   ingestInboundEmail,
   ingestInboundWhatsApp,
+  ingestOutboundEmail,
   ingestOutboundWhatsApp,
   requestChannelCatchup,
 } from "@relvo/db";
@@ -28,6 +29,7 @@ import {
   toEmailHeaders,
   toInboundEmail,
   toInboundWhatsApp,
+  toOutboundEmail,
 } from "@/server/unipile/map";
 import {
   UNIPILE_AUTH_HEADER,
@@ -99,11 +101,11 @@ export async function POST(request: Request) {
     return handleHostedAuthNotify(payload);
   }
 
-  // 2) Email entrant/sortant.
+  // 2) Email reçu, ou envoyé depuis un client de messagerie.
   if (isMailWebhook(payload)) {
     if (payload.event === "mail_received") return handleMailReceived(payload);
-    // `mail_sent` / `mail_moved` : rien à faire en V1 (nos envois sont déjà
-    // journalisés côté Server Action ; l'auto-cochage des réponses est M7).
+    if (payload.event === "mail_sent") return handleMailSent(payload);
+    // `mail_moved` : rien à faire.
     return ok({ ok: true, ignored: payload.event });
   }
 
@@ -316,6 +318,67 @@ async function handleMailReceived(mail: UnipileMailWebhook) {
   }
 
   return ok({ ok: true, messageId: message.id, created, attachments: stored });
+}
+
+/**
+ * Un e-mail ENVOYÉ par le compte connecté (M7 tranche 11, suite) : l'écho d'un
+ * envoi fait depuis Relvo — en base sous sa référence de suivi, l'idempotence
+ * l'arrête — ou un e-mail que le dirigeant a envoyé DEPUIS SON CLIENT DE
+ * MESSAGERIE (Gmail, Outlook, le téléphone), qui entre comme un envoi : même
+ * conversation, l'affaire qui l'écoute, la tâche de réponse cochée par
+ * correspondance, puis la relecture — comme un envoi depuis Relvo (05 §4.1).
+ * Tant que le dirigeant ne répond pas toujours depuis Relvo, ce qu'il envoie
+ * d'ailleurs compte autant. Les pièces jointes d'un envoi ne sont pas
+ * rapatriées : l'affaire se lit, elle ne stocke pas ce que le dirigeant a déjà.
+ */
+async function handleMailSent(mail: UnipileMailWebhook) {
+  const config = await prisma.channelConfig.findUnique({
+    where: { externalAccountId: mail.account_id },
+    select: { accountId: true, channelId: true },
+  });
+  if (!config) return ok({ ok: true, ignored: "unknown_account" });
+
+  const db = tenantDb(config.accountId);
+  const { message, created } = await ingestOutboundEmail(
+    db,
+    toOutboundEmail(mail, config.channelId),
+  );
+  if (!created || !message) {
+    return ok({ ok: true, ignored: "own_message", created: false });
+  }
+
+  // Un envoi d'HISTORIQUE — synchronisé à la connexion, daté d'avant la
+  // demande d'un rattrapage encore ouvert — est rangé, jamais relu à
+  // contretemps (même règle que la réception).
+  const ouvert = await getOpenCatchup(db, config.channelId);
+  if (ouvert && estHistorique(mail.date, ouvert.requestedAt)) {
+    expireTenantData();
+    return ok({ ok: true, messageId: message.id, historique: true, own: true });
+  }
+
+  expireTenantData();
+
+  // Capté par l'écoute d'une affaire : Relvo la relit à la lumière de ce qui
+  // vient de partir — ce qu'il a décidé, ce à quoi il s'engage. Un envoi sans
+  // affaire reste dans sa conversation : la réponse qui viendra se triera
+  // avec lui sous les yeux. Rien ne se trie sur un envoi seul.
+  if (message.subjectId) {
+    const subjectId = message.subjectId;
+    after(async () => {
+      const resultat = await relireSujet({
+        accountId: config.accountId,
+        subjectId,
+        messageId: message.id,
+      });
+      console.info("[ia] relecture après envoi", {
+        accountId: config.accountId,
+        messageId: message.id,
+        ...resultat,
+      });
+    });
+  }
+
+  return ok({ ok: true, messageId: message.id, created, own: true });
 }
 
 // Nom de fichier lisible pour un média WhatsApp (le webhook n'en fournit aucun).

@@ -51,6 +51,13 @@ export type UnipileMailWebhook = {
   date?: string | null;
   has_attachments?: boolean | null;
   attachments?: UnipileAttachmentRef[] | null;
+  /** Référence de suivi d'un envoi fait PAR l'agrégateur — celle que `email.send`
+   *  renvoie et que nos propres envois portent en `externalId`. Sur un
+   *  `mail_sent`, c'est elle qui reconnaît l'écho d'un envoi depuis Relvo. */
+  tracking_id?: string | null;
+  /** `unipile` : parti par l'agrégateur ; `external` : parti d'un client de
+   *  messagerie (Gmail, Outlook, le téléphone). */
+  origin?: string | null;
 };
 
 /**

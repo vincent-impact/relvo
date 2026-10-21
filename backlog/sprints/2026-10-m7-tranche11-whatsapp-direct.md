@@ -285,6 +285,19 @@ Lancer avec `--cas demo-026,demo-027,demo-028` ; annoncer avant de jouer.
       pas posé la tâche de présence, écart gardé visible) et suite-014 (confirmation : le
       rendez-vous daté et heuré posé, la tâche de réponse cochée). La décision 6 est révisée
       dans `ecarts`.
+- [x] **Le dirigeant a tranché les deux limites restantes** : ses envois et ses décisions se
+      traitent d'où qu'ils partent, et les envois depuis un client e-mail comptent. Livré : la
+      consigne de relecture d'un envoi (décisions acquises, engagements datés), `joinListening`
+      sur `createMessage` (un sortant rejoué rejoint l'écoute, et rouvre une affaire terminée),
+      `ingestOutboundEmail` + `toOutboundEmail` + `mail_sent` dans le webhook (idempotent sur
+      `email_id` et sur la référence de suivi de nos envois, origine « unipile » inconnue
+      ignorée), le webhook e-mail abonné aux envoyés (`create` et `create-sent` du script
+      d'ops), suites d'évaluation suite-015 (bail signé à l'étude mardi 10h → tâche datée) et
+      suite-016 (reconduction du contrat clim → en attente de l'avenant ; la tâche de décision
+      n'est pas jugée : la fiche rejouée par le banc n'en portait pas). Rejoué sur les six
+      suites « envoi » : terminé, attente, priorité et tâches ajoutées justes à 100 % —
+      suite-013 pose désormais la visite de jeudi 10h sur l'envoi lui-même. Tests : trois en
+      base sur l'e-mail sortant, deux sur le mapper.
 - [x] Conception récrite en place (`05 §1.2`, §9.5, §9.6 ; `04 §13`) ; `ecarts` (« Le fil
       WhatsApp direct se trie à réception, par salve ; les groupes attendent ») ; épique M7
       (M7.4, tranche 7 du découpage) ; aucun piège nouveau.

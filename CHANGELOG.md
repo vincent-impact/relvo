@@ -6,6 +6,7 @@
 
 ## 2026-10-21
 
+- **Corrigé** — Quand vous répondez depuis Gmail, Outlook ou WhatsApp plutôt que depuis Relvo, votre réponse rejoint l'affaire, et le rendez-vous que vous proposez ou la décision que vous prenez sont pris en compte.
 - **Corrigé** — Quand vous répondez à un contact directement depuis WhatsApp, Relvo le voit : la tâche de réponse se coche, et quand votre interlocuteur confirme, le rendez-vous se pose dans votre calendrier.
 - **Corrigé** — Un long message WhatsApp s'affiche désormais en entier dans la conversation, plus rien n'est coupé.
 

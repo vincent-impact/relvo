@@ -67,9 +67,17 @@ export const createMessageSchema = z.object({
    * MÊME conversation directe. Ignoré sur un entrant.
    */
   interlocutorRaw: z.string().trim().max(320).optional().nullable(),
-  /** E-MAIL entrant (M6quater) — destinataires To+Cc bruts du webhook. Servent à
-   *  calculer le SET de la conversation (notre propre adresse retirée). Ignoré
-   *  hors e-mail. */
+  /**
+   * SORTANT venu de l'extérieur de Relvo — une réponse envoyée depuis le
+   * téléphone ou depuis un client e-mail, que l'agrégateur rejoue (05 §4.1) :
+   * sans sujet imposé, il rejoint l'écoute encore ouverte sur sa conversation,
+   * comme un entrant. Un envoi fait DEPUIS Relvo porte toujours son sujet et
+   * n'en a pas besoin. Ignoré sur un entrant, qui rejoint toujours l'écoute.
+   */
+  joinListening: z.boolean().optional(),
+  /** E-MAIL (M6quater) — destinataires To+Cc bruts. Servent à calculer le SET
+   *  de la conversation (notre propre adresse retirée), dans les deux sens.
+   *  Ignoré hors e-mail. */
   recipients: z.array(z.string().trim().max(320)).optional().nullable(),
   externalId: z.string().trim().max(255).optional().nullable(),
   externalThreadId: z.string().trim().max(255).optional().nullable(),
@@ -205,11 +213,14 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
 
   // Règle d'ancrage (M6ter) : à défaut de sujet imposé par l'appelant, un message
   // ENTRANT rejoint l'écoute encore ouverte sur sa conversation, s'il y en a une.
-  // Un sortant, lui, porte toujours son sujet explicitement (c'est une réponse).
+  // Un sortant envoyé DEPUIS Relvo porte toujours son sujet explicitement (c'est
+  // une réponse) ; un sortant que l'agrégateur rejoue — téléphone, client
+  // e-mail — ne le connaît pas et rejoint l'écoute de la même façon
+  // (`joinListening`) : d'où qu'il parte, ce que le dirigeant envoie compte.
   let subjectId = data.subjectId ?? null;
   let reopenSubjectId: string | null = null;
   let inSetSubjectId: string | null = null;
-  if (!subjectId && incoming) {
+  if (!subjectId && (incoming || data.joinListening)) {
     const routed = await findListeningSubjectForConversation(
       db,
       conversation.id,
@@ -217,8 +228,11 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
     if (routed) {
       subjectId = routed.subjectId;
       // Écoute permanente d'un sujet email non-ouvert → il ROUVRE (invariant n°7).
+      // Un envoi du dirigeant sur une affaire terminée la fait repartir aussi :
+      // c'est lui qui relance l'échange.
       if (routed.needsReopen) reopenSubjectId = routed.subjectId;
     } else if (
+      incoming &&
       channel.type === ChannelType.email &&
       conversation.normalizedSubject
     ) {
@@ -613,20 +627,131 @@ export async function ingestOutboundWhatsApp(
   });
   if (!conversation) return { message: null, created: false };
 
-  const listening = await findListeningSubjectForConversation(
-    db,
-    conversation.id,
-  );
   try {
     const message = await createMessage(db, {
       channelId: data.channelId,
       direction: MessageDirection.outgoing,
-      subjectId: listening?.subjectId ?? null,
+      joinListening: true,
       recipientContactId: conversation.contactId,
       interlocutorRaw: conversation.interlocutorRaw,
       externalId: data.externalId,
       externalThreadId: data.externalThreadId,
       content: data.content ?? null,
+      sentAt: data.sentAt ?? new Date(),
+      status: MessageStatus.sent,
+    });
+    if (message.subjectId) {
+      await db.subject.updateMany({
+        where: { id: message.subjectId },
+        data: { lastActivityAt: new Date() },
+      });
+    }
+    return { message, created: true };
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      const raced = await db.message.findFirst({
+        where: { channelId: data.channelId, externalId: data.externalId },
+      });
+      if (raced) return { message: raced, created: false };
+    }
+    throw err;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Un e-mail envoyé DEPUIS UN CLIENT DE MESSAGERIE (Gmail, Outlook, le
+// téléphone) — l'agrégateur le rejoue en `mail_sent`. Tant que le dirigeant ne
+// répond pas toujours depuis Relvo, ces envois comptent autant que les autres.
+// ─────────────────────────────────────────────────────────────
+
+export const ingestOutboundEmailSchema = z.object({
+  channelId: z.uuid(),
+  /** Idempotence : l'identifiant de l'e-mail chez l'agrégateur. */
+  externalId: z.string().trim().min(1).max(255),
+  /** La référence de suivi que l'agrégateur donne à un envoi fait PAR LUI —
+   *  c'est sous elle que nos propres envois sont en base. */
+  trackingId: z.string().trim().max(255).optional().nullable(),
+  /** `unipile` quand l'e-mail est parti par l'agrégateur (donc par Relvo),
+   *  `external` quand il est parti d'un client de messagerie. */
+  origin: z.string().trim().max(40).optional().nullable(),
+  externalThreadId: z.string().trim().max(255).optional().nullable(),
+  /** Destinataires To+Cc : le premier To est l'interlocuteur, l'ensemble forme
+   *  le SET de la conversation (notre propre adresse retirée). */
+  recipients: z.array(z.string().trim().max(320)).min(1),
+  subjectLine: z.string().trim().max(500).optional().nullable(),
+  content: z.string().optional().nullable(),
+  contentHtml: z.string().optional().nullable(),
+  sentAt: z.date().optional().nullable(),
+});
+
+export type IngestOutboundEmailInput = z.infer<
+  typeof ingestOutboundEmailSchema
+>;
+
+/**
+ * Persiste un e-mail que le dirigeant a envoyé depuis un client de messagerie,
+ * de façon IDEMPOTENTE. Un envoi fait depuis Relvo est déjà en base sous sa
+ * référence de suivi : l'agrégateur le rejoue avec cette référence et l'origine
+ * « unipile », et rien n'est dupliqué — ni sur une seconde livraison du même
+ * webhook. Un envoi venu d'ailleurs entre comme un envoi ordinaire : dans la
+ * conversation que l'objet et les destinataires désignent — créée s'il écrit le
+ * premier —, rattaché à l'affaire qui l'écoute s'il y en a une, la tâche de
+ * réponse cochée par correspondance et « En attente » posé (05 §4.1). Sans
+ * écoute, le message reste orphelin dans sa conversation : la réponse qui
+ * viendra se triera avec lui sous les yeux.
+ */
+export async function ingestOutboundEmail(
+  db: TenantDb,
+  input: IngestOutboundEmailInput,
+): Promise<{
+  message: Awaited<ReturnType<typeof createMessage>> | null;
+  created: boolean;
+}> {
+  const data = ingestOutboundEmailSchema.parse(input);
+
+  const existing = await db.message.findFirst({
+    where: {
+      channelId: data.channelId,
+      externalId: {
+        in: [data.externalId, data.trackingId ?? ""].filter(Boolean),
+      },
+    },
+  });
+  if (existing) return { message: existing, created: false };
+  // Parti par l'agrégateur sans que Relvo le connaisse : ce n'est pas un envoi
+  // du dirigeant depuis son client — on n'invente rien.
+  if (data.origin?.toLowerCase() === "unipile") {
+    return { message: null, created: false };
+  }
+
+  const recipients = data.recipients
+    .map((r) => r.trim())
+    .filter((r) => r.length > 0);
+  if (recipients.length === 0) return { message: null, created: false };
+  const recipientContactId =
+    (
+      await db.contact.findFirst({
+        where: contactMatchesAnyEmail(recipients),
+        select: { id: true },
+      })
+    )?.id ?? null;
+
+  try {
+    const message = await createMessage(db, {
+      channelId: data.channelId,
+      direction: MessageDirection.outgoing,
+      joinListening: true,
+      recipientContactId,
+      interlocutorRaw: recipients[0],
+      recipients,
+      externalId: data.externalId,
+      externalThreadId: data.externalThreadId ?? null,
+      subjectLine: data.subjectLine ?? null,
+      content: data.content ?? null,
+      contentHtml: data.contentHtml ?? null,
       sentAt: data.sentAt ?? new Date(),
       status: MessageStatus.sent,
     });

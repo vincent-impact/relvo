@@ -105,8 +105,10 @@ pnpm --filter @relvo/storage smoke
 - La commande de build applique les migrations (`vercel-build`), previews comprises.
   ⚠️ **Vérifier que les previews sont isolées de la production** avant de pousser une branche :
   sans branche de base par branche git, une branche de travail migre la **production**.
-- **Webhook Unipile** : déclarer `https://<app>/api/webhooks/unipile` côté dashboard Unipile,
-  avec le header `Unipile-Auth: <UNIPILE_WEBHOOK_SECRET>`.
+- **Webhooks Unipile** : déclarer `https://<app>/api/webhooks/unipile` côté Unipile, avec le
+  header `Unipile-Auth: <UNIPILE_WEBHOOK_SECRET>` — e-mails reçus **et envoyés** (`mail_sent` :
+  un envoi depuis un client e-mail compte), messagerie, état des comptes
+  (`apps/web/scripts/unipile-webhook.mjs`).
 - Base **PostgreSQL** (Neon).
 
 ## Scripts

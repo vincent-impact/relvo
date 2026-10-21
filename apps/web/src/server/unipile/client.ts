@@ -516,7 +516,7 @@ export async function getAccount(accountId: string): Promise<{
 
 /**
  * Enregistre (idempotence côté Unipile non garantie — à lancer une fois) le
- * webhook email entrant, avec notre header secret d'authentification. Utilitaire
+ * webhook email — reçus et envoyés —, avec notre header secret d'authentification. Utilitaire
  * de setup : peut être appelé depuis un script ou remplacé par la config manuelle
  * du dashboard Unipile. Retourne l'id du webhook créé, ou null si non configuré.
  */
@@ -530,7 +530,9 @@ export async function registerInboundEmailWebhook(input: {
     source: "email",
     request_url: input.requestUrl,
     format: "json",
-    events: ["mail_received"],
+    // Reçus ET envoyés : un e-mail que le dirigeant envoie depuis son client de
+    // messagerie compte autant qu'un envoi depuis Relvo (05 §4.1).
+    events: ["mail_received", "mail_sent"],
     headers: [{ key: "Unipile-Auth", value: input.secret }],
     name: "relvo-inbound-email",
   });

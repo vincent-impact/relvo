@@ -215,10 +215,13 @@ export const FICHES_PRECEDENTS_RELECTURE = 1;
 /**
  * RELECTURE (`05 §5.2`–§5.5) : la fiche — situation structurée, deux derniers
  * messages ANTÉRIEURS —, les précédents (titres, une fiche), et le message qui
- * vient d'arriver — ou que le dirigeant vient d'ENVOYER —, à part. Le poste le
- * plus fréquent : budget serré. Après un envoi, la consigne change : ce qui est
- * fait est fait (les tâches accomplies sont déjà cochées dans la fiche), et la
- * prochaine étape est le plus souvent ce qu'on attend de l'interlocuteur.
+ * vient d'arriver — ou que le dirigeant vient d'ENVOYER, depuis Relvo, son
+ * téléphone ou son client e-mail —, à part. Le poste le plus fréquent : budget
+ * serré. Après un envoi, la consigne change : ce qui est fait est fait (les
+ * tâches accomplies sont déjà cochées dans la fiche), ce qu'il décide est
+ * acquis, ce à quoi il s'engage — un rendez-vous qu'il propose, une promesse —
+ * est une tâche, et la prochaine étape est le plus souvent ce qu'on attend de
+ * l'interlocuteur.
  */
 export function contexteRelecture(args: {
   compte: CompteContexte;
@@ -253,7 +256,7 @@ export function contexteRelecture(args: {
     [
       `# Ta relecture`,
       envoi
-        ? `Le dirigeant vient d'envoyer ce message sur ce sujet suivi. Mets à jour la situation structurée et le résumé à sa lumière : ce qu'il a fait est FAIT — sa réponse est déjà cochée dans la fiche, n'en recrée aucune, et n'invente pas de tâche pour ce que son message demande à l'interlocuteur. S'il dit qu'une chose attendue est arrivée, faite ou réglée, la tâche ouverte qui l'attendait est terminée : nomme-la dans « taches_terminees », et l'affaire est « termine » s'il ne reste rien. Ajoute UNIQUEMENT une tâche qu'il s'engage lui-même à faire ensuite (« je vous rappelle lundi »). Recalibre la priorité — « urgent » sur signal explicite seulement —, et complète les étiquettes si une clé du registre s'impose.`
+        ? `Le dirigeant vient d'envoyer ce message sur ce sujet suivi. Mets à jour la situation structurée et le résumé à sa lumière : ce qu'il a fait est FAIT — sa réponse est déjà cochée dans la fiche, n'en recrée aucune, et n'invente pas de tâche pour ce que son message demande à l'interlocuteur. Ce qu'il DÉCIDE est acquis : s'il valide, choisit, commande ou refuse, la tâche ouverte qui attendait cette décision est terminée — nomme-la dans « taches_terminees » —, et la situation le dit. S'il dit qu'une chose attendue est arrivée, faite ou réglée, la tâche ouverte qui l'attendait est terminée de même, et l'affaire est « termine » s'il ne reste rien. Ajoute UNIQUEMENT ce à quoi il S'ENGAGE lui-même : un rendez-vous, un passage, une livraison ou un appel qu'il propose ou fixe à une date est une tâche datée (avec l'heure si elle est donnée), même avant que l'interlocuteur confirme — il doit y être, et l'oublier coûte ; une promesse (« je vous rappelle lundi », « je vous envoie le devis demain ») de même. Recalibre la priorité — « urgent » sur signal explicite seulement —, et complète les étiquettes si une clé du registre s'impose.`
         : `Un message vient d'arriver sur ce sujet suivi. Mets à jour la situation structurée et le résumé à la lumière de ce message${args.rouvert ? " — le sujet était terminé, il repart" : ""}, ajoute UNIQUEMENT les tâches que ce message rend nécessaires (aucune s'il est informatif, et jamais une tâche déjà ouverte dans la fiche), recalibre la priorité — « urgent » sur signal explicite seulement —, et complète les étiquettes si une clé du registre s'impose.`,
       envoi
         ? null

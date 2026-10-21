@@ -4,13 +4,17 @@
 // Lancer depuis apps/web :
 //   node --env-file=.env.local scripts/unipile-webhook.mjs list
 //   node --env-file=.env.local scripts/unipile-webhook.mjs create https://xxxx.trycloudflare.com
+//   node --env-file=.env.local scripts/unipile-webhook.mjs create-sent https://xxxx.trycloudflare.com
 //   node --env-file=.env.local scripts/unipile-webhook.mjs create-status https://xxxx.trycloudflare.com
 //   node --env-file=.env.local scripts/unipile-webhook.mjs create-messaging https://xxxx.trycloudflare.com
 //   node --env-file=.env.local scripts/unipile-webhook.mjs delete <webhook_id>
 //
-// `create` pose `mail_received`, `create-status` l'état des comptes,
-// `create-messaging` `message_received` (WhatsApp) — tous avec le header secret
-// `Unipile-Auth` (lu depuis UNIPILE_WEBHOOK_SECRET). Rien n'est affiché des secrets.
+// `create` pose `mail_received` + `mail_sent` (un envoi depuis un client e-mail
+// compte, 05 §4.1), `create-sent` seulement `mail_sent` — pour une instance où le
+// webhook des reçus existe déjà et reste en place —, `create-status` l'état des
+// comptes, `create-messaging` `message_received` (WhatsApp) — tous avec le header
+// secret `Unipile-Auth` (lu depuis UNIPILE_WEBHOOK_SECRET). Rien n'est affiché
+// des secrets.
 
 import { UnipileClient } from "unipile-node-sdk";
 
@@ -52,11 +56,34 @@ async function main() {
       source: "email",
       request_url: requestUrl,
       format: "json",
-      events: ["mail_received"],
+      events: ["mail_received", "mail_sent"],
       headers: [{ key: "Unipile-Auth", value: UNIPILE_WEBHOOK_SECRET }],
       name: "relvo-inbound-email",
     });
     console.log("✓ Webhook email créé →", requestUrl);
+    console.log(JSON.stringify(res, null, 2));
+    return;
+  }
+
+  if (cmd === "create-sent") {
+    if (!arg) {
+      console.error("Usage: create-sent <PUBLIC_BASE_URL>");
+      process.exit(1);
+    }
+    if (!UNIPILE_WEBHOOK_SECRET) {
+      console.error("✗ UNIPILE_WEBHOOK_SECRET absent.");
+      process.exit(1);
+    }
+    const requestUrl = `${arg.replace(/\/+$/, "")}/api/webhooks/unipile`;
+    const res = await client.webhook.create({
+      source: "email",
+      request_url: requestUrl,
+      format: "json",
+      events: ["mail_sent"],
+      headers: [{ key: "Unipile-Auth", value: UNIPILE_WEBHOOK_SECRET }],
+      name: "relvo-sent-email",
+    });
+    console.log("✓ Webhook email envoyés créé →", requestUrl);
     console.log(JSON.stringify(res, null, 2));
     return;
   }
@@ -117,7 +144,7 @@ async function main() {
   }
 
   console.error(
-    "Commandes : list | create <url> | create-status <url> | create-messaging <url> | delete <id>",
+    "Commandes : list | create <url> | create-sent <url> | create-status <url> | create-messaging <url> | delete <id>",
   );
   process.exit(1);
 }

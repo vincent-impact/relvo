@@ -599,11 +599,28 @@ réserve « e-mail seulement (A8) » des entrées précédentes pour les convers
   tâche de réponse cochée, relecture), l'écho de nos envois restant arrêté par l'idempotence ;
   et tout message capté par une écoute, reçu ou envoyé, relit l'affaire avec la discipline de
   salve du tri. Le coût se lit au journal.
+- **D'où qu'il parte, ce que le dirigeant envoie compte.** Le dirigeant l'a dit en deux
+  phrases : ses messages et ses décisions doivent être traités, y compris quand il répond depuis
+  WhatsApp ; et les envois faits depuis un client e-mail doivent compter, « tous les retours ne
+  se feront pas toujours de Relvo, du moins pas tant que le client n'a pas entièrement
+  confiance ». Deux conséquences. La consigne de relecture d'un envoi lit désormais ce que le
+  dirigeant **décide** (la tâche qui attendait la décision est terminée) et ce à quoi il
+  **s'engage** (un rendez-vous qu'il propose ou fixe est une tâche datée avant même la
+  confirmation ; la relecture suivante la retire si l'autre décline) — le jeu d'évaluation le
+  juge sur l'envoi lui-même, plus seulement sur la réponse qui le confirme. Et l'e-mail envoyé
+  depuis un client de messagerie (`mail_sent`, origine « externe ») entre comme un envoi : même
+  conversation, l'affaire qui l'écoute, la tâche de réponse cochée, relecture ; l'écho de nos
+  envois est reconnu à la référence de suivi que l'agrégateur lui donne ; un e-mail que le
+  dirigeant écrit le premier ouvre sa conversation, sans affaire, et c'est la réponse qui se
+  triera avec lui. Le webhook e-mail s'abonne aux envoyés ; sur une instance déjà équipée, un
+  second webhook ne porte que les envoyés, le premier reste en place. Les pièces jointes d'un
+  envoi ne sont pas rapatriées.
 - **Ce que la tranche ne fait pas, et pourquoi** : la lecture de l'historique de la messagerie
   à la connexion (import des chats par l'agrégateur, sur la mécanique par tranches de la
   tranche 10 — la tranche d'après) ; les groupes ; l'entrelacement de deux affaires dans un même
-  fil direct (une seule écoute ouverte à la fois). Les envois faits depuis un client e-mail
-  (`mail_sent`) restent ignorés : ils n'ont pas encore manqué.
+  fil direct (une seule écoute ouverte à la fois) ; un fil WhatsApp que le dirigeant ouvre le
+  premier depuis son téléphone (l'agrégateur ne dit pas à qui il écrit : rien n'est inventé,
+  la réponse ouvrira le fil) ; un envoi seul n'ouvre jamais d'affaire.
 
 ### La prise en main est une conversation avec Relvo
 
