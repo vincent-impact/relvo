@@ -7,9 +7,9 @@ resume_client: >
   Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent, ouvre l'affaire
   correspondant, propose les tâches à faire et prépare un brouillon de réponse. C'est la fin du
   tri à la main.
-statut: en-cours
+statut: termine
 debut: 2026-09-15
-fin: 2026-10-23
+fin: 2026-10-21
 ---
 
 # M7 — Pipeline IA d'arrivée

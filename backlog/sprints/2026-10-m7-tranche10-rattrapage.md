@@ -390,6 +390,5 @@ relue) ; les pièges remontés ; `conception/` sans phrase datée.
 - [x] Migration `20261020100100_m7_rattrapage_anciennes_lignes` : les lignes de la tranche 9
       arrêtées au plafond ont eu leurs nuits — **le déploiement ne relance aucune lecture** sur
       un compte réel ; seule une nouvelle connexion de boîte démarre une lecture.
-- [ ] **Clôture** : vérification en production sur le compte du dirigeant (connecter une
-      boîte, la carte qui monte, le coût au journal, la question de fin de lecture et sa
-      notification, les domaines proposés) ; alors M7 passe en `termine`.
+- [x] **Clôture** : vérifié en production sur le compte du dirigeant ; M7 passe en `termine`
+      le 2026-10-21, avec la tranche 11 (`2026-10-m7-tranche11-whatsapp-direct.md`).

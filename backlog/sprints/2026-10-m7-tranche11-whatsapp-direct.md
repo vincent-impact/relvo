@@ -279,6 +279,7 @@ Lancer avec `--cas demo-026,demo-027,demo-028` ; annoncer avant de jouer.
       (M7.4, tranche 7 du découpage) ; aucun piège nouveau.
 - [x] Gate (typage, lint, format, 215 tests base, 204 tests web, build avec la ligne du proxy) ;
       push `512dfd7` ; déploiement Ready en production.
-- [ ] **Clôture** : vérification en production sur le numéro du dirigeant — l'affaire qui
-      s'ouvre, le coût ; M7 passe en `termine` dès que les tranches 8 à 11 sont vues sur son
-      compte.
+- [x] **Clôture** : vérifié en production par le dirigeant sur son numéro le 2026-10-21 (« cela
+      fonctionne vraiment très bien ») ; **M7 passe en `termine`**, tranches 8 à 11 vues sur son
+      compte. La lecture de l'historique de la messagerie à la connexion est la tranche d'après,
+      hors M7.
