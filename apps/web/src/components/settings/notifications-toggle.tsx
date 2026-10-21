@@ -4,44 +4,21 @@ import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
 import {
-  cleEnOctets,
-  disponibilitePush,
-  type DisponibilitePush,
-} from "@/lib/push-client";
-import { abonnerPushAction, desabonnerPushAction } from "@/server/actions/push";
+  activerPushAppareil,
+  couperPushAppareil,
+  type EtatPush,
+  etatPushAppareil,
+} from "@/lib/push-appareil";
 
 // La ligne « Notifications » des Préférences (M12.7, M12.9). L'abonnement de
 // CET appareil est le réglage : activer enregistre le service worker, demande
 // l'autorisation sur ce geste — jamais au chargement —, s'abonne et confie
 // l'abonnement au serveur, qui répond par une notification de bienvenue.
 // Couper désabonne l'appareil. Quand le push n'est pas possible ici, la ligne
-// le dit au lieu de montrer un interrupteur qui ne ferait rien.
+// le dit au lieu de montrer un interrupteur qui ne ferait rien. La mécanique
+// vit dans `lib/push-appareil.ts`, partagée avec l'invitation de l'échange.
 
-type Etat =
-  | { kind: "chargement" }
-  | {
-      kind: "impossible";
-      raison: Exclude<DisponibilitePush, "disponible"> | "sans-cle";
-    }
-  | { kind: "refuse" }
-  | { kind: "pret"; actif: boolean };
-
-const SW_URL = "/sw.js";
-
-async function abonnementCourant(): Promise<PushSubscription | null> {
-  const registration = await navigator.serviceWorker.getRegistration(SW_URL);
-  if (!registration) return null;
-  return registration.pushManager.getSubscription();
-}
-
-function enEntree(sub: PushSubscription) {
-  const json = sub.toJSON();
-  return {
-    endpoint: sub.endpoint,
-    keys: { p256dh: json.keys?.p256dh ?? "", auth: json.keys?.auth ?? "" },
-    userAgent: navigator.userAgent.slice(0, 400),
-  };
-}
+type Etat = { kind: "chargement" } | EtatPush;
 
 export function NotificationsToggle({
   clePublique,
@@ -54,38 +31,9 @@ export function NotificationsToggle({
 
   useEffect(() => {
     let vivant = true;
-    (async () => {
-      if (!clePublique) {
-        setEtat({ kind: "impossible", raison: "sans-cle" });
-        return;
-      }
-      const dispo = disponibilitePush({
-        serviceWorker: "serviceWorker" in navigator,
-        pushManager: "PushManager" in window,
-        notification: "Notification" in window,
-        userAgent: navigator.userAgent,
-      });
-      if (dispo !== "disponible") {
-        setEtat({ kind: "impossible", raison: dispo });
-        return;
-      }
-      if (Notification.permission === "denied") {
-        setEtat({ kind: "refuse" });
-        return;
-      }
-      try {
-        const sub = await abonnementCourant();
-        if (!vivant) return;
-        if (sub) {
-          // L'appareil est déjà abonné : on le redit au serveur, sans bruit —
-          // des clés rafraîchies, un compte qui a changé sur cet appareil.
-          void abonnerPushAction(enEntree(sub));
-        }
-        setEtat({ kind: "pret", actif: Boolean(sub) });
-      } catch {
-        if (vivant) setEtat({ kind: "pret", actif: false });
-      }
-    })();
+    etatPushAppareil(clePublique).then((e) => {
+      if (vivant) setEtat(e);
+    });
     return () => {
       vivant = false;
     };
@@ -98,34 +46,23 @@ export function NotificationsToggle({
     startTransition(async () => {
       try {
         if (next) {
-          const permission = await Notification.requestPermission();
-          if (permission !== "granted") {
-            setEtat(permission === "denied" ? { kind: "refuse" } : precedent);
-            if (permission === "denied")
+          const r = await activerPushAppareil(clePublique);
+          if (!r.ok) {
+            if (r.raison === "refuse") {
+              setEtat({ kind: "refuse" });
               toast.error(
                 "Les notifications sont bloquées pour Relvo dans les réglages du téléphone.",
               );
+            } else {
+              setEtat(precedent);
+              if (r.raison === "erreur")
+                toast.error("Le réglage n'a pas pu être enregistré.");
+            }
             return;
           }
-          const registration = await navigator.serviceWorker.register(SW_URL);
-          await navigator.serviceWorker.ready;
-          const sub =
-            (await registration.pushManager.getSubscription()) ??
-            (await registration.pushManager.subscribe({
-              userVisibleOnly: true,
-              applicationServerKey: cleEnOctets(clePublique) as BufferSource,
-            }));
-          const result = await abonnerPushAction(enEntree(sub));
-          if (!result.ok) throw new Error(result.message);
           toast.success("C'est activé. Une notification de bienvenue arrive.");
         } else {
-          const sub = await abonnementCourant();
-          if (sub) {
-            const endpoint = sub.endpoint;
-            await sub.unsubscribe();
-            const result = await desabonnerPushAction(endpoint);
-            if (!result.ok) throw new Error(result.message);
-          }
+          await couperPushAppareil();
           toast.success("Relvo ne vous préviendra plus sur cet appareil.");
         }
       } catch (err) {

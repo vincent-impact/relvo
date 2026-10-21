@@ -85,12 +85,21 @@ describe("les gestes d'administration sur un compte", () => {
     ).toHaveLength(1);
   });
 
-  it("activateAccount ouvre l'accès une seule fois", async () => {
+  it("activateAccount ouvre l'accès une seule fois, et allume l'assistant", async () => {
     const { account, db } = await makeAccount("attente@test.fr");
     expect(account.activatedAt).toBeNull();
     const at = new Date("2026-10-21T08:00:00Z");
+    // Un compte en attente dont l'assistant a été coupé avant l'ouverture.
+    await prisma.account.update({
+      where: { id: account.id },
+      data: { assistantEnabled: false },
+    });
     const a = await activateAccount(db, account.id, at);
     expect(a).toEqual({ activatedAt: at, changed: true });
+    expect(
+      (await prisma.account.findUniqueOrThrow({ where: { id: account.id } }))
+        .assistantEnabled,
+    ).toBe(true);
     const b = await activateAccount(db, account.id, new Date());
     expect(b.changed).toBe(false);
     expect(b.activatedAt).toEqual(at);

@@ -14,8 +14,9 @@ import { avecOrigine, EVENT_TYPES, logEvent, type Origine } from "./events";
 
 /**
  * L'assistant est-il actif sur ce compte ? Gouverne TOUT ce que Relvo fait de
- * lui-même — le tri à l'arrivée aujourd'hui, la structuration, la relecture et
- * l'échange demain. Faux par défaut : un compte nouveau ne sollicite rien.
+ * lui-même — le tri à l'arrivée, la structuration, la relecture, l'échange.
+ * Vrai par défaut, et rallumé quand l'accès s'ouvre (`activateAccount`) : un
+ * compte qui démarre a son assistant, personne n'a d'interrupteur à trouver.
  */
 export async function isAssistantEnabled(
   db: TenantDb,
@@ -166,6 +167,9 @@ export async function activateAccount(
     title: "Accès ouvert",
     actor: Actor.system,
   });
+  // L'accès s'ouvre avec son assistant : un compte validé démarre complet,
+  // journalisé comme tout changement de l'interrupteur.
+  await setAssistantEnabled(db, accountId, true, Actor.system);
   return { activatedAt: at, changed: true };
 }
 

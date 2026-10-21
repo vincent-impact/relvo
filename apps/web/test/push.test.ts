@@ -269,3 +269,26 @@ describe("une question de Relvo s'ouvre (M12.9)", async () => {
     });
   });
 });
+
+describe("l'invitation à activer les notifications (recette 2026-10-21)", () => {
+  it("se pose sans « plus tard », se tait pendant le délai, revient après, et ignore une date illisible", async () => {
+    const { doitReproposer, REPROPOSER_APRES_MS } =
+      await import("../src/lib/push-client");
+    const now = new Date("2026-10-21T10:00:00Z");
+    expect(doitReproposer(null, now)).toBe(true);
+    expect(doitReproposer("n'importe quoi", now)).toBe(true);
+    expect(doitReproposer(now.toISOString(), now)).toBe(false);
+    expect(
+      doitReproposer(
+        new Date(now.getTime() - REPROPOSER_APRES_MS + 1).toISOString(),
+        now,
+      ),
+    ).toBe(false);
+    expect(
+      doitReproposer(
+        new Date(now.getTime() - REPROPOSER_APRES_MS).toISOString(),
+        now,
+      ),
+    ).toBe(true);
+  });
+});

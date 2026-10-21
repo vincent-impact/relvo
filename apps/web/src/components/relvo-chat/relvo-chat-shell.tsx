@@ -15,6 +15,7 @@ import {
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
 import { RelvoFil } from "@/components/relvo-chat/relvo-fil";
+import { InvitationNotifications } from "@/components/relvo-chat/invitation-notifications";
 import { QuestionsRelvo } from "@/components/relvo-chat/questions-relvo";
 import { PriseEnMain } from "@/components/relvo-chat/prise-en-main";
 import type { CarteVivanteData } from "@/components/shared/carte-vivante";
@@ -63,6 +64,7 @@ export function RelvoChatShell({
   questions = [],
   lecture = null,
   affaires = [],
+  clePublique = null,
 }: {
   backHref: string;
   /** La page d'origine, transmise à chaque tour. */
@@ -82,6 +84,8 @@ export function RelvoChatShell({
   lecture?: CarteVivanteData | null;
   /** Les affaires nées de cette lecture, sous la carte. */
   affaires?: SubjectRowData[];
+  /** La clé publique VAPID : l'invitation à activer les notifications, quand les questions sont traitées. */
+  clePublique?: string | null;
 }) {
   // Ce que l'appareil sait de l'échange à ouvrir — lu AVANT de monter le fil,
   // parce que les messages initiaux du hook ne se posent qu'une fois.
@@ -135,6 +139,7 @@ export function RelvoChatShell({
       questions={questions}
       lecture={lecture}
       affaires={affaires}
+      clePublique={clePublique}
     />
   );
 }
@@ -149,6 +154,7 @@ function RelvoSession({
   questions,
   lecture,
   affaires,
+  clePublique,
 }: {
   initial: Initial;
   backHref: string;
@@ -159,6 +165,7 @@ function RelvoSession({
   questions: OpenQuestion[];
   lecture: CarteVivanteData | null;
   affaires: SubjectRowData[];
+  clePublique: string | null;
 }) {
   // Une invite touchée se pose dans le composer : le composant repart avec
   // ce texte (la clé change), l'utilisateur l'envoie ou le corrige.
@@ -289,6 +296,11 @@ function RelvoSession({
           </>
         ) : null}
         <QuestionsRelvo questions={questions} />
+        {/* La dernière étape de la prise en main : les notifications de CET
+            appareil, une fois les questions du compte traitées. */}
+        {questions.length === 0 ? (
+          <InvitationNotifications clePublique={clePublique} />
+        ) : null}
 
         {vide ? (
           <RelvoBlock className="pb-2">

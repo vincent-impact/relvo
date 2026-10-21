@@ -336,11 +336,11 @@ model Account {
   observedPreferences   String?     @map("observed_preferences") @db.Text
   observedPreferencesAt DateTime?   @map("observed_preferences_at")
   /// L'assistant est-il actif sur ce compte ? Gouverne TOUT ce que Relvo fait
-  /// de lui-même — tri à l'arrivée aujourd'hui, structuration, relecture et
-  /// échange demain. Faux par défaut : un compte nouveau ne sollicite rien.
-  /// Réglage de l'utilisateur (Réglages › Préférences) ; un administrateur
-  /// pourra le couper à tout moment depuis le backoffice à venir.
-  assistantEnabled      Boolean     @default(false) @map("assistant_enabled")
+  /// de lui-même — tri à l'arrivée, structuration, relecture, échange. VRAI par
+  /// défaut, et rallumé à l'ouverture de l'accès : un compte qui démarre a son
+  /// assistant. Réglage de l'utilisateur (Préférences) ; un administrateur
+  /// peut le couper à tout moment depuis le backoffice.
+  assistantEnabled      Boolean     @default(true) @map("assistant_enabled")
   /// Dernier passage de l'utilisateur sur les onglets « Suivies » et « Ignorées »
   /// de Conversations. Sert aux PASTILLES : ce que Relvo y a rangé depuis. Le
   /// stock « Sans sujet » n'a pas d'horodatage — il se vide en triant, pas en

@@ -17,6 +17,7 @@ import { getTenantDb, requireAccountId } from "@/server/auth-context";
 import { relancerLignesEnPanne } from "@/server/ia/pipeline/rattrapage";
 import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
 import { boiteEnMiseEnRoute, carteEnAttente } from "@/server/lecture-en-cours";
+import { clePubliquePush } from "@/server/push/envoyer";
 
 // Échange avec Relvo, plein écran (coquille M9). Page-aware : `from` porte la
 // page d'origine pour le bouton retour, le chip de contexte et les prompts.
@@ -164,6 +165,7 @@ export default async function ConversationPage({
       questions={questions}
       lecture={lecture}
       affaires={affaires}
+      clePublique={clePubliquePush()}
     />
   );
 }

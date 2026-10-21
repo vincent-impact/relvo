@@ -1542,8 +1542,15 @@ scripté reste la prise en main — mais il ne commence plus à la connexion du 
   mène à l'échange, et le disque du dock respire tant qu'elle dure. **Retenu contre** une
   notification « lecture terminée » seule : elle dit la fin, pas le travail.
 
+- **L'assistant est allumé avec le compte, les notifications se proposent.** L'interrupteur de
+  l'assistant passe à vrai par défaut et se rallume à l'ouverture de l'accès ; un administrateur
+  peut toujours le couper. Les notifications, elles, ne peuvent pas s'activer sans un geste sur
+  l'appareil : la prise en main se termine par l'invitation à les activer, et l'accueil la garde
+  en une ligne. **Retenu contre** demander la permission au chargement : le navigateur la refuse
+  ou l'utilisateur la bloque pour toujours.
+
 **Mis en œuvre par** le chantier de recette `2026-10-recette-alpha.md` ; `01-principes.md` §11
-et `05-ia.md` §11.11 disent la séquence.
+et `05-ia.md` §11.11 disent la séquence, `02-modele-donnees.md` le défaut de l'assistant.
 
 ### L'échange avec Relvo : le dirigeant est l'acteur, l'annulation est un geste de l'écran, le tier se décide par règles
 

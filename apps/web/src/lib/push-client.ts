@@ -11,6 +11,24 @@ export function cleEnOctets(base64url: string): Uint8Array {
   return octets;
 }
 
+/** « Plus tard » sur l'invitation : on repropose après ce délai, pas avant. */
+export const REPROPOSER_APRES_MS = 3 * 24 * 60 * 60 * 1000;
+
+/**
+ * L'invitation à activer les notifications se repose-t-elle ? Jamais sans
+ * « plus tard » daté (elle se pose), jamais avant le délai, et une date
+ * illisible compte comme absente.
+ */
+export function doitReproposer(
+  plusTardLe: string | null,
+  now: Date = new Date(),
+): boolean {
+  if (!plusTardLe) return true;
+  const t = Date.parse(plusTardLe);
+  if (Number.isNaN(t)) return true;
+  return now.getTime() - t >= REPROPOSER_APRES_MS;
+}
+
 export type DisponibilitePush =
   /** Tout est là : service worker, PushManager, Notification. */
   | "disponible"

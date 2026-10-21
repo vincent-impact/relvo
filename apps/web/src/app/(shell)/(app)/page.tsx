@@ -21,6 +21,7 @@ import {
 } from "@/server/cached";
 import { getTenantDb, requireAccount } from "@/server/auth-context";
 import { boiteEnMiseEnRoute, carteEnAttente } from "@/server/lecture-en-cours";
+import { clePubliquePush } from "@/server/push/envoyer";
 import { FUSEAU, calendrierParis, jourParis } from "@relvo/db/temps";
 
 // Accueil — un BRIEF en quatre zones (01 §11, invariant 34), le premier tour de
@@ -62,6 +63,7 @@ async function News({
       suggestions={suggestions}
       hasChannels={channels > 0}
       lecture={lecture}
+      clePublique={clePubliquePush()}
     />
   );
 }

@@ -85,6 +85,33 @@ ne disait que Relvo lisait.
   de toute entreprise, proposés quand aucun secteur connu ne les éclipse ; le texte de l'étape ne
   dit plus « votre métier » dans ce cas. Tests `questions.test.ts`, `domaines.test.ts`.
 
+### R5 — L'assistant doit être actif au démarrage
+
+**Constat.** Un compte nouveau avait l'assistant coupé : rien ne se triait tant que le testeur
+n'avait pas trouvé l'interrupteur dans les Préférences.
+
+**Livré.** `assistant_enabled` vrai par défaut (migration
+`20261021120000_assistant_actif_par_defaut`, défaut de colonne seulement — les comptes existants
+ne bougent pas) ; `activateAccount` rallume l'assistant quand l'administrateur ouvre l'accès,
+journalisé (acteur `system`). Test `admin.test.ts`. `02-modele-donnees.md` récrit.
+
+### R6 — Les notifications doivent être activées au démarrage
+
+**Constat.** Le testeur ne recevait ni brief ni question : l'abonnement se faisait seulement
+depuis la ligne des Préférences. Une permission push ne s'obtient que sur un geste de
+l'utilisateur, sur CET appareil : on ne peut pas l'activer à sa place, on peut la demander au bon
+moment.
+
+**Livré.**
+- `lib/push-appareil.ts` : la mécanique d'abonnement de l'appareil, partagée par la ligne des
+  Préférences (`NotificationsToggle`, refaite dessus) et par deux nouvelles entrées.
+- `InvitationNotifications` dans l'échange : quand les questions de Relvo sont traitées, un
+  formulaire de Relvo propose « Activer les notifications » ; « Plus tard » se retient sur
+  l'appareil et revient après trois jours (`doitReproposer`, testé dans `test/push.test.ts`) ;
+  sur un iPhone hors application installée, le geste à faire est dit à la place.
+- `LienNotifications` sur l'accueil : « → Activer les notifications sur cet appareil » dans le
+  bloc des nouvelles, tant que l'appareil n'est pas abonné.
+
 ## Vérification
 
 - `pnpm typecheck`, `pnpm lint`, tests du paquet (`questions`, `domaines`, `channel-connection`)
@@ -98,5 +125,6 @@ ne disait que Relvo lisait.
 ## Où on en est
 
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
+- [x] R5 et R6 livrées (assistant actif par défaut, invitation aux notifications dans l'échange et sur l'accueil).
 - [ ] Vérification en production par le dirigeant.
 - [ ] Vagues de recette suivantes : à ajouter ici.

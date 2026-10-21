@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LienNotifications } from "@/components/home/lien-notifications";
 import {
   RELVO_LINK,
   RelvoBlock,
@@ -90,9 +91,12 @@ export function NewsPanel({
   suggestions,
   hasChannels = true,
   lecture = null,
+  clePublique = null,
 }: {
   news: CachedNews;
   suggestions: BriefSuggestion[];
+  /** La clé publique VAPID : la ligne « Activer les notifications » tant que cet appareil n'est pas abonné. */
+  clePublique?: string | null;
   /** Aucune boîte reliée : le bloc guide vers Canaux au lieu de résumer. */
   hasChannels?: boolean;
   /** Relvo lit le courrier EN CE MOMENT (lu en direct, jamais du cache) : le
@@ -138,6 +142,8 @@ export function NewsPanel({
           → {s.text}
         </Link>
       ))}
+      {/* En dernier des lignes : un réglage de l'appareil, pas une nouvelle. */}
+      <LienNotifications clePublique={clePublique} />
       {questions.map((s, i) => (
         <div
           key={`${s.kind}-${i}`}
