@@ -4,9 +4,12 @@ import {
   MessageStatus,
   SubjectStatus,
   assignMessageToSubject,
+  createMessage,
   createSubject,
   createSubjectFromMessage,
+  createTask,
   ingestInboundWhatsApp,
+  ingestOutboundWhatsApp,
   prisma,
   tenantDb,
   updateSubjectStatus,
@@ -271,5 +274,124 @@ describe("sujet issu d'un groupe WhatsApp (1 groupe = 1 sujet, invariant n°12)"
 
     expect(subject.contactIds).toHaveLength(1);
     expect(await db.contact.count()).toBe(1);
+  });
+});
+
+// M7 tranche 11 — une réponse envoyée DEPUIS LE TÉLÉPHONE du dirigeant entre
+// dans Relvo comme un envoi : même conversation directe, rattachée à l'affaire
+// qui l'écoute, la tâche de réponse cochée par correspondance ; nos propres
+// envois (déjà en base sous le même identifiant) ne sont jamais dupliqués ;
+// un fil inconnu n'est pas inventé.
+describe("ingestOutboundWhatsApp — la réponse envoyée depuis le téléphone", () => {
+  it("rejoint la conversation directe et l'affaire qui l'écoute, et coche la tâche de réponse", async () => {
+    const { channel, db } = await makeAccountWithChannel("wa-out@test.fr");
+    const { message: entrant } = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "in-1",
+      externalThreadId: "chat-ilies",
+      senderRaw: "+33611223344",
+      senderName: "Ilies Cadeau",
+      content: "On se voit vendredi ?",
+    });
+    const subject = await createSubjectFromMessage(db, entrant.id);
+    const tache = await createTask(db, {
+      subjectId: subject.id,
+      title: "Répondre à Ilies pour fixer l'échange",
+      kind: "reply",
+    });
+
+    const { message, created } = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "out-phone-1",
+      externalThreadId: "chat-ilies",
+      content: "Vendredi 14h au Conseil régional, ça marche",
+    });
+    expect(created).toBe(true);
+    expect(message?.direction).toBe(MessageDirection.outgoing);
+    expect(message?.conversationId).toBe(entrant.conversationId);
+    expect(message?.subjectId).toBe(subject.id);
+    expect(message?.recipientContactId).toBe(subject.contactIds[0]);
+    // Une seule conversation directe, pas une seconde « où l'on se parle tout seul ».
+    expect(await db.conversation.count()).toBe(1);
+    // La tâche de réponse est cochée par correspondance (05 §4.1), et
+    // l'affaire attend la réponse.
+    const t = await db.task.findFirstOrThrow({ where: { id: tache.id } });
+    expect(t.status).toBe("done");
+    const s = await db.subject.findFirstOrThrow({ where: { id: subject.id } });
+    expect(s.waitingForReply).toBe(true);
+  });
+
+  it("ne duplique jamais l'écho d'un envoi fait depuis Relvo, ni un rejeu", async () => {
+    const { channel, db } = await makeAccountWithChannel("wa-echo@test.fr");
+    const { message: entrant } = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "in-1",
+      externalThreadId: "chat-ilies",
+      senderRaw: "+33611223344",
+      content: "Bonjour",
+    });
+    const subject = await createSubjectFromMessage(db, entrant.id);
+    // Un envoi depuis Relvo : en base sous l'identifiant que l'agrégateur rend.
+    await createMessage(db, {
+      channelId: channel.id,
+      direction: MessageDirection.outgoing,
+      subjectId: subject.id,
+      recipientContactId: subject.contactIds[0],
+      externalId: "sent-by-relvo",
+      externalThreadId: "chat-ilies",
+      content: "Oui",
+    });
+    const echo = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "sent-by-relvo",
+      externalThreadId: "chat-ilies",
+      content: "Oui",
+    });
+    expect(echo.created).toBe(false);
+    expect(echo.message?.externalId).toBe("sent-by-relvo");
+    const once = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "out-phone-2",
+      externalThreadId: "chat-ilies",
+      content: "À vendredi",
+    });
+    const twice = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "out-phone-2",
+      externalThreadId: "chat-ilies",
+      content: "À vendredi",
+    });
+    expect(once.created).toBe(true);
+    expect(twice.created).toBe(false);
+    expect(await db.message.count()).toBe(3);
+  });
+
+  it("n'invente rien sur un fil inconnu, et reste orphelin sans écoute", async () => {
+    const { channel, db } = await makeAccountWithChannel("wa-unk@test.fr");
+    const inconnu = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "out-phone-3",
+      externalThreadId: "chat-jamais-vu",
+      content: "Bonjour, c'est Mam's",
+    });
+    expect(inconnu).toEqual({ message: null, created: false });
+    expect(await db.message.count()).toBe(0);
+
+    const { message: entrant } = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "in-1",
+      externalThreadId: "chat-lea",
+      senderRaw: "+33677777777",
+      content: "Vous êtes ouverts dimanche ?",
+    });
+    const sortant = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "out-phone-4",
+      externalThreadId: "chat-lea",
+      content: "Oui, jusqu'à 22h",
+    });
+    expect(sortant.created).toBe(true);
+    expect(sortant.message?.conversationId).toBe(entrant.conversationId);
+    expect(sortant.message?.subjectId).toBeNull();
   });
 });

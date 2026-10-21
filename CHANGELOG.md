@@ -6,6 +6,7 @@
 
 ## 2026-10-21
 
+- **Corrigé** — Quand vous répondez à un contact directement depuis WhatsApp, Relvo le voit : la tâche de réponse se coche, et quand votre interlocuteur confirme, le rendez-vous se pose dans votre calendrier.
 - **Corrigé** — Un long message WhatsApp s'affiche désormais en entier dans la conversation, plus rien n'est coupé.
 
 ## 2026-10-20

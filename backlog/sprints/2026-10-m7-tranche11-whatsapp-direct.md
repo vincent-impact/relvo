@@ -274,6 +274,17 @@ Lancer avec `--cas demo-026,demo-027,demo-028` ; annoncer avant de jouer.
       de l'affaire capturés à 390×844 ; un quatrième payload capté par l'écoute sans tour ; un
       payload de groupe → `canal-non-couvert` ; un payload daté de la veille de la connexion →
       `historique`. Compte remis à neuf (`pnpm db:seed`).
+- [x] **Après la clôture, deux retours du dirigeant** (2026-10-21) : un long message WhatsApp
+      coupé à douze lignes dans sa bulle (clamp retiré, `fix(conversations)`) ; et la réponse
+      envoyée depuis son téléphone perdue — l'agrégateur la rejoue marquée `is_sender`, le
+      webhook l'écartait comme l'écho de nos envois —, d'où une confirmation « 14h c'est
+      parfait » sans rendez-vous. Livré : `ingestOutboundWhatsApp` (même conversation, affaire
+      qui écoute, tâche de réponse cochée, idempotent sur nos envois, rien sur un fil inconnu),
+      la relecture de tout message capté par une écoute avec la discipline de salve
+      (`relireApresSalve`), suites d'évaluation suite-013 (envoi du téléphone : le modèle n'a
+      pas posé la tâche de présence, écart gardé visible) et suite-014 (confirmation : le
+      rendez-vous daté et heuré posé, la tâche de réponse cochée). La décision 6 est révisée
+      dans `ecarts`.
 - [x] Conception récrite en place (`05 §1.2`, §9.5, §9.6 ; `04 §13`) ; `ecarts` (« Le fil
       WhatsApp direct se trie à réception, par salve ; les groupes attendent ») ; épique M7
       (M7.4, tranche 7 du découpage) ; aucun piège nouveau.

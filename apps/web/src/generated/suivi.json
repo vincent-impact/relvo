@@ -180,6 +180,10 @@
       "entrees": [
         {
           "type": "fix",
+          "texte": "Quand vous répondez à un contact directement depuis WhatsApp, Relvo le voit : la tâche de réponse se coche, et quand votre interlocuteur confirme, le rendez-vous se pose dans votre calendrier."
+        },
+        {
+          "type": "fix",
           "texte": "Un long message WhatsApp s'affiche désormais en entier dans la conversation, plus rien n'est coupé."
         }
       ]

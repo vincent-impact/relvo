@@ -60,6 +60,13 @@ export const createMessageSchema = z.object({
   senderRaw: z.string().trim().max(320).optional().nullable(),
   senderName: z.string().trim().max(200).optional().nullable(),
   recipientContactId: z.uuid().optional().nullable(),
+  /**
+   * SORTANT sans contact résolu (une réponse envoyée depuis le téléphone du
+   * dirigeant, M7 tranche 11) : l'identifiant brut de l'interlocuteur, tel que
+   * la conversation le porte — c'est lui qui fait retomber le message dans la
+   * MÊME conversation directe. Ignoré sur un entrant.
+   */
+  interlocutorRaw: z.string().trim().max(320).optional().nullable(),
   /** E-MAIL entrant (M6quater) — destinataires To+Cc bruts du webhook. Servent à
    *  calculer le SET de la conversation (notre propre adresse retirée). Ignoré
    *  hors e-mail. */
@@ -154,7 +161,7 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
     : null;
   const interlocutorRaw = incoming
     ? (data.senderRaw ?? null)
-    : (recipient?.email ?? recipient?.phone ?? null);
+    : (data.interlocutorRaw ?? recipient?.email ?? recipient?.phone ?? null);
   const interlocutorName = incoming
     ? (data.senderName ?? null)
     : recipient
@@ -542,6 +549,93 @@ export async function ingestInboundWhatsApp(
     }
     // Même règle que l'e-mail : recevoir prouve la connexion (PITFALLS #53).
     await confirmChannelConnected(db, data.channelId);
+    return { message, created: true };
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      const raced = await db.message.findFirst({
+        where: { channelId: data.channelId, externalId: data.externalId },
+      });
+      if (raced) return { message: raced, created: false };
+    }
+    throw err;
+  }
+}
+
+export const ingestOutboundWhatsAppSchema = z.object({
+  channelId: z.uuid(),
+  /** Idempotence : identifiant du message chez Unipile — nos propres envois le portent déjà. */
+  externalId: z.string().trim().min(1).max(255),
+  /** Le `chat_id` : c'est lui qui retrouve la conversation directe. */
+  externalThreadId: z.string().trim().min(1).max(255),
+  content: z.string().optional().nullable(),
+  sentAt: z.date().optional().nullable(),
+});
+
+export type IngestOutboundWhatsAppInput = z.infer<
+  typeof ingestOutboundWhatsAppSchema
+>;
+
+/**
+ * Une réponse que le dirigeant a envoyée DEPUIS SON TÉLÉPHONE (M7 tranche 11) :
+ * l'agrégateur la rejoue en « message reçu » marqué `is_sender`. Nos propres
+ * envois, déjà en base sous le même identifiant, retombent sur l'idempotence
+ * — rien n'est dupliqué. Une réponse inconnue entre comme un envoi ordinaire :
+ * dans la conversation directe que le fil désigne, rattachée à l'affaire qui
+ * l'écoute, et `createMessage` coche la tâche de réponse par correspondance et
+ * pose « En attente » comme pour un envoi depuis Relvo (05 §4.1). Un fil que
+ * Relvo ne connaît pas (le dirigeant écrit le premier à un numéro) n'est pas
+ * rangé : `conversation: null`, rien n'est inventé.
+ */
+export async function ingestOutboundWhatsApp(
+  db: TenantDb,
+  input: IngestOutboundWhatsAppInput,
+): Promise<{
+  message: Awaited<ReturnType<typeof createMessage>> | null;
+  created: boolean;
+}> {
+  const data = ingestOutboundWhatsAppSchema.parse(input);
+
+  const existing = await db.message.findFirst({
+    where: { channelId: data.channelId, externalId: data.externalId },
+  });
+  if (existing) return { message: existing, created: false };
+
+  const conversation = await db.conversation.findFirst({
+    where: {
+      channelId: data.channelId,
+      externalThreadId: data.externalThreadId,
+      type: ConversationType.whatsapp_direct,
+    },
+    select: { id: true, contactId: true, interlocutorRaw: true },
+  });
+  if (!conversation) return { message: null, created: false };
+
+  const listening = await findListeningSubjectForConversation(
+    db,
+    conversation.id,
+  );
+  try {
+    const message = await createMessage(db, {
+      channelId: data.channelId,
+      direction: MessageDirection.outgoing,
+      subjectId: listening?.subjectId ?? null,
+      recipientContactId: conversation.contactId,
+      interlocutorRaw: conversation.interlocutorRaw,
+      externalId: data.externalId,
+      externalThreadId: data.externalThreadId,
+      content: data.content ?? null,
+      sentAt: data.sentAt ?? new Date(),
+      status: MessageStatus.sent,
+    });
+    if (message.subjectId) {
+      await db.subject.updateMany({
+        where: { id: message.subjectId },
+        data: { lastActivityAt: new Date() },
+      });
+    }
     return { message, created: true };
   } catch (err) {
     if (

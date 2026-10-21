@@ -11,7 +11,7 @@ import {
 } from "@relvo/db";
 import { expireTenantData } from "@/server/cached";
 import { EchecSollicitation, extract } from "../client";
-import { inferenceDisponible, NIVEAU_RETENU } from "../config";
+import { inferenceDisponible, MESSAGERIE, NIVEAU_RETENU } from "../config";
 import { contexteRelecture, prefixeStable } from "../contexte";
 import { SortieRelecture } from "../schemas";
 import { retenirRelecture, type CadreRelecture } from "./proposition";
@@ -56,6 +56,7 @@ export type IssueRelecture =
   | "inference-indisponible"
   | "deja-relu"
   | "sujet-non-ouvert"
+  | "salve-en-cours"
   | "relu"
   | "echec";
 
@@ -67,6 +68,46 @@ export type ResultatRelecture = {
   /** Coût de l'appel, en euros (0 sans appel). */
   coutEur: number;
 };
+
+const dormir = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
+
+/**
+ * La relecture d'un fil de MESSAGERIE suivi (M7 tranche 11) — même discipline
+ * de salve que le tri : un message capté par l'écoute, reçu ou envoyé depuis
+ * le téléphone, attend la fin de la salve, puis ne relit que s'il est encore
+ * le DERNIER message de la conversation ; sinon il s'efface, et c'est le
+ * message suivant qui portera la relecture — une salve, un tour. Le modèle
+ * voit la salve entière : la fiche garde les messages antérieurs, le dernier
+ * est poussé à part.
+ */
+export async function relireApresSalve(args: {
+  accountId: string;
+  subjectId: string;
+  conversationId: string;
+  messageId: string;
+  attendre?: (ms: number) => Promise<void>;
+}): Promise<ResultatRelecture> {
+  const db = tenantDb(args.accountId);
+  if (!inferenceDisponible())
+    return { issue: "inference-indisponible", coutEur: 0 };
+  if (!(await isAssistantEnabled(db, args.accountId)))
+    return { issue: "desactive", coutEur: 0 };
+  const dernier = async () =>
+    (
+      await db.conversation.findFirst({
+        where: { id: args.conversationId },
+        select: { lastMessageId: true },
+      })
+    )?.lastMessageId === args.messageId;
+  if (!(await dernier())) return { issue: "salve-en-cours", coutEur: 0 };
+  await (args.attendre ?? dormir)(MESSAGERIE.attenteSalveMs);
+  if (!(await dernier())) return { issue: "salve-en-cours", coutEur: 0 };
+  return relireSujet({
+    accountId: args.accountId,
+    subjectId: args.subjectId,
+    messageId: args.messageId,
+  });
+}
 
 /** Le cadre de retenue, depuis la projection : ce que le modèle a eu sous les yeux, et l'état du sujet. */
 export function cadreDeRelecture(p: RelectureProjection): CadreRelecture {

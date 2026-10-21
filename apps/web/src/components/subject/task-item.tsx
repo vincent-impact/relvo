@@ -98,15 +98,20 @@ export function TaskItem({
 
   // Les décisions portées par la tâche : à prendre (violet, l'appel de Relvo)
   // ou prises (« Décidé : Oui, commandez »).
+  // Une tâche cochée sans qu'aucune décision ait été répondue (la réponse est
+  // partie depuis le téléphone) n'affiche rien : « Décidé : » sans rien
+  // derrière serait un mensonge.
   const decisions = task.decisions ?? [];
   const restantes = decisions.filter((d) => d.reponse === null).length;
+  const prises = decisions
+    .map((d) => d.reponse)
+    .filter((r): r is string => r !== null);
   const aDecider = restantes > 0 && !done;
-  const decisionsLine =
-    decisions.length === 0
-      ? null
-      : aDecider
-        ? `✦ ${restantes} décision${restantes > 1 ? "s" : ""} à prendre`
-        : `Décidé : ${decisions.map((d) => d.reponse).join(" · ")}`;
+  const decisionsLine = aDecider
+    ? `✦ ${restantes} décision${restantes > 1 ? "s" : ""} à prendre`
+    : prises.length > 0
+      ? `Décidé : ${prises.join(" · ")}`
+      : null;
 
   const dateLine = meta === "date" ? dateShortLabel(task.startDate) : null;
   const timeLine = meta !== "none" ? (task.startTime ?? null) : null;

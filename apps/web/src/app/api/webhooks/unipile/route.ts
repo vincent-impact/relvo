@@ -3,6 +3,7 @@ import {
   getOpenCatchup,
   ingestInboundEmail,
   ingestInboundWhatsApp,
+  ingestOutboundWhatsApp,
   requestChannelCatchup,
 } from "@relvo/db";
 import {
@@ -20,7 +21,7 @@ import {
   estHistorique,
   fenetreDeRattrapage,
 } from "@/server/ia/pipeline/rattrapage-regles";
-import { relireSujet } from "@/server/ia/pipeline/relecture";
+import { relireApresSalve, relireSujet } from "@/server/ia/pipeline/relecture";
 import { trierConversation } from "@/server/ia/pipeline/tri";
 import { stockerPiecesJointes } from "@/server/unipile/attachments";
 import {
@@ -334,15 +335,29 @@ function whatsAppMediaName(type: string | null | undefined): string {
   }
 }
 
-async function handleMessageReceived(evt: UnipileMessagingWebhook) {
-  // Anti-loop : un message ENVOYÉ par le compte connecté (nous, ou l'utilisateur
-  // depuis son propre téléphone) revient en `message_received` avec
-  // `is_sender: true`. Nos envois sont déjà journalisés par sendWhatsAppReply →
-  // on ignore l'écho (plus robuste que l'idempotence seule).
-  if (evt.is_sender) {
-    return ok({ ok: true, ignored: "own_message" });
-  }
+/**
+ * La relecture d'un fil de messagerie suivi, après la réponse HTTP (M7
+ * tranche 11) : un message capté par l'écoute — reçu, ou envoyé depuis le
+ * téléphone — relit l'affaire, avec la discipline de salve du tri. Un échec
+ * laisse l'affaire telle qu'elle était, journalisé.
+ */
+function relireLeFil(args: {
+  accountId: string;
+  subjectId: string;
+  conversationId: string;
+  messageId: string;
+}) {
+  after(async () => {
+    const resultat = await relireApresSalve(args);
+    console.info("[ia] relecture", {
+      accountId: args.accountId,
+      messageId: args.messageId,
+      ...resultat,
+    });
+  });
+}
 
+async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   // Données minimales requises pour l'ingestion idempotente + le rattachement.
   if (!evt.account_id || !evt.message_id) {
     return ok({ ok: true, ignored: "incomplete_message" });
@@ -356,6 +371,37 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   if (!config) return ok({ ok: true, ignored: "unknown_account" });
 
   const db = tenantDb(config.accountId);
+
+  // Un message ENVOYÉ par le compte connecté revient en `message_received`
+  // avec `is_sender: true` : l'écho d'un envoi fait depuis Relvo — déjà en
+  // base sous le même identifiant, l'idempotence l'arrête —, ou une RÉPONSE
+  // ÉCRITE DEPUIS LE TÉLÉPHONE du dirigeant (M7 tranche 11), qui entre comme
+  // un envoi : même conversation, l'affaire qui l'écoute, la tâche de réponse
+  // cochée par correspondance, puis la relecture — comme un envoi depuis
+  // Relvo (05 §4.1). Sans elle, Relvo perdait la moitié de l'échange.
+  if (evt.is_sender) {
+    if (!evt.chat_id) return ok({ ok: true, ignored: "own_message" });
+    const { message, created } = await ingestOutboundWhatsApp(db, {
+      channelId: config.channelId,
+      externalId: evt.message_id,
+      externalThreadId: evt.chat_id,
+      content: evt.message?.trim() ? evt.message.trim() : null,
+      sentAt: evt.timestamp != null ? new Date(evt.timestamp) : null,
+    });
+    if (!created || !message) {
+      return ok({ ok: true, ignored: "own_message", created: false });
+    }
+    expireTenantData();
+    if (message.subjectId) {
+      relireLeFil({
+        accountId: config.accountId,
+        subjectId: message.subjectId,
+        conversationId: message.conversationId,
+        messageId: message.id,
+      });
+    }
+    return ok({ ok: true, messageId: message.id, created, own: true });
+  }
 
   // Ingestion idempotente → Message rangé dans sa conversation (M6bis, clé
   // `chat_id` en groupe), rattaché au sujet si une fenêtre y est ouverte.
@@ -416,6 +462,19 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   }
 
   if (created) expireTenantData();
+
+  // Capté par l'écoute d'une affaire : Relvo la relit à la lumière du message
+  // (05 §5.2 — la relecture suit chaque message, reçu ou envoyé), après la
+  // salve, comme le tri. C'est ce qui pose le rendez-vous qu'un « 14h c'est
+  // parfait » confirme.
+  if (created && message.subjectId) {
+    relireLeFil({
+      accountId: config.accountId,
+      subjectId: message.subjectId,
+      conversationId: message.conversationId,
+      messageId: message.id,
+    });
+  }
 
   // Tri automatique d'un fil DIRECT (M7, tranche 11 — A8) : APRÈS la réponse
   // HTTP, une fois par message (`created`), et seulement si aucun sujet n'a

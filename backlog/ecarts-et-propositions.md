@@ -590,12 +590,20 @@ réserve « e-mail seulement (A8) » des entrées précédentes pour les convers
   du canal (`ChannelConfig.lastSyncAt`, reposée à chaque reconnexion ou guérison du canal : ce
   qui est arrivé pendant la coupure est de l'historique) est rangé et laissé à la future lecture
   de la messagerie ; sans date connue, rien n'est trié. Pas de colonne nouvelle.
-- **Ce que la tranche ne fait pas, et pourquoi** : la relecture d'une affaire qui écoute déjà, à
-  chaque message capté (reportée pour mesurer d'abord ce que coûte le tri seul sur un vrai
-  numéro) ; la lecture de l'historique de la messagerie à la connexion (import des chats par
-  l'agrégateur, sur la mécanique par tranches de la tranche 10 — la tranche d'après) ; les
-  groupes ; l'entrelacement de deux affaires dans un même fil direct (une seule écoute ouverte à
-  la fois).
+- **L'affaire qui écoute se relit à chaque message capté, et la réponse du téléphone entre.**
+  D'abord reportée pour mesurer le tri seul, la relecture a manqué dès le premier usage réel :
+  le dirigeant avait répondu depuis WhatsApp sur son téléphone — l'agrégateur rejoue cet envoi
+  marqué « de l'expéditeur », que le webhook écartait comme l'écho de nos propres envois — et la
+  confirmation de l'interlocuteur (« 14h c'est parfait ») n'a posé aucun rendez-vous. Désormais
+  une réponse du téléphone entre comme un envoi (même conversation, l'affaire qui l'écoute, la
+  tâche de réponse cochée, relecture), l'écho de nos envois restant arrêté par l'idempotence ;
+  et tout message capté par une écoute, reçu ou envoyé, relit l'affaire avec la discipline de
+  salve du tri. Le coût se lit au journal.
+- **Ce que la tranche ne fait pas, et pourquoi** : la lecture de l'historique de la messagerie
+  à la connexion (import des chats par l'agrégateur, sur la mécanique par tranches de la
+  tranche 10 — la tranche d'après) ; les groupes ; l'entrelacement de deux affaires dans un même
+  fil direct (une seule écoute ouverte à la fois). Les envois faits depuis un client e-mail
+  (`mail_sent`) restent ignorés : ils n'ont pas encore manqué.
 
 ### La prise en main est une conversation avec Relvo
 
