@@ -276,11 +276,17 @@ async function handleMailReceived(
     toInboundEmail(mail, config.channelId),
   );
 
-  // Pièces jointes (M5.4) : seulement au premier passage (idempotence). Le
-  // fichier vit dans R2 (source de vérité) ; Unipile n'est qu'un transport.
-  // Si le message a été rattaché à un sujet au rangement, la PJ en hérite.
+  // Pièces jointes (M5.4) : au premier passage — ou à un passage suivant si le
+  // message est entré SANS elles (importé par la lecture de l'historique depuis
+  // une ligne de liste qui ne les détaillait pas) : le webhook qui les porte
+  // les range, une fois. Le fichier vit dans R2 (source de vérité) ; Unipile
+  // n'est qu'un transport. Si le message est rattaché à un sujet, la PJ en hérite.
+  const piecesManquantes =
+    !created &&
+    (mail.attachments?.length ?? 0) > 0 &&
+    (await db.attachment.count({ where: { messageId: message.id } })) === 0;
   const stored =
-    created && mail.attachments?.length
+    (created || piecesManquantes) && mail.attachments?.length
       ? await stockerPiecesJointes(db, {
           accountId: config.accountId,
           unipileAccountId: mail.account_id,
@@ -290,6 +296,7 @@ async function handleMailReceived(
           attachments: mail.attachments,
         })
       : 0;
+  if (piecesManquantes && stored > 0) expireTenantData();
 
   // Un message d'HISTORIQUE — synchronisé à la connexion, daté d'avant la
   // demande d'un rattrapage encore ouvert sur le canal — est rangé mais laissé

@@ -1,4 +1,3 @@
-import "server-only";
 import { createAttachment, type TenantDb } from "@relvo/db";
 import {
   buildObjectKey,

@@ -31,7 +31,11 @@ import {
 } from "./rattrapage-regles";
 import { stockerPiecesJointes } from "@/server/unipile/attachments";
 import { getEmail, listInboxEmails } from "@/server/unipile/client";
-import { apiMailToWebhook, toInboundEmail } from "@/server/unipile/map";
+import {
+  apiMailToWebhook,
+  doitRelireEmail,
+  toInboundEmail,
+} from "@/server/unipile/map";
 import { trierConversation } from "./tri";
 
 // LE RATTRAPAGE DU COURRIER RÉCENT (M7.19) : « Relvo lit le courrier récent
@@ -381,11 +385,9 @@ async function importerUnePasse(
     for (const item of page.items) {
       if (connus.has(item.id)) continue;
       if (tempsRestant(chrono) < 15_000) return { importes, epuise: false };
-      // La liste ne porte pas toujours le corps : on relit l'e-mail entier.
-      const complet =
-        item.kind === "2_full" || (item.body ?? item.body_plain)
-          ? item
-          : await getEmail(item.id);
+      // La liste ne porte pas toujours le corps, ni le détail des pièces
+      // jointes qu'elle annonce : on relit alors l'e-mail entier.
+      const complet = doitRelireEmail(item) ? await getEmail(item.id) : item;
       if (!complet) continue;
       const mail = apiMailToWebhook({
         ...complet,

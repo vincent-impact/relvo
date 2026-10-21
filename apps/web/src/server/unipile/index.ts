@@ -1,3 +1,4 @@
+import "server-only";
 import type {
   EmailSenderPort,
   WhatsAppChatDirectoryPort,
@@ -8,6 +9,9 @@ import { getChatIdentity, sendEmail, sendWhatsAppMessage } from "./client";
 // Point d'entrée du module Unipile (M5/M6). Réexporte le client + les adaptateurs
 // qui satisfont les ports d'envoi du domaine (`EmailSenderPort`,
 // `WhatsAppSenderPort`) — le domaine ne connaît qu'un contrat, jamais Unipile.
+// La garde `server-only` est posée ICI, comme sur `server/ia` : les modules
+// (`client`, `attachments`) restent importables par un script en ligne de
+// commande (`pj:rattraper`), l'application passe par l'index.
 
 export * from "./client";
 export * from "./signature";

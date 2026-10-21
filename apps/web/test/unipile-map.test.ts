@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { natureDuCourrier, toOutboundEmail } from "@/server/unipile/map";
+import {
+  doitRelireEmail,
+  natureDuCourrier,
+  toOutboundEmail,
+} from "@/server/unipile/map";
 import type { UnipileMailWebhook } from "@/server/unipile/types";
 
 // Un `mail_sent` — un e-mail que le dirigeant a envoyé depuis son client de
@@ -148,5 +152,44 @@ describe("natureDuCourrier", () => {
         nous,
       ),
     ).toBe("recu");
+  });
+});
+
+describe("doitRelireEmail — la ligne de liste suffit-elle ?", () => {
+  it("relit sans corps, relit quand des pièces sont annoncées sans être listées, sinon garde la ligne", () => {
+    expect(
+      doitRelireEmail({ kind: "1_meta", body: null, body_plain: null }),
+    ).toBe(true);
+    expect(
+      doitRelireEmail({
+        kind: "1_meta",
+        body_plain: "Bonjour",
+        has_attachments: false,
+      }),
+    ).toBe(false);
+    expect(
+      doitRelireEmail({
+        kind: "1_meta",
+        body_plain: "Devis ci-joint",
+        has_attachments: true,
+        attachments: [],
+      }),
+    ).toBe(true);
+    expect(
+      doitRelireEmail({
+        kind: "2_full",
+        body: "<p>ok</p>",
+        has_attachments: true,
+        attachments: [],
+      }),
+    ).toBe(true);
+    expect(
+      doitRelireEmail({
+        kind: "2_full",
+        body: "<p>ok</p>",
+        has_attachments: true,
+        attachments: [{ id: "a1", name: "devis.pdf" }],
+      }),
+    ).toBe(false);
   });
 });

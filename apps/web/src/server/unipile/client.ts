@@ -1,4 +1,3 @@
-import "server-only";
 import { UnipileClient } from "unipile-node-sdk";
 import { type ChannelConfigStatus, DomainError } from "@relvo/db";
 import { statutDepuisSources } from "./status";

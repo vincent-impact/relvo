@@ -124,6 +124,25 @@ attrape l'erreur, la journalise avec le compte visé et répond en langage clien
 déjà absent chez l'agrégateur compte comme déconnecté, pas comme un échec. `PITFALLS.md` #71.
 **À refaire par le dirigeant** : relancer la suppression de ce compte depuis le backoffice.
 
+### R8 — Les pièces jointes d'une conversation e-mail (Kiloutou, compte de Lila) n'ont pas été relevées
+
+**Constat.** Sans accès à la base de production, la cause exacte n'est pas prouvée. Deux chemins
+pouvaient perdre les pièces : la lecture de l'historique utilisait la ligne de liste de
+l'agrégateur dès qu'elle portait un corps, sans vérifier qu'elle détaillait les pièces
+annoncées (`has_attachments`) ; et le webhook ne stockait les pièces qu'au premier passage —
+un message déjà importé sans elles ne les recevait jamais. Troisième lecture possible : les
+pièces étaient sur un e-mail **envoyé** par la dirigeante, que Relvo ne rapatrie pas par choix
+(« l'affaire se lit, elle ne stocke pas ce que le dirigeant a déjà »).
+
+**Livré.**
+- `doitRelireEmail` : la lecture relit l'e-mail entier quand des pièces sont annoncées sans
+  être listées (testé, `unipile-map.test.ts`).
+- Le webhook range les pièces d'un message déjà connu qui n'en avait aucune.
+- `pnpm --filter web pj:rattraper <e-mail> --filtre kiloutou` : relit chez l'agrégateur les
+  e-mails reçus sans pièce jointe et stocke celles qu'ils portent — à lancer **par le dirigeant
+  avec les variables de production**, d'abord en `--simuler`. La garde `server-only` du module
+  Unipile remonte sur son index pour que le script importe `client` et `attachments`.
+
 ## Vérification
 
 - `pnpm typecheck`, `pnpm lint`, tests du paquet (`questions`, `domaines`, `channel-connection`)
@@ -139,5 +158,6 @@ déjà absent chez l'agrégateur compte comme déconnecté, pas comme un échec.
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
 - [x] R5 et R6 livrées (assistant actif par défaut, invitation aux notifications dans l'échange et sur l'accueil).
 - [x] R7 livrée (suppression d'un compte robuste, PITFALLS #71) — à relancer en production sur le compte concerné.
+- [x] R8 livrée (pièces jointes : relecture, webhook qui complète, script `pj:rattraper`) — à lancer en production sur le compte de Lila.
 - [ ] Vérification en production par le dirigeant.
 - [ ] Vagues de recette suivantes : à ajouter ici.

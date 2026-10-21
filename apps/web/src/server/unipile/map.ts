@@ -151,6 +151,25 @@ function htmlContent(mail: UnipileMailWebhook): string | null {
  * idempotence sur `email_id`. Le corps HTML vit dans `body`, le texte dans
  * `body_plain` — comme dans le webhook.
  */
+/**
+ * Une ligne de liste suffit-elle, ou faut-il relire l'e-mail entier ? Il le
+ * faut quand le corps manque, et quand l'e-mail DIT avoir des pièces jointes
+ * sans les lister : la liste porte `has_attachments` sur toutes ses formes,
+ * mais le détail des pièces ne vient sûrement qu'à l'unité. Sans ça, un devis
+ * en PDF passait inaperçu (recette du 2026-10-21).
+ */
+export function doitRelireEmail(
+  item: Pick<
+    UnipileMailApi,
+    "kind" | "body" | "body_plain" | "has_attachments" | "attachments"
+  >,
+): boolean {
+  const corpsAbsent = item.kind !== "2_full" && !(item.body ?? item.body_plain);
+  const piecesNonListees =
+    item.has_attachments === true && !(item.attachments?.length ?? 0);
+  return corpsAbsent || piecesNonListees;
+}
+
 export function apiMailToWebhook(mail: UnipileMailApi): UnipileMailWebhook {
   return {
     event: "mail_received",
