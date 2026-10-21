@@ -44,7 +44,18 @@ async function makeAccount(
 describe("les domaines typiques", () => {
   it("sont ceux des secteurs, sans doublon, et ne se proposent qu'avec un métier connu et aucun domaine", async () => {
     expect(domainesTypiquesDe([]).length).toBe(0);
-    expect(domainesTypiquesDe(["other"]).length).toBe(0);
+    // « Un autre métier » a les domaines de tout métier ; un métier connu
+    // les éclipse.
+    expect(domainesTypiquesDe(["other"]).map((d) => d.key)).toEqual([
+      "clients",
+      "fournisseurs",
+      "devis",
+      "equipe",
+      "administratif",
+    ]);
+    expect(domainesTypiquesDe(["food", "other"]).map((d) => d.key)).toEqual(
+      domainesTypiquesDe(["food"]).map((d) => d.key),
+    );
     const les2 = domainesTypiquesDe(["food", "construction"]);
     expect(les2.map((d) => d.key)).toEqual([
       "fournisseurs",
@@ -59,7 +70,7 @@ describe("les domaines typiques", () => {
     const sans = await makeAccount("dom-sans@test.fr");
     await ensureOnboardingQuestions(sans.db, sans.account.id);
     expect((await listOpenQuestions(sans.db)).map((q) => q.originStep)).toEqual(
-      [ETAPES.secteurs, ETAPES.premiereInstruction],
+      [ETAPES.secteurs, ETAPES.premiereInstruction, ETAPES.premiereBoite],
     );
     // Métier connu, aucun domaine : la question, avec les domaines du secteur.
     const { account, db } = await makeAccount("dom-typiques@test.fr", ["food"]);

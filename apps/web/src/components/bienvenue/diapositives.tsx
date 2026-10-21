@@ -4,22 +4,19 @@ import { useRef, useState, useTransition } from "react";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RELVO_LOGO_PATHS, RelvoLogo } from "@/components/layout/relvo-logo";
 import { EtapeFormulaire } from "@/components/relvo-chat/etape-formulaire";
-import { MAIL_CHOICES } from "@/components/settings/connect-email-button";
 import { Brain, Envelope } from "@/components/shared/picto";
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
-import {
-  connecterPremiereBoiteAction,
-  passerBienvenueAction,
-} from "@/server/actions/bienvenue";
-import type { MailProvider } from "@/server/unipile/client";
+import { passerBienvenueAction } from "@/server/actions/bienvenue";
 import { cn } from "@/lib/utils";
 
 // Les diapositives de première connexion (01 §11, M19.9) : un ciel plein
 // écran, six phrases courtes qui disent la promesse — ce que Relvo fera du
-// courrier —, puis l'invitation à connecter sa première adresse, posée en
-// ÉTAPE-FORMULAIRE dans la voix de Relvo. Du contexte, pas un mode d'emploi :
-// aucune diapositive n'explique un écran ; ce qui s'apprend (sujet, domaine,
-// tâche) s'apprend dans l'échange.
+// courrier —, puis l'invitation à FAIRE CONNAISSANCE, posée en
+// ÉTAPE-FORMULAIRE dans la voix de Relvo : elle ouvre l'échange, où la prise
+// en main commence (05 §11.11) — le métier, les domaines, une première règle,
+// et la boîte à lire en dernier. Du contexte, pas un mode d'emploi : aucune
+// diapositive n'explique un écran ; ce qui s'apprend (sujet, domaine, tâche)
+// s'apprend dans l'échange.
 //
 // Le glissé est natif (`scroll-snap`), pas une bibliothèque : le pouce fait ce
 // qu'il fait partout ailleurs sur le téléphone, et le geste s'interrompt. Les
@@ -31,7 +28,8 @@ import { cn } from "@/lib/utils";
 //
 // « Passer » mène à la dernière diapositive, pas hors de la séquence :
 // l'invitation est le but, les diapositives n'en sont que le chemin. « Plus
-// tard » en sort — la trace est posée, on ne les remontre jamais.
+// tard » en sort — la trace est posée, on ne les remontre jamais ; l'échange
+// posera ses questions quand on l'ouvrira.
 
 type Slide = {
   key: string;
@@ -225,8 +223,9 @@ function Disque() {
   );
 }
 
+const CONFIGURER = "CONFIGURER" as const;
 const PLUS_TARD = "PLUS_TARD" as const;
-type Choix = MailProvider | typeof PLUS_TARD;
+type Choix = typeof CONFIGURER | typeof PLUS_TARD;
 
 export function Diapositives({ firstName }: { firstName: string }) {
   const slides: Slide[] = [
@@ -299,19 +298,16 @@ export function Diapositives({ firstName }: { firstName: string }) {
     setError(null);
     setBusy(choix);
     startTransition(async () => {
-      if (choix === PLUS_TARD) {
+      try {
         await passerBienvenueAction();
-        // Navigation complète, pas `router` : voir l'action.
-        window.location.replace("/");
+      } catch {
+        setError("Je n’ai pas pu enregistrer votre choix. Réessayez.");
+        setBusy(null);
         return;
       }
-      const result = await connecterPremiereBoiteAction(choix);
-      if (result.ok) {
-        window.location.href = result.data.url;
-        return;
-      }
-      setError(result.message);
-      setBusy(null);
+      // Navigation complète, pas `router` : voir l'action. L'échange s'ouvre
+      // depuis l'accueil : c'est là que le retour ramène.
+      window.location.replace(choix === CONFIGURER ? "/relvo?from=%2F" : "/");
     });
   }
 
@@ -372,24 +368,25 @@ export function Diapositives({ firstName }: { firstName: string }) {
           </section>
         ))}
 
-        {/* L'invitation : une étape-formulaire de Relvo. Les trois boîtes sont
-            celles de la page des canaux — même liste, même action. */}
+        {/* L'invitation : une étape-formulaire de Relvo, qui ouvre l'échange.
+            La boîte n'est pas demandée ici : Relvo se configure d'abord, la
+            boîte est la dernière étape de l'échange. */}
         <section
           aria-label={`${total} sur ${total}`}
           className="flex w-full flex-none snap-start flex-col justify-end px-4 pb-4"
         >
           <h2 className="px-2 font-heading text-[30px] leading-9 font-semibold tracking-[-0.01em] text-white">
-            Par où on commence ?
+            Faisons connaissance.
           </h2>
           <RelvoBlock className={cn("mt-4", index === last && "arrive")}>
             <EtapeFormulaire<Choix>
-              question="Confiez-moi la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des dernières semaines et j’ouvre les premiers sujets."
+              question="Avant de lire votre courrier, j’ai besoin de vous connaître : votre métier, vos domaines, vos règles. Deux minutes, en quelques questions."
               options={[
-                ...MAIL_CHOICES.map((c) => ({
-                  key: c.provider,
-                  label: c.label,
-                  hint: c.hint,
-                })),
+                {
+                  key: CONFIGURER,
+                  label: "Configurer Relvo",
+                  hint: "Je vous pose mes questions, puis vous me confiez votre boîte",
+                },
                 { key: PLUS_TARD, label: "Plus tard", secondary: true },
               ]}
               onChoose={choose}

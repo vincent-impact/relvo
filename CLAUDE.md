@@ -129,7 +129,8 @@ relvo/
 | `/calendrier` | **Calendrier** — la page des **tâches** : indicateurs, semaine ou mois | onglet |
 | `/fil` | **Affaires** — indicateurs cliquables qui **sélectionnent** la liste, filtres par domaine, « à trier » | onglet |
 | `/conversations` · `/conversations/[id]` | **Conversations** — **seule surface d'affichage et de réponse** d'un fil | onglet |
-| `/relvo` · `/relvo/historique` | **Échange avec Relvo**, plein écran ; questions de Relvo en formulaires ; **la prise en main** (M13.2) : carte vivante de la lecture du courrier, affaires du moment, script en texte fixe ; **dictée** par le disque du composer (M22) — maintenir pour parler, relâcher envoie la transcription | **bouton central du dock** |
+| `/relvo` · `/relvo/historique` | **Échange avec Relvo**, plein écran ; questions de Relvo en formulaires ; **la prise en main** (M13.2) : s'ouvre depuis la dernière diapositive, script en texte fixe — métier, domaines, première règle, **la boîte en dernier** —, carte vivante de la lecture du courrier, affaires du moment ; **dictée** par le disque du composer (M22) — maintenir pour parler, relâcher envoie la transcription | **bouton central du dock** |
+| `/bienvenue` | **Première connexion** — six diapositives à glisser, puis « Configurer Relvo » ouvre l'échange ; vues une fois (`welcome_seen_at`) | hors-nav |
 | `/bilan` | **Bilan** — deux familles de chiffres, séparées | menu |
 | `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Mémoire** — instructions du compte, puis les domaines (Instructions / Documents / Affaires) | menu |
 | `/contacts` · `/contacts/[id]` · `/contacts/nouveau` | **Contacts** — annuaire et fiche | menu |

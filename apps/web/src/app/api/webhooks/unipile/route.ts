@@ -6,6 +6,7 @@ import {
   ingestOutboundEmail,
   ingestOutboundWhatsApp,
   requestChannelCatchup,
+  resolveMailboxStep,
 } from "@relvo/db";
 import {
   buildObjectKey,
@@ -165,10 +166,12 @@ async function handleHostedAuthNotify(notify: UnipileHostedAuthNotify) {
         channelId,
         since: fenetreDeRattrapage(),
       });
-      // Le premier échange naît ICI (05 §11.11) : les étapes du script qui
-      // restent à poser sont posées, le badge s'allume avant même que le
-      // dirigeant n'ouvre l'échange ; le même script rejoue, plus court, à
-      // chaque canal.
+      // La boîte confiée ferme l'étape « première boîte » de la prise en main
+      // (05 §11.11) : c'est la connexion qui vaut réponse, jamais le clic.
+      await resolveMailboxStep(db, identifier);
+      // Les étapes du script qui restent à poser sont posées, le badge
+      // s'allume avant même que le dirigeant n'ouvre l'échange ; le même
+      // script rejoue, plus court, à chaque canal.
       await ensureOnboardingQuestions(db, channel.accountId);
       await lancerTranche(catchup.id);
     } catch (err) {

@@ -128,7 +128,8 @@ export type AnswerQuestionInput = z.input<typeof answerQuestionSchema>;
 
 /** Ce que la réponse a fait sur le compte, en langage client. */
 export type QuestionOutcome =
-  | { kind: "sectors"; sectors: Sector[] }
+  /** `metier` : « un autre métier », dit en clair, retenu en instruction du compte. */
+  | { kind: "sectors"; sectors: Sector[]; metier?: string }
   | { kind: "instruction"; noteId: string; folderName: string }
   /** « Lisez deux semaines de plus » : l'application ouvre la lecture suivante sur ce canal. */
   | { kind: "lecture-etendue"; channelId: string; since: Date }
@@ -211,9 +212,27 @@ async function appliquerDestination(
     const sectors = SECTEURS_PAR_CLE[data.key ?? ""];
     if (sectors) {
       await setSectors(db, q.accountId, sectors, origine);
+      // « Un autre métier » s'écrit : le métier dit devient une instruction
+      // du compte — c'est ainsi que Relvo lit le courrier avec ses mots —,
+      // et les domaines proposés ensuite sont ceux de tout métier.
+      if (data.key === CLE_AUTRE_METIER && estUnMetierDit(data.answer)) {
+        await instruireDepuisReponse(
+          db,
+          { folderId: null, subjectId: null },
+          "Mon métier",
+          `Mon métier : ${data.answer}`,
+          origine,
+        );
+        return { kind: "sectors", sectors: [...sectors], metier: data.answer };
+      }
       return { kind: "sectors", sectors: [...sectors] };
     }
     // Une réponse libre sur les secteurs : on la note, rien de plus.
+    return { kind: "noted" };
+  }
+  if (q.originStep === ETAPES.premiereBoite) {
+    // La boîte se connecte par la page du fournisseur, et c'est la connexion
+    // qui ferme l'étape (`resolveMailboxStep`) ; une réponse directe est notée.
     return { kind: "noted" };
   }
   if (q.originStep?.startsWith(`${ETAPES.finDeLecture}/`)) {
@@ -425,12 +444,19 @@ export type OpenQuestion = {
   originStep: string | null;
   /** Plusieurs réponses se gardent (les domaines typiques) : le formulaire se coche. */
   multiple: boolean;
+  /** La boîte à lire : chaque réponse ouvre la page de connexion du fournisseur. */
+  connecteBoite: boolean;
   /** La fiche concernée, pour la nommer dans l'échange. */
   about: { kind: "subject" | "contact" | "folder"; label: string } | null;
   askedAt: string;
 };
 
-/** Les questions ouvertes, les plus anciennes d'abord : on répond dans l'ordre. */
+/**
+ * Les questions ouvertes, dans l'ordre où l'on y répond : les étapes du
+ * script dans l'ordre du script — les domaines typiques naissent après le
+ * métier mais se posent avant la règle et la boîte —, puis les autres, les
+ * plus anciennes d'abord.
+ */
 export async function listOpenQuestions(
   db: TenantDb,
   opts: { limit?: number } = {},
@@ -438,20 +464,29 @@ export async function listOpenQuestions(
   const rows = await db.relvoQuestion.findMany({
     where: { status: QuestionStatus.open },
     orderBy: { askedAt: "asc" },
-    take: opts.limit ?? 5,
     include: {
       subject: { select: { title: true } },
       contact: { select: { firstName: true, lastName: true } },
       folder: { select: { name: true } },
     },
   });
-  return rows.map((r) => ({
+  const rang = (step: string | null) => {
+    const i = SCRIPT_PRISE_EN_MAIN.findIndex((e) => e.step === step);
+    return i === -1 ? SCRIPT_PRISE_EN_MAIN.length : i;
+  };
+  rows.sort(
+    (a, b) =>
+      rang(a.originStep) - rang(b.originStep) ||
+      a.askedAt.getTime() - b.askedAt.getTime(),
+  );
+  return rows.slice(0, opts.limit ?? 5).map((r) => ({
     id: r.id,
     scope: r.scope,
     text: r.text,
     proposedAnswers: readProposedAnswers(r.proposedAnswers),
     originStep: r.originStep,
     multiple: r.originStep === ETAPES.domainesTypiques,
+    connecteBoite: r.originStep === ETAPES.premiereBoite,
     about: r.subject
       ? { kind: "subject", label: r.subject.title }
       : r.contact
@@ -477,12 +512,22 @@ export function countOpenQuestions(db: TenantDb): Promise<number> {
 // ─────────────────────────────────────────────────────────────
 
 export const CLE_AUTRE = "autre";
+/** « Un autre métier » : la réponse s'écrit, et le métier dit se retient. */
+export const CLE_AUTRE_METIER = "other";
+/** Les boîtes que la dernière étape propose — les clés sont celles du fournisseur. */
+export const BOITES_PROPOSEES = [
+  { key: "GOOGLE", label: "Gmail", hint: "Google Workspace compris" },
+  { key: "OUTLOOK", label: "Outlook", hint: "Microsoft 365 compris" },
+  { key: "MAIL", label: "Une autre boîte", hint: "OVH, Orange, Free, Gandi…" },
+] as const satisfies readonly ProposedAnswer[];
 
 export const ETAPES = {
   secteurs: "prise-en-main/secteurs",
   /** À choix multiples (`keys`) : l'échange le sait par l'étape. */
   domainesTypiques: "prise-en-main/domaines-typiques",
   premiereInstruction: "prise-en-main/premiere-instruction",
+  /** La boîte à lire, en dernier : se ferme à la connexion, pas par une réponse. */
+  premiereBoite: "prise-en-main/premiere-boite",
   /** Préfixe : l'étape porte l'identifiant du rattrapage — une par lecture. */
   finDeLecture: "prise-en-main/fin-de-lecture",
 } as const;
@@ -491,19 +536,28 @@ const SECTEURS_PAR_CLE: Record<string, readonly Sector[]> = {
   food: ["food"],
   construction: ["construction"],
   "food+construction": ["food", "construction"],
-  other: ["other"],
+  [CLE_AUTRE_METIER]: ["other"],
 };
+
+/** Une réponse libre qui dit un métier — pas le libellé de l'option recliqué. */
+function estUnMetierDit(answer: string): boolean {
+  const a = answer.trim();
+  return a.length > 0 && a.toLowerCase() !== "un autre métier";
+}
 
 export type CompteScript = {
   sectors: Sector[];
   instructionsGenerales: number;
   /** Les domaines du compte hors Général. */
   domaines: number;
+  /** Les boîtes e-mail connectées au moins une fois chez le fournisseur. */
+  boitesEmail: number;
 };
 
 export type EtapeScript = {
   step: (typeof ETAPES)[keyof typeof ETAPES];
-  text: string;
+  /** Le texte, fixe ou calculé depuis le compte (« un autre métier » n'a pas « votre métier »). */
+  text: string | ((compte: CompteScript) => string);
   /** Les réponses, fixes ou calculées depuis le compte (les domaines typiques des secteurs). */
   proposedAnswers:
     | ProposedAnswer[]
@@ -525,13 +579,21 @@ export const SCRIPT_PRISE_EN_MAIN: readonly EtapeScript[] = [
       { key: "food", label: "La restauration, l'alimentaire" },
       { key: "construction", label: "Le bâtiment, les travaux" },
       { key: "food+construction", label: "Les deux" },
-      { key: "other", label: "Un autre métier" },
+      {
+        key: CLE_AUTRE_METIER,
+        label: "Un autre métier",
+        hint: "Dites-le-moi en quelques mots",
+        libre: true,
+      },
     ],
     applicable: (c) => c.sectors.length === 0,
   },
   {
     step: ETAPES.domainesTypiques,
-    text: "Je range vos affaires par domaine. Dans votre métier, on trouve souvent ceux-ci. Lesquels gardez-vous ?",
+    text: (c) =>
+      c.sectors.some((s) => s !== "other")
+        ? "Je range vos affaires par domaine. Dans votre métier, on trouve souvent ceux-ci. Lesquels gardez-vous ?"
+        : "Je range vos affaires par domaine. Voici ceux qu'on retrouve dans la plupart des entreprises. Lesquels gardez-vous ?",
     proposedAnswers: (c) => [
       ...domainesTypiquesDe(c.sectors).map((d) => ({
         key: d.key,
@@ -554,6 +616,16 @@ export const SCRIPT_PRISE_EN_MAIN: readonly EtapeScript[] = [
     proposedAnswers: [{ key: CLE_AUTRE, label: "Je vous l'écris…" }],
     applicable: (c) => c.instructionsGenerales === 0,
   },
+  {
+    // En dernier : Relvo se configure d'abord, la boîte se confie ensuite. La
+    // réponse ouvre la page de connexion du fournisseur ; l'étape se ferme à
+    // la connexion (`resolveMailboxStep`), pas au clic — revenir en arrière la
+    // laisse ouverte, et elle se repose.
+    step: ETAPES.premiereBoite,
+    text: "Maintenant, confiez-moi la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des deux dernières semaines et j'ouvre vos premières affaires. Laquelle ?",
+    proposedAnswers: [...BOITES_PROPOSEES],
+    applicable: (c) => c.boitesEmail === 0,
+  },
 ];
 
 /**
@@ -566,7 +638,7 @@ export async function ensureOnboardingQuestions(
   db: TenantDb,
   accountId: string,
 ): Promise<number> {
-  const [account, general, deja, domaines] = await Promise.all([
+  const [account, general, deja, domaines, boitesEmail] = await Promise.all([
     db.account.findUnique({
       where: { id: accountId },
       select: { sectors: true },
@@ -577,6 +649,18 @@ export async function ensureOnboardingQuestions(
       select: { originStep: true },
     }),
     db.folder.count({ where: { isDefault: false } }),
+    // Les boîtes e-mail qui comptent : connectées chez le fournisseur, ou sans
+    // configuration (le jeu de démonstration) — jamais un orphelin de la page
+    // de connexion (`isNeverConnected`).
+    db.channel.count({
+      where: {
+        type: "email",
+        OR: [
+          { config: { is: null } },
+          { config: { externalAccountId: { not: null } } },
+        ],
+      },
+    }),
   ]);
   if (!account) return 0;
   const instructionsGenerales = general
@@ -588,6 +672,7 @@ export async function ensureOnboardingQuestions(
     sectors: account.sectors,
     instructionsGenerales,
     domaines,
+    boitesEmail,
   };
   const posees = new Set(deja.map((d) => d.originStep));
   let n = 0;
@@ -596,7 +681,7 @@ export async function ensureOnboardingQuestions(
     if (!etape.applicable(compte)) continue;
     await askQuestion(db, {
       scope: QuestionScope.account,
-      text: etape.text,
+      text: typeof etape.text === "function" ? etape.text(compte) : etape.text,
       proposedAnswers:
         typeof etape.proposedAnswers === "function"
           ? etape.proposedAnswers(compte)
@@ -607,6 +692,43 @@ export async function ensureOnboardingQuestions(
   }
   n += await ensureFolderProposalQuestions(db);
   return n;
+}
+
+/**
+ * La BOÎTE EST CONNECTÉE : l'étape « première boîte » encore ouverte se ferme,
+ * répondue par la connexion elle-même — c'est le geste qui vaut réponse, pas
+ * le clic sur l'option (revenir en arrière de la page du fournisseur ne ferme
+ * rien). Appelé par le webhook de connexion ; sans étape ouverte, ne fait rien.
+ */
+export async function resolveMailboxStep(
+  db: TenantDb,
+  identifier: string | null,
+): Promise<{ resolved: boolean }> {
+  const q = await db.relvoQuestion.findFirst({
+    where: { originStep: ETAPES.premiereBoite, status: QuestionStatus.open },
+    select: { id: true, text: true },
+  });
+  if (!q) return { resolved: false };
+  const answer = identifier
+    ? `Boîte connectée : ${identifier}`
+    : "Boîte connectée";
+  await db.relvoQuestion.update({
+    where: { id: q.id },
+    data: { status: QuestionStatus.answered, answer, answeredAt: new Date() },
+  });
+  await logEvent(db as Tx, {
+    entityType: "system",
+    entityId: q.id,
+    eventType: EVENT_TYPES.questionAnswered,
+    title: `Réponse à Relvo : ${q.text}`,
+    description: answer,
+    actor: Actor.system,
+    metadata: {
+      outcome: "mailbox-connected",
+      originStep: ETAPES.premiereBoite,
+    },
+  });
+  return { resolved: true };
 }
 
 /**

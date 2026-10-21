@@ -13,6 +13,7 @@ import {
   poserFinDeLecture,
   prisma,
   requestChannelCatchup,
+  resolveMailboxStep,
   SCRIPT_PRISE_EN_MAIN,
   tenantDb,
   titreInstruction,
@@ -138,6 +139,52 @@ describe("répondre, écarter", () => {
     ).rejects.toThrow();
   });
 
+  it("« un autre métier » s'écrit : les secteurs passent à `other` et le métier dit devient une instruction de Général", async () => {
+    const { account, general, db } = await makeAccount(
+      "q-autre-metier@test.fr",
+    );
+    const q = await askQuestion(db, {
+      scope: "account",
+      text: "Votre métier ?",
+      originStep: ETAPES.secteurs,
+    });
+    const { outcome } = await answerQuestion(db, q.id, {
+      key: "other",
+      answer: "Paysagiste, entretien de jardins pour des copropriétés",
+    });
+    expect(outcome).toEqual({
+      kind: "sectors",
+      sectors: ["other"],
+      metier: "Paysagiste, entretien de jardins pour des copropriétés",
+    });
+    const maj = await prisma.account.findUniqueOrThrow({
+      where: { id: account.id },
+    });
+    expect(maj.sectors).toEqual(["other"]);
+    const notes = await db.knowledgeDocument.findMany({
+      where: { folderId: general.id, kind: "note" },
+    });
+    expect(notes).toHaveLength(1);
+    expect(notes[0]!.name).toBe("Mon métier");
+    expect(notes[0]!.content).toContain("Paysagiste");
+    // Le métier connu — même « autre » —, les domaines de tout métier se
+    // proposent, avec un texte qui ne dit pas « votre métier ».
+    await ensureOnboardingQuestions(db, account.id);
+    const domaines = (await listOpenQuestions(db)).find(
+      (o) => o.originStep === ETAPES.domainesTypiques,
+    );
+    expect(domaines).toBeDefined();
+    expect(domaines!.text).not.toContain("votre métier");
+    expect(domaines!.proposedAnswers.map((p) => p.key)).toEqual([
+      "clients",
+      "fournisseurs",
+      "devis",
+      "equipe",
+      "administratif",
+      "aucun",
+    ]);
+  });
+
   it("une réponse libre devient une instruction du domaine de la portée, sinon de « Général »", async () => {
     const { general, db } = await makeAccount("q-instruction@test.fr");
     const q = await askQuestion(db, {
@@ -190,30 +237,104 @@ describe("le script de la prise en main", () => {
   it("pose les étapes qui ont quelque chose à apprendre, une fois, jamais après une réponse ou un écart", async () => {
     const { account, db } = await makeAccount("q-script@test.fr");
     // Sans métier connu, les domaines typiques ne se proposent pas encore :
-    // deux étapes sur les trois du script.
-    expect(SCRIPT_PRISE_EN_MAIN).toHaveLength(3);
-    expect(await ensureOnboardingQuestions(db, account.id)).toBe(2);
+    // trois étapes sur les quatre du script, la boîte en dernier.
+    expect(SCRIPT_PRISE_EN_MAIN).toHaveLength(4);
+    expect(await ensureOnboardingQuestions(db, account.id)).toBe(3);
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(0);
     const ouvertes = await listOpenQuestions(db);
     expect(ouvertes.map((o) => o.originStep)).toEqual([
       ETAPES.secteurs,
       ETAPES.premiereInstruction,
+      ETAPES.premiereBoite,
     ]);
     expect(ouvertes[0]!.proposedAnswers.map((p) => p.key)).toContain(
       "food+construction",
     );
+    expect(
+      ouvertes[0]!.proposedAnswers.find((p) => p.key === "other")?.libre,
+    ).toBe(true);
+    expect(ouvertes[2]!.connecteBoite).toBe(true);
+    expect(ouvertes[2]!.proposedAnswers.map((p) => p.key)).toEqual([
+      "GOOGLE",
+      "OUTLOOK",
+      "MAIL",
+    ]);
 
     await answerQuestion(db, ouvertes[0]!.id, {
       key: "food",
       answer: "La restauration",
     });
     await dismissQuestion(db, ouvertes[1]!.id);
-    // Le métier connu, les domaines typiques se proposent — une fois.
+    // Le métier connu, les domaines typiques se proposent — une fois —, et
+    // AVANT la boîte : l'ordre du script, pas celui de la naissance.
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(1);
     expect((await listOpenQuestions(db)).map((o) => o.originStep)).toEqual([
       ETAPES.domainesTypiques,
+      ETAPES.premiereBoite,
     ]);
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(0);
+  });
+
+  it("l'étape « première boîte » se ferme à la connexion, jamais au clic, et ne se repose pas à une boîte connectée", async () => {
+    const { account, db } = await makeAccount("q-boite@test.fr", ["food"]);
+    await ensureOnboardingQuestions(db, account.id);
+    const boite = (await listOpenQuestions(db)).find(
+      (o) => o.originStep === ETAPES.premiereBoite,
+    );
+    expect(boite).toBeDefined();
+    const channel = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "Gmail",
+        type: "email",
+        identifier: "pro@test.fr",
+      },
+    });
+    await prisma.channelConfig.create({
+      data: {
+        accountId: account.id,
+        channelId: channel.id,
+        provider: "unipile",
+        externalAccountId: "acc_q_boite",
+        status: "connected",
+      },
+    });
+    expect(await resolveMailboxStep(db, "pro@test.fr")).toEqual({
+      resolved: true,
+    });
+    const fermee = await prisma.relvoQuestion.findUniqueOrThrow({
+      where: { id: boite!.id },
+    });
+    expect(fermee.status).toBe("answered");
+    expect(fermee.answer).toContain("pro@test.fr");
+    expect(await resolveMailboxStep(db, "pro@test.fr")).toEqual({
+      resolved: false,
+    });
+    // Une boîte connectée : l'étape n'a plus rien à apprendre.
+    const { account: a2, db: db2 } = await makeAccount("q-boite2@test.fr", [
+      "food",
+    ]);
+    const c2 = await prisma.channel.create({
+      data: {
+        accountId: a2.id,
+        name: "Gmail",
+        type: "email",
+        identifier: "deja@test.fr",
+      },
+    });
+    await prisma.channelConfig.create({
+      data: {
+        accountId: a2.id,
+        channelId: c2.id,
+        provider: "unipile",
+        externalAccountId: "acc_q_boite2",
+        status: "connected",
+      },
+    });
+    await ensureOnboardingQuestions(db2, a2.id);
+    expect(
+      (await listOpenQuestions(db2)).map((o) => o.originStep),
+    ).not.toContain(ETAPES.premiereBoite);
   });
 
   it("un compte qui a déjà ses secteurs, un domaine et une instruction n'a rien à répondre", async () => {
@@ -225,6 +346,33 @@ describe("le script de la prise en main", () => {
     await db.folder.create({
       data: { name: "Fournisseurs", slug: "fournisseurs" },
     });
+    // Une boîte pré-créée mais jamais connectée ne compte pas : l'étape se pose.
+    const boite = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "Gmail",
+        type: "email",
+        identifier: "En attente de connexion…",
+      },
+    });
+    await prisma.channelConfig.create({
+      data: {
+        accountId: account.id,
+        channelId: boite.id,
+        provider: "unipile",
+        status: "pending",
+      },
+    });
+    expect(await ensureOnboardingQuestions(db, account.id)).toBe(1);
+    expect((await listOpenQuestions(db)).map((o) => o.originStep)).toEqual([
+      ETAPES.premiereBoite,
+    ]);
+    // Connectée : plus rien à répondre.
+    await prisma.channelConfig.updateMany({
+      where: { channelId: boite.id },
+      data: { externalAccountId: "acc_rien", status: "connected" },
+    });
+    await resolveMailboxStep(db, "rien@test.fr");
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(0);
   });
 });

@@ -17,10 +17,7 @@ export type DomaineTypique = {
   icon: string;
 };
 
-export const DOMAINES_TYPIQUES: Record<
-  Exclude<Sector, "other">,
-  readonly DomaineTypique[]
-> = {
+export const DOMAINES_TYPIQUES: Record<Sector, readonly DomaineTypique[]> = {
   food: [
     {
       key: "fournisseurs",
@@ -95,20 +92,66 @@ export const DOMAINES_TYPIQUES: Record<
       icon: "scale",
     },
   ],
+  // « Un autre métier » : les domaines qu'on retrouve dans la plupart des
+  // entreprises, sans mot d'un secteur — le métier dit par le dirigeant, lui,
+  // vit dans une instruction du compte.
+  other: [
+    {
+      key: "clients",
+      name: "Clients",
+      description: "Demandes, commandes, réclamations, suivi",
+      color: "red",
+      icon: "building",
+    },
+    {
+      key: "fournisseurs",
+      name: "Fournisseurs",
+      description: "Commandes, livraisons, tarifs, prestataires",
+      color: "amber",
+      icon: "boxes",
+    },
+    {
+      key: "devis",
+      name: "Devis",
+      description: "Demandes, chiffrages, relances, signatures",
+      color: "purple",
+      icon: "banknote",
+    },
+    {
+      key: "equipe",
+      name: "Équipe",
+      description: "Recrutement, plannings, absences, contrats",
+      color: "green",
+      icon: "users",
+    },
+    {
+      key: "administratif",
+      name: "Administratif",
+      description: "Comptable, banque, assurance, administration",
+      color: "blue",
+      icon: "scale",
+    },
+  ],
 };
 
 /**
  * Les domaines typiques des secteurs d'un compte, sans doublon de clé — un
  * nom partagé par deux secteurs n'est proposé qu'une fois, avec la description
- * du premier secteur dans l'ordre canonique.
+ * du premier secteur dans l'ordre canonique. Les domaines de tout métier
+ * (`other`) ne viennent qu'en l'absence de secteur connu : un métier connu a
+ * déjà les siens.
  */
 export function domainesTypiquesDe(
   sectors: readonly Sector[],
 ): DomaineTypique[] {
   const vus = new Set<string>();
   const out: DomaineTypique[] = [];
-  for (const s of ["food", "construction"] as const) {
-    if (!sectors.includes(s)) continue;
+  const connus = (["food", "construction"] as const).filter((s) =>
+    sectors.includes(s),
+  );
+  const ordre: readonly Sector[] =
+    connus.length > 0 ? connus : sectors.includes("other") ? ["other"] : [];
+  for (const s of ordre) {
     for (const d of DOMAINES_TYPIQUES[s]) {
       if (vus.has(d.key)) continue;
       vus.add(d.key);

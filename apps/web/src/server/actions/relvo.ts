@@ -10,9 +10,11 @@ import {
   requestChannelCatchup,
 } from "@relvo/db";
 import { domainAction } from "@/lib/action-result";
+import { connectEmailChannelAction } from "@/server/actions/email";
 import { getTenantDb } from "@/server/auth-context";
 import { revalidateTenantData } from "@/server/cached";
 import { lancerTranche } from "@/server/ia/pipeline/rattrapage";
+import type { MailProvider } from "@/server/unipile/client";
 
 // Server Actions de l'ÉCHANGE avec Relvo : défaire un geste depuis son bloc
 // dans le fil (M10.10), répondre à une question de Relvo ou l'écarter (M18.9).
@@ -59,6 +61,26 @@ export async function repondreQuestionAction(
     revalidateTenantData();
   }
   return result;
+}
+
+const BOITES: readonly MailProvider[] = ["GOOGLE", "OUTLOOK", "MAIL"];
+
+/**
+ * La boîte choisie à la dernière étape de la prise en main (05 §11.11) : la
+ * connexion ordinaire d'un canal, avec retour dans l'échange — c'est là que la
+ * lecture se suit. La question n'est PAS répondue ici : c'est la connexion qui
+ * la ferme (webhook `notify`), revenir en arrière la laisse ouverte.
+ */
+export async function connecterBoiteDepuisEchangeAction(provider: string) {
+  const choisi = BOITES.find((p) => p === provider);
+  if (!choisi) {
+    return {
+      ok: false as const,
+      code: "VALIDATION" as const,
+      message: "Boîte inconnue.",
+    };
+  }
+  return connectEmailChannelAction(choisi, "relvo");
 }
 
 /** Écarte une question : jamais reposée. */

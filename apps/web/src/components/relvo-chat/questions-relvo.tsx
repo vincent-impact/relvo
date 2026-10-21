@@ -8,6 +8,7 @@ import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { EtapeChoixMultiples } from "@/components/relvo-chat/etape-choix-multiples";
 import { EtapeFormulaire } from "@/components/relvo-chat/etape-formulaire";
 import {
+  connecterBoiteDepuisEchangeAction,
   ecarterQuestionAction,
   repondreQuestionAction,
 } from "@/server/actions/relvo";
@@ -27,7 +28,9 @@ const ECARTER = "__ecarter";
 function phraseOutcome(o: QuestionOutcome): string {
   switch (o.kind) {
     case "sectors":
-      return "C’est noté : je lirai votre courrier avec les mots de votre métier.";
+      return o.metier
+        ? `C’est noté dans votre Mémoire : ${o.metier}. Je lirai votre courrier avec les mots de votre métier.`
+        : "C’est noté : je lirai votre courrier avec les mots de votre métier.";
     case "instruction":
       return `C’est noté dans votre Mémoire, dans ${o.folderName} : je l’appliquerai.`;
     case "folders":
@@ -45,7 +48,13 @@ function phraseOutcome(o: QuestionOutcome): string {
 
 export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
   const router = useRouter();
-  const [index, setIndex] = useState(0);
+  // Les questions TRAITÉES dans cette session — répondues, écartées, remises
+  // à plus tard — par identifiant, jamais par rang : la liste se rafraîchit
+  // après chaque réponse (elle rétrécit, une étape du script peut naître), et
+  // un rang qui avance sur une liste qui bouge saute une question.
+  const [traitees, setTraitees] = useState<ReadonlySet<string>>(
+    () => new Set(),
+  );
   const [reponduEn, setReponduEn] = useState<string | null>(null);
   const [libre, setLibre] = useState(false);
   /** La clé sous laquelle la réponse libre part : « Autre… », ou une réponse qui s'écrit. */
@@ -55,14 +64,16 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
   const [error, setError] = useState<string | null>(null);
   const [, start] = useTransition();
 
-  const question = questions[index] ?? null;
+  const question = questions.find((q) => !traitees.has(q.id)) ?? null;
   if (!question && !reponduEn) return null;
 
   function suivante() {
+    if (!question) return;
+    const id = question.id;
     setLibre(false);
     setCleLibre(CLE_AUTRE);
     setTexte("");
-    setIndex((i) => i + 1);
+    setTraitees((t) => new Set([...t, id]));
   }
 
   function repondre(key: string | null, answer: string, keys?: string[]) {
@@ -107,6 +118,22 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
     if (key === CLE_AUTRE || option?.libre) {
       setCleLibre(key);
       return setLibre(true);
+    }
+    if (question.connecteBoite) {
+      // La boîte à lire (05 §11.11) : la réponse ouvre la page du fournisseur,
+      // et c'est la connexion qui fermera la question — pas ce clic.
+      setBusyKey(key);
+      setError(null);
+      start(async () => {
+        const res = await connecterBoiteDepuisEchangeAction(key);
+        if (res.ok) {
+          window.location.href = res.data.url;
+          return;
+        }
+        setBusyKey(null);
+        setError(res.message);
+      });
+      return;
     }
     repondre(key, option?.label ?? key);
   }
@@ -160,13 +187,24 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
                 ...question.proposedAnswers
                   .filter((p) => p.key !== CLE_AUTRE)
                   .map((p) => ({ key: p.key, label: p.label, hint: p.hint })),
-                {
-                  key: CLE_AUTRE,
-                  label:
-                    question.proposedAnswers.find((p) => p.key === CLE_AUTRE)
-                      ?.label ?? "Autre…",
-                  hint: libre ? undefined : "Une réponse en quelques mots",
-                },
+                // Une boîte ne s'écrit pas : pas de réponse libre à cette étape.
+                // Et quand une réponse proposée s'écrit déjà (« Un autre
+                // métier », « Il en manque »), « Autre… » ferait doublon.
+                ...(question.connecteBoite ||
+                question.proposedAnswers.some((p) => p.libre)
+                  ? []
+                  : [
+                      {
+                        key: CLE_AUTRE,
+                        label:
+                          question.proposedAnswers.find(
+                            (p) => p.key === CLE_AUTRE,
+                          )?.label ?? "Autre…",
+                        hint: libre
+                          ? undefined
+                          : "Une réponse en quelques mots",
+                      },
+                    ]),
                 { key: PLUS_TARD, label: "Plus tard", secondary: true },
                 {
                   key: ECARTER,

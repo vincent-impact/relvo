@@ -1507,7 +1507,43 @@ utilisateur ne voit qu'un accueil vide et un dock dont il ne sait rien.
   tant que l'adresse n'est pas branchée.
 
 **Mis en œuvre par** M19.9, tranche 4 « Guider » ; `01-principes.md` §11 et `05-ia.md` §11.11
-disent la séquence.
+disent la séquence. **Précisé** en recette par « La prise en main commence à la sortie des
+diapositives ; la boîte se demande en dernier », ci-dessous.
+
+### La prise en main commence à la sortie des diapositives ; la boîte se demande en dernier
+
+**`tranché`** · Avec le dirigeant, en recette de l'alpha (2026-10-21), sur quatre remontées des
+testeurs. Précise la décision précédente sans la rouvrir : les diapositives restent, l'échange
+scripté reste la prise en main — mais il ne commence plus à la connexion du premier canal.
+
+- **L'échange s'ouvre à la sortie des diapositives.** La dernière diapositive n'invite plus à
+  connecter une boîte : elle invite à **configurer Relvo**, et ouvre l'échange. Relvo y pose son
+  script — le métier, les domaines, une première règle — et demande **la boîte en dernier**, par
+  une question dont chaque réponse ouvre la page du fournisseur. **Retenu contre** la boîte
+  d'abord : un dirigeant qui confie sa boîte avant d'avoir dit son métier voit Relvo lire avec
+  les mots de personne, et la connexion, geste le plus technique du parcours, arrivait avant
+  qu'il ait eu une raison de faire confiance.
+- **C'est la connexion qui ferme la question de la boîte, jamais le clic.** Revenir en arrière
+  de la page du fournisseur laisse la question ouverte — elle se repose — et laisse un canal
+  pré-créé sans compte. **Ce canal se reprend**, il ne se supprime pas : la ligne porte
+  « Connecter », qui rouvre la page du fournisseur sur le même canal et le même choix ; une
+  nouvelle tentative depuis le bouton de la page reprend ce canal au lieu d'en créer un second
+  (`PITFALLS.md` #70). **Retenu contre** la suppression automatique de l'orphelin : l'utilisateur
+  a fait un choix qu'on lui conserve.
+- **« Un autre métier » ne se valide pas d'un clic : il s'écrit.** Le métier dit devient une
+  instruction du compte, dans Général, et les domaines proposés ensuite sont ceux de toute
+  entreprise — clients, fournisseurs, devis, équipe, administratif. **Retenu contre** une liste
+  de secteurs plus longue : les socles de la couche Produit n'existent que pour le food et le
+  bâtiment ; un troisième secteur est une décision de produit, pas une option de formulaire.
+- **La lecture se voit d'où qu'on soit.** Entre le retour de la page du fournisseur et la
+  première tranche, il y a quelques secondes où rien n'existe en base ; les testeurs y ont vu un
+  produit arrêté. La carte vivante existe dès ce retour (« en attente »), les pages se
+  rafraîchissent jusqu'à la lecture, l'accueil dit la lecture en premier avec ses compteurs et
+  mène à l'échange, et le disque du dock respire tant qu'elle dure. **Retenu contre** une
+  notification « lecture terminée » seule : elle dit la fin, pas le travail.
+
+**Mis en œuvre par** le chantier de recette `2026-10-recette-alpha.md` ; `01-principes.md` §11
+et `05-ia.md` §11.11 disent la séquence.
 
 ### L'échange avec Relvo : le dirigeant est l'acteur, l'annulation est un geste de l'écran, le tier se décide par règles
 

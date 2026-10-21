@@ -224,12 +224,13 @@ pas sa place dans une barre qu'on regarde trente fois par jour.
 
 Personne n'apprend Relvo par des infobulles. La première connexion s'ouvre sur une courte série
 de **diapositives à glisser**, une phrase par diapositive, qui disent ce que Relvo fait — du
-contexte, pas un mode d'emploi —, puis invite à connecter sa **première adresse e-mail**. À la
-connexion de ce premier canal, Relvo **prend la parole** : il dit qu'il lit le courrier récent,
-montre ce qu'il trouve à mesure, pose les quelques questions dont il a besoin — sous la forme
-des formulaires du produit — et explique en deux phrases ce qu'il faut savoir. Le temps de la
-lecture est le temps de la prise en main, et rien n'est bloqué pendant qu'il travaille. Le
-détail vit dans `05-ia.md` §11.11.
+contexte, pas un mode d'emploi —, puis ouvre **l'échange avec Relvo**. Relvo **prend la
+parole** : il demande le métier, propose les domaines, retient une première règle — sous la
+forme des formulaires du produit — et demande **en dernier** la boîte où arrive le courrier. À
+la connexion de ce premier canal, il dit qu'il lit le courrier récent, montre ce qu'il trouve à
+mesure et explique en deux phrases ce qu'il faut savoir. Le temps de la lecture est le temps de
+la prise en main, et rien n'est bloqué pendant qu'il travaille ; la lecture **se voit d'où qu'on
+soit** — l'accueil la dit, le disque du dock respire. Le détail vit dans `05-ia.md` §11.11.
 
 ### Relvo rend les mêmes composants que l'interface
 
