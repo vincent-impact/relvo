@@ -4,6 +4,10 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-10-21
+
+- **Corrigé** — Un long message WhatsApp s'affiche désormais en entier dans la conversation, plus rien n'est coupé.
+
 ## 2026-10-20
 
 - **Nouveau** — Relvo lit vos conversations WhatsApp directes comme vos e-mails : une affaire s'ouvre à réception, avec ses tâches. Les groupes restent à votre main.

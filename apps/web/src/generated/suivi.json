@@ -176,6 +176,15 @@
   "en_cours": null,
   "journal": [
     {
+      "date": "2026-10-21",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "Un long message WhatsApp s'affiche désormais en entier dans la conversation, plus rien n'est coupé."
+        }
+      ]
+    },
+    {
       "date": "2026-10-20",
       "entrees": [
         {

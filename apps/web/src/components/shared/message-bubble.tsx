@@ -93,11 +93,13 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
       {data.content.trim()
         ? (() => {
             const boxClass = cn(
-              // Les e-mails très longs sont tronqués dans le fil (≈12 lignes) pour
-              // ne pas saturer la conversation ; la page détail donne le texte
-              // complet. `overflow-wrap:anywhere` : une URL interminable se coupe
-              // au lieu d'élargir l'écran (jamais de scroll horizontal).
-              "line-clamp-[12] px-3.5 py-[11px] text-[14.5px] leading-[1.45] font-light whitespace-pre-wrap [overflow-wrap:anywhere]",
+              // Le texte ENTIER, jamais tronqué : un message WhatsApp n'a pas de
+              // page détail, la bulle est le seul endroit où on le lit (un long
+              // message coupé à douze lignes passait pour un bug). Les e-mails,
+              // eux, ne passent plus par la bulle (`EmailMessage`, pleine
+              // largeur). `overflow-wrap:anywhere` : une URL interminable se
+              // coupe au lieu d'élargir l'écran (jamais de scroll horizontal).
+              "px-3.5 py-[11px] text-[14.5px] leading-[1.45] font-light whitespace-pre-wrap [overflow-wrap:anywhere]",
               outgoing
                 ? "rounded-[18px_18px_5px_18px] bg-actor-me text-white"
                 : relvo
