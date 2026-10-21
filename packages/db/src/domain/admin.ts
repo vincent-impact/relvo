@@ -243,24 +243,47 @@ export async function deleteAccount(
     }),
     "Compte",
   );
-  await adminDb.$transaction(async (tx) => {
-    await logEvent(tx as Tx, {
-      entityType: "system",
-      entityId: target.id,
-      eventType: EVENT_TYPES.accountDeleted,
-      title: `Compte « ${target.email} » supprimé`,
-      actor: Actor.user,
-      metadata: {
-        accountId: target.id,
-        email: target.email,
-        isTest: target.isTest,
-        creeLe: target.createdAt.toISOString(),
-        canaux: target.channels.length,
-        unipile: input.unipile,
-      },
-    });
-    await tx.account.delete({ where: { id: target.id } });
-  });
+  // Le GROS du tenant s'efface D'ABORD, table par table, hors de toute
+  // transaction interactive (PITFALLS #71) : une cascade de tout un compte
+  // — des milliers de messages, leurs pièces jointes et le déclencheur qui
+  // enfile chaque clé de fichier — dépassait le délai de cinq secondes de la
+  // transaction Prisma, et le compte restait là, son agrégateur déjà
+  // déconnecté. Chaque instruction est bornée à une table du compte,
+  // idempotente : une suppression interrompue se reprend en la relançant. La
+  // transaction finale ne porte plus que la trace chez l'administrateur et la
+  // ligne du compte, dont la cascade n'emporte que les restes.
+  const cible = { accountId: target.id };
+  await prisma.attachment.deleteMany({ where: cible });
+  await prisma.message.deleteMany({ where: cible });
+  await prisma.subjectConversation.deleteMany({ where: cible });
+  await prisma.conversation.deleteMany({ where: cible });
+  await prisma.action.deleteMany({ where: cible });
+  await prisma.task.deleteMany({ where: cible });
+  await prisma.subject.deleteMany({ where: cible });
+  await prisma.knowledgeDocument.deleteMany({ where: cible });
+  await prisma.contact.deleteMany({ where: cible });
+  await prisma.eventLog.deleteMany({ where: cible });
+  await adminDb.$transaction(
+    async (tx) => {
+      await logEvent(tx as Tx, {
+        entityType: "system",
+        entityId: target.id,
+        eventType: EVENT_TYPES.accountDeleted,
+        title: `Compte « ${target.email} » supprimé`,
+        actor: Actor.user,
+        metadata: {
+          accountId: target.id,
+          email: target.email,
+          isTest: target.isTest,
+          creeLe: target.createdAt.toISOString(),
+          canaux: target.channels.length,
+          unipile: input.unipile,
+        },
+      });
+      await tx.account.delete({ where: { id: target.id } });
+    },
+    { timeout: 60_000, maxWait: 10_000 },
+  );
   return { email: target.email, channels: target.channels.length };
 }
 

@@ -619,6 +619,28 @@ temps que son webhook passe — jamais « Connecter » sous les yeux de quelqu'u
 faire. Même famille que #53 : l'état stocké n'est jamais la vérité, et un état sans issue est un
 bug de parcours, pas un état.
 
+### #71 — Effacer tout un tenant par la cascade d'une transaction interactive Prisma échoue en silence sur un compte réel
+
+**Symptôme** : en recette, l'administrateur supprime un compte qui a lu deux semaines de courrier.
+L'écran ne dit rien d'utile, le journal de production montre une réponse **500** sur la fiche
+du compte, et le compte est toujours là — alors que son compte chez l'agrégateur, supprimé
+AVANT la base, a disparu : la tentative suivante reçoit un 404 de l'agrégateur.
+
+**Cause** : la suppression tenait dans `adminDb.$transaction(async tx => …)` — trace chez
+l'administrateur, puis `account.delete` et sa cascade sur seize tables, chaque pièce jointe
+effacée passant par le déclencheur qui enfile sa clé de fichier. Une transaction interactive
+Prisma expire à **cinq secondes** par défaut ; sur un compte de démonstration c'est instantané,
+sur un compte réel derrière Neon ce ne l'est pas. L'erreur n'était pas une `DomainError`, donc
+`tryAction` la relançait, et l'action répondait 500 sans un mot.
+
+**Règle** : **jamais la cascade d'un tenant entier dans une transaction interactive.** Le gros
+s'efface d'abord, table par table, par des `deleteMany` bornés au compte, hors transaction,
+chacun idempotent — une suppression interrompue se reprend en la relançant ; la transaction
+finale ne porte que la trace et la ligne du compte, avec un `timeout` explicite. Et une action
+d'administration **attrape** l'erreur qu'elle ne sait pas nommer : elle la journalise avec le
+compte visé et répond en langage client, jamais un 500 muet. Même famille que « mutations à
+requêtes constantes » (Neon, latence par requête).
+
 ## Si une MAJEURE a bougé
 
 | Majeure | Revérifier |

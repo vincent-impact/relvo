@@ -554,6 +554,13 @@ export async function deleteUnipileAccount(
     await ctx.client.account.delete(accountId);
     return true;
   } catch (err) {
+    // Déjà absent chez l'agrégateur — une suppression précédente a fait cette
+    // part et pas la suite — : c'est fait, pas un échec à finir à la main.
+    const status = (err as { body?: { status?: unknown } })?.body?.status;
+    if (status === 404) {
+      console.info("[unipile] compte déjà absent", accountId);
+      return true;
+    }
     console.error("[unipile] suppression du compte échouée", accountId, err);
     return false;
   }

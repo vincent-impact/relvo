@@ -112,6 +112,18 @@ moment.
 - `LienNotifications` sur l'accueil : « → Activer les notifications sur cet appareil » dans le
   bloc des nouvelles, tant que l'appareil n'est pas abonné.
 
+### R7 — Un compte ne se supprimait pas depuis le backoffice
+
+**Constat.** La suppression de `mamadou@tastycrousty.io` échouait sans message ; en production,
+la fiche répondait 500 après que l'agrégateur avait déjà perdu le compte (404 à la tentative
+suivante).
+
+**Livré.** `deleteAccount` efface d'abord le gros du tenant table par table, hors transaction,
+puis trace et supprime la ligne du compte dans une transaction à délai explicite ; l'action
+attrape l'erreur, la journalise avec le compte visé et répond en langage client ; un compte
+déjà absent chez l'agrégateur compte comme déconnecté, pas comme un échec. `PITFALLS.md` #71.
+**À refaire par le dirigeant** : relancer la suppression de ce compte depuis le backoffice.
+
 ## Vérification
 
 - `pnpm typecheck`, `pnpm lint`, tests du paquet (`questions`, `domaines`, `channel-connection`)
@@ -126,5 +138,6 @@ moment.
 
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
 - [x] R5 et R6 livrées (assistant actif par défaut, invitation aux notifications dans l'échange et sur l'accueil).
+- [x] R7 livrée (suppression d'un compte robuste, PITFALLS #71) — à relancer en production sur le compte concerné.
 - [ ] Vérification en production par le dirigeant.
 - [ ] Vagues de recette suivantes : à ajouter ici.

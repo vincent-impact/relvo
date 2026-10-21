@@ -121,12 +121,32 @@ export async function adminDeleteAccountAction(
     (fait ? deconnectes : echecs).push(canal.externalAccountId);
   }
 
-  const result = await tryAction(() =>
-    deleteAccount(tenantDb(admin.id), {
-      targetId: compte.id,
-      unipile: { deconnectes, echecs },
-    }),
-  );
+  let result: ActionResult<{ email: string; channels: number }>;
+  try {
+    result = await tryAction(() =>
+      deleteAccount(tenantDb(admin.id), {
+        targetId: compte.id,
+        unipile: { deconnectes, echecs },
+      }),
+    );
+  } catch (error) {
+    // Un échec en base ne doit pas finir en 500 muet : il se journalise avec
+    // le compte visé, et l'écran dit quoi faire — relancer efface le reste,
+    // chaque étape étant idempotente (PITFALLS #71).
+    console.error("[admin] suppression du compte échouée", {
+      accountId: compte.id,
+      email: compte.email,
+      error,
+    });
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String((error as { code: unknown }).code)
+        : null;
+    return err(
+      "INVALID_STATE",
+      `La suppression a échoué en base${code ? ` (${code})` : ""}. Relancez-la : ce qui est effacé ne revient pas, le reste le sera.`,
+    );
+  }
   if (!result.ok) return result;
   revalidateAdmin();
   return ok({ email: result.data.email, unipile: { echecs } });
