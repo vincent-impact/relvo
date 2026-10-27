@@ -102,14 +102,10 @@ const mesure = {
 };
 
 describe("assistant actif sur le compte", () => {
-  it("est coupé par défaut, s'active et se coupe par la méthode du domaine, journalisé", async () => {
+  it("est actif par défaut, se coupe et se rallume par la méthode du domaine, journalisé", async () => {
+    // Actif dès l'ouverture du compte (recette de l'alpha, R5) : rien ne se
+    // trie tant que personne n'a trouvé l'interrupteur, sinon.
     const { account, db } = await makeAccount("a@test.fr");
-    expect(await isAssistantEnabled(db, account.id)).toBe(false);
-
-    expect(await setAssistantEnabled(db, account.id, true)).toEqual({
-      assistantEnabled: true,
-      changed: true,
-    });
     expect(await isAssistantEnabled(db, account.id)).toBe(true);
     // Idempotent : aucun événement en double.
     expect(await setAssistantEnabled(db, account.id, true)).toEqual({
@@ -122,6 +118,12 @@ describe("assistant actif sur le compte", () => {
     ).toMatchObject({ assistantEnabled: false, changed: true });
     expect(await isAssistantEnabled(db, account.id)).toBe(false);
 
+    expect(await setAssistantEnabled(db, account.id, true)).toEqual({
+      assistantEnabled: true,
+      changed: true,
+    });
+    expect(await isAssistantEnabled(db, account.id)).toBe(true);
+
     const events = await db.eventLog.findMany({
       where: {
         eventType: {
@@ -131,8 +133,8 @@ describe("assistant actif sur le compte", () => {
       orderBy: { createdAt: "asc" },
     });
     expect(events.map((e) => [e.eventType, e.actor])).toEqual([
-      [EVENT_TYPES.assistantEnabled, Actor.user],
       [EVENT_TYPES.assistantDisabled, Actor.system],
+      [EVENT_TYPES.assistantEnabled, Actor.user],
     ]);
   });
 });
