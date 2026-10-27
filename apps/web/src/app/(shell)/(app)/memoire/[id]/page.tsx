@@ -5,26 +5,29 @@ import { FileText } from "@/components/shared/picto";
 import { RelvoLogo } from "@/components/layout/relvo-logo";
 import { ListPanel } from "@/components/shared/list-panel";
 import { folderVisual } from "@/lib/folders";
-import type { Folder } from "@relvo/db";
+import type { Folder as FolderModel } from "@relvo/db";
 import {
   enrichSubjects,
   folderSubtreeIds,
   listFolderOptions,
   PROFONDEUR_MAX,
 } from "@relvo/db";
-import { FeedTabs } from "@/components/feed/feed-tabs";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import {
   EditDomainButton,
   type MoveTarget,
 } from "@/components/memoire/edit-domain-dialog";
-import { AddFolderRow, FolderRow } from "@/components/memoire/folder-row";
+import {
+  DossierTabs as OngletsDossier,
+  type OngletDossier,
+} from "@/components/memoire/dossier-tabs";
+import { AddFolderRow } from "@/components/memoire/folder-row";
+import { FolderDescription } from "@/components/memoire/folder-description";
+import { FolderTree } from "@/components/memoire/folder-tree";
 import { InstructionList } from "@/components/memoire/instruction-list";
 import { TabsSkeleton } from "@/components/shared/screen-skeletons";
 import { SubjectRow, toSubjectRowData } from "@/components/shared/subject-row";
-import { type SegTabOption } from "@/components/shared/seg-tabs";
-import { ZoneHeading } from "@/components/shared/zone-heading";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -36,29 +39,32 @@ import { formatRelative } from "@/lib/display";
 import { cachedMemoire } from "@/server/cached";
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
 
-// Fiche Mémoire / domaine (M9.7 → M9.20, M23.3, Direction B) — un domaine de
-// la mémoire de Relvo : sa chaîne dans le ciel (on remonte d'un tap), SES
-// DOMAINES en lignes (on y entre, on en crée dedans), puis 3 onglets :
-// Instructions (consignes éditables, activables), Documents (fichiers
-// absorbés ✦ / écartés) et Sujets (les siennes ET celles de ses domaines —
-// la portée). Le domaine « Général » (is_default) masque l'onglet Sujets.
-// L'upload de document arrive ensuite (coquille en M9).
+// La fiche d'un dossier (M9.7 → M9.20, M23.3, M27.3 — tranché sur maquettes) :
+// sa chaîne dans le ciel (on remonte d'un tap), SA DESCRIPTION en première
+// carte (c'est elle qui aide Relvo à ranger), puis QUATRE onglets à icône, du
+// contenant au contenu — Dossiers (son arbre, même mécanique que la page
+// Dossiers), Sujets (les siens et ceux de ses fils : la portée), Instructions,
+// Connaissances — et UN AJOUT EN PREMIÈRE LIGNE de chaque onglet, qu'une
+// longue liste ne pousse pas sous le dock. La fiche s'ouvre sur Sujets, ce
+// qu'on vient chercher ; Général, qui ne range aucun sujet, s'ouvre sur ses
+// instructions et n'a pas l'onglet Sujets.
 //
-// PERF (M9.19, point 2) : le hero (nom du dossier) s'affiche dès que la requête
-// légère du dossier répond ; le contenu des onglets stream dans un <Suspense>.
+// PERF (M9.19, point 2) : le ciel s'affiche dès que la requête légère du
+// dossier répond ; le contenu des onglets stream dans un <Suspense>.
 
 async function DossierTabs({
   folder,
-  overlap,
+  accountId,
+  depth,
 }: {
-  folder: Folder;
-  /** Les onglets chevauchent le ciel seulement quand rien ne les précède. */
-  overlap: boolean;
+  folder: FolderModel;
+  accountId: string;
+  depth: number;
 }) {
   const db = await getTenantDb();
   const id = folder.id;
 
-  const [docs, subjects] = await Promise.all([
+  const [docs, subjects, memoire] = await Promise.all([
     db.knowledgeDocument.findMany({
       where: { folderId: id },
       orderBy: { updatedAt: "desc" },
@@ -70,25 +76,64 @@ async function DossierTabs({
           where: { folderId: { in: await folderSubtreeIds(db, id) } },
           orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
         }),
+    cachedMemoire(accountId),
   ]);
 
   const notes = docs.filter((d) => d.kind === "note");
   const files = docs.filter((d) => d.kind === "file");
   const rows = (await enrichSubjects(db, subjects)).map(toSubjectRowData);
+  // L'arbre du dossier : ses fils et leurs fils, en ordre d'arbre (Général :
+  // tout l'arbre, la même carte que la page Dossiers).
+  const sousArbre = folder.isDefault
+    ? memoire.folders.filter((f) => !f.isDefault)
+    : memoire.folders.filter((f) => {
+        let p = f.parentId;
+        while (p) {
+          if (p === id) return true;
+          p = memoire.folders.find((o) => o.id === p)?.parentId ?? null;
+        }
+        return false;
+      });
+  const fils = sousArbre.filter((f) => f.parentId === id).length;
+  const peutCreer = depth < PROFONDEUR_MAX;
 
-  const options: SegTabOption[] = [
+  const options: OngletDossier[] = [
+    { value: "dossiers", label: "Dossiers", count: fils },
+    ...(folder.isDefault
+      ? []
+      : [{ value: "sujets" as const, label: "Sujets", count: rows.length }]),
     { value: "instructions", label: "Instructions", count: notes.length },
-    { value: "documents", label: "Connaissances", count: files.length },
+    { value: "connaissances", label: "Connaissances", count: files.length },
   ];
-  if (!folder.isDefault) {
-    options.push({ value: "sujets", label: "Sujets", count: rows.length });
-  }
 
   return (
-    <FeedTabs
+    <OngletsDossier
       options={options}
-      overlap={overlap}
+      overlap={folder.isDefault}
+      defaultValue={folder.isDefault ? "instructions" : "sujets"}
       panes={{
+        dossiers: (
+          <div className="pt-3 pb-2">
+            {sousArbre.length === 0 && !peutCreer ? (
+              <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
+                Ce dossier est au dernier niveau : on n’y range plus de dossier.
+              </p>
+            ) : (
+              <FolderTree
+                folders={sousArbre}
+                ajout={
+                  peutCreer
+                    ? {
+                        label: "Ajouter un dossier ici",
+                        parentId: folder.isDefault ? null : id,
+                        position: "haut",
+                      }
+                    : null
+                }
+              />
+            )}
+          </div>
+        ),
         instructions: (
           <InstructionList
             folderId={id}
@@ -100,10 +145,11 @@ async function DossierTabs({
             }))}
           />
         ),
-        documents:
+        connaissances:
           // Une liste = une carte ; la ligne est celle des documents d'un sujet.
-          // Pas de « Déposer un document » tant que rien ne se dépose : un
-          // contrôle sans effet se retire.
+          // Le dépôt d'une connaissance arrive avec M27.5 : pas de ligne
+          // « Ajouter » tant que rien ne se dépose (un contrôle sans effet se
+          // retire).
           files.length === 0 ? (
             <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
               Aucune connaissance. Les pièces que Relvo lit pour ce dossier
@@ -149,56 +195,27 @@ async function DossierTabs({
         ...(folder.isDefault
           ? {}
           : {
-              sujets:
-                rows.length === 0 ? (
-                  <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
-                    Aucun sujet ouvert ici. Relvo en ouvrira une quand un
-                    message concernera ce dossier.
-                  </p>
-                ) : (
-                  <div className="pt-3 pb-2">
-                    <ListPanel>
-                      {rows.map((row) => (
-                        <SubjectRow key={row.id} data={row} />
-                      ))}
-                    </ListPanel>
-                  </div>
-                ),
+              sujets: (
+                <div className="pt-3 pb-2">
+                  <ListPanel>
+                    <AddFolderRow
+                      href={`/sujets/nouveau?dossier=${id}`}
+                      label="Ajouter un sujet ici"
+                    />
+                    {rows.length === 0 ? (
+                      <p className="px-[22px] py-8 text-center text-[14px] font-light text-gris">
+                        Aucun sujet ici. Relvo en ouvrira un quand un message
+                        concernera ce dossier.
+                      </p>
+                    ) : (
+                      rows.map((row) => <SubjectRow key={row.id} data={row} />)
+                    )}
+                  </ListPanel>
+                </div>
+              ),
             }),
       }}
     />
-  );
-}
-
-/** Les dossiers d'un dossier, en lignes — depuis le cache de la Mémoire. */
-async function SousDossiers({
-  accountId,
-  folderId,
-  depth,
-}: {
-  accountId: string;
-  folderId: string;
-  depth: number;
-}) {
-  const { folders } = await cachedMemoire(accountId);
-  const fils = folders.filter((f) => f.parentId === folderId);
-  const peutCreer = depth < PROFONDEUR_MAX;
-  if (fils.length === 0 && !peutCreer) return null;
-  return (
-    <section className="pt-4">
-      <ZoneHeading
-        label="Dossiers"
-        hint={fils.length > 0 ? `${fils.length}` : undefined}
-      />
-      <ListPanel>
-        {fils.map((f) => (
-          <FolderRow key={f.id} folder={f} />
-        ))}
-        {peutCreer ? (
-          <AddFolderRow parentId={folderId} label="Ajouter un dossier ici" />
-        ) : null}
-      </ListPanel>
-    </section>
   );
 }
 
@@ -219,10 +236,6 @@ export default async function DossierPage({
 
   const option = options.find((o) => o.id === id) ?? null;
   const depth = option?.depth ?? 0;
-  // La zone des sous-domaines existe dès qu'il y en a, ou qu'on peut en créer.
-  const avecSousDossiers =
-    !folder.isDefault &&
-    (options.some((o) => o.parentId === id) || depth < PROFONDEUR_MAX);
   // La chaîne des pères, du premier niveau au père direct — le fil d'Ariane.
   const peres: { id: string; name: string }[] = [];
   let courant = option?.parentId ?? null;
@@ -262,7 +275,7 @@ export default async function DossierPage({
 
   return (
     <Screen entree>
-      {/* La bande du domaine dans le ciel, comme sur sa ligne et comme sur la
+      {/* La bande du dossier dans le ciel, comme sur sa ligne et comme sur la
           fiche d'un sujet : le fil de couleur ne se rompt pas à sa porte. Les
           pères, à sa suite, se remontent d'un tap. */}
       <RelvoHeader
@@ -296,8 +309,10 @@ export default async function DossierPage({
                   ])}
                 </BreadcrumbList>
               </Breadcrumb>
+            ) : folder.isDefault ? (
+              "La racine"
             ) : (
-              "Dossier"
+              "Général ›"
             )}
           </span>
         }
@@ -318,20 +333,18 @@ export default async function DossierPage({
           )
         }
       />
-      {avecSousDossiers ? (
-        <Suspense fallback={null}>
-          <SousDossiers
-            accountId={accountId}
-            folderId={folder.id}
-            depth={depth}
-          />
-        </Suspense>
-      ) : null}
+      {/* Général n'a pas de description à écrire : il est la racine, et ses
+          instructions valent pour tous. Sa carte d'onglets chevauche le ciel. */}
+      {folder.isDefault ? null : (
+        <FolderDescription
+          folderId={folder.id}
+          description={folder.description}
+          className="relative z-3 -mt-7.5"
+        />
+      )}
       <Suspense fallback={<TabsSkeleton />}>
-        <DossierTabs folder={folder} overlap={!avecSousDossiers} />
+        <DossierTabs folder={folder} accountId={accountId} depth={depth} />
       </Suspense>
     </Screen>
   );
 }
-
-// Affordance « + Ajouter… » (coquille M9 : édition de note / upload à venir).

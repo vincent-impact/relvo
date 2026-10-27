@@ -464,6 +464,13 @@ niveau. Les dossiers **émergent du courrier** ; ils ne s'inventent pas devant u
 Dans l'échange, Relvo liste, crée, déplace un dossier et range un sujet **à la demande du
 dirigeant**, par les fonctions de la page Dossiers.
 
+**La fiche d'un dossier s'ouvre sur sa description** — c'est elle que Relvo lit, avec le
+chemin, pour décider qu'un sujet se range là plutôt qu'ailleurs ; quand elle manque, la fiche
+invite à l'écrire — puis sur quatre onglets, du contenant au contenu : ses dossiers (son arbre),
+ses sujets (les siens et ceux de ses fils), ses instructions, ses connaissances. Chaque onglet
+commence par son geste d'ajout. Général, qui ne range aucun sujet, n'a ni description ni onglet
+Sujets.
+
 **La page Dossiers montre l'arbre entier, d'un coup**, Général en tête comme la racine qu'il
 est, et chaque branche porte deux gestes qui ne se confondent pas : **replier** (le triangle à
 gauche ; une branche sans dossier n'en a pas) et **entrer** (la ligne). L'état replié appartient

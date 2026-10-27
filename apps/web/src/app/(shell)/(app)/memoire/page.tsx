@@ -25,6 +25,11 @@ async function DossiersBody({ accountId }: { accountId: string }) {
         general={general}
         folders={folders.filter((f) => !f.isDefault)}
         unfiled={unfiledOpenSubjects}
+        ajout={{
+          label: "Ajouter un dossier dans Général",
+          parentId: null,
+          position: "bas",
+        }}
         className="relative z-3 -mt-7.5"
       />
     </div>

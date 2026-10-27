@@ -103,3 +103,8 @@ export const ForkKnife = plein(P.ForkKnife, "ForkKnife");
 export const Money = plein(P.Money, "Money");
 export const Wrench = plein(P.Wrench, "Wrench");
 export const Folder = plein(P.Folder, "Folder");
+// Les onglets d'un dossier (M27.3) : ses sujets (la corbeille à courrier),
+// ses instructions (la note), ses connaissances (le livre ouvert).
+export const Tray = plein(P.Tray, "Tray");
+export const Note = plein(P.Note, "Note");
+export const BookOpen = plein(P.BookOpen, "BookOpen");

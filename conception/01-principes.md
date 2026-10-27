@@ -339,8 +339,8 @@ mot dit ce que le geste fait vraiment.
 
 16. Un `Folder` est un **dossier de la mémoire de Relvo** — un dossier a un **père**, les
     dossiers s'emboîtent sur une profondeur bornée, et une instruction ou un document donnés à un
-    père valent pour tous ses fils —, présenté en trois onglets : Instructions / Connaissances /
-    Sujets.
+    père valent pour tous ses fils —, présenté par sa **description** (celle que Relvo lit pour
+    ranger) puis quatre onglets : Dossiers / Sujets / Instructions / Connaissances.
 17. Le dossier **« Général »** est auto-créé, **purement documentaire**, **non supprimable**, est
     la **racine** de l'arbre, et ne contient **jamais** de sujet.
 18. Un `KnowledgeDocument` est soit un **Document** — une **connaissance** pour le dirigeant — (référence figée, non modifiable, avec un

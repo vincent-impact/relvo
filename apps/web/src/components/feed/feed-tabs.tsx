@@ -14,6 +14,7 @@ export function FeedTabs({
   note,
   defaultValue,
   overlap = true,
+  iconOnly = false,
 }: {
   options: SegTabOption[];
   panes: Record<string, React.ReactNode>;
@@ -22,6 +23,8 @@ export function FeedTabs({
   defaultValue?: string;
   /** false : une zone précède les onglets (les sous-domaines d'un dossier), la carte ne chevauche plus le ciel. */
   overlap?: boolean;
+  /** L'icône et son mot dessous, le compte en badge (la fiche d'un sujet, celle d'un dossier). */
+  iconOnly?: boolean;
 }) {
   const [tab, setTab] = useState(defaultValue ?? options[0]?.value ?? "");
   return (
@@ -31,6 +34,7 @@ export function FeedTabs({
         value={tab}
         onValueChange={setTab}
         overlap={overlap}
+        iconOnly={iconOnly}
         className={overlap ? undefined : "mx-4 mt-5"}
       />
       {note}

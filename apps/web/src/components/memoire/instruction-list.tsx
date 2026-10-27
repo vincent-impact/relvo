@@ -59,12 +59,24 @@ export function InstructionList({
 
   return (
     <div className={cn("px-4 pt-4", className)}>
-      {/* Une liste = UNE carte : les instructions en lignes, la ligne « Ajouter »
-          en dernier (design-system/02-composants). */}
+      {/* Une liste = UNE carte : la ligne « Ajouter » EN PREMIER (M27.3 : un
+          ajout par onglet, en tête, qu'une longue liste ne pousse pas sous le
+          dock), puis les instructions en lignes (design-system/02-composants). */}
       <div className="overflow-hidden rounded-(--rayon-carte) border border-(--filet) bg-white shadow-carte">
+        <button
+          type="button"
+          onClick={() => setEditing("new")}
+          className="flex w-full items-center gap-2.5 border-b border-(--filet) px-3.5 py-3 text-left text-[14px] font-medium text-relvo active:bg-relvo-pale"
+        >
+          <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-pale">
+            <Plus className="size-[15px]" strokeWidth={2.4} />
+          </span>
+          Ajouter une instruction
+        </button>
         {notes.length === 0 ? (
-          <p className="px-4 py-5 text-[14px] font-light text-gris">
-            Aucune instruction. Ajoutez des consignes que Relvo suivra.
+          <p className="px-4 py-4 text-[14px] font-light text-gris">
+            Aucune instruction. Les consignes données ici valent pour ce dossier
+            et ceux qu’il contient.
           </p>
         ) : (
           notes.map((n) => (
@@ -72,7 +84,7 @@ export function InstructionList({
               key={n.id}
               type="button"
               onClick={() => setEditing(n)}
-              className="flex w-full items-start gap-2.5 border-b border-(--filet) px-3.5 py-3 text-left active:bg-(--fond-enfonce)"
+              className="flex w-full items-start gap-2.5 border-b border-(--filet) px-3.5 py-3 text-left last:border-b-0 active:bg-(--fond-enfonce)"
             >
               {/* Pas de signe de Relvo : c'est l'utilisateur qui écrit ici
                   (invariant 20). L'état se lit à la puce, et à elle seule. */}
@@ -96,16 +108,6 @@ export function InstructionList({
             </button>
           ))
         )}
-        <button
-          type="button"
-          onClick={() => setEditing("new")}
-          className="flex w-full items-center gap-2.5 px-3.5 py-3 text-left text-[14px] font-medium text-relvo active:bg-relvo-pale"
-        >
-          <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-pale">
-            <Plus className="size-[15px]" strokeWidth={2.4} />
-          </span>
-          Ajouter une instruction
-        </button>
       </div>
 
       <InstructionEditor

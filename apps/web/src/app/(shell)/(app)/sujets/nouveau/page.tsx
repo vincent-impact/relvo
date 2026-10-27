@@ -8,7 +8,12 @@ import { getTenantDb } from "@/server/auth-context";
 // d'une fiche, en mode `create`. Hero violet + formulaire ; à la création, on
 // redirige vers la fiche du nouveau sujet.
 
-export default async function NouveauSujetPage() {
+export default async function NouveauSujetPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ dossier?: string }>;
+}) {
+  const { dossier } = await searchParams;
   const db = await getTenantDb();
   const [folders, contacts] = await Promise.all([
     listFolderOptions(db),
@@ -23,13 +28,17 @@ export default async function NouveauSujetPage() {
     company: c.company,
   }));
 
+  // Venu de l'onglet Sujets d'un dossier (« Ajouter un sujet ici », M27.3) :
+  // le dossier est pré-rempli, et le retour y ramène.
+  const dans = dossier ? (folders.find((f) => f.id === dossier) ?? null) : null;
+
   return (
     <>
       <main className="entre-ecran min-h-0 flex-1 overflow-y-auto bg-background pb-[calc(92px+env(safe-area-inset-bottom))]">
         <RelvoHeader
-          back="/fil"
+          back={dans ? `/memoire/${dans.id}` : "/fil"}
           title="Nouveau sujet"
-          subtitle="Paramétrez le sujet à suivre"
+          subtitle={dans ? `Dans ${dans.path}` : "Paramétrez le sujet à suivre"}
           className="pb-9"
         />
         <SubjectDetailForm
@@ -40,7 +49,7 @@ export default async function NouveauSujetPage() {
             title: "",
             status: "open",
             priority: "normal",
-            folderId: null,
+            folderId: dans?.id ?? null,
             contactIds: [],
           }}
         />

@@ -83,10 +83,13 @@ const INDENT = 22;
 
 function Branche({
   folder: f,
+  niveau,
   replie,
   onBascule,
 }: {
   folder: CachedFolderRow;
+  /** Le niveau DANS l'arbre montré : 1 pour une branche de tête, même sous un dossier. */
+  niveau: number;
   replie: boolean;
   onBascule: () => void;
 }) {
@@ -95,8 +98,8 @@ function Branche({
     color: f.color,
     icon: f.icon,
   });
-  const premier = f.depth === 1;
-  const retrait = 14 + INDENT * (f.depth - 1);
+  const premier = niveau === 1;
+  const retrait = 14 + INDENT * (niveau - 1);
   const sous = premier ? sousLigne(f) : "";
   return (
     <div
@@ -109,7 +112,7 @@ function Branche({
     >
       {/* Le trait qui relie un dossier à ses fils : la couleur du premier
           niveau, à peine posée, de haut en bas de la branche. */}
-      {f.depth > 1 ? (
+      {niveau > 1 ? (
         <span
           aria-hidden
           className="absolute top-0 bottom-0 w-0.5 opacity-30"
@@ -166,19 +169,31 @@ function Branche({
 }
 
 export function FolderTree({
-  general,
+  general = null,
   folders,
-  unfiled,
+  unfiled = 0,
+  ajout,
   className,
 }: {
-  /** La racine : ses instructions et connaissances valent pour tous. */
-  general: CachedFolderRow | null;
-  /** Les dossiers, Général exclu, en ordre d'arbre (profondeur d'abord). */
+  /** La racine en tête de carte : ses instructions et connaissances valent pour tous. */
+  general?: CachedFolderRow | null;
+  /** Les dossiers à montrer, en ordre d'arbre (profondeur d'abord) ; le niveau se lit du plus haut d'entre eux. */
   folders: CachedFolderRow[];
-  /** Les sujets ouverts que Relvo n'a pas su ranger. */
-  unfiled: number;
+  /** Les sujets ouverts que Relvo n'a pas su ranger (la page Dossiers seulement). */
+  unfiled?: number;
+  /** L'invite d'ajout : en pied (la page Dossiers) ou en tête (l'onglet d'un dossier, M27.3) ; absente quand l'arbre ne peut plus descendre. */
+  ajout?: {
+    label: string;
+    parentId: string | null;
+    position: "haut" | "bas";
+  } | null;
   className?: string;
 }) {
+  // Le niveau de tête : 1 sous Général, mais aussi 1 pour les fils d'un
+  // dossier montrés dans son onglet — l'arbre se lit pareil partout.
+  const base = folders.length
+    ? Math.min(...folders.map((f) => f.depth)) - 1
+    : 0;
   const brut = useSyncExternalStore(abonner, instantane, () => RIEN);
   const replies = useMemo(() => analyser(brut), [brut]);
 
@@ -233,10 +248,14 @@ export function FolderTree({
           />
         </Link>
       ) : null}
+      {ajout?.position === "haut" ? (
+        <AddFolderRow parentId={ajout.parentId} label={ajout.label} />
+      ) : null}
       {folders.filter(visible).map((f) => (
         <Branche
           key={f.id}
           folder={f}
+          niveau={f.depth - base}
           replie={replies.has(f.id)}
           onBascule={() => bascule(f.id)}
         />
@@ -269,7 +288,9 @@ export function FolderTree({
           />
         </Link>
       ) : null}
-      <AddFolderRow label="Ajouter un dossier dans Général" />
+      {ajout?.position === "bas" ? (
+        <AddFolderRow parentId={ajout.parentId} label={ajout.label} />
+      ) : null}
     </ListPanel>
   );
 }

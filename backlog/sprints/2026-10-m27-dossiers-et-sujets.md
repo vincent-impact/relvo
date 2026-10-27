@@ -124,10 +124,36 @@ en -ée, -ie, -ue, -te ; `toutes les` ; `est-elle`).
 de démonstration à trois niveaux : Fournisseurs › Kiloutou › Agence de Narbonne), de la page
 Sujets filtrée « Sans dossier » ; console propre.
 
+## Tranche 3 — « La fiche » (M27.3)
+
+**Livré.**
+- La fiche d'un dossier s'ouvre sur **sa description** (`components/memoire/folder-description.tsx`) :
+  la première carte sous le ciel, signée « Relvo s'en sert pour ranger les sujets ici », le
+  crayon ouvre une boîte à une phrase (500 caractères) ; quand elle manque, la carte est une
+  invite en pointillé « Décrire ce dossier ». Le formulaire de création la demande aussi,
+  facultative. Général n'en a pas : il est la racine.
+- **Quatre onglets à icône** (`dossier-tabs.tsx`, le mode `iconOnly` de `SegTabs` : l'icône, le
+  mot à 11 px, le compte en badge), Dossiers · Sujets · Instructions · Connaissances ; la fiche
+  s'ouvre sur Sujets, Général sur Instructions et sans Sujets. Le serveur passe la clé de
+  l'onglet, le composant client la change en dessin — une fonction ne traverse pas la frontière
+  serveur/client (l'erreur l'a rappelé au premier rendu).
+- L'onglet Dossiers est **l'arbre du dossier** (`FolderTree` généralisé : niveau relatif, racine
+  facultative, ajout en tête ou en pied), même triangle, même ligne ; au dernier niveau, il dit
+  qu'on n'y range plus de dossier.
+- **Un ajout en première ligne de chaque onglet** : « Ajouter un dossier ici » (la page de
+  création, dans ce père), « Ajouter un sujet ici » (`/sujets/nouveau?dossier=` : le dossier
+  pré-rempli, le retour y ramène), « Ajouter une instruction » (la ligne passe en tête de la
+  liste). Pas d'ajout sur Connaissances tant que rien ne se dépose (tranche 5) : un contrôle
+  sans effet se retire.
+- La zone « Dans ce dossier » du ciel disparaît : l'arbre vit dans son onglet.
+
+**Vérification.** Typage, lint ; rendu headless de Fournisseurs sur ses quatre onglets, de
+Général, de Kiloutou (deux niveaux sous Général), du nouveau sujet pré-rangé ; console propre.
+
 ## Où on en est
 
 - [x] Tranche 1 — « Le mot »
 - [x] Tranche 2 — « L'arbre »
-- [ ] Tranche 3 — « La fiche »
+- [x] Tranche 3 — « La fiche »
 - [ ] Tranche 4 — « Ranger dans… »
 - [ ] Tranche 5 — « Déposer »

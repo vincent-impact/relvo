@@ -57,15 +57,21 @@ export function FolderRow({ folder: f }: { folder: CachedFolderRow }) {
 export function AddFolderRow({
   parentId,
   label,
+  href,
 }: {
   /** Le père du dossier à créer ; absent → sous Général. */
   parentId?: string | null;
   label: string;
+  /** Une autre destination, avec la même grammaire d'ajout (un sujet dans un dossier, M27.3). */
+  href?: string;
 }) {
   return (
     <Link
       data-list-row
-      href={parentId ? `/memoire/nouveau?dans=${parentId}` : "/memoire/nouveau"}
+      href={
+        href ??
+        (parentId ? `/memoire/nouveau?dans=${parentId}` : "/memoire/nouveau")
+      }
       className="flex items-center gap-2.5 border-b border-(--filet) px-3.5 py-3 text-[14px] font-medium text-relvo active:bg-relvo-pale"
     >
       <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-pale">

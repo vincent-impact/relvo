@@ -215,6 +215,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Un dossier s'ouvre sur sa description, que Relvo lit pour y ranger vos sujets, puis sur quatre onglets, Dossiers, Sujets, Instructions, Connaissances, chacun avec son bouton d'ajout."
+        },
+        {
+          "type": "new",
           "texte": "La page Dossiers montre tous vos dossiers en arbre, Général en tête ; le triangle à gauche replie une branche, la ligne ouvre le dossier."
         },
         {
