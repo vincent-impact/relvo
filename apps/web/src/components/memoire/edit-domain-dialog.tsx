@@ -2,7 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { PencilSimple, Trash } from "@/components/shared/picto";
+import { Folder, PencilSimple, Trash } from "@/components/shared/picto";
+import { ChevronRight } from "lucide-react";
+import {
+  RangerDansSheet,
+  type DossierChoix,
+} from "@/components/memoire/ranger-dans-sheet";
 import { SKY_BTN } from "@/components/layout/relvo-header";
 import { toast } from "sonner";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
@@ -14,7 +19,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { FOLDER_COLORS, FOLDER_ICONS } from "@/lib/folders";
-import { cn } from "@/lib/utils";
 import {
   deleteFolderAction,
   moveFolderAction,
@@ -42,6 +46,7 @@ export function EditDomainButton({
   parentId: initialParentId,
   parentLabel,
   targets,
+  arbre,
   afterDelete,
   rootDelete,
 }: {
@@ -53,8 +58,10 @@ export function EditDomainButton({
   parentId: string | null;
   /** Le nom du père, pour dire où remonte le contenu à la suppression. */
   parentLabel: string;
-  /** Les pères possibles, Général compris (`id: null`). */
+  /** Les pères possibles, Général compris (`id: null`) : les autres sont grisés dans la feuille. */
   targets: MoveTarget[];
+  /** L'arbre entier, pour la feuille « Rangé dans… » (M27.4). */
+  arbre: DossierChoix[];
   /** Où aller une fois le domaine supprimé : la fiche du père, ou la Mémoire. */
   afterDelete: string;
   /** Le père est Général : les sujets redeviennent « sans domaine ». */
@@ -68,6 +75,17 @@ export function EditDomainButton({
   const [color, setColor] = useState(initialColor ?? FOLDER_COLORS[0]!.key);
   const [icon, setIcon] = useState(initialIcon ?? FOLDER_ICONS[0]!.key);
   const [parentId, setParentId] = useState<string | null>(initialParentId);
+  const [choixPere, setChoixPere] = useState(false);
+  const possibles = new Set(
+    targets.map((t) => t.id).filter((t): t is string => t != null),
+  );
+  const exclus = new Set(
+    arbre.map((d) => d.id).filter((id) => !possibles.has(id)),
+  );
+  const pereLabel =
+    parentId == null
+      ? "Général (à la racine)"
+      : (arbre.find((d) => d.id === parentId)?.path ?? "…");
 
   function save() {
     const trimmed = name.trim();
@@ -144,31 +162,25 @@ export function EditDomainButton({
             onIcon={setIcon}
           />
 
+          {/* « Rangé dans » ouvre la même feuille que le rangement d'un sujet :
+              le même arbre, Général choisissable (à la racine), ce que l'arbre
+              refuse grisé — lui-même, ses fils, trop profond. */}
           <div>
             <span className="mb-1.5 block text-[12.5px] font-semibold text-(--text-secondary)">
               Rangé dans
             </span>
-            <div className="flex flex-wrap gap-2">
-              {targets.map((t) => {
-                const active = t.id === parentId;
-                return (
-                  <button
-                    key={t.id ?? "general"}
-                    type="button"
-                    onClick={() => setParentId(t.id)}
-                    aria-pressed={active}
-                    className={cn(
-                      "inline-flex h-9 max-w-full items-center rounded-(--rayon-pilule) border px-3.5 text-[13px] font-medium transition-colors",
-                      active
-                        ? "border-noir bg-noir text-white"
-                        : "border-(--filet) bg-white text-noir",
-                    )}
-                  >
-                    <span className="truncate">{t.label}</span>
-                  </button>
-                );
-              })}
-            </div>
+            <button
+              type="button"
+              onClick={() => setChoixPere(true)}
+              className="flex h-11 w-full items-center gap-2 rounded-xl border border-(--border) px-3 text-left text-[14px] text-noir"
+            >
+              <Folder className="size-[18px] flex-none text-gris" />
+              <span className="min-w-0 flex-1 truncate">{pereLabel}</span>
+              <ChevronRight
+                className="size-4 flex-none text-(--gris-clair)"
+                strokeWidth={2}
+              />
+            </button>
           </div>
 
           <button
@@ -193,6 +205,18 @@ export function EditDomainButton({
           </button>
         </DialogContent>
       </Dialog>
+
+      <RangerDansSheet
+        open={choixPere}
+        onOpenChange={setChoixPere}
+        titre="Rangé dans…"
+        sousTitre={`Le dossier « ${initialName} » et tout ce qu’il contient`}
+        dossiers={arbre}
+        actuel={parentId}
+        racine="choisissable"
+        exclus={exclus}
+        onChoix={setParentId}
+      />
 
       <ConfirmDialog
         open={confirm}

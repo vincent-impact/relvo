@@ -215,6 +215,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Pour ranger un sujet, glissez sa ligne vers la droite dans un dossier, ou tapez son dossier en haut de sa fiche : la même feuille montre vos dossiers en arbre, un tap suffit, et vous pouvez annuler."
+        },
+        {
+          "type": "new",
           "texte": "Un dossier s'ouvre sur sa description, que Relvo lit pour y ranger vos sujets, puis sur quatre onglets, Dossiers, Sujets, Instructions, Connaissances, chacun avec son bouton d'ajout."
         },
         {

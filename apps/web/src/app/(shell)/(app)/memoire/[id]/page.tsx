@@ -27,7 +27,8 @@ import { FolderDescription } from "@/components/memoire/folder-description";
 import { FolderTree } from "@/components/memoire/folder-tree";
 import { InstructionList } from "@/components/memoire/instruction-list";
 import { TabsSkeleton } from "@/components/shared/screen-skeletons";
-import { SubjectRow, toSubjectRowData } from "@/components/shared/subject-row";
+import { toSubjectRowData } from "@/components/shared/subject-row";
+import { SujetsRangeables } from "@/components/memoire/sujets-rangeables";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -208,7 +209,11 @@ async function DossierTabs({
                         concernera ce dossier.
                       </p>
                     ) : (
-                      rows.map((row) => <SubjectRow key={row.id} data={row} />)
+                      // Glisser une ligne à droite : « Ranger » (M27.4).
+                      <SujetsRangeables
+                        rows={rows}
+                        dossiers={memoire.folders.filter((f) => !f.isDefault)}
+                      />
                     )}
                   </ListPanel>
                 </div>
@@ -324,9 +329,12 @@ export default async function DossierPage({
               name={folder.name}
               color={folder.color}
               icon={folder.icon}
-              parentId={option?.parentId ?? null}
+              // Le père tel que la feuille le dit : null sous Général (les
+              // options portent l'identifiant de Général, la feuille non).
+              parentId={pere?.id ?? null}
               parentLabel={pere?.name ?? "Général"}
               targets={targets}
+              arbre={options}
               afterDelete={pere ? `/memoire/${pere.id}` : "/memoire"}
               rootDelete={pere == null}
             />

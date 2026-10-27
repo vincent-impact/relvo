@@ -150,10 +150,38 @@ Sujets filtrée « Sans dossier » ; console propre.
 **Vérification.** Typage, lint ; rendu headless de Fournisseurs sur ses quatre onglets, de
 Général, de Kiloutou (deux niveaux sous Général), du nouveau sujet pré-rangé ; console propre.
 
+## Tranche 4 — « Ranger dans… » (M27.4)
+
+**Livré.**
+- La feuille `components/memoire/ranger-dans-sheet.tsx` (la primitive `Sheet` du registre, côté
+  bas, poignée, rayon de feuille, ombre de feuille) : **le même arbre** que la page Dossiers,
+  mêmes triangles et même état replié (`useRepliesDossiers`, exporté de l'arbre), le dossier
+  actuel cerclé et marqué « ici », Général grisé pour un sujet (invariant 17) ou choisissable
+  « à la racine » pour un dossier, « Sans dossier » en pied pour un sujet, les dossiers que
+  l'arbre refuse grisés. Un tap choisit et ferme.
+- **Déclencheur 1** : dans l'onglet Sujets d'un dossier, la ligne glissée vers la droite révèle
+  « Ranger » (`sujets-rangeables.tsx`, le `SwipeRow` du produit, ton `brand` — le geste de
+  l'utilisateur, jamais le violet de Relvo) ; on lâche, la ligne revient, la feuille s'ouvre. Un
+  tap sur la ligne ouvre la fiche. Le rangement passe par `updateSubjectAction` et un toast
+  « Annuler » le défait. Sur la page Sujets, les gestes restent valider et fermer.
+- **Déclencheur 2** : le dossier dans le ciel de la fiche d'un sujet
+  (`subject-folder-eyebrow.tsx`) ouvre la feuille à la place de la boîte centrée à liste plate ;
+  même toast, même annulation.
+- **Déplacer un dossier** : dans le crayon, « Rangé dans » est une ligne qui ouvre la même
+  feuille, Général choisissable, lui-même, ses fils et les pères trop profonds grisés ; le
+  déplacement se fait à l'enregistrement, comme avant.
+- Au passage : le crayon recevait comme père l'identifiant de Général là où ses cibles disent
+  « nul » pour la racine — aucune puce n'était jamais active sous Général. La fiche passe
+  désormais le père tel que la feuille le lit.
+
+**Vérification.** Typage, lint ; rendu headless de la feuille ouverte depuis la fiche d'un sujet
+et depuis le crayon d'un dossier ; console propre. Le glissé ne se capture pas en headless : le
+composant est celui des lignes fermées de la page Sujets, déjà vérifié au téléphone.
+
 ## Où on en est
 
 - [x] Tranche 1 — « Le mot »
 - [x] Tranche 2 — « L'arbre »
 - [x] Tranche 3 — « La fiche »
-- [ ] Tranche 4 — « Ranger dans… »
+- [x] Tranche 4 — « Ranger dans… »
 - [ ] Tranche 5 — « Déposer »

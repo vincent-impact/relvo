@@ -5,30 +5,21 @@ import { useRouter } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { updateSubjectAction } from "@/server/actions/subjects";
+  RangerDansSheet,
+  type DossierChoix,
+} from "@/components/memoire/ranger-dans-sheet";
 import { folderVisual } from "@/lib/folders";
-import { cn } from "@/lib/utils";
+import { updateSubjectAction } from "@/server/actions/subjects";
 
-// La ligne du dessus de la fiche d'un sujet : la bande et le nom de son
-// domaine, dans le ciel, comme sur sa ligne — et c'est AUSSI le geste qui le
-// change. Le domaine n'est dit qu'une fois sur la fiche (02-composants, « un
-// même chiffre n'est jamais rendu deux fois » vaut pour un mot) : la puce qui
-// le répétait sous les onglets a disparu, son sélecteur est monté ici.
+// La ligne du dessus de la fiche d'un sujet : la bande et le chemin de son
+// dossier, dans le ciel, comme sur sa ligne — et c'est AUSSI le geste qui le
+// change (M27.4) : un tap ouvre la feuille « Ranger dans… », la même que
+// partout, avec l'arbre entier. Le dossier n'est dit qu'une fois sur la fiche
+// (02-composants, « un même chiffre n'est jamais rendu deux fois » vaut pour
+// un mot) : la puce qui le répétait sous les onglets a disparu, son sélecteur
+// est monté ici.
 
-export type EyebrowFolder = {
-  id: string;
-  name: string;
-  /** Le chemin lisible (« Clients › Narbonne »), M23.4 ; absent → le nom. */
-  path?: string;
-  slug: string | null;
-  color: string | null;
-  icon: string | null;
-};
+export type EyebrowFolder = DossierChoix;
 
 export function SubjectFolderEyebrow({
   subjectId,
@@ -50,16 +41,36 @@ export function SubjectFolderEyebrow({
   );
 
   function setFolder(nextId: string | null) {
-    setOpen(false);
     if (nextId === folderId) return;
+    const precedent = folderId;
     startTransition(async () => {
       const res = await updateSubjectAction(subjectId, { folderId: nextId });
-      if (res.ok) {
-        toast.success("Dossier mis à jour");
-        router.refresh();
-      } else {
+      if (!res.ok) {
         toast.error(res.message);
+        return;
       }
+      router.refresh();
+      const nom =
+        nextId == null
+          ? "sans dossier"
+          : `dans ${folders.find((f) => f.id === nextId)?.path ?? "ce dossier"}`;
+      toast.success(`Sujet rangé ${nom}`, {
+        duration: 8000,
+        action: {
+          label: "Annuler",
+          onClick: () => {
+            startTransition(async () => {
+              const back = await updateSubjectAction(subjectId, {
+                folderId: precedent,
+              });
+              if (back.ok) {
+                toast.success("Remis où il était");
+                router.refresh();
+              } else toast.error(back.message);
+            });
+          },
+        },
+      });
     });
   }
 
@@ -69,7 +80,7 @@ export function SubjectFolderEyebrow({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={`Changer le dossier : ${folder?.path ?? folder?.name ?? "non rangée"}`}
+        aria-label={`Changer le dossier : ${folder?.path ?? "sans dossier"}`}
         className="relative inline-flex max-w-full items-center gap-2 before:absolute before:-inset-x-2 before:-inset-y-3 before:content-[''] active:opacity-80"
       >
         <i
@@ -77,9 +88,7 @@ export function SubjectFolderEyebrow({
           className="h-2 w-5 flex-none rounded-full"
           style={{ background: viz.color }}
         />
-        <span className="truncate">
-          {folder?.path ?? folder?.name ?? "Sans dossier"}
-        </span>
+        <span className="truncate">{folder?.path ?? "Sans dossier"}</span>
         <ChevronDown
           className="size-3 flex-none text-white/70"
           strokeWidth={2.6}
@@ -87,55 +96,16 @@ export function SubjectFolderEyebrow({
         />
       </button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="gap-4 p-5">
-          <DialogHeader>
-            <DialogTitle>Dossier du sujet</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setFolder(null)}
-              className={cn(
-                "inline-flex h-9 items-center rounded-(--rayon-pilule) border px-3.5 text-[13px] font-medium transition-colors",
-                folderId == null
-                  ? "border-noir bg-noir text-white"
-                  : "border-(--filet) bg-white text-noir",
-              )}
-            >
-              Sans dossier
-            </button>
-            {folders.map((f) => {
-              const v = folderVisual({
-                slug: f.slug,
-                color: f.color,
-                icon: f.icon,
-              });
-              const active = folderId === f.id;
-              return (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => setFolder(f.id)}
-                  className={cn(
-                    "inline-flex h-9 items-center gap-1.5 rounded-(--rayon-pilule) border px-3.5 text-[13px] font-medium transition-colors",
-                    active
-                      ? "border-noir bg-noir text-white"
-                      : "border-(--filet) bg-white text-noir",
-                  )}
-                >
-                  <i
-                    aria-hidden
-                    className="size-2 flex-none rounded-[2px]"
-                    style={{ background: v.color }}
-                  />
-                  {f.path ?? f.name}
-                </button>
-              );
-            })}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <RangerDansSheet
+        open={open}
+        onOpenChange={setOpen}
+        sousTitre={`Ce sujet · aujourd’hui ${folder ? `dans ${folder.path}` : "sans dossier"}`}
+        dossiers={folders}
+        actuel={folderId}
+        racine="grisee"
+        sansDossier
+        onChoix={setFolder}
+      />
     </>
   );
 }

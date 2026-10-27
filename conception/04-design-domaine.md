@@ -471,6 +471,15 @@ ses sujets (les siens et ceux de ses fils), ses instructions, ses connaissances.
 commence par son geste d'ajout. Général, qui ne range aucun sujet, n'a ni description ni onglet
 Sujets.
 
+**Ranger un sujet, déplacer un dossier : une seule feuille.** Elle monte du bas et montre le
+même arbre que la page Dossiers, le dossier actuel cerclé ; pour un sujet, Général est grisé
+(la racine n'en range aucun) et « Sans dossier » reste possible ; pour un dossier, Général se
+choisit et ce que l'arbre refuse est grisé. Elle s'ouvre en glissant une ligne de sujet vers la
+droite dans un dossier, en tapant le dossier dans le ciel de la fiche d'un sujet, et depuis le
+crayon d'un dossier. Un tap range ; un toast annule. Pas de glisser-déposer entre dossiers : ce
+que deux taps font, un geste tenu à une main ne le fait pas mieux. Sur la page Sujets, les gestes
+de la ligne restent valider et fermer — un même geste ne dit pas deux choses sur une même page.
+
 **La page Dossiers montre l'arbre entier, d'un coup**, Général en tête comme la racine qu'il
 est, et chaque branche porte deux gestes qui ne se confondent pas : **replier** (le triangle à
 gauche ; une branche sans dossier n'en a pas) et **entrer** (la ligne). L'état replié appartient

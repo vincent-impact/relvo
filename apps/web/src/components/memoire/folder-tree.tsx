@@ -168,6 +168,19 @@ function Branche({
   );
 }
 
+/** Les branches repliées sur cet appareil, et le geste qui les bascule — partagés par la page Dossiers, l'onglet d'un dossier et la feuille « Ranger dans… ». */
+export function useRepliesDossiers() {
+  const brut = useSyncExternalStore(abonner, instantane, () => RIEN);
+  const replies = useMemo(() => analyser(brut), [brut]);
+  function bascule(id: string) {
+    const apres = new Set(replies);
+    if (apres.has(id)) apres.delete(id);
+    else apres.add(id);
+    ecrireReplies(apres);
+  }
+  return { replies, bascule };
+}
+
 export function FolderTree({
   general = null,
   folders,
@@ -194,15 +207,7 @@ export function FolderTree({
   const base = folders.length
     ? Math.min(...folders.map((f) => f.depth)) - 1
     : 0;
-  const brut = useSyncExternalStore(abonner, instantane, () => RIEN);
-  const replies = useMemo(() => analyser(brut), [brut]);
-
-  function bascule(id: string) {
-    const apres = new Set(replies);
-    if (apres.has(id)) apres.delete(id);
-    else apres.add(id);
-    ecrireReplies(apres);
-  }
+  const { replies, bascule } = useRepliesDossiers();
 
   // Une branche se montre si aucun de ses pères n'est replié.
   const parDossier = new Map(folders.map((f) => [f.id, f]));

@@ -6,6 +6,7 @@
 
 ## 2026-10-27
 
+- **Nouveau** — Pour ranger un sujet, glissez sa ligne vers la droite dans un dossier, ou tapez son dossier en haut de sa fiche : la même feuille montre vos dossiers en arbre, un tap suffit, et vous pouvez annuler.
 - **Nouveau** — Un dossier s'ouvre sur sa description, que Relvo lit pour y ranger vos sujets, puis sur quatre onglets, Dossiers, Sujets, Instructions, Connaissances, chacun avec son bouton d'ajout.
 - **Nouveau** — La page Dossiers montre tous vos dossiers en arbre, Général en tête ; le triangle à gauche replie une branche, la ligne ouvre le dossier.
 - **Nouveau** — Vos affaires s'appellent désormais vos sujets, rangés dans vos dossiers ; la page Mémoire s'appelle Dossiers, et les fichiers d'un dossier, ses connaissances.
