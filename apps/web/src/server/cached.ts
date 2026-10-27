@@ -273,7 +273,7 @@ export type CachedFolderRow = {
   children: number;
   instructions: number;
   documents: number;
-  /** Les affaires ouvertes du dossier ET de ses fils (la portée, M23.4). */
+  /** Les sujets ouverts du dossier ET de ses fils (la portée, M23.4). */
   openSubjects: number;
 };
 
@@ -312,7 +312,7 @@ export const cachedMemoire = unstable_cache(
       );
     }
 
-    // Les affaires ouvertes d'un dossier comptent celles de ses fils.
+    // Les sujets ouverts d'un dossier comptent celles de ses fils.
     const openInSubtree = (id: string): number =>
       (openByFolder.get(id) ?? 0) +
       options
@@ -409,7 +409,7 @@ export type FolderChip = {
   depth: number;
 };
 
-// Les dossiers pour la barre de filtres des Affaires et les listes de choix,
+// Les dossiers pour la barre de filtres des Sujets et les listes de choix,
 // en ordre d'arbre. Exclut « Général » (documentaire : il ne porte jamais de
 // sujet, cf. invariant n°17).
 export const cachedFolders = unstable_cache(

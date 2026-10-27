@@ -50,22 +50,22 @@
       "largeur": 0.93
     },
     {
-      "titre": "Affaires, tâches et domaines",
-      "resume": "Poser la structure de votre espace de travail : une affaire regroupe un dossier en cours, ses échanges, ses tâches et l'historique des décisions prises. C'est l'unité autour de laquelle tourne tout le produit.",
+      "titre": "Sujets, tâches et domaines",
+      "resume": "Poser la structure de votre espace de travail : un sujet regroupe un dossier en cours, ses échanges, ses tâches et l'historique des décisions prises. C'est l'unité autour de laquelle tourne tout le produit.",
       "statut": "termine",
       "gauche": 4.21,
       "largeur": 3.27
     },
     {
       "titre": "Écrans de l'application",
-      "resume": "Construire les écrans du quotidien, pensés d'abord pour le téléphone et l'usage à une main : vos actions du jour, vos affaires, vos conversations, vos contacts, votre planning.",
+      "resume": "Construire les écrans du quotidien, pensés d'abord pour le téléphone et l'usage à une main : vos actions du jour, vos sujets, vos conversations, vos contacts, votre planning.",
       "statut": "termine",
       "gauche": 7.48,
       "largeur": 6.07
     },
     {
       "titre": "Fichiers et pièces jointes",
-      "resume": "Conserver durablement les documents reçus — factures, bons de livraison, devis — et les rendre consultables depuis l'affaire, y compris après sa clôture. Ils sont stockés en Europe.",
+      "resume": "Conserver durablement les documents reçus — factures, bons de livraison, devis — et les rendre consultables depuis le sujet, y compris après sa clôture. Ils sont stockés en Europe.",
       "statut": "termine",
       "gauche": 14.02,
       "largeur": 6.54
@@ -86,7 +86,7 @@
     },
     {
       "titre": "Regroupement en conversations",
-      "resume": "Ranger chaque message dans le bon fil dès sa réception, sans jamais se tromper — par objet pour un e-mail, par interlocuteur pour WhatsApp. C'est ce rangement qui permet ensuite d'ouvrir une affaire d'un seul geste.",
+      "resume": "Ranger chaque message dans le bon fil dès sa réception, sans jamais se tromper — par objet pour un e-mail, par interlocuteur pour WhatsApp. C'est ce rangement qui permet ensuite d'ouvrir une sujet d'un seul geste.",
       "statut": "termine",
       "gauche": 22.9,
       "largeur": 4.2
@@ -100,7 +100,7 @@
     },
     {
       "titre": "Tri automatique des messages",
-      "resume": "Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent, ouvre l'affaire correspondant, propose les tâches à faire et prépare un brouillon de réponse. C'est la fin du tri à la main.",
+      "resume": "Le cœur de Relvo. Il lit les messages qui arrivent, comprend de quoi ils parlent, ouvre le sujet correspondant, propose les tâches à faire et prépare un brouillon de réponse. C'est la fin du tri à la main.",
       "statut": "termine",
       "gauche": 49.53,
       "largeur": 16.83
@@ -149,7 +149,7 @@
     },
     {
       "titre": "Relvo apprend de vos gestes",
-      "resume": "Ce que vous ignorez, ce que vous corrigez, ce que vous gardez : Relvo s'en souvient et trie mieux la semaine suivante. Il retrouve les affaires passées qui ressemblent à celle du jour, et vous pose ses questions là où vous pouvez y répondre en un geste.",
+      "resume": "Ce que vous ignorez, ce que vous corrigez, ce que vous gardez : Relvo s'en souvient et trie mieux la semaine suivante. Il retrouve les sujets passés qui ressemblent à celle du jour, et vous pose ses questions là où vous pouvez y répondre en un geste.",
       "statut": "a-faire",
       "gauche": 89.25,
       "largeur": 6.54
@@ -170,7 +170,7 @@
     },
     {
       "titre": "Vos dossiers, rangés comme sur votre ordinateur",
-      "resume": "Vous créez vos propres dossiers, et des dossiers dans ces dossiers, et vous y rangez vos affaires. Une consigne donnée à un dossier vaut pour tout ce qu'il contient. Les domaines d'aujourd'hui deviennent vos premiers dossiers.",
+      "resume": "Vous créez vos propres dossiers, et des dossiers dans ces dossiers, et vous y rangez vos sujets. Une consigne donnée à un dossier vaut pour tout ce qu'il contient. Les domaines d'aujourd'hui deviennent vos premiers dossiers.",
       "statut": "termine",
       "gauche": 69.16,
       "largeur": 0
@@ -184,7 +184,7 @@
     },
     {
       "titre": "Les photos et vidéos reçues, sans encombrer",
-      "resume": "Relvo garde ce qui sert à une affaire et va rechercher le reste à la source quand vous le demandez. Les conversations en sourdine ne pèsent rien, et l'espace de chaque compte est surveillé.",
+      "resume": "Relvo garde ce qui sert à un sujet et va rechercher le reste à la source quand vous le demandez. Les conversations en sourdine ne pèsent rien, et l'espace de chaque compte est surveillé.",
       "statut": "a-faire",
       "gauche": null,
       "largeur": 0
@@ -195,17 +195,28 @@
       "statut": "a-faire",
       "gauche": null,
       "largeur": 0
+    },
+    {
+      "titre": "Vos dossiers, vos sujets — comme sur votre ordinateur",
+      "resume": "Ce qu'on appelait une affaire s'appelle désormais un sujet, et un sujet se range dans un dossier, comme un fichier. La page Dossiers montre toute l'arborescence d'un coup, Général en tête ; un dossier s'ouvre sur sa description, ses dossiers, ses sujets, ses instructions et ses connaissances, avec un bouton pour ajouter chacun ; un sujet se range d'un glissement.",
+      "statut": "en-cours",
+      "gauche": 69.16,
+      "largeur": 0
     }
   ],
   "livraison": {
     "date": "2026-12-23",
     "gauche": 95.79
   },
-  "en_cours": null,
+  "en_cours": "Vos dossiers, vos sujets — comme sur votre ordinateur",
   "journal": [
     {
       "date": "2026-10-27",
       "entrees": [
+        {
+          "type": "new",
+          "texte": "Vos affaires s'appellent désormais vos sujets, rangés dans vos dossiers ; la page Mémoire s'appelle Dossiers, et les fichiers d'un dossier, ses connaissances."
+        },
         {
           "type": "new",
           "texte": "Relvo parle de dossiers, range vos affaires au bon endroit dans vos dossiers, et vous pouvez lui demander de lister, créer ou déplacer un dossier et d'y ranger une affaire."

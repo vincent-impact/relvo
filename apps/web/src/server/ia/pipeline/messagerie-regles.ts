@@ -23,7 +23,7 @@ export type MessageDeSalve = {
   id: string;
   /** ISO 8601. */
   recuLe: string;
-  /** Sans affaire et non ignoré : ce que l'écoute peut emporter. */
+  /** Sans sujet et non ignoré : ce que l'écoute peut emporter. */
   orphelin: boolean;
 };
 
@@ -31,7 +31,7 @@ export type MessageDeSalve = {
  * L'ANCRE de l'écoute que le tri pose : le plus ancien message orphelin daté
  * de moins de `fenetreMs` avant le déclencheur, parmi ceux que le modèle a
  * lus ; à défaut, le déclencheur lui-même. Un message plus vieux que la
- * fenêtre est un bavardage que le tri avait laissé sans affaire : il n'entre
+ * fenêtre est un bavardage que le tri avait laissé sans sujet : il n'entre
  * pas dans celle-ci.
  */
 export function ancreDeLaSalve(

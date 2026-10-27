@@ -23,7 +23,7 @@ const DEBUTS_FACTUELS = [
     "i",
   ),
   new RegExp(
-    "^(mes|les)\\s+(affaires|tâches|taches|contacts|urgences|rendez[- ]vous|messages)" +
+    "^(mes|les)\\s+(sujets|affaires|tâches|taches|contacts|urgences|rendez[- ]vous|messages)" +
       FIN_DE_MOT,
     "i",
   ),

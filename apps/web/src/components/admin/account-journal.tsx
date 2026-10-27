@@ -185,7 +185,7 @@ export function AccountJournal({
                   </span>
                 </div>
                 <div className="mt-0.5 text-[12px] leading-4 font-light text-gris">
-                  {r.messagesImported} messages · {r.subjectsOpened} affaires ·{" "}
+                  {r.messagesImported} messages · {r.subjectsOpened} sujets ·{" "}
                   {r.conversationsIgnored} ignorées · {eur(r.costEur)}
                   {r.lastError ? ` · ${r.lastError}` : ""}
                 </div>

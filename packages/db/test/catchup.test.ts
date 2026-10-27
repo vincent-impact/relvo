@@ -305,7 +305,7 @@ describe("l'avancement et la clôture", () => {
     ]);
     expect(journal[1].title).toBe("Rattrapage du courrier récent terminé");
     expect(journal[1].description).toContain(
-      "40 messages lus, 3 affaires ouvertes",
+      "40 messages lus, 3 sujets ouverts",
     );
     // Close : plus ouverte, plus due ; une nouvelle demande en crée une autre.
     expect(await getOpenCatchup(db, channel.id)).toBeNull();

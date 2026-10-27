@@ -84,7 +84,7 @@ export function DeleteAccount({
             </AlertDialogTitle>
             <AlertDialogDescription>
               Ses canaux seront déconnectés chez l&apos;agrégateur, puis tout ce
-              qu&apos;il contient — affaires, conversations, messages, pièces
+              qu&apos;il contient — sujets, conversations, messages, pièces
               jointes, documents, journal — sera effacé. Il n&apos;y a pas de
               corbeille. Pour confirmer, retapez son adresse :{" "}
               <span className="font-medium text-noir">{email}</span>

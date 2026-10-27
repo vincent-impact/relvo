@@ -5,7 +5,7 @@ ordre_public: 20
 titre_client: Vos dossiers, rangés comme sur votre ordinateur
 resume_client: >
   Vous créez vos propres dossiers, et des dossiers dans ces dossiers, et vous y rangez vos
-  affaires. Une consigne donnée à un dossier vaut pour tout ce qu'il contient. Les domaines
+  sujets. Une consigne donnée à un dossier vaut pour tout ce qu'il contient. Les domaines
   d'aujourd'hui deviennent vos premiers dossiers.
 statut: termine
 debut: 2026-10-27

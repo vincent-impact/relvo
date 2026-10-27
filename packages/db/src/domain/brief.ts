@@ -192,7 +192,7 @@ export async function getBriefSuggestions(
       text:
         lus === 0
           ? "Je lis encore votre courrier."
-          : `Je lis encore votre courrier : ${lus} message${lus > 1 ? "s" : ""} lu${lus > 1 ? "s" : ""}, ${ouvertes} affaire${ouvertes > 1 ? "s" : ""} ouverte${ouvertes > 1 ? "s" : ""}.`,
+          : `Je lis encore votre courrier : ${lus} message${lus > 1 ? "s" : ""} lu${lus > 1 ? "s" : ""}, ${ouvertes} sujet${ouvertes > 1 ? "s" : ""} ouvert${ouvertes > 1 ? "s" : ""}.`,
     });
   }
   if (question) {
@@ -207,8 +207,8 @@ export async function getBriefSuggestions(
       kind: "rule",
       text:
         staleReplies === 1
-          ? "Une affaire attend une réponse depuis plus d'une semaine. On fait le point ?"
-          : `${staleReplies} affaires attendent une réponse depuis plus d'une semaine. On fait le point ?`,
+          ? "Un sujet attend une réponse depuis plus d'une semaine. On fait le point ?"
+          : `${staleReplies} sujets attendent une réponse depuis plus d'une semaine. On fait le point ?`,
     });
   }
   if (overdue > 0) {
@@ -225,8 +225,8 @@ export async function getBriefSuggestions(
       kind: "rule",
       text:
         unsorted === 1
-          ? "Une conversation sans affaire attend votre tri."
-          : `${unsorted} conversations sans affaire attendent votre tri.`,
+          ? "Une conversation sans sujet attend votre tri."
+          : `${unsorted} conversations sans sujet attendent votre tri.`,
     });
   }
   return out.slice(0, MAX_SUGGESTIONS);

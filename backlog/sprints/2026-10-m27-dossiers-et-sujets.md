@@ -63,11 +63,46 @@ journal du client régénéré avant le push (#57) ; `vercel ls` jusqu'à Ready.
 
 ## Tranche 1 — « Le mot » (M27.1)
 
-_En cours._
+**Livré.**
+- « sujet » partout où le dirigeant lisait « affaire » : l'interface (onglet du dock, indicateurs
+  « ouverts · validés · fermés », fiches, états vides, toasts, diapositives), les phrases de
+  Relvo (nouvelles, brief, blocs de l'échange, prise en main), les titres du journal et les
+  erreurs du domaine, les champs client des épiques publiques (le journal du client les publie),
+  les tests qui citent ces textes. Balayage outillé avec les accords (`un sujet ouvert`, `ce
+  sujet`, `aucun sujet`, participes et adjectifs au masculin), relu sur le diff ; les
+  identifiants du code gardent leurs noms, les étiquettes de type de l'échange
+  (`affaire-creee`, `affaire-rangee`…) aussi, parce que l'historique local des appareils les
+  porte.
+- « Dossiers » à la place de « Mémoire » : l'entrée du menu (icône dossier), le titre et la
+  ligne du dessous de la page (« Vos sujets, rangés »), la diapositive de première connexion,
+  les libellés de l'échange (« Voir dans les Dossiers », « Je cherche dans vos dossiers ») et
+  ses réponses de prise en main ; les descriptions d'outils parlent des dossiers.
+- « Connaissances » à la place de « Documents » pour les fichiers d'un dossier (onglet, compte
+  sur la ligne, état vide). Les pièces jointes d'un sujet restent des documents.
+- Le dock : l'onglet « Sujets » porte une corbeille à courrier ; le dossier reste le dessin des
+  dossiers.
+- Le socle des consignes ne force plus « affaire » : la règle du mot ne garde que « dossier »,
+  et dit que « sujet » est aussi le mot du dirigeant. Les phrases rendues tautologiques par le
+  balayage (« pas de second sujet pour la même affaire ») sont récrites (« pour ce qui est déjà
+  suivi »). Le budget du socle ne bouge pas.
+- La conception récrite en place (`00` à `05`, le design system, `uml.mermaid`), `CLAUDE.md`,
+  `PRODUCT.md`, `DESIGN.md`. L'invariant 16 nomme les onglets d'aujourd'hui (Instructions /
+  Connaissances / Sujets) ; les quatre onglets arrivent avec la tranche 3. L'historique n'est
+  pas récrit.
+
+**Vérification.** Typage, lint, les 234 tests du domaine et les 213 de l'application ;
+l'évaluation de l'échange sur ses 23 cas, 23 réussis (« Mes affaires avec Karim » et « Range
+l'affaire… » restent compris : le dirigeant peut dire l'un ou l'autre) ; rendu headless de
+Dossiers, Sujets et de l'accueil.
+
+**Piège vu.** Un balayage de mot qui change le genre ne se fait pas en une passe : les
+déterminants (`une affaire` → `un sujet`) consomment le mot avant que les accords postposés
+(`affaire ouverte`) ne le voient. Deux passes, puis une relecture du diff par motif (adjectifs
+en -ée, -ie, -ue, -te ; `toutes les` ; `est-elle`).
 
 ## Où on en est
 
-- [ ] Tranche 1 — « Le mot »
+- [x] Tranche 1 — « Le mot »
 - [ ] Tranche 2 — « L'arbre »
 - [ ] Tranche 3 — « La fiche »
 - [ ] Tranche 4 — « Ranger dans… »

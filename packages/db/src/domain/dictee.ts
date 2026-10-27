@@ -3,7 +3,7 @@ import type { TenantDb } from "../tenant";
 
 // LE VOCABULAIRE D'UNE DICTÉE (M22.4) — ce qu'un modèle de transcription a
 // besoin de connaître du compte pour écrire JUSTE les noms propres : les
-// contacts (prénom, nom, entreprise), les affaires ouvertes (titres), le
+// contacts (prénom, nom, entreprise), les sujets ouverts (titres), le
 // dirigeant et ses secteurs. Une projection EXPLICITE, champ par champ
 // (PITFALLS #41), jamais les lignes entières ; rien de nouveau à stocker.
 //
@@ -11,7 +11,7 @@ import type { TenantDb } from "../tenant";
 // qu'un court préfixe, et un compte à mille contacts ne doit pas pousser
 // mille lignes. Les contacts complets passent avant les contacts
 // automatiques (un nom tiré d'une adresse n'aide pas à transcrire) ; les
-// affaires les plus actives passent d'abord.
+// sujets les plus actives passent d'abord.
 
 export const DICTATION_VOCABULARY_LIMITS = {
   contacts: 40,
@@ -22,7 +22,7 @@ export type DictationVocabulary = {
   dirigeant: string;
   secteurs: string[];
   contacts: { prenom: string | null; nom: string; entreprise: string | null }[];
-  affaires: string[];
+  sujets: string[];
 };
 
 export async function getDictationVocabulary(
@@ -70,6 +70,6 @@ export async function getDictationVocabulary(
         entreprise: c.company?.trim() || null,
       }))
       .filter((c) => c.nom.length > 0),
-    affaires: subjects.map((s) => s.title.trim()).filter((t) => t.length > 0),
+    sujets: subjects.map((s) => s.title.trim()).filter((t) => t.length > 0),
   };
 }

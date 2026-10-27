@@ -2,7 +2,7 @@ import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 
 // CarteVivante — l'avancement de Relvo qui lit le courrier d'une boîte (05-ia
 // §11.11, « l'avancement est une carte vivante, pas une suite de messages ») :
-// UNE carte qui se met à jour — messages lus, affaires ouvertes, conversations
+// UNE carte qui se met à jour — messages lus, sujets ouverts, conversations
 // ignorées — et dit dans ses mots où elle en est. Tant que l'import n'est pas
 // fermé, le total n'est pas connu et la carte le dit ; dès qu'il l'est,
 // l'avancement se lit en fraction ; « rien trouvé encore » est une étape,
@@ -115,9 +115,7 @@ export function CarteVivante({
           />
           <Compteur
             n={data.subjectsOpened}
-            label={
-              data.subjectsOpened > 1 ? "affaires ouvertes" : "affaire ouverte"
-            }
+            label={data.subjectsOpened > 1 ? "sujets ouverts" : "sujet ouvert"}
           />
           <Compteur
             n={data.conversationsIgnored}

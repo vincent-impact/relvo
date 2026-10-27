@@ -1,11 +1,11 @@
 ---
 id: M27
 public: true
-ordre_public: 21
+ordre_public: 24
 titre_client: Vos dossiers, vos sujets — comme sur votre ordinateur
 resume_client: >
-  Une affaire s'appelle désormais un sujet, et un sujet se range dans un dossier, comme un
-  fichier. La page Dossiers montre toute l'arborescence d'un coup, Général en tête ; un dossier
+  Ce qu'on appelait une affaire s'appelle désormais un sujet, et un sujet se range dans un
+  dossier, comme un fichier. La page Dossiers montre toute l'arborescence d'un coup, Général en tête ; un dossier
   s'ouvre sur sa description, ses dossiers, ses sujets, ses instructions et ses connaissances,
   avec un bouton pour ajouter chacun ; un sujet se range d'un glissement.
 statut: en-cours

@@ -54,7 +54,10 @@ export function SubjectsIcon({ className }: IconProps) {
       aria-hidden="true"
       className={className}
     >
-      <path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h5l2 2.2h8A1.5 1.5 0 0 1 21 8.7V19a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19z" />
+      {/* La corbeille à courrier des sujets (M27.1) : le dossier est le dessin
+          des dossiers, il ne dit pas deux choses. */}
+      <path d="M4 3.5h16a1 1 0 0 1 1 1V11h-4.6l-1.4 2.6H9L7.6 11H3V4.5a1 1 0 0 1 1-1z" />
+      <path d="M3 12.6h4l1.4 2.6h7.2l1.4-2.6h4V19a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19z" />
     </svg>
   );
 }

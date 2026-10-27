@@ -229,7 +229,7 @@ export type NatureDuCourrier = "recu" | "envoye" | "brouillon" | "ecarte";
  * Ce qu'un webhook de courrier porte VRAIMENT — l'événement ne suffit pas.
  * Gmail enregistre un brouillon à chaque pause de frappe, et chacun arrive en
  * `mail_received` : sans ce tri, un e-mail en cours d'écriture entrait en
- * quatre messages « reçus » de soi-même, dans l'affaire, relus quatre fois.
+ * quatre messages « reçus » de soi-même, dans le sujet, relus quatre fois.
  *
  *   - `brouillon` : rôle ou dossier de brouillons — jamais rangé, jamais lu ;
  *   - `ecarte`    : indésirable ou corbeille — ce que la boîte a déjà écarté ;

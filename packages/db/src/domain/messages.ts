@@ -228,7 +228,7 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
     if (routed) {
       subjectId = routed.subjectId;
       // Écoute permanente d'un sujet email non-ouvert → il ROUVRE (invariant n°7).
-      // Un envoi du dirigeant sur une affaire terminée la fait repartir aussi :
+      // Un envoi du dirigeant sur un sujet terminé la fait repartir aussi :
       // c'est lui qui relance l'échange.
       if (routed.needsReopen) reopenSubjectId = routed.subjectId;
     } else if (
@@ -597,7 +597,7 @@ export type IngestOutboundWhatsAppInput = z.infer<
  * l'agrégateur la rejoue en « message reçu » marqué `is_sender`. Nos propres
  * envois, déjà en base sous le même identifiant, retombent sur l'idempotence
  * — rien n'est dupliqué. Une réponse inconnue entre comme un envoi ordinaire :
- * dans la conversation directe que le fil désigne, rattachée à l'affaire qui
+ * dans la conversation directe que le fil désigne, rattachée à le sujet qui
  * l'écoute, et `createMessage` coche la tâche de réponse par correspondance et
  * pose « En attente » comme pour un envoi depuis Relvo (05 §4.1). Un fil que
  * Relvo ne connaît pas (le dirigeant écrit le premier à un numéro) n'est pas
@@ -698,7 +698,7 @@ export type IngestOutboundEmailInput = z.infer<
  * « unipile », et rien n'est dupliqué — ni sur une seconde livraison du même
  * webhook. Un envoi venu d'ailleurs entre comme un envoi ordinaire : dans la
  * conversation que l'objet et les destinataires désignent — créée s'il écrit le
- * premier —, rattaché à l'affaire qui l'écoute s'il y en a une, la tâche de
+ * premier —, rattaché à le sujet qui l'écoute s'il y en a une, la tâche de
  * réponse cochée par correspondance et « En attente » posé (05 §4.1). Sans
  * écoute, le message reste orphelin dans sa conversation : la réponse qui
  * viendra se triera avec lui sous les yeux.
@@ -859,7 +859,7 @@ export async function sendEmailReply(
 
   assertFound(
     await db.subject.findFirst({ where: { id: data.subjectId } }),
-    "Affaire",
+    "Sujet",
   );
   const channel = assertFound(
     await db.channel.findFirst({
@@ -966,7 +966,7 @@ export async function sendWhatsAppReply(
 
   assertFound(
     await db.subject.findFirst({ where: { id: data.subjectId } }),
-    "Affaire",
+    "Sujet",
   );
   const channel = assertFound(
     await db.channel.findFirst({
@@ -1016,7 +1016,7 @@ function deriveSubjectTitle(
   if (fromLine) return fromLine.slice(0, 200);
   const fromContent = content?.replace(/\s+/g, " ").trim();
   if (fromContent) return fromContent.slice(0, 80);
-  return "Nouvelle affaire";
+  return "Nouveau sujet";
 }
 
 /**
@@ -1170,7 +1170,7 @@ export async function openSubjectOnConversation(
       entityId: subject.id,
       subjectId: subject.id,
       eventType: EVENT_TYPES.messageLinked,
-      title: `${others} message${plural} de la conversation couvert${plural} par l'affaire`,
+      title: `${others} message${plural} de la conversation couvert${plural} par le sujet`,
       actor: "system",
     });
   }
@@ -1352,7 +1352,7 @@ export async function assignMessageToSubject(
 ) {
   assertFound(
     await db.subject.findFirst({ where: { id: subjectId } }),
-    "Affaire",
+    "Sujet",
   );
 
   // Les PJ suivent leur message (box « Pièces jointes » de la fiche). Deux
@@ -1372,7 +1372,7 @@ export async function assignMessageToSubject(
     messageId: id,
     subjectId,
     eventType: EVENT_TYPES.messageLinked,
-    title: "Message rattaché à une affaire",
+    title: "Message rattaché à un sujet",
     actor: "user",
   });
 
@@ -1411,7 +1411,7 @@ export async function reassignMessage(
   return db.$transaction(async (tx) => {
     assertFound(
       await tx.subject.findFirst({ where: { id: subjectId } }),
-      "Affaire",
+      "Sujet",
     );
     const { count } = await tx.message.updateMany({
       where: { id },
@@ -1428,7 +1428,7 @@ export async function reassignMessage(
       messageId: id,
       subjectId,
       eventType: EVENT_TYPES.messageReassigned,
-      title: "Message réaffecté à une autre affaire",
+      title: "Message réaffecté à un autre sujet",
       actor: "user",
     });
     return assertFound(
@@ -1473,7 +1473,7 @@ export async function detachMessage(db: TenantDb, id: string) {
       entityId: id,
       messageId: id,
       eventType: EVENT_TYPES.messageDetached,
-      title: "Message détaché (sans affaire)",
+      title: "Message détaché (sans sujet)",
       actor: "user",
     });
     return assertFound(

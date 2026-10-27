@@ -152,7 +152,7 @@ describe("suggestions par règles", () => {
     const s = await getBriefSuggestions(db);
     expect(s.map((x) => x.kind)).toEqual(["lecture", "question"]);
     expect(s[0]!.text).toBe(
-      "Je lis encore votre courrier : 12 messages lus, 1 affaire ouverte.",
+      "Je lis encore votre courrier : 12 messages lus, 1 sujet ouvert.",
     );
     // Close : la ligne disparaît.
     await prisma.channelCatchup.update({

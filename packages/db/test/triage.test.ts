@@ -409,7 +409,7 @@ describe("ouvrir ou rattacher depuis le tri", () => {
     expect(subject.proposedFolder).toBe("Réglementaire");
 
     const { message: m2 } = await mail(db, channel.id, "e2", {
-      subjectLine: "Autre affaire",
+      subjectLine: "Autre sujet",
     });
     const r2 = await applyTriageMatter(db, {
       conversationId: m2.conversationId,
@@ -421,7 +421,7 @@ describe("ouvrir ou rattacher depuis le tri", () => {
       where: { id: r2.subjectId },
     });
     // Sans titre proposé, l'objet du fil est le titre (cas e-mail).
-    expect(s2.title).toBe("Autre affaire");
+    expect(s2.title).toBe("Autre sujet");
   });
 
   it("rattache au sujet ouvert que le fil prolonge, sinon ouvre", async () => {
@@ -479,7 +479,7 @@ describe("ouvrir ou rattacher depuis le tri", () => {
 
 // M7 tranche 11 (A8) — le fil WhatsApp DIRECT se trie à réception. Le domaine
 // teste l'ANCRE, jamais le canal : ouvrir emporte la salve depuis l'ancre et
-// pas le bavardage d'avant ; rattacher ouvre une ÉCOUTE sur l'affaire
+// pas le bavardage d'avant ; rattacher ouvre une ÉCOUTE sur le sujet
 // existante, par la fonction de la fiche ; un groupe reste refusé ; la
 // projection dit le canal, le numéro du compte et la date de connexion.
 describe("le fil WhatsApp direct, ancré", () => {
@@ -620,7 +620,7 @@ describe("le fil WhatsApp direct, ancré", () => {
     expect(contact.firstName).toBe("Bruno");
     expect(contact.lastName).toBe("Lefèvre");
 
-    // L'écoute commence à l'ancre : la salve est dans l'affaire, le message
+    // L'écoute commence à l'ancre : la salve est dans le sujet, le message
     // d'avant reste orphelin et sans domaine.
     const parId = new Map(
       (
@@ -655,7 +655,7 @@ describe("le fil WhatsApp direct, ancré", () => {
     expect(m4.subjectId).toBe(r.subjectId);
   });
 
-  it("rattacher ouvre une écoute ancrée sur l'affaire existante, par Relvo, et n'emporte que la salve", async () => {
+  it("rattacher ouvre une écoute ancrée sur le sujet existant, par Relvo, et n'emporte que la salve", async () => {
     const { db, wa: canal } = await makeWhatsApp("s@test.fr");
     const existant = await createSubject(db, {
       title: "Rupture sauce blanche",

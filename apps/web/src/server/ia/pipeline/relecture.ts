@@ -18,7 +18,7 @@ import { retenirRelecture, type CadreRelecture } from "./proposition";
 import { entreesDuContexte } from "./structuration";
 
 // LA RELECTURE EN PRODUCTION (M7, tranche 6 — M7.9, M7.11) : « Relvo suit
-// l'affaire ». UN SEUL appel quand un message ENTRANT arrive sur un sujet
+// le sujet ». UN SEUL appel quand un message ENTRANT arrive sur un sujet
 // suivi — capté au rangement par l'écoute du fil, rattaché par le tri, ou
 // arrivé sur un sujet validé que la mécanique vient de rouvrir — ET quand le
 // dirigeant ENVOIE une réponse depuis Relvo (retour du second essai réel,

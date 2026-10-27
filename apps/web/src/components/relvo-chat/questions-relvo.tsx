@@ -29,18 +29,18 @@ function phraseOutcome(o: QuestionOutcome): string {
   switch (o.kind) {
     case "sectors":
       return o.metier
-        ? `C’est noté dans votre Mémoire : ${o.metier}. Je lirai votre courrier avec les mots de votre métier.`
+        ? `C’est noté : ${o.metier}. Je lirai votre courrier avec les mots de votre métier.`
         : "C’est noté : je lirai votre courrier avec les mots de votre métier.";
     case "instruction":
-      return `C’est noté dans votre Mémoire, dans ${o.folderName} : je l’appliquerai.`;
+      return `C’est noté dans le dossier ${o.folderName} : je l’appliquerai.`;
     case "folders":
       return o.names.length === 1
-        ? `C’est fait : le dossier ${o.names[0]} est dans votre Mémoire. J’y rangerai les affaires qui s’y rapportent.`
-        : `C’est fait : ${o.names.join(", ")} sont dans votre Mémoire. J’y rangerai les affaires qui s’y rapportent.`;
+        ? `C’est fait : le dossier ${o.names[0]} est créé. J’y rangerai les sujets qui s’y rapportent.`
+        : `C’est fait : les dossiers ${o.names.join(", ")} sont créés. J’y rangerai les sujets qui s’y rapportent.`;
     case "folder-created":
-      return `C’est fait : le dossier « ${o.name} » existe, ${o.reclassees} affaire${o.reclassees > 1 ? "s y sont rangées" : " y est rangée"}.`;
+      return `C’est fait : le dossier « ${o.name} » existe, ${o.reclassees} sujet${o.reclassees > 1 ? "s y sont rangées" : " y est rangée"}.`;
     case "lecture-etendue":
-      return "C’est parti : je lis deux semaines de plus. Les affaires apparaîtront à mesure.";
+      return "C’est parti : je lis deux semaines de plus. Les sujets apparaîtront à mesure.";
     case "noted":
       return "C’est noté, merci.";
   }

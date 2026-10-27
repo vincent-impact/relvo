@@ -8,10 +8,10 @@ import { BottomTabBar } from "@/components/layout/bottom-tab-bar";
 // du <Screen> réserve sa hauteur et le débord du disque.
 //
 // Le dock cède la place sur le DÉTAIL d'une conversation (`/conversations/x`),
-// où le composer de réponse ou les boutons « Ignorer » / « Ouvrir une affaire »
+// où le composer de réponse ou les boutons « Ignorer » / « Ouvrir un sujet »
 // prennent son ancrage. L'échange (`/relvo`) et les premiers pas (`/bienvenue`)
 // vivent hors du groupe `(app)` et n'ont pas de dock. Les LISTES et les fiches
-// (affaire, contact en carte de visite) gardent le dock.
+// (sujet, contact en carte de visite) gardent le dock.
 
 export function AppDock({
   pendingQuestions = 0,

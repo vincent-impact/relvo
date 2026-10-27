@@ -229,7 +229,7 @@ type CourrierConfig = { accountId: string; channelId: string };
  * Le courrier se range d'après ce qu'il EST, pas d'après l'événement : Gmail
  * pousse chaque enregistrement de brouillon en `mail_received`, et un e-mail
  * en cours d'écriture entrait en quatre messages « reçus » de soi-même, dans
- * l'affaire, relus quatre fois. Un brouillon n'est jamais rangé ; l'indésirable
+ * le sujet, relus quatre fois. Un brouillon n'est jamais rangé ; l'indésirable
  * et la corbeille non plus ; un courrier du dossier des envoyés — ou venu de
  * l'une de nos adresses hors boîte de réception — est un envoi, quel que soit
  * l'événement ; le reste est reçu. `mail_moved` ne porte rien.
@@ -367,11 +367,11 @@ async function handleMailReceived(
  * envoi fait depuis Relvo — en base sous sa référence de suivi, l'idempotence
  * l'arrête — ou un e-mail que le dirigeant a envoyé DEPUIS SON CLIENT DE
  * MESSAGERIE (Gmail, Outlook, le téléphone), qui entre comme un envoi : même
- * conversation, l'affaire qui l'écoute, la tâche de réponse cochée par
+ * conversation, le sujet qui l'écoute, la tâche de réponse cochée par
  * correspondance, puis la relecture — comme un envoi depuis Relvo (05 §4.1).
  * Tant que le dirigeant ne répond pas toujours depuis Relvo, ce qu'il envoie
  * d'ailleurs compte autant. Les pièces jointes d'un envoi ne sont pas
- * rapatriées : l'affaire se lit, elle ne stocke pas ce que le dirigeant a déjà.
+ * rapatriées : le sujet se lit, elle ne stocke pas ce que le dirigeant a déjà.
  */
 async function handleMailSent(
   mail: UnipileMailWebhook,
@@ -397,9 +397,9 @@ async function handleMailSent(
 
   expireTenantData();
 
-  // Capté par l'écoute d'une affaire : Relvo la relit à la lumière de ce qui
+  // Capté par l'écoute d'un sujet : Relvo la relit à la lumière de ce qui
   // vient de partir — ce qu'il a décidé, ce à quoi il s'engage. Un envoi sans
-  // affaire reste dans sa conversation : la réponse qui viendra se triera
+  // sujet reste dans sa conversation : la réponse qui viendra se triera
   // avec lui sous les yeux. Rien ne se trie sur un envoi seul.
   if (message.subjectId) {
     const subjectId = message.subjectId;
@@ -440,8 +440,8 @@ function whatsAppMediaName(type: string | null | undefined): string {
 /**
  * La relecture d'un fil de messagerie suivi, après la réponse HTTP (M7
  * tranche 11) : un message capté par l'écoute — reçu, ou envoyé depuis le
- * téléphone — relit l'affaire, avec la discipline de salve du tri. Un échec
- * laisse l'affaire telle qu'elle était, journalisé.
+ * téléphone — relit le sujet, avec la discipline de salve du tri. Un échec
+ * laisse le sujet telle qu'elle était, journalisé.
  */
 function relireLeFil(args: {
   accountId: string;
@@ -478,7 +478,7 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   // avec `is_sender: true` : l'écho d'un envoi fait depuis Relvo — déjà en
   // base sous le même identifiant, l'idempotence l'arrête —, ou une RÉPONSE
   // ÉCRITE DEPUIS LE TÉLÉPHONE du dirigeant (M7 tranche 11), qui entre comme
-  // un envoi : même conversation, l'affaire qui l'écoute, la tâche de réponse
+  // un envoi : même conversation, le sujet qui l'écoute, la tâche de réponse
   // cochée par correspondance, puis la relecture — comme un envoi depuis
   // Relvo (05 §4.1). Sans elle, Relvo perdait la moitié de l'échange.
   if (evt.is_sender) {
@@ -565,7 +565,7 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
 
   if (created) expireTenantData();
 
-  // Capté par l'écoute d'une affaire : Relvo la relit à la lumière du message
+  // Capté par l'écoute d'un sujet : Relvo la relit à la lumière du message
   // (05 §5.2 — la relecture suit chaque message, reçu ou envoyé), après la
   // salve, comme le tri. C'est ce qui pose le rendez-vous qu'un « 14h c'est
   // parfait » confirme.

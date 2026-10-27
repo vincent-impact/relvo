@@ -48,6 +48,6 @@ Exemple 7 — aucune date inventée.
 Message : un fournisseur annonce une hausse de tarif « prochainement » sans date.
 Décision : à traiter, professionnel (une décision d'achat se prépare). Aucune date sur la tâche : le message n'en donne pas.
 
-Exemple 8 — affaire déjà suivie.
+Exemple 8 — sujet déjà suivi.
 Message : le magasin écrit « on n'a toujours pas reçu la sauce blanche », alors qu'un sujet ouvert porte déjà la rupture de sauce blanche avec le fournisseur.
-Décision : à traiter, professionnel, rattaché au sujet existant. Pas de second sujet pour la même affaire.`;
+Décision : à traiter, professionnel, rattaché au sujet existant. Pas de second sujet pour ce qui est déjà suivi.`;

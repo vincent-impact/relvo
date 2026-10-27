@@ -70,8 +70,8 @@ import { structurerSujet, type IssueStructuration } from "./structuration";
 //      client, seules la publicité et l'automatique mettent en sourdine ;
 //      sinon l'avis seul (05 §1.1, §1.2, §9.5).
 //   6. Ouverture ou rattachement par les primitives du domaine — sur un fil
-//      direct, ANCRÉS au début de la salve (`ancreDeLaSalve`) : l'affaire
-//      écoute depuis là, et rattacher ouvre une écoute sur l'affaire existante.
+//      direct, ANCRÉS au début de la salve (`ancreDeLaSalve`) : le sujet
+//      écoute depuis là, et rattacher ouvre une écoute sur le sujet existant.
 //   7. Cache de données invalidé après toute écriture (PITFALLS.md #45).
 //   8. Un sujet OUVERT enchaîne sur la STRUCTURATION (`./structuration`,
 //      tranche 5) : le second appel, qui apporte les tâches et la date. Son

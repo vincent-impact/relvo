@@ -91,7 +91,7 @@ export type TriageMessageProjection = {
  */
 export type TriageThreadMessage = TriageMessageProjection & {
   id: string;
-  /** Sans affaire et non ignoré : ce qu'une écoute ouverte par le tri peut emporter. */
+  /** Sans sujet et non ignoré : ce qu'une écoute ouverte par le tri peut emporter. */
   orphelin: boolean;
 };
 
@@ -702,7 +702,7 @@ export type ApplyTriageMatterResult = {
 };
 
 /**
- * Le tri a conclu « affaire » avec assez de confiance : ouvrir un sujet sur le
+ * Le tri a conclu « sujet » avec assez de confiance : ouvrir un sujet sur le
  * fil, ou le rattacher au sujet ouvert qu'il prolonge. La logique teste
  * l'ANCRE, jamais le canal (04 §4) — c'est l'ancre que le canal décide :
  *
@@ -710,7 +710,7 @@ export type ApplyTriageMatterResult = {
  *   • fil WhatsApp DIRECT → ancre obligatoire, le premier message de la salve
  *     lue par le tri : l'écoute commence là (M7 tranche 11), et RATTACHER
  *     ouvre une écoute sur le sujet existant par la fonction de la fiche
- *     (« Lier à une affaire »), avec la même ancre — jamais le rattachement
+ *     (« Lier à un sujet »), avec la même ancre — jamais le rattachement
  *     permanent de l'e-mail ;
  *   • un GROUPE n'est jamais trié : l'écoute s'y pose à la main (05 §9.5).
  *
@@ -737,7 +737,7 @@ export async function applyTriageMatter(
   if (conversation.type === ConversationType.whatsapp_group) {
     throw new DomainError(
       "VALIDATION",
-      "Le tri automatique n'ouvre pas d'affaire sur un groupe.",
+      "Le tri automatique n'ouvre pas de sujet sur un groupe.",
     );
   }
   const direct = conversation.type === ConversationType.whatsapp_direct;

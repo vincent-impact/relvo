@@ -36,20 +36,19 @@ import { ZoneHeading } from "@/components/shared/zone-heading";
 type Tagged = { row: SubjectRowData; basket: "ouvert" | "done" };
 
 const TAB_LABEL: Record<SubjectTab, string> = {
-  ouverts: "Ouvertes",
-  valides: "Validées",
-  fermes: "Fermées",
+  ouverts: "Ouverts",
+  valides: "Validés",
+  fermes: "Fermés",
 };
 
 // L'état vide GUIDE : c'est dans un onglet vide qu'on apprend le geste. Les
 // ouverts, eux, sont dans la voix de Relvo (ci-dessous) : c'est lui qui les
 // remplit, et c'est lui qui dit par où commencer quand rien n'est arrivé.
 const EMPTY: Record<SubjectTab, string> = {
-  ouverts: "Aucune affaire ouverte.",
+  ouverts: "Aucun sujet ouvert.",
   valides:
-    "Aucune affaire validée. Glissez une affaire ouverte vers la droite pour la valider.",
-  fermes:
-    "Aucune affaire fermée. Glissez une affaire vers la gauche pour la fermer.",
+    "Aucun sujet validé. Glissez un sujet ouvert vers la droite pour la valider.",
+  fermes: "Aucun sujet fermé. Glissez un sujet vers la gauche pour la fermer.",
 };
 
 // Onglet initial déduit de l'URL. `?urgent=1` / `?nouveau=1` (anciens liens)
@@ -167,8 +166,8 @@ export function FeedView({
         <RelvoBlock className="mx-4">
           <RelvoSentence>
             {hasChannels
-              ? "Je n’ai pas encore ouvert d’affaire. Dès que je lis votre courrier, chaque affaire — un devis, une relance, un litige — apparaît ici. Vous pouvez aussi en ouvrir une vous-même avec le +."
-              : "Je n’ai encore rien à lire. Reliez la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des dernières semaines et j’ouvre ici vos premières affaires."}
+              ? "Je n’ai pas encore ouvert de sujet. Dès que je lis votre courrier, chaque sujet — un devis, une relance, un litige — apparaît ici. Vous pouvez aussi en ouvrir une vous-même avec le +."
+              : "Je n’ai encore rien à lire. Reliez la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des dernières semaines et j’ouvre ici vos premiers sujets."}
           </RelvoSentence>
           {!hasChannels ? (
             <Link href="/canaux" className={RELVO_LINK}>
@@ -179,7 +178,7 @@ export function FeedView({
       ) : filtered.length === 0 ? (
         <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
           {domainName != null
-            ? `Aucune affaire « ${domainName} » parmi les ${TAB_LABEL[tab].toLowerCase()}.`
+            ? `Aucun sujet « ${domainName} » parmi les ${TAB_LABEL[tab].toLowerCase()}.`
             : EMPTY[tab]}
         </p>
       ) : (

@@ -138,7 +138,7 @@ export default async function CompteAdminPage({
         <section>
           <ZoneHeading label="Activité" />
           <ListPanel>
-            <Ligne label="Affaires ouvertes">{compte.openSubjects}</Ligne>
+            <Ligne label="Sujets ouverts">{compte.openSubjects}</Ligne>
             <Ligne
               label="Questions ouvertes"
               tone={compte.openQuestions ? "attente" : undefined}

@@ -20,8 +20,8 @@ import {
 // LES DOMAINES (M17.10, 05 §9.6, 04 §10) : les domaines typiques des secteurs
 // se proposent à la prise en main, à plusieurs, et se créent par la fonction
 // de la Mémoire ; les domaines proposés par le courrier se groupent par nom
-// dès deux affaires, se tranchent une fois, se créent d'un geste avec leurs
-// affaires rangées, et réapparaissent si le domaine est supprimé.
+// dès deux sujets, se tranchent une fois, se créent d'un geste avec leurs
+// sujets rangés, et réapparaissent si le domaine est supprimé.
 
 async function makeAccount(
   email: string,
@@ -133,7 +133,7 @@ describe("les domaines typiques", () => {
 });
 
 describe("les domaines proposés par le courrier", () => {
-  async function affaire(
+  async function sujet(
     db: ReturnType<typeof tenantDb>,
     title: string,
     proposedFolder: string | null,
@@ -146,12 +146,12 @@ describe("les domaines proposés par le courrier", () => {
     return s;
   }
 
-  it("se groupent par nom dès deux affaires sans domaine, la casse et les accents confondus, et ne reviennent pas une fois tranchés", async () => {
+  it("se groupent par nom dès deux sujets sans domaine, la casse et les accents confondus, et ne reviennent pas une fois tranchés", async () => {
     const { db, general } = await makeAccount("dom-prop@test.fr", ["food"]);
-    const a1 = await affaire(db, "Multirisque", "Assurances");
-    const a2 = await affaire(db, "Auto flotte", "assurances");
-    await affaire(db, "Seul", "Banque");
-    await affaire(db, "Sans", null);
+    const a1 = await sujet(db, "Multirisque", "Assurances");
+    const a2 = await sujet(db, "Auto flotte", "assurances");
+    await sujet(db, "Seul", "Banque");
+    await sujet(db, "Sans", null);
     const props = await listFolderProposals(db);
     expect(props).toEqual([
       {
@@ -167,7 +167,7 @@ describe("les domaines proposés par le courrier", () => {
     const [q] = await listOpenQuestions(db);
     expect(q?.originStep).toBe(`${ETAPE_DOMAINE_PROPOSE}/assurances`);
     expect(q?.text).toBe(
-      "Plusieurs affaires parlent de « Assurances » (2). J'en fais un dossier et je les y range ?",
+      "Plusieurs sujets parlent de « Assurances » (2). J'en fais un dossier et je les y range ?",
     );
     expect(nomProposeDe(q!.text)).toBe("Assurances");
     // « Non, pas celui-là » : notée, jamais reproposée.
@@ -181,18 +181,18 @@ describe("les domaines proposés par le courrier", () => {
     ).toEqual({ kind: "noted" });
     expect(await listFolderProposals(db)).toEqual([]);
     expect(await ensureFolderProposalQuestions(db)).toBe(0);
-    // Une troisième affaire « Banque » : la proposition naît ; écartée, pareil.
-    await affaire(db, "Prêt", "Banque");
+    // Une troisième sujet « Banque » : la proposition naît ; écartée, pareil.
+    await sujet(db, "Prêt", "Banque");
     await ensureFolderProposalQuestions(db);
     const [qb] = await listOpenQuestions(db);
     await dismissQuestion(db, qb!.id);
     expect(await listFolderProposals(db)).toEqual([]);
   });
 
-  it("« Oui, créez-le » crée le domaine et y range les affaires ; supprimer le domaine fait réapparaître la proposition", async () => {
+  it("« Oui, créez-le » crée le domaine et y range les sujets ; supprimer le domaine fait réapparaître la proposition", async () => {
     const { db, general } = await makeAccount("dom-oui@test.fr", ["food"]);
-    const a1 = await affaire(db, "Multirisque", "Assurances");
-    const a2 = await affaire(db, "Auto flotte", "Assurances");
+    const a1 = await sujet(db, "Multirisque", "Assurances");
+    const a2 = await sujet(db, "Auto flotte", "Assurances");
     await ensureFolderProposalQuestions(db);
     const [q] = await listOpenQuestions(db);
     const { outcome } = await answerQuestion(
@@ -213,10 +213,10 @@ describe("les domaines proposés par le courrier", () => {
       where: { id: { in: [a1.id, a2.id] } },
     });
     expect(sujets.every((s) => s.folderId === folder.id)).toBe(true);
-    // La proposition reste sur l'affaire ; rangée, elle ne compte plus.
+    // La proposition reste sur le sujet ; rangée, elle ne compte plus.
     expect(sujets.every((s) => s.proposedFolder === "Assurances")).toBe(true);
     expect(await listFolderProposals(db)).toEqual([]);
-    // Supprimer le domaine : les affaires reperdent leur domaine, la
+    // Supprimer le domaine : les sujets reperdent leur domaine, la
     // proposition redevient visible — mais la question, répondue, ne revient
     // pas : « jamais reproposé » vaut pour le geste, pas pour la Mémoire.
     await deleteFolder(db, folder.id);
@@ -224,7 +224,7 @@ describe("les domaines proposés par le courrier", () => {
       where: { id: { in: [a1.id, a2.id] } },
     });
     expect(apres.every((s) => s.folderId === null)).toBe(true);
-    // Reprendre un domaine qui existe déjà : pas de doublon, affaires rangées.
+    // Reprendre un domaine qui existe déjà : pas de doublon, sujets rangés.
     await db.folder.create({
       data: { name: "Assurances", slug: "assurances", parentId: general.id },
     });

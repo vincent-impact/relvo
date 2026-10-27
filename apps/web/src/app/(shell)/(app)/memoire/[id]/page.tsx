@@ -40,8 +40,8 @@ import { getTenantDb, requireAccountId } from "@/server/auth-context";
 // la mémoire de Relvo : sa chaîne dans le ciel (on remonte d'un tap), SES
 // DOMAINES en lignes (on y entre, on en crée dedans), puis 3 onglets :
 // Instructions (consignes éditables, activables), Documents (fichiers
-// absorbés ✦ / écartés) et Affaires (les siennes ET celles de ses domaines —
-// la portée). Le domaine « Général » (is_default) masque l'onglet Affaires.
+// absorbés ✦ / écartés) et Sujets (les siennes ET celles de ses domaines —
+// la portée). Le domaine « Général » (is_default) masque l'onglet Sujets.
 // L'upload de document arrive ensuite (coquille en M9).
 //
 // PERF (M9.19, point 2) : le hero (nom du dossier) s'affiche dès que la requête
@@ -78,10 +78,10 @@ async function DossierTabs({
 
   const options: SegTabOption[] = [
     { value: "instructions", label: "Instructions", count: notes.length },
-    { value: "documents", label: "Documents", count: files.length },
+    { value: "documents", label: "Connaissances", count: files.length },
   ];
   if (!folder.isDefault) {
-    options.push({ value: "sujets", label: "Affaires", count: rows.length });
+    options.push({ value: "sujets", label: "Sujets", count: rows.length });
   }
 
   return (
@@ -106,7 +106,7 @@ async function DossierTabs({
           // contrôle sans effet se retire.
           files.length === 0 ? (
             <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
-              Aucun document. Les pièces que Relvo lit pour ce dossier
+              Aucune connaissance. Les pièces que Relvo lit pour ce dossier
               s’ajoutent ici.
             </p>
           ) : (
@@ -152,7 +152,7 @@ async function DossierTabs({
               sujets:
                 rows.length === 0 ? (
                   <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
-                    Aucune affaire ouverte ici. Relvo en ouvrira une quand un
+                    Aucun sujet ouvert ici. Relvo en ouvrira une quand un
                     message concernera ce dossier.
                   </p>
                 ) : (

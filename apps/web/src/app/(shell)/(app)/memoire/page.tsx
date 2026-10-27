@@ -10,7 +10,7 @@ import { ZoneHeading } from "@/components/shared/zone-heading";
 import { cachedMemoire } from "@/server/cached";
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
 
-export const metadata: Metadata = { title: "Mémoire — Relvo" };
+export const metadata: Metadata = { title: "Dossiers — Relvo" };
 
 // Mémoire — ce que Relvo sait de l'entreprise (01 §8), page du menu. Trois
 // zones : les instructions du COMPTE en tête (celles du domaine « Général »,
@@ -82,8 +82,8 @@ export default async function MemoirePage() {
       {/* Pas de « + » dans le ciel : au-dessus d'une liste d'instructions, il
           menait à un domaine. L'ajout vit en bas de chaque liste. */}
       <RelvoHeader
-        title="Mémoire"
-        subtitle="Ce que Relvo sait de votre entreprise"
+        title="Dossiers"
+        subtitle="Vos sujets, rangés"
         className="pb-5"
       />
       <Suspense fallback={<RowsSkeleton count={4} />}>

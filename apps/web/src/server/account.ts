@@ -56,7 +56,7 @@ export async function createAccount(
         name: "Général",
         slug: "general",
         description:
-          "Connaissances transversales chargées dans le contexte de toutes les affaires.",
+          "Connaissances transversales chargées dans le contexte de tous les sujets.",
         isDefault: true,
       },
     });

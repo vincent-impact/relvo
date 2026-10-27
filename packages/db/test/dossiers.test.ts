@@ -25,7 +25,7 @@ import {
 // racine, la profondeur est bornée ICI — par ce test, pas par la vigilance —,
 // le slug est unique par père ; la couche Domaine hérite de toute la chaîne,
 // racine en premier ; supprimer un dossier remonte ce qu'il contenait chez le
-// père, et jamais une affaire dans Général (invariant 17).
+// père, et jamais un sujet dans Général (invariant 17).
 
 async function makeAccount(email: string) {
   const account = await prisma.account.create({
@@ -161,7 +161,7 @@ describe("l'arbre des dossiers", () => {
 });
 
 describe("l'héritage de la chaîne (couche Domaine)", () => {
-  it("une affaire rangée dans un fils lit tout ce qu'ont ses pères, racine en premier, le plus précis en dernier", async () => {
+  it("un sujet rangé dans un fils lit tout ce qu'ont ses pères, racine en premier, le plus précis en dernier", async () => {
     const {
       db,
       account,
@@ -244,7 +244,7 @@ describe("l'héritage de la chaîne (couche Domaine)", () => {
 });
 
 describe("supprimer un dossier remonte ce qu'il contenait chez le père", () => {
-  it("ses dossiers, ses instructions, ses affaires, ses contacts et ses canaux passent au père ; un slug déjà pris se suffixe", async () => {
+  it("ses dossiers, ses instructions, ses sujets, ses contacts et ses canaux passent au père ; un slug déjà pris se suffixe", async () => {
     const { db, account, clients, franchises, narbonne } =
       await arbre("suppr-pere@test.fr");
     // Un frère de Franchises qui porte déjà le slug « narbonne ».
@@ -257,7 +257,7 @@ describe("supprimer un dossier remonte ce qu'il contenait chez le père", () => 
       name: "Redevance",
       content: "5 %.",
     });
-    const affaire = await createSubject(db, {
+    const sujet = await createSubject(db, {
       title: "Ouverture Béziers",
       folderId: franchises.id,
     });
@@ -293,8 +293,7 @@ describe("supprimer un dossier remonte ce qu'il contenait chez le père", () => 
         .folderId,
     ).toBe(clients.id);
     expect(
-      (await db.subject.findFirstOrThrow({ where: { id: affaire.id } }))
-        .folderId,
+      (await db.subject.findFirstOrThrow({ where: { id: sujet.id } })).folderId,
     ).toBe(clients.id);
     expect(
       (await db.contact.findFirstOrThrow({ where: { id: contact.id } }))
@@ -312,14 +311,14 @@ describe("supprimer un dossier remonte ce qu'il contenait chez le père", () => 
       remontes: {
         dossiers: 1,
         connaissances: 1,
-        affaires: 1,
+        sujets: 1,
         contacts: 1,
         canaux: 1,
       },
     });
   });
 
-  it("quand le père est Général, les instructions y remontent et les affaires redeviennent « sans dossier »", async () => {
+  it("quand le père est Général, les instructions y remontent et les sujets redeviennent « sans dossier »", async () => {
     const { db, general, clients, franchises } = await arbre(
       "suppr-general@test.fr",
     );
@@ -328,7 +327,7 @@ describe("supprimer un dossier remonte ce qu'il contenait chez le père", () => 
       name: "Relances",
       content: "7 jours.",
     });
-    const affaire = await createSubject(db, {
+    const sujet = await createSubject(db, {
       title: "Devis Dupont",
       folderId: clients.id,
     });
@@ -338,8 +337,7 @@ describe("supprimer un dossier remonte ce qu'il contenait chez le père", () => 
         .folderId,
     ).toBe(general.id);
     expect(
-      (await db.subject.findFirstOrThrow({ where: { id: affaire.id } }))
-        .folderId,
+      (await db.subject.findFirstOrThrow({ where: { id: sujet.id } })).folderId,
     ).toBeNull();
     expect(
       (await db.folder.findFirstOrThrow({ where: { id: franchises.id } }))
@@ -391,12 +389,12 @@ describe("la présentation d'un dossier sur les lignes (M23.4)", () => {
       (await db.folder.findFirstOrThrow({ where: { isDefault: true } })).id,
     );
 
-    // Une affaire rangée au fond porte le chemin et répond au filtre d'un père.
-    const affaire = await createSubject(db, {
+    // Un sujet rangé au fond porte le chemin et répond au filtre d'un père.
+    const sujet = await createSubject(db, {
       title: "Loyer de Narbonne",
       folderId: narbonne.id,
     });
-    const [e] = await enrichSubjects(db, [affaire]);
+    const [e] = await enrichSubjects(db, [sujet]);
     expect(e).toMatchObject({
       folderName: "Narbonne",
       folderPath: "Clients › Franchises › Narbonne",

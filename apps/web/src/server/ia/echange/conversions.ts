@@ -90,7 +90,7 @@ export const PERIODES_TACHES = [
   "semaine",
   "en_retard",
   "sans_date",
-  "affaire",
+  "sujet",
 ] as const;
 export type PeriodeTaches = (typeof PERIODES_TACHES)[number];
 
@@ -110,7 +110,7 @@ function jourNu(d: Date): string {
  * civils FRANÇAIS (#55) : « aujourd'hui » et « demain » sont un jour ; « la
  * semaine » va d'aujourd'hui au dimanche inclus — la semaine civile, pas sept
  * jours glissants ; « en retard » et « sans date » sont des filtres ;
- * « affaire » et l'absence de période ne bornent rien. Des jours explicites
+ * « sujet » et l'absence de période ne bornent rien. Des jours explicites
  * (`depuis`, `jusquAu`) l'emportent sur la période.
  */
 export function bornesPeriode(
@@ -183,8 +183,8 @@ export function titreTaches(
       return "Tâches en retard";
     case "sans_date":
       return "Tâches sans date";
-    case "affaire":
-      return "Tâches de l'affaire";
+    case "sujet":
+      return "Tâches du sujet";
     default:
       return "Tâches";
   }
@@ -220,7 +220,7 @@ export function injecterVolatil(
   ];
 }
 
-/** La page d'origine, lue depuis `?from=` : l'affaire ou le contact ouvert. */
+/** La page d'origine, lue depuis `?from=` : le sujet ou le contact ouvert. */
 export function lirePage(from: string | null | undefined): {
   page: string | null;
   subjectId: string | null;

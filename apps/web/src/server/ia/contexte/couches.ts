@@ -176,7 +176,7 @@ export function blocExpediteur(e: ExpediteurContexte): string[] {
 /**
  * Couche Compte, profil du TRI : identité, domaines, sujets ouverts,
  * préférences. Pas d'instructions : le domaine n'est pas connu. Les sujets
- * ouverts ne servent qu'au tri (reconnaître une affaire déjà suivie, 05 §1.2) ;
+ * ouverts ne servent qu'au tri (reconnaître un sujet déjà suivi, 05 §1.2) ;
  * le profil complet les omet.
  */
 export function coucheCompteTri(

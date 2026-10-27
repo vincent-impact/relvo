@@ -196,7 +196,7 @@ async function assertFolderAssignable(db: Tx, folderId: string) {
   if (folder.isDefault) {
     throw new DomainError(
       "FORBIDDEN_GENERAL_FOLDER",
-      "Le dossier « Général » est documentaire : aucune affaire ne peut y être rangée.",
+      "Le dossier « Général » est documentaire : aucun sujet ne peut y être rangée.",
     );
   }
 }
@@ -226,7 +226,7 @@ export async function listSubjects(
 }
 
 export async function getSubject(db: TenantDb, id: string) {
-  return assertFound(await db.subject.findFirst({ where: { id } }), "Affaire");
+  return assertFound(await db.subject.findFirst({ where: { id } }), "Sujet");
 }
 
 /**
@@ -294,7 +294,7 @@ async function createSubjectOnce(
       entityId: subject.id,
       subjectId: subject.id,
       eventType: EVENT_TYPES.subjectCreated,
-      title: `Affaire ${subject.reference} créée`,
+      title: `Sujet ${subject.reference} créée`,
       description: subject.title,
       actor: data.createdByActor,
       metadata: avecOrigine(null, origine),
@@ -314,7 +314,7 @@ export async function updateSubject(
     if (data.folderId) await assertFolderAssignable(tx as Tx, data.folderId);
     const current = assertFound(
       await tx.subject.findFirst({ where: { id } }),
-      "Affaire",
+      "Sujet",
     );
 
     // On calcule les changements AVANT d'écraser les valeurs, pour pouvoir
@@ -336,10 +336,10 @@ export async function updateSubject(
         lastActivityAt: new Date(),
       },
     });
-    ensureAffected(count, "Affaire");
+    ensureAffected(count, "Sujet");
     const subject = assertFound(
       await tx.subject.findFirst({ where: { id } }),
-      "Affaire",
+      "Sujet",
     );
 
     // Un événement explicite par champ modifié. Aucun changement réel → aucun
@@ -370,7 +370,7 @@ export async function updateSubjectStatus(
   return db.$transaction(async (tx) => {
     const current = assertFound(
       await tx.subject.findFirst({ where: { id } }),
-      "Affaire",
+      "Sujet",
     );
     if (current.status === status) return current; // no-op idempotent
     if (!TRANSITIONS[current.status].includes(status)) {
@@ -393,7 +393,7 @@ export async function updateSubjectStatus(
         ...(status === SubjectStatus.validated ? { resolvedAt: now } : {}),
       },
     });
-    ensureAffected(count, "Affaire");
+    ensureAffected(count, "Sujet");
 
     // M6ter — l'appartenance suit le STATUT côté WhatsApp seulement : valider ou
     // fermer POSE la borne de fin des écoutes WhatsApp (elles cessent d'alimenter
@@ -407,7 +407,7 @@ export async function updateSubjectStatus(
 
     const subject = assertFound(
       await tx.subject.findFirst({ where: { id } }),
-      "Affaire",
+      "Sujet",
     );
     const eventType =
       status === SubjectStatus.validated
@@ -458,17 +458,17 @@ export async function updateSubjectPriority(
   return db.$transaction(async (tx) => {
     const current = assertFound(
       await tx.subject.findFirst({ where: { id } }),
-      "Affaire",
+      "Sujet",
     );
     if (current.priority === priority) return current; // no-op : pas de log
     const { count } = await tx.subject.updateMany({
       where: { id },
       data: { priority, lastActivityAt: new Date() },
     });
-    ensureAffected(count, "Affaire");
+    ensureAffected(count, "Sujet");
     const subject = assertFound(
       await tx.subject.findFirst({ where: { id } }),
-      "Affaire",
+      "Sujet",
     );
     await logEvent(tx as Tx, {
       entityType: "subject",
@@ -503,7 +503,7 @@ export async function openSubject(db: TenantDb, id: string) {
   return db.$transaction(async (tx) => {
     const current = assertFound(
       await tx.subject.findFirst({ where: { id } }),
-      "Affaire",
+      "Sujet",
     );
     // « Était nouveau » = jamais ouvert → quitte le marqueur « Nouveau » à présent.
     const statusChanged = current.lastOpenedAt === null;
@@ -511,10 +511,10 @@ export async function openSubject(db: TenantDb, id: string) {
       where: { id },
       data: { lastOpenedAt: new Date() },
     });
-    ensureAffected(count, "Affaire");
+    ensureAffected(count, "Sujet");
     const subject = assertFound(
       await tx.subject.findFirst({ where: { id } }),
-      "Affaire",
+      "Sujet",
     );
     // Lecture des messages : ouvrir le sujet vaut lecture de ses messages reçus
     // encore non-lus (seul moyen d'« interagir » avec un message). Les orphelins
@@ -532,7 +532,7 @@ export async function openSubject(db: TenantDb, id: string) {
         entityId: subject.id,
         subjectId: subject.id,
         eventType: EVENT_TYPES.subjectOpened,
-        title: "Affaire ouverte pour la première fois",
+        title: "Sujet ouvert pour la première fois",
         actor: "user",
       });
     }
@@ -557,10 +557,10 @@ export async function suggestResolution(
       where: { id },
       data: { resolutionSuggestedAt: new Date() },
     });
-    ensureAffected(count, "Affaire");
+    ensureAffected(count, "Sujet");
     const subject = assertFound(
       await tx.subject.findFirst({ where: { id } }),
-      "Affaire",
+      "Sujet",
     );
     await logEvent(tx as Tx, {
       entityType: "subject",
@@ -603,7 +603,7 @@ export async function revokeResolutionSuggestion(
     if (count === 0) return null;
     const subject = assertFound(
       await tx.subject.findFirst({ where: { id } }),
-      "Affaire",
+      "Sujet",
     );
     await logEvent(tx as Tx, {
       entityType: "subject",
@@ -624,6 +624,6 @@ export async function revokeResolutionSuggestion(
 
 export async function deleteSubject(db: TenantDb, id: string) {
   const { count } = await db.subject.deleteMany({ where: { id } });
-  ensureAffected(count, "Affaire");
+  ensureAffected(count, "Sujet");
   return { id };
 }

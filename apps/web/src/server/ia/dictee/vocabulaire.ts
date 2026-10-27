@@ -23,7 +23,7 @@ export type VocabulaireDictee = {
     nom: string;
     entreprise: string | null;
   }[];
-  affaires: readonly string[];
+  sujets: readonly string[];
 };
 
 const SECTEUR_EN_CLAIR: Record<Secteur, string | null> = {
@@ -71,7 +71,7 @@ export function promptDictee(v: VocabulaireDictee): string {
   let reste = PLAFOND_PROMPT_DICTEE - cadre.length;
   for (const [prefixe, elements] of [
     ["Contacts : ", v.contacts.map(nomComplet)],
-    ["Affaires : ", v.affaires],
+    ["Sujets : ", v.sujets],
     ["Mots : ", lexiqueDe(connus)],
   ] as const) {
     const l = liste(prefixe, elements, reste - 1);

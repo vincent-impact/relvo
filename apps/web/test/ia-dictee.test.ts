@@ -155,19 +155,19 @@ describe("le vocabulaire du compte — promptDictee()", () => {
       { prenom: "Karim", nom: "Benali", entreprise: "ClimaPro" },
       { prenom: null, nom: "Blanchard", entreprise: null },
     ],
-    affaires: ["Panne chambre froide", "Devis extracteur"],
+    sujets: ["Panne chambre froide", "Devis extracteur"],
   };
 
-  it("porte le cadre, les noms, les affaires et les mots du secteur, dans cet ordre", () => {
+  it("porte le cadre, les noms, les sujets et les mots du secteur, dans cet ordre", () => {
     const p = promptDictee(vocabulaire);
     expect(
       p.startsWith("Dictée en français de Mam's Crousty, restauration."),
     ).toBe(true);
     expect(p).toContain("Contacts : Karim Benali (ClimaPro), Blanchard.");
-    expect(p).toContain("Affaires : Panne chambre froide, Devis extracteur.");
+    expect(p).toContain("Sujets : Panne chambre froide, Devis extracteur.");
     expect(p).toContain("Mots : DLC");
-    expect(p.indexOf("Contacts")).toBeLessThan(p.indexOf("Affaires"));
-    expect(p.indexOf("Affaires")).toBeLessThan(p.indexOf("Mots"));
+    expect(p.indexOf("Contacts")).toBeLessThan(p.indexOf("Sujets"));
+    expect(p.indexOf("Sujets")).toBeLessThan(p.indexOf("Mots"));
     expect(promptDictee(vocabulaire)).toBe(p);
   });
 
@@ -180,9 +180,9 @@ describe("le vocabulaire du compte — promptDictee()", () => {
         nom: `Nom-De-Famille-Composé-${i}`,
         entreprise: `Entreprise Numéro ${i} SARL`,
       })),
-      affaires: Array.from(
+      sujets: Array.from(
         { length: 100 },
-        (_, i) => `Affaire numéro ${i} avec un titre long`,
+        (_, i) => `Sujet numéro ${i} avec un titre long`,
       ),
     });
     expect(p.length).toBeLessThanOrEqual(PLAFOND_PROMPT_DICTEE);
@@ -194,12 +194,12 @@ describe("le vocabulaire du compte — promptDictee()", () => {
     expect(p).not.toContain(", .");
   });
 
-  it("sans contact ni affaire, le cadre et les mots du secteur suffisent", () => {
+  it("sans contact ni sujet, le cadre et les mots du secteur suffisent", () => {
     const p = promptDictee({
       dirigeant: "",
       secteurs: ["construction"],
       contacts: [],
-      affaires: [],
+      sujets: [],
     });
     expect(p).toBe(
       `Dictée en français, bâtiment. Mots : ${p.slice(p.indexOf("Mots : ") + 7)}`,

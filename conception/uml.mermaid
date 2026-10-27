@@ -20,7 +20,7 @@ classDiagram
 
     class Folder {
         +bool is_default
-        « Général » : documentaire, non supprimable, jamais d'affaire
+        « Général » : documentaire, non supprimable, jamais de sujet
     }
 
     class Contact {
@@ -43,7 +43,7 @@ classDiagram
         +string contact_id         « messagerie : 1 ou groupe »
         +ConversationStatus status « active | ignored = PAUSE »
         +IgnoreReason ignored_reason « choisie en un appui — la leçon »
-        +TriageVerdict triage_verdict « bruit | affaire | incertain — ne conditionne RIEN »
+        +TriageVerdict triage_verdict « bruit | sujet | incertain — ne conditionne RIEN »
         +Confidence triage_confidence « haute | moyenne | basse »
     }
 
@@ -54,7 +54,7 @@ classDiagram
     }
 
     class Subject {
-        <<agrégat central — l'affaire>>
+        <<agrégat central — le sujet>>
         +SubjectStatus status      « open | validated | closed »
         +Priority priority
         +datetime closed_at        « DATE de clôture, PAS une borne »
@@ -105,12 +105,12 @@ classDiagram
         <<registre par compte>>
         +string key                « unique par compte »
         +LabelOrigin origin        « secteur | relvo »
-        +LabelStatus status        « candidate → active à la 2e affaire »
+        +LabelStatus status        « candidate → active à la 2e sujet »
     }
 
     class RelvoQuestion {
         <<jamais une tâche>>
-        +QuestionScope scope       « contact | domaine | affaire »
+        +QuestionScope scope       « contact | domaine | sujet »
         +QuestionStatus status     « ouverte | répondue | écartée »
     }
 
@@ -145,10 +145,10 @@ classDiagram
     Folder "1" --> "*" KnowledgeDocument
     Contact "0..1" --> "*" Conversation
 
-    note for SubjectConversation "Aucune contrainte d'unicité sur subject_id.\nLa poser interdirait le changement d'objet,\nl'extension à un second canal et le\nchangement d'adresse d'un interlocuteur.\n\nPlusieurs affaires simultanées : interdites par une\nRÈGLE MÉTIER V1, pas par le schéma — la lever\nne demande aucune migration."
+    note for SubjectConversation "Aucune contrainte d'unicité sur subject_id.\nLa poser interdirait le changement d'objet,\nl'extension à un second canal et le\nchangement d'adresse d'un interlocuteur.\n\nPlusieurs sujets simultanés : interdites par une\nRÈGLE MÉTIER V1, pas par le schéma — la lever\nne demande aucune migration."
 
     note for Message "subject_id sur le MESSAGE, jamais sur la\nconversation : c'est ce qui rend l'écoute\ndémontable le jour où le pipeline IA décidera\nmessage par message."
 
-    note for Label "Un vocabulaire à deux mains diverge.\nL'utilisateur filtre, ne saisit jamais.\nCandidate tant qu'une seule affaire la porte."
+    note for Label "Un vocabulaire à deux mains diverge.\nL'utilisateur filtre, ne saisit jamais.\nCandidate tant qu'un seul sujet la porte."
 
-    note for Subject "closed_at ne borne RIEN.\nAppartenance (bornes) et statut sont deux axes\nindépendants — les confondre ampute le périmètre\nd'une affaire quand on la valide."
+    note for Subject "closed_at ne borne RIEN.\nAppartenance (bornes) et statut sont deux axes\nindépendants — les confondre ampute le périmètre\nd'un sujet quand on la valide."

@@ -70,7 +70,7 @@ export function SubjectCreateDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-4 p-5">
         <DialogHeader>
-          <DialogTitle>Nouvelle affaire</DialogTitle>
+          <DialogTitle>Nouveau sujet</DialogTitle>
         </DialogHeader>
 
         {/* Titre */}
@@ -81,7 +81,7 @@ export function SubjectCreateDialog({
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Intitulé de l’affaire"
+            placeholder="Intitulé du sujet"
             className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14.5px] outline-none focus:border-brand"
           />
         </div>
@@ -171,7 +171,7 @@ export function SubjectCreateDialog({
           }
           className="mt-1 w-full rounded-full bg-brand py-3 text-[14.5px] font-bold text-white active:opacity-90 disabled:opacity-50"
         >
-          Créer l’affaire
+          Créer le sujet
         </button>
       </DialogContent>
     </Dialog>

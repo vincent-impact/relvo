@@ -4,7 +4,7 @@ import type { FolderChip } from "@/server/cached";
 import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 
-// Barre de filtre par DOSSIER des Affaires — une seule rangée de puces
+// Barre de filtre par DOSSIER des Sujets — une seule rangée de puces
 // défilable : « Tous », puis les dossiers de premier niveau ; un dossier
 // choisi filtre lui ET ce qu'il contient (M23.4), et ses propres dossiers
 // viennent à sa droite pour affiner — on descend dans l'arbre puce après

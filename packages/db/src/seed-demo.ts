@@ -126,7 +126,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
       name: "Général",
       slug: "general",
       description:
-        "Connaissances transversales chargées dans le contexte de toutes les affaires.",
+        "Connaissances transversales chargées dans le contexte de tous les sujets.",
       isDefault: true,
     },
   });
@@ -1363,7 +1363,7 @@ export async function seedDemoAccount(storage?: SeedStorage) {
   // ===== GROUPE WhatsApp BAVARD, mis en SOURDINE (mute) — SANS sujet =====
   // Le cas d'usage fondateur du « mute » (invariant conversation `ignored`) : un
   // groupe de quartier qui déborde, qu'on fait taire sans rien perdre. Aucun sujet
-  // : c'est une SOURCE qu'on ignore, pas une affaire. Alimente le filtre
+  // : c'est une SOURCE qu'on ignore, pas un sujet. Alimente le filtre
   // « Ignorées » de /conversations.
   const noisyTitle = "Commerçants Épinay";
   const noisyThread = "wa-group-commercants-epinay";

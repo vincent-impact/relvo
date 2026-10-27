@@ -24,22 +24,22 @@ import { clePubliquePush } from "@/server/push/envoyer";
 
 /** Une lecture finie reste montrée dans l'échange pendant ce délai. */
 const LECTURE_FINIE_MS = 2 * 60 * 60 * 1000;
-/** Affaires montrées sous la carte ; « Toutes les affaires » pour le reste. */
+/** Sujets montrés sous la carte ; « Tous les sujets » pour le reste. */
 const AFFAIRES_DU_MOMENT = 5;
 
 const PROMPTS = {
   general: [
     "Qu'est-ce qui est urgent aujourd'hui ?",
     "Quelles sont mes tâches cette semaine ?",
-    "Quelles affaires attendent une réponse ?",
+    "Quelles sujets attendent une réponse ?",
   ],
   fil: [
     "Qu'est-ce qui est urgent aujourd'hui ?",
-    "Quelles affaires attendent une réponse ?",
-    "Range mes affaires ouvertes par priorité",
+    "Quelles sujets attendent une réponse ?",
+    "Range mes sujets ouverts par priorité",
   ],
   subject: [
-    "Résume-moi cette affaire",
+    "Résume-moi ce sujet",
     "Prépare une réponse",
     "Quelles tâches restent à faire ?",
     "Qui sont les contacts impliqués ?",
@@ -80,7 +80,7 @@ export default async function ConversationPage({
     listOpenQuestions(db, { limit: 5 }),
     // La lecture en cours — ou, un moment encore après sa fin, la lecture
     // finie : le temps que la question de fin de lecture se pose avec ses
-    // affaires sous les yeux (05 §11.11).
+    // sujets sous les yeux (05 §11.11).
     db.channelCatchup.findFirst({
       where: {
         OR: [
@@ -117,9 +117,9 @@ export default async function ConversationPage({
   if (rattrapage && estEnPanne(rattrapage)) {
     after(() => relancerLignesEnPanne(db));
   }
-  // Les affaires du moment : nées depuis la demande de lecture, les plus
+  // Les sujets du moment : nées depuis la demande de lecture, les plus
   // récentes d'abord, rendues par la ligne ordinaire du produit.
-  let affaires: SubjectRowData[] = [];
+  let sujets: SubjectRowData[] = [];
   if (rattrapage) {
     const nees = await db.subject.findMany({
       where: {
@@ -129,7 +129,7 @@ export default async function ConversationPage({
       orderBy: { createdAt: "desc" },
       take: AFFAIRES_DU_MOMENT,
     });
-    affaires = (await enrichSubjects(db, nees)).map(toSubjectRowData);
+    sujets = (await enrichSubjects(db, nees)).map(toSubjectRowData);
   }
 
   let contextLabel: string | null = null;
@@ -147,7 +147,7 @@ export default async function ConversationPage({
       prompts = PROMPTS.subject;
     }
   } else if (from?.startsWith("/fil")) {
-    contextLabel = "Affaires";
+    contextLabel = "Sujets";
     prompts = PROMPTS.fil;
   }
   // Depuis l'accueil, pas de puce « Contexte » : elle ne changeait rien aux
@@ -164,7 +164,7 @@ export default async function ConversationPage({
       reprendre={reprendre?.trim() || null}
       questions={questions}
       lecture={lecture}
-      affaires={affaires}
+      sujets={sujets}
       clePublique={clePubliquePush()}
     />
   );

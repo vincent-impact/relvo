@@ -68,7 +68,7 @@ export type RelectureProjection = SubjectSheetProjection & {
 };
 
 /**
- * Charge ce que le profil « relecture » consomme : la fiche du sujet bornée
+ * Charge ce que le profil « relecture » consomme : la fiche du sujet borné
  * aux messages antérieurs au message déclencheur, le message lui-même à
  * part, les précédents, et le fait que le message ait rouvert le sujet.
  */
@@ -86,7 +86,7 @@ export async function getRelectureProjection(
   if (message.subjectId !== args.subjectId) {
     throw new DomainError(
       "VALIDATION",
-      "Ce message n'appartient pas à l'affaire à relire.",
+      "Ce message n'appartient pas à le sujet à relire.",
     );
   }
 
@@ -256,12 +256,12 @@ export async function applyRelecture(
         resolutionSuggestedAt: true,
       },
     }),
-    "Affaire",
+    "Sujet",
   );
   if (subject.status !== SubjectStatus.open) {
     throw new DomainError(
       "INVALID_STATE",
-      "La relecture ne s'applique qu'à une affaire ouverte.",
+      "La relecture ne s'applique qu'à un sujet ouvert.",
     );
   }
 
@@ -416,7 +416,7 @@ export async function applyRelecture(
     subjectId: subject.id,
     messageId: data.messageId ?? null,
     eventType: EVENT_TYPES.subjectReviewed,
-    title: `Relvo a relu l'affaire${[
+    title: `Relvo a relu le sujet${[
       taskIds.length
         ? `${taskIds.length} tâche${taskIds.length > 1 ? "s" : ""} en plus`
         : null,
@@ -476,7 +476,7 @@ export async function logRelectureFailure(
     subjectId: input.subjectId,
     messageId: input.messageId,
     eventType: EVENT_TYPES.relectureFailed,
-    title: "Relecture interrompue — l'affaire reste telle quelle",
+    title: "Relecture interrompue — le sujet reste telle quelle",
     description: input.error.slice(0, 500),
     actor: Actor.system,
     metadata: { cause: input.cause ?? null },

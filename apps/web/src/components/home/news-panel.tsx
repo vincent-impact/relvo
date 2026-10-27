@@ -36,7 +36,7 @@ export function newsSentence(news: CachedNews, hasChannels = true): string {
   if (news.messagesRead > 0)
     parts.push(`lu ${plural(news.messagesRead, "message", "messages")}`);
   if (news.subjectsOpened > 0)
-    parts.push(`ouvert ${plural(news.subjectsOpened, "affaire", "affaires")}`);
+    parts.push(`ouvert ${plural(news.subjectsOpened, "sujet", "sujets")}`);
   if (news.tasksProposed > 0)
     parts.push(`proposé ${plural(news.tasksProposed, "tâche", "tâches")}`);
   if (news.draftsPrepared > 0)
@@ -59,10 +59,10 @@ export function newsSentence(news: CachedNews, hasChannels = true): string {
     // diapositives. Avec une boîte, la lecture est en cours : elle se suit
     // dans l'échange (M7.19).
     if (!hasChannels)
-      return "Je n’ai encore rien à lire. Reliez la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des dernières semaines et j’ouvre vos premières affaires.";
+      return "Je n’ai encore rien à lire. Reliez la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des dernières semaines et j’ouvre vos premiers sujets.";
     return news.since
       ? "Rien de nouveau de mon côté depuis votre dernière visite."
-      : "Je lis le courrier des deux dernières semaines : vos premières affaires arrivent au fil de la lecture.";
+      : "Je lis le courrier des deux dernières semaines : vos premiers sujets arrivent au fil de la lecture.";
   }
   const list =
     parts.length === 1
@@ -82,7 +82,7 @@ function suggestionHref(s: BriefSuggestion): string {
 function compteursLecture(l: CarteVivanteData): string | null {
   if (l.messagesImported === 0 && l.subjectsOpened === 0) return null;
   const lus = `${l.messagesImported} message${l.messagesImported > 1 ? "s" : ""} lu${l.messagesImported > 1 ? "s" : ""}`;
-  const ouvertes = `${l.subjectsOpened} affaire${l.subjectsOpened > 1 ? "s" : ""} ouverte${l.subjectsOpened > 1 ? "s" : ""}`;
+  const ouvertes = `${l.subjectsOpened} sujet${l.subjectsOpened > 1 ? "s" : ""} ouvert${l.subjectsOpened > 1 ? "s" : ""}`;
   return `${lus}, ${ouvertes}`;
 }
 

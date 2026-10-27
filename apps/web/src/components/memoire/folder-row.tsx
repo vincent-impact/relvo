@@ -18,9 +18,9 @@ export function folderSub(f: CachedFolderRow): string {
   const parts: string[] = [];
   if (f.children > 0) parts.push(plural(f.children, "dossier"));
   if (f.instructions > 0) parts.push(plural(f.instructions, "instruction"));
-  if (f.documents > 0) parts.push(plural(f.documents, "document"));
+  if (f.documents > 0) parts.push(plural(f.documents, "connaissance"));
   if (!f.isDefault && f.openSubjects > 0)
-    parts.push(plural(f.openSubjects, "affaire ouverte", "affaires ouvertes"));
+    parts.push(plural(f.openSubjects, "sujet ouvert", "sujets ouverts"));
   return parts.length ? parts.join(" · ") : "rien encore";
 }
 

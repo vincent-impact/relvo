@@ -31,7 +31,7 @@ export default function AuthLayout({
             Relvo
           </span>
           <p className="mt-2 text-[14px] font-light text-white/90">
-            Vos messages deviennent des affaires
+            Vos messages deviennent des sujets
           </p>
         </div>
       </div>

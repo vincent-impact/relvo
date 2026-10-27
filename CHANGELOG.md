@@ -6,6 +6,7 @@
 
 ## 2026-10-27
 
+- **Nouveau** — Vos affaires s'appellent désormais vos sujets, rangés dans vos dossiers ; la page Mémoire s'appelle Dossiers, et les fichiers d'un dossier, ses connaissances.
 - **Nouveau** — Relvo parle de dossiers, range vos affaires au bon endroit dans vos dossiers, et vous pouvez lui demander de lister, créer ou déplacer un dossier et d'y ranger une affaire.
 - **Nouveau** — Vous rangez vos affaires dans des domaines, et des domaines dans des domaines : la Mémoire s'ouvre en arborescence, chaque affaire affiche son chemin, et le filtre des Affaires montre un domaine avec tout ce qu'il contient.
 - **Nouveau** — Vos domaines peuvent maintenant contenir d'autres domaines, sur trois niveaux ; une consigne ou un document donnés à un domaine valent pour tout ce qu'il contient.

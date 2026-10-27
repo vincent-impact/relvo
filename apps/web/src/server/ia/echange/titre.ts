@@ -13,7 +13,7 @@ const SortieTitre = z.object({
   titre: z.string().min(1).max(80),
 });
 
-export const SYSTEME_TITRE = `Tu nommes un échange entre un dirigeant et son assistant Relvo, pour une liste d'historique. Rends un titre court — quatre à huit mots —, en français, sans guillemets, sans point final, qui dit DE QUOI il a été question (« Rendez-vous Karim demain 10h », « Affaires urgentes du jour »), jamais « Question sur… » ni « Échange à propos de… ».`;
+export const SYSTEME_TITRE = `Tu nommes un échange entre un dirigeant et son assistant Relvo, pour une liste d'historique. Rends un titre court — quatre à huit mots —, en français, sans guillemets, sans point final, qui dit DE QUOI il a été question (« Rendez-vous Karim demain 10h », « Sujets urgents du jour »), jamais « Question sur… » ni « Échange à propos de… ».`;
 
 export async function titrerEchange(args: {
   question: string;

@@ -290,7 +290,7 @@ export function InformationsPane({
                   onClick={openEditor}
                   className="text-[14px] font-medium text-relvo active:opacity-70"
                 >
-                  Résumer cette affaire en une phrase
+                  Résumer ce sujet en une phrase
                 </button>
               )}
             </DescriptionLine>
@@ -310,7 +310,7 @@ export function InformationsPane({
             <span className="grid size-6 flex-none place-items-center rounded-full bg-relvo-bg">
               <Plus className="size-[15px]" strokeWidth={2.6} />
             </span>
-            Résumer cette affaire en une phrase
+            Résumer ce sujet en une phrase
           </button>
         )}
       </section>
@@ -354,14 +354,14 @@ export function InformationsPane({
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="gap-4 p-5">
           <DialogHeader>
-            <DialogTitle>Description de l’affaire</DialogTitle>
+            <DialogTitle>Description du sujet</DialogTitle>
           </DialogHeader>
           <textarea
             value={value}
             onChange={(e) => setValue(e.target.value)}
             rows={4}
             autoFocus
-            placeholder="Résumez cette affaire en une phrase ou deux…"
+            placeholder="Résumez ce sujet en une phrase ou deux…"
             className="w-full resize-y rounded-xl border border-(--border) bg-white px-3 py-2.5 text-[14px] leading-[1.5] text-(--text-primary) outline-none placeholder:text-(--text-tertiary) focus:border-brand"
           />
           <div className="flex justify-end gap-2">

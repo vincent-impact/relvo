@@ -12,9 +12,9 @@
 
 ## 1. L'entité centrale
 
-**L'Affaire (`Subject`) est l'entité centrale du produit, pas le message.**
+**L'Sujet (`Subject`) est l'entité centrale du produit, pas le message.**
 
-Une affaire est un **espace de travail** ouvert sur une situation métier en cours. Elle agrège, en un
+Un sujet est un **espace de travail** ouvert sur une situation métier en cours. Elle agrège, en un
 seul endroit : les conversations qui l'alimentent, les tâches qui la font avancer, les pièces
 jointes qui s'y rapportent, et le journal des décisions qui s'y sont prises.
 
@@ -34,7 +34,7 @@ conversations, contacts — existe avant elle, à côté d'elle, et après elle.
 | `Action` | Exécute concrètement (en V1 : envoyer un message) | Ouverte → faite / annulée / échouée |
 | `LogEvent` | Trace ce qui s'est passé | Immuable, écrit dans la transaction de chaque mutation |
 
-**La granularité sémantique est plus fine que la granularité de transport.** Une affaire est plus
+**La granularité sémantique est plus fine que la granularité de transport.** Un sujet est plus
 fine qu'une conversation. C'est pourquoi le rattachement se décide, **dans le modèle**, message
 par message (`Message.subject_id`) et non conversation par conversation — même quand l'interface
 ne l'expose pas.
@@ -57,18 +57,18 @@ Nos propres messages **sortants** rejoignent la conversation de leur set de dest
 pour l'e-mail, de leur objet. Une conversation contient donc les deux sens de l'échange.
 
 **Il n'existe pas de message orphelin.** Ce qui peut rester en attente de tri, c'est une
-**conversation orpheline** : une conversation qu'aucune affaire ouverte n'écoute.
+**conversation orpheline** : une conversation qu'aucun sujet ouvert n'écoute.
 
 ### Ce qu'une conversation n'est jamais
 
-**Elle n'est pas découpée par thème.** Découper un fil par affaire exigerait d'**inférer** à la
+**Elle n'est pas découpée par thème.** Découper un fil par sujet exigerait d'**inférer** à la
 réception. On y perdrait deux choses :
 
 - le **déterminisme** — un message n'aurait plus de place garantie ;
 - la **stabilité de l'identité** — une erreur d'inférence rangerait durablement un message au
   mauvais endroit, et le corriger reviendrait à déplacer des messages un à un.
 
-La conversation est la couche **transport et identité**. L'affaire est la couche **sémantique**.
+La conversation est la couche **transport et identité**. Le sujet est la couche **sémantique**.
 
 ---
 
@@ -79,22 +79,22 @@ faut revenir.
 
 > ## 🔑 L'énoncé central
 >
-> **Un fil d'e-mail appartient à une affaire, une seule, à vie.**
+> **Un fil d'e-mail appartient à un sujet, une seule, à vie.**
 >
-> **Une conversation de messagerie est un FLUX ; une affaire l'ÉCOUTE — à partir d'un message,
+> **Une conversation de messagerie est un FLUX ; un sujet l'ÉCOUTE — à partir d'un message,
 > jusqu'à ce qu'il cesse d'écouter.**
 
-**Pourquoi.** L'e-mail porte nativement une notion de fil : l'**objet**. Deux affaires menées
+**Pourquoi.** L'e-mail porte nativement une notion de fil : l'**objet**. Deux sujets menés
 avec la même personne s'y séparent d'elles-mêmes — l'objet **est déjà** une délimitation
-d'affaire, posée par l'expéditeur. Il n'y a rien à découper, donc rien à borner.
+de sujet, posée par l'expéditeur. Il n'y a rien à découper, donc rien à borner.
 
 La messagerie n'a pas d'objet. Le seul discriminant disponible est l'interlocuteur (ou le
-groupe) : un fil est un flux continu où les affaires **s'entrelacent**. C'est là — et seulement
-là — qu'une affaire doit se **brancher** sur le flux pour en extraire ce qui la concerne.
+groupe) : un fil est un flux continu où les sujets **s'entrelacent**. C'est là — et seulement
+là — qu'un sujet doit se **brancher** sur le flux pour en extraire ce qui la concerne.
 
 > **Un groupe de messagerie se comporte exactement comme un direct.** La tentation est de voir
 > dans le **nom du groupe** l'équivalent d'un objet — « Chantier Narbonne », « Équipe
-> Marne-la-Vallée ». C'est faux : un nom de groupe désigne un **collectif**, pas une **affaire**.
+> Marne-la-Vallée ». C'est faux : un nom de groupe désigne un **collectif**, pas une **sujet**.
 > Il parlera successivement d'une livraison en retard, d'un planning de congés et d'un
 > congélateur en panne — exactement le mélange que l'objet d'e-mail évite.
 
@@ -104,33 +104,33 @@ C'est la lecture la plus facile à rater du modèle, et la rater **bloque l'impl
 
 | Sens de lecture | Cardinalité | Énoncé |
 |---|---|---|
-| **conversation → affaire** | **1:1** | une conversation e-mail a **UNE** affaire, une seule, pour toute sa vie |
-| **affaire → conversations** | **1:N** | une affaire porte **0, 1 ou n** conversations, e-mail et/ou messagerie |
+| **conversation → sujet** | **1:1** | une conversation e-mail a **UNE** sujet, une seule, pour toute sa vie |
+| **sujet → conversations** | **1:N** | un sujet porte **0, 1 ou n** conversations, e-mail et/ou messagerie |
 
-**Ce qui est unique, c'est l'affaire d'une conversation, pas la conversation d'une affaire.** Une
-affaire **agrège** — c'est sa raison d'être, puisque c'est à son niveau que se fait la
+**Ce qui est unique, c'est le sujet d'une conversation, pas la conversation d'un sujet.** Une
+sujet **agrège** — c'est sa raison d'être, puisque c'est à son niveau que se fait la
 réunification entre canaux.
 
 > ⚠️ **Aucune contrainte d'unicité sur `subject_id` dans la table de liaison.** La poser
 > interdirait d'un coup le changement d'objet, l'extension à un second canal et le changement
 > d'adresse d'un interlocuteur.
 
-### Une affaire agrège 0, 1 ou n conversations
+### Un sujet agrège 0, 1 ou n conversations
 
-- **0** — une affaire sans échange, purement personnelle : une liste de tâches.
+- **0** — un sujet sans échange, purement personnelle : une liste de tâches.
 - **1** — le cas courant : un fil d'e-mail, ou une écoute sur un fil de messagerie.
-- **n** — l'affaire s'étend : parti d'un fil de messagerie, l'utilisateur écrit **par e-mail** au
-  même interlocuteur pour la même affaire. L'affaire porte alors une **écoute** d'un côté et un
+- **n** — le sujet s'étend : parti d'un fil de messagerie, l'utilisateur écrit **par e-mail** au
+  même interlocuteur pour le même sujet. Le sujet porte alors une **écoute** d'un côté et un
   **fil entier** de l'autre.
 
 ---
 
-## 4. Ouvrir une affaire : une seule primitive
+## 4. Ouvrir un sujet : une seule primitive
 
-Le domaine expose **une seule** fonction : *ouvrir une affaire **sur une conversation**, avec une
+Le domaine expose **une seule** fonction : *ouvrir un sujet **sur une conversation**, avec une
 ancre **optionnelle***.
 
-- **ancre nulle** → l'affaire couvre **tout le fil** ;
+- **ancre nulle** → le sujet couvre **tout le fil** ;
 - **ancre posée** → l'écoute **commence à ce message**.
 
 > ⚠️ **La logique métier teste l'ANCRE, jamais le canal.** Un `if (channel === 'email')` dans le
@@ -141,28 +141,28 @@ Ce que le canal détermine, c'est **sur quoi porte le geste**, et donc quelle an
 | | **E-mail** | **Messagerie** |
 |---|---|---|
 | Le geste porte sur… | la **conversation** | le **message** |
-| Ce qu'il propose | ouvrir une **nouvelle affaire**, ou **rattacher à une affaire existante** | « ce message est important » → commencer l'écoute ici et ouvrir l'affaire |
+| Ce qu'il propose | ouvrir une **nouveau sujet**, ou **rattacher à un sujet existant** | « ce message est important » → commencer l'écoute ici et ouvrir le sujet |
 | Ancre transmise | **aucune** | le **message désigné** |
-| Ce qui appartient à l'affaire | **tout le fil**, amont compris | les messages **à partir de l'ancre**, jusqu'à l'éventuelle borne de fin |
+| Ce qui appartient à le sujet | **tout le fil**, amont compris | les messages **à partir de l'ancre**, jusqu'à l'éventuelle borne de fin |
 
-⚠️ **Ouvrir une affaire sur une conversation e-mail balaie le fil ENTIER, amont compris.** Un
-échange de six e-mails déjà reçus produit une affaire portant les **six** messages, pas le dernier.
+⚠️ **Ouvrir un sujet sur une conversation e-mail balaie le fil ENTIER, amont compris.** Un
+échange de six e-mails déjà reçus produit un sujet portant les **six** messages, pas le dernier.
 La règle « messages ≥ ancre » est un héritage de la messagerie ; appliquée à l'e-mail, elle
 n'en rattacherait qu'un sur six.
 
 **Côté e-mail, le geste ne crée pas le lien : il DÉCLARE que ce fil mérite d'être suivi.** Tous
-les fils ne sont pas des affaires — une newsletter, un accusé de réception, un démarchage n'ont
-pas à devenir des affaires. Le geste ne fabrique pas une correspondance, il **reconnaît** celle
+les fils ne sont pas des sujets — une newsletter, un accusé de réception, un démarchage n'ont
+pas à devenir des sujets. Le geste ne fabrique pas une correspondance, il **reconnaît** celle
 que l'objet a déjà posée.
 
-⚠️ **Corollaire : une ligne de conversation de messagerie n'ouvre jamais une affaire directement.**
-Le faire reviendrait à proposer « faire de ce groupe une affaire » — or un groupe n'est jamais
-une affaire, et il n'existe pas d'ancre par défaut à lui donner. Le geste d'écartement, lui,
+⚠️ **Corollaire : une ligne de conversation de messagerie n'ouvre jamais un sujet directement.**
+Le faire reviendrait à proposer « faire de ce groupe un sujet » — or un groupe n'est jamais
+un sujet, et il n'existe pas d'ancre par défaut à lui donner. Le geste d'écartement, lui,
 existe sur les deux canaux.
 
 **Ce que la ligne porte, en revanche, c'est un geste de CLASSEMENT** — sur les deux canaux. Il
-n'ouvre rien lui-même : il propose les deux issues à parité (nouvelle affaire, ou rattachement à une
-affaire existante) puis **transmet l'intention à l'écran de conversation**, seul endroit où le fil
+n'ouvre rien lui-même : il propose les deux issues à parité (nouveau sujet, ou rattachement à une
+sujet existant) puis **transmet l'intention à l'écran de conversation**, seul endroit où le fil
 est lisible. En e-mail, l'écran enchaîne aussitôt. En messagerie, il ouvre le **choix du message
 d'ancrage** — la règle « l'utilisateur désigne toujours le message » est donc tenue, non
 contournée.
@@ -174,11 +174,11 @@ le geste est disponible là où le pouce est, la décision se prend là où le f
 
 ### Étendre une écoute : le même geste, sur un message plus ancien
 
-Si une affaire écoute déjà la conversation et que l'utilisateur désigne un message **antérieur à
-l'ancre**, l'écoute **remonte jusqu'à lui** — les messages traversés entrent dans l'affaire.
+Si un sujet écoute déjà la conversation et que l'utilisateur désigne un message **antérieur à
+l'ancre**, l'écoute **remonte jusqu'à lui** — les messages traversés entrent dans le sujet.
 
-**Pourquoi le même geste.** L'utilisateur n'a qu'une intention à exprimer, « l'affaire commence
-ici », et elle ne change pas selon qu'une affaire existe déjà ou non. Un seul geste qui **crée** ou
+**Pourquoi le même geste.** L'utilisateur n'a qu'une intention à exprimer, « le sujet commence
+ici », et elle ne change pas selon qu'un sujet existe déjà ou non. Un seul geste qui **crée** ou
 qui **étend** selon le contexte, c'est une règle à retenir au lieu de deux — et cela rend
 inutile tout dispositif de correction dédié.
 
@@ -192,10 +192,10 @@ Une écoute a **un début** (`anchor_message_id`) et peut recevoir **une fin**
 > ⚠️ **Une borne qui désigne un message ne ment jamais ; une borne déduite d'un horodatage
 > devient fausse dès que deux messages arrivent dans la même seconde.**
 
-Tant que l'affaire reste ouverte et qu'aucune borne de fin n'est posée, les nouveaux messages de
+Tant que le sujet reste ouvert et qu'aucune borne de fin n'est posée, les nouveaux messages de
 la conversation lui sont rattachés automatiquement.
 
-**L'écoute est un concept exclusivement de la messagerie.** Côté e-mail, une affaire n'écoute rien :
+**L'écoute est un concept exclusivement de la messagerie.** Côté e-mail, un sujet n'écoute rien :
 elle **EST** le fil.
 
 ### Appartenance et statut sont deux axes indépendants
@@ -204,45 +204,45 @@ C'est l'erreur qu'il ne faut pas refaire, et elle a été commise une fois.
 
 | | Question posée | Ce qui y répond |
 |---|---|---|
-| **Appartenance** | *quels messages sont dans cette affaire ?* | les **bornes** — jamais le statut |
-| **Statut** | *où en est cette affaire ?* | `Subject.status` |
+| **Appartenance** | *quels messages sont dans ce sujet ?* | les **bornes** — jamais le statut |
+| **Statut** | *où en est ce sujet ?* | `Subject.status` |
 
-Les confondre produit des effets absurdes : valider une affaire ampute silencieusement son
-périmètre, et une affaire ne peut plus être rouverte sans réécrire son appartenance.
+Les confondre produit des effets absurdes : valider un sujet ampute silencieusement son
+périmètre, et un sujet ne peut plus être rouverte sans réécrire son appartenance.
 
 `Subject.closed_at` est donc **une simple date de clôture**, pas une borne d'appartenance.
 
 ### Le modèle porte des RÉFÉRENCES, jamais des copies
 
 Un `Message` porte son `conversation_id` **et** son `subject_id` ; la table de liaison
-`SubjectConversation` porte les bornes. Lu depuis la conversation ou depuis l'affaire, **c'est la
+`SubjectConversation` porte les bornes. Lu depuis la conversation ou depuis le sujet, **c'est la
 même ligne**.
 
-⚠️ Ne jamais « optimiser » en dupliquant les messages dans l'affaire.
+⚠️ Ne jamais « optimiser » en dupliquant les messages dans le sujet.
 
 ---
 
 ## 6. La règle de réception est canal-dépendante
 
 C'est la règle la plus facile à casser en la lisant trop vite : les règles d'**arrêt d'écoute**
-ne concernent **que la messagerie**, puisqu'une affaire e-mail n'écoute rien.
+ne concernent **que la messagerie**, puisqu'un sujet e-mail n'écoute rien.
 
 | | **E-mail** | **Messagerie** |
 |---|---|---|
-| Un message entrant rejoint l'affaire… | **toujours**, quel que soit son statut | **seulement** si l'écoute est active |
-| Affaire `validé` ou `fermé` | le message la **ROUVRE** (`→ ouvert`, `closed_at` effacé) | rien : le message reste sans affaire, la conversation redevient orpheline |
+| Un message entrant rejoint le sujet… | **toujours**, quel que soit son statut | **seulement** si l'écoute est active |
+| Sujet `validé` ou `fermé` | le message la **ROUVRE** (`→ ouvert`, `closed_at` effacé) | rien : le message reste sans sujet, la conversation redevient orpheline |
 | Comment faire taire le fil | **ignorer la conversation**, et rien d'autre | ignorer la conversation, ou arrêter l'écoute |
 
-**Pourquoi l'e-mail rouvre.** De l'activité sur une affaire signifie qu'elle est **vivante**. Un
-fournisseur relance sur une affaire validée il y a trois jours : soit son message rouvre
-l'affaire et remonte dans le fil, soit il s'y range **en silence** — et l'utilisateur rate exactement
+**Pourquoi l'e-mail rouvre.** De l'activité sur un sujet signifie qu'elle est **vivante**. Un
+fournisseur relance sur un sujet validé il y a trois jours : soit son message rouvre
+le sujet et remonte dans le fil, soit il s'y range **en silence** — et l'utilisateur rate exactement
 le message qu'il ne fallait pas rater. Le statut dit ce que l'utilisateur *croyait* en le
 posant ; le message entrant dit ce qui *est*. Quand les deux se contredisent, c'est le message
 qui a raison.
 
-**Pourquoi la messagerie ne rouvre pas.** La conversation n'y est pas l'affaire mais un flux qui
-charrie des affaires successives : un message arrivé après l'arrêt d'une écoute ne parle pas
-forcément de la même chose. Le rattacher serait un pari ; rouvrir une affaire dessus serait un pari
+**Pourquoi la messagerie ne rouvre pas.** La conversation n'y est pas le sujet mais un flux qui
+charrie des sujets successifs : un message arrivé après l'arrêt d'une écoute ne parle pas
+forcément de la même chose. Le rattacher serait un pari ; rouvrir un sujet dessus serait un pari
 sur un pari.
 
 ---
@@ -251,11 +251,11 @@ sur un pari.
 
 | Geste | Ce qui s'arrête | Borne de fin | Canal |
 |---|---|---|---|
-| **Fermer l'affaire** | **toutes** ses écoutes ; la conversation ne référence plus cette affaire | posée | messagerie |
-| **Valider l'affaire** | la conversation n'alimente plus l'affaire | posée | messagerie |
-| **Arrêter l'écoute** (depuis l'affaire) | cette conversation-là seulement | posée | messagerie |
+| **Fermer le sujet** | **toutes** ses écoutes ; la conversation ne référence plus ce sujet | posée | messagerie |
+| **Valider le sujet** | la conversation n'alimente plus le sujet | posée | messagerie |
+| **Arrêter l'écoute** (depuis le sujet) | cette conversation-là seulement | posée | messagerie |
 | **Détacher un fil e-mail** | la liaison est supprimée, `subject_id` retiré des messages du fil | **aucune** | e-mail |
-| **Ignorer la conversation** | elle n'alimente plus **aucun** affaire ouverte qui l'écoute | **aucune** | les deux |
+| **Ignorer la conversation** | elle n'alimente plus **aucun** sujet ouvert qui l'écoute | **aucune** | les deux |
 
 **Détacher un fil e-mail est un rattrapage d'erreur, pas un arrêt.** Sur un fil e-mail il n'y a
 pas d'écoute à arrêter : le détachement corrige un **rangement erroné**, il ne défait pas un
@@ -270,8 +270,8 @@ sans effet observable.
 rend l'ignorance exploitable : un expéditeur ignoré plusieurs fois pour publicité n'est plus
 soumis au tri. Sans raison, une conversation ignorée est un fait ; avec, c'est une leçon.
 
-⚠️ **Écarter une conversation écoutée exige une confirmation qui NOMME les affaires concernées.**
-Jamais « une ou plusieurs affaires » : le nom. On ne demande pas à quelqu'un de confirmer un risque
+⚠️ **Écarter une conversation écoutée exige une confirmation qui NOMME les sujets concernés.**
+Jamais « une ou plusieurs sujets » : le nom. On ne demande pas à quelqu'un de confirmer un risque
 sans lui dire lequel — une confirmation sans information se clique sans être lue.
 
 ---
@@ -279,13 +279,13 @@ sans lui dire lequel — une confirmation sans information se clique sans être 
 ## 8. Rattachement automatique : la frontière IN-SET / HORS-SET
 
 Deux situations voisines, traitées à l'opposé, selon un test **exact** : l'expéditeur est-il
-**déjà dans le set de destinataires** de l'affaire ?
+**déjà dans le set de destinataires** du sujet ?
 
 | | **IN-SET** — automatique | **HORS-SET** — manuel |
 |---|---|---|
 | Situation | un destinataire connu répond, à un sous-ensemble différent | un interlocuteur écrit depuis une adresse **jamais vue** |
 | Effet sur la clé | le set change → **nouvelle conversation** | la clé change → **conversation orpheline** |
-| Ce que fait Relvo | la **range automatiquement** dans la même affaire | rien : l'utilisateur rattache à la main |
+| Ce que fait Relvo | la **range automatiquement** dans le même sujet | rien : l'utilisateur rattache à la main |
 
 **Le rattachement in-set n'est pas de l'inférence.** Objet normalisé = fonction pure ;
 appartenance au set = test exact. Le déterminisme tient.
@@ -297,21 +297,21 @@ un).
 
 ---
 
-## 9. Le cycle de vie d'une affaire
+## 9. Le cycle de vie d'un sujet
 
-Le vocabulaire est délibéré : on ne « crée » ni ne « supprime » une affaire — on l'**ouvre** et on
+Le vocabulaire est délibéré : on ne « crée » ni ne « supprime » un sujet — on l'**ouvre** et on
 la **ferme**.
 
 ### Trois états exclusifs
 
 | Statut | Sens | Alimenté ? | Récupérable ? | Visible ? |
 |---|---|---|---|---|
-| `ouvert` | l'affaire est **en cours** | oui | — | **aucun badge** |
+| `ouvert` | le sujet est **en cours** | oui | — | **aucun badge** |
 | `validé` | le travail est **fait** | non | oui | badge |
-| `fermé` | l'affaire est **écartée** — jamais traitée, abandonnée | non | oui | badge |
+| `fermé` | le sujet est **écartée** — jamais traitée, abandonnée | non | oui | badge |
 
 `ouvert` est l'état par défaut et il est **invisible** : un état porté par la quasi-totalité des
-affaires n'informe pas. On lit « ouvert » par l'**absence** de badge.
+sujets n'informe pas. On lit « ouvert » par l'**absence** de badge.
 
 **La distinction entre les deux états terminaux compte.** `validé` dit « c'est fait » ; `fermé`
 dit « on ne l'a pas fait, et on ne le fera pas ». Les confondre reviendrait à ne plus pouvoir
@@ -319,36 +319,36 @@ répondre à « qu'est-ce que j'ai réellement traité ce mois-ci ? ».
 
 ### « Fermer » est une suppression douce
 
-**C'est un statut, jamais une destruction.** L'affaire sort de la vue, ses écoutes cessent, et elle
+**C'est un statut, jamais une destruction.** Le sujet sort de la vue, ses écoutes cessent, et elle
 reste récupérable. Le vocabulaire retenu est **« Fermer » / « Fermés » / « Remettre »** — jamais
 « Supprimer » ni « Corbeille ». Deux raisons :
 
 1. **C'est honnête.** Rien n'est détruit, autant que le mot le dise. Un vocabulaire de
    destruction pour une opération réversible entraîne soit l'hésitation, soit la fausse
    confiance.
-2. **Une affaire est le SEUL endroit où vivent les tâches et le journal des décisions.** Un message
+2. **Un sujet est le SEUL endroit où vivent les tâches et le journal des décisions.** Un message
    supprimé par erreur existe encore dans Gmail ; une **tâche** supprimée par erreur n'existe
    **nulle part ailleurs**. Le coût d'une fausse manœuvre n'est pas symétrique.
 
 ⚠️ **« Remettre » ne redémarre pas les écoutes.** Les bornes de fin restent posées ; l'utilisateur
-relance l'écoute qu'il veut, là où il veut repartir. Sans cela, une affaire de messagerie remise
+relance l'écoute qu'il veut, là où il veut repartir. Sans cela, un sujet de messagerie remise
 après trois semaines **avalerait d'un bloc** tout ce que le fil a charrié entre-temps. Remettre
-dit « je reprends cette affaire », pas « rattrape tout ce que j'ai manqué ». Côté e-mail il n'y
+dit « je reprends ce sujet », pas « rattrape tout ce que j'ai manqué ». Côté e-mail il n'y
 a rien à redémarrer : le fil n'a jamais été détaché.
 
-⚠️ **Une affaire fermée n'est JAMAIS purgée.** Aucune rétention, aucune expiration — pour la raison
+⚠️ **Un sujet fermé n'est JAMAIS purgée.** Aucune rétention, aucune expiration — pour la raison
 exacte qui impose le vocabulaire « Remettre ». Une purge automatique ferait d'une opération
 annoncée comme réversible une **destruction différée** : le pire des deux mondes.
 
 À la fermeture, Relvo propose d'**ignorer aussi la conversation** — c'est le geste qui empêche un
-fil bavard de reproposer indéfiniment de nouvelles affaires, et le seul qui fasse taire un fil
-e-mail. L'ignorance vit sur la **conversation** : ce n'est pas une affaire qu'on veut faire taire,
+fil bavard de reproposer indéfiniment de nouveaux sujets, et le seul qui fasse taire un fil
+e-mail. L'ignorance vit sur la **conversation** : ce n'est pas un sujet qu'on veut faire taire,
 c'est une **source**.
 
 ### Où vivent ces transitions
 
-**Toutes dans les swipes de la liste des affaires, aucune dans la fiche.** Une affaire ouverte se
-valide ou se ferme au swipe ; une affaire terminale se **remet** au swipe droite, et se **supprime**
+**Toutes dans les swipes de la liste des sujets, aucune dans la fiche.** Un sujet ouvert se
+valide ou se ferme au swipe ; un sujet terminal se **remet** au swipe droite, et se **supprime**
 au swipe gauche — cette dernière étant la seule destruction définitive, et la seule à demander
 une confirmation.
 
@@ -358,8 +358,8 @@ chemins pour un même geste, dont un affiché en grand sous le contenu. Le résu
 et n'osait plus ni l'un ni l'autre.
 
 ⚠️ **Un geste retiré d'une surface doit exister sur l'autre AVANT de disparaître.** Les boutons
-de la fiche étaient l'unique chemin de réouverture d'une affaire terminale, dont la liste ne portait
-alors aucun swipe : les retirer d'abord aurait enfermé pour de bon toute affaire validée.
+de la fiche étaient l'unique chemin de réouverture d'un sujet terminal, dont la liste ne portait
+alors aucun swipe : les retirer d'abord aurait enfermé pour de bon tout sujet validé.
 
 ### Les marqueurs : cumulables, indépendants du statut
 
@@ -368,16 +368,16 @@ stocké comme statut ; tous sont **dérivés** :
 
 | Marqueur | Dérivé de |
 |---|---|
-| **Nouveau** | `last_opened_at == null` sur une affaire ouverte — ouvrir la fiche l'éteint |
+| **Nouveau** | `last_opened_at == null` sur un sujet ouvert — ouvrir la fiche l'éteint |
 | **Urgent** | `priority = urgent` |
 | **À faire** | il reste au moins une tâche ouverte |
-| **En attente** | `waiting_for_reply` — posé après un envoi quand il ne reste aucune tâche ouverte, levé par tout message entrant **ou quand l'utilisateur coche la dernière tâche ouverte** (§10). **Mécanique, sans IA** ; Relvo ne le pose lui-même qu'en relecture, quand une affaire attend un tiers sans qu'aucun envoi ne l'ait dit |
+| **En attente** | `waiting_for_reply` — posé après un envoi quand il ne reste aucune tâche ouverte, levé par tout message entrant **ou quand l'utilisateur coche la dernière tâche ouverte** (§10). **Mécanique, sans IA** ; Relvo ne le pose lui-même qu'en relecture, quand un sujet attend un tiers sans qu'aucun envoi ne l'ait dit |
 
-Une affaire **ouverte** peut afficher en même temps Urgent et « À faire » — impossible à représenter
+Un sujet **ouverte** peut afficher en même temps Urgent et « À faire » — impossible à représenter
 dans un énuméré exclusif. C'est la preuve que les deux axes devaient être séparés.
 
-**Le non-lu appartient à la conversation, pas à l'affaire.** C'est là que les messages arrivent, et
-c'est l'ouverture de la **conversation** — non celle de l'affaire — qui marque un message comme lu.
+**Le non-lu appartient à la conversation, pas à le sujet.** C'est là que les messages arrivent, et
+c'est l'ouverture de la **conversation** — non celle du sujet — qui marque un message comme lu.
 
 ---
 
@@ -385,10 +385,10 @@ c'est l'ouverture de la **conversation** — non celle de l'affaire — qui marq
 
 ### Task
 
-Une tâche est rattachée **à l'affaire, pas à un utilisateur** : elle matérialise une action
+Une tâche est rattachée **à le sujet, pas à un utilisateur** : elle matérialise une action
 nécessaire, indépendamment de qui l'exécutera. En V1, un compte = un humain.
 
-Une tâche peut n'avoir **aucune affaire** : créée à la volée, ou détachée. La suppression d'une affaire
+Une tâche peut n'avoir **aucun sujet** : créée à la volée, ou détachée. La suppression d'un sujet
 supprime en cascade les tâches qui lui sont rattachées.
 
 **Taxonomie dérivée de la date**, sans champ dédié : **rendez-vous** (date + heure), **tâche
@@ -399,11 +399,11 @@ La **source** (`Relvo` ou `Moi`) est un attribut historique permanent : elle res
 toute la vie de la tâche.
 
 **Une tâche de réponse se coche seule, sans IA.** Quand un message sortant part vers un contact
-de l'affaire alors qu'une tâche de réponse y est ouverte, elle est terminée par correspondance. Un
+du sujet alors qu'une tâche de réponse y est ouverte, elle est terminée par correspondance. Un
 jugement du modèle n'y apporterait rien et coûterait un appel par message envoyé.
 
-**La dernière tâche cochée à la main règle l'affaire, sans IA.** Quand l'utilisateur coche la
-dernière tâche ouverte d'une affaire ouverte, plus rien ne reste à faire : ce qu'on attendait d'un
+**La dernière tâche cochée à la main règle le sujet, sans IA.** Quand l'utilisateur coche la
+dernière tâche ouverte d'un sujet ouvert, plus rien ne reste à faire : ce qu'on attendait d'un
 tiers est arrivé — c'est le plus souvent cette tâche même, une livraison, une intervention. Le
 marqueur « En attente » se lève et Relvo propose la clôture, le journal le dit. Rouvrir une tâche
 retire la suggestion. Relvo, lui, ne déclenche pas cette mécanique quand il coche : sa relecture
@@ -411,7 +411,7 @@ décide de la clôture avec toute la situation sous les yeux (`05 §5.5`). La li
 si la tâche cochée n'avait rien à voir avec l'attente, la suggestion est de trop, et « pas
 encore » la retire d'un tap.
 
-**La relance se dérive de la situation, sans IA.** Quand la situation structurée d'une affaire dit
+**La relance se dérive de la situation, sans IA.** Quand la situation structurée d'un sujet dit
 qu'on attend un tiers et que l'échéance passe sans message entrant, une tâche « Relancer » naît,
 portée par Relvo, datée du jour. Une seule par échéance : si l'utilisateur la supprime, elle n'est
 pas recréée pour la même attente. C'est le premier bénéfice concret d'une situation structurée.
@@ -423,8 +423,8 @@ c'est la matière première de l'apprentissage (cf. `05 §9`).
 ### Contact
 
 Un contact naît **complet** quand l'utilisateur le crée, **automatique** quand Relvo le déduit.
-⚠️ **Relvo ne crée jamais un contact « dans le vide »** : uniquement à la création d'une affaire. Un
-expéditeur inconnu reste une chaîne brute jusqu'à ce qu'une affaire existe.
+⚠️ **Relvo ne crée jamais un contact « dans le vide »** : uniquement à la création d'un sujet. Un
+expéditeur inconnu reste une chaîne brute jusqu'à ce qu'un sujet existe.
 
 Un contact porte une adresse et un téléphone **primaires**, plus des **secondaires**.
 L'auto-rattachement des messages entrants consulte **les deux**.
@@ -435,46 +435,46 @@ pas vérifié.
 
 ### Folder
 
-Un `Folder` est un **dossier de la mémoire de Relvo** : il regroupe les affaires d'un périmètre
+Un `Folder` est un **dossier de la mémoire de Relvo** : il regroupe les sujets d'un périmètre
 **et** les connaissances qui servent à les traiter.
 
 Le folder **« Général »** est auto-créé, **purement documentaire**, et **non supprimable** : il
-ne contient jamais d'affaire. Il accueille les connaissances transversales, chargées dans le
-contexte de toutes les affaires. Une affaire que Relvo ne sait pas ranger reste **sans dossier** — elle
+ne contient jamais de sujet. Il accueille les connaissances transversales, chargées dans le
+contexte de tous les sujets. Un sujet que Relvo ne sait pas ranger reste **sans dossier** — elle
 n'atterrit **pas** dans Général.
 
 **Les dossiers s'emboîtent**, comme sur un ordinateur : « Général » est la racine,
-tout autre dossier a un père, une affaire se range à n'importe quelle profondeur. **Une
+tout autre dossier a un père, un sujet se range à n'importe quelle profondeur. **Une
 instruction ou un document donnés à un père s'appliquent à tous ses fils et à leurs
-affaires** — ce n'est pas une option, c'est ce qu'un dossier veut dire ; la chaîne se lit du
+sujets** — ce n'est pas une option, c'est ce qu'un dossier veut dire ; la chaîne se lit du
 plus général au plus précis, et le plus précis précise les autres sans les effacer. Un dossier
 se **déplace** avec tout ce qu'il contient ; jamais la racine, jamais dans lui-même ni dans un
 de ses fils, jamais au-delà de la profondeur bornée. Un dossier se **supprime en remontant**
-ce qu'il contenait chez son père — ses dossiers, ses instructions, ses documents, ses affaires,
+ce qu'il contenait chez son père — ses dossiers, ses instructions, ses documents, ses sujets,
 ses messages classés, les contacts et canaux qui le citaient — ; rien n'est perdu. Quand le
-père est « Général », les affaires et les contacts redeviennent **sans dossier** plutôt que d'y
+père est « Général », les sujets et les contacts redeviennent **sans dossier** plutôt que d'y
 entrer. Les questions de Relvo sur ce dossier tombent avec lui.
 
 **Un dossier n'est jamais créé par Relvo.** Quand aucun dossier ne convient, Relvo pose sur
-l'affaire un **dossier proposé** ; quand il range, il parle en **chemins** (« Clients › Franchises »),
-le plus précis qui convient. Dès que plusieurs affaires portent la même proposition, l'interface
-suggère de créer le dossier et d'y ranger ces affaires — un geste, réversible. Les socles des
+le sujet un **dossier proposé** ; quand il range, il parle en **chemins** (« Clients › Franchises »),
+le plus précis qui convient. Dès que plusieurs sujets portent la même proposition, l'interface
+suggère de créer le dossier et d'y ranger ces sujets — un geste, réversible. Les socles des
 secteurs du compte proposent par ailleurs des dossiers typiques à la prise en main, de premier
 niveau. Les dossiers **émergent du courrier** ; ils ne s'inventent pas devant un formulaire vide.
-Dans l'échange, Relvo liste, crée, déplace un dossier et range une affaire **à la demande du
-dirigeant**, par les fonctions de la Mémoire.
+Dans l'échange, Relvo liste, crée, déplace un dossier et range un sujet **à la demande du
+dirigeant**, par les fonctions de la page Dossiers.
 
 ### Label
 
-Une étiquette naît **candidate** quand Relvo la propose sur une affaire, devient **active** dès
-qu'une seconde affaire la porte, et n'est jamais supprimée : une étiquette sans affaire est simplement
+Une étiquette naît **candidate** quand Relvo la propose sur un sujet, devient **active** dès
+qu'un second sujet la porte, et n'est jamais supprimée : une étiquette sans sujet est simplement
 inutilisée. Relvo choisit dans le registre actif et ne propose au plus qu'une étiquette nouvelle
-par affaire. L'utilisateur ne la saisit jamais ; il filtre dessus.
+par sujet. L'utilisateur ne la saisit jamais ; il filtre dessus.
 
 ### RelvoQuestion
 
-Une question naît **ouverte** à la structuration d'une affaire, ou à une étape de la prise en
-main et du rattrapage, avec pour portée le contact, le dossier, l'affaire ou le compte qu'elle
+Une question naît **ouverte** à la structuration d'un sujet, ou à une étape de la prise en
+main et du rattrapage, avec pour portée le contact, le dossier, le sujet ou le compte qu'elle
 concerne. Elle devient **répondue** quand l'utilisateur y répond — sur la fiche, ou dans
 l'échange par le formulaire —, la réponse étant écrite dans la fiche, dans l'objet du compte ou
 dans une instruction, dans la même transaction ; ou **écartée** d'un geste. Tant qu'une question
@@ -504,7 +504,7 @@ vocabulaire de l'interface doit le refléter.
 
 | Geste | Ce qu'il fait vraiment |
 |---|---|
-| « Fermer » une affaire | pose un statut, réversible |
+| « Fermer » un sujet | pose un statut, réversible |
 | « Ignorer » une conversation | met la **source** en pause, réversible, sur les deux canaux — jamais « Supprimer », rien n'est détruit |
 | « Détacher » un fil e-mail | supprime une **liaison**, pas des messages |
 | Cocher une tâche | pose un état, réversible |
@@ -523,9 +523,9 @@ même migration.**
 ### Ce qui est outillé
 
 Multi-tenant par compte · triptyque d'acteurs · rangement déterministe en conversations ·
-ouverture d'affaire manuelle sur les deux canaux · écoutes et leurs bornes · tâches avec modèle de
+ouverture de sujet manuelle sur les deux canaux · écoutes et leurs bornes · tâches avec modèle de
 date riche, semainier et vue mois avec replanification par glissement · domaines regroupant
-affaires et connaissances · ingestion e-mail **et** messagerie · pièces jointes avec étiquetage
+sujets et connaissances · ingestion e-mail **et** messagerie · pièces jointes avec étiquetage
 automatique de premier niveau · échange avec Relvo action-capable et conscient de la page,
 **dicté** aussi bien que tapé — on maintient le micro, on relâche, la transcription part ·
 citations activées avec un affichage minimal · **administration** : un rôle d'administrateur,
@@ -535,13 +535,13 @@ définitive** — la seule destruction du produit, l'agrégateur déconnecté d'
 
 ### Ce qui reste manuel en V1
 
-**Le tri.** Aucune affaire ne s'ouvre toute seule : c'est l'utilisateur qui désigne ce qui mérite d'en
+**Le tri.** Aucun sujet ne s'ouvre toute seule : c'est l'utilisateur qui désigne ce qui mérite d'en
 devenir un. Le pipeline qui le fera à sa place est l'objet du prochain jalon majeur.
 
 ### Ce qui est reporté
 
 Page d'activité autonome · niveaux 2 et 3 d'analyse des pièces jointes · édition des instructions
-par Relvo · échange multi-appareils · affichage riche des citations · portée « affaire » pour un
+par Relvo · échange multi-appareils · affichage riche des citations · portée « sujet » pour un
 document de connaissance · affectation d'une tâche à un utilisateur · temps réel par WebSocket
 (V1 : rafraîchissement périodique) · facturation.
 
@@ -561,17 +561,17 @@ pour qu'on ne les fossilise pas : sans cette section, quelqu'un les lira comme d
 domaine et cherchera à les préserver.
 
 **1. L'écoute est la prothèse d'un objet manquant.** Là où l'objet existe, il n'y a rien à
-écouter. Là où il manque, l'écoute est indispensable — sans elle, ouvrir une affaire embarquerait
+écouter. Là où il manque, l'écoute est indispensable — sans elle, ouvrir un sujet embarquerait
 des mois de bavardage. L'échafaudage commence à tomber : sur un fil direct, c'est le **pipeline**
 qui pose l'écoute, ancrée au premier message de la salve qu'il a lue (`05-ia.md` §1.2) — le
 dirigeant ne désigne plus le message, Relvo le fait. Le jour où le pipeline saura découper un
 flux **par le sens**, il produira ce que l'objet d'e-mail donne gratuitement, et l'écoute
 **tombera** : sans migration, l'ancre étant déjà optionnelle.
 
-**2. « Au plus une affaire ouverte par conversation » est une règle métier, pas une contrainte de
+**2. « Au plus un sujet ouvert par conversation » est une règle métier, pas une contrainte de
 schéma.** La table de liaison est **déjà** plusieurs-à-plusieurs. Lever la règle ne demande
 aucune migration. ⚠️ Le jour où on la lèvera, il faudra **réinventer un signal plus fin** que le
-bandeau d'appartenance, qui suppose une seule affaire à la fois.
+bandeau d'appartenance, qui suppose un seul sujet à la fois.
 
 **3. L'appartenance vit sur le message, jamais sur la conversation.** C'est précisément ce qui
 rend l'échafaudage démontable : quand le pipeline décidera message par message, la règle
@@ -582,26 +582,26 @@ mécanique sera **remplacée**, pas complétée.
 Ils ne sont pas des oublis, et ils reviendront sur la table.
 
 **1. L'entrelacement dans une plage d'écoute n'est plus exprimable dans l'interface.** C'était
-l'argument fondateur du modèle : un fournisseur qui alterne deux affaires dans le même fil. **Le
+l'argument fondateur du modèle : un fournisseur qui alterne deux sujets dans le même fil. **Le
 modèle le permet toujours** — l'appartenance est décidée message par message — mais l'interface
-ne l'expose plus : dans une plage d'écoute, **tous** les messages appartiennent à l'affaire ; hors
+ne l'expose plus : dans une plage d'écoute, **tous** les messages appartiennent à le sujet ; hors
 plage, **aucun**.
 
-> **Arbitrage assumé.** Séparer des affaires entrelacées est exactement le travail du pipeline
-> IA. En attendant, **un peu de bruit dans une affaire vaut mieux qu'une interface que personne ne
+> **Arbitrage assumé.** Séparer des sujets entrelacés est exactement le travail du pipeline
+> IA. En attendant, **un peu de bruit dans un sujet vaut mieux qu'une interface que personne ne
 > comprend**. On ne construit pas une mécanique manuelle sophistiquée pour six mois en sachant
 > qu'une machine la remplacera.
 
 **2. Les écoutes passées deviennent invisibles côté conversation.** Rien, dans le fil lui-même,
-ne dit plus qu'une affaire y a été suivie puis close. C'est ce que rattrape le dépliant
-« N affaires passées » du bandeau d'appartenance — sans lui, cette mémoire n'existerait plus nulle
+ne dit plus qu'un sujet y a été suivie puis close. C'est ce que rattrape le dépliant
+« N sujets passés » du bandeau d'appartenance — sans lui, cette mémoire n'existerait plus nulle
 part.
 
 ---
 
 ## 14. La garde
 
-> ⚠️ **Le domaine reste commun aux deux canaux.** Ouverture d'affaire, écoute, arrêt d'écoute,
+> ⚠️ **Le domaine reste commun aux deux canaux.** Ouverture de sujet, écoute, arrêt d'écoute,
 > détachement, ignorance, statuts : une seule implémentation.
 >
 > Ce qui diverge par canal est le **rendu** et le **geste** — jamais la fonction appelée. Un

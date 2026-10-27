@@ -44,7 +44,7 @@ export function PreferencesToggles({
             Assistant Relvo
           </div>
           <div className="mt-0.5 text-[14px] leading-5 font-light text-gris">
-            Relvo lit les messages reçus, ouvre les affaires qui le méritent et
+            Relvo lit les messages reçus, ouvre les sujets qui le méritent et
             prépare le travail. Coupé, les messages arrivent quand même et vous
             triez à la main.
           </div>

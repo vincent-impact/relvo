@@ -50,7 +50,7 @@ export function SubjectPickerDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-4 p-5">
         <DialogHeader>
-          <DialogTitle>Rattacher à une affaire</DialogTitle>
+          <DialogTitle>Rattacher à un sujet</DialogTitle>
         </DialogHeader>
 
         <div className="flex items-center gap-2 rounded-xl border border-(--border-light) px-3.5 py-2.5">
@@ -62,7 +62,7 @@ export function SubjectPickerDialog({
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher une affaire…"
+            placeholder="Rechercher un sujet…"
             className="min-w-0 flex-1 border-none bg-transparent text-[14px] outline-none"
           />
         </div>
@@ -70,7 +70,7 @@ export function SubjectPickerDialog({
         <div className="-mx-1 max-h-[46vh] overflow-y-auto px-1">
           {filtered.length === 0 ? (
             <p className="py-6 text-center text-[13.5px] text-(--text-tertiary)">
-              Aucune affaire trouvée.
+              Aucun sujet trouvé.
             </p>
           ) : (
             <div className="flex flex-col">

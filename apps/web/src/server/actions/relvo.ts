@@ -19,7 +19,7 @@ import type { MailProvider } from "@/server/unipile/client";
 // Server Actions de l'ÉCHANGE avec Relvo : défaire un geste depuis son bloc
 // dans le fil (M10.10), répondre à une question de Relvo ou l'écarter (M18.9).
 // La logique vit dans le domaine ; ici la session, et le cache à invalider —
-// le badge du bouton, l'accueil, le Calendrier, les affaires.
+// le badge du bouton, l'accueil, le Calendrier, les sujets.
 
 export async function annulerGesteAction(annulation: Annulation) {
   const result = await domainAction((db) => defaireGeste(db, annulation));

@@ -11,7 +11,7 @@
 ## Projet
 
 Relvo transforme le flux désordonné de messages reçus par un dirigeant — e-mails, messagerie —
-en **affaires structurées** (« sujets » dans le code et la conception, **« affaires » pour l'utilisateur**), avec tâches, journal de bord et aide à la décision.
+en **sujets structurés** (« sujet » dans le code, la conception et pour l'utilisateur — un sujet se range dans un **dossier**), avec tâches, journal de bord et aide à la décision.
 
 **Public** : dirigeants des secteurs **food** et **bâtiment**. Peu familiers des SaaS
 bureautiques, à l'aise avec les assistants conversationnels.
@@ -117,7 +117,7 @@ relvo/
 
 > ⚠️ **Cette table décrit la cible** tranchée le 2026-09-20 (`ecarts`, « La disposition
 > générale »), livrée par l'épique **M18**. **En place** : le dock, le menu, le header, l'accueil
-> en brief, le Calendrier, le Bilan, la Mémoire, l'Usage, les redirections, le badge du bouton
+> en brief, le Calendrier, le Bilan, les Dossiers, l'Usage, les redirections, le badge du bouton
 > Relvo et la `RelvoQuestion` élargie (M10), la notification push — un abonnement par appareil
 > dans Préférences, le brief du matin et les questions nées hors écran (M12.7, M12.9). ⚠️ Le
 > **Bilan** et l'**Usage** affichent des **chiffres de démonstration** (`lib/demo-bilan.ts`) et
@@ -127,27 +127,27 @@ relvo/
 |---|---|---|
 | `/` | **Accueil** — brief en quatre zones : dernières nouvelles (header) · activité · aujourd'hui · en attente de vous | onglet |
 | `/calendrier` | **Calendrier** — la page des **tâches** : indicateurs, semaine ou mois | onglet |
-| `/fil` | **Affaires** — indicateurs cliquables qui **sélectionnent** la liste, filtres par dossier **et ses dossiers** (on descend puce après puce), « à trier » | onglet |
+| `/fil` | **Sujets** — indicateurs cliquables qui **sélectionnent** la liste, filtres par dossier **et ses dossiers** (on descend puce après puce), « à trier » | onglet |
 | `/conversations` · `/conversations/[id]` | **Conversations** — **seule surface d'affichage et de réponse** d'un fil | onglet |
-| `/relvo` · `/relvo/historique` | **Échange avec Relvo**, plein écran ; questions de Relvo en formulaires ; **la prise en main** (M13.2) : s'ouvre depuis la dernière diapositive, script en texte fixe — métier, dossiers, première règle, **la boîte en dernier** —, carte vivante de la lecture du courrier, affaires du moment ; **dictée** par le disque du composer (M22) — maintenir pour parler, relâcher envoie la transcription | **bouton central du dock** |
+| `/relvo` · `/relvo/historique` | **Échange avec Relvo**, plein écran ; questions de Relvo en formulaires ; **la prise en main** (M13.2) : s'ouvre depuis la dernière diapositive, script en texte fixe — métier, dossiers, première règle, **la boîte en dernier** —, carte vivante de la lecture du courrier, sujets du moment ; **dictée** par le disque du composer (M22) — maintenir pour parler, relâcher envoie la transcription | **bouton central du dock** |
 | `/bienvenue` | **Première connexion** — six diapositives à glisser, puis « Configurer Relvo » ouvre l'échange ; vues une fois (`welcome_seen_at`) | hors-nav |
 | `/bilan` | **Bilan** — deux familles de chiffres, séparées | menu |
-| `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Mémoire** — instructions du compte, puis les **dossiers en arbre** (M23 ; « dossier » partout pour l'utilisateur et dans les consignes, `Folder` dans le code) : la page liste le premier niveau, un dossier montre ses dossiers (créer dedans, `?dans=`), puis Instructions / Documents / Affaires (les siennes et celles de ses fils) ; le crayon renomme, **range dans** un autre père et supprime (le contenu remonte chez le père). La couleur d'une ligne, d'une tâche, du Calendrier est celle du **premier niveau** ; Relvo range et parle en **chemins** (« Clients › Franchises ») et l'échange liste, crée, déplace un dossier et range une affaire à la demande | menu |
+| `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Dossiers** (ex-Mémoire) — instructions du compte, puis les **dossiers en arbre** (M23 ; « dossier » partout pour l'utilisateur et dans les consignes, `Folder` dans le code) : la page liste le premier niveau, un dossier montre ses dossiers (créer dedans, `?dans=`), puis Instructions / Connaissances / Sujets (les siens et ceux de ses fils) ; le crayon renomme, **range dans** un autre père et supprime (le contenu remonte chez le père). La couleur d'une ligne, d'une tâche, du Calendrier est celle du **premier niveau** ; Relvo range et parle en **chemins** (« Clients › Franchises ») et l'échange liste, crée, déplace un dossier et range un sujet à la demande | menu |
 | `/contacts` · `/contacts/[id]` · `/contacts/nouveau` | **Contacts** — annuaire et fiche | menu |
 | `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros ; les **Préférences** portent l'assistant et les notifications de cet appareil. Il n'y a **pas** de page Réglages | menu |
 | `/recherche` | Recherche transverse | menu, en dernier |
-| `/sujets/[id]` · `/sujets/nouveau` | Fiche d'une affaire | hors-nav |
+| `/sujets/[id]` · `/sujets/nouveau` | Fiche d'un sujet | hors-nav |
 | `/admin` · `/admin/comptes/[id]` · `/admin/dictee` | **Backoffice** (M21) — rôle `admin` seulement : les comptes, les demandes à ouvrir, les gestes (assistant, test, suppression), l'**essai de dictée** (M22.1 : le micro en PWA, la mesure, le partage des enregistrements du benchmark) | entrée du menu pour les administrateurs ; retour à l'app par le pictogramme maison |
 | `/(auth)/*` | Tunnel d'authentification — l'inscription est libre, **l'accès s'ouvre quand un administrateur valide la demande** (`/inscription/attente`) | — |
 
 **Navigation** : barre d'onglets basse, fixe, violette, **cinq places** : Accueil · Calendrier ·
 **Relvo** (bouton central, disque violet qui déborde du dock des deux côtés, le dock se soulevant autour de lui, badge quand une question attend) ·
-Affaires · Conversations. Le **menu latéral** (burger, discret, à droite du header) porte Bilan, Mémoire, Contacts, Canaux, Profil,
+Sujets · Conversations. Le **menu latéral** (burger, discret, à droite du header) porte Bilan, Dossiers, Contacts, Canaux, Profil,
 Préférences, Usage, Rechercher. **Toute page du menu porte le burger** ; la flèche retour est
 réservée aux écrans poussés (fiches, création). Les boutons de page se posent **à droite**.
 
 ⚠️ **`/messages`, `/planning`, `/dossiers` et `/parametres` sont redirigées** (M18) — vers
-Conversations, Calendrier, Mémoire et les quatre pages du menu (`next.config.ts`).
+Conversations, Calendrier, Dossiers et les quatre pages du menu (`next.config.ts`).
 
 ## Invariants produit
 

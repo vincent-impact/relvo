@@ -37,7 +37,7 @@ import {
 // une seconde implémentation divergerait en une semaine. Une lecture par compte
 // et par fonction : c'est une page d'exploitation pour une poignée de comptes,
 // pas une page produit — on accepte des requêtes en nombre de comptes, jamais
-// en nombre d'affaires ou de messages.
+// en nombre de sujets ou de messages.
 
 /** Les deux fenêtres de coût affichées (jours). */
 export const ADMIN_COST_WINDOWS = { courte: 7, longue: 30 } as const;

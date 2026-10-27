@@ -86,7 +86,7 @@ export function SwipeableSubject({
     startTransition(async () => {
       const res = await validateSubjectAction(subjectId);
       if (!res.ok) return rollback(res.message);
-      toast.success("Affaire validée");
+      toast.success("Sujet validé");
       router.refresh();
     });
   }
@@ -113,11 +113,11 @@ export function SwipeableSubject({
       if (ignorable.length === 0) {
         // Aucune conversation encore active : rien à proposer (sujet créé à la
         // main, ou fil déjà ignoré) — on ne pose pas une question sans objet.
-        toast.success("Affaire fermée");
+        toast.success("Sujet fermé");
         return;
       }
       const plural = ignorable.length > 1;
-      toast.success("Affaire fermée", {
+      toast.success("Sujet fermé", {
         description: `Souhaitez-vous aussi ignorer ${plural ? "ces conversations" : "la conversation"} ?`,
         duration: 10000,
         action: {
@@ -297,7 +297,7 @@ export function SwipeableSubject({
               {openTasks} tâche{openTasks > 1 ? "s" : ""}
             </span>{" "}
             {openTasks > 1 ? "ne sont pas terminées" : "n'est pas terminée"} sur
-            cette affaire.{" "}
+            ce sujet.{" "}
             {confirm === "close"
               ? "La fermer les retirera de vos actions."
               : "La valider les retirera de vos actions."}

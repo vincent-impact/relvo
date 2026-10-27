@@ -17,7 +17,7 @@ import { revalidateTenantData } from "@/server/cached";
 function revalidateFolders() {
   revalidatePath("/memoire");
   revalidatePath("/memoire/[id]", "page");
-  // Le chemin d'un dossier s'écrit sur chaque ligne d'affaire : tout le
+  // Le chemin d'un dossier s'écrit sur chaque ligne de sujet : tout le
   // tenant se relit.
   revalidateTenantData();
 }

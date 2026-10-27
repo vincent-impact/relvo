@@ -116,25 +116,25 @@ export function ConversationTriageDialog({
           <DialogTitle>Classer cette conversation</DialogTitle>
           <DialogDescription>
             {isEmail
-              ? "Le fil entier rejoindra l’affaire."
-              : "Vous choisirez ensuite le message à partir duquel l’affaire écoute ce fil."}
+              ? "Le fil entier rejoindra le sujet."
+              : "Vous choisirez ensuite le message à partir duquel le sujet écoute ce fil."}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-2">
           <Choice
             icon={Plus}
-            label="Nouvelle affaire"
-            hint="Ouvrir une affaire sur cette conversation."
+            label="Nouveau sujet"
+            hint="Ouvrir un sujet sur cette conversation."
             onSelect={() => pick(onCreate)}
           />
           <Choice
             icon={LinkSimple}
-            label="Lier à une affaire existante"
+            label="Lier à un sujet existant"
             hint={
               hasSubjects
-                ? "Rattacher ce fil à une affaire déjà suivie."
-                : "Aucune affaire ouverte pour l'instant."
+                ? "Rattacher ce fil à un sujet déjà suivi."
+                : "Aucun sujet ouvert pour l'instant."
             }
             onSelect={() => pick(onLink)}
           />

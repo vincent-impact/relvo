@@ -12,7 +12,7 @@ export const BILAN_DEMO = {
   relvo: {
     mois: [
       { value: 412, label: "messages lus" },
-      { value: 23, label: "affaires ouvertes" },
+      { value: 23, label: "sujets ouverts" },
       { value: 57, label: "tâches créées" },
       { value: 19, label: "brouillons préparés" },
       { value: 31, label: "contacts reconnus" },
@@ -20,7 +20,7 @@ export const BILAN_DEMO = {
     ],
     tout: [
       { value: 1284, label: "messages lus" },
-      { value: 71, label: "affaires ouvertes" },
+      { value: 71, label: "sujets ouverts" },
       { value: 168, label: "tâches créées" },
       { value: 54, label: "brouillons préparés" },
       { value: 89, label: "contacts reconnus" },

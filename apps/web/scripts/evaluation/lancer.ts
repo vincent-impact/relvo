@@ -198,12 +198,12 @@ async function main() {
     const rattachements = resultats.filter(
       (r) => r.accordRattachement !== null,
     );
-    const affaires = resultats.filter((r) => r.accordDomaine !== null);
+    const sujets = resultats.filter((r) => r.accordDomaine !== null);
     const aConsiderer = resultats.filter(
       (r) => r.sortie?.action === "a_considerer",
     ).length;
     // Un rattachement que la vérité n'attendait pas : le fil aurait rejoint un
-    // sujet qui n'était pas la même affaire — à surveiller autant que l'inverse.
+    // sujet qui n'était pas le même sujet — à surveiller autant que l'inverse.
     const rattachementsIndus = resultats.filter((r) => {
       const c = cas.find((x) => x.id === r.cas)!;
       return !c.verite.rattache && (r.sortie?.sujet_existant ?? "").trim();
@@ -223,9 +223,9 @@ async function main() {
       ),
       "rattachements non attendus": `${rattachementsIndus}`,
       "à considérer": `${aConsiderer}`,
-      "domaines justes (sur affaires reconnues)": pct(
-        affaires.filter((r) => r.accordDomaine).length,
-        affaires.length,
+      "domaines justes (sur sujets reconnues)": pct(
+        sujets.filter((r) => r.accordDomaine).length,
+        sujets.length,
       ),
       erreurs: `${resultats.length - ok.length}`,
       "coût total": `${ok.reduce((s, r) => s + r.mesure!.cout.eur, 0).toFixed(5)} €`,

@@ -33,8 +33,8 @@ import {
 } from "../src/index";
 
 // Ce que l'échange avec Relvo LIT en base (M10) : le compte et le brief depuis
-// n'importe quelle page, la fiche de l'affaire ou du contact ouvert, et la
-// résolution d'une affaire désignée par sa référence ou son titre — jamais
+// n'importe quelle page, la fiche du sujet ou du contact ouvert, et la
+// résolution d'un sujet désigné par sa référence ou son titre — jamais
 // une approximation silencieuse.
 
 async function makeAccount(email: string) {
@@ -58,7 +58,7 @@ async function makeAccount(email: string) {
 }
 
 describe("projection de l'échange", () => {
-  it("hors d'une fiche : le compte, le brief calculé, ni affaire ni domaine", async () => {
+  it("hors d'une fiche : le compte, le brief calculé, ni sujet ni domaine", async () => {
     const { account, db } = await makeAccount("echange-brief@test.fr");
     const urgent = await createSubject(db, { title: "Panne four" });
     await updateSubjectPriority(db, urgent.id, "urgent");
@@ -83,7 +83,7 @@ describe("projection de l'échange", () => {
     expect(p.brief.tachesEnRetard).toBe(1);
   });
 
-  it("sur une affaire : sa fiche, son domaine, son contact ; sur un contact : sa fiche", async () => {
+  it("sur un sujet : sa fiche, son domaine, son contact ; sur un contact : sa fiche", async () => {
     const { account, db } = await makeAccount("echange-fiche@test.fr");
     const contact = await createContact(db, {
       firstName: "Karim",
@@ -117,7 +117,7 @@ describe("projection de l'échange", () => {
   });
 });
 
-describe("l'affaire que le dirigeant désigne", () => {
+describe("le sujet que le dirigeant désigne", () => {
   it("par sa référence, entière ou en numéro ; par son titre, les ouvertes d'abord ; sinon rien", async () => {
     const { db } = await makeAccount("echange-resolve@test.fr");
     const a = await createSubject(db, { title: "Devis isolation Narbonne" });
@@ -306,7 +306,7 @@ describe("la recherche de messages de l'échange", () => {
     expect(await searchMessages(db, { sens: "sortant" })).toHaveLength(0);
   });
 
-  it("se filtre par canal, par affaire et sur les non-lus", async () => {
+  it("se filtre par canal, par sujet et sur les non-lus", async () => {
     const { account, db } = await makeAccount("echange-canal@test.fr");
     const email = await prisma.channel.create({
       data: {
@@ -347,7 +347,7 @@ describe("la recherche de messages de l'échange", () => {
       (await searchMessages(db, { canal: "email" })).map((m) => m.extrait),
     ).toEqual(["Par e-mail."]);
 
-    // Les messages d'UNE affaire : ceux que sa fenêtre couvre.
+    // Les messages d'UNE sujet : ceux que sa fenêtre couvre.
     const sujet = await createSubject(db, { title: "Livraison Sogood" });
     await prisma.message.update({
       where: { id: mail.id },
@@ -494,10 +494,10 @@ describe("les tâches de l'échange, par critères", () => {
   });
 });
 
-describe("les affaires de l'échange, par critères", () => {
+describe("les sujets de l'échange, par critères", () => {
   it("par état, urgence, attente, domaine, contact, mots et jours de dernière activité", async () => {
     const { account, db, general } = await makeAccount(
-      "echange-affaires@test.fr",
+      "echange-sujets@test.fr",
     );
     const cuisine = await prisma.folder.create({
       data: {
@@ -686,7 +686,7 @@ describe("défaire un geste de l'échange (M10.10)", () => {
       await db.task.findFirst({ where: { title: "Rappeler le plombier" } }),
     ).not.toBeNull();
 
-    // L'état, la priorité, le résumé d'une affaire → remis comme avant.
+    // L'état, la priorité, le résumé d'un sujet → remis comme avant.
     await updateSubjectStatus(db, sujet.id, "validated");
     await defaireGeste(db, {
       type: "statut",
@@ -735,7 +735,7 @@ describe("défaire un geste de l'échange (M10.10)", () => {
       1,
     );
 
-    // Une affaire ouverte dans l'échange → retirée.
+    // Un sujet ouvert dans l'échange → retirée.
     const s2 = await createSubject(db, { title: "Ouverte par erreur" });
     await defaireGeste(db, { type: "affaire", id: s2.id, a });
     expect(await db.subject.findFirst({ where: { id: s2.id } })).toBeNull();

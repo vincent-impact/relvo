@@ -23,7 +23,7 @@ import { domainesTypiquesDe } from "./prise-en-main";
 
 // Domaine QUESTIONS DE RELVO (M18.9, livré par M10 — 02 RelvoQuestion, 05
 // §11.12) : l'objet par lequel Relvo parle en premier. Une question porte une
-// portée — un contact, un domaine, une affaire, ou le COMPTE pour une étape de
+// portée — un contact, un domaine, un sujet, ou le COMPTE pour une étape de
 // script —, un texte, des réponses proposées quand elle se pose en formulaire,
 // et sa destination : une réponse structurée modifie un objet du compte par la
 // même fonction que l'écran ; une réponse libre devient une INSTRUCTION, en
@@ -135,7 +135,7 @@ export type QuestionOutcome =
   | { kind: "lecture-etendue"; channelId: string; since: Date }
   /** Des domaines typiques cochés et créés. */
   | { kind: "folders"; names: string[] }
-  /** Un domaine proposé par le courrier, créé, et ses affaires rangées. */
+  /** Un domaine proposé par le courrier, créé, et ses sujets rangés. */
   | { kind: "folder-created"; name: string; reclassees: number }
   | { kind: "noted" };
 
@@ -266,7 +266,7 @@ async function appliquerDestination(
 
 /**
  * Une réponse libre devient une INSTRUCTION, en couche Compte ou Domaine
- * (05 §11.11) : le domaine de la portée, celui de l'affaire, sinon Général.
+ * (05 §11.11) : le domaine de la portée, celui du sujet, sinon Général.
  */
 async function instruireDepuisReponse(
   db: TenantDb,
@@ -592,8 +592,8 @@ export const SCRIPT_PRISE_EN_MAIN: readonly EtapeScript[] = [
     step: ETAPES.domainesTypiques,
     text: (c) =>
       c.sectors.some((s) => s !== "other")
-        ? "Je range vos affaires dans des dossiers, et vous pourrez y faire des dossiers. Dans votre métier, on trouve souvent ceux-ci. Lesquels gardez-vous ?"
-        : "Je range vos affaires dans des dossiers, et vous pourrez y faire des dossiers. Voici ceux qu'on retrouve dans la plupart des entreprises. Lesquels gardez-vous ?",
+        ? "Je range vos sujets dans des dossiers, et vous pourrez y faire des dossiers. Dans votre métier, on trouve souvent ceux-ci. Lesquels gardez-vous ?"
+        : "Je range vos sujets dans des dossiers, et vous pourrez y faire des dossiers. Voici ceux qu'on retrouve dans la plupart des entreprises. Lesquels gardez-vous ?",
     proposedAnswers: (c) => [
       ...domainesTypiquesDe(c.sectors).map((d) => ({
         key: d.key,
@@ -612,7 +612,7 @@ export const SCRIPT_PRISE_EN_MAIN: readonly EtapeScript[] = [
   },
   {
     step: ETAPES.premiereInstruction,
-    text: "Y a-t-il une règle que je dois toujours suivre ? Par exemple « Crée automatiquement une affaire urgente quand un client demande la réalisation d'un devis ».",
+    text: "Y a-t-il une règle que je dois toujours suivre ? Par exemple « Crée automatiquement un sujet urgent quand un client demande la réalisation d'un devis ».",
     proposedAnswers: [{ key: CLE_AUTRE, label: "Je vous l'écris…" }],
     applicable: (c) => c.instructionsGenerales === 0,
   },
@@ -622,7 +622,7 @@ export const SCRIPT_PRISE_EN_MAIN: readonly EtapeScript[] = [
     // la connexion (`resolveMailboxStep`), pas au clic — revenir en arrière la
     // laisse ouverte, et elle se repose.
     step: ETAPES.premiereBoite,
-    text: "Maintenant, confiez-moi la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des deux dernières semaines et j'ouvre vos premières affaires. Laquelle ?",
+    text: "Maintenant, confiez-moi la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des deux dernières semaines et j'ouvre vos premiers sujets. Laquelle ?",
     proposedAnswers: [...BOITES_PROPOSEES],
     applicable: (c) => c.boitesEmail === 0,
   },
@@ -733,7 +733,7 @@ export async function resolveMailboxStep(
 
 /**
  * Les DOMAINES PROPOSÉS PAR LE COURRIER (M17.10) : une question par
- * proposition que plusieurs affaires partagent — posée par la lecture après
+ * proposition que plusieurs sujets partagent — posée par la lecture après
  * chaque salve, et à l'ouverture de l'échange pour celles du fil de l'eau.
  * Idempotente : une proposition ouverte, répondue ou écartée ne revient pas.
  * Rend le nombre de questions posées.
@@ -752,7 +752,7 @@ export async function ensureFolderProposalQuestions(
     if (deja) continue;
     await askQuestion(db, {
       scope: QuestionScope.account,
-      text: `Plusieurs affaires parlent de « ${p.name} » (${p.count}). J'en fais un dossier et je les y range ?`,
+      text: `Plusieurs sujets parlent de « ${p.name} » (${p.count}). J'en fais un dossier et je les y range ?`,
       proposedAnswers: [
         { key: "oui", label: "Oui, créez-le" },
         {
@@ -775,7 +775,7 @@ function compte(n: number, un: string, plusieurs: string): string {
 
 /**
  * La FIN DE LECTURE du courrier (05 §11.11) : quand une ligne de rattrapage se
- * clôt avec au moins une affaire ouverte, Relvo le dit et demande si ça
+ * clôt avec au moins un sujet ouvert, Relvo le dit et demande si ça
  * ressemble à l'activité du dirigeant — c'est cette question qui porte le
  * badge et la notification (invariant 36). Une par lecture ; rien pour une
  * lecture vide. Rend la question, ou null.
@@ -790,7 +790,7 @@ export async function poserFinDeLecture(
 ) {
   if (lecture.subjectsOpened < 1) return null;
   const compteurs = [
-    compte(lecture.subjectsOpened, "affaire ouverte", "affaires ouvertes"),
+    compte(lecture.subjectsOpened, "sujet ouvert", "sujets ouverts"),
     ...(lecture.conversationsIgnored > 0
       ? [
           compte(

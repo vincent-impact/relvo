@@ -62,7 +62,7 @@ const brief: BriefCompte = {
   sujetsOuverts: 12,
   sujetsUrgents: Array.from({ length: 8 }, (_, i) => ({
     reference: `SUB-${String(i + 1).padStart(4, "0")}`,
-    titre: `Affaire urgente numéro ${i + 1} avec un titre de longueur ordinaire`,
+    titre: `Sujet urgent numéro ${i + 1} avec un titre de longueur ordinaire`,
   })),
   tachesDuJour: 3,
   tachesEnRetard: 2,
@@ -309,7 +309,7 @@ describe("les arguments d'un outil deviennent une entrée du domaine", () => {
       depuis: null,
     });
     expect(bornesPeriode("sans_date", now).sansDate).toBe(true);
-    expect(bornesPeriode("affaire", now)).toEqual(bornesPeriode(null, now));
+    expect(bornesPeriode("sujet", now)).toEqual(bornesPeriode(null, now));
     // « Lundi prochain » : des jours explicites, qui l'emportent sur la période.
     expect(
       bornesPeriode("semaine", now, {
@@ -331,7 +331,7 @@ describe("les arguments d'un outil deviennent une entrée du domaine", () => {
     expect(titreTaches(null, null)).toBe("Tâches");
   });
 
-  it("la page d'origine désigne l'affaire ou le contact ouvert, et rien d'autre", () => {
+  it("la page d'origine désigne le sujet ou le contact ouvert, et rien d'autre", () => {
     const id = "0f5a2d5e-7c3b-4a1e-9b2d-1c2d3e4f5a6b";
     expect(lirePage(`/sujets/${id}`)).toEqual({
       page: `/sujets/${id}`,
@@ -543,11 +543,11 @@ describe("le tier par tour (M10.11) — des règles écrites, jamais un appel de
     for (const q of [
       "Qu'est-ce qui est urgent aujourd'hui ?",
       "Combien de tâches en retard ?",
-      "Quelles affaires attendent une réponse ?",
+      "Quelles sujets attendent une réponse ?",
       "Qui est Karim Benali ?",
       "Où en est la rupture de sauce blanche ?",
       "Mes tâches de la semaine",
-      "Montre-moi les affaires ouvertes",
+      "Montre-moi les sujets ouverts",
       "Retrouve le mail de la DDPP",
     ]) {
       expect(tierDuTour(q), q).toBe("extraction");
@@ -558,12 +558,12 @@ describe("le tier par tour (M10.11) — des règles écrites, jamais un appel de
       "Crée-moi une tâche : rappeler le plombier lundi",
       "Pose un rendez-vous avec Karim demain à 10h",
       "Prépare une réponse à Karim pour relancer",
-      "Résume-moi cette affaire",
-      "Marque cette affaire comme réglée",
+      "Résume-moi ce sujet",
+      "Marque ce sujet comme réglée",
       "Retiens que les devis au-dessus de 5000 € passent par moi",
       "Qu'est-ce qui est urgent ? Et qu'est-ce que je dois faire en premier ?",
       "Si la livraison n'arrive pas jeudi, qu'est-ce que je fais ?",
-      "Quelles sont les affaires ouvertes dont le dernier message date de plus d'une semaine et qui n'ont aucune tâche planifiée pour les dix prochains jours ?",
+      "Quelles sont les sujets ouverts dont le dernier message date de plus d'une semaine et qui n'ont aucune tâche planifiée pour les dix prochains jours ?",
       "",
     ]) {
       expect(tierDuTour(q), q || "(vide)").toBe("raisonnement");

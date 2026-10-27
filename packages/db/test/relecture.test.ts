@@ -305,7 +305,7 @@ describe("écriture de la relecture", () => {
     )!;
     expect(relu.actor).toBe(Actor.ai);
     expect(relu.messageId).toBe(message.id);
-    expect(relu.title).toBe("Relvo a relu l'affaire : 1 tâche en plus");
+    expect(relu.title).toBe("Relvo a relu le sujet : 1 tâche en plus");
     expect(relu.description).toBe("Le fournisseur confirme la livraison.");
     expect(relu.metadata).toMatchObject({
       proposal,
@@ -462,7 +462,7 @@ describe("écriture de la relecture", () => {
     const relu = await db.eventLog.findFirstOrThrow({
       where: { eventType: EVENT_TYPES.subjectReviewed },
     });
-    expect(relu.title).toBe("Relvo a relu l'affaire : 1 retirée");
+    expect(relu.title).toBe("Relvo a relu le sujet : 1 retirée");
     expect(relu.metadata).toMatchObject({ retiredTaskIds: r.retiredTaskIds });
   });
 
@@ -529,7 +529,7 @@ describe("écriture de la relecture", () => {
     const relu = await db.eventLog.findFirstOrThrow({
       where: { eventType: EVENT_TYPES.subjectReviewed },
     });
-    expect(relu.title).toBe("Relvo a relu l'affaire : 1 cochée");
+    expect(relu.title).toBe("Relvo a relu le sujet : 1 cochée");
     expect(relu.metadata).toMatchObject({ completedTaskIds: [duDirigeant.id] });
   });
 
@@ -558,7 +558,7 @@ describe("écriture de la relecture", () => {
         reason: null,
         proposal: null,
       }),
-    ).rejects.toThrow(/affaire ouverte/);
+    ).rejects.toThrow(/sujet ouvert/);
   });
 
   it("une relecture par message : l'idempotence se lit dans le journal des sollicitations, et l'échec se journalise sans rien écrire", async () => {

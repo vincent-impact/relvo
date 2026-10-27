@@ -31,7 +31,7 @@ export function estimerJetons(texte: string): number {
 // Le socle a grossi d'un bloc délibéré : la nature de l'avis, le cadre du
 // message reçu (l'expéditeur est un tiers) et la règle du rattachement — ce
 // qui a corrigé les premiers avis réels. Puis du mot du dirigeant (M23.6) :
-// « affaire » et « dossier », et le rangement par chemin. Chaque jeton du
+// « dossier », et le rangement par chemin. Chaque jeton du
 // socle est payé par tous les comptes : on ne relève ce budget qu'avec un
 // motif de cette taille.
 export const BUDGET_PRODUIT = {

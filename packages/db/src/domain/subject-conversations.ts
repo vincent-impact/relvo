@@ -276,7 +276,7 @@ export async function attachConversationToSubject(
 
   const subject = assertFound(
     await db.subject.findFirst({ where: { id: data.subjectId } }),
-    "Affaire",
+    "Sujet",
   );
   const conversation = assertFound(
     await db.conversation.findFirst({ where: { id: data.conversationId } }),
@@ -344,7 +344,7 @@ export async function attachEmailConversationToSubject(
  * tout l'aval. Symétrique de `attachEmailConversationToSubject`, mais avec une
  * borne de départ (le WhatsApp n'a pas d'objet, il faut dire où l'écoute commence).
  * C'est aussi la fonction par laquelle le tri (M7, tranche 11) rattache un fil
- * direct à l'affaire qu'il prolonge : même geste, acteur Relvo.
+ * direct à le sujet qu'il prolonge : même geste, acteur Relvo.
  */
 export async function attachConversationToSubjectFromMessage(
   db: TenantDb,
@@ -383,7 +383,7 @@ export async function detachConversationFromSubject(
       where: { subjectId, conversationId },
       include: { conversation: { select: { title: true } } },
     }),
-    "Conversation de l'affaire",
+    "Conversation du sujet",
   );
   return db.$transaction(async (tx) => {
     await tx.subjectConversation.deleteMany({ where: { id: link.id } });
@@ -534,7 +534,7 @@ export type ExtendSubjectInput = z.infer<typeof extendSubjectSchema>;
 
 /**
  * Étend un sujet à une seconde conversation (cas S) — « parti d'un fil WhatsApp,
- * j'écris par email au fournisseur pour la même affaire ».
+ * j'écris par email au fournisseur pour le même sujet ».
  *
  * ⚠️ MÊME GESTE CÔTÉ INTERFACE, DEUX MÉCANIQUES DESSOUS. C'est l'asymétrie
  * structurante du modèle, et c'est ici qu'elle est absorbée :
@@ -567,7 +567,7 @@ export async function extendSubjectToConversation(
 
   const subject = assertFound(
     await db.subject.findFirst({ where: { id: data.subjectId } }),
-    "Affaire",
+    "Sujet",
   );
   // Étendre une fenêtre FIGÉE n'a pas de sens : les messages postérieurs à
   // `closedAt` n'appartiennent plus au sujet, la conversation rattachée
@@ -575,7 +575,7 @@ export async function extendSubjectToConversation(
   if (subject.status !== SubjectStatus.open) {
     throw new DomainError(
       "INVALID_STATE",
-      "Seule une affaire ouverte peut être étendue à une nouvelle conversation.",
+      "Seule un sujet ouvert peut être étendue à une nouvelle conversation.",
     );
   }
 

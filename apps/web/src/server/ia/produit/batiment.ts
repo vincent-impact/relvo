@@ -44,7 +44,7 @@ Exemple 6 — aucune tâche inventée.
 Message : un fournisseur confirme qu'une commande a été expédiée, avec le numéro de suivi.
 Décision : rien à faire, automatique, rattaché au sujet de la commande s'il existe. Tu ne crées pas « vérifier la livraison » : rien dans le message ne le demande.
 
-Exemple 7 — affaire déjà suivie.
+Exemple 7 — sujet déjà suivi.
 Message : le syndic écrit au sujet des infiltrations du 3e étage, alors qu'un sujet ouvert porte déjà ce sinistre avec l'assureur.
 Décision : à traiter, professionnel, rattaché au sujet existant.
 

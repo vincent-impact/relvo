@@ -99,7 +99,7 @@ describe("décision du tri", () => {
     });
     // Frontière relevée à « haute » : moyenne ne suffit plus.
     expect(
-      deciderTri({ ...aTraiter, confiance: "moyenne" }, { affaire: "haute" }),
+      deciderTri({ ...aTraiter, confiance: "moyenne" }, { sujet: "haute" }),
     ).toEqual({ type: "avis-seul", motif: "sous-la-frontiere" });
   });
 

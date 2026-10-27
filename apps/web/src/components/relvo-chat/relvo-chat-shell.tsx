@@ -63,13 +63,13 @@ export function RelvoChatShell({
   reprendre = null,
   questions = [],
   lecture = null,
-  affaires = [],
+  sujets = [],
   clePublique = null,
 }: {
   backHref: string;
   /** La page d'origine, transmise à chaque tour. */
   from: string | null;
-  /** Libellé de la puce page-aware (le titre d'une affaire, « Affaires »), ou null. */
+  /** Libellé de la puce page-aware (le titre d'un sujet, « Sujets »), ou null. */
   contextLabel: string | null;
   prompts: string[];
   /** Premier tour proposé (une suggestion de l'accueil) : pré-rempli, jamais envoyé seul. */
@@ -82,8 +82,8 @@ export function RelvoChatShell({
   questions?: OpenQuestion[];
   /** La lecture du courrier en cours, ou null. */
   lecture?: CarteVivanteData | null;
-  /** Les affaires nées de cette lecture, sous la carte. */
-  affaires?: SubjectRowData[];
+  /** Les sujets nés de cette lecture, sous la carte. */
+  sujets?: SubjectRowData[];
   /** La clé publique VAPID : l'invitation à activer les notifications, quand les questions sont traitées. */
   clePublique?: string | null;
 }) {
@@ -138,7 +138,7 @@ export function RelvoChatShell({
       initialText={initialText}
       questions={questions}
       lecture={lecture}
-      affaires={affaires}
+      sujets={sujets}
       clePublique={clePublique}
     />
   );
@@ -153,7 +153,7 @@ function RelvoSession({
   initialText,
   questions,
   lecture,
-  affaires,
+  sujets,
   clePublique,
 }: {
   initial: Initial;
@@ -164,7 +164,7 @@ function RelvoSession({
   initialText: string;
   questions: OpenQuestion[];
   lecture: CarteVivanteData | null;
-  affaires: SubjectRowData[];
+  sujets: SubjectRowData[];
   clePublique: string | null;
 }) {
   // Une invite touchée se pose dans le composer : le composant repart avec
@@ -289,7 +289,7 @@ function RelvoSession({
 
         {lecture ? (
           <>
-            <PriseEnMain lecture={lecture} affaires={affaires} />
+            <PriseEnMain lecture={lecture} sujets={sujets} />
             {lecture.status === "pending" || lecture.status === "running" ? (
               <PollRefresh intervalMs={20_000} />
             ) : null}

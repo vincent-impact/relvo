@@ -416,7 +416,7 @@ describe("la fin de lecture (M13.2, 05 §11.11)", () => {
       conversationsIgnored: 14,
     });
     expect(q?.text).toBe(
-      "J'ai fini de lire votre courrier : 6 affaires ouvertes, 14 messages mis de côté. Est-ce que ça ressemble à votre activité ?",
+      "J'ai fini de lire votre courrier : 6 sujets ouverts, 14 messages mis de côté. Est-ce que ça ressemble à votre activité ?",
     );
     expect(q?.originStep).toBe(`${ETAPES.finDeLecture}/${catchup.id}`);
     const encore = await poserFinDeLecture(db, {
@@ -435,13 +435,13 @@ describe("la fin de lecture (M13.2, 05 §11.11)", () => {
     expect(
       ouverte?.proposedAnswers.find((p) => p.key === "manque")?.libre,
     ).toBe(true);
-    // Une seule affaire, aucun message mis de côté : le singulier, sans virgule.
+    // Un seul sujet, aucun message mis de côté : le singulier, sans virgule.
     const q1 = await poserFinDeLecture(db, {
       id: "00000000-0000-4000-8000-000000000001",
       subjectsOpened: 1,
       conversationsIgnored: 0,
     });
-    expect(q1?.text).toContain(": 1 affaire ouverte. Est-ce");
+    expect(q1?.text).toContain(": 1 sujet ouvert. Est-ce");
   });
 
   it("« Oui » est noté ; « Il en manque » devient une instruction de Général ; « deux semaines de plus » demande la lecture suivante sur le même canal", async () => {

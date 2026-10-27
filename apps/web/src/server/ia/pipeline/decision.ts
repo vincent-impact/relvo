@@ -69,11 +69,11 @@ export type DecisionTri =
 /** Ce que le pipeline fait de la sortie — rien d'autre n'est jamais écrit. */
 export function deciderTri(
   sortie: SortieTri,
-  frontieres: { affaire?: Confiance; ignorance?: Confiance } = {},
+  frontieres: { sujet?: Confiance; ignorance?: Confiance } = {},
 ): DecisionTri {
-  const affaire = frontieres.affaire ?? FRONTIERE_CONFIANCE;
+  const sujet = frontieres.sujet ?? FRONTIERE_CONFIANCE;
   const ignorance = frontieres.ignorance ?? FRONTIERE_IGNORANCE;
-  const assezSur = RANG[sortie.confiance] >= RANG[affaire];
+  const assezSur = RANG[sortie.confiance] >= RANG[sujet];
   const personnel = sortie.nature === "personnel";
   const rattachable =
     sortie.nature === "professionnel" || sortie.nature === "automatique";

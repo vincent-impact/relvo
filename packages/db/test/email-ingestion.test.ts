@@ -273,11 +273,11 @@ describe("normalizeSubjectLine", () => {
 
 // Un e-mail envoyé DEPUIS UN CLIENT DE MESSAGERIE (M7, suite de la tranche 11) :
 // l'agrégateur le rejoue en `mail_sent`. Il entre comme un envoi — même
-// conversation, l'affaire qui l'écoute, la tâche de réponse cochée — ; l'écho
+// conversation, le sujet qui l'écoute, la tâche de réponse cochée — ; l'écho
 // d'un envoi depuis Relvo, en base sous sa référence de suivi, ne se duplique
 // jamais ; un e-mail que le dirigeant écrit le premier ouvre sa conversation.
 describe("ingestOutboundEmail — l'e-mail envoyé depuis un client de messagerie", () => {
-  it("rejoint la conversation du fil et l'affaire qui l'écoute, et coche la tâche de réponse", async () => {
+  it("rejoint la conversation du fil et le sujet qui l'écoute, et coche la tâche de réponse", async () => {
     const { channel, db } = await makeAccountWithChannel("out@test.fr");
     const { message: entrant } = await ingestInboundEmail(db, {
       channelId: channel.id,

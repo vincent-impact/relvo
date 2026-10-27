@@ -54,9 +54,9 @@ export function ResetDemoButton() {
         <AlertDialogHeader>
           <AlertDialogTitle>Repartir de données neuves ?</AlertDialogTitle>
           <AlertDialogDescription>
-            Toutes tes modifications sur le compte démo (affaires traitées,
-            tâches cochées, messages…) seront effacées et remplacées par le jeu
-            de démonstration Tasty Crousty d’origine. Action irréversible.
+            Toutes tes modifications sur le compte démo (sujets traités, tâches
+            cochées, messages…) seront effacées et remplacées par le jeu de
+            démonstration Tasty Crousty d’origine. Action irréversible.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

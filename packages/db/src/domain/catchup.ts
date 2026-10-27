@@ -445,7 +445,7 @@ export async function finishCatchup(
         : outcome.status === "capped"
           ? "Rattrapage arrêté au plafond"
           : "Rattrapage interrompu",
-    description: `${updated.messagesImported} message${updated.messagesImported > 1 ? "s" : ""} lu${updated.messagesImported > 1 ? "s" : ""}, ${updated.subjectsOpened} affaire${updated.subjectsOpened > 1 ? "s" : ""} ouverte${updated.subjectsOpened > 1 ? "s" : ""}, ${updated.conversationsIgnored} mise${updated.conversationsIgnored > 1 ? "s" : ""} en sourdine · ${updated.costEur.toFixed(4)} €`,
+    description: `${updated.messagesImported} message${updated.messagesImported > 1 ? "s" : ""} lu${updated.messagesImported > 1 ? "s" : ""}, ${updated.subjectsOpened} sujet${updated.subjectsOpened > 1 ? "s" : ""} ouvert${updated.subjectsOpened > 1 ? "s" : ""}, ${updated.conversationsIgnored} mise${updated.conversationsIgnored > 1 ? "s" : ""} en sourdine · ${updated.costEur.toFixed(4)} €`,
     actor: Actor.ai,
     metadata: {
       channelId: updated.channelId,

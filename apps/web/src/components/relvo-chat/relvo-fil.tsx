@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
 // Un tour du dirigeant est la bulle sortante des conversations ; un tour de
 // Relvo est UN bloc de Relvo, dans lequel le texte arrive en flux et où chaque
 // outil appelé se rend en BLOC : d'abord « je regarde… », puis le résultat avec
-// les composants des écrans — une affaire est une ligne d'affaire, une tâche
+// les composants des écrans — un sujet est une ligne de sujet, une tâche
 // une ligne de tâche (01 §11 « Relvo rend les mêmes composants que
 // l'interface », invariant 31). Jamais une liste à puces pour ce que le produit
 // sait rendre. Une action faite est une phrase signée ✦ avec [Voir] et
@@ -42,7 +42,7 @@ import { cn } from "@/lib/utils";
 // que l'écran (`defaireGeste`), et reste actif quelques minutes — au-delà, le
 // geste se défait par les écrans habituels.
 //
-// Une affaire ou une tâche citée dans un bloc de Relvo est une SOUS-CARTE à
+// Un sujet ou une tâche citée dans un bloc de Relvo est une SOUS-CARTE à
 // filet, sans ombre (02-composants : une carte ne contient pas une carte).
 
 type Part = UIMessagePart<never, OutilsRelvoUI>;
@@ -91,7 +91,7 @@ function SousCarte({ children }: { children: React.ReactNode }) {
 }
 
 const EN_COURS: Record<keyof OutilsRelvoUI, string> = {
-  list_subjects: "Je regarde vos affaires",
+  list_subjects: "Je regarde vos sujets",
   get_subject: "Je lis la fiche",
   list_tasks: "Je regarde vos tâches",
   get_kpis: "Je compte",
@@ -105,15 +105,15 @@ const EN_COURS: Record<keyof OutilsRelvoUI, string> = {
   update_task: "Je modifie la tâche",
   mark_task_done: "Je coche la tâche",
   mark_task_deleted: "Je retire la tâche",
-  create_subject: "J'ouvre l'affaire",
-  update_subject_status: "Je change l'état de l'affaire",
+  create_subject: "J'ouvre le sujet",
+  update_subject_status: "Je change l'état du sujet",
   update_subject_priority: "Je change la priorité",
   update_subject_summary: "Je récris le résumé",
   create_message_draft: "Je prépare le brouillon",
   list_folders: "Je regarde vos dossiers",
   create_folder: "Je crée le dossier",
   move_folder: "Je range le dossier",
-  move_subject: "Je range l'affaire",
+  move_subject: "Je range le sujet",
   create_knowledge_note: "J'écris l'instruction",
   update_knowledge_note: "Je modifie l'instruction",
   delete_knowledge_note: "Je retire l'instruction",
@@ -317,11 +317,11 @@ function Dossiers({ dossiers }: { dossiers: DossierLigne[] }) {
   );
 }
 
-function Affaires({ affaires }: { affaires: SubjectRowData[] }) {
-  if (affaires.length === 0) return null;
+function Sujets({ sujets }: { sujets: SubjectRowData[] }) {
+  if (sujets.length === 0) return null;
   return (
     <SousCarte>
-      {affaires.map((a) => (
+      {sujets.map((a) => (
         <SubjectRow key={a.id} data={a} />
       ))}
     </SousCarte>
@@ -333,7 +333,7 @@ function Taches({
   flat = true,
 }: {
   taches: TaskItemData[];
-  /** false : les tâches d'UNE affaire déjà montrée — son titre ne se répète pas sous chaque ligne. */
+  /** false : les tâches d'UN sujet déjà montré — son titre ne se répète pas sous chaque ligne. */
   flat?: boolean;
 }) {
   if (taches.length === 0) return null;
@@ -349,13 +349,11 @@ function Taches({
 function Sortie({ sortie }: { sortie: SortieOutil }) {
   switch (sortie.type) {
     case "affaires":
-      return sortie.affaires.length ? (
-        <Affaires affaires={sortie.affaires} />
-      ) : null;
+      return sortie.sujets.length ? <Sujets sujets={sortie.sujets} /> : null;
     case "affaire":
       return (
         <>
-          <Affaires affaires={[sortie.affaire]} />
+          <Sujets sujets={[sortie.sujet]} />
           <Taches taches={sortie.taches} flat={false} />
         </>
       );
@@ -424,7 +422,7 @@ function Sortie({ sortie }: { sortie: SortieOutil }) {
       return (
         <>
           <Sortie sortie={{ type: "contacts", contacts: [sortie.contact] }} />
-          <Affaires affaires={sortie.affaires} />
+          <Sujets sujets={sortie.sujets} />
         </>
       );
     case "messages":
@@ -447,7 +445,7 @@ function Sortie({ sortie }: { sortie: SortieOutil }) {
           }
           voir={{
             href: `/memoire/${sortie.folderId}`,
-            label: "Voir dans la Mémoire",
+            label: "Voir dans les Dossiers",
           }}
           annulation={sortie.annulation}
         />
@@ -501,14 +499,14 @@ function Sortie({ sortie }: { sortie: SortieOutil }) {
         <BlocAction
           phrase={
             <>
-              J’ai ouvert l’affaire{" "}
-              <span className="font-medium">« {sortie.affaire.title} »</span>.
+              J’ai ouvert le sujet{" "}
+              <span className="font-medium">« {sortie.sujet.title} »</span>.
             </>
           }
-          voir={{ href: `/sujets/${sortie.affaire.id}`, label: "Voir" }}
+          voir={{ href: `/sujets/${sortie.sujet.id}`, label: "Voir" }}
           annulation={sortie.annulation}
         >
-          <Affaires affaires={[sortie.affaire]} />
+          <Sujets sujets={[sortie.sujet]} />
         </BlocAction>
       );
     case "affaire-modifiee":
@@ -516,14 +514,14 @@ function Sortie({ sortie }: { sortie: SortieOutil }) {
         <BlocAction
           phrase={
             <>
-              <span className="font-medium">« {sortie.affaire.title} »</span> :{" "}
+              <span className="font-medium">« {sortie.sujet.title} »</span> :{" "}
               {sortie.geste}.
             </>
           }
-          voir={{ href: `/sujets/${sortie.affaire.id}`, label: "Voir" }}
+          voir={{ href: `/sujets/${sortie.sujet.id}`, label: "Voir" }}
           annulation={sortie.annulation}
         >
-          <Affaires affaires={[sortie.affaire]} />
+          <Sujets sujets={[sortie.sujet]} />
         </BlocAction>
       );
     case "brouillon":
@@ -566,7 +564,7 @@ function Sortie({ sortie }: { sortie: SortieOutil }) {
           }
           voir={{
             href: `/memoire/${sortie.folderId}`,
-            label: "Voir dans la Mémoire",
+            label: "Voir dans les Dossiers",
           }}
           annulation={sortie.annulation}
         />

@@ -150,7 +150,7 @@ export async function getDraftProjection(
     "Tâche",
   );
   if (!task.subjectId) {
-    throw new DomainError("VALIDATION", "Cette tâche n'a pas d'affaire.");
+    throw new DomainError("VALIDATION", "Cette tâche n'a pas de sujet.");
   }
   if (task.status !== TaskStatus.open) {
     throw new DomainError("INVALID_STATE", "Cette tâche n'est plus ouverte.");

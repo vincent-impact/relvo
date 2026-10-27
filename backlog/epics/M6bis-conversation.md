@@ -6,7 +6,7 @@ titre_client: Regroupement en conversations
 resume_client: >
   Ranger chaque message dans le bon fil dès sa réception, sans jamais se tromper — par objet pour
   un e-mail, par interlocuteur pour WhatsApp. C'est ce rangement qui permet ensuite d'ouvrir une
-  affaire d'un seul geste.
+  sujet d'un seul geste.
 statut: termine
 debut: 2026-07-20
 fin: 2026-07-29

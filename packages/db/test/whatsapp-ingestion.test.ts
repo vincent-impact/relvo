@@ -278,12 +278,12 @@ describe("sujet issu d'un groupe WhatsApp (1 groupe = 1 sujet, invariant n°12)"
 });
 
 // M7 tranche 11 — une réponse envoyée DEPUIS LE TÉLÉPHONE du dirigeant entre
-// dans Relvo comme un envoi : même conversation directe, rattachée à l'affaire
+// dans Relvo comme un envoi : même conversation directe, rattachée à le sujet
 // qui l'écoute, la tâche de réponse cochée par correspondance ; nos propres
 // envois (déjà en base sous le même identifiant) ne sont jamais dupliqués ;
 // un fil inconnu n'est pas inventé.
 describe("ingestOutboundWhatsApp — la réponse envoyée depuis le téléphone", () => {
-  it("rejoint la conversation directe et l'affaire qui l'écoute, et coche la tâche de réponse", async () => {
+  it("rejoint la conversation directe et le sujet qui l'écoute, et coche la tâche de réponse", async () => {
     const { channel, db } = await makeAccountWithChannel("wa-out@test.fr");
     const { message: entrant } = await ingestInboundWhatsApp(db, {
       channelId: channel.id,
@@ -314,7 +314,7 @@ describe("ingestOutboundWhatsApp — la réponse envoyée depuis le téléphone"
     // Une seule conversation directe, pas une seconde « où l'on se parle tout seul ».
     expect(await db.conversation.count()).toBe(1);
     // La tâche de réponse est cochée par correspondance (05 §4.1), et
-    // l'affaire attend la réponse.
+    // le sujet attend la réponse.
     const t = await db.task.findFirstOrThrow({ where: { id: tache.id } });
     expect(t.status).toBe("done");
     const s = await db.subject.findFirstOrThrow({ where: { id: subject.id } });

@@ -42,9 +42,9 @@ function Signe() {
   return <RelvoLogo size={96} variant="mark" className="text-white" />;
 }
 
-// Un e-mail qui devient une affaire, et l'affaire ses tâches : la
+// Un e-mail qui devient un sujet, et le sujet ses tâches : la
 // transformation que Relvo opère, montrée avec les pièces du produit — la
-// ligne d'un message, la carte d'une affaire avec sa bande et sa pastille, des
+// ligne d'un message, la carte d'un sujet avec sa bande et sa pastille, des
 // tâches à cocher — reliées par des flèches.
 function Fleche({ branches = 1 }: { branches?: 1 | 3 }) {
   const w = 280;
@@ -147,7 +147,7 @@ function Memoire() {
         <span className="grid size-9 flex-none place-items-center rounded-full bg-(--fond-puce)">
           <Brain className="size-[18px]" />
         </span>
-        <span className="flex-1 text-[15px] font-normal">Mémoire</span>
+        <span className="flex-1 text-[15px] font-normal">Dossiers</span>
         <span className="text-[12px] font-normal text-gris">
           3 instructions
         </span>
@@ -167,7 +167,7 @@ function Brief() {
   return (
     <RelvoBlock className="w-[280px] text-left">
       <RelvoSentence>
-        Depuis votre dernière visite, j’ai lu 12 messages et ouvert 2 affaires.
+        Depuis votre dernière visite, j’ai lu 12 messages et ouvert 2 sujets.
       </RelvoSentence>
       <span className="mt-0.5 block py-1.5 pl-[1.1em] -indent-[1.1em] text-[14px] leading-[18px] font-medium text-relvo">
         → Le devis de la chambre froide attend votre décision.
@@ -232,13 +232,13 @@ export function Diapositives({ firstName }: { firstName: string }) {
     {
       key: "signe",
       title: <>Bonjour {firstName}.</>,
-      text: "Je suis Relvo. Je fais le tri dans vos messages et je vous avertis quand une affaire mérite votre attention.",
+      text: "Je suis Relvo. Je fais le tri dans vos messages et je vous avertis quand un sujet mérite votre attention.",
       Illustration: Signe,
     },
     {
       key: "extraction",
       title: "Je prends les devants.",
-      text: "Un devis, une relance, un litige, un retard annoncé… Je vous indique les affaires chaudes du moment et j’organise votre agenda.",
+      text: "Un devis, une relance, un litige, un retard annoncé… Je vous indique les sujets chaudes du moment et j’organise votre agenda.",
       Illustration: Extraction,
     },
     {
@@ -256,7 +256,7 @@ export function Diapositives({ firstName }: { firstName: string }) {
     {
       key: "disque",
       title: "Le disque au centre, c’est moi !",
-      text: "Posez-moi toutes vos questions sur les affaires en cours ou les urgences du moment : j’y réponds.",
+      text: "Posez-moi toutes vos questions sur les sujets en cours ou les urgences du moment : j’y réponds.",
       Illustration: Disque,
     },
     {

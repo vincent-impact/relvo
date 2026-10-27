@@ -217,7 +217,7 @@ describe("extendSubjectToConversation (cas S)", () => {
       ).id,
       externalId: "mail-y",
       senderRaw: "compta@sogood.fr",
-      subjectLine: "Autre affaire",
+      subjectLine: "Autre sujet",
       content: "…",
     });
     const subjectB = await createSubjectFromMessage(db, mail.message.id);
@@ -334,7 +334,7 @@ describe("attachConversationToSubject", () => {
     const other = await db.subject.create({
       data: {
         reference: "SUB-90001",
-        title: "Autre affaire",
+        title: "Autre sujet",
         createdByActor: "user",
       },
     });

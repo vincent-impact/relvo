@@ -201,7 +201,7 @@ export const SortieRelecture = z.object({
   priorite: z.enum(PRIORITES),
   /** Le sujet attend un tiers — livraison promise, devis annoncé, retour attendu — sans action du dirigeant (`05 §5.3`). */
   en_attente: z.boolean(),
-  /** L'affaire semble terminée : confirmation reçue, plus rien à faire, situation close naturellement (`05 §5.5`). */
+  /** Le sujet semble terminé : confirmation reçue, plus rien à faire, situation close naturellement (`05 §5.5`). */
   termine: z.boolean(),
   /** Tâches OUVERTES de la fiche que ce message rend sans objet (`05 §4.2`) — titre EXACT de la fiche, et pourquoi. Vide sinon. */
   taches_obsoletes: z.array(

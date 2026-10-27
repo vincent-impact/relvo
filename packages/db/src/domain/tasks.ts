@@ -163,7 +163,7 @@ export async function createTask(
     if (data.subjectId) {
       assertFound(
         await tx.subject.findFirst({ where: { id: data.subjectId } }),
-        "Affaire",
+        "Sujet",
       );
     }
     const task = await tx.task.create({
@@ -221,7 +221,7 @@ export async function updateTask(
     if (data.subjectId) {
       assertFound(
         await tx.subject.findFirst({ where: { id: data.subjectId } }),
-        "Affaire",
+        "Sujet",
       );
     }
     const { count } = await tx.task.updateMany({

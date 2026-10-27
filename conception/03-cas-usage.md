@@ -18,26 +18,26 @@ Karim écrit sur WhatsApp : *« Bonjour, la sauce blanche est en rupture chez no
 fournisseur. »*
 
 **Ce que voit l'utilisateur.** Rien d'urgent. Le message est rangé dans la conversation « Karim
-Benali », qui remonte en tête de la liste, avec une pastille de non-lu. Aucune affaire n'existe
+Benali », qui remonte en tête de la liste, avec une pastille de non-lu. Aucun sujet n'existe
 encore.
 
 **Ce qui pourrait le surprendre.** Rien ne s'est passé. C'est délibéré : le produit ne devine pas
-qu'une affaire commence, et il ne fabrique pas un dossier pour chaque bonjour. Le rangement est
+qu'un sujet commence, et il ne fabrique pas un dossier pour chaque bonjour. Le rangement est
 mécanique, l'interprétation viendra de lui — ou, plus tard, du pipeline.
 
 ---
 
-## Cas B — Il décide que ça mérite une affaire
+## Cas B — Il décide que ça mérite un sujet
 
 C'est **le geste fondateur du produit en V1**, et il porte à un endroit différent selon le canal.
 
 ### B1 — Sur une messagerie : le geste porte sur LE MESSAGE
 
 L'utilisateur ouvre la conversation de Karim, remonte au message de la rupture — pas au dernier,
-à **celui qui lance l'affaire** — et le fait glisser vers la droite.
+à **celui qui lance le sujet** — et le fait glisser vers la droite.
 
-Une affaire s'ouvre : « Remplacement sauce blanche ». À partir de ce message, tout ce que Karim
-écrira dans ce fil alimentera l'affaire.
+Un sujet s'ouvre : « Remplacement sauce blanche ». À partir de ce message, tout ce que Karim
+écrira dans ce fil alimentera le sujet.
 
 **Ce qu'il fait à la main.** Il choisit le message. C'est tout le travail, et c'est un travail
 qu'il fait naturellement : il sait où l'histoire commence.
@@ -45,41 +45,41 @@ qu'il fait naturellement : il sait où l'histoire commence.
 ### B2 — Sur un e-mail : le geste porte sur LA CONVERSATION
 
 Six e-mails ont déjà été échangés sur « Contrat maintenance climatisation ». L'utilisateur fait
-glisser **la ligne de la conversation** vers la droite et choisit d'ouvrir une affaire.
+glisser **la ligne de la conversation** vers la droite et choisit d'ouvrir un sujet.
 
-L'affaire porte les **six** messages, pas seulement le dernier.
+Le sujet porte les **six** messages, pas seulement le dernier.
 
-**Ce qui le surprendrait — et qu'il faut éviter.** Qu'une affaire ouverte sur un échange déjà nourri
-n'en récupère que la dernière ligne. Il ouvre une affaire *parce que* l'échange a une histoire ; la
+**Ce qui le surprendrait — et qu'il faut éviter.** Qu'un sujet ouvert sur un échange déjà nourri
+n'en récupère que la dernière ligne. Il ouvre un sujet *parce que* l'échange a une histoire ; la
 lui amputer serait absurde.
 
 **Pourquoi il n'y a pas de geste équivalent sur une ligne de conversation de messagerie.** Le
-proposer reviendrait à demander « veux-tu faire de ce groupe une affaire ? » — or un groupe n'est
-jamais une affaire, c'est un collectif qui en charrie plusieurs.
+proposer reviendrait à demander « veux-tu faire de ce groupe un sujet ? » — or un groupe n'est
+jamais un sujet, c'est un collectif qui en charrie plusieurs.
 
 ---
 
-## Cas C — Un message arrive pendant que l'affaire est ouverte
+## Cas C — Un message arrive pendant que le sujet est ouvert
 
 Karim précise : *« Je peux te proposer une sauce algérienne en substitution. »*
 
-Le message rejoint l'affaire tout seul. L'utilisateur ne fait rien.
+Le message rejoint le sujet tout seul. L'utilisateur ne fait rien.
 
 ---
 
-## Cas D — Deux affaires entrelacées dans le même fil
+## Cas D — Deux sujets entrelacés dans le même fil
 
 Karim alterne, dans la même conversation : la sauce blanche, puis la facture des emballages, puis
 de nouveau la sauce.
 
-**Ce qui se passe en V1.** L'affaire « Remplacement sauce blanche » récupère **tout** ce qui passe
+**Ce qui se passe en V1.** Le sujet « Remplacement sauce blanche » récupère **tout** ce qui passe
 dans la plage écoutée — y compris les messages sur la facture. Il y a du bruit.
 
-**Ce que peut faire l'utilisateur.** Arrêter l'écoute, ouvrir une seconde affaire à partir du message
+**Ce que peut faire l'utilisateur.** Arrêter l'écoute, ouvrir un second sujet à partir du message
 sur la facture, ou simplement vivre avec.
 
-**Pourquoi ce renoncement est assumé.** Séparer des affaires entrelacées est exactement le
-travail du pipeline IA. En attendant, **un peu de bruit dans une affaire vaut mieux qu'une interface
+**Pourquoi ce renoncement est assumé.** Séparer des sujets entrelacés est exactement le
+travail du pipeline IA. En attendant, **un peu de bruit dans un sujet vaut mieux qu'une interface
 que personne ne comprend** — et on ne construit pas une mécanique manuelle sophistiquée pour six
 mois en sachant qu'une machine la remplacera.
 
@@ -93,7 +93,7 @@ mois en sachant qu'une machine la remplacera.
 
 Le comptable écrit : *« La TVA du trimestre a bien été déclarée. »*
 
-Une affaire peut s'ouvrir — l'utilisateur veut garder la trace — mais **aucune tâche n'est
+Un sujet peut s'ouvrir — l'utilisateur veut garder la trace — mais **aucune tâche n'est
 proposée**. Relvo ne fabrique pas de travail pour justifier sa présence.
 
 **Ce qui le surprendrait.** Une tâche « Prendre connaissance de la déclaration ». C'est le genre
@@ -129,9 +129,9 @@ n'a pas été envoyé.
 ## Cas H — L'utilisateur envoie
 
 Il modifie le brouillon et envoie. Le message part depuis **sa vraie adresse** et atterrit dans
-ses envoyés ; il rejoint la conversation et l'affaire ; la tâche de réponse se coche toute seule.
+ses envoyés ; il rejoint la conversation et le sujet ; la tâche de réponse se coche toute seule.
 S'il répond plutôt depuis WhatsApp sur son téléphone, ou depuis Gmail, c'est pareil : la réponse
-rejoint la conversation et l'affaire, et Relvo la lit comme s'il l'avait envoyée depuis
+rejoint la conversation et le sujet, et Relvo la lit comme s'il l'avait envoyée depuis
 l'application — ce qu'il a décidé est acquis, le rendez-vous qu'il propose est dans son
 calendrier.
 
@@ -142,26 +142,26 @@ inconnue de son interlocuteur.
 
 ## Cas I — Il attend un retour
 
-Une fois la réponse partie, l'affaire passe « En attente ». Ce n'est pas un statut : elle est
+Une fois la réponse partie, le sujet passe « En attente ». Ce n'est pas un statut : elle est
 toujours ouverte, c'est simplement une information utile quand on parcourt sa liste.
 
 ---
 
 ## Cas J — Le tiers répond
 
-Le marqueur « En attente » tombe, l'affaire remonte, une pastille de non-lu apparaît sur la
+Le marqueur « En attente » tombe, le sujet remonte, une pastille de non-lu apparaît sur la
 conversation.
 
 ---
 
 ## Cas K — Il valide
 
-Le travail est fait. L'utilisateur fait glisser l'affaire vers la droite.
+Le travail est fait. L'utilisateur fait glisser le sujet vers la droite.
 
 Relvo propose alors : « Souhaitez-vous aussi ignorer la conversation ? »
 
 **Pourquoi cette question.** Sur une messagerie, valider suffit à faire taire le fil. Sur un
-e-mail, non : le fil rouvrira l'affaire au prochain message (cas W). Ignorer la conversation est
+e-mail, non : le fil rouvrira le sujet au prochain message (cas W). Ignorer la conversation est
 **le seul geste qui fasse taire un fil e-mail**, et l'utilisateur n'a aucune raison de le savoir
 — d'où la proposition, au moment exact où elle est utile.
 
@@ -173,14 +173,14 @@ L'archivage automatique après inactivité n'existe plus. La lettre n'est pas r�
 
 ---
 
-## Cas M — Rattacher un fil à une affaire qui existe déjà
+## Cas M — Rattacher un fil à un sujet qui existe déjà
 
 Le fournisseur répond, mais en changeant l'objet : « Re: Devis substitution » au lieu de
 « Rupture sauce blanche ». Une nouvelle conversation apparaît, orpheline.
 
-L'utilisateur la fait glisser vers la droite et choisit **« Rattacher à une affaire existante »**.
+L'utilisateur la fait glisser vers la droite et choisit **« Rattacher à un sujet existant »**.
 
-**Ce que ça résout.** Sans ce geste, un changement d'objet couperait l'affaire en deux dossiers,
+**Ce que ça résout.** Sans ce geste, un changement d'objet couperait le sujet en deux dossiers,
 et il n'y aurait aucun moyen de les recoller.
 
 ---
@@ -200,8 +200,8 @@ dessus reste.
 de parler ; on « supprime » un e-mail traité, parce que c'est le geste attendu de toute boîte
 mail. Le mot juste n'est pas le même ; l'effet, si.
 
-**Ce qui arrive avant, si le fil est suivi.** Une confirmation qui **nomme l'affaire concernée**.
-Jamais « une ou plusieurs affaires » : une confirmation qui n'apporte pas l'information qu'elle
+**Ce qui arrive avant, si le fil est suivi.** Une confirmation qui **nomme le sujet concerné**.
+Jamais « une ou plusieurs sujets » : une confirmation qui n'apporte pas l'information qu'elle
 réclame de valider se clique sans être lue.
 
 ---
@@ -215,7 +215,7 @@ réattribuée.
 
 ## Cas P — Compléter une fiche contact
 
-Une affaire s'ouvre sur un expéditeur inconnu : le contact est créé automatiquement, avec ce qu'on a
+Un sujet s'ouvre sur un expéditeur inconnu : le contact est créé automatiquement, avec ce qu'on a
 pu déduire — souvent un nom et une adresse. Il apparaît « à compléter » dans l'annuaire.
 
 L'utilisateur y ajoute l'entreprise, un second numéro, l'adresse professionnelle. À partir de là,
@@ -223,15 +223,15 @@ L'utilisateur y ajoute l'entreprise, un second numéro, l'adresse professionnell
 
 ---
 
-## Cas Q — Fermer une affaire
+## Cas Q — Fermer un sujet
 
-L'affaire n'avait pas lieu d'être, ou elle n'intéresse plus. Glissement vers la gauche.
+Le sujet n'avait pas lieu d'être, ou elle n'intéresse plus. Glissement vers la gauche.
 
-L'affaire sort de la vue. Elle n'est **pas** détruite, elle n'est **jamais** purgée, et elle se retrouve
-dans les affaires fermées.
+Le sujet sort de la vue. Elle n'est **pas** détruite, elle n'est **jamais** purgée, et elle se retrouve
+dans les sujets fermés.
 
 **Pourquoi le vocabulaire compte ici plus qu'ailleurs.** Un message supprimé par erreur existe
-encore dans Gmail. Une **tâche** supprimée par erreur n'existe **nulle part ailleurs** — une affaire
+encore dans Gmail. Une **tâche** supprimée par erreur n'existe **nulle part ailleurs** — un sujet
 est le seul endroit où vivent les tâches et les décisions.
 
 ---
@@ -246,73 +246,73 @@ pose jamais de borne de fin : sinon le bouton serait décoratif.
 
 ---
 
-## Cas S — Étendre une affaire à un second canal
+## Cas S — Étendre un sujet à un second canal
 
-L'affaire a commencé sur WhatsApp. L'utilisateur veut envoyer un e-mail formel au même
+Le sujet a commencé sur WhatsApp. L'utilisateur veut envoyer un e-mail formel au même
 fournisseur, sur le même dossier.
 
-Depuis la fiche de l'affaire, il ajoute une conversation et écrit son e-mail : l'objet est
-pré-rempli avec le titre de l'affaire.
+Depuis la fiche du sujet, il ajoute une conversation et écrit son e-mail : l'objet est
+pré-rempli avec le titre du sujet.
 
-L'affaire porte maintenant **deux** conversations — une écoute d'un côté, un fil entier de
+Le sujet porte maintenant **deux** conversations — une écoute d'un côté, un fil entier de
 l'autre. **C'est ici, et nulle part ailleurs, que se fait la réunification entre canaux.**
 
 ---
 
 ## Cas T — Remonter une écoute
 
-L'utilisateur se rend compte que l'affaire avait commencé trois messages plus haut. Il fait
+L'utilisateur se rend compte que le sujet avait commencé trois messages plus haut. Il fait
 glisser **ce message-là** vers la droite.
 
-L'écoute remonte jusqu'à lui ; les messages traversés entrent dans l'affaire.
+L'écoute remonte jusqu'à lui ; les messages traversés entrent dans le sujet.
 
 **Pourquoi c'est le même geste que l'ouverture.** Il n'a qu'une intention à exprimer,
-« l'affaire commence ici », et elle ne change pas selon qu'une affaire existe déjà ou non. Une règle
+« le sujet commence ici », et elle ne change pas selon qu'un sujet existe déjà ou non. Une règle
 au lieu de deux, et aucun dispositif de rattrapage à apprendre.
 
 ---
 
-## Cas U — Reprendre la main sur les fils d'une affaire
+## Cas U — Reprendre la main sur les fils d'un sujet
 
-Depuis la fiche de l'affaire, l'utilisateur voit la **liste** de ses conversations : icône du canal,
+Depuis la fiche du sujet, l'utilisateur voit la **liste** de ses conversations : icône du canal,
 objet ou nom, extrait du dernier message, non-lus.
 
 Il clique une ligne : la conversation s'ouvre dans son écran, **la seule surface où l'on lit et
-où l'on répond**. Le bandeau d'en-tête rappelle dans quelle affaire ce fil est suivi, et c'est là
+où l'on répond**. Le bandeau d'en-tête rappelle dans quel sujet ce fil est suivi, et c'est là
 qu'il peut le détacher, ou arrêter de l'écouter.
 
-**Ce qui a été délibérément retiré.** Le fil ne s'affiche plus *dans* la fiche de l'affaire. Deux
+**Ce qui a été délibérément retiré.** Le fil ne s'affiche plus *dans* la fiche du sujet. Deux
 endroits pour lire un même échange, c'est deux rendus à maintenir et deux occasions de diverger.
 
 ---
 
-## Cas V — Remettre une affaire fermée
+## Cas V — Remettre un sujet fermé
 
-L'utilisateur retrouve l'affaire dans les fermées et la remet.
+L'utilisateur retrouve le sujet dans les fermées et la remet.
 
 **Ce qui ne se produit pas — et c'est important.** L'écoute ne redémarre pas toute seule. Une
-affaire de messagerie remise après trois semaines **avalerait d'un bloc** tout ce que le fil a
+sujet de messagerie remise après trois semaines **avalerait d'un bloc** tout ce que le fil a
 charrié entre-temps.
 
-« Remettre » dit *je reprends cette affaire*, pas *rattrape tout ce que j'ai manqué*. Pour
+« Remettre » dit *je reprends ce sujet*, pas *rattrape tout ce que j'ai manqué*. Pour
 reprendre l'écoute, l'utilisateur désigne le message où il veut repartir — le geste du cas B1.
 
 ---
 
-## Cas W — Un e-mail arrive sur une affaire déjà validée
+## Cas W — Un e-mail arrive sur un sujet déjà validé
 
 Trois jours après avoir validé « Remplacement sauce blanche », Karim relance par e-mail sur le
 même fil.
 
-**L'affaire rouvre**, et elle remonte dans la liste.
+**Le sujet rouvre**, et elle remonte dans la liste.
 
 **Pourquoi c'est la bonne règle, concrètement.** L'alternative serait que le message se range en
-silence dans une affaire validée — et l'utilisateur raterait exactement le message qu'il ne fallait
+silence dans un sujet validé — et l'utilisateur raterait exactement le message qu'il ne fallait
 pas rater. Le statut dit ce qu'il *croyait* en le posant ; le message entrant dit ce qui *est*.
 Quand les deux se contredisent, c'est le message qui a raison.
 
 **Ce que ce cas n'est pas.** Ce n'est pas vrai sur une messagerie : là, la conversation n'est pas
-l'affaire mais un flux qui charrie des affaires successives. Un message arrivé après l'arrêt
+le sujet mais un flux qui charrie des sujets successifs. Un message arrivé après l'arrêt
 d'une écoute ne parle pas forcément de la même chose.
 
 ---
@@ -321,9 +321,9 @@ d'une écoute ne parle pas forcément de la même chose.
 
 Deux situations qui se ressemblent, et que l'utilisateur vit de façon opposée.
 
-**Sophie répond « à nous seuls »** sur une affaire envoyée à Karim et Sophie. Elle est déjà
-connue de l'affaire. Une nouvelle conversation apparaît — le cercle des destinataires a changé — et
-elle est **rangée automatiquement dans la même affaire**. L'utilisateur ne fait rien et ne remarque
+**Sophie répond « à nous seuls »** sur un sujet envoyé à Karim et Sophie. Elle est déjà
+connue du sujet. Une nouvelle conversation apparaît — le cercle des destinataires a changé — et
+elle est **rangée automatiquement dans le même sujet**. L'utilisateur ne fait rien et ne remarque
 rien.
 
 **Karim répond depuis une adresse jamais vue.** La conversation tombe **orpheline**.
@@ -343,15 +343,15 @@ Il vient d'installer Relvo. Depuis la page Canaux du menu, il connecte sa boîte
 et revient dans l'application.
 
 **Ce que voit l'utilisateur.** Relvo lui parle, dans l'échange : « Je lis votre courrier des
-dernières semaines. » Une carte s'y met à jour — messages trouvés, messages lus, affaires
+dernières semaines. » Une carte s'y met à jour — messages trouvés, messages lus, sujets
 ouvertes. Pendant ce temps, Relvo lui demande ses secteurs, puis lui explique en deux phrases ce
-qu'il appelle une affaire. Les premières affaires apparaissent sous la carte, comme partout ailleurs.
-Quand plusieurs affaires se ressemblent, Relvo propose des dossiers à cocher, tirés de son
+qu'il appelle un sujet. Les premiers sujets apparaissent sous la carte, comme partout ailleurs.
+Quand plusieurs sujets se ressemblent, Relvo propose des dossiers à cocher, tirés de son
 courrier, et lui demande s'il a une consigne pour l'un d'eux. Il répond, ou il passe. À la fin,
 Relvo dit ce qu'il a lu, ouvert et mis en sourdine, et lui propose d'entrer.
 
 **Ce qui pourrait le surprendre.** Relvo n'a pas fini quand lui a fini : une ligne discrète le
-dit, l'application est déjà utilisable, et les affaires continuent d'arriver. Ou bien Relvo n'a
+dit, l'application est déjà utilisable, et les sujets continuent d'arriver. Ou bien Relvo n'a
 encore rien trouvé, parce que le fournisseur livre le courrier à son rythme : il le dit, et
 n'insiste pas. Rien ne l'a empêché d'entrer, à aucun moment ; s'il ferme l'application au milieu,
 Relvo reprend l'échange où il en était. Le même échange, plus court, revient quand il connecte un
@@ -367,5 +367,5 @@ autre canal.
 - **Il ne tape pas sur un message pour ouvrir un menu.** Le tap ouvre une pièce jointe, et rien
   d'autre. Un geste qui fait deux choses selon l'endroit exact où le doigt tombe est un geste
   qu'on n'ose plus faire.
-- **Il ne valide pas les suggestions de Relvo.** Ouvrir l'affaire suffit.
+- **Il ne valide pas les suggestions de Relvo.** Ouvrir le sujet suffit.
 - **Il ne supprime rien.** Aucun geste courant du produit ne détruit de données.

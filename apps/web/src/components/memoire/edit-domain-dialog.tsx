@@ -57,7 +57,7 @@ export function EditDomainButton({
   targets: MoveTarget[];
   /** Où aller une fois le domaine supprimé : la fiche du père, ou la Mémoire. */
   afterDelete: string;
-  /** Le père est Général : les affaires redeviennent « sans domaine ». */
+  /** Le père est Général : les sujets redeviennent « sans domaine ». */
   rootDelete: boolean;
 }) {
   const router = useRouter();
@@ -200,8 +200,8 @@ export function EditDomainButton({
         title={`Supprimer « ${initialName} » ?`}
         description={
           rootDelete
-            ? `Ses dossiers, instructions et documents remontent dans ${parentLabel}. Ses affaires restent, sans dossier. Rien n’est perdu.`
-            : `Ses dossiers, instructions, documents et affaires remontent dans « ${parentLabel} ». Rien n’est perdu.`
+            ? `Ses dossiers, instructions et documents remontent dans ${parentLabel}. Ses sujets restent, sans dossier. Rien n’est perdu.`
+            : `Ses dossiers, instructions, documents et sujets remontent dans « ${parentLabel} ». Rien n’est perdu.`
         }
         confirmLabel="Supprimer"
         tone="destructive"

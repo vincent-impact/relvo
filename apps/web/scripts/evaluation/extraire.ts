@@ -183,9 +183,9 @@ async function main() {
     resolve(dossier, "cas.jsonl"),
     cas.map((x) => JSON.stringify(x)).join("\n") + "\n",
   );
-  const affaires = cas.filter((x) => x.verite.action === "a_traiter").length;
+  const sujets = cas.filter((x) => x.verite.action === "a_traiter").length;
   console.log(
-    `${cas.length} cas écrits dans ${dossier} — ${affaires} à traiter, ${cas.length - affaires} rien à faire, ${domaines.length} domaines, ${sujetsOuverts.length} sujets ouverts.`,
+    `${cas.length} cas écrits dans ${dossier} — ${sujets} à traiter, ${cas.length - sujets} rien à faire, ${domaines.length} domaines, ${sujetsOuverts.length} sujets ouverts.`,
   );
   console.log(
     "⚠️ Relire le fichier avant de le commiter : les noms de personnes ne sont pas anonymisés automatiquement.",

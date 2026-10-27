@@ -310,7 +310,7 @@ export function ConversationDetail({
             conversationId,
           });
       if (res.ok) {
-        toast.success(isEmail ? "Fil détaché de l’affaire" : "Écoute arrêtée");
+        toast.success(isEmail ? "Fil détaché du sujet" : "Écoute arrêtée");
         router.refresh();
       } else {
         toast.error(res.message);
@@ -389,7 +389,7 @@ export function ConversationDetail({
     claimed.current = true;
     router.replace(`/conversations/${conversationId}`, { scroll: false });
     if (initialIntent === "link" && subjects.length === 0) {
-      toast.info("Aucune affaire ouverte où rattacher cette conversation.");
+      toast.info("Aucun sujet ouvert où rattacher cette conversation.");
     }
   }, [initialIntent, conversationId, router, subjects.length]);
 
@@ -419,7 +419,7 @@ export function ConversationDetail({
           : await createSubjectFromConversationAction(conversationId, input);
       if (res.ok) {
         setShowCreate(false);
-        toast.success("Affaire créée");
+        toast.success("Sujet créé");
         goToSubject(res.data.id);
       } else {
         toast.error(res.message);
@@ -442,7 +442,7 @@ export function ConversationDetail({
             });
       if (res.ok) {
         setShowPicker(false);
-        toast.success("Rattaché à l’affaire");
+        toast.success("Rattaché à le sujet");
         goToSubject(res.data.subjectId);
       } else {
         toast.error(res.message);
@@ -694,7 +694,7 @@ export function ConversationDetail({
                           onClick={() => setUnlinkTarget(l)}
                           aria-label={
                             isEmail
-                              ? "Détacher ce fil de l’affaire"
+                              ? "Détacher ce fil du sujet"
                               : "Arrêter l'écoute"
                           }
                           // 28 px de dessin, 44 px de frappe.
@@ -721,13 +721,13 @@ export function ConversationDetail({
                 <AlertDialogHeader>
                   <AlertDialogTitle>
                     {isEmail
-                      ? "Détacher ce fil de l’affaire ?"
+                      ? "Détacher ce fil du sujet ?"
                       : "Arrêter l'écoute ?"}
                   </AlertDialogTitle>
                   <AlertDialogDescription>
                     {isEmail ? (
                       <>
-                        L’affaire{" "}
+                        Le sujet{" "}
                         <span className="font-semibold text-(--text-primary)">
                           « {unlinkTarget?.title} »
                         </span>{" "}
@@ -736,7 +736,7 @@ export function ConversationDetail({
                       </>
                     ) : (
                       <>
-                        L’affaire{" "}
+                        Le sujet{" "}
                         <span className="font-semibold text-(--text-primary)">
                           « {unlinkTarget?.title} »
                         </span>{" "}

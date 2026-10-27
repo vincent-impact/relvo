@@ -106,7 +106,7 @@ describe("getMorningCounters", () => {
     await askQuestion(db, {
       scope: "subject",
       subjectId: sauce.id,
-      text: "Le devis, même affaire ?",
+      text: "Le devis, même sujet ?",
     });
 
     expect(await getMorningCounters(db, now)).toEqual({

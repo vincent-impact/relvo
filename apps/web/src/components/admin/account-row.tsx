@@ -8,7 +8,7 @@ import { depuis, eur, pluriel } from "./format";
 
 // Une ligne de la liste des comptes (M21.2) — dans UNE carte, un filet entre
 // les lignes (ListPanel). Le nom, l'adresse, l'état en un mot, et les chiffres
-// qui décident : coût 7 j / 30 j, affaires ouvertes, canaux, dernière activité.
+// qui décident : coût 7 j / 30 j, sujets ouverts, canaux, dernière activité.
 // Un compte en attente porte son bouton d'ouverture ici même : c'est le geste
 // du jour J, il ne mérite pas un écran de plus.
 
@@ -73,9 +73,7 @@ export function AccountRow({
                   {eur(compte.coutEurLong)}
                   <span className="text-gris"> / 30 j</span>
                 </span>
-                <span>
-                  {pluriel(compte.openSubjects, "affaire", "affaires")}
-                </span>
+                <span>{pluriel(compte.openSubjects, "sujet", "sujets")}</span>
                 <span>
                   {compte.channels.length === 0
                     ? "aucun canal"

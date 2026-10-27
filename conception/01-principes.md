@@ -9,16 +9,16 @@
 
 ---
 
-## 1. Le produit ne pilote pas des messages, il pilote des affaires
+## 1. Le produit ne pilote pas des messages, il pilote des sujets
 
-Le cœur de Relvo n'est ni la boîte mail ni la messagerie. C'est l'**Affaire** (`Subject`).
+Le cœur de Relvo n'est ni la boîte mail ni la messagerie. C'est l'**Sujet** (`Subject`).
 
-Une affaire rassemble en un seul endroit les messages, les pièces jointes, les tâches et les
+Un sujet rassemble en un seul endroit les messages, les pièces jointes, les tâches et les
 événements liés à une **situation métier en cours de traitement**. C'est l'intention fondatrice
 du projet : transformer un flux désordonné de sollicitations en dossiers clairs et suivis.
 
 Le message, lui, n'est ni l'unité de pilotage ni l'unité de regroupement : il **alimente** une
-conversation, et c'est depuis une conversation que s'ouvre une affaire. La mécanique complète — le
+conversation, et c'est depuis une conversation que s'ouvre un sujet. La mécanique complète — le
 rangement déterministe, l'écoute, les bornes — fait foi dans `04-design-domaine.md`.
 
 ## 2. À qui s'adresse Relvo
@@ -49,7 +49,7 @@ comme surface d'action, ou est-ce que ça ajoute un écran de plus à apprendre 
 C'est aussi ce qui explique une décision qui surprend : **la liste des conversations n'est pas la
 surface principale du produit.** Exposer en permanence tous les fils reviendrait à réafficher une
 boîte de réception que le dirigeant a déjà dans sa messagerie — on lui *ajouterait* du travail au
-lieu de lui en retirer. La charge mentale doit rester sur les **affaires**, pas sur les messages.
+lieu de lui en retirer. La charge mentale doit rester sur les **sujets**, pas sur les messages.
 
 ## 4. Le triptyque d'acteurs
 
@@ -89,11 +89,11 @@ C'est précisément ce que la mémoire du compte (§8) sert à combler.
 ### L'acquittement implicite
 
 Le produit fait un choix de **légèreté maximale** : aucune validation explicite à donner aux
-suggestions. **Ouvrir la fiche d'une affaire vaut acquittement** de tout ce qui s'y trouve — tâches
+suggestions. **Ouvrir la fiche d'un sujet vaut acquittement** de tout ce qui s'y trouve — tâches
 proposées, brouillon, suggestion de validation. L'utilisateur agit ensuite naturellement, à son
 rythme.
 
-**Pourquoi.** Un bouton « valider les suggestions » ajoute un geste à chaque affaire pour un
+**Pourquoi.** Un bouton « valider les suggestions » ajoute un geste à chaque sujet pour un
 bénéfice nul : l'utilisateur qui lit la suggestion l'a déjà acquittée dans sa tête. Le produit ne
 lui demande pas de le prouver.
 
@@ -107,13 +107,13 @@ action. L'action est le **mécanisme d'exécution** de certaines tâches, pas la
 
 ## 7. Tout ce qui se passe alimente un journal de bord
 
-Des messages arrivent, des tâches se créent et se cochent, des actions s'exécutent, une affaire
+Des messages arrivent, des tâches se créent et se cochent, des actions s'exécutent, un sujet
 change d'état. Chaque événement est identifié par **son type** et **son acteur**, et le triptyque
 Moi / Relvo / Externe structure la lecture de l'activité dans toute la plateforme.
 
 Le journal n'est pas un mécanisme technique de traçabilité : c'est ce qui permet à l'utilisateur
 de **comprendre d'un coup d'œil qui agit dans son système**, et de garder une trace des décisions
-prises sur une affaire.
+prises sur un sujet.
 
 ## 8. Les Dossiers sont la mémoire de Relvo
 
@@ -121,9 +121,9 @@ Relvo ne lit pas que les messages entrants. Il s'appuie sur une **base de connai
 compte**, alimentée par l'utilisateur — c'est ce qui transforme un assistant générique en un
 assistant **qui connaît le métier**.
 
-Cette base **n'a pas sa propre page**. Elle vit à l'intérieur des Dossiers, aux côtés des affaires
+Cette base **n'a pas sa propre page**. Elle vit à l'intérieur des Dossiers, aux côtés des sujets
 du même périmètre. Le modèle mental est celui d'un **classeur physique** : on ouvre son dossier
-« Fournisseurs » et on y trouve à la fois les affaires en cours et les documents de référence qui
+« Fournisseurs » et on y trouve à la fois les sujets en cours et les documents de référence qui
 servent à les traiter. C'est l'unité de classement la plus intuitive pour un public non rompu aux
 SaaS — un dossier, c'est concret.
 
@@ -132,10 +132,11 @@ qu'il emboîte, qu'il déplace — le réflexe de vingt ans de bureautique, que 
 pas. Chaque dossier est aussi **un dossier de la mémoire de Relvo**. L'utilisateur comprend qu'il
 **enrichit la mémoire de son assistant**.
 
-### Deux natures de documents, et pourquoi la distinction compte
+### Deux natures de connaissances, et pourquoi la distinction compte
 
-- **Documents** — fichiers de référence figés : organigrammes, contrats, chartes tarifaires. Non
-  modifiables dans l'app. Ce sont des **références auxquelles on se fie**.
+- **Connaissances** — fichiers de référence figés : organigrammes, contrats, chartes tarifaires. Non
+  modifiables dans l'app. Ce sont des **références auxquelles on se fie** (le modèle les nomme
+  « Document »).
 - **Instructions** — texte rédigé dans l'app, que l'utilisateur fait évoluer : règles internes,
   ton de réponse, particularités d'un fournisseur, leçons apprises. C'est une **mémoire qu'on
   façonne**.
@@ -199,7 +200,7 @@ conversation, augmentée de vues structurées quand on veut creuser.
 La page d'atterrissage répond à « qu'est-ce qui m'attend ? » en trente secondes, en **quatre
 zones**, dans cet ordre : les **dernières nouvelles** de Relvo — ce qu'il a fait depuis la
 dernière visite, et ce qu'il attend de l'utilisateur —, l'**activité** des sept derniers jours en
-trois chiffres, les **tâches du jour**, et les **affaires en attente** d'une réponse ou d'une
+trois chiffres, les **tâches du jour**, et les **sujets en attente** d'une réponse ou d'une
 décision. C'est le **premier tour de parole de Relvo**, rendu en cartes — pas une page muette, et
 pas non plus un chat vide qui attendrait une question. Les nouvelles vivent dans le header, dans
 la voix de Relvo ; elles portent un résumé et **au plus deux suggestions**, qui ouvrent
@@ -210,14 +211,14 @@ compteurs du jour — « deux réponses attendues, une urgence ». Un calcul, au
 
 ### Quatre vues, un centre
 
-La barre d'onglets porte cinq places, et rien de plus : **Accueil · Calendrier · Relvo · Affaires
+La barre d'onglets porte cinq places, et rien de plus : **Accueil · Calendrier · Relvo · Sujets
 · Conversations**. Relvo est au centre, plus gros, sans libellé : c'est le seul objet coloré du
 dock, plus haut que lui et autour duquel le dock se soulève, et il est sous le pouce. L'échange proprement dit est une **surface plein écran**,
 atteinte depuis ce bouton, présent au même endroit sur toutes les pages, et qui transmet le
 contexte de la page d'origine. Quand Relvo attend une réponse, le bouton porte un badge.
 
 Tout ce qu'on ouvre moins d'une fois par jour vit dans un **menu latéral**, ouvert depuis la
-gauche du header : le Bilan, la Mémoire, les Contacts, puis les Canaux, le Profil, les
+gauche du header : le Bilan, les Dossiers, les Contacts, puis les Canaux, le Profil, les
 Préférences, l'Usage, et la Recherche en dernier, comme une action. Un écran de configuration n'a
 pas sa place dans une barre qu'on regarde trente fois par jour.
 
@@ -236,7 +237,7 @@ soit** — l'accueil la dit, le disque du dock respire. Le détail vit dans `05-
 ### Relvo rend les mêmes composants que l'interface
 
 Les réponses de Relvo ne sont pas que du texte : il **rend les composants structurés du produit
-directement dans le fil**. Demander « montre-moi mes affaires urgentes » fait apparaître de vraies
+directement dans le fil**. Demander « montre-moi mes sujets urgents » fait apparaître de vraies
 cartes cliquables, pas une liste à puces.
 
 Une seule bibliothèque, deux surfaces — c'est ce qui rend l'agent crédible comme surface
@@ -257,10 +258,10 @@ tort est asymétrique — il engage la parole de l'utilisateur auprès d'un tier
 
 Trois refus délibérés, écrits ici parce qu'ils reviendront sur la table :
 
-- **Relvo ne pilote pas le cycle de vie d'une affaire.** Il peut *suggérer* qu'elle semble
+- **Relvo ne pilote pas le cycle de vie d'un sujet.** Il peut *suggérer* qu'elle semble
   terminée ; c'est l'utilisateur qui valide et qui ferme.
 - **Relvo ne crée pas de contact dans le vide.** Un expéditeur inconnu reste une chaîne brute
-  jusqu'à ce qu'une affaire existe.
+  jusqu'à ce qu'un sujet existe.
 - **Relvo n'envoie jamais de message automatiquement.**
 
 ## 13. Le vocabulaire
@@ -270,9 +271,9 @@ mot dit ce que le geste fait vraiment.
 
 | On dit | On ne dit pas | Parce que |
 |---|---|---|
-| **ouvrir** / **fermer** une affaire | créer / supprimer | Une affaire est un espace de travail, pas un enregistrement |
+| **ouvrir** / **fermer** un sujet | créer / supprimer | Un sujet est un espace de travail, pas un enregistrement |
 | **Fermer** / **Fermées** / **Remettre** | Supprimer / Corbeille / Restaurer | Rien n'est détruit — autant que le mot le dise |
-| **écouter** une conversation | « fenêtre », « plage » | L'initiative appartient à l'affaire, qui se branche et se débranche |
+| **écouter** une conversation | « fenêtre », « plage » | L'initiative appartient à le sujet, qui se branche et se débranche |
 | **Interlocuteur** | Destinataire | Un fil a deux sens |
 | **échange** avec Relvo | conversation | « Conversation » désigne une entité du modèle : le fil avec un tiers |
 | **Dossiers**, et des dossiers dans des dossiers | Domaines, catégories, tags | Ranger est le geste que les dirigeants connaissent ; une consigne donnée à un dossier vaut pour ce qu'il contient |
@@ -297,31 +298,31 @@ mot dit ce que le geste fait vraiment.
    `E` (ambre).
 3. « **Relvo** » dans l'UI, « IA » dans la documentation technique. L'enum reste `ai`.
 
-**Affaires, conversations, tâches, contacts**
+**Sujets, conversations, tâches, contacts**
 
-4. L'**affaire** est l'entité centrale, pas le message. Chaîne :
+4. L'**sujet** est l'entité centrale, pas le message. Chaîne :
    **Message → Conversation → Subject → Task → Action → LogEvent**.
 5. Le rangement en conversation est **déterministe et infaillible à la réception** : il n'existe
-   pas de message orphelin. Ce qui reste à trier est une **conversation** qu'aucune affaire ouverte
+   pas de message orphelin. Ce qui reste à trier est une **conversation** qu'aucun sujet ouvert
    n'écoute. *(`triage_hint` n'est plus alimenté ; le champ est conservé pour l'historique.)*
-6. Une **tâche est rattachée à l'affaire, pas à un utilisateur**. Sa source (Relvo / Moi) est
+6. Une **tâche est rattachée à le sujet, pas à un utilisateur**. Sa source (Relvo / Moi) est
    visible et permanente. L'affectation à une personne est reportée.
 7. **Statut = cycle de vie à 3 valeurs exclusives** (`ouvert` / `validé` / `fermé`). « Fermer »
-   est une **suppression douce**, jamais une destruction, et une affaire fermée n'est **jamais
+   est une **suppression douce**, jamais une destruction, et un sujet fermé n'est **jamais
    purgée**. → détail : `04 §9`.
 8. **Priorité à 2 valeurs**, drapeau urgent **rare** — la rareté est le signal. Le geste de swipe
    dépend de la **surface**, jamais du canal. → détail : `04 §4` et `04 §7`.
 9. Le **brouillon de Relvo vit dans le composer**, jamais affiché comme un message du fil, et
    **jamais envoyé automatiquement**.
-10. **Acquittement implicite** : ouvrir une affaire vaut acquittement de ses suggestions. Pas de
+10. **Acquittement implicite** : ouvrir un sujet vaut acquittement de ses suggestions. Pas de
     bouton « valider ».
 11. La `Conversation` est une entité à **deux sous-types** (e-mail / messagerie). La fiche d'une
-    affaire en affiche une **liste** ; l'écran de conversation est la **seule** surface d'affichage
+    sujet en affiche une **liste** ; l'écran de conversation est la **seule** surface d'affichage
     **et** de réponse. → détail : `04 §3`.
-12. **Relvo ne crée un contact qu'à la création d'une affaire**, jamais dans le vide. La création
+12. **Relvo ne crée un contact qu'à la création d'un sujet**, jamais dans le vide. La création
     manuelle par l'utilisateur reste permise. L'auto-rattachement des entrants consulte les
     coordonnées **primaires et secondaires**.
-13. Les affaires sont **multi-contacts**. Une conversation e-mail porte un **set** de contacts ;
+13. Les sujets sont **multi-contacts**. Une conversation e-mail porte un **set** de contacts ;
     une conversation de messagerie en porte **un seul** (ou un groupe).
 
     **13bis.** On diverge par canal sur le **rendu** et les **gestes**, **jamais sur le
@@ -338,11 +339,11 @@ mot dit ce que le geste fait vraiment.
 
 16. Un `Folder` est un **dossier de la mémoire de Relvo** — un dossier a un **père**, les
     dossiers s'emboîtent sur une profondeur bornée, et une instruction ou un document donnés à un
-    père valent pour tous ses fils —, présenté en trois onglets : Instructions / Documents /
-    Affaires.
+    père valent pour tous ses fils —, présenté en trois onglets : Instructions / Connaissances /
+    Sujets.
 17. Le dossier **« Général »** est auto-créé, **purement documentaire**, **non supprimable**, est
-    la **racine** de l'arbre, et ne contient **jamais** d'affaire.
-18. Un `KnowledgeDocument` est soit un **Document** (référence figée, non modifiable, avec un
+    la **racine** de l'arbre, et ne contient **jamais** de sujet.
+18. Un `KnowledgeDocument` est soit un **Document** — une **connaissance** pour le dirigeant — (référence figée, non modifiable, avec un
     état d'absorption décidé par Relvo), soit une **Instruction** (texte éditable).
 19. **Deux stockages, jamais un seul.** Le stockage objet est la **source de vérité et la seule
     voie d'affichage** ; la copie d'inférence est en **écriture seule**. L'envoi se fait du
@@ -372,13 +373,13 @@ mot dit ce que le geste fait vraiment.
 
 **Actions et tâches**
 
-30. **Périmé.** ~~La page d'accueil (« Actions ») est la page des tâches, pas des affaires.~~
+30. **Périmé.** ~~La page d'accueil (« Actions ») est la page des tâches, pas des sujets.~~
     Remplacé par 34. Ce qui en reste : la barre d'indicateurs est **contextuelle par page** —
     jamais deux lentilles sur un écran.
-31. **Présentation unique des tâches partout** : même rendu dans la liste d'une affaire et dans une
+31. **Présentation unique des tâches partout** : même rendu dans la liste d'un sujet et dans une
     liste à plat, seul le contexte affiché varie. Cocher termine, décocher remet à faire ; le tap
     ouvre la fiche ; le rail de couleur porte le dossier de premier niveau.
-32. **Une tâche peut n'avoir aucune affaire** — créée à la volée, ou détachée.
+32. **Une tâche peut n'avoir aucun sujet** — créée à la volée, ou détachée.
 
 **Suivi de projet**
 
@@ -390,9 +391,9 @@ mot dit ce que le geste fait vraiment.
 **Disposition**
 
 34. L'**accueil est un brief en quatre zones** — dernières nouvelles, activité, tâches du jour,
-    affaires en attente — qui ne duplique aucune vue et ne porte aucune barre d'indicateurs. Le
+    sujets en attente — qui ne duplique aucune vue et ne porte aucune barre d'indicateurs. Le
     **Calendrier** est la page des tâches.
-35. **Cinq places dans la barre d'onglets** : Accueil, Calendrier, Relvo au centre, Affaires,
+35. **Cinq places dans la barre d'onglets** : Accueil, Calendrier, Relvo au centre, Sujets,
     Conversations. Tout le reste vit dans le menu latéral. Une entrée ne s'ajoute pas à la barre,
     elle en remplace une.
 36. **Relvo parle en premier** : ce qu'il attend de l'utilisateur est une `RelvoQuestion`

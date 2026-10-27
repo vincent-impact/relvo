@@ -539,7 +539,7 @@ export type OptionsTranscription = {
    * et le repli du compteur si le fournisseur ne rend pas la sienne.
    */
   dureeS: number;
-  /** Le vocabulaire du compte — noms, affaires, mots du secteur (M22.4). */
+  /** Le vocabulaire du compte — noms, sujets, mots du secteur (M22.4). */
   prompt?: string;
   abortSignal?: AbortSignal;
   /** Jeu d'évaluation et tests : impose un modèle (identifiant OpenAI ou modèle simulé). */

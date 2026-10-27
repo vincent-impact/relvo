@@ -47,13 +47,13 @@ describe("messagerie — l'ancre de l'écoute", () => {
     expect(MESSAGERIE.fenetreSalveMs).toBe(fenetre);
   });
 
-  it("n'emporte jamais un bavardage plus vieux que la fenêtre, ni un message déjà dans une affaire", () => {
+  it("n'emporte jamais un bavardage plus vieux que la fenêtre, ni un message déjà dans un sujet", () => {
     const messages = [
-      // Il y a dix jours : le tri l'avait laissé sans affaire, il y reste.
+      // Il y a dix jours : le tri l'avait laissé sans sujet, il y reste.
       { id: "m0", recuLe: "2026-10-10T09:00:00Z", orphelin: true },
       // Juste à la limite de la fenêtre : exclu (strictement plus de deux heures).
       { id: "m0b", recuLe: "2026-10-20T12:03:10Z", orphelin: true },
-      // Dans la fenêtre, mais déjà emporté par une affaire validée depuis.
+      // Dans la fenêtre, mais déjà emporté par un sujet validé depuis.
       { id: "m1", recuLe: "2026-10-20T13:00:00Z", orphelin: false },
       { id: "m2", recuLe: "2026-10-20T14:02:40Z", orphelin: true },
       { id: "m3", recuLe: "2026-10-20T14:03:10Z", orphelin: true },

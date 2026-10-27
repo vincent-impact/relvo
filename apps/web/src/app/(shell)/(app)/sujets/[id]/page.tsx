@@ -252,7 +252,7 @@ export default async function SujetPage({
           attachments.length === 0 ? (
             <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
               Aucun document pour l’instant. Les pièces jointes reçues dans les
-              conversations de l’affaire s’accumulent ici.
+              conversations du sujet s’accumulent ici.
             </p>
           ) : (
             <div className="pt-3 pb-2">

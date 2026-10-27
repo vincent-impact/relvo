@@ -17,11 +17,11 @@
 ## 1. Le produit en une phrase
 
 **Relvo est un assistant qui transforme le flux désordonné de messages reçus par un dirigeant —
-e-mails, messagerie — en affaires métier structurées**, avec tâches, journal de bord et aide à la
+e-mails, messagerie — en sujets métier structurées**, avec tâches, journal de bord et aide à la
 décision. Ce n'est ni une boîte mail, ni un CRM, ni un outil de notes : c'est un **agent** auquel
-on parle, qui range et fait avancer les affaires en cours à votre place.
+on parle, qui range et fait avancer les sujets en cours à votre place.
 
-L'unité centrale n'est pas le message mais l'**Affaire** : un espace de travail qui rassemble
+L'unité centrale n'est pas le message mais l'**Sujet** : un espace de travail qui rassemble
 messages, pièces jointes, tâches et événements autour d'une *situation métier en cours de
 traitement* (« Rupture sauce blanche », « Contrôle hygiène annoncé »).
 
@@ -81,12 +81,12 @@ Deux invariants gouvernent chaque écran. Ils ne sont pas négociables, ils orie
 
 **La disposition est tranchée** et ne se rouvre pas dans une direction artistique :
 
-- **Cinq places dans le dock** : Accueil · Calendrier · **Relvo** · Affaires · Conversations. Relvo
+- **Cinq places dans le dock** : Accueil · Calendrier · **Relvo** · Sujets · Conversations. Relvo
   au centre, sans libellé, **le seul objet coloré du dock**, plus haut que lui, la pilule se
   soulevant autour de lui pour qu'il en fasse partie ; il porte un badge quand Relvo attend une
   réponse.
 - **Un menu latéral**, ouvert par le burger, discret, à droite du header, pour tout ce qu'on
-  ouvre moins d'une fois par jour : Bilan, Mémoire, Contacts, Canaux, Profil, Préférences, Usage,
+  ouvre moins d'une fois par jour : Bilan, Dossiers, Contacts, Canaux, Profil, Préférences, Usage,
   et Rechercher en dernier. Toute page du menu porte le burger ; la flèche retour, à gauche, est
   réservée aux écrans poussés. Les boutons propres à une page se posent **à droite** du header,
   avant le burger.
@@ -143,7 +143,7 @@ dirigeant a verrouillé, puis sur ce que son monde y apporte.
   de Relvo, puis le blanc. Quelques points fins et trois étoiles à quatre branches, celles du
   signe, qui s'effacent vers le bas. Du CSS, jamais une image. Sur la connexion, le ciel prend
   près de la moitié de l'écran et le signe y flotte.
-- **La bande de dossier.** Chaque carte d'affaire et chaque ligne de liste porte sur sa tranche
+- **La bande de dossier.** Chaque carte de sujet et chaque ligne de liste porte sur sa tranche
   gauche la bande pleine de son dossier de premier niveau, et le chemin du dossier en capitales condensées de la
   même couleur. Une bande par carte, sur la tranche : multipliées, les bandes font un camion de
   foire.
@@ -154,10 +154,10 @@ dirigeant a verrouillé, puis sur ce que son monde y apporte.
   attente une pastille cerclée, en retard un horaire barré.
 - **La sélection se montre par un cerclage** : l'indicateur actif est un chiffre cerclé, à
   distance de son libellé, jamais un remplissage qui efface la couleur.
-- **Chaque phrase de Relvo pointe sa preuve** : l'affaire, la tâche ou le message dont elle parle
+- **Chaque phrase de Relvo pointe sa preuve** : le sujet, la tâche ou le message dont elle parle
   est un lien sous la phrase.
 - **« En attente de vous » se feuillette** : des cartes à faire défiler horizontalement, une par
-  affaire, avec le contact, l'enjeu, depuis quand, et le geste — la seule exception voulue à
+  sujet, avec le contact, l'enjeu, depuis quand, et le geste — la seule exception voulue à
   « une liste est une suite de lignes dans une carte ».
 
 **Ce que la direction refuse** : le relief nacré, le verre, le grain, le fond pierre, le ruban
@@ -185,34 +185,34 @@ comme un tissu tendu : il est dans la barre et non posé dessus. Ce qui le dési
 relief : si une tuile ou un panneau se met à briller, ou si un second objet du dock se colore,
 on perd « ce qui se détache, c'est Relvo ».
 
-### Le système d'état des affaires — à rendre visuellement, sans le complexifier
+### Le système d'état des sujets — à rendre visuellement, sans le complexifier
 
-- **Statut = cycle de vie à trois valeurs, exclusif.** `ouvert` : l'affaire est en cours, défaut
+- **Statut = cycle de vie à trois valeurs, exclusif.** `ouvert` : le sujet est en cours, défaut
   à la création, **invisible** — on lit « ouvert » par l'**absence** de badge, parce qu'un badge
-  porté par la quasi-totalité des affaires n'informe pas. `validé` : le travail est fait, badge
-  **Validé** avec coche. `fermé` : l'affaire est écartée, hors du flux des ouverts. Validés et
+  porté par la quasi-totalité des sujets n'informe pas. `validé` : le travail est fait, badge
+  **Validé** avec coche. `fermé` : le sujet est écarté, hors du flux des ouverts. Validés et
   fermés vivent dans leurs onglets et ne sont jamais purgés : on les **remet**.
-- **Marqueurs = cumulables, dérivés au calcul, indépendants du statut** : **Nouveau** (affaire
+- **Marqueurs = cumulables, dérivés au calcul, indépendants du statut** : **Nouveau** (sujet
   jamais ouverte, disparaît à l'ouverture de la fiche), **Urgent** (pastille rouge pleine, levée
-  seulement sur la priorité `urgent` — **la rareté est le signal** : une ou deux affaires sur
+  seulement sur la priorité `urgent` — **la rareté est le signal** : une ou deux sujets sur
   vingt-quatre), **À faire** (tâches ouvertes), **En attente** (pastille cerclée : on attend un
   retour d'un tiers), **En retard** (une échéance dépassée, l'horaire barré en rouge).
 - **Priorité à deux valeurs** : `normal` / `urgent`. Une seule pastille rouge.
-- **Le non-lu se compte sur la conversation et sur l'affaire** : une affaire qui a reçu trois
+- **Le non-lu se compte sur la conversation et sur le sujet** : un sujet qui a reçu trois
   messages a bougé, et elle porte le chiffre partout où elle se rend, en ligne comme en carte —
   c'est ainsi qu'on le sait sans l'ouvrir.
-- **On n'ignore pas une affaire, on ignore une source** : une conversation est `active` ou
-  `ignorée`. Les gestes suivent : sur une ligne d'affaire, ← **Fermer** / → **Valider** ; sur une
+- **On n'ignore pas un sujet, on ignore une source** : une conversation est `active` ou
+  `ignorée`. Les gestes suivent : sur une ligne de sujet, ← **Fermer** / → **Valider** ; sur une
   ligne de conversation, ← **Ignorer**. Rien n'est détruit, et le vocabulaire le dit.
 
 → Enjeu de direction : **hiérarchiser ces signaux sans saturer la ligne**. L'urgent doit sauter
 aux yeux *parce qu'il est rare*. Le reste reste discret et lisible.
 
-### Les dossiers — la Mémoire de Relvo
+### Les dossiers — la mémoire de Relvo
 
 Les dossiers métier (Fournisseurs, Équipe, Administration, Travaux, Clients…) sont présentés
-comme la **Mémoire** de Relvo, page du menu, et s'emboîtent comme sur un ordinateur. Chaque dossier
-de **premier niveau** a une **couleur** propre, héritée par ses dossiers, par leurs affaires
+comme la page **Dossiers** du menu — la mémoire de Relvo —, et s'emboîtent comme sur un ordinateur. Chaque dossier
+de **premier niveau** a une **couleur** propre, héritée par ses dossiers, par leurs sujets
 puis par leurs tâches, et manifestée par la **bande** sur la tranche de la carte ou de la ligne :
 la couleur dit la famille, le **chemin** écrit au-dessus du titre (« Fournisseurs › Kiloutou »)
 dit le rangement précis. La palette de dossiers est faite de teintes distinctes et harmonieuses,
@@ -238,18 +238,18 @@ voici les pièces **signature**, celles qui portent l'identité :
 - La **feuille du menu** latéral.
 
 **Les lignes et les cartes — réutilisées dans les écrans ET dans l'échange**
-- La **ligne d'affaire** : bande de dossier, chemin du dossier, titre, qui attend quoi, depuis quand.
+- La **ligne de sujet** : bande de dossier, chemin du dossier, titre, qui attend quoi, depuis quand.
   **Le composant le plus important du produit.**
 - La **carte d'attente** : contact, enjeu, geste, à feuilleter sur l'accueil.
-- La **tâche** : présentation unique partout — horaire en condensé à gauche, titre, affaire, case
+- La **tâche** : présentation unique partout — horaire en condensé à gauche, titre, sujet, case
   ronde quand elle se coche.
 - L'**indicateur** cerclé quand il est actif, contextuel par page : tâches sur le Calendrier,
-  affaires sur Affaires, jamais les deux lentilles sur un même écran.
+  sujets sur Sujets, jamais les deux lentilles sur un même écran.
 - La **carte de liste** : les lignes vivent dans une carte unique, séparées par un filet, jamais
   une carte par ligne.
 - La **pastille d'acteur**, les **pastilles d'état** (pleine, cerclée, barrée), la **pastille de
-  non-lus**, sur la conversation comme sur l'affaire.
-- Le **bandeau « Suivi dans »** en tête d'une conversation : bande de dossier + titre de l'affaire.
+  non-lus**, sur la conversation comme sur le sujet.
+- Le **bandeau « Suivi dans »** en tête d'une conversation : bande de dossier + titre du sujet.
 
 **Les surfaces de l'échange**
 - L'**échange plein écran** : ciel court avec retour et contexte, blocs de Relvo, bulle de
@@ -287,7 +287,7 @@ voici les pièces **signature**, celles qui portent l'identité :
   format téléphone, en mode sombre émulé — l'iPhone du dirigeant est en mode sombre et l'app est
   claire seulement, c'est là que les dérives se voient.
 - **Trois écrans héros** d'abord — **Accueil** (la vitrine de l'identité et la voix de Relvo),
-  **Affaires** (la ligne d'affaire, brique centrale), **Échange** (l'âme agent) — puis **tous les
+  **Sujets** (la ligne de sujet, brique centrale), **Échange** (l'âme agent) — puis **tous les
   écrans** : une direction qui ne tient pas sur les trois premiers ne tiendra pas ailleurs, et
   une direction validée sur trois écrans se vérifie sur les seize autres.
 - **De vraies données**, à volumes plausibles : les planches portent les données de

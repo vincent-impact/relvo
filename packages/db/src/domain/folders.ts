@@ -481,9 +481,9 @@ function slugLibreSous(
 
 /**
  * SUPPRIME un dossier en REMONTANT ce qu'il contenait chez le père (M23.3) :
- * ses dossiers, ses instructions et ses documents ; ses affaires, ses messages
+ * ses dossiers, ses instructions et ses documents ; ses sujets, ses messages
  * classés et les contacts qui l'avaient pour dossier habituel — sauf quand le
- * père est « Général », qui ne contient jamais d'affaire (invariant 17) : ils
+ * père est « Général », qui ne contient jamais de sujet (invariant 17) : ils
  * redeviennent « sans dossier ». Les canaux qui le citaient citent le père.
  * Les questions de Relvo sur ce dossier tombent avec lui.
  */
@@ -519,7 +519,7 @@ export async function deleteFolder(db: TenantDb, id: string) {
       tree.set(f.id, { ...f, parentId: pere.id, slug });
       exclure.delete(f.id);
     }
-    const [connaissances, affaires, messages, contacts] = await Promise.all([
+    const [connaissances, sujets, messages, contacts] = await Promise.all([
       tx.knowledgeDocument.updateMany({
         where: { folderId: id },
         data: { folderId: pere.id },
@@ -564,7 +564,7 @@ export async function deleteFolder(db: TenantDb, id: string) {
         remontes: {
           dossiers: fils.length,
           connaissances: connaissances.count,
-          affaires: affaires.count,
+          sujets: sujets.count,
           messages: messages.count,
           contacts: contacts.count,
           canaux: canaux.length,
@@ -580,12 +580,12 @@ export async function deleteFolder(db: TenantDb, id: string) {
 // ─────────────────────────────────────────────────────────────
 //
 // Relvo ne crée jamais un domaine : quand aucun ne convient, la structuration
-// pose un `proposedFolder` sur l'affaire. Dès que plusieurs affaires partagent
+// pose un `proposedFolder` sur le sujet. Dès que plusieurs sujets partagent
 // la même proposition, Relvo suggère de créer le domaine et d'y ranger ces
-// affaires — un geste, par la même fonction que la Mémoire. La proposition
-// RESTE sur l'affaire : supprimer le domaine la fait réapparaître.
+// sujets — un geste, par la même fonction que la Mémoire. La proposition
+// RESTE sur le sujet : supprimer le domaine la fait réapparaître.
 
-/** Deux affaires au moins pour qu'une proposition vaille une question. */
+/** Deux sujets au moins pour qu'une proposition vaille une question. */
 export const PROPOSITION_MIN_AFFAIRES = 2;
 
 /** L'étape d'origine d'une question de domaine proposé : le préfixe, puis le slug. */
@@ -600,7 +600,7 @@ export type FolderProposal = {
 };
 
 /**
- * Les propositions de domaine que plusieurs affaires partagent — affaires
+ * Les propositions de domaine que plusieurs sujets partagent — sujets
  * ouvertes ou validées, sans domaine —, groupées par slug (la casse et les
  * accents ne séparent pas deux propositions), les plus portées d'abord. Une
  * proposition déjà tranchée — question répondue ou écartée — n'est jamais
@@ -659,7 +659,7 @@ export async function listFolderProposals(
 
 /**
  * CRÉE le domaine d'une proposition — ou reprend celui qui porte déjà ce
- * slug — et y range toutes les affaires sans domaine qui partagent la
+ * slug — et y range tous les sujets sans domaine qui partagent la
  * proposition, par `updateSubject` (la fonction de la fiche), journalisé.
  */
 export async function createFolderFromProposal(
@@ -672,7 +672,7 @@ export async function createFolderFromProposal(
   if (!slug) throw new DomainError("VALIDATION", "Nom de domaine invalide.");
   const existant = await db.folder.findFirst({ where: { slug } });
   const folder = existant ?? (await createFolder(db, { name }));
-  const affaires = await db.subject.findMany({
+  const sujets = await db.subject.findMany({
     where: {
       folderId: null,
       proposedFolder: { not: null },
@@ -681,7 +681,7 @@ export async function createFolderFromProposal(
     select: { id: true, proposedFolder: true },
   });
   let reclassees = 0;
-  for (const a of affaires) {
+  for (const a of sujets) {
     if (slugify(a.proposedFolder!.trim()) !== slug) continue;
     await updateSubject(db, a.id, { folderId: folder.id }, origine);
     reclassees += 1;

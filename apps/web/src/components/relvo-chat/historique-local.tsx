@@ -84,7 +84,7 @@ export function HistoriqueLocal() {
             open={confirm}
             onOpenChange={setConfirm}
             title="Effacer mon historique ?"
-            description="Les échanges enregistrés sur cet appareil seront supprimés. Ce que Relvo a fait pour vous — tâches, affaires, brouillons — reste en place."
+            description="Les échanges enregistrés sur cet appareil seront supprimés. Ce que Relvo a fait pour vous — tâches, sujets, brouillons — reste en place."
             confirmLabel="Effacer"
             tone="destructive"
             icon={Trash}

@@ -4,7 +4,7 @@ public: true
 ordre_public: 22
 titre_client: Les photos et vidéos reçues, sans encombrer
 resume_client: >
-  Relvo garde ce qui sert à une affaire et va rechercher le reste à la source quand vous le
+  Relvo garde ce qui sert à un sujet et va rechercher le reste à la source quand vous le
   demandez. Les conversations en sourdine ne pèsent rien, et l'espace de chaque compte est
   surveillé.
 statut: a-faire

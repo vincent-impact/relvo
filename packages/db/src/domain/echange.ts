@@ -73,12 +73,12 @@ export type BriefProjection = {
 
 export type EchangeProjection = {
   compte: TriageAccountProjection;
-  /** Le domaine de l'affaire ouverte, avec ses connaissances lues ; null hors d'une fiche. */
+  /** Le domaine du sujet ouvert, avec ses connaissances lues ; null hors d'une fiche. */
   domaine: StructurationDomainProjection | null;
   brief: BriefProjection;
-  /** La fiche de l'affaire ouverte (`/sujets/[id]`), ou null. */
+  /** La fiche du sujet ouvert (`/sujets/[id]`), ou null. */
   sujet: (SubjectSheetProjection["sujet"] & { id: string }) | null;
-  /** La fiche du contact ouvert (`/contacts/[id]`), ou celui de l'affaire, ou null. */
+  /** La fiche du contact ouvert (`/contacts/[id]`), ou celui du sujet, ou null. */
   contact: StructurationContactProjection | null;
 };
 
@@ -87,7 +87,7 @@ export const BRIEF_URGENT_MAX = 8;
 
 /**
  * Le brief du compte, calculé par les indicateurs existants — jamais généré
- * (05 §10.1). Le même calcul que l'accueil et la page des affaires.
+ * (05 §10.1). Le même calcul que l'accueil et la page des sujets.
  */
 export async function getBriefProjection(
   db: TenantDb,
@@ -141,7 +141,7 @@ export async function getBriefProjection(
 
 /**
  * Tout ce que le profil « échange » du contexte consomme, en une lecture :
- * le compte, le brief, et la fiche de la page d'origine — celle d'une affaire
+ * le compte, le brief, et la fiche de la page d'origine — celle d'un sujet
  * (avec son domaine et son contact) ou celle d'un contact. Une page qui n'est
  * ni l'une ni l'autre ne charge que le compte et le brief.
  */
@@ -179,9 +179,9 @@ export async function getEchangeProjection(
 }
 
 /**
- * Résout l'affaire que le dirigeant désigne dans l'échange : par sa référence
+ * Résout le sujet que le dirigeant désigne dans l'échange : par sa référence
  * (« SUB-0142 », « 142 »), sinon par son titre, en cherchant d'abord parmi les
- * affaires ouvertes. Null si rien ne correspond — jamais une approximation
+ * sujets ouverts. Null si rien ne correspond — jamais une approximation
  * silencieuse : l'outil le dit, et le modèle demande.
  */
 export async function resolveSubject(
@@ -226,7 +226,7 @@ export type MessageTrouve = {
   /** La conversation, telle que la liste la nomme. */
   conversation: string;
   subjectId: string | null;
-  affaire: string | null;
+  sujet: string | null;
   sens: "entrant" | "sortant";
   expediteur: string | null;
   /** Heure FRANÇAISE, « AAAA-MM-JJ HH:MM » : c'est ce que le modèle lit et ce qu'il répète (PITFALLS #55). */
@@ -253,7 +253,7 @@ export type RechercheMessages = {
   sens?: "entrant" | "sortant" | null;
   /** Le canal : e-mail ou WhatsApp. */
   canal?: "email" | "whatsapp" | null;
-  /** Les messages d'UNE affaire. */
+  /** Les messages d'UN sujet. */
   subjectId?: string | null;
   /** true : seulement les messages reçus non lus. */
   nonLus?: boolean | null;
@@ -408,7 +408,7 @@ export async function searchMessages(
         conversationId: m.conversationId,
         conversation: m.conversation.title,
         subjectId: m.subjectId,
-        affaire: m.subject?.title ?? null,
+        sujet: m.subject?.title ?? null,
         sens: m.direction === "outgoing" ? "sortant" : "entrant",
         expediteur: m.senderName ?? m.senderRaw,
         recuLe: horodatageParis(instantDuMessage(m)),
@@ -422,7 +422,7 @@ export async function searchMessages(
 }
 
 // ─────────────────────────────────────────────────────────────
-// Les tâches, les affaires et la Mémoire, par critères (05 §11.6)
+// Les tâches, les sujets et la Mémoire, par critères (05 §11.6)
 // ─────────────────────────────────────────────────────────────
 
 /** Tâches rendues au plus par une recherche de l'échange. */
@@ -514,7 +514,7 @@ export async function searchTasks(
   return rows;
 }
 
-/** Affaires rendues au plus par une recherche de l'échange. */
+/** Sujets rendus au plus par une recherche de l'échange. */
 export const SEARCH_SUBJECTS_MAX = 20;
 
 export type RechercheAffaires = {
@@ -534,7 +534,7 @@ export type RechercheAffaires = {
 };
 
 /**
- * Les affaires de l'échange (`list_subjects`) : par état, urgence, attente,
+ * Les sujets de l'échange (`list_subjects`) : par état, urgence, attente,
  * domaine, contact, mots, et par jours de dernière activité (« ce qui a bougé
  * cette semaine »). Les urgentes d'abord, puis la plus récente activité.
  */
@@ -748,7 +748,7 @@ export const annulationSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("brouillon"), actionId: z.uuid(), a: horodatage }),
   z.object({ type: z.literal("note"), id: z.uuid(), a: horodatage }),
   // Les dossiers (M23.7) : un dossier créé se retire, un dossier déplacé
-  // revient sous son père, une affaire rangée retrouve son dossier.
+  // revient sous son père, un sujet rangé retrouve son dossier.
   z.object({ type: z.literal("dossier"), id: z.uuid(), a: horodatage }),
   z.object({
     type: z.literal("dossier-deplace"),
@@ -797,7 +797,7 @@ function datesDuSnapshot(s: TacheSnapshot) {
  * DÉFAIT un geste de l'échange, par la fonction du domaine que l'écran
  * appelle pour le même geste — journalisée avec la provenance `chat`. Une
  * tâche supprimée se recrée depuis son instantané (l'écran non plus ne sait
- * pas la ressusciter) ; une affaire ouverte dans l'échange se supprime.
+ * pas la ressusciter) ; un sujet ouvert dans l'échange se supprime.
  */
 export async function defaireGeste(
   db: TenantDb,
@@ -840,7 +840,7 @@ export async function defaireGeste(
       return { fait: "Tâche recréée." };
     case "affaire":
       await deleteSubject(db, g.id);
-      return { fait: "Affaire retirée." };
+      return { fait: "Sujet retiré." };
     case "statut":
       await updateSubjectStatus(db, g.id, g.precedent, Actor.user, CHAT);
       return { fait: "État remis comme avant." };
@@ -864,7 +864,7 @@ export async function defaireGeste(
       return { fait: "Dossier remis à sa place." };
     case "affaire-rangee":
       await updateSubject(db, g.id, { folderId: g.precedent }, CHAT);
-      return { fait: "Affaire remise dans son dossier." };
+      return { fait: "Sujet remis dans son dossier." };
     case "note-modifiee":
       await updateNote(
         db,

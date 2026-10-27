@@ -73,7 +73,7 @@ import {
 // la lecture, et chaque geste d'écriture de l'interface. Chaque outil
 // enveloppe UNE fonction du domaine — jamais une server action, jamais une
 // règle réécrite — et rend une PROJECTION PRÊTE POUR L'ÉCRAN : le fil affiche
-// une affaire avec la ligne d'affaire, une tâche avec la ligne de tâche
+// un sujet avec la ligne de sujet, une tâche avec la ligne de tâche
 // (01 §11, invariant 31), jamais une liste à puces.
 //
 // Un geste d'écriture porte sa PROVENANCE (`source: "chat"`, M10.13) dans le
@@ -111,15 +111,15 @@ export type ConversationLigne = {
   dernierMessageLe: string | null;
   apercu: string;
   nonLus: number;
-  /** Les affaires qui écoutent encore ce fil. */
-  affaires: string[];
+  /** Les sujets qui écoutent encore ce fil. */
+  sujets: string[];
 };
 
 export type SortieOutil =
-  | { type: "affaires"; titre: string; affaires: SubjectRowData[] }
+  | { type: "affaires"; titre: string; sujets: SubjectRowData[] }
   | {
       type: "affaire";
-      affaire: SubjectRowData;
+      sujet: SubjectRowData;
       /** La fiche en texte structuré, pour le modèle. */
       fiche: string;
       taches: TaskItemData[];
@@ -132,7 +132,7 @@ export type SortieOutil =
       /** Posée quand un nom désigne plusieurs contacts : le modèle demande lequel. */
       precision?: string;
     }
-  | { type: "contact"; contact: ContactLigne; affaires: SubjectRowData[] }
+  | { type: "contact"; contact: ContactLigne; sujets: SubjectRowData[] }
   | { type: "messages"; messages: MessageTrouve[] }
   | {
       type: "conversations";
@@ -147,10 +147,10 @@ export type SortieOutil =
   | { type: "tache-modifiee"; tache: TaskItemData; annulation: Annulation }
   | { type: "tache-cochee"; tache: TaskItemData; annulation: Annulation }
   | { type: "tache-supprimee"; titre: string; annulation: Annulation }
-  | { type: "affaire-creee"; affaire: SubjectRowData; annulation: Annulation }
+  | { type: "affaire-creee"; sujet: SubjectRowData; annulation: Annulation }
   | {
       type: "affaire-modifiee";
-      affaire: SubjectRowData;
+      sujet: SubjectRowData;
       /** « validée », « rouverte », « marquée urgente », « résumé mis à jour »… */
       geste: string;
       annulation: Annulation;
@@ -174,7 +174,7 @@ export type SortieOutil =
     }
   /** Les dossiers du compte, en ordre d'arbre, avec leur chemin (M23.7). */
   | { type: "dossiers"; dossiers: DossierLigne[] }
-  /** Un dossier créé ou déplacé, une affaire rangée. */
+  /** Un dossier créé ou déplacé, un sujet rangé. */
   | {
       type: "dossier";
       geste: "créé" | "déplacé";
@@ -213,7 +213,7 @@ export type LectureLigne = {
 export type ContexteOutils = {
   accountId: string;
   now: Date;
-  /** La page d'origine : l'affaire ouverte, par défaut de toute désignation. */
+  /** La page d'origine : le sujet ouvert, par défaut de toute désignation. */
   subjectId: string | null;
   /**
    * La rédaction d'un brouillon (M7.7), INJECTÉE : la route passe le pipeline
@@ -238,13 +238,13 @@ const designation = {
     .string()
     .nullable()
     .describe(
-      "La référence de l'affaire (« SUB-00142 »), si le dirigeant la donne.",
+      "La référence du sujet (« SUB-00142 »), si le dirigeant la donne.",
     ),
   titre: z
     .string()
     .nullable()
     .describe(
-      "Un bout du titre de l'affaire, sinon. Null pour l'affaire de la page ouverte.",
+      "Un bout du titre du sujet, sinon. Null pour le sujet de la page ouverte.",
     ),
 };
 
@@ -259,7 +259,7 @@ const designationTache = {
     .string()
     .nullable()
     .describe(
-      "Sinon, un bout de son titre ; cherchée parmi les tâches ouvertes de l'affaire désignée ou de la page.",
+      "Sinon, un bout de son titre ; cherchée parmi les tâches ouvertes du sujet désigné ou de la page.",
     ),
 };
 
@@ -309,18 +309,18 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
   const a = () => ctx.now.toISOString();
   const ecrit = () => ctx.onEcriture?.();
 
-  /** L'affaire désignée, ou celle de la page ; un message sinon. */
-  async function affaire(args: {
+  /** Le sujet désigné, ou celle de la page ; un message sinon. */
+  async function sujetDesigne(args: {
     reference: string | null;
     titre: string | null;
   }): Promise<{ id: string } | { message: string }> {
     if (!args.reference && !args.titre) {
       if (ctx.subjectId) return { id: ctx.subjectId };
-      return { message: "Aucune affaire désignée : demander laquelle." };
+      return { message: "Aucun sujet désigné : demander laquelle." };
     }
     const trouve = await resolveSubject(db, args);
     return (
-      trouve ?? { message: "Aucune affaire ne correspond : demander laquelle." }
+      trouve ?? { message: "Aucun sujet ne correspond : demander laquelle." }
     );
   }
 
@@ -337,7 +337,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     return toTaskItemData(t!);
   }
 
-  /** La tâche désignée : par identifiant, sinon par titre parmi les ouvertes de l'affaire. */
+  /** La tâche désignée : par identifiant, sinon par titre parmi les ouvertes du sujet. */
   async function tache(args: {
     tache_id: string | null;
     tache_titre: string | null;
@@ -352,7 +352,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     if (!q) return { message: "Aucune tâche désignée : demander laquelle." };
     const cible =
       args.reference || args.titre || ctx.subjectId
-        ? await affaire(args)
+        ? await sujetDesigne(args)
         : null;
     const subjectId = cible && "id" in cible ? cible.id : undefined;
     const t = await db.task.findFirst({
@@ -429,7 +429,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
       nom: o.name,
       chemin: o.path,
       profondeur: o.depth,
-      // Les affaires du dossier et de ses fils : sa portée.
+      // Les sujets du dossier et de ses fils : sa portée.
       affairesOuvertes: options
         .filter((x) => x.id === o.id || x.chainIds.includes(o.id))
         .reduce((n, x) => n + (parDossier.get(x.id) ?? 0), 0),
@@ -554,7 +554,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     // ── Lecture ──────────────────────────────────────────────────────────
     list_subjects: tool({
       description:
-        "Liste les affaires du dirigeant. `filtre` : urgentes, ou en_attente (celles qui attendent une réponse). `statut` : ouvertes (défaut), validees, fermees, toutes. `recherche` : des mots du titre ou du résumé. `domaine` : le chemin ou le nom d'un dossier du compte — un dossier compte avec tout ce qu'il contient. `contact` : le nom d'un contact (« mes affaires avec Karim »). `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française sur la dernière activité (« ce qui a bougé cette semaine » ; la date du jour est dans le contexte). Sans critère : les affaires ouvertes, urgentes d'abord. Ce qui est à trier : list_conversations.",
+        "Liste les sujets du dirigeant. `filtre` : urgentes, ou en_attente (celles qui attendent une réponse). `statut` : ouvertes (défaut), validees, fermees, toutes. `recherche` : des mots du titre ou du résumé. `domaine` : le chemin ou le nom d'un dossier du compte — un dossier compte avec tout ce qu'il contient. `contact` : le nom d'un contact (« mes sujets avec Karim »). `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française sur la dernière activité (« ce qui a bougé cette semaine » ; la date du jour est dans le contexte). Sans critère : les sujets ouverts, urgentes d'abord. Ce qui est à trier : list_conversations.",
       inputSchema: z.object({
         filtre: z.enum(["urgentes", "en_attente"]).nullable(),
         statut: z
@@ -594,20 +594,20 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
           });
           const titre =
             args.filtre === "urgentes"
-              ? "Affaires urgentes"
+              ? "Sujets urgents"
               : args.filtre === "en_attente"
-                ? "Affaires en attente"
+                ? "Sujets en attente"
                 : args.statut === "validees"
-                  ? "Affaires validées"
+                  ? "Sujets validés"
                   : args.statut === "fermees"
-                    ? "Affaires fermées"
+                    ? "Sujets fermés"
                     : args.statut === "toutes"
-                      ? "Affaires"
-                      : "Affaires ouvertes";
+                      ? "Sujets"
+                      : "Sujets ouverts";
           return {
             type: "affaires",
             titre,
-            affaires: (await enrichSubjects(db, rows)).map(toSubjectRowData),
+            sujets: (await enrichSubjects(db, rows)).map(toSubjectRowData),
           };
         } catch (e) {
           return erreur(e);
@@ -617,11 +617,11 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     get_subject: tool({
       description:
-        "Lit la fiche d'une affaire : situation, résumé, tâches, contacts, derniers messages. À appeler avant de résumer, d'expliquer où en est une affaire, ou de répondre sur son contenu. Sans référence ni titre : l'affaire de la page ouverte.",
+        "Lit la fiche d'un sujet : situation, résumé, tâches, contacts, derniers messages. À appeler avant de résumer, d'expliquer où en est un sujet, ou de répondre sur son contenu. Sans référence ni titre : le sujet de la page ouverte.",
       inputSchema: z.object(designation),
       execute: async (args): Promise<SortieOutil> => {
         try {
-          const cible = await affaire(args);
+          const cible = await sujetDesigne(args);
           if ("message" in cible) return introuvable(cible.message);
           const [sheet, rows, taches] = await Promise.all([
             loadSubjectSheet(db, cible.id, { messages: 3 }),
@@ -631,7 +631,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
           const vivantes = taches.items.filter((t) => t.status !== "deleted");
           return {
             type: "affaire",
-            affaire: rows[0]!,
+            sujet: rows[0]!,
             fiche: ficheSujet(sheet.sujet, { messages: 3 }),
             taches: (await enrichTasks(db, vivantes, ctx.now)).map(
               toTaskItemData,
@@ -645,7 +645,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     list_tasks: tool({
       description:
-        "Les tâches du dirigeant et ses rendez-vous. `periode` : aujourd_hui, demain, semaine (d'aujourd'hui à dimanche), en_retard, sans_date (les tâches sans échéance), affaire (toutes celles d'une affaire). Pour « lundi », « la semaine prochaine », « en novembre » : des jours explicites `depuis` / `jusquAu` (AAAA-MM-JJ, calculés depuis la date du jour du contexte), qui l'emportent sur la période. Sans période ni jours : toutes les tâches ouvertes, par échéance, les sans-date en dernier. `statut` faites : ce qui a été coché, les jours portant alors sur le jour où la tâche a été faite (« qu'est-ce que j'ai fait hier »). `type` : call = appeler, reply = répondre, decision, check = vérifier, follow_up = relancer, inform, other. `recherche` : des mots du titre. Une affaire désignée (référence ou titre) limite à ses tâches. Les identifiants rendus servent à modifier, cocher ou supprimer une tâche ensuite.",
+        "Les tâches du dirigeant et ses rendez-vous. `periode` : aujourd_hui, demain, semaine (d'aujourd'hui à dimanche), en_retard, sans_date (les tâches sans échéance), sujet (toutes celles d'un sujet). Pour « lundi », « la semaine prochaine », « en novembre » : des jours explicites `depuis` / `jusquAu` (AAAA-MM-JJ, calculés depuis la date du jour du contexte), qui l'emportent sur la période. Sans période ni jours : toutes les tâches ouvertes, par échéance, les sans-date en dernier. `statut` faites : ce qui a été coché, les jours portant alors sur le jour où la tâche a été faite (« qu'est-ce que j'ai fait hier »). `type` : call = appeler, reply = répondre, decision, check = vérifier, follow_up = relancer, inform, other. `recherche` : des mots du titre. Un sujet désigné (référence ou titre) limite à ses tâches. Les identifiants rendus servent à modifier, cocher ou supprimer une tâche ensuite.",
       inputSchema: z.object({
         periode: z.enum(PERIODES_TACHES).nullable(),
         depuis: z.string().regex(DATE_NUE).nullable(),
@@ -668,8 +668,8 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
       }): Promise<SortieOutil> => {
         try {
           let subjectId: string | null = null;
-          if (periode === "affaire" || args.reference || args.titre) {
-            const cible = await affaire(args);
+          if (periode === "sujet" || args.reference || args.titre) {
+            const cible = await sujetDesigne(args);
             if ("message" in cible) return introuvable(cible.message);
             subjectId = cible.id;
           }
@@ -699,7 +699,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     get_kpis: tool({
       description:
-        "Les compteurs du jour : affaires ouvertes, urgentes, tâches du jour, en retard, conversations à trier, messages reçus aujourd'hui et sur sept jours. Pour une question chiffrée.",
+        "Les compteurs du jour : sujets ouverts, urgentes, tâches du jour, en retard, conversations à trier, messages reçus aujourd'hui et sur sept jours. Pour une question chiffrée.",
       inputSchema: z.object({}),
       execute: async (): Promise<SortieOutil> => {
         try {
@@ -707,8 +707,8 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
           return {
             type: "indicateurs",
             lignes: [
-              { libelle: "Affaires ouvertes", valeur: b.sujetsOuverts },
-              { libelle: "Affaires urgentes", valeur: b.sujetsUrgents.length },
+              { libelle: "Sujets ouverts", valeur: b.sujetsOuverts },
+              { libelle: "Sujets urgents", valeur: b.sujetsUrgents.length },
               { libelle: "Tâches aujourd'hui", valeur: b.tachesDuJour },
               { libelle: "Tâches en retard", valeur: b.tachesEnRetard },
               {
@@ -765,7 +765,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     get_contact: tool({
       description:
-        "La fiche d'un contact et ses affaires ouvertes : par son nom (prénom, nom, ou les deux), son adresse ou son entreprise — au moins l'un des trois. Si plusieurs contacts correspondent, l'outil les rend tous : demander lequel, ne pas choisir.",
+        "La fiche d'un contact et ses sujets ouverts : par son nom (prénom, nom, ou les deux), son adresse ou son entreprise — au moins l'un des trois. Si plusieurs contacts correspondent, l'outil les rend tous : demander lequel, ne pas choisir.",
       inputSchema: z.object({
         nom: z.string().nullable(),
         email: z.string().nullable(),
@@ -791,7 +791,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
           return {
             type: "contact",
             contact: contactLigne(c),
-            affaires: (await enrichSubjects(db, sujets)).map(toSubjectRowData),
+            sujets: (await enrichSubjects(db, sujets)).map(toSubjectRowData),
           };
         } catch (e) {
           return erreur(e);
@@ -801,7 +801,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     search_messages: tool({
       description:
-        "Les messages reçus et envoyés, les plus récents d'abord. Sans aucun critère : les derniers messages. `recherche` : des mots de l'objet, du texte ou de l'expéditeur — jamais une date ni « email ». `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française, pour « aujourd'hui », « hier », « cette semaine » (la date du jour est dans le contexte). `expediteur` : un nom ou une adresse. `sens` : entrant ou sortant. `canal` : email ou whatsapp. `non_lus` : seulement les messages reçus non lus. Une affaire désignée (référence ou titre) limite à ses messages. Les horodatages rendus sont à l'heure française.",
+        "Les messages reçus et envoyés, les plus récents d'abord. Sans aucun critère : les derniers messages. `recherche` : des mots de l'objet, du texte ou de l'expéditeur — jamais une date ni « email ». `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française, pour « aujourd'hui », « hier », « cette semaine » (la date du jour est dans le contexte). `expediteur` : un nom ou une adresse. `sens` : entrant ou sortant. `canal` : email ou whatsapp. `non_lus` : seulement les messages reçus non lus. Un sujet désigné (référence ou titre) limite à ses messages. Les horodatages rendus sont à l'heure française.",
       inputSchema: z.object({
         recherche: z.string().nullable(),
         depuis: z.string().regex(DATE_NUE).nullable(),
@@ -832,7 +832,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
             const cible = await resolveSubject(db, { reference, titre });
             if (!cible) {
               return introuvable(
-                "Aucune affaire ne correspond : demander laquelle.",
+                "Aucun sujet ne correspond : demander laquelle.",
               );
             }
             subjectId = cible.id;
@@ -859,7 +859,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     list_conversations: tool({
       description:
-        "Les conversations du dirigeant, la plus récente d'abord. `filtre` : a_trier (défaut — aucune affaire ne couvre leur dernier message : c'est ce que « à trier » veut dire), suivies (couvertes par une affaire), ignorees. `canal` : email ou whatsapp. Pour « qu'est-ce qui est à trier », « mes conversations WhatsApp ». Pour chercher dans le contenu : search_messages.",
+        "Les conversations du dirigeant, la plus récente d'abord. `filtre` : a_trier (défaut — aucun sujet ne couvre leur dernier message : c'est ce que « à trier » veut dire), suivies (couvertes par un sujet), ignorees. `canal` : email ou whatsapp. Pour « qu'est-ce qui est à trier », « mes conversations WhatsApp ». Pour chercher dans le contenu : search_messages.",
       inputSchema: z.object({
         filtre: z.enum(["a_trier", "suivies", "ignorees"]).nullable(),
         canal: z.enum(["email", "whatsapp"]).nullable(),
@@ -896,7 +896,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
                 : null,
               apercu: c.preview,
               nonLus: c.unreadCount,
-              affaires: c.listeningSubjects.map((s) => s.title),
+              sujets: c.listeningSubjects.map((s) => s.title),
             })),
           };
         } catch (e) {
@@ -907,7 +907,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     search_knowledge: tool({
       description:
-        "Cherche dans la Mémoire de Relvo : les instructions du dirigeant (ses règles) et les documents qu'il a déposés. `recherche` : des mots. `domaine` : le chemin ou le nom d'un dossier du compte. `genre` : instructions ou documents. Sans critère : toute la Mémoire, la plus récente d'abord. Pour « qu'est-ce que je t'ai dit sur… », « quelles sont mes règles », « le document sur… ». Une instruction désactivée est rendue avec `active: false` : elle existe mais ne s'applique pas.",
+        "Cherche dans les dossiers du dirigeant (la mémoire de Relvo) : les instructions du dirigeant (ses règles) et les documents qu'il a déposés. `recherche` : des mots. `domaine` : le chemin ou le nom d'un dossier du compte. `genre` : instructions ou documents. Sans critère : toute la Mémoire, la plus récente d'abord. Pour « qu'est-ce que je t'ai dit sur… », « quelles sont mes règles », « le document sur… ». Une instruction désactivée est rendue avec `active: false` : elle existe mais ne s'applique pas.",
       inputSchema: z.object({
         recherche: z.string().nullable(),
         domaine: z.string().nullable(),
@@ -944,7 +944,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     get_mail_reading: tool({
       description:
-        "Où en est la lecture du courrier récent d'une boîte e-mail (celle que Relvo fait dès qu'une boîte est reliée) : en attente, en cours, terminée, arrêtée au garde-fou ; messages lus, fils lus sur le total, affaires ouvertes, messages mis de côté. `boite` : le nom ou l'adresse d'une boîte, si le dirigeant la nomme ; sans critère, la dernière lecture de chaque boîte. Pour « où en es-tu de la lecture », « tu as fini de lire mes mails ? », « combien d'affaires tu as ouvertes en lisant ».",
+        "Où en est la lecture du courrier récent d'une boîte e-mail (celle que Relvo fait dès qu'une boîte est reliée) : en attente, en cours, terminée, arrêtée au garde-fou ; messages lus, fils lus sur le total, sujets ouverts, messages mis de côté. `boite` : le nom ou l'adresse d'une boîte, si le dirigeant la nomme ; sans critère, la dernière lecture de chaque boîte. Pour « où en es-tu de la lecture », « tu as fini de lire mes mails ? », « combien de sujets tu as ouvertes en lisant ».",
       inputSchema: z.object({
         boite: z.string().nullable(),
       }),
@@ -1007,7 +1007,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     // ── Tâches ───────────────────────────────────────────────────────────
     create_task: tool({
       description:
-        "Crée une tâche pour le dirigeant — ou un RENDEZ-VOUS, qui est une tâche avec une date et une heure. Rattachée à une affaire si elle est désignée ou si la page en ouvre une ; sinon sans affaire. Les dates et heures sont en heure française, telles que le dirigeant les dit.",
+        "Crée une tâche pour le dirigeant — ou un RENDEZ-VOUS, qui est une tâche avec une date et une heure. Rattachée à un sujet si elle est désignée ou si la page en ouvre une ; sinon sans sujet. Les dates et heures sont en heure française, telles que le dirigeant les dit.",
       inputSchema: z.object({
         titre: z
           .string()
@@ -1050,7 +1050,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
             });
             if (!s) {
               return introuvable(
-                "Aucune affaire ne correspond : demander laquelle, ou créer la tâche sans affaire.",
+                "Aucun sujet ne correspond : demander laquelle, ou créer la tâche sans sujet.",
               );
             }
             subjectId = s.id;
@@ -1138,7 +1138,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     mark_task_done: tool({
       description:
-        "Coche une tâche : le dirigeant dit qu'elle est faite. La dernière tâche cochée d'une affaire peut la régler.",
+        "Coche une tâche : le dirigeant dit qu'elle est faite. La dernière tâche cochée d'un sujet peut la régler.",
       inputSchema: z.object({ ...designationTache, ...designation }),
       execute: async (args): Promise<SortieOutil> => {
         try {
@@ -1182,7 +1182,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     // ── Dossiers (M23.7) — par les mêmes fonctions que la Mémoire ─────────
     list_folders: tool({
       description:
-        "Liste les dossiers du dirigeant, en arbre, avec leur chemin (« Clients › Franchises ») et le nombre d'affaires ouvertes qu'ils contiennent. Pour « quels dossiers j'ai ? », « où est rangé… ». Inutile avant de créer, déplacer ou ranger : ces outils disent eux-mêmes quand un dossier manque ou qu'un nom en désigne plusieurs.",
+        "Liste les dossiers du dirigeant, en arbre, avec leur chemin (« Clients › Franchises ») et le nombre de sujets ouverts qu'ils contiennent. Pour « quels dossiers j'ai ? », « où est rangé… ». Inutile avant de créer, déplacer ou ranger : ces outils disent eux-mêmes quand un dossier manque ou qu'un nom en désigne plusieurs.",
       inputSchema: z.object({}),
       execute: async (): Promise<SortieOutil> => {
         try {
@@ -1267,14 +1267,14 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     move_subject: tool({
       description:
-        "Range une affaire dans un dossier (« mets l'affaire Narbonne dans Franchises », « classe ça dans Fournisseurs »). `domaine` : le chemin ou le nom du dossier, ou null pour la sortir de tout dossier.",
+        "Range un sujet dans un dossier (« mets le sujet Narbonne dans Franchises », « classe ça dans Fournisseurs »). `domaine` : le chemin ou le nom du dossier, ou null pour la sortir de tout dossier.",
       inputSchema: z.object({
         ...designation,
         domaine: z.string().nullable(),
       }),
       execute: async (args): Promise<SortieOutil> => {
         try {
-          const cible = await affaire(args);
+          const cible = await sujetDesigne(args);
           if (!("id" in cible)) return introuvable(cible.message);
           let folderId: string | null = null;
           if (args.domaine) {
@@ -1294,7 +1294,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
             geste: folderId
               ? `rangée dans ${cheminDe(tree, folderId)}`
               : "sortie de son dossier",
-            affaire: (await lignesAffaires([s.id]))[0]!,
+            sujet: (await lignesAffaires([s.id]))[0]!,
             annulation: {
               type: "affaire-rangee",
               id: s.id,
@@ -1308,10 +1308,10 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
       },
     }),
 
-    // ── Affaires ─────────────────────────────────────────────────────────
+    // ── Sujets ─────────────────────────────────────────────────────────
     create_subject: tool({
       description:
-        "Ouvre une affaire à la demande du dirigeant : un titre court orienté métier, un dossier du compte s'il convient, un contact connu s'il est nommé, un résumé d'une phrase.",
+        "Ouvre un sujet à la demande du dirigeant : un titre court orienté métier, un dossier du compte s'il convient, un contact connu s'il est nommé, un résumé d'une phrase.",
       inputSchema: z.object({
         titre: z.string(),
         domaine: z
@@ -1340,7 +1340,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
             {
               title: args.titre.trim(),
               summary: args.resume?.trim() || null,
-              // « Général » ne contient jamais d'affaire (invariant 17).
+              // « Général » ne contient jamais de sujet (invariant 17).
               folderId: f && !f.isDefault ? f.id : null,
               contactIds: c ? [c.id] : [],
             },
@@ -1349,7 +1349,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
           ecrit();
           return {
             type: "affaire-creee",
-            affaire: (await lignesAffaires([s.id]))[0]!,
+            sujet: (await lignesAffaires([s.id]))[0]!,
             annulation: { type: "affaire", id: s.id, a: a() },
           };
         } catch (e) {
@@ -1360,14 +1360,14 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     update_subject_status: tool({
       description:
-        "Change l'état d'une affaire à la demande du dirigeant : validee = le travail est fait ; fermee = on la range sans la valider ; rouverte = elle repart. Jamais de ta propre initiative.",
+        "Change l'état d'un sujet à la demande du dirigeant : validee = le travail est fait ; fermee = on la range sans la valider ; rouverte = elle repart. Jamais de ta propre initiative.",
       inputSchema: z.object({
         ...designation,
         statut: z.enum(["validee", "fermee", "rouverte"]),
       }),
       execute: async ({ statut, ...args }): Promise<SortieOutil> => {
         try {
-          const cible = await affaire(args);
+          const cible = await sujetDesigne(args);
           if ("message" in cible) return introuvable(cible.message);
           const avant = await db.subject.findFirst({
             where: { id: cible.id },
@@ -1383,7 +1383,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
           ecrit();
           return {
             type: "affaire-modifiee",
-            affaire: (await lignesAffaires([cible.id]))[0]!,
+            sujet: (await lignesAffaires([cible.id]))[0]!,
             geste:
               statut === "validee"
                 ? "validée"
@@ -1405,11 +1405,11 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     update_subject_priority: tool({
       description:
-        "Marque une affaire urgente, ou lui retire l'urgence. L'urgent est rare : seulement à la demande du dirigeant.",
+        "Marque un sujet urgent, ou lui retire l'urgence. L'urgent est rare : seulement à la demande du dirigeant.",
       inputSchema: z.object({ ...designation, urgent: z.boolean() }),
       execute: async ({ urgent, ...args }): Promise<SortieOutil> => {
         try {
-          const cible = await affaire(args);
+          const cible = await sujetDesigne(args);
           if ("message" in cible) return introuvable(cible.message);
           const avant = await db.subject.findFirst({
             where: { id: cible.id },
@@ -1425,7 +1425,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
           ecrit();
           return {
             type: "affaire-modifiee",
-            affaire: (await lignesAffaires([cible.id]))[0]!,
+            sujet: (await lignesAffaires([cible.id]))[0]!,
             geste: urgent ? "marquée urgente" : "plus urgente",
             annulation: {
               type: "priorite",
@@ -1442,11 +1442,11 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     update_subject_summary: tool({
       description:
-        "Récrit le résumé d'une affaire (une à deux phrases : de quoi il s'agit), à la demande du dirigeant ou quand il te dicte une précision à retenir sur l'affaire.",
+        "Récrit le résumé d'un sujet (une à deux phrases : de quoi il s'agit), à la demande du dirigeant ou quand il te dicte une précision à retenir sur le sujet.",
       inputSchema: z.object({ ...designation, resume: z.string() }),
       execute: async ({ resume, ...args }): Promise<SortieOutil> => {
         try {
-          const cible = await affaire(args);
+          const cible = await sujetDesigne(args);
           if ("message" in cible) return introuvable(cible.message);
           const avant = await db.subject.findFirst({
             where: { id: cible.id },
@@ -1456,7 +1456,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
           ecrit();
           return {
             type: "affaire-modifiee",
-            affaire: (await lignesAffaires([cible.id]))[0]!,
+            sujet: (await lignesAffaires([cible.id]))[0]!,
             geste: "résumé mis à jour",
             annulation: {
               type: "resume",
@@ -1474,7 +1474,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     // ── Brouillon ────────────────────────────────────────────────────────
     create_message_draft: tool({
       description:
-        "Prépare un brouillon de réponse au contact d'une affaire : il se dépose dans la conversation, le dirigeant l'envoie lui-même — rien n'est envoyé. Sur une tâche de réponse ouverte de l'affaire, sinon sur une tâche de réponse créée avec la consigne.",
+        "Prépare un brouillon de réponse au contact d'un sujet : il se dépose dans la conversation, le dirigeant l'envoie lui-même — rien n'est envoyé. Sur une tâche de réponse ouverte du sujet, sinon sur une tâche de réponse créée avec la consigne.",
       inputSchema: z.object({
         ...designation,
         consigne: z
@@ -1486,7 +1486,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
       }),
       execute: async ({ consigne, ...args }): Promise<SortieOutil> => {
         try {
-          const cible = await affaire(args);
+          const cible = await sujetDesigne(args);
           if ("message" in cible) return introuvable(cible.message);
           const ouverte = await db.task.findFirst({
             where: {
@@ -1519,7 +1519,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
                 : r.issue === "desactive" ||
                     r.issue === "inference-indisponible"
                   ? "Je ne peux pas rédiger pour l'instant."
-                  : "Je n'ai pas pu rédiger ce brouillon : aucune conversation ne porte cette affaire, ou la rédaction a échoué.";
+                  : "Je n'ai pas pu rédiger ce brouillon : aucune conversation ne porte ce sujet, ou la rédaction a échoué.";
             return { type: "erreur", message: motif };
           }
           const [conversationId, sujet] = await Promise.all([
@@ -1568,7 +1568,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     // ── Mémoire ──────────────────────────────────────────────────────────
     create_knowledge_note: tool({
       description:
-        "Écrit une instruction dans la Mémoire de Relvo, à la demande du dirigeant : une règle qu'il veut que tu appliques (« les devis au-dessus de 5 000 € passent par moi »). Dans un dossier du compte (son chemin ou son nom), sinon dans « Général » — une instruction donnée à un dossier vaut pour tout ce qu'il contient.",
+        "Écrit une instruction dans un dossier (la mémoire de Relvo), à la demande du dirigeant : une règle qu'il veut que tu appliques (« les devis au-dessus de 5 000 € passent par moi »). Dans un dossier du compte (son chemin ou son nom), sinon dans « Général » — une instruction donnée à un dossier vaut pour tout ce qu'il contient.",
       inputSchema: z.object({
         titre: z.string(),
         contenu: z.string(),
@@ -1608,7 +1608,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     update_knowledge_note: tool({
       description:
-        "Modifie une instruction de la Mémoire, désignée par son titre : nouveau titre ou nouveau contenu.",
+        "Modifie une instruction d'un dossier, désignée par son titre : nouveau titre ou nouveau contenu.",
       inputSchema: z.object({
         titre: z.string().describe("Le titre actuel, ou un bout."),
         nouveau_titre: z.string().nullable(),
@@ -1650,7 +1650,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     delete_knowledge_note: tool({
       description:
-        "Supprime une instruction de la Mémoire, désignée par son titre. Seulement sur demande explicite.",
+        "Supprime une instruction d'un dossier, désignée par son titre. Seulement sur demande explicite.",
       inputSchema: z.object({ titre: z.string() }),
       execute: async ({ titre }): Promise<SortieOutil> => {
         try {
