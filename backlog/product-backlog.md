@@ -37,10 +37,14 @@ frontmatter l'est.
 | [M9 — Pages applicatives](epics/M9-pages-applicatives.md)                  | ✅                                               | démo client                     |
 | [M16 — Consolidation](epics/M16-consolidation.md)                          | ✅                                               | —                               |
 | **[M21 — Mini backoffice](epics/M21-mini-backoffice.md)**                  | ✅ — accès, liste, gestes, porte de l'alpha, fiche, vue d'ensemble | l'alpha                         |
-| **[M22 — Parler à Relvo](epics/M22-voix.md)**                              | ⬜ après M21 — la voix comme entrée de l'échange                                        | M20.1                           |
-| **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | 🟡 **en pause** — reste la tranche 10 (M7.19 : le rattrapage dès la connexion d'un canal, qui fait naître le script de la prise en main dans l'échange), après M21 et M22 | M8, M10                         |
+| **[M22 — Parler à Relvo](epics/M22-voix.md)**                              | ✅ socle livré — reste M22.8 (maintenir le bouton du dock pour parler) | M20.1                           |
+| **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | ✅ — vérifié en production par le dirigeant ; reste hors épique la lecture de l'historique de la messagerie à la connexion | M8, M10                         |
 | **[M18 — Disposition générale](epics/M18-disposition-generale.md)**       | ✅ — M18.9 livré par M10 ; M18.11 glissé vers M12.9 (pas de socle push) | M19, M10, M13 |
 | **[M19 — Direction artistique, allègement et prise en main](epics/M19-direction-artistique.md)** | ✅                                               | M10, M13.2                      |
+| **[M23 — Les dossiers](epics/M23-dossiers.md)**                            | ⬜ **prochain** — tranché                         | M11, M17.4                      |
+| **[M24 — Dix boîtes par compte](epics/M24-dix-boites.md)**                 | ⬜ **après M23** — tranché, M24.10 en premier    | la marge                        |
+| **[M25 — La maîtrise des médias](epics/M25-maitrise-des-medias.md)**       | ⬜ tranché solution par solution — après M24      | M8.6, M20.3                     |
+| **[M26 — Des chiffres vrais](epics/M26-chiffres-vrais.md)**                | ⬜ recette de l'alpha                            | —                               |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
 | **[M10 — Échange avec Relvo](epics/M10-echange-relvo.md)**                 | ✅ — le déclencheur du script à la connexion d'un canal est M7.19 | M13                             |
 | [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md)                    | ⬜                                               | —                               |
@@ -72,6 +76,14 @@ dans deux jours ») : l'alpha ouvre avec des comptes de test, et personne ne peu
 couper ni les supprimer sans toucher à la base — ce que le dépôt interdit. La voix suit, parce que
 le public dicte plus qu'il n'écrit et que l'échange est désormais la surface où Relvo agit. Le
 rattrapage dès la connexion (M7.19) et la prise en main (M13) viennent après.
+
+**La recette de l'alpha réordonne la suite** (décision du 2026-10-27, `ecarts`, « La deuxième
+vague de la recette ») : avant M11, **M23 puis M24**, dans cet ordre, tranché par le
+dirigeant — les dossiers d'abord, parce que c'est ce que les testeurs n'ont pas adopté ; le
+relais Gmail ensuite, parce que dix boîtes par compte est leur exigence première et que
+l'agrégateur en fait un poste à perte. **Tout le reste est moins urgent** : M25 attend ses
+décisions solution par solution, M26 vient quand il vient. Les correctifs de la vague (R9,
+M22.8, M12.10, M13.6) se glissent dans le sprint de recette.
 
 **M19 suit M18, pour la même raison** : on habille et on allège **avant** de construire la
 surface de l'échange, pas après. La disposition ne rouvre pas ; c'est l'apparence, la densité et

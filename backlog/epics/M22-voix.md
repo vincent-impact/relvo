@@ -6,9 +6,8 @@ titre_client: Parler à Relvo
 resume_client: >
   Dicter votre demande à Relvo plutôt que la taper : vous maintenez le micro, vous parlez, vous
   relâchez, et Relvo reçoit votre demande. Pour la cuisine et le chantier, où l'on n'écrit pas.
-statut: termine
+statut: partiel
 debut: 2026-10-19
-fin: 2026-10-19
 ---
 
 # M22 — Parler à Relvo
@@ -44,6 +43,7 @@ l'autre laisse le téléphone dans la poche.
 | M22.5 | ✅ **La garde** : durée maximale d'une dictée, coût par minute au disjoncteur (M14.5), aucune transcription si l'assistant est coupé                                                                                                             |
 | M22.6 | 📌 **Le même socle pour la messagerie** : M20.1 (dicter un message à un contact) réutilise l'enregistrement et la route, sans seconde implémentation                                                                                            |
 | M22.7 | **En réserve — la transcription en direct** par une session Realtime, si l'attente du mode fichier se révèle gênante en usage                                                                                                                 |
+| M22.8 | ⬜ **Maintenir le bouton central du dock pour parler** : le disque Relvo se maintient comme le disque du composer (même `useDictee`, même route), **relâcher ouvre l'échange sur une nouvelle conversation** avec la transcription déjà envoyée ; le tap ouvre l'échange comme aujourd'hui ; le badge ne change pas. Remontée de la recette de l'alpha (`2026-10-recette-alpha.md`, deuxième vague) |
 
 ⚠️ **Le micro en PWA installée sur iPhone est à éprouver le premier jour** : `getUserMedia` et
 `MediaRecorder` s'y comportent autrement que dans Safari (permission redemandée, format figé,

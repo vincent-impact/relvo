@@ -20,6 +20,7 @@ debut: 2026-06-10
 | M12.7 | Brief du matin en notification : les compteurs du jour à l'heure d'ouverture, sans génération | ✅ cron `/api/cron/matin`, `0 6 * * *` UTC, un calcul, silence quand tout est nul |
 | M12.8 | La vue Mois du Calendrier en **grille à pastilles** : chaque case un chiffre et jusqu'à trois pastilles de domaine, le tap sélectionne le jour et sa liste se pose sous la grille, le glissé part de la liste vers une case (invariant 15 tenu) | ⬜                            |
 | M12.9 | **Notification push** quand une question de Relvo s'ouvre (PWA) — glissée depuis M18 (ex-M18.11, l'identifiant d'origine reste cité) | ✅ socle Web Push (abonnement par appareil, Préférences) ; `notifierQuestion` appelée par les producteurs hors écran — le tri (M17) et le rattrapage (M7.19) quand ils naîtront |
+| M12.10 | **Notification push à chaque nouvelle affaire** : « Nouvelle affaire : <titre> », qui ouvre la fiche ; née du tri **à réception** (webhook e-mail, salve WhatsApp), **jamais pendant la lecture à la connexion** — la fin de lecture la résume (M12.9) ; une salve qui ouvre plusieurs affaires fait **une** notification ; sur les appareils abonnés, comme les deux autres. C'est la notification qui fait revenir (`ecarts`, « Une notification à chaque nouvelle affaire ») | ⬜ |
 
 > **M12 se livre au fil de l'eau**, en accompagnement des autres épiques. C'est la seule qui n'a
 > pas vocation à faire l'objet d'un sprint dédié.

@@ -153,11 +153,66 @@ pièces étaient sur un e-mail **envoyé** par la dirigeante, que Relvo ne rapat
 - À vérifier **en production par le dirigeant** : le parcours complet avec une vraie boîte —
   retour en arrière puis « Connecter », et la carte « en attente » au retour du fournisseur.
 
+## Deuxième vague — remontées du 2026-10-27, après une semaine d'usage
+
+La première vague portait sur le premier quart d'heure ; celle-ci porte sur **la semaine
+d'après** : ce que les testeurs demandent une fois qu'ils ont laissé Relvo lire. Les décisions
+sont dans `ecarts`, « La deuxième vague de la recette » et les quatre titres qui suivent. Quatre
+remontées sont assez grosses pour être des **épiques** (M23 à M26) ; elles ne se livrent pas
+ici, le backlog dit leur ordre. Restent dans ce sprint les correctifs et les gestes.
+
+### R9 — La prise en main mêle les questions de configuration et celles nées de la lecture
+
+**Constat.** Dès que la boîte est confiée, la lecture démarre et pose ses questions (dossiers
+que le courrier propose, fin de lecture, lecture étendue) au milieu du script, quand celui-ci
+rejoue à la connexion d'un canal ; le testeur ne sait plus à quoi il répond.
+
+**Tranché.** La configuration d'abord, la lecture ensuite ; la lecture ne se montre que par la
+carte vivante tant qu'une étape du script est ouverte ; pas deux questions sur les dossiers.
+
+**À livrer.** Les producteurs de questions de la lecture (`ensureFolderProposalQuestions`,
+`poserFinDeLecture`, la lecture étendue) **retiennent** leur question tant qu'une étape du
+script est ouverte (`originStep` le sait), et la posent quand le script se ferme ; l'échange
+sépare visuellement ce que Relvo demande pour se configurer de ce qu'il dit de sa lecture ;
+test sur `questions.test.ts`.
+
+### R10 — Maintenir le bouton central du dock pour parler
+
+Item **M22.8**. Le disque Relvo se maintient, on parle, relâcher ouvre l'échange sur une
+nouvelle conversation avec la transcription envoyée. Même socle que le composer.
+
+### R11 — Une notification à chaque nouvelle affaire
+
+Item **M12.10**. Née du tri à réception, jamais de la lecture à la connexion ; une par salve.
+
+### R12 — Relvo dit ce qui a changé
+
+Item **M13.6**, avancé dans ce sprint parce que les testeurs de l'alpha en ont besoin
+maintenant : à l'ouverture de l'échange, les entrées du journal client depuis le dernier
+passage, en un message, une fois.
+
+### Les quatre épiques nées de cette vague
+
+- **M23 — Les dossiers** : les domaines deviennent une arborescence de dossiers, l'instruction
+  d'un père vaut pour ses fils. Tranché.
+- **M24 — Dix boîtes par compte** : relais Gmail en propre, l'agrégateur gardé pour WhatsApp,
+  le nom de domaine de Relvo. **Tranché**, après M23.
+- **M25 — La maîtrise des médias** : référence plutôt que téléchargement, sourdine à zéro,
+  purge par cycle de vie, état du stockage au backoffice, quota. **Tranché** solution par
+  solution dans l'épique ; après M23 et M24.
+- **M26 — Des chiffres vrais** : le Bilan et l'Usage reliés au journal et au compteur.
+
 ## Où on en est
 
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
 - [x] R5 et R6 livrées (assistant actif par défaut, invitation aux notifications dans l'échange et sur l'accueil).
 - [x] R7 livrée (suppression d'un compte robuste, PITFALLS #71) — à relancer en production sur le compte concerné.
 - [x] R8 livrée (pièces jointes : relecture, webhook qui complète, script `pj:rattraper`) — à lancer en production sur le compte de Lila.
-- [ ] Vérification en production par le dirigeant.
+- [ ] Vérification en production par le dirigeant (première vague).
+- [x] Deuxième vague enregistrée : R9 à R12 dans ce sprint, M23 à M26 au backlog, décisions
+      dans `ecarts`.
+- [x] M24 tranchée (webhook Gmail en propre, déclaration à Google, nom de domaine) ; ordre : **M23 puis M24**, le reste moins urgent.
+- [x] M25 tranchée solution par solution : toutes les recommandations, S5 à éprouver, S10 et S17 écartées.
+- [ ] M23 démarre dans son propre chantier (`2026-10-m23-dossiers.md`, à créer).
+- [ ] R9, R10, R11, R12 à livrer.
 - [ ] Vagues de recette suivantes : à ajouter ici.

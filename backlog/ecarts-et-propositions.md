@@ -1585,6 +1585,105 @@ et `05-ia.md` §11.11 disent la séquence, `02-modele-donnees.md` le défaut de 
 **Mis en œuvre par** M10, tranches 1 à 5 ; `05-ia.md` §11 reste la conception, le sprint
 `2026-10-m10-echange-relvo.md` l'histoire de la construction.
 
+### Les médias : le menu tranché, toutes les recommandations
+
+**`tranché`** · Par le dirigeant, le 2026-10-27, sur le menu de dix-sept solutions de l'épique
+M25 (S0 à S17), parce qu'il est délicat de dire d'un média s'il est « utile » : la décision se
+prend solution par solution, pas sur un principe. **Retenu** : tout ce qui était recommandé —
+sortir du palier gratuit, mesurer, décider avant de télécharger (plafonds par type, vidéo en
+référence, types sans valeur et images incorporées des e-mails jamais stockés, sourdine et
+historique à zéro), recompresser les images, le plein format pour ce qu'une affaire porte,
+l'expiration par cycle de vie, le quota par compte, la vérification de l'outbox, la
+déduplication si la mesure la justifie. **À éprouver** avant de choisir : la durée pendant
+laquelle l'agrégateur sert encore un média, qui décide entre la recompression seule et la
+vignette avec l'original au tap. **Écarté** : la purge à la clôture d'une affaire (le précédent
+et le litige valent plus que les octets) et la classe de stockage à accès peu fréquent. Épique
+**M25**, après M23 et M24.
+
+### Le relais Gmail se construit, avec le nom de domaine de Relvo
+
+**`tranché`** · Par le dirigeant, le 2026-10-27, sur la proposition « Un relais Gmail en
+propre ; l'agrégateur reste pour WhatsApp ». Relvo construit **son propre webhook Gmail** et
+**se déclare auprès de Google** (consentement, vérification des périmètres restreints) ; le
+dirigeant **achète un vrai nom de domaine** pour Relvo et **formalise l'infrastructure
+publique** — le domaine, ses sous-domaines, les adresses des webhooks, la politique de
+confidentialité que Google exige à cette adresse. **Retenu contre** négocier un tarif par siège
+avec l'agrégateur : la marge ne dépend pas d'une négociation. L'agrégateur reste pour WhatsApp.
+Épique **M24**, dont M24.10 porte le domaine et l'infrastructure ; **M23 passe devant**, M24
+suit, tout le reste est moins urgent.
+
+### La deuxième vague de la recette : des dossiers, dix boîtes, des médias qui ne saturent pas, une notification qui fait revenir
+
+**`tranché`** · Avec le dirigeant, au retour de la recette de l'alpha (2026-10-27), sur les
+remontées des testeurs après une semaine d'usage. Les décisions de fond sont ci-dessous, une par
+titre ; l'ordre de réalisation est dans le backlog, les définitions dans les épiques M23 à M26
+et les items M12.10, M13.6, M22.8 ; la vague elle-même est tenue par le sprint
+`2026-10-recette-alpha.md`.
+
+### Les domaines deviennent des dossiers, en arbre
+
+**`tranché`** · Les testeurs n'adoptent pas les domaines : ils veulent **ranger** leurs affaires
+dans des **dossiers** qu'ils nomment eux-mêmes, et des dossiers dans ces dossiers — le réflexe
+de vingt ans de bureautique. Le produit s'y plie plutôt que de le combattre.
+
+- **Un dossier a un père.** Général devient la racine ; les domaines d'aujourd'hui deviennent
+  ses fils, à plat, sans rien changer pour l'utilisateur. Une affaire est rangée dans un
+  dossier à n'importe quelle profondeur. **Retenu contre** garder les domaines à plat et compter
+  sur les étiquettes (M17.4) pour nuancer : l'étiquette qualifie, elle ne range pas, et c'est
+  ranger que les testeurs demandent.
+- **Le système de contexte ne change pas : c'est son assemblage qui change.** La couche Domaine
+  (`05 §10.1`) se compose de la **chaîne** des dossiers, de la racine au dossier de l'affaire,
+  le plus précis en dernier. **Conséquence assumée de l'arbre** : une instruction ou un document
+  donné à un père s'applique à tous ses fils et à toutes leurs affaires. Ce n'est pas un
+  réglage, c'est ce qu'un dossier veut dire — et c'est ce qui rend les consignes du dirigeant
+  **moins nombreuses**, pas plus.
+- **Relvo propose un dossier, il n'en crée jamais un seul.** Le classement et les domaines
+  proposés par le courrier (M17.10) parlent en chemins ; la création reste un geste du
+  dirigeant, parce que l'arbre est le sien.
+- **Le mot change pour l'utilisateur, pas pour le code.** « Dossier » partout à l'écran et dans
+  les consignes ; le code disait déjà `Folder`. Comme pour « affaire », la conception se récrit
+  en place.
+
+**Ce qui a tranché** : un dirigeant qui ne retrouve pas le geste de ranger ne range pas, et un
+produit où rien n'est rangé n'a plus de couche Domaine du tout. Épique **M23**.
+
+### Une notification à chaque nouvelle affaire
+
+**`tranché`** · Révise « Relvo vous prévient : deux notifications et pas une de plus ». Les
+testeurs ne reviennent pas dans l'application parce que rien ne les y appelle entre le brief du
+matin et une question de Relvo. La notification qui fait revenir est **« une nouvelle affaire
+s'est ouverte »** : elle dit que Relvo a travaillé pour eux pendant qu'ils étaient en cuisine
+ou sur le chantier.
+
+- **Trois notifications, et pas une de plus** : le brief du matin, une question de Relvo, une
+  nouvelle affaire. Toujours **pas** de notification de message ni d'alerte de tâche.
+- **Née du tri à réception, jamais de la lecture à la connexion** : les quatorze jours relus
+  ouvrent des dizaines d'affaires d'un coup, la fin de lecture les résume en une question
+  (M12.9). Une salve WhatsApp qui ouvre plusieurs affaires fait **une** notification.
+- **Retenu contre** une notification par message trié : c'est le bruit que Relvo retire, pas
+  celui qu'il ajoute.
+
+Item **M12.10**.
+
+### La prise en main sépare la configuration de la lecture
+
+**`tranché`** · Précise « La prise en main commence à la sortie des diapositives » sans la
+rouvrir. En recette, les questions **de configuration** (le métier, les dossiers, la règle, la
+boîte) et les questions **nées de la lecture** (les dossiers que le courrier propose, la fin de
+lecture, la lecture étendue) se mêlaient dans l'échange, et les testeurs ne savaient plus à quoi
+ils répondaient.
+
+- **La configuration d'abord, la lecture ensuite.** Tant qu'une étape du script reste ouverte,
+  aucune question née de la lecture ne se pose dans l'échange : elles attendent la fin du
+  script. Dans l'échange, la lecture ne se montre que par la **carte vivante**. Quand le script
+  est fini, Relvo enchaîne de lui-même sur ce qu'il a lu.
+- **Pas deux questions sur le même sujet** : la proposition de dossiers par le courrier ne se
+  pose pas tant que la question des dossiers typiques est ouverte.
+- **Retenu contre** deux écrans (configurer, puis lire) : l'échange reste la seule surface de
+  la prise en main ; c'est l'ordre qui change, pas le lieu.
+
+Remontée **R9** du sprint de recette.
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté
@@ -1849,3 +1948,51 @@ trancher aujourd'hui, c'est l'usage après M7 qui décidera.
 **`proposé` — tranché** · Les trois questions — la position des menus et l'intérêt d'un menu
 « burger », la place de l'échange avec Relvo, la page d'accueil — sont tranchées dans « La
 disposition générale : quatre vues, Relvo au centre, un menu pour le reste », plus haut.
+
+### Un relais Gmail en propre ; l'agrégateur reste pour WhatsApp
+
+**`proposé` — tranché** · Voir « Le relais Gmail se construit, avec le nom de domaine de Relvo », plus haut. · Exprimé par le dirigeant au retour de la recette (2026-10-27). Les testeurs
+exigent **au moins dix boîtes e-mail par compte**, toutes Gmail ; l'agrégateur facture environ
+cinq euros par boîte connectée — cinquante euros par siège, pour un abonnement vendu
+cinquante-neuf. « Facile pour l'e-mail, bien plus difficile pour WhatsApp » (« Le disjoncteur
+de coût ») : le moment de le faire est venu pour l'e-mail, et seulement pour lui.
+
+**Recommandé** : **oui**, un relais Gmail en propre, par l'API Gmail et ses notifications
+(Pub/Sub → webhook), derrière la même frontière de courrier entrant que l'agrégateur — un
+fournisseur par canal, aucune duplication du domaine. Ce qui plaide pour : le coût tombe à zéro
+par boîte, la réception reste un webhook (aucun processus permanent), la lecture à la connexion
+et le rangement sont réutilisés tels quels, et l'envoi dans le fil est natif. Ce qui pèse
+contre, et qu'il faut regarder en face : **deux semaines de construction**, un abonnement aux
+notifications à **renouveler tous les sept jours** sans troisième cron (au passage du webhook,
+ou dans le cron du matin), et surtout la **vérification Google** des périmètres restreints —
+écran de consentement, politique de confidentialité, évaluation de sécurité annuelle — qui se
+compte en semaines ; tant qu'elle n'est pas faite, Google avertit et borne le nombre de comptes
+(de l'ordre de cent), ce qui suffit à la bêta mais pas à l'ouverture. **Écarté** : IMAP avec
+mot de passe d'application (une connexion à tenir ou un cron de relève — ni l'un ni l'autre
+n'ont leur place ici, et Google le réserve aux comptes en validation en deux étapes) ; demander
+à l'agrégateur un tarif par siège (à tenter en parallèle, mais la marge ne peut pas dépendre
+d'une négociation). **L'agrégateur reste pour WhatsApp**, et pour les boîtes qui ne sont pas
+Gmail tant que personne n'en demande dix. Épique **M24** ; **à trancher par le dirigeant**,
+parce que c'est un investissement en temps contre un coût récurrent.
+
+### Les médias de la messagerie : garder ce qui sert, relire le reste à la source
+
+**`proposé` — tranché** · Voir « Les médias : le menu tranché, toutes les recommandations », plus haut. · Exprimé par le dirigeant au retour de la recette (2026-10-27). Les fils
+WhatsApp charrient des photos et des vidéos ; le webhook les télécharge toutes, et le stockage
+se remplit en quelques jours. Le dirigeant ne veut ni tout garder, ni purger à la main.
+
+**Recommandé** : un principe, pas une corvée — *Relvo garde ce qui sert à une affaire ; le
+reste se relit à la source.* Concrètement : à la réception, un média de messagerie n'est
+qu'une **référence** chez l'agrégateur (et, pour une image, une vignette de quelques
+kilo-octets) ; l'original se récupère **au tap** et se garde alors ; une **vidéo** n'est jamais
+stockée à la réception ; une **conversation en sourdine** ne télécharge rien, pas même la
+vignette. La **purge** ne demande aucun cron : le bucket porte des règles de cycle de vie par
+préfixe de clé, et le préfixe **est** la politique — les médias non rattachés expirent, ce
+qu'une affaire porte ou ce que l'utilisateur a gardé ne meurt pas. Le **backoffice** mesure le
+poids par compte (la taille des pièces est déjà en base) et l'état du bucket, et un **quota par
+compte** dégrade en références seules, visible dans l'Usage en pourcentage. **Ce qu'il faut
+éprouver avant de figer** : combien de temps l'agrégateur sert encore un média après sa
+réception — c'est lui qui borne le « au tap ». **Ce qu'il faut trancher** : le délai
+d'expiration (trente jours proposés), la vignette en sourdine (non), l'e-mail soumis ou non à la
+même politique (non : une pièce jointe d'e-mail est un document, et M8 en a besoin). Épique
+**M25**.

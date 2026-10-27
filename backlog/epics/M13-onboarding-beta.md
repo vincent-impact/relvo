@@ -26,6 +26,7 @@ ce stade.
 | M13.3 | Pages d'erreur et de maintenance                                                                                                                                                                                                    |
 | M13.4 | Documentation utilisateur courte                                                                                                                                                                                                    |
 | M13.5 | Retour d'expérience depuis l'application                                                                                                                                                                                            |
+| M13.6 | **Relvo dit ce qui a changé** : à l'ouverture de l'échange, si le journal client (généré au build par M15.7, les lignes `Client:` des commits) porte des entrées depuis le dernier passage, Relvo les dit en **un** message, en langage client, puis s'en souvient (horodatage sur le compte) ; jamais plus d'une fois, jamais pendant la prise en main. Relvo évolue chaque semaine : c'est l'échange qui tient les testeurs informés, pas un e-mail |
 
 ⚠️ **M13.2 conditionne la valeur de tout le reste.** Un dirigeant qui n'a connecté aucun canal
 et déposé aucune instruction verra un produit vide et le jugera sur ce vide.

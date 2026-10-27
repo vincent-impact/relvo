@@ -164,8 +164,36 @@
     {
       "titre": "Parler à Relvo",
       "resume": "Dicter votre demande à Relvo plutôt que la taper : vous maintenez le micro, vous parlez, vous relâchez, et Relvo reçoit votre demande. Pour la cuisine et le chantier, où l'on n'écrit pas.",
-      "statut": "termine",
+      "statut": "partiel",
       "gauche": 65.42,
+      "largeur": 0
+    },
+    {
+      "titre": "Vos dossiers, rangés comme sur votre ordinateur",
+      "resume": "Vous créez vos propres dossiers, et des dossiers dans ces dossiers, et vous y rangez vos affaires. Une consigne donnée à un dossier vaut pour tout ce qu'il contient. Les domaines d'aujourd'hui deviennent vos premiers dossiers.",
+      "statut": "a-faire",
+      "gauche": null,
+      "largeur": 0
+    },
+    {
+      "titre": "Dix boîtes e-mail par compte",
+      "resume": "Vous confiez à Relvo toutes vos boîtes — jusqu'à dix par compte — sans que chacune coûte un abonnement. Relvo lit vos boîtes Gmail en direct, et WhatsApp continue comme aujourd'hui.",
+      "statut": "a-faire",
+      "gauche": null,
+      "largeur": 0
+    },
+    {
+      "titre": "Les photos et vidéos reçues, sans encombrer",
+      "resume": "Relvo garde ce qui sert à une affaire et va rechercher le reste à la source quand vous le demandez. Les conversations en sourdine ne pèsent rien, et l'espace de chaque compte est surveillé.",
+      "statut": "a-faire",
+      "gauche": null,
+      "largeur": 0
+    },
+    {
+      "titre": "Le Bilan et l'Usage disent vrai",
+      "resume": "Les chiffres du Bilan et de l'Usage sont les vôtres : ce que Relvo a lu, ouvert, préparé pour vous, et la part de votre forfait consommée ce mois-ci.",
+      "statut": "a-faire",
+      "gauche": null,
       "largeur": 0
     }
   ],
