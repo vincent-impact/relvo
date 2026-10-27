@@ -6,6 +6,7 @@ import {
   listConversationGroups,
   listSubjectConversationRows,
   resolveReplyTargets,
+  listFolderOptions,
 } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { ListPanel } from "@/components/shared/list-panel";
@@ -49,10 +50,9 @@ export default async function SujetPage({
   const [detail, folders, allContacts, conversationRows, channels, groups] =
     await Promise.all([
       getSubjectDetail(db, id),
-      db.folder.findMany({
-        orderBy: [{ isDefault: "desc" }, { name: "asc" }],
-        select: { id: true, name: true, slug: true, color: true, icon: true },
-      }),
+      // Les dossiers en ordre d'arbre, avec leur chemin et la bande de leur
+      // premier niveau (M23.4) ; Général n'en est pas (invariant 17).
+      listFolderOptions(db),
       db.contact.findMany({
         orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
         select: {

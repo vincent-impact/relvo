@@ -22,7 +22,13 @@ import { folderVisual } from "@/lib/folders";
 // champ s'enregistre immédiatement (action dédiée + refresh). En mode `create`
 // le même formulaire sert de set-up à la création manuelle (un seul « Créer »).
 
-export type FolderOption = { id: string; name: string; slug: string | null };
+export type FolderOption = {
+  id: string;
+  name: string;
+  /** Le chemin lisible (M23.4) ; absent → le nom. */
+  path?: string;
+  slug: string | null;
+};
 export type ContactOption = {
   id: string;
   name: string;
@@ -244,7 +250,7 @@ export function SubjectDetailForm({
                   className="size-[17px] flex-none"
                   style={{ color: active ? "#fff" : color }}
                 />
-                {fo.name}
+                {fo.path ?? fo.name}
               </button>
             );
           })}

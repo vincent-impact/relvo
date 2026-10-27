@@ -17,6 +17,8 @@ import {
   getSubjectsAwaitingUser,
   getTaskKpis,
   tenantDb,
+  getDefaultFolder,
+  listFolderOptions,
 } from "@relvo/db";
 import {
   type SubjectRowData,
@@ -63,7 +65,7 @@ export const TENANT_DATA_TAG = "tenant-data";
 // rendez-vous du Calendrier, CachedFolderRow (+ instructions/documents/
 // openSubjects, − sub).
 // Suivant = "v14".
-const CACHE_V = "v15";
+const CACHE_V = "v16";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
@@ -257,12 +259,21 @@ export const cachedFilFeed = unstable_cache(
 export type CachedFolderRow = {
   id: string;
   name: string;
+  /** « Clients › Franchises », sans Général ; le nom seul au premier niveau. */
+  path: string;
+  /** Les clés de logo du PREMIER NIVEAU (M23.4) — un fils porte la bande de son père. */
   slug: string;
   color: string | null;
   icon: string | null;
   isDefault: boolean;
+  parentId: string | null;
+  /** Niveaux sous Général : 0 pour Général, 1 pour ses fils… */
+  depth: number;
+  /** Ses dossiers, directement dedans. */
+  children: number;
   instructions: number;
   documents: number;
+  /** Les affaires ouvertes du dossier ET de ses fils (la portée, M23.4). */
   openSubjects: number;
 };
 
@@ -275,10 +286,9 @@ export type CachedMemoire = {
 export const cachedMemoire = unstable_cache(
   async (accountId: string): Promise<CachedMemoire> => {
     const db = tenantDb(accountId);
-    const [folders, subjGroups, docGroups] = await Promise.all([
-      db.folder.findMany({
-        orderBy: [{ isDefault: "asc" }, { name: "asc" }],
-      }),
+    const [general, options, subjGroups, docGroups] = await Promise.all([
+      getDefaultFolder(db),
+      listFolderOptions(db),
       db.subject.groupBy({
         by: ["folderId"],
         where: { status: "open" },
@@ -302,20 +312,45 @@ export const cachedMemoire = unstable_cache(
       );
     }
 
-    return {
-      defaultFolderId: folders.find((f) => f.isDefault)?.id ?? null,
-      folders: folders.map((f) => ({
-        id: f.id,
-        name: f.name,
-        slug: f.slug,
-        color: f.color,
-        icon: f.icon,
-        isDefault: f.isDefault,
-        instructions: notesByFolder.get(f.id) ?? 0,
-        documents: filesByFolder.get(f.id) ?? 0,
-        openSubjects: openByFolder.get(f.id) ?? 0,
-      })),
-    };
+    // Les affaires ouvertes d'un dossier comptent celles de ses fils.
+    const openInSubtree = (id: string): number =>
+      (openByFolder.get(id) ?? 0) +
+      options
+        .filter((o) => o.parentId === id)
+        .reduce((n, o) => n + openInSubtree(o.id), 0);
+    const rows: CachedFolderRow[] = options.map((o) => ({
+      id: o.id,
+      name: o.name,
+      path: o.path,
+      slug: o.slug,
+      color: o.color,
+      icon: o.icon,
+      isDefault: false,
+      parentId: o.parentId,
+      depth: o.depth,
+      children: options.filter((c) => c.parentId === o.id).length,
+      instructions: notesByFolder.get(o.id) ?? 0,
+      documents: filesByFolder.get(o.id) ?? 0,
+      openSubjects: openInSubtree(o.id),
+    }));
+    if (general) {
+      rows.push({
+        id: general.id,
+        name: general.name,
+        path: general.name,
+        slug: general.slug,
+        color: general.color,
+        icon: general.icon,
+        isDefault: true,
+        parentId: null,
+        depth: 0,
+        children: options.filter((o) => o.depth === 1).length,
+        instructions: notesByFolder.get(general.id) ?? 0,
+        documents: filesByFolder.get(general.id) ?? 0,
+        openSubjects: 0,
+      });
+    }
+    return { defaultFolderId: general?.id ?? null, folders: rows };
   },
   ["memoire", CACHE_V],
   CACHE,
@@ -362,34 +397,34 @@ export const cachedChannelCount = unstable_cache(
   CACHE,
 );
 
-// ── Noms de domaines par slug (libellés des chips de filtre Mon fil) ──────────
-export const cachedFolderNames = unstable_cache(
-  async (accountId: string): Promise<Record<string, string>> => {
-    const folders = await tenantDb(accountId).folder.findMany({
-      select: { slug: true, name: true },
-    });
-    return Object.fromEntries(folders.map((f) => [f.slug, f.name]));
-  },
-  ["folder-names", CACHE_V],
-  CACHE,
-);
-
 export type FolderChip = {
+  id: string;
+  /** Les clés de logo du premier niveau (M23.4). */
   slug: string;
   name: string;
+  path: string;
   color: string | null;
   icon: string | null;
+  parentId: string | null;
+  depth: number;
 };
 
-// Domaines pour la barre de filtres de Sujets (icône + couleur). Exclut le
-// « Général » (documentaire : il ne porte jamais de sujet, cf. invariant n°17).
+// Les dossiers pour la barre de filtres des Affaires et les listes de choix,
+// en ordre d'arbre. Exclut « Général » (documentaire : il ne porte jamais de
+// sujet, cf. invariant n°17).
 export const cachedFolders = unstable_cache(
   async (accountId: string): Promise<FolderChip[]> => {
-    return tenantDb(accountId).folder.findMany({
-      where: { isDefault: false },
-      orderBy: { name: "asc" },
-      select: { slug: true, name: true, color: true, icon: true },
-    });
+    const options = await listFolderOptions(tenantDb(accountId));
+    return options.map((o) => ({
+      id: o.id,
+      slug: o.slug,
+      name: o.name,
+      path: o.path,
+      color: o.color,
+      icon: o.icon,
+      parentId: o.parentId,
+      depth: o.depth,
+    }));
   },
   ["folders-chips", CACHE_V],
   CACHE,

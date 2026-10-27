@@ -1,4 +1,5 @@
 import { debutDuJourParis } from "./temps";
+import { loadFolderTree, presentationDe } from "./folders";
 import {
   Actor,
   QuestionStatus,
@@ -268,11 +269,12 @@ export async function getSubjectsAwaitingUser(
           title: true,
           priority: true,
           contactIds: true,
-          folder: { select: { name: true, slug: true, color: true } },
+          folderId: true,
         },
       },
     },
   });
+  const tree = await loadFolderTree(db);
 
   const bySubject = new Map<string, (typeof tasks)[number]>();
   for (const t of tasks) {
@@ -318,9 +320,10 @@ export async function getSubjectsAwaitingUser(
     since: t.createdAt,
     contactName: nameOf.get(t.subject!.contactIds[0] ?? "") ?? null,
     contactCompany: companyOf.get(t.subject!.contactIds[0] ?? "") ?? null,
-    folderName: t.subject!.folder?.name ?? null,
-    folderSlug: t.subject!.folder?.slug ?? null,
-    folderColor: t.subject!.folder?.color ?? null,
+    // Le chemin du dossier et la couleur de son premier niveau (M23.4).
+    folderName: presentationDe(tree, t.subject!.folderId)?.path ?? null,
+    folderSlug: presentationDe(tree, t.subject!.folderId)?.slug ?? null,
+    folderColor: presentationDe(tree, t.subject!.folderId)?.color ?? null,
   }));
 }
 

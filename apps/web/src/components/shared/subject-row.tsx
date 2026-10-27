@@ -18,11 +18,15 @@ export type SubjectRowData = {
   reference: string;
   title: string;
   summary?: string | null;
+  /** Les clés de logo du PREMIER NIVEAU du dossier (M23.4) — la bande. */
   folderSlug?: string | null;
   folderName?: string | null;
-  /** Clés STOCKÉES sur le dossier (logo personnalisé) — priment sur le slug. */
+  /** Le chemin lisible (« Clients › Narbonne ») — ce que la ligne écrit. */
+  folderPath?: string | null;
   folderColor?: string | null;
   folderIcon?: string | null;
+  /** La chaîne du dossier, Général exclu : la ligne répond au filtre d'un père. */
+  folderChainIds?: string[];
   urgent: boolean;
   /** Marqueur DÉRIVÉ « Nouveau » (jamais ouvert). */
   isNew: boolean;
@@ -97,7 +101,10 @@ export function SubjectRow({
           className={cn("domaine truncate", done && "opacity-60")}
           style={{ color: text }}
         >
-          {data.folderName ?? data.folderSlug ?? "Sans domaine"}
+          {data.folderPath ??
+            data.folderName ??
+            data.folderSlug ??
+            "Sans domaine"}
         </div>
         <h3
           className={cn(
@@ -173,8 +180,10 @@ export function toSubjectRowData(e: EnrichedSubject): SubjectRowData {
     summary: e.subject.summary,
     folderSlug: e.folderSlug,
     folderName: e.folderName,
+    folderPath: e.folderPath,
     folderColor: e.folderColor,
     folderIcon: e.folderIcon,
+    folderChainIds: e.folderChainIds,
     urgent: e.subject.priority === "urgent",
     // « Nouveau » = sujet ouvert jamais consulté (marqueur dérivé de lastOpenedAt).
     isNew:

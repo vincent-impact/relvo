@@ -482,6 +482,8 @@ export async function loadAccountProjection(
       isDefault: true,
       isActive: true,
       parentId: true,
+      color: true,
+      icon: true,
     },
     orderBy: { name: "asc" },
   });

@@ -16,6 +16,7 @@ import { formatTime } from "@/lib/display";
 import { folderVisual } from "@/lib/folders";
 import { cachedAgendaTasks, cachedTaskFeed } from "@/server/cached";
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
+import { loadFolderTree, presentationDe } from "@relvo/db";
 import { calendrierParis, jourDecale, jourParis } from "@relvo/db/temps";
 
 // Calendrier — LA page des tâches (invariant 34), sous un segmented Semaine /
@@ -129,14 +130,10 @@ async function PlanningGrid({
     },
     orderBy: [{ startDate: "asc" }, { startTime: "asc" }],
     include: {
-      subject: {
-        select: {
-          id: true,
-          folder: { select: { slug: true, color: true } },
-        },
-      },
+      subject: { select: { id: true, folderId: true } },
     },
   });
+  const tree = await loadFolderTree(db);
 
   const planningTasks: PlanningTask[] = tasks
     .filter((t) => t.startDate)
@@ -144,10 +141,11 @@ async function PlanningGrid({
       id: t.id,
       title: t.title,
       time: formatTime(t.startTime),
-      // La couleur de BANDE du domaine, la même que sur toute ligne du produit.
+      // La couleur de BANDE du domaine, la même que sur toute ligne du
+      // produit : celle de son PREMIER NIVEAU (M23.4).
       color: folderVisual({
-        slug: t.subject?.folder?.slug ?? null,
-        color: t.subject?.folder?.color ?? null,
+        slug: presentationDe(tree, t.subject?.folderId)?.slug ?? null,
+        color: presentationDe(tree, t.subject?.folderId)?.color ?? null,
       }).color,
       subjectId: t.subject?.id ?? null,
       dayKey: t.startDate!.toISOString().slice(0, 10),

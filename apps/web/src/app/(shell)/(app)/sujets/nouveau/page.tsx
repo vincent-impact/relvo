@@ -1,6 +1,7 @@
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { SubjectDetailForm } from "@/components/subject/subject-detail-form";
 import { contactFullName } from "@/lib/display";
+import { listFolderOptions } from "@relvo/db";
 import { getTenantDb } from "@/server/auth-context";
 
 // Création manuelle d'un sujet (Direction B) — même set-up que l'onglet « Détail »
@@ -10,10 +11,7 @@ import { getTenantDb } from "@/server/auth-context";
 export default async function NouveauSujetPage() {
   const db = await getTenantDb();
   const [folders, contacts] = await Promise.all([
-    db.folder.findMany({
-      orderBy: [{ isDefault: "desc" }, { name: "asc" }],
-      select: { id: true, name: true, slug: true },
-    }),
+    listFolderOptions(db),
     db.contact.findMany({
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       select: { id: true, firstName: true, lastName: true, company: true },

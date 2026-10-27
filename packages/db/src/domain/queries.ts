@@ -10,6 +10,7 @@ import {
 import { Actor, SubjectStatus } from "../generated/prisma/enums";
 import type { TenantDb } from "../tenant";
 import { contactDisplayName } from "./contacts";
+import { loadFolderTree, presentationDe } from "./folders";
 import { resolveReplyTargets } from "./brouillon";
 import { countUnsortedConversations } from "./conversations";
 import { cursorArgs, paginationSchema, toPage } from "./pagination";
@@ -258,17 +259,20 @@ export async function enrichTasks(
       tasks.map((t) => t.subjectId).filter((id): id is string => id != null),
     ),
   ];
-  const subjects = await db.subject.findMany({
-    where: { id: { in: subjectIds } },
-    select: {
-      id: true,
-      title: true,
-      reference: true,
-      priority: true,
-      contactIds: true,
-      folder: { select: { slug: true } },
-    },
-  });
+  const [subjects, tree] = await Promise.all([
+    db.subject.findMany({
+      where: { id: { in: subjectIds } },
+      select: {
+        id: true,
+        title: true,
+        reference: true,
+        priority: true,
+        contactIds: true,
+        folderId: true,
+      },
+    }),
+    loadFolderTree(db),
+  ]);
   const subById = new Map(subjects.map((s) => [s.id, s]));
   const contactIds = [...new Set(subjects.flatMap((s) => s.contactIds))];
   const contacts = contactIds.length
@@ -289,7 +293,8 @@ export async function enrichTasks(
       subjectTitle: s?.title ?? "",
       subjectReference: s?.reference ?? "",
       urgent: s?.priority === Priority.urgent,
-      folderSlug: s?.folder?.slug ?? null,
+      // Le rail d'une tâche : la couleur du premier niveau du dossier (M23.4).
+      folderSlug: presentationDe(tree, s?.folderId)?.slug ?? null,
       contactName: firstContactId
         ? (nameById.get(firstContactId) ?? null)
         : null,
@@ -321,14 +326,18 @@ export type EnrichedSubject = {
   taskTotal: number;
   /** Tâches terminées — numérateur de la progress bar. */
   taskDone: number;
-  /** Slug du dossier de rattachement (rail coloré / icône de domaine), ou null. */
+  /** Slug du PREMIER NIVEAU du dossier (rail coloré / icône, M23.4), ou null. */
   folderSlug: string | null;
   /** Nom du dossier de rattachement, ou null. */
   folderName: string | null;
-  /** Clé de couleur STOCKÉE sur le dossier (logo personnalisé), ou null. */
+  /** Chemin lisible du dossier (« Clients › Narbonne »), ou null. */
+  folderPath: string | null;
+  /** Clé de couleur STOCKÉE sur le premier niveau (logo personnalisé), ou null. */
   folderColor: string | null;
-  /** Clé d'icône STOCKÉE sur le dossier, ou null. */
+  /** Clé d'icône STOCKÉE sur le premier niveau, ou null. */
   folderIcon: string | null;
+  /** La chaîne du dossier, Général exclu — ce qui fait répondre au filtre d'un père. */
+  folderChainIds: string[];
 };
 
 export async function enrichSubjects(
@@ -338,13 +347,8 @@ export async function enrichSubjects(
   if (subjects.length === 0) return [];
   const ids = subjects.map((s) => s.id);
   const contactIds = [...new Set(subjects.flatMap((s) => s.contactIds))];
-  const folderIds = [
-    ...new Set(
-      subjects.map((s) => s.folderId).filter((id): id is string => !!id),
-    ),
-  ];
 
-  const [contacts, folders, tasks, openActions, attachments, incoming] =
+  const [contacts, tree, tasks, openActions, attachments, incoming] =
     await Promise.all([
       contactIds.length
         ? db.contact.findMany({
@@ -354,26 +358,9 @@ export async function enrichSubjects(
         : Promise.resolve(
             [] as { id: string; firstName: string | null; lastName: string }[],
           ),
-      folderIds.length
-        ? db.folder.findMany({
-            where: { id: { in: folderIds } },
-            select: {
-              id: true,
-              name: true,
-              slug: true,
-              color: true,
-              icon: true,
-            },
-          })
-        : Promise.resolve(
-            [] as {
-              id: string;
-              name: string;
-              slug: string;
-              color: string | null;
-              icon: string | null;
-            }[],
-          ),
+      // L'arbre entier, d'un coup : la présentation d'un dossier remonte à
+      // son premier niveau (M23.4).
+      loadFolderTree(db),
       db.task.findMany({
         where: { subjectId: { in: ids }, status: { not: TaskStatus.deleted } },
         select: { subjectId: true, status: true, sourceActor: true },
@@ -393,10 +380,9 @@ export async function enrichSubjects(
     ]);
 
   const nameById = new Map(contacts.map((c) => [c.id, contactDisplayName(c)]));
-  const folderById = new Map(folders.map((f) => [f.id, f]));
 
   return subjects.map((subject) => {
-    const folder = subject.folderId ? folderById.get(subject.folderId) : null;
+    const folder = presentationDe(tree, subject.folderId);
     const subTasks = tasks.filter((t) => t.subjectId === subject.id);
     const openTasks = subTasks.filter((t) => t.status === TaskStatus.open);
     const aiOpenTasks = openTasks.filter((t) => t.sourceActor === Actor.ai);
@@ -426,8 +412,10 @@ export async function enrichSubjects(
       taskDone: doneTasks.length,
       folderSlug: folder?.slug ?? null,
       folderName: folder?.name ?? null,
+      folderPath: folder?.path ?? null,
       folderColor: folder?.color ?? null,
       folderIcon: folder?.icon ?? null,
+      folderChainIds: folder?.chainIds ?? [],
     };
   });
 }

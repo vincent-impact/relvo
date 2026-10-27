@@ -83,8 +83,52 @@ migration appliquée sur la base locale et recomptée (les six domaines de démo
 Général) ; `migrate diff` sans dérive ; pages Mémoire, Affaires, fiche d'affaire et Calendrier
 rendues en local après la migration.
 
+## Tranche 2 — « On range » (M23.3, M23.4)
+
+**Livré.**
+- **La règle de présentation, en un seul endroit** (`presentationDe`, `domain/folders.ts`) :
+  une affaire porte le **chemin** de son dossier (« Fournisseurs › Kiloutou »), et les clés de
+  logo — slug, couleur, icône — de son **premier niveau** sous Général. Toutes les projections
+  passent par elle : `enrichSubjects` (lignes d'affaires, `folderPath`, `folderChainIds`),
+  `enrichTasks` (rail des tâches), le brief (affaires en attente), le Calendrier (mois), le fil
+  d'une conversation (cordon et bandeau d'écoute), les options de sujets de la modale de tâche.
+  `listFolderOptions` / `arbreOrdonne` : les dossiers en ordre de lecture (profondeur d'abord,
+  frères par nom) avec chemin, père, profondeur — ce que lisent les listes de choix et la Mémoire.
+- **La Mémoire en arborescence** : `/memoire` liste le **premier niveau** (Général en dernier,
+  pour ses documents) ; `FolderRow` et `AddFolderRow` (`components/memoire/folder-row.tsx`)
+  sont la ligne et l'invite partagées ; un dossier (`/memoire/[id]`) porte sa chaîne dans le
+  ciel (fil d'Ariane, primitive `breadcrumb` du registre — piège #52 rejoué : paquet `cn`
+  fantôme retiré), ses **sous-domaines** avec « Ajouter un domaine ici » (tant que la
+  profondeur le permet), puis les onglets ; l'onglet Affaires compte **lui et ses fils** ; les
+  onglets ne chevauchent le ciel que lorsque rien ne les précède (`FeedTabs overlap`). La
+  flèche remonte chez le père. `/memoire/nouveau?dans=<id>` crée dedans. Le dialogue du crayon
+  gagne **« Rangé dans »** (Général ou tout père que l'arbre accepte : ni lui-même, ni un fils,
+  ni une profondeur dépassée, hauteur du sous-arbre comprise — `moveFolderAction`) et
+  **« Supprimer ce domaine »** (confirmation qui nomme où remonte le contenu ; les affaires
+  d'un dossier de premier niveau redeviennent sans domaine).
+- **Ranger une affaire** : l'eyebrow de la fiche et les listes de choix (fiche, création,
+  dialogue de création depuis une conversation) proposent les dossiers **en ordre d'arbre avec
+  leur chemin** ; Général n'y est plus (invariant 17).
+- **La page Affaires** filtre par **dossier et ses fils** (`?dossier=<id>`, `folderChainIds`) ;
+  la barre de puces montre « Tous », les pères du dossier choisi, lui-même, puis ses fils qui
+  ont une affaire — on descend puce après puce, et on remonte par un père. L'en-tête de filtre
+  dit le chemin.
+- `cached.ts` : `CachedFolderRow` porte père, profondeur, chemin, nombre de fils et les
+  affaires ouvertes du sous-arbre ; `FolderChip` porte l'identifiant, le chemin, le père ;
+  `cachedFolderNames` (inutilisé) retiré ; version de cache `v16`.
+
+**Vérification.** Typecheck, lint, suites du paquet (`dossiers.test.ts` : présentation,
+ordre de l'arbre, chaîne sur une affaire enrichie) et de l'application vertes. Rendu headless
+390 × 844, clair et sombre émulé, sur le compte démo avec un arbre posé par les fonctions du
+domaine (Fournisseurs › Kiloutou › Agence de Narbonne) : Mémoire, dossier Fournisseurs,
+dossier Kiloutou (fil d'Ariane, sous-domaines, onglets), Affaires filtrées sur Fournisseurs
+(puces Fournisseurs puis Kiloutou, chemins sur les lignes), fiche d'une affaire (chemin dans le
+ciel), Calendrier, création « dans Fournisseurs › Kiloutou », dialogue du crayon et sa
+confirmation de suppression ; console sans erreur (un `<li>` dans un `<li>` du fil d'Ariane
+cassait l'hydratation — les séparateurs sont des frères).
+
 ## Où on en est
 
 - [x] Tranche 1 — l'arbre existe.
-- [ ] Tranche 2 — on range.
+- [x] Tranche 2 — on range.
 - [ ] Tranche 3 — Relvo range et parle en dossiers.

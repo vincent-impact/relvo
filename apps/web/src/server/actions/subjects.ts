@@ -17,6 +17,8 @@ import {
   updateSubjectPriority,
   updateSubjectStatus,
   validateSubject,
+  loadFolderTree,
+  presentationDe,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
@@ -47,22 +49,21 @@ export async function createSubjectAction(input: CreateSubjectInput) {
 /** Options légères pour le sélecteur de sujet (modale de tâche) — sujets ouverts. */
 export async function listSubjectOptionsAction() {
   return domainAction(async (db) => {
-    const subjects = await db.subject.findMany({
-      where: { status: { notIn: ["validated", "closed"] } },
-      orderBy: [{ lastActivityAt: "desc" }],
-      select: {
-        id: true,
-        reference: true,
-        title: true,
-        folder: { select: { slug: true } },
-      },
-      take: 100,
-    });
+    const [subjects, tree] = await Promise.all([
+      db.subject.findMany({
+        where: { status: { notIn: ["validated", "closed"] } },
+        orderBy: [{ lastActivityAt: "desc" }],
+        select: { id: true, reference: true, title: true, folderId: true },
+        take: 100,
+      }),
+      loadFolderTree(db),
+    ]);
     return subjects.map((s) => ({
       id: s.id,
       reference: s.reference,
       title: s.title,
-      folderSlug: s.folder?.slug ?? null,
+      // La bande du premier niveau du dossier (M23.4).
+      folderSlug: presentationDe(tree, s.folderId)?.slug ?? null,
     }));
   });
 }

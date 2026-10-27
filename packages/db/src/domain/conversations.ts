@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { loadFolderTree, presentationDe } from "./folders";
 import {
   Actor,
   ChannelType,
@@ -1014,7 +1015,7 @@ const CONVERSATION_MESSAGE_INCLUDE = {
       id: true,
       reference: true,
       title: true,
-      folder: { select: { name: true, slug: true, color: true, icon: true } },
+      folder: { select: { id: true } },
     },
   },
   attachments: {
@@ -1108,19 +1109,27 @@ export async function getConversationThread(
           id: true,
           reference: true,
           title: true,
-          folder: {
-            select: { name: true, slug: true, color: true, icon: true },
-          },
+          folder: { select: { id: true } },
         },
       },
     },
   });
+  const tree = await loadFolderTree(db);
+  // Le chemin du dossier et la couleur de son premier niveau (M23.4).
+  const dossierDe = (
+    f: { id: string } | null,
+  ): ConversationListening["folder"] => {
+    const p = presentationDe(tree, f?.id);
+    return p
+      ? { name: p.path, slug: p.slug, color: p.color, icon: p.icon }
+      : null;
+  };
   const listenings: ConversationListening[] = links
     .map((l) => ({
       subjectId: l.subject.id,
       reference: l.subject.reference,
       title: l.subject.title,
-      folder: l.subject.folder,
+      folder: dossierDe(l.subject.folder),
       active: l.closingMessageId == null,
     }))
     .sort((a, b) => Number(b.active) - Number(a.active));
@@ -1219,13 +1228,7 @@ export async function getConversationThread(
             id: m.subject.id,
             reference: m.subject.reference,
             title: m.subject.title,
-            folder: m.subject.folder
-              ? {
-                  slug: m.subject.folder.slug,
-                  color: m.subject.folder.color,
-                  icon: m.subject.folder.icon,
-                }
-              : null,
+            folder: dossierDe(m.subject.folder),
           }
         : null,
       attachments: m.attachments.map((a) => ({

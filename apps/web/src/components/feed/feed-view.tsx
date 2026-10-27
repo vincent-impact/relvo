@@ -76,8 +76,9 @@ export function FeedView({
 }) {
   const params = useSearchParams();
   const [tab, setTab] = useState<SubjectTab>(() => initialTab(params));
+  // Le dossier filtré, par identifiant : un dossier et tout ce qu'il contient.
   const [domain, setDomain] = useState<string | null>(
-    params.get("domaine") || null,
+    params.get("dossier") || null,
   );
 
   const counts: Record<SubjectTab, number> = useMemo(
@@ -99,23 +100,19 @@ export function FeedView({
   }, [tab, ouverts, valides, fermes]);
 
   const filtered = base.filter(
-    ({ row }) => domain == null || row.folderSlug === domain,
+    ({ row }) => domain == null || (row.folderChainIds ?? []).includes(domain),
   );
-  // Les domaines qui ont au moins un sujet dans l'onglet : seuls ceux-là ont
-  // une puce (une puce vers une liste vide est une puce morte).
+  // Les dossiers qui ont au moins un sujet dans l'onglet — eux ou un de leurs
+  // fils : seuls ceux-là ont une puce (une puce vers une liste vide est une
+  // puce morte).
   const present = useMemo(
-    () =>
-      new Set(
-        base
-          .map(({ row }) => row.folderSlug)
-          .filter((slug): slug is string => Boolean(slug)),
-      ),
+    () => new Set(base.flatMap(({ row }) => row.folderChainIds ?? [])),
     [base],
   );
   const domainName =
     domain == null
       ? null
-      : (folders.find((f) => f.slug === domain)?.name ?? domain);
+      : (folders.find((f) => f.id === domain)?.path ?? null);
 
   function renderRow({ row, basket }: Tagged) {
     if (basket === "ouvert") {

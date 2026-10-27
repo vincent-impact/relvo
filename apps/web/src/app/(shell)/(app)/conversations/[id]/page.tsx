@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import {
   getConversationThread,
   listDecisionTasksForConversation,
+  listFolderOptions,
 } from "@relvo/db";
 import { ConversationDetail } from "@/components/conversations/conversation-detail";
 import { MarkConversationRead } from "@/components/conversations/mark-conversation-read";
@@ -35,21 +36,12 @@ export default async function ConversationDetailPage({
 
   // Domaines (dialog de création) + sujets ouverts (« Lier à un sujet existant »).
   const [folders, subjectRows, decisionTasks] = await Promise.all([
-    db.folder.findMany({
-      where: { isDefault: false },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true, color: true, icon: true },
-    }),
+    listFolderOptions(db),
     db.subject.findMany({
       where: { status: "open" },
       orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
       take: 200,
-      select: {
-        id: true,
-        reference: true,
-        title: true,
-        folder: { select: { slug: true } },
-      },
+      select: { id: true, reference: true, title: true, folderId: true },
     }),
     // Le formulaire de décisions (05 §3.1) : les tâches ouvertes qui se
     // répondent dans ce fil et portent des questions.
@@ -103,7 +95,8 @@ export default async function ConversationDetailPage({
           id: s.id,
           reference: s.reference,
           title: s.title,
-          folderSlug: s.folder?.slug ?? null,
+          // La bande du premier niveau du dossier (M23.4).
+          folderSlug: folders.find((f) => f.id === s.folderId)?.slug ?? null,
         }))}
       />
     </>

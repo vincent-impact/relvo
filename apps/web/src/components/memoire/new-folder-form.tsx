@@ -7,10 +7,11 @@ import { FolderLogoPicker } from "@/components/memoire/folder-logo-picker";
 import { FOLDER_COLORS, FOLDER_ICONS } from "@/lib/folders";
 import { createFolderAction } from "@/server/actions/folders";
 
-// Création d'un domaine de la Mémoire (M9.20) — nom + logo (couleur + icône).
-// À la création, on ouvre la fiche du nouveau domaine.
+// Création d'un domaine de la Mémoire (M9.20) — nom + logo (couleur + icône),
+// dans le père reçu (M23.3 ; nul → sous Général). À la création, on ouvre la
+// fiche du nouveau domaine.
 
-export function NewFolderForm() {
+export function NewFolderForm({ parentId }: { parentId: string | null }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [name, setName] = useState("");
@@ -24,7 +25,12 @@ export function NewFolderForm() {
       return;
     }
     startTransition(async () => {
-      const res = await createFolderAction({ name: trimmed, color, icon });
+      const res = await createFolderAction({
+        name: trimmed,
+        color,
+        icon,
+        parentId,
+      });
       if (res.ok) {
         toast.success("Domaine créé");
         router.replace(`/memoire/${res.data.id}`);

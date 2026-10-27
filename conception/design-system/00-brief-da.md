@@ -211,10 +211,12 @@ aux yeux *parce qu'il est rare*. Le reste reste discret et lisible.
 ### Les domaines — la Mémoire de Relvo
 
 Les domaines métier (Fournisseurs, Équipe, Administration, Travaux, Clients…) sont présentés
-comme la **Mémoire** de Relvo, page du menu. Chacun a une **couleur** propre, héritée par ses
-affaires puis par leurs tâches, et manifestée par la **bande** sur la tranche de la carte ou de la
-ligne. La palette de domaines est faite de teintes distinctes et harmonieuses, lisibles sans lire
-les titres, chacune avec sa variante de texte qui tient le contraste sur blanc.
+comme la **Mémoire** de Relvo, page du menu, et s'emboîtent comme des dossiers. Chaque domaine
+de **premier niveau** a une **couleur** propre, héritée par ses sous-domaines, par leurs affaires
+puis par leurs tâches, et manifestée par la **bande** sur la tranche de la carte ou de la ligne :
+la couleur dit la famille, le **chemin** écrit au-dessus du titre (« Fournisseurs › Kiloutou »)
+dit le rangement précis. La palette de domaines est faite de teintes distinctes et harmonieuses,
+lisibles sans lire les titres, chacune avec sa variante de texte qui tient le contraste sur blanc.
 
 ### Le rendu par canal
 

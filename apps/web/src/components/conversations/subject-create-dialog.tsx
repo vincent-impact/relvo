@@ -18,6 +18,8 @@ import { cn } from "@/lib/utils";
 export type FolderOption = {
   id: string;
   name: string;
+  /** Le chemin lisible (M23.4) ; absent → le nom. */
+  path?: string;
   slug: string | null;
   color: string | null;
   icon: string | null;
@@ -149,7 +151,7 @@ export function SubjectCreateDialog({
                       className="size-[14px] flex-none"
                       style={active ? undefined : { color: viz.color }}
                     />
-                    {f.name}
+                    {f.path ?? f.name}
                   </button>
                 );
               })}

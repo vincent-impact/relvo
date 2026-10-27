@@ -67,6 +67,8 @@ export type FolderNode = {
   slug: string;
   parentId: string | null;
   isDefault: boolean;
+  color: string | null;
+  icon: string | null;
 };
 
 export type FolderTree = Map<string, FolderNode>;
@@ -79,6 +81,8 @@ export async function loadFolderTree(db: TenantDb | Tx): Promise<FolderTree> {
       slug: true,
       parentId: true,
       isDefault: true,
+      color: true,
+      icon: true,
     },
   });
   return new Map(rows.map((r) => [r.id, r]));
@@ -143,6 +147,83 @@ function hauteurDe(tree: FolderTree, id: string): number {
     max = Math.max(max, profondeurDe(tree, f.id) - profondeurDe(tree, id));
   }
   return max;
+}
+
+/**
+ * La PRÉSENTATION d'un dossier, la même sur toute ligne du produit (M23.4) :
+ * son nom, son chemin lisible, et les clés de logo — slug, couleur, icône —
+ * du PREMIER NIVEAU sous Général, celui dont le Calendrier et les bandes
+ * prennent la couleur. Un dossier de premier niveau se présente lui-même.
+ */
+export type DossierPresentation = {
+  id: string;
+  name: string;
+  /** « Clients › Franchises › Narbonne », sans Général. */
+  path: string;
+  /** Le premier dossier sous Général de la chaîne. */
+  topId: string;
+  slug: string;
+  color: string | null;
+  icon: string | null;
+  /** Les identifiants de la chaîne, Général exclu, du premier niveau au dossier. */
+  chainIds: string[];
+};
+
+export function presentationDe(
+  tree: FolderTree,
+  id: string | null | undefined,
+): DossierPresentation | null {
+  if (!id) return null;
+  const chaine = chaineDe(tree, id).filter((f) => !f.isDefault);
+  const dossier = chaine[chaine.length - 1];
+  const top = chaine[0];
+  if (!dossier || !top) return null;
+  return {
+    id: dossier.id,
+    name: dossier.name,
+    path: chaine.map((f) => f.name).join(" › "),
+    topId: top.id,
+    slug: top.slug,
+    color: top.color,
+    icon: top.icon,
+    chainIds: chaine.map((f) => f.id),
+  };
+}
+
+/** Un dossier tel que les listes de choix le proposent : sa présentation, son père et sa profondeur. */
+export type DossierOption = DossierPresentation & {
+  parentId: string | null;
+  /** Niveaux sous Général : 1 pour un fils de Général. */
+  depth: number;
+};
+
+/**
+ * L'arbre en ORDRE DE LECTURE — profondeur d'abord, les frères par nom —,
+ * Général exclu : c'est l'ordre des listes de choix et de la Mémoire.
+ */
+export function arbreOrdonne(tree: FolderTree): DossierOption[] {
+  const resultat: DossierOption[] = [];
+  const filsDe = (parentId: string | null) =>
+    [...tree.values()]
+      .filter((f) => !f.isDefault && f.parentId === parentId)
+      .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  const racine = [...tree.values()].find((f) => f.isDefault) ?? null;
+  const parcourir = (parentId: string | null, depth: number) => {
+    for (const f of filsDe(parentId)) {
+      const p = presentationDe(tree, f.id);
+      if (p) resultat.push({ ...p, parentId: f.parentId, depth });
+      parcourir(f.id, depth + 1);
+    }
+  };
+  parcourir(racine?.id ?? null, 1);
+  return resultat;
+}
+
+/** Les dossiers d'un compte, en ordre de lecture, Général exclu. */
+export async function listFolderOptions(
+  db: TenantDb,
+): Promise<DossierOption[]> {
+  return arbreOrdonne(await loadFolderTree(db));
 }
 
 /** Les identifiants d'un dossier et de ses fils — pour filtrer « ce dossier et ce qu'il contient ». */

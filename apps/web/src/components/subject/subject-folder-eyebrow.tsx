@@ -23,6 +23,8 @@ import { cn } from "@/lib/utils";
 export type EyebrowFolder = {
   id: string;
   name: string;
+  /** Le chemin lisible (« Clients › Narbonne »), M23.4 ; absent → le nom. */
+  path?: string;
   slug: string | null;
   color: string | null;
   icon: string | null;
@@ -75,7 +77,9 @@ export function SubjectFolderEyebrow({
           className="h-2 w-5 flex-none rounded-full"
           style={{ background: viz.color }}
         />
-        <span className="truncate">{folder?.name ?? "Non classé"}</span>
+        <span className="truncate">
+          {folder?.path ?? folder?.name ?? "Non classé"}
+        </span>
         <ChevronDown
           className="size-3 flex-none text-white/70"
           strokeWidth={2.6}
@@ -125,7 +129,7 @@ export function SubjectFolderEyebrow({
                     className="size-2 flex-none rounded-[2px]"
                     style={{ background: v.color }}
                   />
-                  {f.name}
+                  {f.path ?? f.name}
                 </button>
               );
             })}

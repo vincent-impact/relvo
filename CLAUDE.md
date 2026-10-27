@@ -127,12 +127,12 @@ relvo/
 |---|---|---|
 | `/` | **Accueil** — brief en quatre zones : dernières nouvelles (header) · activité · aujourd'hui · en attente de vous | onglet |
 | `/calendrier` | **Calendrier** — la page des **tâches** : indicateurs, semaine ou mois | onglet |
-| `/fil` | **Affaires** — indicateurs cliquables qui **sélectionnent** la liste, filtres par domaine, « à trier » | onglet |
+| `/fil` | **Affaires** — indicateurs cliquables qui **sélectionnent** la liste, filtres par domaine **et ses sous-domaines** (on descend puce après puce), « à trier » | onglet |
 | `/conversations` · `/conversations/[id]` | **Conversations** — **seule surface d'affichage et de réponse** d'un fil | onglet |
 | `/relvo` · `/relvo/historique` | **Échange avec Relvo**, plein écran ; questions de Relvo en formulaires ; **la prise en main** (M13.2) : s'ouvre depuis la dernière diapositive, script en texte fixe — métier, domaines, première règle, **la boîte en dernier** —, carte vivante de la lecture du courrier, affaires du moment ; **dictée** par le disque du composer (M22) — maintenir pour parler, relâcher envoie la transcription | **bouton central du dock** |
 | `/bienvenue` | **Première connexion** — six diapositives à glisser, puis « Configurer Relvo » ouvre l'échange ; vues une fois (`welcome_seen_at`) | hors-nav |
 | `/bilan` | **Bilan** — deux familles de chiffres, séparées | menu |
-| `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Mémoire** — instructions du compte, puis les domaines (Instructions / Documents / Affaires) | menu |
+| `/memoire` · `/memoire/[id]` · `/memoire/nouveau` | **Mémoire** — instructions du compte, puis les domaines **en arbre** (M23) : la page liste le premier niveau, un domaine montre ses sous-domaines (créer dedans, `?dans=`), puis Instructions / Documents / Affaires (les siennes et celles de ses fils) ; le crayon renomme, **range dans** un autre père et supprime (le contenu remonte chez le père). La couleur d'une ligne, d'une tâche, du Calendrier est celle du **premier niveau** | menu |
 | `/contacts` · `/contacts/[id]` · `/contacts/nouveau` | **Contacts** — annuaire et fiche | menu |
 | `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros ; les **Préférences** portent l'assistant et les notifications de cet appareil. Il n'y a **pas** de page Réglages | menu |
 | `/recherche` | Recherche transverse | menu, en dernier |

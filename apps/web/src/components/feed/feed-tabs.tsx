@@ -13,17 +13,26 @@ export function FeedTabs({
   panes,
   note,
   defaultValue,
+  overlap = true,
 }: {
   options: SegTabOption[];
   panes: Record<string, React.ReactNode>;
   note?: React.ReactNode;
   /** Onglet actif initial (défaut : premier de la liste). */
   defaultValue?: string;
+  /** false : une zone précède les onglets (les sous-domaines d'un dossier), la carte ne chevauche plus le ciel. */
+  overlap?: boolean;
 }) {
   const [tab, setTab] = useState(defaultValue ?? options[0]?.value ?? "");
   return (
     <>
-      <SegTabs options={options} value={tab} onValueChange={setTab} overlap />
+      <SegTabs
+        options={options}
+        value={tab}
+        onValueChange={setTab}
+        overlap={overlap}
+        className={overlap ? undefined : "mx-4 mt-5"}
+      />
       {note}
       <div>{panes[tab]}</div>
     </>

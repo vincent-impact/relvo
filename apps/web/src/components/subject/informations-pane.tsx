@@ -62,6 +62,7 @@ import { cn } from "@/lib/utils";
 export type PaneFolder = {
   id: string;
   name: string;
+  path?: string;
   slug: string | null;
   color: string | null;
   icon: string | null;

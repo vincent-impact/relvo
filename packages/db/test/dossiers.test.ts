@@ -6,12 +6,15 @@ import {
   createNote,
   createSubject,
   deleteFolder,
+  enrichSubjects,
   folderChain,
   folderSubtreeIds,
+  listFolderOptions,
   loadAccountProjection,
   loadFolderTree,
   moveFolder,
   premierNiveauDe,
+  presentationDe,
   prisma,
   PROFONDEUR_MAX,
   tenantDb,
@@ -343,6 +346,62 @@ describe("supprimer un dossier remonte ce qu'il contenait chez le père", () => 
     ).toBe(general.id);
     await expect(deleteFolder(db, general.id)).rejects.toMatchObject({
       code: "FORBIDDEN_GENERAL_FOLDER",
+    });
+  });
+});
+
+describe("la présentation d'un dossier sur les lignes (M23.4)", () => {
+  it("le chemin est le sien, les clés de logo sont celles du premier niveau, et les options suivent l'ordre de l'arbre", async () => {
+    const { db, clients, franchises, narbonne, fournisseurs } = await arbre(
+      "presentation@test.fr",
+    );
+    await db.folder.updateMany({
+      where: { id: clients.id },
+      data: { color: "red", icon: "users" },
+    });
+    await db.folder.updateMany({
+      where: { id: narbonne.id },
+      data: { color: "blue", icon: "truck" },
+    });
+    const tree = await loadFolderTree(db);
+    const p = presentationDe(tree, narbonne.id)!;
+    expect(p).toMatchObject({
+      id: narbonne.id,
+      name: "Narbonne",
+      path: "Clients › Franchises › Narbonne",
+      topId: clients.id,
+      slug: "clients",
+      color: "red",
+      icon: "users",
+      chainIds: [clients.id, franchises.id, narbonne.id],
+    });
+    expect(presentationDe(tree, clients.id)?.path).toBe("Clients");
+    expect(presentationDe(tree, null)).toBeNull();
+
+    // L'ordre de lecture : profondeur d'abord, les frères par nom.
+    const options = await listFolderOptions(db);
+    expect(options.map((o) => [o.depth, o.path])).toEqual([
+      [1, "Clients"],
+      [2, "Clients › Franchises"],
+      [3, "Clients › Franchises › Narbonne"],
+      [1, "Fournisseurs"],
+    ]);
+    expect(options.find((o) => o.id === fournisseurs.id)?.parentId).toBe(
+      (await db.folder.findFirstOrThrow({ where: { isDefault: true } })).id,
+    );
+
+    // Une affaire rangée au fond porte le chemin et répond au filtre d'un père.
+    const affaire = await createSubject(db, {
+      title: "Loyer de Narbonne",
+      folderId: narbonne.id,
+    });
+    const [e] = await enrichSubjects(db, [affaire]);
+    expect(e).toMatchObject({
+      folderName: "Narbonne",
+      folderPath: "Clients › Franchises › Narbonne",
+      folderSlug: "clients",
+      folderColor: "red",
+      folderChainIds: [clients.id, franchises.id, narbonne.id],
     });
   });
 });
