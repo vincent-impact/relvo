@@ -171,8 +171,8 @@
     {
       "titre": "Vos dossiers, rangés comme sur votre ordinateur",
       "resume": "Vous créez vos propres dossiers, et des dossiers dans ces dossiers, et vous y rangez vos affaires. Une consigne donnée à un dossier vaut pour tout ce qu'il contient. Les domaines d'aujourd'hui deviennent vos premiers dossiers.",
-      "statut": "a-faire",
-      "gauche": null,
+      "statut": "en-cours",
+      "gauche": 69.16,
       "largeur": 0
     },
     {
@@ -201,7 +201,7 @@
     "date": "2026-12-23",
     "gauche": 95.79
   },
-  "en_cours": null,
+  "en_cours": "Vos dossiers, rangés comme sur votre ordinateur",
   "journal": [
     {
       "date": "2026-10-21",

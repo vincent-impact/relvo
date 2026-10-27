@@ -7,7 +7,8 @@ resume_client: >
   Vous créez vos propres dossiers, et des dossiers dans ces dossiers, et vous y rangez vos
   affaires. Une consigne donnée à un dossier vaut pour tout ce qu'il contient. Les domaines
   d'aujourd'hui deviennent vos premiers dossiers.
-statut: a-faire
+statut: en-cours
+debut: 2026-10-27
 ---
 
 # M23 — Les dossiers
