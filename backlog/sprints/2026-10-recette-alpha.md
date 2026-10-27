@@ -214,5 +214,6 @@ passage, en un message, une fois.
 - [x] M24 tranchée (webhook Gmail en propre, déclaration à Google, nom de domaine) ; ordre : **M23 puis M24**, le reste moins urgent.
 - [x] M25 tranchée solution par solution : toutes les recommandations, S5 à éprouver, S10 et S17 écartées.
 - [x] M23 démarrée dans son propre chantier (`2026-10-m23-dossiers.md`).
+- [x] M23 terminée ; M27 (dossiers et sujets, tranché sur maquettes) démarrée dans son propre chantier (`2026-10-m27-dossiers-et-sujets.md`), avant M24.
 - [ ] R9, R10, R11, R12 à livrer.
 - [ ] Vagues de recette suivantes : à ajouter ici.

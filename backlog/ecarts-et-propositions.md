@@ -1828,6 +1828,32 @@ concept et reçoivent une règle de vocabulaire dans le socle : tout texte desti
 dit « affaire » — à confirmer par les jeux d'évaluation à leur prochaine passe. L'historique
 (sprints, journal du client, ce registre) n'est pas récrit.
 
+### Un sujet se range dans un dossier
+
+**`tranché`** · Par le dirigeant, le 2026-10-27, à la lecture de la Mémoire livrée par M23 :
+rien n'y disait qu'on avait un arbre sous les yeux, et « affaire » n'est pas le mot de ses
+clients. Leur modèle mental est celui de la **gestion de fichiers** : un fichier se range dans
+un dossier. Le produit s'y plie : une affaire **redevient un sujet**, qui se range dans un
+**dossier** ; la page Mémoire s'appelle **Dossiers** ; les fichiers d'un dossier sont des
+**connaissances**. Ce que « Affaire plutôt que sujet » avait tranché le 2026-10-15 est donc
+inversé, pour une raison qui n'est pas de goût : le mot doit dire le geste (ranger), et le
+geste est celui de l'ordinateur.
+
+**La forme a été tranchée sur maquettes, avant tout code** (la méthode de M19) : trois
+structures proposées pour la page, une retenue — **l'arbre déplié**, Général en tête de carte,
+tout l'arbre dessous, le triangle à gauche qui déplie et la ligne qui entre — parce qu'elle
+seule distingue la vue générale (l'arbre) de la vue d'un dossier. La fiche d'un dossier :
+sa description d'abord (c'est elle qui aide Relvo à ranger), puis quatre onglets à icône,
+Dossiers · Sujets · Instructions · Connaissances, un ajout en tête de chacun. Pas de
+glisser-déposer entre dossiers de premier niveau : une feuille « Ranger dans… » avec le même
+arbre, ouverte d'un glissement de la ligne ou depuis le dossier dans le ciel de la fiche.
+
+**Ce qui ne bouge pas** : `Subject`, `Folder`, `KnowledgeDocument`, les routes, les invariants
+sous leurs numéros, les consignes du modèle (qui disaient déjà « sujet » ; la règle de
+vocabulaire du socle qui forçait « affaire » tombe, celle du « dossier » reste). La conception
+se récrit en place. L'historique (sprints, journal du client, ce registre) n'est pas récrit.
+Chantier : `M27-dossiers-et-sujets.md`.
+
 ### La maquette ne fait plus foi sur le rendu
 
 **`tranché`** · Après l'habillage, l'application ne ressemble plus à la maquette, et la maquette

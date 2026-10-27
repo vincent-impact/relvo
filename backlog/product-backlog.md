@@ -41,8 +41,9 @@ frontmatter l'est.
 | **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | ✅ — vérifié en production par le dirigeant ; reste hors épique la lecture de l'historique de la messagerie à la connexion | M8, M10                         |
 | **[M18 — Disposition générale](epics/M18-disposition-generale.md)**       | ✅ — M18.9 livré par M10 ; M18.11 glissé vers M12.9 (pas de socle push) | M19, M10, M13 |
 | **[M19 — Direction artistique, allègement et prise en main](epics/M19-direction-artistique.md)** | ✅                                               | M10, M13.2                      |
-| **[M23 — Les dossiers](epics/M23-dossiers.md)**                            | ⬜ **prochain** — tranché                         | M11, M17.4                      |
-| **[M24 — Dix boîtes par compte](epics/M24-dix-boites.md)**                 | ⬜ **après M23** — tranché, M24.10 en premier    | la marge                        |
+| **[M23 — Les dossiers](epics/M23-dossiers.md)**                            | ✅ — l'arbre, la Mémoire en arborescence, Relvo range en chemins | M11, M17.4                      |
+| **[M27 — Dossiers et sujets](epics/M27-dossiers-et-sujets.md)**            | ⬜ **en cours** — tranché sur maquettes          | M24                             |
+| **[M24 — Dix boîtes par compte](epics/M24-dix-boites.md)**                 | ⬜ **après M27** — tranché, M24.10 en premier    | la marge                        |
 | **[M25 — La maîtrise des médias](epics/M25-maitrise-des-medias.md)**       | ⬜ tranché solution par solution — après M24      | M8.6, M20.3                     |
 | **[M26 — Des chiffres vrais](epics/M26-chiffres-vrais.md)**                | ⬜ recette de l'alpha                            | —                               |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
