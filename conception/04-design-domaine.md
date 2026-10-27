@@ -12,7 +12,7 @@
 
 ## 1. L'entité centrale
 
-**L'Sujet (`Subject`) est l'entité centrale du produit, pas le message.**
+**Le sujet (`Subject`) est l'entité centrale du produit, pas le message.**
 
 Un sujet est un **espace de travail** ouvert sur une situation métier en cours. Elle agrège, en un
 seul endroit : les conversations qui l'alimentent, les tâches qui la font avancer, les pièces

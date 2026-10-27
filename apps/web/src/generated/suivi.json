@@ -214,6 +214,10 @@
       "date": "2026-10-27",
       "entrees": [
         {
+          "type": "fix",
+          "texte": "Dans un dossier, chaque sujet n'affiche plus le nom du dossier en double, et si un dossier ne peut pas être déplacé, Relvo vous dit pourquoi."
+        },
+        {
           "type": "new",
           "texte": "Dans un dossier, l'onglet Connaissances vous laisse déposer un PDF, une image ou un texte ; il apparaît « à lire », et Relvo le lira pour ce dossier."
         },

@@ -53,22 +53,20 @@ export function NewFolderForm({ parentId }: { parentId: string | null }) {
       />
 
       <label className="mt-5 block">
-        <span className="mb-1.5 block text-[12.5px] font-semibold text-(--text-secondary)">
-          Nom du dossier
-        </span>
+        <span className="libelle mb-1.5 block">Nom du dossier</span>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
           autoFocus
           placeholder="Ex. Marketing, Maintenance…"
-          className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
+          className="w-full rounded-(--rayon-option) border border-(--filet) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
         />
       </label>
 
       {/* La description aide Relvo à ranger (M27.3) : demandée à la création,
           facultative — l'invite en pointillé de la fiche la rappelle. */}
       <label className="mt-4 block">
-        <span className="mb-1.5 block text-[12.5px] font-semibold text-(--text-secondary)">
+        <span className="libelle mb-1.5 block">
           En une phrase, ce qu’on y range
         </span>
         <textarea
@@ -77,7 +75,7 @@ export function NewFolderForm({ parentId }: { parentId: string | null }) {
           placeholder="Ex. Nos achats de produits frais et secs, hors boissons et emballages."
           rows={3}
           maxLength={500}
-          className="w-full resize-none rounded-xl border border-(--border) px-3 py-2.5 text-[14px] leading-[1.5] outline-none focus:border-relvo"
+          className="w-full resize-none rounded-(--rayon-option) border border-(--filet) px-3 py-2.5 text-[14px] leading-[1.5] outline-none focus:border-relvo"
         />
         <span className="mt-1 block text-[12px] leading-4 font-normal text-gris">
           Relvo lit cette phrase pour décider si un sujet se range ici.
@@ -88,7 +86,7 @@ export function NewFolderForm({ parentId }: { parentId: string | null }) {
         type="button"
         onClick={save}
         disabled={pending}
-        className="mt-7 w-full rounded-xl bg-relvo py-3 text-[15px] font-bold text-white disabled:opacity-60"
+        className="mt-7 w-full rounded-(--rayon-pilule) bg-relvo py-3 text-[15px] font-medium text-white disabled:opacity-60"
       >
         Créer le dossier
       </button>

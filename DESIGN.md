@@ -225,7 +225,7 @@ pierre, ruban décoratif, aplat d'informations.
 - L'état se lit à la forme : pastille pleine, pastille cerclée, horaire barré
 - La sélection est un cerclage, jamais un remplissage
 - Un bloc violet pâle signé des étoiles, c'est Relvo qui parle
-- Une liste est une suite de lignes dans **une** carte
+- Une liste est une suite de lignes dans **une** carte ; un arbre est une liste qui s'indente
 
 ## Colors
 
@@ -293,7 +293,7 @@ et large, lisible en plein soleil. Chargée par `next/font` (`apps/web/src/app/f
 - **Display** (600, 28px, 34px) : le titre de page dans le ciel ; 26px quand il descend sous la
   flèche d'un écran poussé.
 - **Headline** (600, 28px, 32px, chiffres tabulaires, `-0.02em`) : le chiffre d'un
-  indicateur — les cellules d'Sujets, du Calendrier, de Conversations, de Contacts et
+  indicateur — les cellules de Sujets, du Calendrier, de Conversations, de Contacts et
   l'activité de l'accueil, au même corps ; 19px pour un horaire, 16px pour un compte à droite
   d'une ligne. Jamais plus gros que le titre de page. Utilitaire `.chiffre`.
 - **Title** (400, 14.5px, 18px) : le titre d'une ligne de sujet ou de tâche ; 18px condensé,
@@ -423,7 +423,7 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
 
 ### Chips
 - **Style :** pilule blanche à filet, texte noir, une pastille de couleur de domaine devant le
-  nom (filtres par domaine d'Sujets, chips de canal).
+  nom (filtres par dossier de Sujets, chips de canal).
 - **State :** la puce active est **noire sur blanc**, jamais violette : le violet est la livrée,
   pas un état.
 
@@ -437,6 +437,21 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
 - **Carte d'attente :** 300px, bande de domaine sur la tranche, nom du domaine et état à la forme
   (pastille pleine « Urgent », cerclée « Réponse »), titre condensé 18px, contact · entreprise,
   échéance, geste en puce et « depuis N j » — la seule exception à « une liste, une carte ».
+- **Description d'un dossier** (`FolderDescription`) : une carte blanche ordinaire (rayon
+  carte, filet, ombre carte), la phrase en 14.5px fin, dessous « Relvo s'en sert pour ranger
+  les sujets ici » en 12px gris et le crayon sur disque `fond-puce` ; quand elle manque, la
+  carte est une **invite** au même rayon, bord de 2px en pointillé gris clair, sans ombre, un
+  plus violet — le pointillé dit « à compléter », jamais un vide.
+- **Feuille « Ranger dans… »** (`RangerDansSheet`) : la primitive `Sheet` du registre côté bas,
+  blanche, coins hauts au rayon feuille (20px), ombre feuille, 85 % de l'écran au plus, une
+  **poignée** de 36 × 4px gris clair en tête, titre condensé 22px sur filet. Dedans, le **même
+  arbre** que la page Dossiers (mêmes retraits, traits, bandes et triangles), sans en apprendre
+  un second : le dossier actuel est **cerclé** d'un trait violet de 2px au rayon option, avec la
+  pastille « ici » en capitales grises sur `fond-puce` ; Général est grisé à 50 % quand on range
+  un sujet, choisissable « à la racine » quand on range un dossier ; une branche exclue
+  (le dossier lui-même et ses fils) s'éteint à 45 %. Elle s'ouvre d'un glissement de la ligne
+  vers la droite (« Ranger », fond du geste de l'utilisateur, jamais `relvo-pale`) ou depuis le
+  ciel d'un sujet.
 
 ### Lists
 - **ListPanel :** la carte unique qui porte une liste, lignes séparées par le filet, la
@@ -451,6 +466,16 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
   c'est fait), titre, sujet · interlocuteur en fin, et à droite l'horaire condensé 19px ; en
   retard, un point rouge devant le titre et l'horaire **barré** en rouge. Pas de bande : la tâche
   n'a pas deux fois la couleur de son sujet.
+- **FolderTree** (l'arbre des dossiers) : une liste dont les lignes s'indentent, dans la même
+  carte unique. La racine Général en tête, 56px sur `fond-enfonce`, titre condensé 18px ; chaque
+  branche décalée de **22px par niveau**, reliée à son père par un trait de 2px de sa couleur de
+  **premier niveau** à 30 %, la bande de domaine pleine au premier niveau puis plus fine en
+  descendant (4 × 28px). Deux gestes qu'on ne confond pas : à gauche un **triangle rond de 26px**
+  sur `fond-puce` (zone de frappe 44px) qui replie ou déplie, absent quand il n'y a rien à
+  replier ; la ligne elle-même entre dans le dossier, le chevron gris clair à droite le dit. Au
+  bout, le compte des sujets ouverts en chiffre condensé 16px, rien à zéro. Ce qui n'est rangé
+  nulle part se lit au pied, « Sans dossier », avec une **bande en pointillé** gris clair — le
+  pointillé dit « à compléter ». Lignes de 52px au premier niveau, 44px ensuite.
 
 ### Inputs / Fields
 - **Style :** pilule sur `fond-puce` (le composer : 44px minimum, texte 14.5px fin, rayon 22px,
@@ -461,7 +486,8 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
 
 ### Navigation
 - **Dock :** pilule noire de 54px, 14px du bas et des bords, cinq places, icônes pleines blanches
-  (`dock-icons.tsx`), libellé 10px ; l'onglet actif se lit au **blanc plein et à la graisse**
+  (`dock-icons.tsx` ; l'onglet Sujets est une **corbeille à courrier**, le dossier restant le
+  dessin des dossiers), libellé 10px ; l'onglet actif se lit au **blanc plein et à la graisse**
   (inactif à 60 %), jamais à un cerclage. Le disque Relvo au centre, la pilule soulevée autour.
   Le dock cède la place au composer dans une conversation et dans l'échange.
 - **Indicateurs** (`IndicatorTabs`) : une carte blanche de cellules fixes qui chevauche le ciel ;
@@ -470,7 +496,11 @@ aux tokens ; un composant métier naît le jour où un deuxième écran recopie 
   violets) ; un zéro s'écrit « 0 » en gris clair ; un retard est rouge, actif ou non.
 - **Onglets d'une fiche** (`SegTabs`) : même carte, l'icône et son mot à 11px dessous, l'actif
   **souligné** d'un trait violet ; un
-  compteur à zéro ne s'affiche pas.
+  compteur à zéro ne s'affiche pas. Le mode `iconOnly` porte le compteur en badge sur le coin de
+  l'icône pour tenir quatre entrées : la fiche d'un dossier (`DossierTabs`) en a quatre,
+  Dossiers · Sujets · Instructions · Connaissances, et chaque onglet ouvre sur **sa ligne d'ajout
+  en tête** de la carte (« Ajouter un dossier ici », « … un sujet ici », « … une instruction »,
+  « … une connaissance »), texte violet 500 précédé d'un plus sur disque pâle.
 - **Menu latéral :** feuille blanche depuis la gauche, lignes de 52px en texte 17px, séparées par
   le filet, Rechercher en dernier, déconnexion en pied. Icônes pleines en violet de Relvo.
 - **Icônes :** tout pictogramme est **plein** (Phosphor en graisse « fill », via

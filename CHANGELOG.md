@@ -6,6 +6,7 @@
 
 ## 2026-10-27
 
+- **Corrigé** — Dans un dossier, chaque sujet n'affiche plus le nom du dossier en double, et si un dossier ne peut pas être déplacé, Relvo vous dit pourquoi.
 - **Nouveau** — Dans un dossier, l'onglet Connaissances vous laisse déposer un PDF, une image ou un texte ; il apparaît « à lire », et Relvo le lira pour ce dossier.
 - **Nouveau** — Pour ranger un sujet, glissez sa ligne vers la droite dans un dossier, ou tapez son dossier en haut de sa fiche : la même feuille montre vos dossiers en arbre, un tap suffit, et vous pouvez annuler.
 - **Nouveau** — Un dossier s'ouvre sur sa description, que Relvo lit pour y ranger vos sujets, puis sur quatre onglets, Dossiers, Sujets, Instructions, Connaissances, chacun avec son bouton d'ajout.

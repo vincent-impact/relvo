@@ -201,6 +201,19 @@ composant est celui des lignes fermées de la page Sujets, déjà vérifié au t
 connaissance déposée) et ceux de l'application ; rendu headless de l'onglet Connaissances ; le
 dépôt lui-même se vérifie en production, sur un compte réel, avec le stockage.
 
+## Relecture de finition
+
+La relecture d'impeccable (le relecteur de finition, contre le contrat de direction du brief de
+surface et `DESIGN.md`) a jugé la construction fidèle et rendu cinq correctifs, tous appliqués :
+les deux dialogues de dossier passaient par des alias d'avant M19 (`border`, `red-600`, une
+graisse 700, un bouton à coins ronds) — ils prennent `libelle`, `filet`, `urgent`, la pilule ;
+dans l'onglet Sujets d'un dossier, chaque ligne redisait le nom du dossier en ligne du dessus —
+elle n'écrit plus que ce qui descend sous lui ; la feuille « Rangé dans… » grisait tout sans
+dire pourquoi quand un dossier ne peut vivre qu'à la racine — elle le dit ; l'état vide des
+sujets d'un dossier parle dans la voix de Relvo, sous la carte. `DESIGN.md` est récrit depuis le
+code livré (l'arbre, les quatre onglets, la feuille, la description, le dock). Le balayage du
+mot avait laissé quatre élisions fautives devant une majuscule (« l'Sujet ») : corrigées.
+
 ## Où on en est
 
 **M27 terminée** le jour de son ouverture, en cinq commits poussés et déployés. À vérifier en

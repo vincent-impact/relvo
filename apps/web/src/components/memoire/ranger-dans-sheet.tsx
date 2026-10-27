@@ -83,6 +83,14 @@ export function RangerDansSheet({
     return true;
   };
 
+  // Quand l'arbre refuse tout (un dossier dont les fils descendent déjà au
+  // dernier niveau ne peut vivre qu'à la racine), des lignes grisées qui ne
+  // répondent pas à rien sont un cul-de-sac : la feuille dit pourquoi.
+  const toutExclu =
+    racine === "choisissable" &&
+    dossiers.length > 0 &&
+    dossiers.every((d) => exclus?.has(d.id));
+
   function choisir(id: string | null) {
     onOpenChange(false);
     onChoix(id);
@@ -156,6 +164,12 @@ export function RangerDansSheet({
               Choisissez un dossier
             </SheetDescription>
           )}
+          {toutExclu ? (
+            <p className="mt-1.5 text-[12px] leading-4 font-normal text-gris">
+              Ses dossiers descendent trop bas pour entrer ailleurs qu’à la
+              racine.
+            </p>
+          ) : null}
         </div>
         <div className="overflow-y-auto pb-[max(env(safe-area-inset-bottom),12px)]">
           {ligneGenerale}

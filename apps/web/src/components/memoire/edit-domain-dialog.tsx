@@ -144,13 +144,11 @@ export function EditDomainButton({
           </DialogHeader>
 
           <label className="block">
-            <span className="mb-1.5 block text-[12.5px] font-semibold text-(--text-secondary)">
-              Nom du dossier
-            </span>
+            <span className="libelle mb-1.5 block">Nom du dossier</span>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
+              className="w-full rounded-(--rayon-option) border border-(--filet) px-3 py-2.5 text-[14px] outline-none focus:border-relvo"
             />
           </label>
 
@@ -166,13 +164,11 @@ export function EditDomainButton({
               le même arbre, Général choisissable (à la racine), ce que l'arbre
               refuse grisé — lui-même, ses fils, trop profond. */}
           <div>
-            <span className="mb-1.5 block text-[12.5px] font-semibold text-(--text-secondary)">
-              Rangé dans
-            </span>
+            <span className="libelle mb-1.5 block">Rangé dans</span>
             <button
               type="button"
               onClick={() => setChoixPere(true)}
-              className="flex h-11 w-full items-center gap-2 rounded-xl border border-(--border) px-3 text-left text-[14px] text-noir"
+              className="flex h-11 w-full items-center gap-2 rounded-(--rayon-option) border border-(--filet) px-3 text-left text-[14px] text-noir"
             >
               <Folder className="size-[18px] flex-none text-gris" />
               <span className="min-w-0 flex-1 truncate">{pereLabel}</span>
@@ -187,7 +183,7 @@ export function EditDomainButton({
             type="button"
             onClick={save}
             disabled={pending}
-            className="w-full rounded-xl bg-relvo py-2.5 text-[14px] font-bold text-white disabled:opacity-60"
+            className="w-full rounded-(--rayon-pilule) bg-relvo py-2.5 text-[14px] font-medium text-white disabled:opacity-60"
           >
             Enregistrer
           </button>
@@ -198,7 +194,7 @@ export function EditDomainButton({
             type="button"
             onClick={() => setConfirm(true)}
             disabled={pending}
-            className="mx-auto inline-flex items-center gap-1.5 py-1 text-[13px] font-medium text-(--red-600) disabled:opacity-60"
+            className="mx-auto inline-flex items-center gap-1.5 py-1 text-[13px] font-medium text-urgent disabled:opacity-60"
           >
             <Trash className="size-4" />
             Supprimer ce dossier

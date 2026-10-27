@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { FileText } from "@/components/shared/picto";
 import { RelvoLogo } from "@/components/layout/relvo-logo";
 import { ListPanel } from "@/components/shared/list-panel";
+import { RelvoBlock } from "@/components/shared/relvo-block";
 import { folderVisual } from "@/lib/folders";
 import type { Folder as FolderModel } from "@relvo/db";
 import {
@@ -83,7 +84,19 @@ async function DossierTabs({
 
   const notes = docs.filter((d) => d.kind === "note");
   const files = docs.filter((d) => d.kind === "file");
-  const rows = (await enrichSubjects(db, subjects)).map(toSubjectRowData);
+  // Le dossier est déjà dit par la fiche : la ligne d'un sujet n'écrit que ce
+  // qui descend sous lui (« Kiloutou › Agence de Narbonne »), rien quand le
+  // sujet est rangé ici même — une présentation unique, seul le contexte varie.
+  const prefixe = memoire.folders.find((f) => f.id === id)?.path ?? "";
+  const rows = (await enrichSubjects(db, subjects))
+    .map(toSubjectRowData)
+    .map((r) => ({
+      ...r,
+      folderPath:
+        r.folderPath && prefixe && r.folderPath.startsWith(prefixe)
+          ? r.folderPath.slice(prefixe.length).replace(/^ › /, "")
+          : r.folderPath,
+    }));
   // L'arbre du dossier : ses fils et leurs fils, en ordre d'arbre (Général :
   // tout l'arbre, la même carte que la page Dossiers).
   const sousArbre = folder.isDefault
@@ -208,19 +221,22 @@ async function DossierTabs({
                       href={`/sujets/nouveau?dossier=${id}`}
                       label="Ajouter un sujet ici"
                     />
-                    {rows.length === 0 ? (
-                      <p className="px-[22px] py-8 text-center text-[14px] font-light text-gris">
-                        Aucun sujet ici. Relvo en ouvrira un quand un message
-                        concernera ce dossier.
-                      </p>
-                    ) : (
+                    {rows.length > 0 ? (
                       // Glisser une ligne à droite : « Ranger » (M27.4).
                       <SujetsRangeables
                         rows={rows}
                         dossiers={memoire.folders.filter((f) => !f.isDefault)}
                       />
-                    )}
+                    ) : null}
                   </ListPanel>
+                  {/* L'état vide guide, dans la voix de Relvo, quand c'est Relvo qui
+                      remplit (02-composants) — sous la carte, jamais dedans. */}
+                  {rows.length === 0 ? (
+                    <RelvoBlock className="mx-4 mt-3">
+                      Aucun sujet ici pour l’instant. J’en ouvrirai un dès qu’un
+                      message concernera ce dossier.
+                    </RelvoBlock>
+                  ) : null}
                 </div>
               ),
             }),
