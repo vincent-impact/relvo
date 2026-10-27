@@ -380,7 +380,7 @@ export function Diapositives({ firstName }: { firstName: string }) {
           </h2>
           <RelvoBlock className={cn("mt-4", index === last && "arrive")}>
             <EtapeFormulaire<Choix>
-              question="Avant de lire votre courrier, j’ai besoin de vous connaître : votre métier, vos domaines, vos règles. Deux minutes, en quelques questions."
+              question="Avant de lire votre courrier, j’ai besoin de vous connaître : votre métier, vos dossiers, vos règles. Deux minutes, en quelques questions."
               options={[
                 {
                   key: CONFIGURER,

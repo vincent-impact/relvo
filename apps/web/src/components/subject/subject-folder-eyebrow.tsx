@@ -55,7 +55,7 @@ export function SubjectFolderEyebrow({
     startTransition(async () => {
       const res = await updateSubjectAction(subjectId, { folderId: nextId });
       if (res.ok) {
-        toast.success("Domaine mis à jour");
+        toast.success("Dossier mis à jour");
         router.refresh();
       } else {
         toast.error(res.message);
@@ -69,7 +69,7 @@ export function SubjectFolderEyebrow({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label={`Changer le domaine : ${folder?.name ?? "non classé"}`}
+        aria-label={`Changer le dossier : ${folder?.path ?? folder?.name ?? "non rangée"}`}
         className="relative inline-flex max-w-full items-center gap-2 before:absolute before:-inset-x-2 before:-inset-y-3 before:content-[''] active:opacity-80"
       >
         <i
@@ -78,7 +78,7 @@ export function SubjectFolderEyebrow({
           style={{ background: viz.color }}
         />
         <span className="truncate">
-          {folder?.path ?? folder?.name ?? "Non classé"}
+          {folder?.path ?? folder?.name ?? "Sans dossier"}
         </span>
         <ChevronDown
           className="size-3 flex-none text-white/70"
@@ -90,7 +90,7 @@ export function SubjectFolderEyebrow({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="gap-4 p-5">
           <DialogHeader>
-            <DialogTitle>Domaine de l’affaire</DialogTitle>
+            <DialogTitle>Dossier de l’affaire</DialogTitle>
           </DialogHeader>
           <div className="flex flex-wrap gap-2">
             <button
@@ -103,7 +103,7 @@ export function SubjectFolderEyebrow({
                   : "border-(--filet) bg-white text-noir",
               )}
             >
-              Non classé
+              Sans dossier
             </button>
             {folders.map((f) => {
               const v = folderVisual({

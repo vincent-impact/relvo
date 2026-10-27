@@ -72,7 +72,7 @@ export function ficheSujet(
   return [
     `# Sujet ${s.reference} · ${s.titre}`,
     [
-      ligne("Domaine", s.domaine ?? "sans domaine"),
+      ligne("Dossier", s.domaine ?? "sans dossier"),
       ligne(
         "Étiquettes",
         s.etiquettes.length ? [...s.etiquettes].sort().join(", ") : null,
@@ -128,7 +128,7 @@ export function ficheContact(c: ContactContexte): string {
     [
       ligne("Rôle", c.role),
       ligne("Note de Relvo", c.noteRelvo),
-      ligne("Domaine habituel", c.domaineHabituel),
+      ligne("Dossier habituel", c.domaineHabituel),
       ligne(
         "Délai de réponse constaté",
         c.delaiReponseJours === null
@@ -192,7 +192,7 @@ export function ficheCloture(s: SujetClos): string {
   return [
     `# Précédent ${s.reference} · ${s.titre}`,
     [
-      ligne("Domaine", s.domaine ?? "sans domaine"),
+      ligne("Dossier", s.domaine ?? "sans dossier"),
       ligne(
         "Étiquettes",
         s.etiquettes.length ? [...s.etiquettes].sort().join(", ") : null,
@@ -222,8 +222,8 @@ export function blocPrecedents(
     .slice(0, fichesMax)
     .map((p) => p.fiche!);
   return [
-    `# Précédents du domaine`,
-    titres.length ? titres.join("\n") : `Aucun sujet validé dans ce domaine.`,
+    `# Précédents du dossier`,
+    titres.length ? titres.join("\n") : `Aucun sujet validé dans ce dossier.`,
     ...(fiches.length ? [``, ...fiches] : []),
   ].join("\n");
 }

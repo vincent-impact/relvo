@@ -21,7 +21,7 @@ export function NewFolderForm({ parentId }: { parentId: string | null }) {
   function save() {
     const trimmed = name.trim();
     if (!trimmed) {
-      toast.error("Le nom du domaine est requis.");
+      toast.error("Le nom du dossier est requis.");
       return;
     }
     startTransition(async () => {
@@ -32,7 +32,7 @@ export function NewFolderForm({ parentId }: { parentId: string | null }) {
         parentId,
       });
       if (res.ok) {
-        toast.success("Domaine créé");
+        toast.success("Dossier créé");
         router.replace(`/memoire/${res.data.id}`);
       } else {
         toast.error(res.message);
@@ -52,7 +52,7 @@ export function NewFolderForm({ parentId }: { parentId: string | null }) {
 
       <label className="mt-5 block">
         <span className="mb-1.5 block text-[12.5px] font-semibold text-(--text-secondary)">
-          Nom du domaine
+          Nom du dossier
         </span>
         <input
           value={name}
@@ -69,7 +69,7 @@ export function NewFolderForm({ parentId }: { parentId: string | null }) {
         disabled={pending}
         className="mt-7 w-full rounded-xl bg-relvo py-3 text-[15px] font-bold text-white disabled:opacity-60"
       >
-        Créer le domaine
+        Créer le dossier
       </button>
     </div>
   );

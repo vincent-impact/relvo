@@ -106,7 +106,7 @@ async function DossierTabs({
           // contrôle sans effet se retire.
           files.length === 0 ? (
             <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
-              Aucun document. Les pièces que Relvo lit pour ce domaine
+              Aucun document. Les pièces que Relvo lit pour ce dossier
               s’ajoutent ici.
             </p>
           ) : (
@@ -153,7 +153,7 @@ async function DossierTabs({
                 rows.length === 0 ? (
                   <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
                     Aucune affaire ouverte ici. Relvo en ouvrira une quand un
-                    message concernera ce domaine.
+                    message concernera ce dossier.
                   </p>
                 ) : (
                   <div className="pt-3 pb-2">
@@ -187,7 +187,7 @@ async function SousDossiers({
   return (
     <section className="pt-4">
       <ZoneHeading
-        label="Sous-domaines"
+        label="Dossiers"
         hint={fils.length > 0 ? `${fils.length}` : undefined}
       />
       <ListPanel>
@@ -195,7 +195,7 @@ async function SousDossiers({
           <FolderRow key={f.id} folder={f} />
         ))}
         {peutCreer ? (
-          <AddFolderRow parentId={folderId} label="Ajouter un domaine ici" />
+          <AddFolderRow parentId={folderId} label="Ajouter un dossier ici" />
         ) : null}
       </ListPanel>
     </section>
@@ -297,7 +297,7 @@ export default async function DossierPage({
                 </BreadcrumbList>
               </Breadcrumb>
             ) : (
-              "Domaine"
+              "Dossier"
             )}
           </span>
         }

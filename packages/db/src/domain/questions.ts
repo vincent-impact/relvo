@@ -592,8 +592,8 @@ export const SCRIPT_PRISE_EN_MAIN: readonly EtapeScript[] = [
     step: ETAPES.domainesTypiques,
     text: (c) =>
       c.sectors.some((s) => s !== "other")
-        ? "Je range vos affaires par domaine. Dans votre métier, on trouve souvent ceux-ci. Lesquels gardez-vous ?"
-        : "Je range vos affaires par domaine. Voici ceux qu'on retrouve dans la plupart des entreprises. Lesquels gardez-vous ?",
+        ? "Je range vos affaires dans des dossiers, et vous pourrez y faire des dossiers. Dans votre métier, on trouve souvent ceux-ci. Lesquels gardez-vous ?"
+        : "Je range vos affaires dans des dossiers, et vous pourrez y faire des dossiers. Voici ceux qu'on retrouve dans la plupart des entreprises. Lesquels gardez-vous ?",
     proposedAnswers: (c) => [
       ...domainesTypiquesDe(c.sectors).map((d) => ({
         key: d.key,
@@ -752,7 +752,7 @@ export async function ensureFolderProposalQuestions(
     if (deja) continue;
     await askQuestion(db, {
       scope: QuestionScope.account,
-      text: `Plusieurs affaires parlent de « ${p.name} » (${p.count}). J'en fais un domaine et je les y range ?`,
+      text: `Plusieurs affaires parlent de « ${p.name} » (${p.count}). J'en fais un dossier et je les y range ?`,
       proposedAnswers: [
         { key: "oui", label: "Oui, créez-le" },
         {

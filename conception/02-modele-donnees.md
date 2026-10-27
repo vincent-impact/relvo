@@ -107,27 +107,27 @@ enregistré depuis, et l'horodatage avance quand l'accueil est vu.
 
 ## Folder
 
-Un **domaine** : conteneur métier qui regroupe les affaires d'un périmètre, les documents de
-connaissance qui servent à les traiter, et les messages classés dans ce domaine à la réception.
+Un **dossier** : conteneur métier qui regroupe les affaires d'un périmètre, les documents de
+connaissance qui servent à les traiter, et les messages classés dans ce dossier à la réception.
 
 Porte un nom, un identifiant lisible, une description, et deux clés de présentation — couleur et
 icône — **nullables**, avec repli sur un mapping dérivé de l'identifiant lisible.
 
-**Les domaines forment un arbre.** Chaque domaine porte son **père** ; seul « Général » n'en a
+**Les dossiers forment un arbre.** Chaque dossier porte son **père** ; seul « Général » n'en a
 pas — c'est la racine, et une contrainte de base le garantit. L'identifiant lisible est unique
-**par père**, pas par compte : deux domaines de même nom peuvent vivre sous deux pères. La
-profondeur est bornée par un test du domaine, jamais par la base. La **chaîne** d'un domaine —
+**par père**, pas par compte : deux dossiers de même nom peuvent vivre sous deux pères. La
+profondeur est bornée par un test du domaine, jamais par la base. La **chaîne** d'un dossier —
 de la racine à lui — est ce que lit la couche Domaine du contexte (`05 §10.1`) ; son
 **premier niveau** sous Général est ce que lisent le Calendrier et ses pastilles. La **portée**
-d'un domaine est lui et ses fils, jamais un frère : un contact, un canal ou une question qui
-cite un domaine citent aussi tout ce qu'il contient. Le père d'un domaine ne se supprime pas
+d'un dossier est lui et ses fils, jamais un frère : un contact, un canal ou une question qui
+cite un dossier citent aussi tout ce qu'il contient. Le père d'un dossier ne se supprime pas
 en cascade : le comportement de la suppression fait foi dans `04 §10`.
 
-`is_default` marque le domaine **« Général »**, auto-créé à la création du compte.
+`is_default` marque le dossier **« Général »**, auto-créé à la création du compte.
 
-**Invariant structurel :** aucun `Subject.folder_id` ne pointe vers le domaine « Général ».
+**Invariant structurel :** aucun `Subject.folder_id` ne pointe vers le dossier « Général ».
 Quand Relvo ne sait pas classer une affaire, `folder_id` reste **nul** — l'affaire apparaît « sans
-domaine » plutôt que d'atterrir dans Général. Cela préserve le rôle de mémoire transversale de
+dossier » plutôt que d'atterrir dans Général. Cela préserve le rôle de mémoire transversale de
 celui-ci au lieu d'en faire un dépotoir. Le comportement associé fait foi dans `04`.
 
 ## Contact
@@ -136,7 +136,7 @@ Une personne, **indépendamment du canal** par lequel elle communique. Le contac
 dupliqué par canal.
 
 Porte un prénom **nullable** (nul pour une raison sociale) et un nom — ce dernier servant de clé
-de tri et de sectionnement de l'annuaire —, une entreprise, un domaine d'affinité **nullable**
+de tri et de sectionnement de l'annuaire —, une entreprise, un dossier d'affinité **nullable**
 qui oriente la qualification de ses messages, un statut, la source de sa création, et des notes.
 
 **Coordonnées primaires et secondaires.** L'adresse et le téléphone **primaires** sont des
@@ -167,7 +167,7 @@ supprimé : une colonne retirée ne se récupère pas, et rien ne coûte à la g
 ## Channel et ChannelConfig
 
 Un **`Channel`** est un point d'entrée de communication **côté utilisateur** — sa boîte mail, son
-numéro. Il porte un nom, un type, l'identifiant public correspondant, et les domaines qu'il
+numéro. Il porte un nom, un type, l'identifiant public correspondant, et les dossiers qu'il
 oriente.
 
 ⚠️ **Le canal n'est pas le contact.** Un canal est « ma boîte fournisseurs » ; un contact est une
@@ -300,7 +300,7 @@ Contrainte d'unicité sur le couple (affaire, conversation).
 Entité centrale du produit.
 
 Porte une **référence** lisible générée automatiquement, un **titre**, un **résumé** et une
-**description**, un **domaine** nullable, un **set de contacts**, un **statut** de cycle de vie à
+**description**, un **dossier** nullable, un **set de contacts**, un **statut** de cycle de vie à
 trois valeurs, une **priorité** à deux valeurs, un marqueur d'attente de réponse, le canal
 d'origine, et l'acteur qui l'a créée.
 
@@ -316,8 +316,8 @@ existe, sinon le résumé de Relvo signalé comme tel ; l'utilisateur qui corrig
 description, et sa version l'emporte sur toutes les relectures suivantes.
 
 Les **étiquettes** sont un tableau de clés du registre du compte (cf. `Label`), attribuées par
-Relvo seul. Le **domaine proposé** est un nom libre, renseigné quand aucun domaine existant ne
-convient : c'est de l'accumulation de ces propositions que naît un domaine nouveau (cf. `04 §10`).
+Relvo seul. Le **dossier proposé** est un nom libre, renseigné quand aucun dossier existant ne
+convient : c'est de l'accumulation de ces propositions que naît un dossier nouveau (cf. `04 §10`).
 
 Elle porte enfin une série d'horodatages, chacun répondant à une question distincte :
 
@@ -347,8 +347,8 @@ au calcul. Seuls `priority` et `waiting_for_reply` sont des champs.
   message**. Nul signifie « hors de toute plage d'écoute », et non « Relvo n'a pas su traiter ».
   C'est la granularité fine du modèle : elle permettra de séparer des affaires **entrelacées**
   dans un même fil. L'interface ne l'expose pas — cf. `04 §13`.
-- **`folder_id` — nullable.** Le domaine assigné au message à la réception ; c'est lui qui donne
-  ensuite son domaine à l'affaire ouverte depuis ce message.
+- **`folder_id` — nullable.** Le dossier assigné au message à la réception ; c'est lui qui donne
+  ensuite son dossier à l'affaire ouverte depuis ce message.
 
 Le message porte aussi : l'expéditeur (contact **nullable**, plus l'adresse brute et le nom
 affiché conservés quand aucun contact n'existe encore), le destinataire, le **sens**, les
@@ -471,7 +471,7 @@ un clic.
 Deux familles d'entrées portent la **boucle d'apprentissage** et la **maîtrise du coût** :
 
 - **Tout geste sur un objet proposé par Relvo conserve la proposition d'origine.** Une tâche
-  supprimée ou modifiée, un domaine reclassé, un verdict de tri confirmé ou contredit, un
+  supprimée ou modifiée, un dossier reclassé, un verdict de tri confirmé ou contredit, un
   brouillon envoyé après retouche : l'entrée porte ce que Relvo avait proposé **et** ce que
   l'utilisateur en a fait. La suppression d'une tâche étant un vrai effacement, c'est **ici, et
   nulle part ailleurs**, que l'original survit.
@@ -488,9 +488,9 @@ aucun compteur à lui.
 
 Document de référence chargé par l'utilisateur pour enrichir le contexte de Relvo.
 
-**Toujours rattaché à un domaine** — à défaut, au domaine « Général ». C'est ce domaine qui
+**Toujours rattaché à un dossier** — à défaut, au dossier « Général ». C'est ce dossier qui
 détermine sa portée : les documents de « Général » sont chargés pour **toutes** les affaires, ceux
-d'un domaine métier seulement pour les affaires de ce domaine.
+d'un dossier métier pour les affaires de ce dossier et de ses fils.
 
 Deux natures, portées par un énuméré :
 
@@ -514,15 +514,15 @@ d'activation.
 pièce jointe du message qui l'a apporté.
 
 Une instruction peut naître d'une **correction** : quand l'utilisateur reclasse une affaire ou
-écarte une tâche et dit pourquoi, son explication devient une instruction du domaine. Elle garde
+écarte une tâche et dit pourquoi, son explication devient une instruction du dossier. Elle garde
 alors la référence de l'**affaire qui l'a provoquée** — nullable, la plupart des instructions étant
 écrites directement.
 
 ## Label
 
 Une **étiquette** : un marqueur thématique attribué à l'affaire par Relvo, qui **traverse les
-domaines**. Le domaine est le périmètre de mémoire que l'utilisateur contrôle ; l'étiquette est
-une facette que Relvo tient pour lui-même — pour retrouver un précédent hors du domaine, filtrer,
+dossiers**. Le dossier est le périmètre de mémoire que l'utilisateur contrôle ; l'étiquette est
+une facette que Relvo tient pour lui-même — pour retrouver un précédent hors du dossier, filtrer,
 et poser des analogies que ni le contact ni la date ne suggèrent.
 
 Le registre est **par compte**. Une étiquette porte une clé normalisée — unique par compte —, un
@@ -541,7 +541,7 @@ structuration d'une affaire — « Narbonne est-il une franchise ? » —, ou po
 prise en main et du rattrapage (`05 §11.11`). C'est l'objet par lequel **Relvo parle en
 premier** (`05 §11.12`).
 
-Elle porte une **portée** — un contact, un domaine, une affaire ou le compte —, un texte, les
+Elle porte une **portée** — un contact, un dossier, une affaire ou le compte —, un texte, les
 **réponses proposées** quand elle se pose en formulaire, un statut — ouverte, répondue,
 écartée —, la réponse, ce qui l'a fait naître — une affaire, ou l'étape d'un script —, et les
 horodatages de question et de réponse.
@@ -615,7 +615,7 @@ que le test lit.
 | `knowledge_documents_enqueue_file_deletion` | `knowledge_documents` | trigger : même garantie pour les documents de connaissance |
 | `subjects_search_vector` | `subjects` | trigger : le vecteur plein texte (titre pondéré A, situation structurée pondérée B, dictionnaire français) est tenu à chaque écriture — le code ne l'écrit jamais |
 | `relvo_questions_scope_target_check` | `relvo_questions` | vérification : une question a exactement une cible, celle de sa portée |
-| `folders_parent_requis` | `folders` | vérification : seul le domaine « Général » n'a pas de père — tout autre domaine est rangé dans l'arbre |
+| `folders_parent_requis` | `folders` | vérification : seul le dossier « Général » n'a pas de père — tout autre dossier est rangé dans l'arbre |
 
 ### Comment cette liste reste vraie
 

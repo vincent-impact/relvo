@@ -16,6 +16,7 @@ import {
   premierNiveauDe,
   presentationDe,
   prisma,
+  resoudreDossier,
   PROFONDEUR_MAX,
   tenantDb,
 } from "../src/index";
@@ -402,6 +403,51 @@ describe("la présentation d'un dossier sur les lignes (M23.4)", () => {
       folderSlug: "clients",
       folderColor: "red",
       folderChainIds: [clients.id, franchises.id, narbonne.id],
+    });
+  });
+});
+
+describe("résoudre un dossier d'après ce qu'on en dit (M23.5, M23.7)", () => {
+  it("par son chemin, par un nom unique, par la fin du chemin ; un nom porté deux fois rend des candidats", async () => {
+    const { db, franchises, narbonne, fournisseurs } =
+      await arbre("resoudre@test.fr");
+    const m1 = await createFolder(db, {
+      name: "Montpellier",
+      parentId: franchises.id,
+    });
+    const m2 = await createFolder(db, {
+      name: "Montpellier",
+      parentId: fournisseurs.id,
+    });
+    const tree = await loadFolderTree(db);
+    expect(
+      resoudreDossier(tree, "Clients › Franchises › Narbonne").dossier?.id,
+    ).toBe(narbonne.id);
+    expect(
+      resoudreDossier(tree, "clients/franchises/narbonne").dossier?.id,
+    ).toBe(narbonne.id);
+    expect(resoudreDossier(tree, "Général › Clients").dossier?.id).toBe(
+      franchises.parentId,
+    );
+    expect(resoudreDossier(tree, "narbonne").dossier?.id).toBe(narbonne.id);
+    expect(resoudreDossier(tree, "Franchises > Montpellier").dossier?.id).toBe(
+      m1.id,
+    );
+    expect(
+      resoudreDossier(tree, "Fournisseurs › Montpellier").dossier?.id,
+    ).toBe(m2.id);
+    const ambigu = resoudreDossier(tree, "Montpellier");
+    expect(ambigu.dossier).toBeNull();
+    expect(ambigu.candidats.map((c) => c.id).sort()).toEqual(
+      [m1.id, m2.id].sort(),
+    );
+    expect(resoudreDossier(tree, "Inconnu")).toEqual({
+      dossier: null,
+      candidats: [],
+    });
+    expect(resoudreDossier(tree, null)).toEqual({
+      dossier: null,
+      candidats: [],
     });
   });
 });

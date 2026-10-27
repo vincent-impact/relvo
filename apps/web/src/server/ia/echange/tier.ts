@@ -31,7 +31,7 @@ const DEBUTS_FACTUELS = [
 
 /** Un geste ou une rédaction : le modèle agit ou écrit, il raisonne. */
 const VERBES_ACTION =
-  /\b(cr[ée]e[rsz]?|ajoute[rsz]?|pose[rsz]?|pr[ée]pare[rsz]?|r[ée]dige[rsz]?|[ée]cri[st]|marque[rsz]?|valide[rsz]?|ferme[rsz]?|r[ée]gl[ée]e?[rsz]?|supprime[rsz]?|retire[rsz]?|modifie[rsz]?|d[ée]place[rsz]?|d[ée]cale[rsz]?|reporte[rsz]?|coche[rsz]?|termine[rsz]?|retiens|note[rsz]?|r[ée]ponds?|relance[rsz]?|annule[rsz]?|change[rsz]?|ouvre[rsz]?|programme[rsz]?|planifie[rsz]?|rappelle[rsz]?|envoie[rsz]?|r[ée]sume[rsz]?|explique[rsz]?|analyse[rsz]?|compare[rsz]?|propose[rsz]?|conseille[rsz]?|que faire|qu['’]en penses)\b/i;
+  /\b(cr[ée]e[rsz]?|ajoute[rsz]?|pose[rsz]?|pr[ée]pare[rsz]?|r[ée]dige[rsz]?|[ée]cri[st]|marque[rsz]?|valide[rsz]?|ferme[rsz]?|r[ée]gl[ée]e?[rsz]?|supprime[rsz]?|retire[rsz]?|modifie[rsz]?|d[ée]place[rsz]?|mets|range[rsz]?|classe[rsz]?|d[ée]cale[rsz]?|reporte[rsz]?|coche[rsz]?|termine[rsz]?|retiens|note[rsz]?|r[ée]ponds?|relance[rsz]?|annule[rsz]?|change[rsz]?|ouvre[rsz]?|programme[rsz]?|planifie[rsz]?|rappelle[rsz]?|envoie[rsz]?|r[ée]sume[rsz]?|explique[rsz]?|analyse[rsz]?|compare[rsz]?|propose[rsz]?|conseille[rsz]?|que faire|qu['’]en penses)\b/i;
 
 /**
  * Le tier d'un tour, depuis le texte du dirigeant. Un tour sans texte — un

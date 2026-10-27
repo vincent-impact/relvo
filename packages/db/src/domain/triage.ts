@@ -20,6 +20,12 @@ import {
   findListeningSubjectForConversation,
 } from "./conversations";
 import { DomainError, assertFound } from "./errors";
+import {
+  arbreOrdonne,
+  loadFolderTree,
+  presentationDe,
+  resoudreDossier,
+} from "./folders";
 import { EVENT_TYPES, logEvent } from "./events";
 import { openSubjectOnConversation } from "./messages";
 import {
@@ -245,13 +251,14 @@ export async function getSenderProfile(
               status: true,
               waitingForReply: true,
               lastActivityAt: true,
-              folder: { select: { name: true } },
+              folderId: true,
             },
           },
         },
       },
     },
   });
+  const tree = await loadFolderTree(db);
 
   const parRaison = new Map<IgnoreReason, number>();
   const sujets = new Map<
@@ -264,10 +271,11 @@ export async function getSenderProfile(
     }
     for (const l of c.subjects) sujets.set(l.subject.id, l.subject);
   }
+  // Le dossier habituel, par son chemin (M23.5).
   const parDomaine = new Map<string, number>();
   for (const s of sujets.values()) {
-    if (s.folder)
-      parDomaine.set(s.folder.name, (parDomaine.get(s.folder.name) ?? 0) + 1);
+    const chemin = presentationDe(tree, s.folderId)?.path;
+    if (chemin) parDomaine.set(chemin, (parDomaine.get(chemin) ?? 0) + 1);
   }
   const domaineHabituel =
     [...parDomaine.entries()].sort(
@@ -359,7 +367,17 @@ export async function getTriageProjection(
     await Promise.all([
       db.folder.findMany({
         where: { isActive: true },
-        select: { name: true, description: true },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          description: true,
+          isDefault: true,
+          isActive: true,
+          parentId: true,
+          color: true,
+          icon: true,
+        },
         orderBy: { name: "asc" },
       }),
       db.subject.findMany({
@@ -503,10 +521,13 @@ export async function getTriageProjection(
       entreprise: null,
       messageries: mailboxes.map((c) => c.identifier),
       secteurs: account.sectors,
-      domaines: folders.map((f) => ({
-        nom: f.name,
-        description: f.description,
-      })),
+      // Les dossiers du compte par leur CHEMIN, en ordre d'arbre (M23.5).
+      domaines: arbreOrdonne(new Map(folders.map((f) => [f.id, f]))).map(
+        (f) => ({
+          nom: f.path,
+          description: folders.find((x) => x.id === f.id)?.description ?? null,
+        }),
+      ),
       instructionsGenerales: [],
       etiquettes: [],
       preferencesObservees: account.observedPreferences,
@@ -737,15 +758,10 @@ export async function applyTriageMatter(
       )
     : null;
 
+  // Le dossier que le tri nomme, par son CHEMIN (M23.5) — ou son nom quand
+  // il est seul à le porter ; un nom ambigu ne range rien.
   const folder = data.folderName
-    ? await db.folder.findFirst({
-        where: {
-          isDefault: false,
-          isActive: true,
-          name: { equals: data.folderName, mode: "insensitive" },
-        },
-        select: { id: true },
-      })
+    ? resoudreDossier(await loadFolderTree(db), data.folderName).dossier
     : null;
   const folderId = folder?.id ?? null;
   const proposedFolder = folderId ? null : (data.proposedFolder ?? null);

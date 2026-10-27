@@ -16,7 +16,7 @@ function plural(n: number, one: string, many = `${one}s`): string {
 // chose. Rien du tout → « rien encore ».
 export function folderSub(f: CachedFolderRow): string {
   const parts: string[] = [];
-  if (f.children > 0) parts.push(plural(f.children, "sous-domaine"));
+  if (f.children > 0) parts.push(plural(f.children, "dossier"));
   if (f.instructions > 0) parts.push(plural(f.instructions, "instruction"));
   if (f.documents > 0) parts.push(plural(f.documents, "document"));
   if (!f.isDefault && f.openSubjects > 0)

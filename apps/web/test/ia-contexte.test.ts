@@ -452,7 +452,7 @@ describe("profils et budgets", () => {
         { nom: "Bail.pdf", etiquette: null, resume: null, dossier: "Narbonne" },
       ],
     });
-    expect(couche).toContain("# Domaine : Clients › Franchises › Narbonne");
+    expect(couche).toContain("# Dossier : Clients › Franchises › Narbonne");
     expect(couche).toContain(
       "s'appliquent aussi, du plus général au plus précis",
     );
@@ -466,7 +466,7 @@ describe("profils et budgets", () => {
     expect(couche).toMatch(/- Bail\.pdf$/);
     // Un domaine de premier niveau n'hérite de rien : pas de phrase, pas de marque.
     const seul = coucheDomaine(domaine);
-    expect(seul).toContain("# Domaine : Fournisseurs");
+    expect(seul).toContain("# Dossier : Fournisseurs");
     expect(seul).not.toContain("s'appliquent aussi");
     expect(seul).not.toContain("(dossier ");
   });
@@ -523,8 +523,8 @@ describe("profils et budgets", () => {
 
   it("l'ordre du prompt va du plus stable au plus volatil", () => {
     const p = contextes.structuration.prompt;
-    expect(p.indexOf("# Le compte")).toBeLessThan(p.indexOf("# Domaine"));
-    expect(p.indexOf("# Domaine")).toBeLessThan(p.indexOf("# Aujourd'hui"));
+    expect(p.indexOf("# Le compte")).toBeLessThan(p.indexOf("# Dossier"));
+    expect(p.indexOf("# Dossier")).toBeLessThan(p.indexOf("# Aujourd'hui"));
     expect(p.indexOf("# Aujourd'hui")).toBeLessThan(
       p.indexOf("# Sujet SUB-0142"),
     );
@@ -550,7 +550,7 @@ describe("profils et budgets", () => {
       0,
       structuration.couches.compte.indexOf("## Instructions générales"),
     );
-    expect(tete).toContain("## Domaines du compte");
+    expect(tete).toContain("## Dossiers du compte");
     expect(contextes.tri.prompt.startsWith(tete)).toBe(true);
   });
 

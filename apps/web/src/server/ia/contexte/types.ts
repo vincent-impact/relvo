@@ -17,7 +17,7 @@ export type CompteContexte = {
   /** Adresses des messageries connectées : ce sur quoi un fil a été REÇU. */
   messageries: readonly string[];
   secteurs: readonly Secteur[];
-  /** Domaines du compte, « Général » compris (filtré par couche selon l'usage). */
+  /** Les dossiers du compte par leur chemin, en ordre d'arbre, Général exclu (M23.5). */
   domaines: readonly DomaineResume[];
   /** Instructions de « Général » — transversales, chargées pour tous les sujets. */
   instructionsGenerales: readonly InstructionContexte[];

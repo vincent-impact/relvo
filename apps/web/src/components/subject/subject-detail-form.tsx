@@ -229,7 +229,7 @@ export function SubjectDetailForm({
       ) : null}
 
       <div>
-        <FieldLabel>Domaine</FieldLabel>
+        <FieldLabel>Dossier</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {folders.map((fo) => {
             const active = fo.id === form.folderId;

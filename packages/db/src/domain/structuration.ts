@@ -15,7 +15,7 @@ import {
 import type { TenantDb, Tx } from "../tenant";
 import { contactDisplayName } from "./contacts";
 import { DomainError, assertFound } from "./errors";
-import { chaineDe } from "./folders";
+import { arbreOrdonne, chaineDe } from "./folders";
 import { EVENT_TYPES, logEvent } from "./events";
 import {
   createTask,
@@ -542,11 +542,12 @@ export async function loadAccountProjection(
       entreprise: null,
       messageries: mailboxes.map((c) => c.identifier),
       secteurs: account.sectors,
-      domaines: folders
-        .filter((f) => f.isActive)
+      // Les dossiers du compte par leur CHEMIN, en ordre d'arbre (M23.5).
+      domaines: arbreOrdonne(tree)
+        .filter((f) => tree.get(f.id)?.isActive)
         .map((f) => ({
-          nom: f.name,
-          description: f.description,
+          nom: f.path,
+          description: tree.get(f.id)?.description ?? null,
         })),
       instructionsGenerales,
       // Le registre entier, candidates comprises : une candidate reprise par
@@ -645,7 +646,7 @@ export async function loadSubjectSheet(
     await db.subject.findFirst({
       where: { id: subjectId },
       include: {
-        folder: { select: { id: true, name: true, description: true } },
+        folder: { select: { id: true } },
       },
     }),
     "Affaire",
@@ -714,7 +715,8 @@ export async function loadSubjectSheet(
       id: subject.id,
       reference: subject.reference,
       titre: subject.title,
-      domaine: subject.folder?.name ?? null,
+      // Le chemin du dossier (M23.5), ce que la fiche écrit.
+      domaine: domaine?.chemin.length ? domaine.chemin.join(" › ") : null,
       folderId: subject.folderId,
       proposedFolder: subject.proposedFolder,
       etiquettes: subject.labels,

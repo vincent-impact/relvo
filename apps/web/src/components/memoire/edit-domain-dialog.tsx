@@ -72,7 +72,7 @@ export function EditDomainButton({
   function save() {
     const trimmed = name.trim();
     if (!trimmed) {
-      toast.error("Le nom du domaine est requis.");
+      toast.error("Le nom du dossier est requis.");
       return;
     }
     startTransition(async () => {
@@ -88,7 +88,7 @@ export function EditDomainButton({
           return;
         }
       }
-      toast.success("Domaine mis à jour");
+      toast.success("Dossier mis à jour");
       setOpen(false);
       router.refresh();
     });
@@ -113,7 +113,7 @@ export function EditDomainButton({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="Modifier le domaine"
+        aria-label="Modifier le dossier"
         className={SKY_BTN}
       >
         <PencilSimple className="size-4" />
@@ -122,12 +122,12 @@ export function EditDomainButton({
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-h-[85dvh] gap-4 overflow-y-auto p-5">
           <DialogHeader>
-            <DialogTitle>Modifier le domaine</DialogTitle>
+            <DialogTitle>Modifier le dossier</DialogTitle>
           </DialogHeader>
 
           <label className="block">
             <span className="mb-1.5 block text-[12.5px] font-semibold text-(--text-secondary)">
-              Nom du domaine
+              Nom du dossier
             </span>
             <input
               value={name}
@@ -189,7 +189,7 @@ export function EditDomainButton({
             className="mx-auto inline-flex items-center gap-1.5 py-1 text-[13px] font-medium text-(--red-600) disabled:opacity-60"
           >
             <Trash className="size-4" />
-            Supprimer ce domaine
+            Supprimer ce dossier
           </button>
         </DialogContent>
       </Dialog>
@@ -200,8 +200,8 @@ export function EditDomainButton({
         title={`Supprimer « ${initialName} » ?`}
         description={
           rootDelete
-            ? `Ses sous-domaines, instructions et documents remontent dans ${parentLabel}. Ses affaires restent, sans domaine. Rien n’est perdu.`
-            : `Ses sous-domaines, instructions, documents et affaires remontent dans « ${parentLabel} ». Rien n’est perdu.`
+            ? `Ses dossiers, instructions et documents remontent dans ${parentLabel}. Ses affaires restent, sans dossier. Rien n’est perdu.`
+            : `Ses dossiers, instructions, documents et affaires remontent dans « ${parentLabel} ». Rien n’est perdu.`
         }
         confirmLabel="Supprimer"
         tone="destructive"

@@ -41,6 +41,13 @@ import {
   type TacheSnapshot,
   type Task,
   type TenantDb,
+  cheminDe,
+  createFolder,
+  type FolderNode,
+  listFolderOptions,
+  loadFolderTree,
+  moveFolder,
+  resoudreDossier,
 } from "@relvo/db";
 import {
   type SubjectRowData,
@@ -165,8 +172,28 @@ export type SortieOutil =
       folderId: string;
       annulation: Annulation;
     }
+  /** Les dossiers du compte, en ordre d'arbre, avec leur chemin (M23.7). */
+  | { type: "dossiers"; dossiers: DossierLigne[] }
+  /** Un dossier créé ou déplacé, une affaire rangée. */
+  | {
+      type: "dossier";
+      geste: "créé" | "déplacé";
+      nom: string;
+      chemin: string;
+      folderId: string;
+      annulation: Annulation;
+    }
   | { type: "introuvable"; message: string }
   | { type: "erreur"; message: string };
+
+/** Un dossier tel que l'échange le liste. */
+export type DossierLigne = {
+  id: string;
+  nom: string;
+  chemin: string;
+  profondeur: number;
+  affairesOuvertes: number;
+};
 
 /** Une lecture du courrier récent, telle que la carte vivante la rend. */
 export type LectureLigne = {
@@ -341,7 +368,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     );
   }
 
-  /** Le domaine nommé, sinon « Général » — pour y ÉCRIRE. */
+  /** Le dossier nommé, sinon « Général » — pour y ÉCRIRE une instruction. */
   async function domaine(nom: string | null) {
     return (
       (await domaineNomme(nom)) ??
@@ -350,20 +377,63 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     );
   }
 
-  /** Le domaine nommé, ou null — pour y CHERCHER : un repli silencieux fausserait la réponse. */
+  /**
+   * Le dossier que le dirigeant dit — un chemin, ou un nom quand il est seul à
+   * le porter —, ou null : un repli silencieux fausserait la réponse, et un nom
+   * porté par plusieurs dossiers se demande (PITFALLS #68, `dossierDit`).
+   */
   async function domaineNomme(nom: string | null) {
-    const q = nom?.trim().toLowerCase();
+    const q = nom?.trim();
     if (!q) return null;
-    const folders = await listFolders(db);
-    return (
-      folders.find((f) => f.name.toLowerCase() === q) ??
-      folders.find((f) => f.name.toLowerCase().includes(q)) ??
-      null
-    );
+    if (q.toLowerCase() === "général" || q.toLowerCase() === "general") {
+      return (await listFolders(db)).find((f) => f.isDefault) ?? null;
+    }
+    return resoudreDossier(await loadFolderTree(db), q).dossier;
+  }
+
+  /** Le dossier dit, ou le message qui demande lequel : introuvable, ou plusieurs. */
+  async function dossierDit(
+    nom: string,
+  ): Promise<{ dossier: FolderNode } | { message: string }> {
+    const tree = await loadFolderTree(db);
+    const r = resoudreDossier(tree, nom);
+    if (r.dossier) return { dossier: r.dossier };
+    if (r.candidats.length > 1) {
+      return {
+        message: `Plusieurs dossiers s'appellent « ${nom.trim()} » : ${r.candidats
+          .map((c) => cheminDe(tree, c.id))
+          .join(" ; ")}. Demander lequel.`,
+      };
+    }
+    return {
+      message: `Aucun dossier « ${nom.trim()} ». Les dossiers : ${await nomsDesDomaines()}.`,
+    };
   }
 
   async function nomsDesDomaines(): Promise<string> {
-    return (await listFolders(db)).map((f) => f.name).join(", ");
+    return (await listFolderOptions(db)).map((f) => f.path).join(", ");
+  }
+
+  async function lignesDossiers(): Promise<DossierLigne[]> {
+    const [options, ouverts] = await Promise.all([
+      listFolderOptions(db),
+      db.subject.groupBy({
+        by: ["folderId"],
+        where: { status: "open" },
+        _count: { _all: true },
+      }),
+    ]);
+    const parDossier = new Map(ouverts.map((g) => [g.folderId, g._count._all]));
+    return options.map((o) => ({
+      id: o.id,
+      nom: o.name,
+      chemin: o.path,
+      profondeur: o.depth,
+      // Les affaires du dossier et de ses fils : sa portée.
+      affairesOuvertes: options
+        .filter((x) => x.id === o.id || x.chainIds.includes(o.id))
+        .reduce((n, x) => n + (parDossier.get(x.id) ?? 0), 0),
+    }));
   }
 
   /**
@@ -484,7 +554,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     // ── Lecture ──────────────────────────────────────────────────────────
     list_subjects: tool({
       description:
-        "Liste les affaires du dirigeant. `filtre` : urgentes, ou en_attente (celles qui attendent une réponse). `statut` : ouvertes (défaut), validees, fermees, toutes. `recherche` : des mots du titre ou du résumé. `domaine` : le nom d'un domaine du compte. `contact` : le nom d'un contact (« mes affaires avec Karim »). `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française sur la dernière activité (« ce qui a bougé cette semaine » ; la date du jour est dans le contexte). Sans critère : les affaires ouvertes, urgentes d'abord. Ce qui est à trier : list_conversations.",
+        "Liste les affaires du dirigeant. `filtre` : urgentes, ou en_attente (celles qui attendent une réponse). `statut` : ouvertes (défaut), validees, fermees, toutes. `recherche` : des mots du titre ou du résumé. `domaine` : le chemin ou le nom d'un dossier du compte — un dossier compte avec tout ce qu'il contient. `contact` : le nom d'un contact (« mes affaires avec Karim »). `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française sur la dernière activité (« ce qui a bougé cette semaine » ; la date du jour est dans le contexte). Sans critère : les affaires ouvertes, urgentes d'abord. Ce qui est à trier : list_conversations.",
       inputSchema: z.object({
         filtre: z.enum(["urgentes", "en_attente"]).nullable(),
         statut: z
@@ -499,11 +569,11 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
       }),
       execute: async (args): Promise<SortieOutil> => {
         try {
-          const f = args.domaine ? await domaineNomme(args.domaine) : null;
-          if (args.domaine && !f) {
-            return introuvable(
-              `Aucun domaine « ${args.domaine.trim()} ». Les domaines : ${await nomsDesDomaines()}.`,
-            );
+          let f: FolderNode | null = null;
+          if (args.domaine) {
+            const r = await dossierDit(args.domaine);
+            if (!("dossier" in r)) return introuvable(r.message);
+            f = r.dossier;
           }
           let contactId: string | null = null;
           if (args.contact) {
@@ -837,7 +907,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     search_knowledge: tool({
       description:
-        "Cherche dans la Mémoire de Relvo : les instructions du dirigeant (ses règles) et les documents qu'il a déposés. `recherche` : des mots. `domaine` : le nom d'un domaine du compte. `genre` : instructions ou documents. Sans critère : toute la Mémoire, la plus récente d'abord. Pour « qu'est-ce que je t'ai dit sur… », « quelles sont mes règles », « le document sur… ». Une instruction désactivée est rendue avec `active: false` : elle existe mais ne s'applique pas.",
+        "Cherche dans la Mémoire de Relvo : les instructions du dirigeant (ses règles) et les documents qu'il a déposés. `recherche` : des mots. `domaine` : le chemin ou le nom d'un dossier du compte. `genre` : instructions ou documents. Sans critère : toute la Mémoire, la plus récente d'abord. Pour « qu'est-ce que je t'ai dit sur… », « quelles sont mes règles », « le document sur… ». Une instruction désactivée est rendue avec `active: false` : elle existe mais ne s'applique pas.",
       inputSchema: z.object({
         recherche: z.string().nullable(),
         domaine: z.string().nullable(),
@@ -851,11 +921,11 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
         limite,
       }): Promise<SortieOutil> => {
         try {
-          const f = nomDomaine ? await domaineNomme(nomDomaine) : null;
-          if (nomDomaine && !f) {
-            return introuvable(
-              `Aucun domaine « ${nomDomaine.trim()} ». Les domaines : ${await nomsDesDomaines()}.`,
-            );
+          let f: FolderNode | null = null;
+          if (nomDomaine) {
+            const r = await dossierDit(nomDomaine);
+            if (!("dossier" in r)) return introuvable(r.message);
+            f = r.dossier;
           }
           return {
             type: "memoire",
@@ -1109,16 +1179,145 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
       },
     }),
 
+    // ── Dossiers (M23.7) — par les mêmes fonctions que la Mémoire ─────────
+    list_folders: tool({
+      description:
+        "Liste les dossiers du dirigeant, en arbre, avec leur chemin (« Clients › Franchises ») et le nombre d'affaires ouvertes qu'ils contiennent. Pour « quels dossiers j'ai ? », « où est rangé… ». Inutile avant de créer, déplacer ou ranger : ces outils disent eux-mêmes quand un dossier manque ou qu'un nom en désigne plusieurs.",
+      inputSchema: z.object({}),
+      execute: async (): Promise<SortieOutil> => {
+        try {
+          return { type: "dossiers", dossiers: await lignesDossiers() };
+        } catch (e) {
+          return erreur(e);
+        }
+      },
+    }),
+
+    create_folder: tool({
+      description:
+        "Crée un dossier à la demande EXPLICITE du dirigeant (« crée un dossier Franchises dans Clients ») — jamais de ta propre initiative. `dans` : le chemin ou le nom du dossier père, ou null pour un dossier de premier niveau. Trois niveaux au plus.",
+      inputSchema: z.object({
+        nom: z.string(),
+        dans: z.string().nullable(),
+      }),
+      execute: async (args): Promise<SortieOutil> => {
+        try {
+          let parentId: string | null = null;
+          if (args.dans) {
+            const r = await dossierDit(args.dans);
+            if (!("dossier" in r)) return introuvable(r.message);
+            parentId = r.dossier.id;
+          }
+          const f = await createFolder(db, { name: args.nom.trim(), parentId });
+          ecrit();
+          const tree = await loadFolderTree(db);
+          return {
+            type: "dossier",
+            geste: "créé",
+            nom: f.name,
+            chemin: cheminDe(tree, f.id),
+            folderId: f.id,
+            annulation: { type: "dossier", id: f.id, a: a() },
+          };
+        } catch (e) {
+          return erreur(e);
+        }
+      },
+    }),
+
+    move_folder: tool({
+      description:
+        "Range un dossier dans un autre, avec tout ce qu'il contient (« mets Narbonne dans Franchises »). `dossier` : le chemin ou le nom du dossier à déplacer. `dans` : le chemin ou le nom du père, ou null pour le remonter au premier niveau.",
+      inputSchema: z.object({
+        dossier: z.string(),
+        dans: z.string().nullable(),
+      }),
+      execute: async (args): Promise<SortieOutil> => {
+        try {
+          const cible = await dossierDit(args.dossier);
+          if (!("dossier" in cible)) return introuvable(cible.message);
+          let parentId: string | null = null;
+          if (args.dans) {
+            const r = await dossierDit(args.dans);
+            if (!("dossier" in r)) return introuvable(r.message);
+            parentId = r.dossier.id;
+          }
+          const precedent = cible.dossier.parentId;
+          const f = await moveFolder(db, cible.dossier.id, parentId, CHAT);
+          ecrit();
+          const tree = await loadFolderTree(db);
+          return {
+            type: "dossier",
+            geste: "déplacé",
+            nom: f.name,
+            chemin: cheminDe(tree, f.id),
+            folderId: f.id,
+            annulation: {
+              type: "dossier-deplace",
+              id: f.id,
+              precedent,
+              a: a(),
+            },
+          };
+        } catch (e) {
+          return erreur(e);
+        }
+      },
+    }),
+
+    move_subject: tool({
+      description:
+        "Range une affaire dans un dossier (« mets l'affaire Narbonne dans Franchises », « classe ça dans Fournisseurs »). `domaine` : le chemin ou le nom du dossier, ou null pour la sortir de tout dossier.",
+      inputSchema: z.object({
+        ...designation,
+        domaine: z.string().nullable(),
+      }),
+      execute: async (args): Promise<SortieOutil> => {
+        try {
+          const cible = await affaire(args);
+          if (!("id" in cible)) return introuvable(cible.message);
+          let folderId: string | null = null;
+          if (args.domaine) {
+            const r = await dossierDit(args.domaine);
+            if (!("dossier" in r)) return introuvable(r.message);
+            folderId = r.dossier.id;
+          }
+          const avant = await db.subject.findFirst({
+            where: { id: cible.id },
+            select: { folderId: true },
+          });
+          const s = await updateSubject(db, cible.id, { folderId }, CHAT);
+          ecrit();
+          const tree = await loadFolderTree(db);
+          return {
+            type: "affaire-modifiee",
+            geste: folderId
+              ? `rangée dans ${cheminDe(tree, folderId)}`
+              : "sortie de son dossier",
+            affaire: (await lignesAffaires([s.id]))[0]!,
+            annulation: {
+              type: "affaire-rangee",
+              id: s.id,
+              precedent: avant?.folderId ?? null,
+              a: a(),
+            },
+          };
+        } catch (e) {
+          return erreur(e);
+        }
+      },
+    }),
+
     // ── Affaires ─────────────────────────────────────────────────────────
     create_subject: tool({
       description:
-        "Ouvre une affaire à la demande du dirigeant : un titre court orienté métier, un domaine du compte s'il convient, un contact connu s'il est nommé, un résumé d'une phrase.",
+        "Ouvre une affaire à la demande du dirigeant : un titre court orienté métier, un dossier du compte s'il convient, un contact connu s'il est nommé, un résumé d'une phrase.",
       inputSchema: z.object({
         titre: z.string(),
         domaine: z
           .string()
           .nullable()
-          .describe("Le nom d'un domaine du compte, ou null."),
+          .describe("Le chemin ou le nom d'un dossier du compte, ou null."),
         contact: z
           .string()
           .nullable()
@@ -1369,7 +1568,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
     // ── Mémoire ──────────────────────────────────────────────────────────
     create_knowledge_note: tool({
       description:
-        "Écrit une instruction dans la Mémoire de Relvo, à la demande du dirigeant : une règle qu'il veut que tu appliques (« les devis au-dessus de 5 000 € passent par moi »). Dans un domaine du compte, sinon dans « Général ».",
+        "Écrit une instruction dans la Mémoire de Relvo, à la demande du dirigeant : une règle qu'il veut que tu appliques (« les devis au-dessus de 5 000 € passent par moi »). Dans un dossier du compte (son chemin ou son nom), sinon dans « Général » — une instruction donnée à un dossier vaut pour tout ce qu'il contient.",
       inputSchema: z.object({
         titre: z.string(),
         contenu: z.string(),
@@ -1381,7 +1580,7 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
           if (!f)
             return {
               type: "erreur",
-              message: "Aucun domaine pour accueillir l'instruction.",
+              message: "Aucun dossier pour accueillir l'instruction.",
             };
           const n = await createNote(
             db,

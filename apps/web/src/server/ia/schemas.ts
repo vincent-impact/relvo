@@ -73,9 +73,9 @@ export const SortieTri = z.object({
   confiance: z.enum(CONFIANCES),
   /** Une phrase, visible dans la liste à trier. */
   raison: z.string(),
-  /** Nom EXACT d'un domaine du compte, ou null si aucun ne convient ou si la nature n'est pas professionnelle. */
+  /** CHEMIN exact d'un dossier du compte (« Clients › Franchises »), ou null si aucun ne convient ou si la nature n'est pas professionnelle. Le champ garde son nom (M23.6). */
   domaine: z.string().nullable(),
-  /** Nom libre quand aucun domaine existant ne convient (`04 §10`). */
+  /** Nom libre quand aucun dossier existant ne convient (`04 §10`). */
   domaine_propose: z.string().nullable(),
   /** Référence d'un sujet ouvert du compte que ce fil prolonge — réponse, confirmation, accusé attendu —, sinon null. */
   sujet_existant: z.string().nullable(),

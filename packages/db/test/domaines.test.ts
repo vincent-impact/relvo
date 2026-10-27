@@ -167,7 +167,7 @@ describe("les domaines proposés par le courrier", () => {
     const [q] = await listOpenQuestions(db);
     expect(q?.originStep).toBe(`${ETAPE_DOMAINE_PROPOSE}/assurances`);
     expect(q?.text).toBe(
-      "Plusieurs affaires parlent de « Assurances » (2). J'en fais un domaine et je les y range ?",
+      "Plusieurs affaires parlent de « Assurances » (2). J'en fais un dossier et je les y range ?",
     );
     expect(nomProposeDe(q!.text)).toBe("Assurances");
     // « Non, pas celui-là » : notée, jamais reproposée.

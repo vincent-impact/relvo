@@ -164,7 +164,7 @@ export function contexteTri(args: {
       instant: coucheInstant(args.instant.maintenant),
       situation: coucheSituationTri(args.conversation),
     },
-    `# Ta décision\nRends ton verdict de tri sur ce fil, avec sa confiance, sa raison, le domaine, l'éventuel sujet existant, le titre et la priorité.`,
+    `# Ta décision\nRends ton verdict de tri sur ce fil, avec sa confiance, sa raison, le dossier (champ « domaine », par son chemin exact), l'éventuel sujet existant, le titre et la priorité.`,
   );
 }
 

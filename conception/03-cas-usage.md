@@ -346,7 +346,7 @@ et revient dans l'application.
 dernières semaines. » Une carte s'y met à jour — messages trouvés, messages lus, affaires
 ouvertes. Pendant ce temps, Relvo lui demande ses secteurs, puis lui explique en deux phrases ce
 qu'il appelle une affaire. Les premières affaires apparaissent sous la carte, comme partout ailleurs.
-Quand plusieurs affaires se ressemblent, Relvo propose des domaines à cocher, tirés de son
+Quand plusieurs affaires se ressemblent, Relvo propose des dossiers à cocher, tirés de son
 courrier, et lui demande s'il a une consigne pour l'un d'eux. Il répond, ou il passe. À la fin,
 Relvo dit ce qu'il a lu, ouvert et mis en sourdine, et lui propose d'entrer.
 

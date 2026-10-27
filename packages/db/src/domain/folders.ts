@@ -67,6 +67,7 @@ export type FolderNode = {
   slug: string;
   parentId: string | null;
   isDefault: boolean;
+  isActive: boolean;
   color: string | null;
   icon: string | null;
 };
@@ -81,6 +82,7 @@ export async function loadFolderTree(db: TenantDb | Tx): Promise<FolderTree> {
       slug: true,
       parentId: true,
       isDefault: true,
+      isActive: true,
       color: true,
       icon: true,
     },
@@ -224,6 +226,63 @@ export async function listFolderOptions(
   db: TenantDb,
 ): Promise<DossierOption[]> {
   return arbreOrdonne(await loadFolderTree(db));
+}
+
+/**
+ * RÉSOUT un dossier d'après ce qu'on en dit (M23.5, M23.7) : un chemin
+ * (« Clients › Narbonne », « clients/narbonne »), ou un nom seul quand il ne
+ * désigne qu'un dossier. La casse et les accents ne comptent pas. Plusieurs
+ * dossiers du même nom ne sont jamais tranchés en silence : ils reviennent en
+ * candidats, et c'est à qui demande de préciser (PITFALLS #68).
+ */
+export function resoudreDossier(
+  tree: FolderTree,
+  texte: string | null | undefined,
+): { dossier: FolderNode | null; candidats: FolderNode[] } {
+  const segments = (texte ?? "")
+    .split(/\s*(?:›|>|\/|»)\s*/)
+    .map((s) => slugify(s))
+    .filter(Boolean);
+  if (segments.length === 0) return { dossier: null, candidats: [] };
+  // Un dossier inactif ne se range plus.
+  const dossiers = [...tree.values()].filter((f) => !f.isDefault && f.isActive);
+  const cheminSlugs = (f: FolderNode) =>
+    chaineDe(tree, f.id)
+      .filter((x) => !x.isDefault)
+      .map((x) => slugify(x.name));
+  // Le chemin exact, Général omis ou non.
+  const parChemin = dossiers.filter((f) => {
+    const c = cheminSlugs(f);
+    return (
+      c.join("/") === segments.join("/") ||
+      (segments[0] === "general" && c.join("/") === segments.slice(1).join("/"))
+    );
+  });
+  if (parChemin.length === 1) return { dossier: parChemin[0]!, candidats: [] };
+  // Un nom seul : unique → trouvé ; plusieurs → candidats.
+  if (segments.length === 1) {
+    const parNom = dossiers.filter(
+      (f) => slugify(f.name) === segments[0] || f.slug === segments[0],
+    );
+    if (parNom.length === 1) return { dossier: parNom[0]!, candidats: [] };
+    if (parNom.length > 1) return { dossier: null, candidats: parNom };
+    // Un bout du nom, s'il ne désigne qu'un dossier.
+    const parBout = dossiers.filter((f) =>
+      slugify(f.name).includes(segments[0]!),
+    );
+    if (parBout.length === 1) return { dossier: parBout[0]!, candidats: [] };
+    return { dossier: null, candidats: parBout };
+  }
+  // Un chemin partiel : la fin du chemin suffit (« Franchises › Narbonne »).
+  const parFin = dossiers.filter((f) => {
+    const c = cheminSlugs(f);
+    return (
+      c.length >= segments.length &&
+      c.slice(-segments.length).join("/") === segments.join("/")
+    );
+  });
+  if (parFin.length === 1) return { dossier: parFin[0]!, candidats: [] };
+  return { dossier: null, candidats: parFin };
 }
 
 /** Les identifiants d'un dossier et de ses fils — pour filtrer « ce dossier et ce qu'il contient ». */

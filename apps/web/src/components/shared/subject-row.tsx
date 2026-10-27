@@ -104,7 +104,7 @@ export function SubjectRow({
           {data.folderPath ??
             data.folderName ??
             data.folderSlug ??
-            "Sans domaine"}
+            "Sans dossier"}
         </div>
         <h3
           className={cn(

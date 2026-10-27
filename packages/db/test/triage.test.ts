@@ -169,10 +169,8 @@ describe("projection du tri", () => {
     expect(p.compte.messageries).toEqual(["b@test.fr"]);
     expect(p.compte.secteurs).toEqual(["food"]);
     // Domaines actifs, « Général » compris (la couche le filtre) ; l'inactif non.
-    expect(p.compte.domaines.map((d) => d.nom)).toEqual([
-      "Fournisseurs",
-      "Général",
-    ]);
+    // Les dossiers actifs par leur chemin, en ordre d'arbre, Général exclu.
+    expect(p.compte.domaines.map((d) => d.nom)).toEqual(["Fournisseurs"]);
     expect(p.compte.domaines[0]?.description).toBe("Achats et livraisons");
     // Des titres de sujets OUVERTS, jamais les validés.
     expect(p.compte.sujetsOuverts).toEqual([

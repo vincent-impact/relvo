@@ -435,31 +435,34 @@ pas vérifié.
 
 ### Folder
 
-Un `Folder` est un **domaine de la mémoire de Relvo** : il regroupe les affaires d'un périmètre
+Un `Folder` est un **dossier de la mémoire de Relvo** : il regroupe les affaires d'un périmètre
 **et** les connaissances qui servent à les traiter.
 
 Le folder **« Général »** est auto-créé, **purement documentaire**, et **non supprimable** : il
 ne contient jamais d'affaire. Il accueille les connaissances transversales, chargées dans le
-contexte de toutes les affaires. Une affaire que Relvo ne sait pas classer reste **sans domaine** — elle
+contexte de toutes les affaires. Une affaire que Relvo ne sait pas ranger reste **sans dossier** — elle
 n'atterrit **pas** dans Général.
 
-**Les domaines s'emboîtent**, comme des dossiers sur un ordinateur : « Général » est la racine,
-tout autre domaine a un père, une affaire se range à n'importe quelle profondeur. **Une
+**Les dossiers s'emboîtent**, comme sur un ordinateur : « Général » est la racine,
+tout autre dossier a un père, une affaire se range à n'importe quelle profondeur. **Une
 instruction ou un document donnés à un père s'appliquent à tous ses fils et à leurs
 affaires** — ce n'est pas une option, c'est ce qu'un dossier veut dire ; la chaîne se lit du
-plus général au plus précis, et le plus précis précise les autres sans les effacer. Un domaine
+plus général au plus précis, et le plus précis précise les autres sans les effacer. Un dossier
 se **déplace** avec tout ce qu'il contient ; jamais la racine, jamais dans lui-même ni dans un
-de ses fils, jamais au-delà de la profondeur bornée. Un domaine se **supprime en remontant**
-ce qu'il contenait chez son père — ses domaines, ses instructions, ses documents, ses affaires,
+de ses fils, jamais au-delà de la profondeur bornée. Un dossier se **supprime en remontant**
+ce qu'il contenait chez son père — ses dossiers, ses instructions, ses documents, ses affaires,
 ses messages classés, les contacts et canaux qui le citaient — ; rien n'est perdu. Quand le
-père est « Général », les affaires et les contacts redeviennent **sans domaine** plutôt que d'y
-entrer. Les questions de Relvo sur ce domaine tombent avec lui.
+père est « Général », les affaires et les contacts redeviennent **sans dossier** plutôt que d'y
+entrer. Les questions de Relvo sur ce dossier tombent avec lui.
 
-**Un domaine n'est jamais créé par Relvo.** Quand aucun domaine ne convient, Relvo pose sur
-l'affaire un **domaine proposé**. Dès que plusieurs affaires portent la même proposition, l'interface
-suggère de créer le domaine et d'y reclasser ces affaires — un geste, réversible. Les socles des
-secteurs du compte proposent par ailleurs des domaines typiques à la prise en main. Les domaines **émergent du
-courrier** ; ils ne s'inventent pas devant un formulaire vide.
+**Un dossier n'est jamais créé par Relvo.** Quand aucun dossier ne convient, Relvo pose sur
+l'affaire un **dossier proposé** ; quand il range, il parle en **chemins** (« Clients › Franchises »),
+le plus précis qui convient. Dès que plusieurs affaires portent la même proposition, l'interface
+suggère de créer le dossier et d'y ranger ces affaires — un geste, réversible. Les socles des
+secteurs du compte proposent par ailleurs des dossiers typiques à la prise en main, de premier
+niveau. Les dossiers **émergent du courrier** ; ils ne s'inventent pas devant un formulaire vide.
+Dans l'échange, Relvo liste, crée, déplace un dossier et range une affaire **à la demande du
+dirigeant**, par les fonctions de la Mémoire.
 
 ### Label
 
@@ -471,7 +474,7 @@ par affaire. L'utilisateur ne la saisit jamais ; il filtre dessus.
 ### RelvoQuestion
 
 Une question naît **ouverte** à la structuration d'une affaire, ou à une étape de la prise en
-main et du rattrapage, avec pour portée le contact, le domaine, l'affaire ou le compte qu'elle
+main et du rattrapage, avec pour portée le contact, le dossier, l'affaire ou le compte qu'elle
 concerne. Elle devient **répondue** quand l'utilisateur y répond — sur la fiche, ou dans
 l'échange par le formulaire —, la réponse étant écrite dans la fiche, dans l'objet du compte ou
 dans une instruction, dans la même transaction ; ou **écartée** d'un geste. Tant qu'une question

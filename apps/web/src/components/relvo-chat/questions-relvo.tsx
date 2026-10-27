@@ -35,10 +35,10 @@ function phraseOutcome(o: QuestionOutcome): string {
       return `C’est noté dans votre Mémoire, dans ${o.folderName} : je l’appliquerai.`;
     case "folders":
       return o.names.length === 1
-        ? `C’est fait : le domaine ${o.names[0]} est dans votre Mémoire. J’y rangerai les affaires qui s’y rapportent.`
+        ? `C’est fait : le dossier ${o.names[0]} est dans votre Mémoire. J’y rangerai les affaires qui s’y rapportent.`
         : `C’est fait : ${o.names.join(", ")} sont dans votre Mémoire. J’y rangerai les affaires qui s’y rapportent.`;
     case "folder-created":
-      return `C’est fait : le domaine « ${o.name} » existe, ${o.reclassees} affaire${o.reclassees > 1 ? "s y sont rangées" : " y est rangée"}.`;
+      return `C’est fait : le dossier « ${o.name} » existe, ${o.reclassees} affaire${o.reclassees > 1 ? "s y sont rangées" : " y est rangée"}.`;
     case "lecture-etendue":
       return "C’est parti : je lis deux semaines de plus. Les affaires apparaîtront à mesure.";
     case "noted":

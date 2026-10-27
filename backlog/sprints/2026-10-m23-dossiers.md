@@ -127,8 +127,47 @@ ciel), Calendrier, création « dans Fournisseurs › Kiloutou », dialogue du c
 confirmation de suppression ; console sans erreur (un `<li>` dans un `<li>` du fil d'Ariane
 cassait l'hydratation — les séparateurs sont des frères).
 
+## Tranche 3 — « Relvo range et parle en dossiers » (M23.5, M23.6, M23.7)
+
+**Livré.**
+- **Les chemins** (M23.5) : `resoudreDossier` (`domain/folders.ts`) résout ce qu'on dit d'un
+  dossier — un chemin (« Clients › Narbonne », séparateurs tolérés), le chemin depuis Général,
+  la fin d'un chemin, ou un nom seul quand il est unique ; un nom porté par plusieurs dossiers
+  rend des **candidats**, jamais un choix silencieux (PITFALLS #68). Le tri range par ce
+  résolveur (`resolveTriageDecision`) ; la couche Compte liste les dossiers **par leur chemin,
+  en ordre d'arbre** (`coucheCompteTri`, tri et structuration), et dit au modèle que le champ
+  « domaine » attend l'un de ces chemins ; la fiche affaire et le dossier habituel d'un contact
+  portent le chemin. Les dossiers typiques et les propositions du courrier restent de premier
+  niveau ; Relvo ne crée jamais un dossier seul (socle).
+- **Le mot** (M23.6) : « dossier » dans toute l'interface (Mémoire, filtres, fiche, dialogues,
+  diapositives, questions de Relvo), dans le script de la prise en main (« je range vos
+  affaires dans des dossiers »), dans le socle (règle de vocabulaire à côté d'« affaire » ; les
+  champs structurés `domaine` / `domaine_propose` gardent leur nom, comme `sujet`), dans les
+  couches (« Dossiers du compte », « # Dossier : chemin »), les fiches et le prompt du tri.
+  `conception/` récrite en place : `01` (§8 nommage, §13 vocabulaire, invariants 15, 16, 17, 31
+  sous les mêmes numéros), `02`, `03`, `04 §10`, `05` (§1.1 ter, §1.5, §9.6, §10, §11.6, §11.11,
+  §12), le brief du design system ; `CLAUDE.md`.
+- **Les outils de l'échange** (M23.7) : `list_folders` (l'arbre, chemins, affaires ouvertes du
+  sous-arbre), `create_folder` (nom + `dans`, sur demande explicite), `move_folder` (dossier +
+  `dans`), `move_subject` (une affaire par référence ou titre + dossier) — par `createFolder`,
+  `moveFolder`, `updateSubject`, journalisés `chat` ; trois annulations de plus (`dossier`,
+  `dossier-deplace`, `affaire-rangee`, `defaireGeste`) ; `list_subjects`, `search_knowledge`,
+  `create_subject`, `create_knowledge_note` prennent un chemin ou un nom et demandent lequel
+  quand un nom en désigne plusieurs ; rendu dans le fil (`Dossiers`, bloc « Dossier … créé /
+  déplacé », « rangée dans … ») ; le routeur de tier connaît « mets », « range », « classe » ;
+  quatre cas d'évaluation (E20 à E23, `jeu/echange/cas.jsonl`).
+
+**Vérification.** Typecheck, lint, suites du paquet (`dossiers.test.ts` : résolution par
+chemin, nom, fin de chemin, candidats) et de l'application vertes ; rendu headless de la
+Mémoire et d'un dossier avec le mot ; `eval:echange --cas E20,E21,E22,E23` sur le compte démo
+local.
+
 ## Où on en est
 
 - [x] Tranche 1 — l'arbre existe.
 - [x] Tranche 2 — on range.
-- [ ] Tranche 3 — Relvo range et parle en dossiers.
+- [x] Tranche 3 — Relvo range et parle en dossiers.
+
+**M23 terminée.** Reste à vérifier **en production par le dirigeant** : créer un dossier dans
+un dossier, y ranger une affaire, filtrer les Affaires, demander à Relvo « quels dossiers j'ai ? ».
+**Suivant** : M24 (dix boîtes par compte), puis R9 à R12 du sprint de recette.

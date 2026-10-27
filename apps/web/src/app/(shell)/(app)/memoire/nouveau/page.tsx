@@ -6,7 +6,7 @@ import { Screen } from "@/components/layout/screen";
 import { NewFolderForm } from "@/components/memoire/new-folder-form";
 import { getTenantDb } from "@/server/auth-context";
 
-export const metadata: Metadata = { title: "Nouveau domaine — Relvo" };
+export const metadata: Metadata = { title: "Nouveau dossier — Relvo" };
 
 // Création d'un domaine de la Mémoire (M9.20, M23.3) — nom + logo (couleur +
 // icône), DANS un père quand on vient d'un dossier (`?dans=`), sinon sous
@@ -28,8 +28,8 @@ export default async function NouveauDomainePage({
     <Screen entree>
       <RelvoHeader
         back={parent ? `/memoire/${parent.id}` : "/memoire"}
-        title="Nouveau domaine"
-        subtitle={parent ? `Dans ${parent.path}` : "Nom et logo du domaine"}
+        title="Nouveau dossier"
+        subtitle={parent ? `Dans ${parent.path}` : "Nom et logo du dossier"}
         className="pb-9"
       />
       <NewFolderForm parentId={parent?.id ?? null} />

@@ -156,7 +156,7 @@ export function blocExpediteur(e: ExpediteurContexte): string[] {
   const passe: string[] = [];
   if (e.sujetsParSesFils > 0) {
     passe.push(
-      `Ses fils ont ouvert ${e.sujetsParSesFils} sujet${e.sujetsParSesFils > 1 ? "s" : ""}${e.sujetsValides > 0 ? ` (${e.sujetsValides} validé${e.sujetsValides > 1 ? "s" : ""})` : ""}${e.domaineHabituel ? `, domaine habituel ${e.domaineHabituel}` : ""}.`,
+      `Ses fils ont ouvert ${e.sujetsParSesFils} sujet${e.sujetsParSesFils > 1 ? "s" : ""}${e.sujetsValides > 0 ? ` (${e.sujetsValides} validé${e.sujetsValides > 1 ? "s" : ""})` : ""}${e.domaineHabituel ? `, dossier habituel ${e.domaineHabituel}` : ""}.`,
     );
   }
   if (e.antecedentsTri.length) {
@@ -199,10 +199,10 @@ export function coucheCompteTri(
         ]
       : []),
     ``,
-    `## Domaines du compte`,
+    `## Dossiers du compte`,
     domaines.length
-      ? `Le champ « domaine » de ta sortie doit être l'un de ces noms, EXACTEMENT, ou null.`
-      : `Ce compte n'a encore aucun domaine : laisse « domaine » à null et propose un nom.`,
+      ? `Les dossiers du dirigeant, par leur chemin (un dossier rangé dans un autre s'écrit « Père › Fils »). Le champ « domaine » de ta sortie doit être l'un de ces chemins, EXACTEMENT, ou null.`
+      : `Ce compte n'a encore aucun dossier : laisse « domaine » à null et propose un nom.`,
     ...domaines,
     ...(avecSujets
       ? [
@@ -244,7 +244,7 @@ export function coucheCompteComplete(compte: CompteContexte): string {
  */
 export function coucheDomaine(domaine: DomaineContexte | null): string {
   if (!domaine)
-    return `# Domaine\nAucun domaine : ce sujet n'est pas encore classé.`;
+    return `# Dossier\nAucun dossier : ce sujet n'est pas encore rangé.`;
   const chemin = domaine.chemin?.length ? domaine.chemin : [domaine.nom];
   const herite = chemin.length > 1;
   const provenance = (dossier: string | undefined) =>
@@ -254,13 +254,13 @@ export function coucheDomaine(domaine: DomaineContexte | null): string {
       `- ${d.nom}${d.etiquette ? ` (${d.etiquette})` : ""}${d.resume ? ` — ${d.resume.slice(0, PLAFOND_RESUME_DOCUMENT)}` : ""}${provenance(d.dossier)}`,
   );
   return [
-    `# Domaine : ${chemin.join(" › ")}`,
+    `# Dossier : ${chemin.join(" › ")}`,
     domaine.description ?? "",
     herite
-      ? `Ce domaine est rangé dans d'autres : leurs instructions et documents s'appliquent aussi, du plus général au plus précis ; le plus précis précise les autres sans les effacer.`
+      ? `Ce dossier est rangé dans d'autres : leurs instructions et documents s'appliquent aussi, du plus général au plus précis ; le plus précis précise les autres sans les effacer.`
       : "",
     ``,
-    `## Instructions du domaine`,
+    `## Instructions du dossier`,
     blocInstructions(
       domaine.instructions.map((i) => ({
         titre: `${i.titre}${provenance(i.dossier)}`,
@@ -268,7 +268,7 @@ export function coucheDomaine(domaine: DomaineContexte | null): string {
       })),
     ),
     ``,
-    `## Documents du domaine`,
+    `## Documents du dossier`,
     documents.length ? documents.join("\n") : `Aucun.`,
   ]
     .filter((l, i, a) => !(l === "" && a[i - 1] === ""))

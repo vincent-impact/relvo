@@ -4,8 +4,19 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-10-27
+
+- **Nouveau** — Relvo parle de dossiers, range vos affaires au bon endroit dans vos dossiers, et vous pouvez lui demander de lister, créer ou déplacer un dossier et d'y ranger une affaire.
+- **Nouveau** — Vous rangez vos affaires dans des domaines, et des domaines dans des domaines : la Mémoire s'ouvre en arborescence, chaque affaire affiche son chemin, et le filtre des Affaires montre un domaine avec tout ce qu'il contient.
+- **Nouveau** — Vos domaines peuvent maintenant contenir d'autres domaines, sur trois niveaux ; une consigne ou un document donnés à un domaine valent pour tout ce qu'il contient.
+
 ## 2026-10-21
 
+- **Corrigé** — Les pièces jointes d'un e-mail reçu sont retrouvées même quand l'agrégateur ne les détaillait pas dans la liste du courrier, et celles qui manquaient peuvent être rattrapées sur une conversation.
+- **Corrigé** — Depuis le backoffice, la suppression d'un compte qui a déjà lu beaucoup de courrier aboutit, et si quelque chose échoue vous le lisez à l'écran au lieu d'un silence.
+- **Nouveau** — Relvo travaille dès l'ouverture de votre compte sans rien avoir à activer, et il vous propose lui-même d'activer les notifications sur votre téléphone à la fin de la prise en main — vous retrouvez la proposition sur l'accueil tant qu'elles ne sont pas activées.
+- **Nouveau** — Après les diapositives de bienvenue, Relvo vous pose directement ses questions — votre métier, vos domaines, une première règle — avant de vous demander la boîte à lire, et si votre métier n'est pas dans la liste il vous demande lequel.
+- **Corrigé** — Si vous quittez la page de connexion de votre boîte avant la fin, le canal n'est plus bloqué — un bouton « Connecter » vous permet de reprendre —, et pendant que Relvo lit votre courrier vous le voyez travailler depuis l'accueil, la page des canaux et le bouton Relvo.
 - **Corrigé** — Un e-mail que vous êtes en train d'écrire dans Gmail n'apparaît plus dans Relvo en plusieurs morceaux ; seul l'e-mail envoyé compte.
 - **Corrigé** — Quand vous répondez depuis Gmail, Outlook ou WhatsApp plutôt que depuis Relvo, votre réponse rejoint l'affaire, et le rendez-vous que vous proposez ou la décision que vous prenez sont pris en compte.
 - **Corrigé** — Quand vous répondez à un contact directement depuis WhatsApp, Relvo le voit : la tâche de réponse se coche, et quand votre interlocuteur confirme, le rendez-vous se pose dans votre calendrier.

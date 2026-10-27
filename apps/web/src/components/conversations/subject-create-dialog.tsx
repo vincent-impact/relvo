@@ -107,7 +107,7 @@ export function SubjectCreateDialog({
         {folders.length > 0 ? (
           <div>
             <label className="mb-1.5 block text-[12.5px] font-bold text-(--text-secondary)">
-              Domaine
+              Dossier
             </label>
             <div className="flex flex-wrap gap-2">
               <button

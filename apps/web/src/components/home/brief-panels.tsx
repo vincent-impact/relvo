@@ -196,7 +196,7 @@ export function AwaitingPanel({
               <div className="flex min-w-0 flex-1 flex-col px-3 py-2.5">
                 <div className="flex items-center justify-between gap-2">
                   <span className="domaine truncate" style={{ color: text }}>
-                    {s.folderName ?? "Sans domaine"}
+                    {s.folderName ?? "Sans dossier"}
                   </span>
                   <span
                     className={

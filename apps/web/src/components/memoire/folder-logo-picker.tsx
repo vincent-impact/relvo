@@ -33,10 +33,10 @@ export function FolderLogoPicker({
         </span>
         <div className="min-w-0">
           <div className="text-[17px] font-bold">
-            {name.trim() || "Nouveau domaine"}
+            {name.trim() || "Nouveau dossier"}
           </div>
           <div className="text-[13px] text-(--text-tertiary)">
-            Un domaine de la mémoire de Relvo
+            Un dossier de la mémoire de Relvo
           </div>
         </div>
       </div>

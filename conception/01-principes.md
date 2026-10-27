@@ -127,8 +127,9 @@ du même périmètre. Le modèle mental est celui d'un **classeur physique** : o
 servent à les traiter. C'est l'unité de classement la plus intuitive pour un public non rompu aux
 SaaS — un dossier, c'est concret.
 
-**Nommage : « Domaines », pas « Dossiers ».** « Dossiers » évoque la bureautique ; chaque domaine
-est présenté comme **un domaine de la mémoire de Relvo**. L'utilisateur comprend qu'il
+**Nommage : « Dossiers ».** Le dirigeant range, et ranger veut dire des dossiers qu'il nomme,
+qu'il emboîte, qu'il déplace — le réflexe de vingt ans de bureautique, que le produit ne combat
+pas. Chaque dossier est aussi **un dossier de la mémoire de Relvo**. L'utilisateur comprend qu'il
 **enrichit la mémoire de son assistant**.
 
 ### Deux natures de documents, et pourquoi la distinction compte
@@ -153,7 +154,7 @@ n'est pas un assistant qu'on garde.
 
 Une tâche n'est pas seulement « ce qu'il reste à faire » : c'est aussi quelque chose qui se
 positionne dans le temps. Relvo l'expose sur **deux surfaces complémentaires** — une **semaine**
-sur la page des actions, un **mois** sur une page dédiée — avec un code couleur par domaine et la
+sur la page des actions, un **mois** sur une page dédiée — avec un code couleur par dossier de premier niveau et la
 replanification par glissement.
 
 **Pourquoi deux surfaces et pas une.** La semaine répond à « qu'est-ce qui m'attend ? » ; le mois
@@ -225,7 +226,7 @@ pas sa place dans une barre qu'on regarde trente fois par jour.
 Personne n'apprend Relvo par des infobulles. La première connexion s'ouvre sur une courte série
 de **diapositives à glisser**, une phrase par diapositive, qui disent ce que Relvo fait — du
 contexte, pas un mode d'emploi —, puis ouvre **l'échange avec Relvo**. Relvo **prend la
-parole** : il demande le métier, propose les domaines, retient une première règle — sous la
+parole** : il demande le métier, propose les dossiers, retient une première règle — sous la
 forme des formulaires du produit — et demande **en dernier** la boîte où arrive le courrier. À
 la connexion de ce premier canal, il dit qu'il lit le courrier récent, montre ce qu'il trouve à
 mesure et explique en deux phrases ce qu'il faut savoir. Le temps de la lecture est le temps de
@@ -274,7 +275,7 @@ mot dit ce que le geste fait vraiment.
 | **écouter** une conversation | « fenêtre », « plage » | L'initiative appartient à l'affaire, qui se branche et se débranche |
 | **Interlocuteur** | Destinataire | Un fil a deux sens |
 | **échange** avec Relvo | conversation | « Conversation » désigne une entité du modèle : le fil avec un tiers |
-| **Domaines** | Dossiers | On enrichit la mémoire d'un agent, pas une arborescence de fichiers |
+| **Dossiers**, et des dossiers dans des dossiers | Domaines, catégories, tags | Ranger est le geste que les dirigeants connaissent ; une consigne donnée à un dossier vaut pour ce qu'il contient |
 
 ---
 
@@ -331,14 +332,16 @@ mot dit ce que le geste fait vraiment.
 14. Une tâche porte **quatre champs de date optionnels**. La deadline vit dans les champs de
     début ; les champs de fin expriment une durée.
 15. **Deux surfaces calendaires** : la semaine sur la page des actions, le mois sur une page
-    dédiée. Couleur par domaine, replanification par glissement.
+    dédiée. Couleur par dossier de **premier niveau**, replanification par glissement.
 
-**Domaines et connaissances**
+**Dossiers et connaissances**
 
-16. Un `Folder` est un **domaine de la mémoire de Relvo**, présenté en trois onglets :
-    Instructions / Documents / Affaires.
-17. Le domaine **« Général »** est auto-créé, **purement documentaire**, **non supprimable**, et
-    ne contient **jamais** d'affaire.
+16. Un `Folder` est un **dossier de la mémoire de Relvo** — un dossier a un **père**, les
+    dossiers s'emboîtent sur une profondeur bornée, et une instruction ou un document donnés à un
+    père valent pour tous ses fils —, présenté en trois onglets : Instructions / Documents /
+    Affaires.
+17. Le dossier **« Général »** est auto-créé, **purement documentaire**, **non supprimable**, est
+    la **racine** de l'arbre, et ne contient **jamais** d'affaire.
 18. Un `KnowledgeDocument` est soit un **Document** (référence figée, non modifiable, avec un
     état d'absorption décidé par Relvo), soit une **Instruction** (texte éditable).
 19. **Deux stockages, jamais un seul.** Le stockage objet est la **source de vérité et la seule
@@ -374,7 +377,7 @@ mot dit ce que le geste fait vraiment.
     jamais deux lentilles sur un écran.
 31. **Présentation unique des tâches partout** : même rendu dans la liste d'une affaire et dans une
     liste à plat, seul le contexte affiché varie. Cocher termine, décocher remet à faire ; le tap
-    ouvre la fiche ; le rail de couleur porte le domaine.
+    ouvre la fiche ; le rail de couleur porte le dossier de premier niveau.
 32. **Une tâche peut n'avoir aucune affaire** — créée à la volée, ou détachée.
 
 **Suivi de projet**

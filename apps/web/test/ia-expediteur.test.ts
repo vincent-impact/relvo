@@ -134,7 +134,7 @@ describe("l'expéditeur décide sans appel", () => {
       "Karim Benali (SoGood Distribution), contact connu, fournisseur.",
     );
     expect(bloc).toContain(
-      "Ses fils ont ouvert 4 sujets (3 validés), domaine habituel Fournisseurs.",
+      "Ses fils ont ouvert 4 sujets (3 validés), dossier habituel Fournisseurs.",
     );
     expect(bloc).toContain("SUB-0142 (en attente de sa réponse)");
     expect(

@@ -59,8 +59,8 @@ async function MemoireBody({ accountId }: { accountId: string }) {
 
       <section>
         <ZoneHeading
-          label="Par domaine"
-          hint={plural(folders.length, "domaine")}
+          label="Dossiers"
+          hint={plural(folders.length, "dossier")}
         />
         <ListPanel>
           {folders.map((f) => (
@@ -68,7 +68,7 @@ async function MemoireBody({ accountId }: { accountId: string }) {
           ))}
           {/* Même invite que « Ajouter une instruction » : une seule grammaire
               d'ajout sur l'écran, à portée du pouce en bas de la liste. */}
-          <AddFolderRow label="Ajouter un domaine" />
+          <AddFolderRow label="Ajouter un dossier" />
         </ListPanel>
       </section>
     </div>

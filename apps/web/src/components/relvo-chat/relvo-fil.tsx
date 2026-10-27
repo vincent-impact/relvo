@@ -22,6 +22,7 @@ import type {
   OutilsRelvoUI,
   RelvoUIMessage,
   SortieOutil,
+  DossierLigne,
 } from "@/server/ia/echange/outils";
 import { annulable, type Annulation } from "@/lib/relvo-annulation";
 import { phraseArret, phraseErreur } from "@/lib/echange-erreurs";
@@ -109,6 +110,10 @@ const EN_COURS: Record<keyof OutilsRelvoUI, string> = {
   update_subject_priority: "Je change la priorité",
   update_subject_summary: "Je récris le résumé",
   create_message_draft: "Je prépare le brouillon",
+  list_folders: "Je regarde vos dossiers",
+  create_folder: "Je crée le dossier",
+  move_folder: "Je range le dossier",
+  move_subject: "Je range l'affaire",
   create_knowledge_note: "J'écris l'instruction",
   update_knowledge_note: "Je modifie l'instruction",
   delete_knowledge_note: "Je retire l'instruction",
@@ -288,6 +293,30 @@ function Memoire({ connaissances }: { connaissances: ConnaissanceTrouvee[] }) {
   );
 }
 
+/** Les dossiers du compte, en arbre : l'indentation dit la profondeur. */
+function Dossiers({ dossiers }: { dossiers: DossierLigne[] }) {
+  if (dossiers.length === 0) return null;
+  return (
+    <SousCarte>
+      {dossiers.map((d) => (
+        <Link
+          key={d.id}
+          href={`/memoire/${d.id}`}
+          className="flex items-center gap-2 border-b border-(--filet) px-3.5 py-2 text-[13.5px] last:border-b-0 active:bg-(--fond-enfonce)"
+          style={{ paddingLeft: `${14 + (d.profondeur - 1) * 16}px` }}
+        >
+          <span className="min-w-0 flex-1 truncate text-noir">{d.nom}</span>
+          {d.affairesOuvertes > 0 ? (
+            <span className="chiffre flex-none text-[12px] text-gris">
+              {d.affairesOuvertes}
+            </span>
+          ) : null}
+        </Link>
+      ))}
+    </SousCarte>
+  );
+}
+
 function Affaires({ affaires }: { affaires: SubjectRowData[] }) {
   if (affaires.length === 0) return null;
   return (
@@ -404,6 +433,25 @@ function Sortie({ sortie }: { sortie: SortieOutil }) {
       return <Conversations conversations={sortie.conversations} />;
     case "memoire":
       return <Memoire connaissances={sortie.connaissances} />;
+    case "dossiers":
+      return <Dossiers dossiers={sortie.dossiers} />;
+    case "dossier":
+      return (
+        <BlocAction
+          phrase={
+            <>
+              Dossier <span className="font-medium">« {sortie.nom} »</span>{" "}
+              {sortie.geste}
+              {sortie.chemin !== sortie.nom ? ` : ${sortie.chemin}` : ""}.
+            </>
+          }
+          voir={{
+            href: `/memoire/${sortie.folderId}`,
+            label: "Voir dans la Mémoire",
+          }}
+          annulation={sortie.annulation}
+        />
+      );
     case "tache-creee":
     case "tache-modifiee":
     case "tache-cochee": {

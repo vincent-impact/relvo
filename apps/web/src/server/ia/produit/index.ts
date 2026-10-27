@@ -30,10 +30,12 @@ export function estimerJetons(texte: string): number {
 /** Budgets en jetons, par bloc. Dépassement = test rouge, pas dérive silencieuse. */
 // Le socle a grossi d'un bloc délibéré : la nature de l'avis, le cadre du
 // message reçu (l'expéditeur est un tiers) et la règle du rattachement — ce
-// qui a corrigé les premiers avis réels. Chaque jeton du socle est payé par
-// tous les comptes : on ne relève ce budget qu'avec un motif de cette taille.
+// qui a corrigé les premiers avis réels. Puis du mot du dirigeant (M23.6) :
+// « affaire » et « dossier », et le rangement par chemin. Chaque jeton du
+// socle est payé par tous les comptes : on ne relève ce budget qu'avec un
+// motif de cette taille.
 export const BUDGET_PRODUIT = {
-  socle: 1_400,
+  socle: 1_500,
   parSecteur: 1_100,
   /** Le socle de l'échange, ajouté au message système de l'échange seulement (M10). */
   echange: 700,

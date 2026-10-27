@@ -171,7 +171,7 @@
     {
       "titre": "Vos dossiers, rangés comme sur votre ordinateur",
       "resume": "Vous créez vos propres dossiers, et des dossiers dans ces dossiers, et vous y rangez vos affaires. Une consigne donnée à un dossier vaut pour tout ce qu'il contient. Les domaines d'aujourd'hui deviennent vos premiers dossiers.",
-      "statut": "en-cours",
+      "statut": "termine",
       "gauche": 69.16,
       "largeur": 0
     },
@@ -201,11 +201,48 @@
     "date": "2026-12-23",
     "gauche": 95.79
   },
-  "en_cours": "Vos dossiers, rangés comme sur votre ordinateur",
+  "en_cours": null,
   "journal": [
+    {
+      "date": "2026-10-27",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "Relvo parle de dossiers, range vos affaires au bon endroit dans vos dossiers, et vous pouvez lui demander de lister, créer ou déplacer un dossier et d'y ranger une affaire."
+        },
+        {
+          "type": "new",
+          "texte": "Vous rangez vos affaires dans des domaines, et des domaines dans des domaines : la Mémoire s'ouvre en arborescence, chaque affaire affiche son chemin, et le filtre des Affaires montre un domaine avec tout ce qu'il contient."
+        },
+        {
+          "type": "new",
+          "texte": "Vos domaines peuvent maintenant contenir d'autres domaines, sur trois niveaux ; une consigne ou un document donnés à un domaine valent pour tout ce qu'il contient."
+        }
+      ]
+    },
     {
       "date": "2026-10-21",
       "entrees": [
+        {
+          "type": "fix",
+          "texte": "Les pièces jointes d'un e-mail reçu sont retrouvées même quand l'agrégateur ne les détaillait pas dans la liste du courrier, et celles qui manquaient peuvent être rattrapées sur une conversation."
+        },
+        {
+          "type": "fix",
+          "texte": "Depuis le backoffice, la suppression d'un compte qui a déjà lu beaucoup de courrier aboutit, et si quelque chose échoue vous le lisez à l'écran au lieu d'un silence."
+        },
+        {
+          "type": "new",
+          "texte": "Relvo travaille dès l'ouverture de votre compte sans rien avoir à activer, et il vous propose lui-même d'activer les notifications sur votre téléphone à la fin de la prise en main — vous retrouvez la proposition sur l'accueil tant qu'elles ne sont pas activées."
+        },
+        {
+          "type": "new",
+          "texte": "Après les diapositives de bienvenue, Relvo vous pose directement ses questions — votre métier, vos domaines, une première règle — avant de vous demander la boîte à lire, et si votre métier n'est pas dans la liste il vous demande lequel."
+        },
+        {
+          "type": "fix",
+          "texte": "Si vous quittez la page de connexion de votre boîte avant la fin, le canal n'est plus bloqué — un bouton « Connecter » vous permet de reprendre —, et pendant que Relvo lit votre courrier vous le voyez travailler depuis l'accueil, la page des canaux et le bouton Relvo."
+        },
         {
           "type": "fix",
           "texte": "Un e-mail que vous êtes en train d'écrire dans Gmail n'apparaît plus dans Relvo en plusieurs morceaux ; seul l'e-mail envoyé compte."

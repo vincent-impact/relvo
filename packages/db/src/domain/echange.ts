@@ -14,6 +14,7 @@ import type { Prisma, Subject, Task } from "../generated/prisma/client";
 import type { TenantDb } from "../tenant";
 import { cancelAction } from "./actions";
 import type { Origine } from "./events";
+import { deleteFolder, moveFolder } from "./folders";
 import { createNote, deleteNote, updateNote } from "./knowledge";
 import { getKpis } from "./queries";
 import { formatSubjectReference } from "./reference";
@@ -746,6 +747,21 @@ export const annulationSchema = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("brouillon"), actionId: z.uuid(), a: horodatage }),
   z.object({ type: z.literal("note"), id: z.uuid(), a: horodatage }),
+  // Les dossiers (M23.7) : un dossier créé se retire, un dossier déplacé
+  // revient sous son père, une affaire rangée retrouve son dossier.
+  z.object({ type: z.literal("dossier"), id: z.uuid(), a: horodatage }),
+  z.object({
+    type: z.literal("dossier-deplace"),
+    id: z.uuid(),
+    precedent: z.uuid().nullable(),
+    a: horodatage,
+  }),
+  z.object({
+    type: z.literal("affaire-rangee"),
+    id: z.uuid(),
+    precedent: z.uuid().nullable(),
+    a: horodatage,
+  }),
   z.object({
     type: z.literal("note-modifiee"),
     id: z.uuid(),
@@ -840,6 +856,15 @@ export async function defaireGeste(
     case "note":
       await deleteNote(db, g.id, CHAT);
       return { fait: "Instruction retirée." };
+    case "dossier":
+      await deleteFolder(db, g.id);
+      return { fait: "Dossier retiré." };
+    case "dossier-deplace":
+      await moveFolder(db, g.id, g.precedent, CHAT);
+      return { fait: "Dossier remis à sa place." };
+    case "affaire-rangee":
+      await updateSubject(db, g.id, { folderId: g.precedent }, CHAT);
+      return { fait: "Affaire remise dans son dossier." };
     case "note-modifiee":
       await updateNote(
         db,

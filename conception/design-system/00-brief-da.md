@@ -143,8 +143,8 @@ dirigeant a verrouillé, puis sur ce que son monde y apporte.
   de Relvo, puis le blanc. Quelques points fins et trois étoiles à quatre branches, celles du
   signe, qui s'effacent vers le bas. Du CSS, jamais une image. Sur la connexion, le ciel prend
   près de la moitié de l'écran et le signe y flotte.
-- **La bande de domaine.** Chaque carte d'affaire et chaque ligne de liste porte sur sa tranche
-  gauche la bande pleine de son domaine, et le nom du domaine en capitales condensées de la
+- **La bande de dossier.** Chaque carte d'affaire et chaque ligne de liste porte sur sa tranche
+  gauche la bande pleine de son dossier de premier niveau, et le chemin du dossier en capitales condensées de la
   même couleur. Une bande par carte, sur la tranche : multipliées, les bandes font un camion de
   foire.
 - **Les gros chiffres.** Les indicateurs, les horaires et les délais sont en condensé, gros
@@ -208,14 +208,14 @@ on perd « ce qui se détache, c'est Relvo ».
 → Enjeu de direction : **hiérarchiser ces signaux sans saturer la ligne**. L'urgent doit sauter
 aux yeux *parce qu'il est rare*. Le reste reste discret et lisible.
 
-### Les domaines — la Mémoire de Relvo
+### Les dossiers — la Mémoire de Relvo
 
-Les domaines métier (Fournisseurs, Équipe, Administration, Travaux, Clients…) sont présentés
-comme la **Mémoire** de Relvo, page du menu, et s'emboîtent comme des dossiers. Chaque domaine
-de **premier niveau** a une **couleur** propre, héritée par ses sous-domaines, par leurs affaires
+Les dossiers métier (Fournisseurs, Équipe, Administration, Travaux, Clients…) sont présentés
+comme la **Mémoire** de Relvo, page du menu, et s'emboîtent comme sur un ordinateur. Chaque dossier
+de **premier niveau** a une **couleur** propre, héritée par ses dossiers, par leurs affaires
 puis par leurs tâches, et manifestée par la **bande** sur la tranche de la carte ou de la ligne :
 la couleur dit la famille, le **chemin** écrit au-dessus du titre (« Fournisseurs › Kiloutou »)
-dit le rangement précis. La palette de domaines est faite de teintes distinctes et harmonieuses,
+dit le rangement précis. La palette de dossiers est faite de teintes distinctes et harmonieuses,
 lisibles sans lire les titres, chacune avec sa variante de texte qui tient le contraste sur blanc.
 
 ### Le rendu par canal
@@ -238,7 +238,7 @@ voici les pièces **signature**, celles qui portent l'identité :
 - La **feuille du menu** latéral.
 
 **Les lignes et les cartes — réutilisées dans les écrans ET dans l'échange**
-- La **ligne d'affaire** : bande de domaine, nom du domaine, titre, qui attend quoi, depuis quand.
+- La **ligne d'affaire** : bande de dossier, chemin du dossier, titre, qui attend quoi, depuis quand.
   **Le composant le plus important du produit.**
 - La **carte d'attente** : contact, enjeu, geste, à feuilleter sur l'accueil.
 - La **tâche** : présentation unique partout — horaire en condensé à gauche, titre, affaire, case
@@ -249,7 +249,7 @@ voici les pièces **signature**, celles qui portent l'identité :
   une carte par ligne.
 - La **pastille d'acteur**, les **pastilles d'état** (pleine, cerclée, barrée), la **pastille de
   non-lus**, sur la conversation comme sur l'affaire.
-- Le **bandeau « Suivi dans »** en tête d'une conversation : bande de domaine + titre de l'affaire.
+- Le **bandeau « Suivi dans »** en tête d'une conversation : bande de dossier + titre de l'affaire.
 
 **Les surfaces de l'échange**
 - L'**échange plein écran** : ciel court avec retour et contexte, blocs de Relvo, bulle de
