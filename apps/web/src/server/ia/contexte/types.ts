@@ -38,19 +38,33 @@ export type SujetResume = {
   enAttente?: boolean;
 };
 
-export type InstructionContexte = { titre: string; contenu: string };
+export type InstructionContexte = {
+  titre: string;
+  contenu: string;
+  /** Le dossier de la chaîne qui la porte (M23.2) — absent pour une instruction de « Général ». */
+  dossier?: string;
+};
 
 export type DocumentContexte = {
   nom: string;
+  /** Le dossier de la chaîne qui le porte (M23.2). */
+  dossier?: string;
   /** Étiquette posée par Relvo à la réception, si le nom n'est pas parlant. */
   etiquette: string | null;
   /** Résumé de Relvo, quand il existe — jamais le fichier entier ici. */
   resume: string | null;
 };
 
-/** Couche Domaine : instructions et documents du domaine concerné. */
+/**
+ * Couche Domaine : la CHAÎNE des dossiers du sujet (M23.2), du premier niveau
+ * sous Général au dossier du sujet. Les instructions et documents sont ceux de
+ * toute la chaîne, du plus général au plus précis, le plus précis en dernier.
+ */
 export type DomaineContexte = {
+  /** Le dossier du sujet, le plus précis. */
   nom: string;
+  /** Les noms de la chaîne, sans Général ; absent ou vide → le seul `nom`. */
+  chemin?: readonly string[];
   description: string | null;
   instructions: readonly InstructionContexte[];
   documents: readonly DocumentContexte[];

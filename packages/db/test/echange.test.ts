@@ -29,6 +29,7 @@ import {
   updateSubjectPriority,
   updateSubjectStatus,
   updateTask,
+  getDefaultFolder,
 } from "../src/index";
 
 // Ce que l'échange avec Relvo LIT en base (M10) : le compte et le brief depuis
@@ -45,7 +46,15 @@ async function makeAccount(email: string) {
       sectors: ["food"],
     },
   });
-  return { account, db: tenantDb(account.id) };
+  const general = await prisma.folder.create({
+    data: {
+      accountId: account.id,
+      name: "Général",
+      slug: "general",
+      isDefault: true,
+    },
+  });
+  return { account, general, db: tenantDb(account.id) };
 }
 
 describe("projection de l'échange", () => {
@@ -150,18 +159,7 @@ describe("la provenance d'un geste demandé dans l'échange (M10.13)", () => {
     await reopenTask(db, tache.id, chat);
     await deleteTask(db, tache.id, chat);
     await updateSubjectStatus(db, sujet.id, "validated", "user", chat);
-    const general = await prisma.folder.create({
-      data: {
-        accountId: (
-          await prisma.account.findUniqueOrThrow({
-            where: { email: "echange-origine@test.fr" },
-          })
-        ).id,
-        name: "Général",
-        slug: "general",
-        isDefault: true,
-      },
-    });
+    const general = (await getDefaultFolder(db))!;
     const note = await createNote(
       db,
       { folderId: general.id, name: "Délais fournisseurs", content: "48 h." },
@@ -498,9 +496,16 @@ describe("les tâches de l'échange, par critères", () => {
 
 describe("les affaires de l'échange, par critères", () => {
   it("par état, urgence, attente, domaine, contact, mots et jours de dernière activité", async () => {
-    const { account, db } = await makeAccount("echange-affaires@test.fr");
+    const { account, db, general } = await makeAccount(
+      "echange-affaires@test.fr",
+    );
     const cuisine = await prisma.folder.create({
-      data: { accountId: account.id, name: "Cuisine", slug: "cuisine" },
+      data: {
+        accountId: account.id,
+        name: "Cuisine",
+        slug: "cuisine",
+        parentId: general.id,
+      },
     });
     const karim = await createContact(db, {
       firstName: "Karim",
@@ -553,17 +558,16 @@ describe("les affaires de l'échange, par critères", () => {
 
 describe("la Mémoire de l'échange, par critères", () => {
   it("instructions et documents, par mots et par domaine ; une instruction désactivée est rendue avec son état", async () => {
-    const { account, db } = await makeAccount("echange-memoire@test.fr");
-    const general = await prisma.folder.create({
+    const { account, db, general } = await makeAccount(
+      "echange-memoire@test.fr",
+    );
+    const cuisine = await prisma.folder.create({
       data: {
         accountId: account.id,
-        name: "Général",
-        slug: "general",
-        isDefault: true,
+        name: "Cuisine",
+        slug: "cuisine",
+        parentId: general.id,
       },
-    });
-    const cuisine = await prisma.folder.create({
-      data: { accountId: account.id, name: "Cuisine", slug: "cuisine" },
     });
     const livraisons = await createNote(db, {
       folderId: general.id,
@@ -712,14 +716,7 @@ describe("défaire un geste de l'échange (M10.10)", () => {
     ]);
 
     // Une instruction créée → retirée ; supprimée → recréée.
-    const general = await prisma.folder.create({
-      data: {
-        accountId: account.id,
-        name: "Général",
-        slug: "general",
-        isDefault: true,
-      },
-    });
+    const general = (await getDefaultFolder(db))!;
     const n = await createNote(db, {
       folderId: general.id,
       name: "Règle",

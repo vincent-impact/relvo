@@ -405,18 +405,29 @@ model Folder {
   icon        String?
   isDefault   Boolean  @default(false) @map("is_default")
   isActive    Boolean  @default(true) @map("is_active")
+  // L'ARBRE (M23) : le père, nul pour la racine « Général » seulement — la
+  // contrainte `folders_parent_requis` le garantit en base. La profondeur
+  // (PROFONDEUR_MAX, domain/folders.ts) est bornée par le domaine et tenue par
+  // un test. Un dossier ne se supprime jamais avec ses fils : le domaine les
+  // remonte chez le père avant (Restrict).
+  parentId    String?  @map("parent_id") @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   account            Account             @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  parent             Folder?             @relation("FolderTree", fields: [parentId], references: [id], onDelete: Restrict)
+  children           Folder[]            @relation("FolderTree")
   subjects           Subject[]
   messages           Message[]
   knowledgeDocuments KnowledgeDocument[]
   defaultForContacts Contact[]           @relation("ContactDefaultFolder")
   relvoQuestions     RelvoQuestion[]
 
-  @@unique([accountId, slug])
+  // Slug unique PAR PÈRE (M23.1) : « Montpellier » peut vivre sous Franchises
+  // et sous Fournisseurs.
+  @@unique([accountId, parentId, slug])
   @@index([accountId])
+  @@index([parentId])
   @@map("folders")
 }
 

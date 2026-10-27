@@ -95,6 +95,7 @@ export function entreesDuContexte(p: StructurationProjection): {
     domaine: p.domaine
       ? {
           nom: p.domaine.nom,
+          chemin: p.domaine.chemin,
           description: p.domaine.description,
           instructions: p.domaine.instructions,
           documents: p.domaine.documents,

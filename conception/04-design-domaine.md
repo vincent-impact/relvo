@@ -443,6 +443,18 @@ ne contient jamais d'affaire. Il accueille les connaissances transversales, char
 contexte de toutes les affaires. Une affaire que Relvo ne sait pas classer reste **sans domaine** — elle
 n'atterrit **pas** dans Général.
 
+**Les domaines s'emboîtent**, comme des dossiers sur un ordinateur : « Général » est la racine,
+tout autre domaine a un père, une affaire se range à n'importe quelle profondeur. **Une
+instruction ou un document donnés à un père s'appliquent à tous ses fils et à leurs
+affaires** — ce n'est pas une option, c'est ce qu'un dossier veut dire ; la chaîne se lit du
+plus général au plus précis, et le plus précis précise les autres sans les effacer. Un domaine
+se **déplace** avec tout ce qu'il contient ; jamais la racine, jamais dans lui-même ni dans un
+de ses fils, jamais au-delà de la profondeur bornée. Un domaine se **supprime en remontant**
+ce qu'il contenait chez son père — ses domaines, ses instructions, ses documents, ses affaires,
+ses messages classés, les contacts et canaux qui le citaient — ; rien n'est perdu. Quand le
+père est « Général », les affaires et les contacts redeviennent **sans domaine** plutôt que d'y
+entrer. Les questions de Relvo sur ce domaine tombent avec lui.
+
 **Un domaine n'est jamais créé par Relvo.** Quand aucun domaine ne convient, Relvo pose sur
 l'affaire un **domaine proposé**. Dès que plusieurs affaires portent la même proposition, l'interface
 suggère de créer le domaine et d'y reclasser ces affaires — un geste, réversible. Les socles des

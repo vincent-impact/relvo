@@ -33,11 +33,11 @@ async function makeAccount(email: string) {
     data: { email, firstName: "Mam's", lastName: "Crousty", sectors: ["food"] },
   });
   const db = tenantDb(account.id);
-  await db.folder.create({
+  const general = await db.folder.create({
     data: { name: "Général", slug: "general", isDefault: true },
   });
   const fournisseurs = await db.folder.create({
-    data: { name: "Fournisseurs", slug: "fournisseurs" },
+    data: { name: "Fournisseurs", slug: "fournisseurs", parentId: general.id },
   });
   const channel = await prisma.channel.create({
     data: {

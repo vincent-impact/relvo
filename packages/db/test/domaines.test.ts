@@ -30,7 +30,7 @@ async function makeAccount(
   const account = await prisma.account.create({
     data: { email, firstName: "Mam's", lastName: "Crousty", sectors },
   });
-  await prisma.folder.create({
+  const general = await prisma.folder.create({
     data: {
       accountId: account.id,
       name: "Général",
@@ -38,7 +38,7 @@ async function makeAccount(
       isDefault: true,
     },
   });
-  return { account, db: tenantDb(account.id) };
+  return { account, general, db: tenantDb(account.id) };
 }
 
 describe("les domaines typiques", () => {
@@ -108,7 +108,7 @@ describe("les domaines typiques", () => {
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(0);
     const avec = await makeAccount("dom-avec@test.fr", ["construction"]);
     await avec.db.folder.create({
-      data: { name: "Chantiers", slug: "chantiers" },
+      data: { name: "Chantiers", slug: "chantiers", parentId: avec.general.id },
     });
     await ensureOnboardingQuestions(avec.db, avec.account.id);
     expect(
@@ -147,7 +147,7 @@ describe("les domaines proposés par le courrier", () => {
   }
 
   it("se groupent par nom dès deux affaires sans domaine, la casse et les accents confondus, et ne reviennent pas une fois tranchés", async () => {
-    const { db } = await makeAccount("dom-prop@test.fr", ["food"]);
+    const { db, general } = await makeAccount("dom-prop@test.fr", ["food"]);
     const a1 = await affaire(db, "Multirisque", "Assurances");
     const a2 = await affaire(db, "Auto flotte", "assurances");
     await affaire(db, "Seul", "Banque");
@@ -190,7 +190,7 @@ describe("les domaines proposés par le courrier", () => {
   });
 
   it("« Oui, créez-le » crée le domaine et y range les affaires ; supprimer le domaine fait réapparaître la proposition", async () => {
-    const { db } = await makeAccount("dom-oui@test.fr", ["food"]);
+    const { db, general } = await makeAccount("dom-oui@test.fr", ["food"]);
     const a1 = await affaire(db, "Multirisque", "Assurances");
     const a2 = await affaire(db, "Auto flotte", "Assurances");
     await ensureFolderProposalQuestions(db);
@@ -226,7 +226,7 @@ describe("les domaines proposés par le courrier", () => {
     expect(apres.every((s) => s.folderId === null)).toBe(true);
     // Reprendre un domaine qui existe déjà : pas de doublon, affaires rangées.
     await db.folder.create({
-      data: { name: "Assurances", slug: "assurances" },
+      data: { name: "Assurances", slug: "assurances", parentId: general.id },
     });
     const r = await createFolderFromProposal(db, { name: "assurances" });
     expect(r.reclassees).toBe(2);

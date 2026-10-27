@@ -51,8 +51,40 @@ rouvrir) :
    chemins, outils de l'échange, le mot « dossier » dans l'interface, le script de la prise en main
    et les consignes ; `conception/` récrite en place.
 
+## Tranche 1 — « L'arbre existe » (M23.1, M23.2)
+
+**Livré.**
+- `Folder.parent_id` (migration `20261027140000_m23_dossiers_arbre`) : les domaines existants
+  passent sous Général, un compte sans Général en reçoit un, le slug devient unique **par père**
+  (`folders_account_id_parent_id_slug_key`), seul Général est sans père (`folders_parent_requis`,
+  citée dans `02`). Le père n'est jamais supprimé en cascade (Restrict) : le domaine remonte les
+  fils avant.
+- `domain/folders.ts` : l'arbre se lit **d'un coup** (`loadFolderTree`) et se parcourt en
+  mémoire — `chaineDe` (racine en premier), `profondeurDe`, `cheminDe` (« Clients › Franchises
+  › Narbonne », sans Général), `premierNiveauDe` (la couleur du Calendrier), `sousArbreDe` /
+  `folderSubtreeIds` (la portée : lui et ses fils). `PROFONDEUR_MAX = 3`, tenue par
+  `test/dossiers.test.ts`. `createFolder` prend un `parentId` (sinon Général) ; `moveFolder`
+  (journalisé `folder_moved`) refuse la racine, soi-même, un fils, un frère de même slug, une
+  profondeur dépassée ; `deleteFolder` remonte chez le père ses dossiers (slug suffixé en cas de
+  doublon), instructions, documents, affaires, messages classés, contacts, canaux — **sauf**
+  quand le père est Général : affaires, messages et contacts redeviennent « sans dossier »
+  (invariant 17). Les questions de Relvo sur le dossier tombent avec lui.
+- **L'héritage** (`loadAccountProjection`) : la couche Domaine est la **chaîne** du sujet,
+  Général exclu (il reste en couche Compte) ; chaque instruction et document dit son dossier ;
+  ordre = chaîne puis nom, déterministe pour le cache. `DomaineContexte.chemin` et
+  `coucheDomaine` : « # Domaine : Clients › Franchises › Narbonne », la phrase d'héritage, et
+  « (dossier Clients) » sur ce qui vient d'un père. Un domaine de premier niveau rend
+  exactement ce qu'il rendait.
+- `02` (Folder, table des contraintes), `04 §10` (Folder), `05 §10.1` et §10.2 récrits en
+  place — avec le mot « domaine », que la tranche 3 remplace partout.
+
+**Vérification.** `pnpm typecheck`, `pnpm lint`, suites du paquet et de l'application vertes ;
+migration appliquée sur la base locale et recomptée (les six domaines de démonstration sous
+Général) ; `migrate diff` sans dérive ; pages Mémoire, Affaires, fiche d'affaire et Calendrier
+rendues en local après la migration.
+
 ## Où on en est
 
-- [ ] Tranche 1 — l'arbre existe.
+- [x] Tranche 1 — l'arbre existe.
 - [ ] Tranche 2 — on range.
 - [ ] Tranche 3 — Relvo range et parle en dossiers.

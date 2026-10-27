@@ -344,7 +344,11 @@ describe("le script de la prise en main", () => {
     );
     await createNote(db, { folderId: general.id, name: "Règle", content: "x" });
     await db.folder.create({
-      data: { name: "Fournisseurs", slug: "fournisseurs" },
+      data: {
+        name: "Fournisseurs",
+        slug: "fournisseurs",
+        parentId: general.id,
+      },
     });
     // Une boîte pré-créée mais jamais connectée ne compte pas : l'étape se pose.
     const boite = await prisma.channel.create({

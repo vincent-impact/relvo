@@ -15,6 +15,7 @@ import {
 import type { TenantDb, Tx } from "../tenant";
 import { contactDisplayName } from "./contacts";
 import { DomainError, assertFound } from "./errors";
+import { chaineDe } from "./folders";
 import { EVENT_TYPES, logEvent } from "./events";
 import {
   createTask,
@@ -111,13 +112,25 @@ export type StructurationContactProjection = {
   antecedentsTri: { raison: string; nombre: number }[];
 };
 
-/** Miroir structurel de `DomaineContexte` (application). */
+/**
+ * Miroir structurel de `DomaineContexte` (application). Depuis M23.2, la couche
+ * Domaine est la CHAÎNE des dossiers du sujet, racine exclue (Général vit dans
+ * la couche Compte) : `chemin` la nomme, et chaque instruction ou document dit
+ * de quel dossier de la chaîne il vient — du plus général au plus précis.
+ */
 export type StructurationDomainProjection = {
   id: string;
   nom: string;
+  /** Les noms de la chaîne, sans Général, du premier niveau au dossier du sujet. */
+  chemin: string[];
   description: string | null;
-  instructions: { titre: string; contenu: string }[];
-  documents: { nom: string; etiquette: string | null; resume: string | null }[];
+  instructions: { titre: string; contenu: string; dossier: string }[];
+  documents: {
+    nom: string;
+    etiquette: string | null;
+    resume: string | null;
+    dossier: string;
+  }[];
 };
 
 /** Miroir structurel de `SujetClos` (application) : de quoi fabriquer une fiche de clôture sans appel. */
@@ -434,7 +447,8 @@ export function projectSheetMessage(
 /**
  * Le COMPTE tel que les sollicitations le relisent — miroir de
  * `CompteContexte` —, et le DOMAINE demandé avec ses connaissances lues
- * (05 §10.2 : « Général » toujours, le domaine du sujet quand il y en a un).
+ * (05 §10.2 : « Général » toujours, puis la CHAÎNE des dossiers du sujet quand
+ * il en a un — une instruction donnée à un père s'applique à ses fils, M23.2).
  * Partagé par la fiche d'un sujet et par l'échange avec Relvo (M10), qui
  * parle au dirigeant depuis n'importe quelle page.
  */
@@ -459,25 +473,33 @@ export async function loadAccountProjection(
     "Compte",
   );
 
-  const [folder, folders, knowledge, labels, mailboxes] = await Promise.all([
-    folderId
-      ? db.folder.findFirst({
-          where: { id: folderId },
-          select: { id: true, name: true, description: true },
-        })
-      : Promise.resolve(null),
-    db.folder.findMany({
-      where: { isActive: true },
-      select: { name: true, description: true, isDefault: true },
-      orderBy: { name: "asc" },
-    }),
-    // Les connaissances LUES de « Général » et du domaine demandé (05 §10.2).
+  const folders = await db.folder.findMany({
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      isDefault: true,
+      isActive: true,
+      parentId: true,
+    },
+    orderBy: { name: "asc" },
+  });
+  const tree = new Map(folders.map((f) => [f.id, f]));
+  // La chaîne du sujet, racine en premier ; Général seul quand il n'est pas classé.
+  const chaine = folderId
+    ? chaineDe(tree, folderId)
+    : folders.filter((f) => f.isDefault);
+  const folder = folderId ? (tree.get(folderId) ?? null) : null;
+  const niveaux = chaine.filter((f) => !f.isDefault);
+  const nomParDossier = new Map(chaine.map((f) => [f.id, f.name]));
+
+  const [knowledge, labels, mailboxes] = await Promise.all([
+    // Les connaissances LUES de « Général » et de la chaîne du sujet (05 §10.2).
     db.knowledgeDocument.findMany({
       where: {
         absorptionStatus: AbsorptionStatus.read,
-        folder: folderId
-          ? { OR: [{ isDefault: true }, { id: folderId }] }
-          : { isDefault: true },
+        folderId: { in: chaine.map((f) => f.id) },
       },
       select: {
         folderId: true,
@@ -504,8 +526,12 @@ export async function loadAccountProjection(
   const instructionsGenerales = knowledge
     .filter((k) => k.folder.isDefault && k.kind === KnowledgeKind.note)
     .map((k) => ({ titre: k.name, contenu: k.content ?? "" }));
-  const duDomaine = knowledge.filter(
-    (k) => !k.folder.isDefault && k.folderId === folderId,
+  // Du plus général au plus précis, le plus précis en dernier ; par nom dans
+  // un même dossier — un ordre déterministe, le cache en dépend.
+  const duDomaine = niveaux.flatMap((n) =>
+    knowledge
+      .filter((k) => k.folderId === n.id)
+      .map((k) => ({ ...k, dossier: nomParDossier.get(n.id)! })),
   );
 
   return {
@@ -514,10 +540,12 @@ export async function loadAccountProjection(
       entreprise: null,
       messageries: mailboxes.map((c) => c.identifier),
       secteurs: account.sectors,
-      domaines: folders.map((f) => ({
-        nom: f.name,
-        description: f.description,
-      })),
+      domaines: folders
+        .filter((f) => f.isActive)
+        .map((f) => ({
+          nom: f.name,
+          description: f.description,
+        })),
       instructionsGenerales,
       // Le registre entier, candidates comprises : une candidate reprise par
       // un second sujet devient active (04 §10) — le modèle doit la voir.
@@ -529,16 +557,22 @@ export async function loadAccountProjection(
       ? {
           id: folder.id,
           nom: folder.name,
+          chemin: niveaux.map((n) => n.name),
           description: folder.description,
           instructions: duDomaine
             .filter((k) => k.kind === KnowledgeKind.note)
-            .map((k) => ({ titre: k.name, contenu: k.content ?? "" })),
+            .map((k) => ({
+              titre: k.name,
+              contenu: k.content ?? "",
+              dossier: k.dossier,
+            })),
           documents: duDomaine
             .filter((k) => k.kind === KnowledgeKind.file)
             .map((k) => ({
               nom: k.name,
               etiquette: k.aiLabel,
               resume: k.aiSummary,
+              dossier: k.dossier,
             })),
         }
       : null,

@@ -113,6 +113,16 @@ connaissance qui servent à les traiter, et les messages classés dans ce domain
 Porte un nom, un identifiant lisible, une description, et deux clés de présentation — couleur et
 icône — **nullables**, avec repli sur un mapping dérivé de l'identifiant lisible.
 
+**Les domaines forment un arbre.** Chaque domaine porte son **père** ; seul « Général » n'en a
+pas — c'est la racine, et une contrainte de base le garantit. L'identifiant lisible est unique
+**par père**, pas par compte : deux domaines de même nom peuvent vivre sous deux pères. La
+profondeur est bornée par un test du domaine, jamais par la base. La **chaîne** d'un domaine —
+de la racine à lui — est ce que lit la couche Domaine du contexte (`05 §10.1`) ; son
+**premier niveau** sous Général est ce que lisent le Calendrier et ses pastilles. La **portée**
+d'un domaine est lui et ses fils, jamais un frère : un contact, un canal ou une question qui
+cite un domaine citent aussi tout ce qu'il contient. Le père d'un domaine ne se supprime pas
+en cascade : le comportement de la suppression fait foi dans `04 §10`.
+
 `is_default` marque le domaine **« Général »**, auto-créé à la création du compte.
 
 **Invariant structurel :** aucun `Subject.folder_id` ne pointe vers le domaine « Général ».
@@ -605,6 +615,7 @@ que le test lit.
 | `knowledge_documents_enqueue_file_deletion` | `knowledge_documents` | trigger : même garantie pour les documents de connaissance |
 | `subjects_search_vector` | `subjects` | trigger : le vecteur plein texte (titre pondéré A, situation structurée pondérée B, dictionnaire français) est tenu à chaque écriture — le code ne l'écrit jamais |
 | `relvo_questions_scope_target_check` | `relvo_questions` | vérification : une question a exactement une cible, celle de sa portée |
+| `folders_parent_requis` | `folders` | vérification : seul le domaine « Général » n'a pas de père — tout autre domaine est rangé dans l'arbre |
 
 ### Comment cette liste reste vraie
 

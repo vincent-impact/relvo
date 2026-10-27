@@ -26,8 +26,11 @@ async function makeAccount(email: string) {
   });
   const db = tenantDb(account.id);
   // Un domaine ordinaire : « Général » est documentaire et refuse tout sujet.
+  const general = await db.folder.create({
+    data: { name: "Général", slug: "general", isDefault: true },
+  });
   const folder = await db.folder.create({
-    data: { name: "Fournisseurs", slug: "fournisseurs" },
+    data: { name: "Fournisseurs", slug: "fournisseurs", parentId: general.id },
   });
   return { db, folderId: folder.id };
 }

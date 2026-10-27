@@ -235,22 +235,38 @@ export function coucheCompteComplete(compte: CompteContexte): string {
   ].join("\n");
 }
 
-/** Couche Domaine : instructions et documents du domaine concerné. */
+/**
+ * Couche Domaine : instructions et documents de la CHAÎNE des dossiers du
+ * sujet (M23.2). L'ordre est celui de la chaîne — du plus général au plus
+ * précis, le plus précis en dernier —, puis celui reçu dans un même dossier ;
+ * ce qui vient d'un père est marqué de son nom. Les documents gardent l'ordre
+ * de la chaîne aussi : un tri par nom mêlerait les niveaux.
+ */
 export function coucheDomaine(domaine: DomaineContexte | null): string {
   if (!domaine)
     return `# Domaine\nAucun domaine : ce sujet n'est pas encore classé.`;
-  const documents = [...domaine.documents]
-    .sort((a, b) => a.nom.localeCompare(b.nom, "fr"))
-    .map(
-      (d) =>
-        `- ${d.nom}${d.etiquette ? ` (${d.etiquette})` : ""}${d.resume ? ` — ${d.resume.slice(0, PLAFOND_RESUME_DOCUMENT)}` : ""}`,
-    );
+  const chemin = domaine.chemin?.length ? domaine.chemin : [domaine.nom];
+  const herite = chemin.length > 1;
+  const provenance = (dossier: string | undefined) =>
+    herite && dossier && dossier !== domaine.nom ? ` (dossier ${dossier})` : "";
+  const documents = domaine.documents.map(
+    (d) =>
+      `- ${d.nom}${d.etiquette ? ` (${d.etiquette})` : ""}${d.resume ? ` — ${d.resume.slice(0, PLAFOND_RESUME_DOCUMENT)}` : ""}${provenance(d.dossier)}`,
+  );
   return [
-    `# Domaine : ${domaine.nom}`,
+    `# Domaine : ${chemin.join(" › ")}`,
     domaine.description ?? "",
+    herite
+      ? `Ce domaine est rangé dans d'autres : leurs instructions et documents s'appliquent aussi, du plus général au plus précis ; le plus précis précise les autres sans les effacer.`
+      : "",
     ``,
     `## Instructions du domaine`,
-    blocInstructions(domaine.instructions),
+    blocInstructions(
+      domaine.instructions.map((i) => ({
+        titre: `${i.titre}${provenance(i.dossier)}`,
+        contenu: i.contenu,
+      })),
+    ),
     ``,
     `## Documents du domaine`,
     documents.length ? documents.join("\n") : `Aucun.`,

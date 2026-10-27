@@ -12,6 +12,7 @@ export const EVENT_TYPES = {
   folderCreated: "folder_created",
   folderUpdated: "folder_updated",
   folderDeleted: "folder_deleted",
+  folderMoved: "folder_moved",
   // Knowledge (instructions / documents)
   knowledgeCreated: "knowledge_created",
   knowledgeUpdated: "knowledge_updated",

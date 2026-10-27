@@ -2,12 +2,19 @@ import { z } from "zod";
 import { Prisma } from "../generated/prisma/client";
 import type { TenantDb, Tx } from "../tenant";
 import { DomainError, assertFound } from "./errors";
-import { EVENT_TYPES, logEvent, type Origine } from "./events";
+import { avecOrigine, EVENT_TYPES, logEvent, type Origine } from "./events";
 import { ensureAffected, slugify } from "./helpers";
 import { updateSubject } from "./subjects";
 
-// Domaine Folders (M3.4). Invariants : slug unique par compte, suppression du
-// Folder « Général » (is_default) interdite, jamais plus d'un is_default.
+// Domaine Folders (M3.4, M23). Invariants : un dossier a un PÈRE — « Général »
+// (is_default) est la racine, seule sans père (contrainte
+// `folders_parent_requis`) ; slug unique par père ; profondeur bornée
+// (PROFONDEUR_MAX) ; la suppression de « Général » est interdite, et celle d'un
+// autre dossier REMONTE ce qu'il contenait chez le père — jamais perdu ; jamais
+// plus d'un is_default.
+
+/** Niveaux de dossiers SOUS Général, au plus — tenu par un test, pas par la vigilance. */
+export const PROFONDEUR_MAX = 3;
 
 export const createFolderSchema = z.object({
   name: z.string().trim().min(1, "Nom requis").max(80),
@@ -16,6 +23,8 @@ export const createFolderSchema = z.object({
   /** Clés de logo (palette / jeu d'icônes curés, cf. web lib/folders.ts). */
   color: z.string().trim().max(40).optional().nullable(),
   icon: z.string().trim().max(40).optional().nullable(),
+  /** Le père ; absent ou nul → sous « Général ». */
+  parentId: z.uuid().optional().nullable(),
 });
 
 export const updateFolderSchema = z.object({
@@ -39,6 +48,149 @@ export async function getFolder(db: TenantDb, id: string) {
   return assertFound(await db.folder.findFirst({ where: { id } }), "Dossier");
 }
 
+/** Retourne le Folder « Général » (is_default) du compte, ou null. */
+export function getDefaultFolder(db: TenantDb) {
+  return db.folder.findFirst({ where: { isDefault: true } });
+}
+
+// ─────────────────────────────────────────────────────────────
+// L'ARBRE (M23.1) — lu d'un coup, parcouru en mémoire
+// ─────────────────────────────────────────────────────────────
+//
+// Un compte a quelques dizaines de dossiers au plus, sur trois niveaux : une
+// seule requête les ramène tous, et la chaîne, la profondeur, le sous-arbre se
+// calculent en mémoire — nombre de requêtes constant (PITFALLS #3).
+
+export type FolderNode = {
+  id: string;
+  name: string;
+  slug: string;
+  parentId: string | null;
+  isDefault: boolean;
+};
+
+export type FolderTree = Map<string, FolderNode>;
+
+export async function loadFolderTree(db: TenantDb | Tx): Promise<FolderTree> {
+  const rows = await db.folder.findMany({
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      parentId: true,
+      isDefault: true,
+    },
+  });
+  return new Map(rows.map((r) => [r.id, r]));
+}
+
+/** La chaîne des dossiers, RACINE EN PREMIER, le dossier lui-même en dernier. */
+export function chaineDe(tree: FolderTree, id: string): FolderNode[] {
+  const chaine: FolderNode[] = [];
+  let courant = tree.get(id) ?? null;
+  const vus = new Set<string>();
+  while (courant && !vus.has(courant.id)) {
+    vus.add(courant.id);
+    chaine.unshift(courant);
+    courant = courant.parentId ? (tree.get(courant.parentId) ?? null) : null;
+  }
+  return chaine;
+}
+
+/** Niveaux sous Général : Général = 0, ses fils = 1… */
+export function profondeurDe(tree: FolderTree, id: string): number {
+  return Math.max(0, chaineDe(tree, id).length - 1);
+}
+
+/** Le chemin lisible, SANS Général : « Clients › Franchises › Narbonne ». */
+export function cheminDe(tree: FolderTree, id: string): string {
+  return chaineDe(tree, id)
+    .filter((f) => !f.isDefault)
+    .map((f) => f.name)
+    .join(" › ");
+}
+
+/** Le premier dossier sous Général de la chaîne — celui dont le Calendrier prend la couleur. */
+export function premierNiveauDe(
+  tree: FolderTree,
+  id: string,
+): FolderNode | null {
+  return chaineDe(tree, id).find((f) => !f.isDefault) ?? null;
+}
+
+/** Le dossier et tous ses descendants — la PORTÉE d'un dossier (M23.4). */
+export function sousArbreDe(tree: FolderTree, id: string): FolderNode[] {
+  const racine = tree.get(id);
+  if (!racine) return [];
+  const resultat: FolderNode[] = [racine];
+  const file = [id];
+  while (file.length) {
+    const courant = file.shift()!;
+    for (const f of tree.values()) {
+      if (f.parentId === courant) {
+        resultat.push(f);
+        file.push(f.id);
+      }
+    }
+  }
+  return resultat;
+}
+
+/** La hauteur d'un sous-arbre : 0 pour une feuille, 1 pour un dossier qui a des fils sans petits-fils… */
+function hauteurDe(tree: FolderTree, id: string): number {
+  let max = 0;
+  for (const f of sousArbreDe(tree, id)) {
+    max = Math.max(max, profondeurDe(tree, f.id) - profondeurDe(tree, id));
+  }
+  return max;
+}
+
+/** Les identifiants d'un dossier et de ses fils — pour filtrer « ce dossier et ce qu'il contient ». */
+export async function folderSubtreeIds(
+  db: TenantDb,
+  id: string,
+): Promise<string[]> {
+  return sousArbreDe(await loadFolderTree(db), id).map((f) => f.id);
+}
+
+/** La chaîne d'un dossier, racine en premier — pour l'héritage de la couche Domaine (M23.2). */
+export async function folderChain(
+  db: TenantDb,
+  id: string,
+): Promise<FolderNode[]> {
+  return chaineDe(await loadFolderTree(db), id);
+}
+
+const TROP_PROFOND = `Trois niveaux de dossiers sous Général, pas plus.`;
+
+function assertProfondeur(niveau: number) {
+  if (niveau > PROFONDEUR_MAX) {
+    throw new DomainError("VALIDATION", TROP_PROFOND);
+  }
+}
+
+/** Le père demandé — ou « Général » — vérifié dans l'arbre. */
+function resoudrePere(tree: FolderTree, parentId: string | null | undefined) {
+  const pere = parentId
+    ? tree.get(parentId)
+    : [...tree.values()].find((f) => f.isDefault);
+  if (!pere) {
+    throw new DomainError("NOT_FOUND", "Dossier parent introuvable.");
+  }
+  return pere;
+}
+
+function assertSlugLibre(tree: FolderTree, parentId: string, slug: string) {
+  for (const f of tree.values()) {
+    if (f.parentId === parentId && f.slug === slug) {
+      throw new DomainError(
+        "CONFLICT",
+        `Un dossier « ${f.name} » existe déjà à cet endroit.`,
+      );
+    }
+  }
+}
+
 export async function createFolder(db: TenantDb, input: CreateFolderInput) {
   const data = createFolderSchema.parse(input);
   const slug = data.slug ? slugify(data.slug) : slugify(data.name);
@@ -46,10 +198,10 @@ export async function createFolder(db: TenantDb, input: CreateFolderInput) {
     throw new DomainError("VALIDATION", "Slug de dossier invalide.");
   }
 
-  const existing = await db.folder.findFirst({ where: { slug } });
-  if (existing) {
-    throw new DomainError("CONFLICT", `Un dossier « ${slug} » existe déjà.`);
-  }
+  const tree = await loadFolderTree(db);
+  const pere = resoudrePere(tree, data.parentId);
+  assertProfondeur(profondeurDe(tree, pere.id) + 1);
+  assertSlugLibre(tree, pere.id, slug);
 
   return db.$transaction(async (tx) => {
     const folder = await tx.folder.create({
@@ -59,6 +211,7 @@ export async function createFolder(db: TenantDb, input: CreateFolderInput) {
         description: data.description ?? null,
         color: data.color ?? null,
         icon: data.icon ?? null,
+        parentId: pere.id,
         // is_default reste false : le Folder « Général » est créé à l'ouverture
         // du compte (createAccount), jamais via cette fonction.
       } as Prisma.FolderUncheckedCreateInput,
@@ -69,6 +222,7 @@ export async function createFolder(db: TenantDb, input: CreateFolderInput) {
       eventType: EVENT_TYPES.folderCreated,
       title: `Dossier « ${folder.name} » créé`,
       actor: "user",
+      metadata: { parentId: pere.id, chemin: cheminDe(tree, pere.id) || null },
     });
     return folder;
   });
@@ -109,18 +263,154 @@ export async function updateFolder(
   });
 }
 
-export async function deleteFolder(db: TenantDb, id: string) {
-  const folder = assertFound(
-    await db.folder.findFirst({ where: { id } }),
-    "Dossier",
+/**
+ * DÉPLACE un dossier — avec tout ce qu'il contient, fils compris — sous un
+ * autre père (M23.3). Refusé : la racine, un déplacement dans soi-même ou dans
+ * un de ses fils, une profondeur qui dépasserait la borne, un frère de même
+ * slug.
+ */
+export async function moveFolder(
+  db: TenantDb,
+  id: string,
+  parentId: string | null,
+  origine?: Origine,
+) {
+  const tree = await loadFolderTree(db);
+  const dossier = tree.get(id);
+  if (!dossier) throw new DomainError("NOT_FOUND", "Dossier introuvable.");
+  if (dossier.isDefault) {
+    throw new DomainError(
+      "FORBIDDEN_GENERAL_FOLDER",
+      "Le dossier « Général » est la racine : il ne se déplace pas.",
+    );
+  }
+  const pere = resoudrePere(tree, parentId);
+  if (sousArbreDe(tree, id).some((f) => f.id === pere.id)) {
+    throw new DomainError(
+      "VALIDATION",
+      "Un dossier ne se range pas dans lui-même ni dans un de ses dossiers.",
+    );
+  }
+  if (pere.id === dossier.parentId) return getFolder(db, id);
+  assertProfondeur(profondeurDe(tree, pere.id) + 1 + hauteurDe(tree, id));
+  assertSlugLibre(tree, pere.id, dossier.slug);
+
+  return db.$transaction(async (tx) => {
+    const { count } = await tx.folder.updateMany({
+      where: { id },
+      data: { parentId: pere.id },
+    });
+    ensureAffected(count, "Dossier");
+    await logEvent(tx as Tx, {
+      entityType: "system",
+      entityId: id,
+      eventType: EVENT_TYPES.folderMoved,
+      title: `Dossier « ${dossier.name} » déplacé`,
+      actor: "user",
+      metadata: avecOrigine(
+        {
+          from: dossier.parentId,
+          to: pere.id,
+          chemin: cheminDe(tree, pere.id) || null,
+        },
+        origine,
+      ),
+    });
+    return assertFound(await tx.folder.findFirst({ where: { id } }), "Dossier");
+  });
+}
+
+/** Un slug libre sous `parentId`, en suffixant si un frère le porte déjà. */
+function slugLibreSous(
+  tree: FolderTree,
+  parentId: string,
+  slug: string,
+  exclure: Set<string>,
+): string {
+  const pris = new Set(
+    [...tree.values()]
+      .filter((f) => f.parentId === parentId && !exclure.has(f.id))
+      .map((f) => f.slug),
   );
+  if (!pris.has(slug)) return slug;
+  for (let n = 2; ; n++) {
+    const candidat = `${slug}-${n}`;
+    if (!pris.has(candidat)) return candidat;
+  }
+}
+
+/**
+ * SUPPRIME un dossier en REMONTANT ce qu'il contenait chez le père (M23.3) :
+ * ses dossiers, ses instructions et ses documents ; ses affaires, ses messages
+ * classés et les contacts qui l'avaient pour dossier habituel — sauf quand le
+ * père est « Général », qui ne contient jamais d'affaire (invariant 17) : ils
+ * redeviennent « sans dossier ». Les canaux qui le citaient citent le père.
+ * Les questions de Relvo sur ce dossier tombent avec lui.
+ */
+export async function deleteFolder(db: TenantDb, id: string) {
+  const tree = await loadFolderTree(db);
+  const folder = tree.get(id);
+  if (!folder) throw new DomainError("NOT_FOUND", "Dossier introuvable.");
   if (folder.isDefault) {
     throw new DomainError(
       "FORBIDDEN_GENERAL_FOLDER",
       "Le dossier « Général » ne peut pas être supprimé.",
     );
   }
+  const pere = assertFound(
+    folder.parentId ? tree.get(folder.parentId) : null,
+    "Dossier parent",
+  );
+  // Un sujet, un message, un contact ne pointent jamais Général.
+  const cibleAffaires = pere.isDefault ? null : pere.id;
+  const fils = [...tree.values()].filter((f) => f.parentId === id);
+
   return db.$transaction(async (tx) => {
+    const exclure = new Set(fils.map((f) => f.id).concat(id));
+    const nouveauxSlugs = new Map<string, string>();
+    for (const f of fils) {
+      const slug = slugLibreSous(tree, pere.id, f.slug, exclure);
+      nouveauxSlugs.set(f.id, slug);
+      await tx.folder.updateMany({
+        where: { id: f.id },
+        data: { parentId: pere.id, slug },
+      });
+      // Le slug attribué compte pour le fils suivant.
+      tree.set(f.id, { ...f, parentId: pere.id, slug });
+      exclure.delete(f.id);
+    }
+    const [connaissances, affaires, messages, contacts] = await Promise.all([
+      tx.knowledgeDocument.updateMany({
+        where: { folderId: id },
+        data: { folderId: pere.id },
+      }),
+      tx.subject.updateMany({
+        where: { folderId: id },
+        data: { folderId: cibleAffaires },
+      }),
+      tx.message.updateMany({
+        where: { folderId: id },
+        data: { folderId: cibleAffaires },
+      }),
+      tx.contact.updateMany({
+        where: { defaultFolderId: id },
+        data: { defaultFolderId: cibleAffaires },
+      }),
+    ]);
+    const canaux = await tx.channel.findMany({
+      where: { folderIds: { has: id } },
+      select: { id: true, folderIds: true },
+    });
+    for (const c of canaux) {
+      const restants = c.folderIds.filter((f) => f !== id);
+      if (cibleAffaires && !restants.includes(cibleAffaires)) {
+        restants.push(cibleAffaires);
+      }
+      await tx.channel.updateMany({
+        where: { id: c.id },
+        data: { folderIds: restants },
+      });
+    }
     const { count } = await tx.folder.deleteMany({ where: { id } });
     ensureAffected(count, "Dossier");
     await logEvent(tx as Tx, {
@@ -129,14 +419,20 @@ export async function deleteFolder(db: TenantDb, id: string) {
       eventType: EVENT_TYPES.folderDeleted,
       title: `Dossier « ${folder.name} » supprimé`,
       actor: "user",
+      metadata: {
+        parentId: pere.id,
+        remontes: {
+          dossiers: fils.length,
+          connaissances: connaissances.count,
+          affaires: affaires.count,
+          messages: messages.count,
+          contacts: contacts.count,
+          canaux: canaux.length,
+        },
+      },
     });
     return { id };
   });
-}
-
-/** Retourne le Folder « Général » (is_default) du compte, ou null. */
-export function getDefaultFolder(db: TenantDb) {
-  return db.folder.findFirst({ where: { isDefault: true } });
 }
 
 // ─────────────────────────────────────────────────────────────

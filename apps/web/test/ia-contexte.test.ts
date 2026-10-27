@@ -26,6 +26,7 @@ import {
   type DomaineContexte,
   type MessageContexte,
   type SujetContexte,
+  coucheDomaine,
 } from "@/server/ia/contexte";
 import { coucheProduit } from "@/server/ia/produit";
 
@@ -425,6 +426,49 @@ describe("profils et budgets", () => {
     expect(contextes.relecture.prompt).toContain(
       "le sujet était terminé, il repart",
     );
+  });
+
+  it("la couche Domaine est la chaîne des dossiers : le chemin en tête, l'ordre du plus général au plus précis gardé, ce qui vient d'un père marqué de son nom", () => {
+    const couche = coucheDomaine({
+      nom: "Narbonne",
+      chemin: ["Clients", "Franchises", "Narbonne"],
+      description: "La franchise de Narbonne.",
+      instructions: [
+        {
+          titre: "Relances",
+          contenu: "Relancer après 7 jours.",
+          dossier: "Clients",
+        },
+        { titre: "Redevance", contenu: "5 %.", dossier: "Franchises" },
+        { titre: "Loyer", contenu: "Le 5 du mois.", dossier: "Narbonne" },
+      ],
+      documents: [
+        {
+          nom: "Contrat type.pdf",
+          etiquette: "contrat",
+          resume: null,
+          dossier: "Clients",
+        },
+        { nom: "Bail.pdf", etiquette: null, resume: null, dossier: "Narbonne" },
+      ],
+    });
+    expect(couche).toContain("# Domaine : Clients › Franchises › Narbonne");
+    expect(couche).toContain(
+      "s'appliquent aussi, du plus général au plus précis",
+    );
+    expect(couche.indexOf("### Relances (dossier Clients)")).toBeLessThan(
+      couche.indexOf("### Redevance (dossier Franchises)"),
+    );
+    expect(couche.indexOf("### Redevance (dossier Franchises)")).toBeLessThan(
+      couche.indexOf("### Loyer\n"),
+    );
+    expect(couche).toContain("- Contrat type.pdf (contrat) (dossier Clients)");
+    expect(couche).toMatch(/- Bail\.pdf$/);
+    // Un domaine de premier niveau n'hérite de rien : pas de phrase, pas de marque.
+    const seul = coucheDomaine(domaine);
+    expect(seul).toContain("# Domaine : Fournisseurs");
+    expect(seul).not.toContain("s'appliquent aussi");
+    expect(seul).not.toContain("(dossier ");
   });
 
   it("le tri n'a pas de couche Domaine et exclut « Général »", () => {

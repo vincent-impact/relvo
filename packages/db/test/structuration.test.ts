@@ -43,9 +43,12 @@ async function makeAccount(email: string) {
       name: "Fournisseurs",
       slug: "fournisseurs",
       description: "Achats et livraisons",
+      parentId: general.id,
     },
   });
-  const rh = await db.folder.create({ data: { name: "RH", slug: "rh" } });
+  const rh = await db.folder.create({
+    data: { name: "RH", slug: "rh", parentId: general.id },
+  });
   const channel = await prisma.channel.create({
     data: {
       accountId: account.id,
