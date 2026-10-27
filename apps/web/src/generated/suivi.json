@@ -215,6 +215,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "La page Dossiers montre tous vos dossiers en arbre, Général en tête ; le triangle à gauche replie une branche, la ligne ouvre le dossier."
+        },
+        {
+          "type": "new",
           "texte": "Vos affaires s'appellent désormais vos sujets, rangés dans vos dossiers ; la page Mémoire s'appelle Dossiers, et les fichiers d'un dossier, ses connaissances."
         },
         {

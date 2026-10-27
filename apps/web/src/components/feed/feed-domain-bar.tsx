@@ -4,6 +4,9 @@ import type { FolderChip } from "@/server/cached";
 import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 
+/** La valeur de `?dossier=` qui dit « sans dossier » — la même que la page Dossiers écrit. */
+export const SANS_DOSSIER = "aucun";
+
 // Barre de filtre par DOSSIER des Sujets — une seule rangée de puces
 // défilable : « Tous », puis les dossiers de premier niveau ; un dossier
 // choisi filtre lui ET ce qu'il contient (M23.4), et ses propres dossiers
@@ -37,6 +40,7 @@ export function FeedDomainBar({
   onDomain,
   folders,
   present,
+  sansDossier = false,
 }: {
   /** Identifiant du dossier filtré, ou null (tous). */
   domain: string | null;
@@ -46,7 +50,10 @@ export function FeedDomainBar({
    *  leurs fils : une puce qui mène à une liste vide est une puce morte,
    *  elle ne s'affiche pas. */
   present: ReadonlySet<string>;
+  /** L'onglet porte des sujets sans dossier : la puce « Sans dossier » se montre (M27.2). */
+  sansDossier?: boolean;
 }) {
+  const sansActif = domain === SANS_DOSSIER;
   const choisi = domain ? chaine(folders, domain) : [];
   const dessous = folders.filter(
     (f) => f.parentId === (domain ?? null) || (domain == null && f.depth === 1),
@@ -69,6 +76,23 @@ export function FeedDomainBar({
       >
         Tous
       </button>
+      {sansDossier || sansActif ? (
+        <button
+          type="button"
+          onClick={() => onDomain(sansActif ? null : SANS_DOSSIER)}
+          aria-pressed={sansActif}
+          className={cn(CHIP, sansActif ? CHIP_ON : CHIP_IDLE)}
+        >
+          <i
+            aria-hidden
+            className={cn(
+              "size-2 flex-none rounded-[2px] border border-dashed",
+              sansActif ? "border-white/70" : "border-(--gris-clair)",
+            )}
+          />
+          Sans dossier
+        </button>
+      ) : null}
 
       {shown.map((f) => {
         const { color } = folderVisual({ slug: f.slug, color: f.color });

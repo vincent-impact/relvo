@@ -40,6 +40,14 @@ attente de vous », sur l'accueil, est une suite de cartes à feuilleter horizon
 sujet, parce que chacune porte le contact, l'enjeu, depuis quand, et le geste — ce qu'une ligne
 ne peut pas porter.
 
+**Un arbre est une liste dont les lignes s'indentent, dans la même carte unique.** La racine
+en tête de carte, sur le fond enfoncé ; chaque branche décalée d'un cran par niveau, reliée à
+son père par un trait de sa couleur de premier niveau, la bande plus fine en descendant. Une
+branche porte **deux gestes qu'on ne confond pas** : un triangle rond à gauche qui replie ou
+déplie (sa zone de frappe fait 44 px, son dessin 26), et la ligne qui entre (le chevron à droite
+le dit). Pas de triangle quand il n'y a rien à replier. Ce qui n'est rangé nulle part se lit au
+pied, avec une bande en pointillé — le pointillé dit « à compléter ».
+
 **La MATIÈRE dit l'importance, et il y a quatre matières.** Le **ciel** (le header en livrée,
 qui fond vers le blanc) porte l'identité et le titre de la page ; le **bloc de Relvo** (violet
 pâle, signé des étoiles) porte tout ce que l'agent dit ; la **carte blanche** porte ce qui se

@@ -100,10 +100,34 @@ déterminants (`une affaire` → `un sujet`) consomment le mot avant que les acc
 (`affaire ouverte`) ne le voient. Deux passes, puis une relecture du diff par motif (adjectifs
 en -ée, -ie, -ue, -te ; `toutes les` ; `est-elle`).
 
+## Tranche 2 — « L'arbre » (M27.2)
+
+**Livré.**
+- La page Dossiers est **une carte, tout l'arbre** (`components/memoire/folder-tree.tsx`) :
+  Général en tête de carte sur fond enfoncé (« la racine — tout est dedans », ses instructions
+  et connaissances comptées, la ligne entre dans Général), puis les dossiers en ordre d'arbre.
+  Chaque branche porte **deux gestes séparés** : le triangle à gauche (rond de 26 px, 44 px de
+  frappe) replie ou déplie, la ligne entière entre (le chevron à droite le dit). Pas de
+  triangle sans dossier dessous ; un trait de la couleur du premier niveau relie un dossier à ses
+  fils ; le compte de sujets ouverts au bout, ses fils compris, et un zéro ne s'écrit pas.
+- L'état replié vit sur l'appareil (`localStorage`, clé `relvo:dossiers:replies`), lu par
+  `useSyncExternalStore` : le serveur et la première peinture disent « tout déplié », puis
+  l'appareil impose ses plis — ni écart d'hydratation, ni `setState` dans un effet (le lint
+  le refuse).
+- « Sans dossier » au pied, bande pointillée, seulement s'il y en a : la page Sujets reçoit
+  `?dossier=aucun` et une puce « Sans dossier » (`feed-domain-bar.tsx`, `SANS_DOSSIER`) ; le
+  cache de la page porte le compte (`cachedMemoire.unfiledOpenSubjects`, `CACHE_V` v17).
+- La zone « Votre entreprise » quitte la page : les instructions du compte sont celles de
+  Général, on les lit en entrant dans Général.
+
+**Vérification.** Typage, lint ; rendu headless de la page en clair et en sombre émulé (l'arbre
+de démonstration à trois niveaux : Fournisseurs › Kiloutou › Agence de Narbonne), de la page
+Sujets filtrée « Sans dossier » ; console propre.
+
 ## Où on en est
 
 - [x] Tranche 1 — « Le mot »
-- [ ] Tranche 2 — « L'arbre »
+- [x] Tranche 2 — « L'arbre »
 - [ ] Tranche 3 — « La fiche »
 - [ ] Tranche 4 — « Ranger dans… »
 - [ ] Tranche 5 — « Déposer »

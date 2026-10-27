@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FeedDomainBar } from "@/components/feed/feed-domain-bar";
+import { FeedDomainBar, SANS_DOSSIER } from "@/components/feed/feed-domain-bar";
 import {
   SubjectKpiTabs,
   type SubjectTab,
@@ -98,8 +98,14 @@ export function FeedView({
     return ouverts.map((row) => ({ row, basket: "ouvert" as const }));
   }, [tab, ouverts, valides, fermes]);
 
-  const filtered = base.filter(
-    ({ row }) => domain == null || (row.folderChainIds ?? []).includes(domain),
+  // `aucun` : les sujets sans dossier, ce que Relvo n'a pas su ranger — la
+  // ligne « Sans dossier » de la page Dossiers mène ici (M27.2).
+  const filtered = base.filter(({ row }) =>
+    domain == null
+      ? true
+      : domain === SANS_DOSSIER
+        ? (row.folderChainIds ?? []).length === 0
+        : (row.folderChainIds ?? []).includes(domain),
   );
   // Les dossiers qui ont au moins un sujet dans l'onglet — eux ou un de leurs
   // fils : seuls ceux-là ont une puce (une puce vers une liste vide est une
@@ -111,7 +117,9 @@ export function FeedView({
   const domainName =
     domain == null
       ? null
-      : (folders.find((f) => f.id === domain)?.path ?? null);
+      : domain === SANS_DOSSIER
+        ? "Sans dossier"
+        : (folders.find((f) => f.id === domain)?.path ?? null);
 
   function renderRow({ row, basket }: Tagged) {
     if (basket === "ouvert") {
@@ -144,6 +152,9 @@ export function FeedView({
         onDomain={setDomain}
         folders={folders}
         present={present}
+        sansDossier={base.some(
+          ({ row }) => (row.folderChainIds ?? []).length === 0,
+        )}
       />
 
       {/* Sans filtre, l'indicateur cerclé nomme déjà la zone et la compte : un

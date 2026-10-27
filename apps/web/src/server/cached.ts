@@ -65,7 +65,7 @@ export const TENANT_DATA_TAG = "tenant-data";
 // rendez-vous du Calendrier, CachedFolderRow (+ instructions/documents/
 // openSubjects, − sub).
 // Suivant = "v14".
-const CACHE_V = "v16";
+const CACHE_V = "v17";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
@@ -278,9 +278,11 @@ export type CachedFolderRow = {
 };
 
 export type CachedMemoire = {
-  /** Le domaine « Général » (transversal) : ses instructions sont celles du compte. */
+  /** Le dossier « Général » (la racine) : ses instructions sont celles du compte. */
   defaultFolderId: string | null;
   folders: CachedFolderRow[];
+  /** Les sujets ouverts sans dossier — ce que Relvo n'a pas su ranger (M27.2). */
+  unfiledOpenSubjects: number;
 };
 
 export const cachedMemoire = unstable_cache(
@@ -350,7 +352,11 @@ export const cachedMemoire = unstable_cache(
         openSubjects: 0,
       });
     }
-    return { defaultFolderId: general?.id ?? null, folders: rows };
+    return {
+      defaultFolderId: general?.id ?? null,
+      folders: rows,
+      unfiledOpenSubjects: openByFolder.get(null) ?? 0,
+    };
   },
   ["memoire", CACHE_V],
   CACHE,

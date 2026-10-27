@@ -440,7 +440,7 @@ Un `Folder` est un **dossier de la mémoire de Relvo** : il regroupe les sujets 
 
 Le folder **« Général »** est auto-créé, **purement documentaire**, et **non supprimable** : il
 ne contient jamais de sujet. Il accueille les connaissances transversales, chargées dans le
-contexte de tous les sujets. Un sujet que Relvo ne sait pas ranger reste **sans dossier** — elle
+contexte de tous les sujets. Un sujet que Relvo ne sait pas ranger reste **sans dossier** — il
 n'atterrit **pas** dans Général.
 
 **Les dossiers s'emboîtent**, comme sur un ordinateur : « Général » est la racine,
@@ -463,6 +463,12 @@ secteurs du compte proposent par ailleurs des dossiers typiques à la prise en m
 niveau. Les dossiers **émergent du courrier** ; ils ne s'inventent pas devant un formulaire vide.
 Dans l'échange, Relvo liste, crée, déplace un dossier et range un sujet **à la demande du
 dirigeant**, par les fonctions de la page Dossiers.
+
+**La page Dossiers montre l'arbre entier, d'un coup**, Général en tête comme la racine qu'il
+est, et chaque branche porte deux gestes qui ne se confondent pas : **replier** (le triangle à
+gauche ; une branche sans dossier n'en a pas) et **entrer** (la ligne). L'état replié appartient
+à l'appareil, pas au compte : c'est un confort de lecture, pas une donnée. Ce que Relvo n'a pas
+su ranger se lit au pied de l'arbre, « Sans dossier », et mène aux sujets concernés.
 
 ### Label
 
