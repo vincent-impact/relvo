@@ -343,8 +343,9 @@ mot dit ce que le geste fait vraiment.
     ranger) puis quatre onglets : Dossiers / Sujets / Instructions / Connaissances.
 17. Le dossier **« Général »** est auto-créé, **purement documentaire**, **non supprimable**, est
     la **racine** de l'arbre, et ne contient **jamais** de sujet.
-18. Un `KnowledgeDocument` est soit un **Document** — une **connaissance** pour le dirigeant — (référence figée, non modifiable, avec un
-    état d'absorption décidé par Relvo), soit une **Instruction** (texte éditable).
+18. Un `KnowledgeDocument` est soit un **Document** — une **connaissance** pour le dirigeant,
+    qu'il dépose lui-même dans un dossier — (référence figée, non modifiable, à lire jusqu'à ce
+    que Relvo l'ait lue ou écartée), soit une **Instruction** (texte éditable).
 19. **Deux stockages, jamais un seul.** Le stockage objet est la **source de vérité et la seule
     voie d'affichage** ; la copie d'inférence est en **écriture seule**. L'envoi se fait du
     navigateur vers le stockage, en direct.

@@ -509,7 +509,9 @@ Deux natures, et la distinction n'est pas cosmétique : les **documents** (`file
 **références** auxquelles on se fie, non modifiables dans l'app ; les **instructions** (`note`)
 sont une **mémoire** que l'utilisateur façonne. La sensation de contrôle vient des instructions.
 
-Un document porte un état d'absorption décidé par Relvo : **lu** (injecté dans les prompts) ou
+Un document se **dépose** depuis l'onglet Connaissances d'un dossier : le navigateur l'envoie
+au stockage en direct, puis il s'inscrit dans le dossier, **à lire**. Il porte ensuite un état
+d'absorption décidé par Relvo : **lu** (injecté dans les prompts) ou
 **écarté**.
 
 ⚠️ **Deux stockages, jamais un seul.** Le fichier vit dans le stockage objet — **source de

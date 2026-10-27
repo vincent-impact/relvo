@@ -506,8 +506,9 @@ d'inférence est en **écriture seule** et n'est jamais relisible. L'affichage �
 passe **toujours** par la clé d'objet. Si l'identifiant d'inférence est perdu, on ré-uploade
 depuis le stockage objet ; l'inverse est **impossible**.
 
-L'**état d'absorption** — lu ou écarté — décide de l'inclusion dans les prompts. Il est décidé
-par Relvo et modifiable par l'utilisateur. Il sert aussi, sur une instruction, d'interrupteur
+L'**état d'absorption** — à lire, lu ou écarté — décide de l'inclusion dans les prompts : seul
+« lu » y entre. Une connaissance déposée par le dirigeant naît **à lire** ; lu ou écarté est
+décidé par Relvo et modifiable par l'utilisateur. Il sert aussi, sur une instruction, d'interrupteur
 d'activation.
 
 **La portée « sujet » n'existe pas.** Un document spécifique à un sujet ponctuelle reste une

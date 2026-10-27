@@ -19,7 +19,7 @@ fin: 2026-11-13
 
 | #     | Item                                                                                    |
 | ----- | --------------------------------------------------------------------------------------- |
-| M11.1 | Dépôt d'un fichier par glisser-déposer dans la fiche d'un domaine                       |
+| M11.1 | ~~Dépôt d'un fichier dans la fiche d'un dossier~~ — livré par M27.5 (l'onglet Connaissances, « Ajouter une connaissance », l'état « à lire ») ; reste ici la **lecture** du dépôt par Relvo |
 | M11.2 | Copie d'inférence + stockage de son identifiant                                         |
 | M11.3 | Étiquetage automatique du fichier                                                       |
 | M11.4 | Rédaction et modification des instructions                                              |

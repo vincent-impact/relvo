@@ -8,8 +8,9 @@ resume_client: >
   dossier, comme un fichier. La page Dossiers montre toute l'arborescence d'un coup, Général en tête ; un dossier
   s'ouvre sur sa description, ses dossiers, ses sujets, ses instructions et ses connaissances,
   avec un bouton pour ajouter chacun ; un sujet se range d'un glissement.
-statut: en-cours
+statut: termine
 debut: 2026-10-27
+fin: 2026-10-27
 ---
 
 # M27 — Dossiers et sujets

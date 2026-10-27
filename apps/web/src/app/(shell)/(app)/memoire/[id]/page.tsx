@@ -23,6 +23,7 @@ import {
   type OngletDossier,
 } from "@/components/memoire/dossier-tabs";
 import { AddFolderRow } from "@/components/memoire/folder-row";
+import { DeposerConnaissance } from "@/components/memoire/deposer-connaissance";
 import { FolderDescription } from "@/components/memoire/folder-description";
 import { FolderTree } from "@/components/memoire/folder-tree";
 import { InstructionList } from "@/components/memoire/instruction-list";
@@ -146,20 +147,20 @@ async function DossierTabs({
             }))}
           />
         ),
-        connaissances:
-          // Une liste = une carte ; la ligne est celle des documents d'un sujet.
-          // Le dépôt d'une connaissance arrive avec M27.5 : pas de ligne
-          // « Ajouter » tant que rien ne se dépose (un contrôle sans effet se
-          // retire).
-          files.length === 0 ? (
-            <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
-              Aucune connaissance. Les pièces que Relvo lit pour ce dossier
-              s’ajoutent ici.
-            </p>
-          ) : (
-            <div className="pt-3 pb-2">
-              <ListPanel>
-                {files.map((f) => (
+        connaissances: (
+          // Une liste = une carte : « Ajouter une connaissance » en tête (M27.5),
+          // puis les fichiers, chacun avec son état — à lire (déposé), lu par
+          // Relvo (son logo, sur son fond), écarté.
+          <div className="pt-3 pb-2">
+            <ListPanel>
+              <DeposerConnaissance folderId={id} />
+              {files.length === 0 ? (
+                <p className="px-[22px] py-8 text-center text-[14px] font-light text-gris">
+                  Aucune connaissance. Déposez un PDF, une image ou un texte :
+                  Relvo le lira pour ce dossier.
+                </p>
+              ) : (
+                files.map((f) => (
                   <div
                     key={f.id}
                     data-list-row
@@ -177,11 +178,14 @@ async function DossierTabs({
                         {f.aiLabel ? ` · ${f.aiLabel}` : ""}
                       </div>
                     </div>
-                    {/* « Lu » est une décision de Relvo : son logo, sur son fond. */}
                     {f.absorptionStatus === "read" ? (
                       <span className="inline-flex flex-none items-center gap-1 rounded-(--rayon-pilule) bg-relvo-pale px-2 py-0.5 text-[11px] font-medium text-relvo">
                         <RelvoLogo size={11} variant="full" title="" />
                         Lu
+                      </span>
+                    ) : f.absorptionStatus === "pending" ? (
+                      <span className="flex-none rounded-(--rayon-pilule) border border-dashed border-(--gris-clair) px-2 py-0.5 text-[11px] font-medium text-gris">
+                        À lire
                       </span>
                     ) : (
                       <span className="flex-none rounded-(--rayon-pilule) bg-(--fond-puce) px-2 py-0.5 text-[11px] font-medium text-gris">
@@ -189,10 +193,11 @@ async function DossierTabs({
                       </span>
                     )}
                   </div>
-                ))}
-              </ListPanel>
-            </div>
-          ),
+                ))
+              )}
+            </ListPanel>
+          </div>
+        ),
         ...(folder.isDefault
           ? {}
           : {

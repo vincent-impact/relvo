@@ -189,6 +189,8 @@ enum Priority {
 /// État d'absorption d'un KnowledgeDocument `kind=file` : Relvo l'a lu (✦ injecté
 /// dans les prompts) ou l'a écarté du retrieval.
 enum AbsorptionStatus {
+  /// Déposée par le dirigeant, pas encore lue par Relvo (M27.5) : hors des prompts.
+  pending
   read
   ignored
 }
@@ -1037,7 +1039,8 @@ model KnowledgeDocument {
   /// Copie d'inférence chez le fournisseur — en ÉCRITURE SEULE, jamais relisible.
   /// La source de vérité reste `storageKey` (04 §10).
   providerFileId   String?          @map("provider_file_id")
-  // État d'absorption (kind=file) : Relvo a lu (✦) ou écarté le document.
+  // État d'absorption (kind=file) : à lire (déposé, M27.5), lu par Relvo (✦)
+  // ou écarté. Sur une instruction : l'interrupteur d'activation.
   absorptionStatus AbsorptionStatus @default(read) @map("absorption_status")
   aiLabel          String?          @map("ai_label")
   aiSummary        String?          @map("ai_summary") @db.Text

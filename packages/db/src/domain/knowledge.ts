@@ -33,6 +33,51 @@ export const updateNoteSchema = z.object({
 export type CreateNoteInput = z.infer<typeof createNoteSchema>;
 export type UpdateNoteInput = z.infer<typeof updateNoteSchema>;
 
+// CONNAISSANCE déposée (kind=file, M27.5) : le fichier est déjà dans le
+// stockage objet (le navigateur l'y a envoyé en direct, invariant 19) ; ici,
+// on l'inscrit dans son dossier, À LIRE — Relvo ne l'a pas encore absorbée,
+// elle n'entre pas dans les prompts tant qu'elle n'est pas `read` (M11).
+export const createDocumentSchema = z.object({
+  folderId: z.uuid(),
+  name: z.string().trim().min(1, "Nom requis").max(200),
+  mimeType: z.string().trim().min(1).max(120),
+  /** La clé de l'objet dans le stockage — jamais une URL. */
+  storageKey: z.string().trim().min(1).max(300),
+  fileSize: z.number().int().positive(),
+});
+export type CreateDocumentInput = z.infer<typeof createDocumentSchema>;
+
+export async function createDocument(
+  db: TenantDb,
+  input: CreateDocumentInput,
+  origine?: Origine,
+) {
+  const data = createDocumentSchema.parse(input);
+  return db.$transaction(async (tx) => {
+    const doc = await tx.knowledgeDocument.create({
+      data: {
+        folderId: data.folderId,
+        kind: KnowledgeKind.file,
+        name: data.name,
+        mimeType: data.mimeType,
+        storageKey: data.storageKey,
+        fileSize: data.fileSize,
+        absorptionStatus: AbsorptionStatus.pending,
+        createdByActor: Actor.user,
+      } as Prisma.KnowledgeDocumentUncheckedCreateInput,
+    });
+    await logEvent(tx as Tx, {
+      entityType: "system",
+      entityId: doc.id,
+      eventType: EVENT_TYPES.knowledgeCreated,
+      title: `Connaissance « ${doc.name} » déposée`,
+      actor: "user",
+      metadata: avecOrigine({ folderId: data.folderId, kind: "file" }, origine),
+    });
+    return doc;
+  });
+}
+
 export async function createNote(
   db: TenantDb,
   input: CreateNoteInput,

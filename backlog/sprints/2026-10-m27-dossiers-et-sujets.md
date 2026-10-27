@@ -178,10 +178,40 @@ Général, de Kiloutou (deux niveaux sous Général), du nouveau sujet pré-rang
 et depuis le crayon d'un dossier ; console propre. Le glissé ne se capture pas en headless : le
 composant est celui des lignes fermées de la page Sujets, déjà vérifié au téléphone.
 
+## Tranche 5 — « Déposer » (M27.5)
+
+**Livré.**
+- « Ajouter une connaissance », première ligne de l'onglet Connaissances
+  (`components/memoire/deposer-connaissance.tsx`) : le fichier part du navigateur vers le
+  stockage **en direct** (invariant 19 ; `api/uploads`, scope `knowledge`, l'URL signée de
+  M4.3), puis `deposerConnaissanceAction` l'inscrit dans le dossier. Deux gardes côté serveur :
+  la clé est celle d'un objet du compte (le préfixe signé), et l'objet existe à la taille lue
+  (`head`). PDF, images, texte ; le serveur dit le refus.
+- Le domaine : `createDocument` (`domain/knowledge.ts`), kind `file`, état **`pending`** —
+  nouvelle valeur de `AbsorptionStatus` (migration `20261027190000_m27_connaissance_deposee`,
+  additive) : une connaissance déposée est **à lire**, hors des prompts tant que Relvo ne l'a
+  pas lue (la couche Domaine ne charge que `read`). Journal : « Connaissance « x » déposée ».
+  Test d'intégration `test/connaissances.test.ts`.
+- La ligne d'une connaissance dit son état : « À lire » (pointillé), « Lu » (le signe de
+  Relvo), « Écarté ». L'état vide invite à déposer.
+- M11.1 est livré par cette tranche ; **la lecture** du dépôt par Relvo (copie d'inférence,
+  étiquette, résumé) reste M11.
+
+**Vérification.** Typage, lint, les tests du domaine (le catalogue du schéma, les dossiers, la
+connaissance déposée) et ceux de l'application ; rendu headless de l'onglet Connaissances ; le
+dépôt lui-même se vérifie en production, sur un compte réel, avec le stockage.
+
 ## Où on en est
+
+**M27 terminée** le jour de son ouverture, en cinq commits poussés et déployés. À vérifier en
+production par le dirigeant, sur son compte : l'arbre de la page Dossiers (replier, entrer), la
+fiche d'un dossier (décrire, les quatre onglets, les ajouts), ranger un sujet d'un glissement et
+depuis sa fiche, déposer une connaissance (le dépôt touche le stockage réel). **Suivant : M24**
+(dix boîtes par compte), puis R9 à R12 du sprint de recette. Hors chantier : la lecture par Relvo
+d'une connaissance déposée (M11), et l'icône « Sujets » du dock à relire au téléphone.
 
 - [x] Tranche 1 — « Le mot »
 - [x] Tranche 2 — « L'arbre »
 - [x] Tranche 3 — « La fiche »
 - [x] Tranche 4 — « Ranger dans… »
-- [ ] Tranche 5 — « Déposer »
+- [x] Tranche 5 — « Déposer »
