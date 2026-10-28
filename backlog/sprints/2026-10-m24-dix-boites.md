@@ -383,6 +383,12 @@ règle d'organisation « Partage restreint au domaine » levée le temps d'y aut
 `gmail-api-push@system.gserviceaccount.com`, puis remise en héritage), le compte de service
 `relvo-webhook` et l'abonnement push authentifié ; `GMAIL_PUBSUB_TOPIC` et
 `GMAIL_PUSH_SERVICE_ACCOUNT` sont posées, et un e-mail reçu sur la boîte apparaît dans Relvo.
+**La lecture des quatorze jours par le relais est validée en production** par le dirigeant.
+**Reprise** : la tranche 6, « Répondre » — l'envoi par `gmail.send` dans le fil (`threadId`,
+`In-Reply-To`, `References`), l'écho de notre envoi reconnu par l'identifiant du message
+envoyé ; puis 7 et 8. ⚠️ Pour la tranche 8 : les identifiants de message du relais ne sont pas
+ceux de l'agrégateur — une boîte migrée ne doit **pas** redemander une lecture, sinon ses
+messages entrent deux fois.
 
 **L'infrastructure posée le 2026-10-28, avec le dirigeant** (tranche 0 et le socle de la
 tranche 1) : le domaine `relvo.net` acheté chez Ionos, au nom de l'organisation ; `relvo.net`,
