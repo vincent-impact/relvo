@@ -77,7 +77,8 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   un client sans les deux réglages obligatoires (`PITFALLS.md` #8).
 - **Deux layouts racine, par groupes de routes** : `app/(shell)/` porte la coquille de
   l'application (PWA, verrous de viewport, garde anti-rebond, session) ; `app/(public)/` porte ce
-  qui se lit **hors** de l'application (le suivi client) et n'hérite d'aucune de ces contraintes.
+  qui se lit **hors** de l'application (le suivi client, le **site** `relvo.net` et ses pages
+  légales) et n'hérite d'aucune de ces contraintes.
   Il n'y a **pas** de layout à la racine de `app/` — une page publique se crée dans `(public)`,
   jamais ailleurs (`PITFALLS.md` #48).
 - **La zone d'administration `/admin` vit dans `(shell)`, hors du groupe `(app)`** : pas de dock,
@@ -139,6 +140,7 @@ relvo/
 | `/sujets/[id]` · `/sujets/nouveau` | Fiche d'un sujet | hors-nav |
 | `/admin` · `/admin/comptes/[id]` · `/admin/dictee` | **Backoffice** (M21) — rôle `admin` seulement : les comptes, les demandes à ouvrir, les gestes (assistant, test, suppression), l'**essai de dictée** (M22.1 : le micro en PWA, la mesure, le partage des enregistrements du benchmark) | entrée du menu pour les administrateurs ; retour à l'app par le pictogramme maison |
 | `/(auth)/*` | Tunnel d'authentification — l'inscription est libre, **l'accès s'ouvre quand un administrateur valide la demande** (`/inscription/attente`) | — |
+| `relvo.net` · `/confidentialite` · `/conditions` | **Le site** (M24.10) — un autre **hôte** du même déployable : la présentation (`(public)/site`, réécrite depuis `/` sur cet hôte), la politique de confidentialité et les conditions, à l'adresse déclarée à Google. Sur `app.relvo.net`, ces chemins renvoient au site ; sur `relvo.net`, tout autre chemin renvoie à l'application (`lib/hotes.ts`, `next.config.ts`) | hors-nav, sans session |
 
 **Navigation** : barre d'onglets basse, fixe, violette, **cinq places** : Accueil · Calendrier ·
 **Relvo** (bouton central, disque violet qui déborde du dock des deux côtés, le dock se soulevant autour de lui, badge quand une question attend) ·
@@ -215,4 +217,7 @@ pnpm --filter web eval:dictee --dossier <hors dépôt> [--compte <e-mail>]   # b
 curl -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' -d '{"catchupId":"…"}' <app>/api/rattrapage/tranche   # relance une tranche de lecture du courrier (M7.19) ; le cron /api/cron/catch-up n'est qu'un filet
 ```
 
-Déploiement : pousser sur la branche de production. **Un seul déployable.**
+Déploiement : pousser sur la branche de production. **Un seul déployable, deux hôtes** :
+`app.relvo.net` (l'application, les webhooks) et `relvo.net` (le site) ; `relvo-app.vercel.app`
+redirige. Un changement d'adresse = `AUTH_URL`, `VAPID_SUBJECT`, `UNIPILE_PUBLIC_URL` et les
+webhooks de l'agrégateur réenregistrés (`scripts/unipile-webhook.mjs`).

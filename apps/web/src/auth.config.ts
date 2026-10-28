@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import { estLeSite } from "@/lib/hotes";
 
 // Routes publiques (accessibles sans session). Tout le reste est protégé par
 // défaut — invariant produit : l'app n'est jamais accessible anonymement,
@@ -15,6 +16,13 @@ const PUBLIC_ROUTES = [
   // le geste que surveille `test/auth-deny-by-default.test.ts` — l'y ajouter
   // sans mettre le test à jour le fait échouer, dans les deux sens.
   "/suivi",
+  // Le SITE (M24.10) : la page de présentation et les pages légales, lues par
+  // n'importe qui — et par Google pour la vérification de l'application. La
+  // racine du site (`/` sur `relvo.net`) est ouverte par l'hôte, plus bas :
+  // `/` sur l'application reste fermée. ⚠️ Surveillé par le même test.
+  "/site",
+  "/confidentialite",
+  "/conditions",
 ];
 
 // La zone d'administration (M21.1) : réservée au rôle `admin`, lu dans le jeton
@@ -42,12 +50,16 @@ export const authConfig = {
   // Renseignés dans auth.ts (Node) — vides ici pour rester edge-safe.
   providers: [],
   callbacks: {
-    authorized({ auth, request: { nextUrl } }) {
+    authorized({ auth, request }) {
+      const { nextUrl } = request;
       // Routes publiques toujours autorisées ; tout le reste exige une session
       // (sinon redirection vers /connexion via pages.signIn). La redirection
       // d'un utilisateur déjà connecté hors des pages d'entrée est gérée côté
       // page (redirect serveur), plus fiable que depuis ce callback.
       if (matches(PUBLIC_ROUTES, nextUrl.pathname)) return true;
+      // La racine du SITE est sa page d'accueil (réécrite vers `/site` après
+      // ce proxy) : publique sur cet hôte seulement.
+      if (nextUrl.pathname === "/" && estLeSite(request)) return true;
       if (!auth?.user) return false;
       if (
         matches(ADMIN_ROUTES, nextUrl.pathname) &&

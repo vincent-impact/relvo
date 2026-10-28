@@ -170,6 +170,7 @@ describe("design tokens — l'inventaire de 01-tokens.md", () => {
 // exceptions durables sont nommées avec leur raison.
 const EXCEPTIONS_DURABLES = new Set([
   "src/components/layout/relvo-logo.tsx", // le logo est une marque : ses blancs sont les siens
+  "src/app/(public)/site/site.module.css", // le site (M24.10), lu hors de l'application : ses tokens scopés et son mode sombre, comme le suivi client
   "src/components/auth/google-button.tsx", // les couleurs du G sont celles de Google
   "src/app/manifest.ts", // le manifeste PWA est lu hors CSS
   "src/app/(shell)/layout.tsx", // themeColor, lu hors CSS

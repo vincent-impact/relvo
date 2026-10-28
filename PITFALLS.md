@@ -110,7 +110,7 @@ Les autres viennent du kit et sont conservés ici parce qu'ils s'appliquent à c
 | 17 | **Un seul build concurrent sur les offres d'entrée** | Ne pas cumuler un déploiement en ligne de commande et un déploiement automatique : le second s'empile et paraît figé. |
 | **20** | **Doc et code dans le même commit — nécessaire, PAS suffisant** | ⚠️ **Cette règle a été respectée à la lettre tout en laissant passer quatre documents faux.** Le commit qui a remplacé la fiche sujet a modifié **six lignes** de la carte du projet, pour près de huit cents lignes de code supprimées — et quatre documents de conception ont continué à décrire l'ancienne conception. **L'auteur met à jour ce à quoi il pense, c'est-à-dire le récit ; il n'a aucune raison de relire une liste.** La discipline protège l'**intention** ; l'**inventaire** demande un test. |
 | 24 | **Une preview qui migre la production** | Le build exécute les migrations, previews comprises. Sans isolation par branche, pousser une branche de travail applique ses migrations à la **production**. À vérifier **avant** le premier push de branche. |
-| 25 | **URL d'authentification sur le domaine de déploiement** | Liens d'e-mail cassés, découverts à la première réinitialisation de mot de passe — c'est-à-dire au pire moment. Basculer en même temps que le domaine. |
+| 25 | **URL d'authentification sur le domaine de déploiement** | Liens d'e-mail cassés, découverts à la première réinitialisation de mot de passe — c'est-à-dire au pire moment. Basculer en même temps que le domaine. ✅ **Basculé le 2026-10-28** (M24.10) : `AUTH_URL`, `VAPID_SUBJECT`, `UNIPILE_PUBLIC_URL` et les webhooks de l'agrégateur sur `app.relvo.net`, l'ancienne adresse redirigée sauf `/api`. |
 | 27 | **Secrets** | Les fichiers d'environnement sont ignorés sauf l'exemple, vérifié **avant** le premier commit. Un secret poussé, même sur un dépôt privé, même supprimé ensuite, est un secret à **révoquer**. |
 | 28 | **Port de la base locale** | Exposer un port **dédié**, pas celui par défaut : il est presque toujours déjà pris, et le symptôme — une connexion qui aboutit sur la **mauvaise base** — est bien plus long à diagnostiquer qu'un port refusé. ⚠️ **Non appliqué sur ce projet**, cf. `backlog/ecarts-et-propositions.md`. |
 
@@ -670,3 +670,19 @@ ils ne se périment pas.
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et
 > **supprimer l'ancienne formulation** plutôt que de la surcharger d'un avertissement daté. Ce
 > fichier décrit ce qui est vrai, pas ce qui l'a été.
+
+### #72 — En développement, `nextUrl.hostname` dit `localhost` quel que soit l'en-tête `Host` ; les règles `has: host` de `next.config`, elles, le lisent
+
+**Symptôme** : le routage par hôte (M24.10) se vérifie en local avec `curl -H "Host: relvo.net"` :
+les redirections et la réécriture de `next.config.ts` répondent juste, mais le proxy renvoie la
+racine du site vers la connexion — comme si l'hôte n'était pas le bon. En production, derrière
+Vercel, le même code aurait marché, et le défaut ne se serait vu nulle part.
+
+**Cause** : `request.nextUrl` est construit depuis l'adresse sur laquelle le serveur de
+développement écoute, pas depuis l'en-tête `Host` de la requête ; les conditions `has` de la
+configuration, elles, lisent l'en-tête. Deux lectures de « l'hôte », deux réponses.
+
+**Règle** : l'hôte d'une requête se lit **dans l'en-tête `Host`** d'abord (`lib/hotes.ts`,
+`hoteDe`), `nextUrl` en repli ; et toute règle par hôte se vérifie en local au `curl -H Host:`
+sur les **deux** chemins — la configuration et le proxy — avant de pousser.
+

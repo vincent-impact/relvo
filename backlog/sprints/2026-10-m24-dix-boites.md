@@ -166,6 +166,38 @@ d'abord ; Prisma 7 avec adaptateur ; `db:migrate` puis `db:generate` après tout
 - **Plus tard, pour la tranche 8** : la liste des boîtes Gmail à migrer, et le feu vert, parce que
   la migration supprime des comptes chez l'agrégateur.
 
+## Tranche 1 — « L'adresse » (M24.10)
+
+**Livré.**
+- **Deux hôtes, un déployable** (`ecarts`, « Deux hôtes, un déployable ») : `src/lib/hotes.ts`
+  nomme le site (`relvo.net`), l'application (`app.relvo.net`) et l'ancienne adresse ;
+  `next.config.ts` route par l'en-tête d'hôte — la racine du site réécrite vers
+  `(public)/site`, tout autre chemin du site renvoyé à l'application, les pages du site
+  demandées à l'application renvoyées au site, l'ancienne adresse renvoyée à l'application
+  sauf `/api` (un webhook ou un cron qui arrive encore là est servi) ; `auth.config.ts` n'ouvre
+  la racine que sur l'hôte du site, et `test/auth-deny-by-default.test.ts` le tient.
+- **Le site** : la page de présentation (ce que Relvo fait, ce qu'il fait d'une boîte Gmail —
+  ce que Google lit —, l'accès sur demande), la **politique de confidentialité** (le
+  responsable, ce qui est traité, les bases, l'usage de Gmail avec la clause d'usage limité
+  des API Google en français et en anglais, les sous-traitants et leur lieu, la conservation,
+  les droits, la sécurité) et les **conditions d'utilisation** (bêta, accès sur validation,
+  aide et non décision, prix communiqué à la souscription, responsabilité bornée, droit
+  français). Une feuille scopée avec son mode sombre (`site.module.css`, exception durable du
+  test des tokens, comme le suivi), le chrome commun (`components/site/page-publique.tsx`).
+  Les textes se datent en pied ; le dirigeant les relit.
+- **La bascule** : `AUTH_URL`, `VAPID_SUBJECT`, `UNIPILE_PUBLIC_URL` sur `https://app.relvo.net`
+  en production ; `GMAIL_CLIENT_ID` et `GMAIL_CLIENT_SECRET` posés ; les webhooks de
+  l'agrégateur réenregistrés sur la nouvelle adresse et les anciens supprimés ;
+  `.env.example`, `README`, `CLAUDE.md`, `PITFALLS` (#25 ✅, #72) à jour.
+
+**Vérification.** Typage, lint, les 216 tests de l'application (dont le refus par défaut avec
+l'hôte) ; le routage vérifié en local au `curl -H Host:` sur les quatre hôtes ; rendu headless
+des trois pages en clair et en sombre émulé ; en production, les trois adresses répondent et
+l'ancienne redirige.
+
+**Piège vu.** #72 : en développement, `nextUrl.hostname` ignore l'en-tête `Host` que les règles
+`has: host` lisent — l'hôte se lit dans l'en-tête d'abord.
+
 ## Où on en est
 
 **Chantier ouvert le 2026-10-28.** Le découpage est proposé au dirigeant ; rien n'est codé.
@@ -187,7 +219,7 @@ fait à la livraison de la tranche 3 : en état Test, les jetons expirent en sep
 production non vérifiée, Google avertit et plafonne à cent utilisateurs, sans expiration.
 
 - [ ] Tranche 0 — « Se déclarer » (M24.7, en continu)
-- [ ] Tranche 1 — « L'adresse » (M24.10)
+- [x] Tranche 1 — « L'adresse » (M24.10)
 - [ ] Tranche 2 — « Le fournisseur derrière le canal » (M24.1)
 - [ ] Tranche 3 — « Se connecter à Gmail » (M24.2)
 - [ ] Tranche 4 — « Recevoir » (M24.3, M24.6)

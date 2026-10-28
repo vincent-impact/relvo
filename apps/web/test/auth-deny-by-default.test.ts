@@ -28,6 +28,10 @@ const ROUTES_PUBLIQUES = [
   "/reinitialiser-mot-de-passe",
   "/verifier-email",
   "/suivi",
+  // Le site (M24.10) : présentation et pages légales, lues par Google aussi.
+  "/site",
+  "/confidentialite",
+  "/conditions",
 ];
 
 /** Un échantillon de ce qui doit rester fermé, dont la racine. */
@@ -49,7 +53,7 @@ const ROUTES_PROTEGEES = [
 type Verdict = boolean | Response | undefined;
 type Autorise = (args: {
   auth: { user?: unknown } | null;
-  request: { nextUrl: URL };
+  request: { nextUrl: URL; headers?: Headers };
 }) => Verdict;
 
 const autorise = authConfig.callbacks.authorized as unknown as Autorise;
@@ -104,6 +108,37 @@ describe("refus par défaut du proxy d'authentification", () => {
   // passe par le préfixe, sans entrée de plus dans la liste blanche.
   it("ouvre la page d'attente de l'inscription sans session", () => {
     expect(passe("/inscription/attente", null)).toBe(true);
+  });
+});
+
+// LE SITE (M24.10) : la racine de `relvo.net` est la page de présentation,
+// publique ; la racine de l'application reste fermée. C'est l'HÔTE qui décide,
+// et seulement pour `/` — les pages légales sont publiques partout.
+describe("la racine du site", () => {
+  // L'hôte se lit dans l'en-tête `Host`, comme en production derrière Vercel
+  // et comme en développement derrière `curl -H Host:` (`lib/hotes.ts`).
+  const verdict = (hote: string, chemin: string) =>
+    autorise({
+      auth: null,
+      request: {
+        nextUrl: new URL(`https://${hote}${chemin}`),
+        headers: new Headers({ host: hote }),
+      },
+    }) === true;
+
+  it("ouvre `/` sur l'hôte du site, sans session", () => {
+    expect(verdict("relvo.net", "/")).toBe(true);
+  });
+
+  it("garde `/` fermée sur l'application et sur un hôte inconnu", () => {
+    expect(verdict("app.relvo.net", "/")).toBe(false);
+    expect(verdict("relvo.test", "/")).toBe(false);
+    expect(verdict("localhost", "/")).toBe(false);
+  });
+
+  it("n'ouvre rien d'autre sur l'hôte du site", () => {
+    expect(verdict("relvo.net", "/fil")).toBe(false);
+    expect(verdict("relvo.net", "/relvo")).toBe(false);
   });
 });
 

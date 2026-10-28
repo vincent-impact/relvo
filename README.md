@@ -54,7 +54,9 @@ pnpm test           # tests d'intégration (base relvo_test, créée au besoin)
 |---|---|
 | `DATABASE_URL` | Chaîne de connexion PostgreSQL (Neon en prod, conteneur local en dev) |
 | `AUTH_SECRET` | Secret Auth.js — **obligatoire**. `openssl rand -base64 33` |
-| `AUTH_URL` | URL de base de l'app, utilisée par les liens d'e-mail. En prod, **le domaine réel** — une URL `.vercel.app` casse les liens de réinitialisation |
+| `AUTH_URL` | URL de base de l'application, utilisée par les liens d'e-mail, les retours de l'agrégateur et la lecture par tranches. En prod `https://app.relvo.net` — une URL `.vercel.app` casse les liens de réinitialisation (#25) |
+| `RELVO_SITE_HOST` · `RELVO_APP_HOST` | Les hôtes du site (`relvo.net`) et de l'application (`app.relvo.net`), lus par le routage par hôte (`next.config.ts`, `lib/hotes.ts`). Vides = les valeurs de production |
+| `GMAIL_CLIENT_ID` · `GMAIL_CLIENT_SECRET` | Le client OAuth du relais Gmail (M24) — le même client Google que la connexion, sous un autre nom : `AUTH_GOOGLE_*` allumerait la connexion Google à l'application |
 | `AUTH_GOOGLE_ID` · `AUTH_GOOGLE_SECRET` | OAuth Google — optionnel. Sans les **deux**, seul le login e-mail / mot de passe est proposé |
 | `RESEND_API_KEY` | E-mails de vérification et de réinitialisation. Sans clé, le lien est logué en console (dev) |
 | `EMAIL_FROM` | Expéditeur des e-mails transactionnels |
@@ -102,10 +104,15 @@ pnpm --filter @relvo/storage smoke
 
 - **`apps/web` → Vercel**, *Root Directory = `apps/web`*. **Déployable unique** : e-mail et
   WhatsApp arrivent par webhooks serverless, il n'y a aucun process permanent à héberger.
+- **Deux hôtes, un déployable** (M24.10) : `relvo.net` sert le **site** — la présentation et les
+  pages légales, que Google lit pour vérifier l'application — et `app.relvo.net` sert
+  **l'application** et ses webhooks ; `www.relvo.net` et l'ancienne adresse `relvo-app.vercel.app`
+  redirigent (`next.config.ts`, `src/lib/hotes.ts`). Le domaine est au nom de l'organisation
+  (registrar Ionos, DNS posé à la main, domaines ajoutés au projet Vercel).
 - La commande de build applique les migrations (`vercel-build`), previews comprises.
   ⚠️ **Vérifier que les previews sont isolées de la production** avant de pousser une branche :
   sans branche de base par branche git, une branche de travail migre la **production**.
-- **Webhooks Unipile** : déclarer `https://<app>/api/webhooks/unipile` côté Unipile, avec le
+- **Webhooks Unipile** : déclarer `https://app.relvo.net/api/webhooks/unipile` côté Unipile, avec le
   header `Unipile-Auth: <UNIPILE_WEBHOOK_SECRET>` — e-mails reçus **et envoyés** (`mail_sent` :
   un envoi depuis un client e-mail compte), messagerie, état des comptes
   (`apps/web/scripts/unipile-webhook.mjs`).

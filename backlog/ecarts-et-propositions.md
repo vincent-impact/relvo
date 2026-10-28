@@ -1612,6 +1612,25 @@ avec l'agrégateur : la marge ne dépend pas d'une négociation. L'agrégateur r
 Épique **M24**, dont M24.10 porte le domaine et l'infrastructure ; **M23 passe devant**, M24
 suit, tout le reste est moins urgent.
 
+### Deux hôtes, un déployable : le site sur `relvo.net`, l'application sur `app.relvo.net`
+
+**`tranché`** · Avec le dirigeant, le 2026-10-28, à l'ouverture de M24 (M24.10). Le nom de
+domaine est `relvo.net`, acheté au nom de l'organisation. Google exige, pour vérifier une
+application qui lit Gmail, une **page d'accueil qui décrit l'usage des données**, une politique
+de confidentialité et des conditions d'utilisation **sur le domaine déclaré** ; l'écran de
+connexion de l'application ne peut pas tenir ce rôle. D'où deux hôtes servis par le même
+déployable : `relvo.net` est le **site** — la présentation et les pages légales, dans le groupe
+`(public)`, sans session —, `app.relvo.net` est **l'application** et ses webhooks. Le routage se
+fait par l'en-tête d'hôte dans `next.config.ts` (la racine du site est réécrite vers sa page,
+tout autre chemin sur le site renvoie à l'application, les pages du site demandées à
+l'application renvoient au site) et dans l'autorisation du proxy (la racine n'est publique que
+sur l'hôte du site). `www.relvo.net` redirige vers la racine, l'ancienne adresse
+`relvo-app.vercel.app` vers l'application — sauf ses routes d'API, servies jusqu'à ce que plus
+rien n'y arrive. **Retenu contre** faire de `relvo.net` une simple redirection vers
+l'application (Google n'y lirait rien) et contre un second déployable pour le site (une
+frontière de plus pour trois pages). Le prix, payé une fois : la PWA installée et l'abonnement
+aux notifications sont liés à l'origine — les testeurs réinstallent et réactivent.
+
 ### La deuxième vague de la recette : des dossiers, dix boîtes, des médias qui ne saturent pas, une notification qui fait revenir
 
 **`tranché`** · Avec le dirigeant, au retour de la recette de l'alpha (2026-10-27), sur les

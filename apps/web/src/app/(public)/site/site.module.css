@@ -1,0 +1,436 @@
+/* Le SITE (M24.10) — `relvo.net` : la page de présentation et les pages légales.
+ *
+ * Même parti que la page de suivi : un jeu de tokens PROPRE à ces pages, scopé
+ * sur `.page`, qui reprend la livrée (conception/design-system/01-tokens.md —
+ * le ciel violet et ses étoiles, Barlow en deux dessins) sans dépendre du thème
+ * de l'application, et qui porte son mode sombre : ces pages se lisent dans un
+ * navigateur, pas dans la coquille claire de la PWA. Les polices viennent du
+ * layout racine (`../fonts`).
+ */
+
+.page {
+  --nuit: #231b63;
+  --relvo: #4a3fb5;
+  --relvo-clair: #6d5df5;
+  --relvo-pale: #f2f0ff;
+  --relvo-filet: #e3dffb;
+  --surface: #ffffff;
+  --surface-2: #f7f7fa;
+  --hairline: rgb(17 17 17 / 0.09);
+  --text-1: #111111;
+  --text-2: #555a66;
+  --text-3: #8a8f9b;
+  --on-violet: rgb(255 255 255 / 0.82);
+  --fait: #1f9d55;
+  --radius: 14px;
+  --radius-pill: 999px;
+  --shadow: 0 10px 30px rgb(28 22 60 / 0.12);
+  --font-sans: var(--font-barlow), system-ui, sans-serif;
+  --font-cond:
+    var(--font-barlow-condensed), var(--font-barlow), system-ui, sans-serif;
+
+  min-height: 100vh;
+  background: var(--surface-2);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  .page {
+    --relvo: #8b7cf0;
+    --relvo-pale: #241f3d;
+    --relvo-filet: #3a3360;
+    --surface: #1c1b20;
+    --surface-2: #141317;
+    --hairline: rgb(255 255 255 / 0.1);
+    --text-1: #eceaf0;
+    --text-2: #b3b0bc;
+    --text-3: #807d8a;
+    --fait: #4cbf82;
+    --shadow: 0 10px 30px rgb(0 0 0 / 0.45);
+  }
+}
+
+.page a {
+  color: var(--relvo);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+.page a:focus-visible,
+.page button:focus-visible {
+  outline: 2px solid var(--relvo);
+  outline-offset: 2px;
+}
+
+/* ---------- le ciel ---------- */
+.ciel {
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(
+    180deg,
+    var(--nuit) 0,
+    #4a3fb5 45%,
+    var(--relvo-clair) 100%
+  );
+  padding: 28px 20px 56px;
+}
+.ciel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 8% 22%,
+      rgb(255 255 255 / 0.95) 0 1.1px,
+      transparent 2px
+    ),
+    radial-gradient(
+      circle at 19% 9%,
+      rgb(255 255 255 / 0.7) 0 0.8px,
+      transparent 1.7px
+    ),
+    radial-gradient(
+      circle at 27% 31%,
+      rgb(255 255 255 / 0.55) 0 0.7px,
+      transparent 1.6px
+    ),
+    radial-gradient(
+      circle at 36% 14%,
+      rgb(255 255 255 / 0.85) 0 1px,
+      transparent 1.9px
+    ),
+    radial-gradient(
+      circle at 47% 5%,
+      rgb(255 255 255 / 0.6) 0 0.8px,
+      transparent 1.7px
+    ),
+    radial-gradient(
+      circle at 55% 24%,
+      rgb(255 255 255 / 0.9) 0 1.2px,
+      transparent 2.1px
+    ),
+    radial-gradient(
+      circle at 63% 11%,
+      rgb(255 255 255 / 0.5) 0 0.7px,
+      transparent 1.6px
+    ),
+    radial-gradient(
+      circle at 71% 33%,
+      rgb(255 255 255 / 0.7) 0 0.9px,
+      transparent 1.8px
+    ),
+    radial-gradient(
+      circle at 82% 8%,
+      rgb(255 255 255 / 0.85) 0 1px,
+      transparent 1.9px
+    ),
+    radial-gradient(
+      circle at 90% 27%,
+      rgb(255 255 255 / 0.6) 0 0.8px,
+      transparent 1.7px
+    ),
+    radial-gradient(
+      circle at 94% 16%,
+      rgb(255 255 255 / 0.45) 0 0.7px,
+      transparent 1.5px
+    );
+  mask-image: linear-gradient(180deg, #000 0, #000 45%, transparent 90%);
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    #000 0,
+    #000 45%,
+    transparent 90%
+  );
+}
+.cielInner {
+  position: relative;
+  max-width: 720px;
+  margin: 0 auto;
+}
+.marque {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none !important;
+  color: #fff !important;
+}
+.marque strong {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 0.01em;
+}
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.nav a:not(.marque) {
+  color: #fff;
+  font-weight: 400;
+  font-size: 14px;
+  text-decoration: none;
+  opacity: 0.9;
+}
+.titre {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 36px;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  margin: 44px 0 0;
+  text-wrap: balance;
+  max-width: 20ch;
+}
+.titreLegal {
+  margin-top: 28px;
+  font-size: 30px;
+}
+.sousTitre {
+  margin: 14px 0 0;
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--on-violet);
+  max-width: 44ch;
+}
+.surligne {
+  font-family: var(--font-cond);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--on-violet);
+  margin: 0 0 8px;
+}
+
+/* ---------- boutons ---------- */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 26px;
+}
+.bouton,
+.boutonSecondaire {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: 15.5px;
+  text-decoration: none !important;
+}
+.bouton {
+  background: #fff;
+  color: var(--nuit) !important;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.18);
+}
+.boutonSecondaire {
+  color: #fff !important;
+  border: 1px solid rgb(255 255 255 / 0.55);
+}
+
+/* ---------- le corps ---------- */
+.corps {
+  /* Au-dessus du ciel : la première carte le chevauche, comme dans l'application. */
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 20px 48px;
+}
+.carte {
+  margin-top: -28px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 22px 20px;
+}
+.carte + .carte,
+.bloc {
+  margin-top: 18px;
+}
+.carte h2,
+.bloc h2 {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 22px;
+  line-height: 1.15;
+  margin: 0 0 10px;
+}
+.carte p,
+.bloc p {
+  margin: 0 0 10px;
+}
+.carte p:last-child,
+.bloc p:last-child {
+  margin-bottom: 0;
+}
+
+.trois {
+  display: grid;
+  gap: 14px;
+  margin-top: 6px;
+}
+@media (min-width: 640px) {
+  .trois {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+.etape {
+  border-top: 3px solid var(--relvo-clair);
+  padding-top: 10px;
+}
+.etape h3 {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 18px;
+  margin: 0 0 4px;
+}
+.etape p {
+  font-size: 15px;
+  color: var(--text-2);
+  margin: 0;
+}
+
+.liste {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.liste li {
+  margin: 6px 0;
+}
+.liste li::marker {
+  color: var(--relvo);
+}
+
+.relvoBloc {
+  background: var(--relvo-pale);
+  border: 1px solid var(--relvo-filet);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  margin-top: 18px;
+}
+.relvoBloc h2 {
+  color: var(--relvo);
+}
+
+.note {
+  font-size: 14px;
+  color: var(--text-2);
+}
+
+/* ---------- pages légales ---------- */
+.legal {
+  margin-top: -28px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 8px 20px 24px;
+}
+.legal section {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.legal section:last-child {
+  border-bottom: 0;
+}
+.legal h2 {
+  font-family: var(--font-cond);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.2;
+  margin: 0 0 8px;
+}
+.legal h3 {
+  font-weight: 500;
+  font-size: 16px;
+  margin: 12px 0 4px;
+}
+.legal p {
+  margin: 0 0 8px;
+}
+.legal ul {
+  margin: 4px 0 8px;
+  padding-left: 1.2em;
+}
+.legal li {
+  margin: 4px 0;
+}
+.legal li::marker {
+  color: var(--relvo);
+}
+.legal table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+  margin: 6px 0 8px;
+}
+.legal th,
+.legal td {
+  text-align: left;
+  vertical-align: top;
+  padding: 7px 8px 7px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.legal th {
+  font-weight: 500;
+  color: var(--text-2);
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.date {
+  font-size: 13.5px;
+  color: var(--text-3);
+  margin: 0;
+  padding: 14px 0 0;
+}
+.encadre {
+  background: var(--relvo-pale);
+  border: 1px solid var(--relvo-filet);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin: 8px 0;
+}
+.encadre p {
+  margin: 0;
+}
+.encadre p + p {
+  margin-top: 6px;
+}
+.en {
+  font-style: italic;
+  color: var(--text-2);
+}
+
+/* ---------- pied ---------- */
+.pied {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 12px 20px 40px;
+  border-top: 1px solid var(--hairline);
+  font-size: 13.5px;
+  color: var(--text-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  align-items: center;
+}
+.pied a {
+  color: var(--text-2);
+  text-decoration: none;
+}
+.pied a:hover {
+  text-decoration: underline;
+}

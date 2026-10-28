@@ -1,5 +1,13 @@
 import path from "node:path";
 import type { NextConfig } from "next";
+import {
+  ANCIEN_HOST,
+  APP_HOST,
+  APP_URL,
+  SITE_ACCUEIL,
+  SITE_HOST,
+  SITE_URL,
+} from "./src/lib/hotes";
 
 const nextConfig: NextConfig = {
   // Le traçage part du dossier du projet Next (`apps/web`) : « any files outside
@@ -48,6 +56,47 @@ const nextConfig: NextConfig = {
   // d'ancienne page atterrit sur la vue qui l'a remplacée.
   async redirects() {
     return [
+      // ── Les hôtes (M24.10, `lib/hotes.ts`) ───────────────────────────────
+      // L'ANCIENNE adresse renvoie vers l'application, chemin et requête
+      // conservés — sauf les routes d'API : un webhook ou un cron qui arrive
+      // encore là doit être SERVI, pas promené par une redirection qu'un
+      // POST ne suit pas forcément. Les webhooks de l'agrégateur sont
+      // réenregistrés sur la nouvelle adresse ; cette exception est le filet.
+      {
+        source: "/",
+        has: [{ type: "host", value: ANCIEN_HOST }],
+        destination: `${APP_URL}/`,
+        permanent: true,
+      },
+      {
+        source: "/:path((?!api/).*)",
+        has: [{ type: "host", value: ANCIEN_HOST }],
+        destination: `${APP_URL}/:path`,
+        permanent: true,
+      },
+      // Sur le SITE, tout ce qui n'est pas une page du site est l'application
+      // (quelqu'un tape `relvo.net/connexion`) : on l'y envoie. La racine, elle,
+      // est réécrite vers la page d'accueil du site (cf. `rewrites`).
+      {
+        source: "/:path((?!confidentialite$|conditions$|api/).+)",
+        has: [{ type: "host", value: SITE_HOST }],
+        destination: `${APP_URL}/:path`,
+        permanent: true,
+      },
+      // Les pages du site demandées sur l'APPLICATION renvoient au site : une
+      // seule adresse pour chacune, celle que Google a lue.
+      {
+        source: SITE_ACCUEIL,
+        has: [{ type: "host", value: APP_HOST }],
+        destination: `${SITE_URL}/`,
+        permanent: true,
+      },
+      {
+        source: "/:page(confidentialite|conditions)",
+        has: [{ type: "host", value: APP_HOST }],
+        destination: `${SITE_URL}/:page`,
+        permanent: true,
+      },
       { source: "/planning", destination: "/calendrier", permanent: true },
       { source: "/messages", destination: "/conversations", permanent: true },
       {
@@ -67,6 +116,25 @@ const nextConfig: NextConfig = {
       })),
       { source: "/parametres", destination: "/profil", permanent: true },
     ];
+  },
+
+  // La racine du SITE est sa page d'accueil (`(public)/site`), sans que le
+  // chemin change dans la barre d'adresse ; sur tout autre hôte, `/` reste
+  // l'accueil de l'application. `beforeFiles` : avant le système de fichiers,
+  // après le proxy — qui voit donc `/` sur l'hôte du site et le laisse passer
+  // (`auth.config.ts`).
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/",
+          has: [{ type: "host", value: SITE_HOST }],
+          destination: SITE_ACCUEIL,
+        },
+      ],
+      afterFiles: [],
+      fallback: [],
+    };
   },
 
   experimental: {
