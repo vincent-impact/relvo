@@ -2,6 +2,7 @@ import {
   completeChannelConnection,
   ensureOnboardingQuestions,
   isDomainError,
+  requestChannelCatchup,
   resolveMailboxStep,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
@@ -10,6 +11,8 @@ import { expireTenantData } from "@/server/cached";
 import { type MotifDeRetour, pageDeRetour } from "@/server/courrier/retour";
 import { getCurrentAccountId } from "@/server/auth-context";
 import { tenantDb } from "@/lib/tenant-db";
+import { lancerTranche } from "@/server/ia/pipeline/rattrapage";
+import { fenetreDeRattrapage } from "@/server/ia/pipeline/rattrapage-regles";
 import { reprendreEtat } from "@/server/gmail/etat";
 import { poserLAbonnement } from "@/server/gmail/abonnement";
 import { donneesDepuisJetons } from "@/server/gmail/jetons";
@@ -84,6 +87,21 @@ export async function GET(req: Request) {
         { adresse },
         err,
       );
+    }
+    // La lecture des deux dernières semaines (M24.4), demandée à la
+    // connexion comme chez l'agrégateur, et la première tranche part
+    // aussitôt. Pas à une reconnexion : la boîte a déjà sa lecture — ou sa
+    // migration (M24.9), qui décidera.
+    if (!etat.adresse) {
+      try {
+        const catchup = await requestChannelCatchup(db, {
+          channelId: etat.channelId,
+          since: fenetreDeRattrapage(),
+        });
+        await lancerTranche(catchup.id);
+      } catch (err) {
+        console.error("[gmail] lecture non lancée", { adresse }, err);
+      }
     }
   } catch (err) {
     if (isDomainError(err)) {

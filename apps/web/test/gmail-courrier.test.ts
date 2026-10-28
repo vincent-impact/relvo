@@ -207,3 +207,12 @@ describe("l'hygiène des adresses", () => {
     expect(sansFilCite("Merci\n\n> cité")).toBe("Merci");
   });
 });
+
+describe("requeteDeLecture", () => {
+  it("la boîte de réception depuis la date, sans indésirable ni corbeille, en secondes", async () => {
+    const { requeteDeLecture } = await import("@/server/gmail/courrier");
+    expect(requeteDeLecture(new Date("2026-10-14T09:00:00.000Z"))).toBe(
+      "in:inbox -in:spam -in:trash after:1791968400",
+    );
+  });
+});

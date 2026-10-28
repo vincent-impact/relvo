@@ -148,6 +148,29 @@ export async function historiqueDepuis(
   };
 }
 
+/** `users.messages.list` : les identifiants qui répondent à une requête Gmail, page par page. */
+export async function listerMessages(
+  acces: string,
+  args: { q: string; pageToken?: string | null; maxResults: number },
+): Promise<{ ids: string[]; nextPageToken: string | null }> {
+  const { json } = await appel<{
+    messages?: { id?: string }[];
+    nextPageToken?: string;
+  }>(acces, "messages", {
+    params: {
+      q: args.q,
+      maxResults: String(args.maxResults),
+      ...(args.pageToken ? { pageToken: args.pageToken } : {}),
+    },
+  });
+  return {
+    ids: (json?.messages ?? [])
+      .map((m) => m.id)
+      .filter((id): id is string => Boolean(id)),
+    nextPageToken: json?.nextPageToken ?? null,
+  };
+}
+
 /** Un message entier (en-têtes, corps, pièces). `null` s'il n'existe plus — un brouillon jeté. */
 export async function lireMessage(
   acces: string,

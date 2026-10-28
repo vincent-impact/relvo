@@ -18,6 +18,16 @@ import type { MessageGmail, PartieGmail } from "./api";
 // l'entrée du domaine qui va avec, ses pièces jointes. Mapper PUR, testable
 // sans réseau.
 
+/**
+ * La requête de la LECTURE à la connexion (M24.4) : la boîte de réception
+ * depuis une date — comme la liste de l'agrégateur, bornée à `inbox` : les
+ * envoyés, les brouillons, la corbeille et l'indésirable ne sont pas du
+ * courrier à trier. `after:` en secondes depuis l'époque, ce que Gmail lit.
+ */
+export function requeteDeLecture(after: Date): string {
+  return `in:inbox -in:spam -in:trash after:${Math.floor(after.getTime() / 1000)}`;
+}
+
 export function natureDepuisEtiquettes(
   labelIds: readonly string[],
   expediteur: string | null,

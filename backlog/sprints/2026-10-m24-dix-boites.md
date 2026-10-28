@@ -352,17 +352,37 @@ adresse publique). Se vérifie en production, une fois le sujet, le compte de se
 l'abonnement push créés par le dirigeant et les deux variables posées : un e-mail envoyé à la
 boîte apparaît dans Relvo en quelques secondes, avec sa pièce jointe.
 
+## Tranche 5 — « Lire les quatorze jours » (M24.4)
+
+**Livré.**
+- **Le relais lit à la connexion** : `lireRecents` du fournisseur `gmail` liste la boîte de
+  réception depuis la date (`users.messages.list`, requête `in:inbox -in:spam -in:trash
+  after:<secondes>` — `requeteDeLecture`, la même borne que la liste de l'agrégateur), chaque
+  message entier à la demande (`lire()`), versé dans **les mêmes tranches** que M7.19
+  (`importerUnePasse`, `rangerCourrier`) ; la carte vivante ne change pas.
+- **La lecture se demande à la première connexion** dans `/api/gmail/retour`
+  (`requestChannelCatchup` + `lancerTranche`, comme le webhook de connexion de l'agrégateur),
+  pas à une reconnexion — la boîte a déjà sa lecture, ou sa migration (M24.9) décidera.
+- **Les lectures manquantes** : une boîte du relais reliée avant la tranche 5 n'a jamais eu
+  la sienne ; la page Canaux la demande après sa réponse (`demanderLecturesManquantes`), une
+  fois. La carte « lecture à venir » de la tranche 4 est retirée : une boîte Gmail se met en
+  route comme une autre.
+- Test web : `requeteDeLecture`. Pas de changement du domaine.
+
+**Vérification.** Typage, lint, tests de l'application. La lecture réelle se vérifie en
+production : ouvrir Canaux demande la lecture de la boîte reliée avant la tranche ; la carte
+vivante compte, le disque du dock respire, les premiers sujets s'ouvrent.
+
 ## Où on en est
 
-**Chantier ouvert le 2026-10-28.** Découpage validé ; tranches 1 à 4 livrées en production le
+**Chantier ouvert le 2026-10-28.** Découpage validé ; tranches 1 à 5 livrées en production le
 jour même. L'écran de consentement est **en production** (non vérifiée : avertissement Google,
-cent comptes), le branding soumis ; le dirigeant a relié une seconde boîte par le relais, le
-retour réel de Google est vérifié. **Ce que la tranche 4 attend du dirigeant** : dans la
-console Google, le sujet Pub/Sub `gmail-relvo` avec le droit « Éditeur Pub/Sub » pour
-`gmail-api-push@system.gserviceaccount.com`, le compte de service `relvo-webhook` sans rôle ni
-clé, l'abonnement push `gmail-relvo-app` vers `https://app.relvo.net/api/webhooks/gmail` avec
-l'authentification par ce compte ; puis les deux variables en production — l'abonnement de sa
-boîte se pose à l'ouverture de Canaux ou au cron du matin.
+cent comptes), le branding soumis. **La réception par le relais est vérifiée en production** :
+le dirigeant a relié une seconde boîte par Google, créé le sujet Pub/Sub `gmail-relvo` (la
+règle d'organisation « Partage restreint au domaine » levée le temps d'y autoriser
+`gmail-api-push@system.gserviceaccount.com`, puis remise en héritage), le compte de service
+`relvo-webhook` et l'abonnement push authentifié ; `GMAIL_PUBSUB_TOPIC` et
+`GMAIL_PUSH_SERVICE_ACCOUNT` sont posées, et un e-mail reçu sur la boîte apparaît dans Relvo.
 
 **L'infrastructure posée le 2026-10-28, avec le dirigeant** (tranche 0 et le socle de la
 tranche 1) : le domaine `relvo.net` acheté chez Ionos, au nom de l'organisation ; `relvo.net`,
@@ -385,7 +405,7 @@ production non vérifiée, Google avertit et plafonne à cent utilisateurs, sans
 - [x] Tranche 2 — « Le fournisseur derrière le canal » (M24.1)
 - [x] Tranche 3 — « Se connecter à Gmail » (M24.2)
 - [x] Tranche 4 — « Recevoir » (M24.3, M24.6)
-- [ ] Tranche 5 — « Lire les quatorze jours » (M24.4)
+- [x] Tranche 5 — « Lire les quatorze jours » (M24.4)
 - [ ] Tranche 6 — « Répondre » (M24.5)
 - [ ] Tranche 7 — « Dix boîtes dans l'interface » (M24.8)
 - [ ] Tranche 8 — « Migrer » (M24.9)

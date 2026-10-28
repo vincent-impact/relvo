@@ -21,13 +21,12 @@ import { RowsSkeleton } from "@/components/shared/screen-skeletons";
 import { getTenantDb } from "@/server/auth-context";
 import { fournisseurDe } from "@/server/courrier";
 import { MOTIFS_DE_RETOUR, estUnMotifDeRetour } from "@/server/courrier/retour";
-import { relancerLignesEnPanne } from "@/server/ia/pipeline/rattrapage";
-import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
 import {
-  boiteEnMiseEnRoute,
-  carteEnAttente,
-  lectureAttendue,
-} from "@/server/lecture-en-cours";
+  demanderLecturesManquantes,
+  relancerLignesEnPanne,
+} from "@/server/ia/pipeline/rattrapage";
+import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
+import { boiteEnMiseEnRoute, carteEnAttente } from "@/server/lecture-en-cours";
 import {
   type ChannelConfigStatus,
   MAX_EMAIL_CHANNELS,
@@ -134,7 +133,7 @@ async function ChannelList({ connected }: { connected: boolean }) {
     })),
     ...enMiseEnRoute.map((ch) => ({
       channelId: ch.id,
-      ...carteEnAttente(plusieurs ? ch.name : null, ch.config?.provider),
+      ...carteEnAttente(plusieurs ? ch.name : null),
     })),
   ];
   // Au retour de la page du fournisseur (`connected=1`), la page se rafraîchit
@@ -145,13 +144,25 @@ async function ChannelList({ connected }: { connected: boolean }) {
     connected &&
     channels.some((ch) =>
       ch.type === "email"
-        ? lectureAttendue(ch, now)
+        ? boiteEnMiseEnRoute(ch, now)
         : statuts[channels.indexOf(ch)] !== "connected",
     );
   // Une ligne dont plus aucune tranche ne s'occupe est relancée après la
   // réponse (M7.19) : la reprise, sans attendre la nuit.
   if (avecRattrapage.some((ch) => estEnPanne(ch.catchups[0]))) {
     after(() => relancerLignesEnPanne(db));
+  }
+  // Une boîte du relais Gmail reliée avant que le relais sache lire (M24.4)
+  // n'a jamais eu sa lecture : elle se demande d'ici, après la réponse.
+  if (
+    channels.some(
+      (ch) =>
+        ch.config?.provider === "gmail" &&
+        ch.config.externalAccountId &&
+        !ch.catchups[0],
+    )
+  ) {
+    after(() => demanderLecturesManquantes(db));
   }
 
   return (

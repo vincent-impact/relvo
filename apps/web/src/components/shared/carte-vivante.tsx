@@ -34,8 +34,6 @@ export function phraseLecture(c: CarteVivanteData): string {
   switch (c.status) {
     case "pending":
       return `Je commence à lire le courrier des deux dernières semaines${ou}.`;
-    case "a-venir":
-      return `La boîte${ou} est reliée : je reçois chaque nouveau message. La lecture des deux dernières semaines arrive avec une prochaine mise à jour.`;
     case "running": {
       if (c.messagesImported === 0) {
         return `Je lis le courrier des deux dernières semaines${ou}. Je n’ai rien trouvé encore : la boîte se synchronise.`;
@@ -102,8 +100,7 @@ export function CarteVivante({
   className?: string;
 }) {
   const running = data.status === "running" || data.status === "pending";
-  // Rien à compter tant que la lecture n'a pas commencé — ni quand elle est à venir.
-  const counting = data.status !== "pending" && data.status !== "a-venir";
+  const counting = data.status !== "pending";
   return (
     <RelvoBlock className={className} label="Relvo lit le courrier">
       <RelvoSentence>

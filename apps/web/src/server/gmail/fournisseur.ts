@@ -9,8 +9,9 @@ import { revoquer } from "./oauth";
 // connecte et se reconnecte par le consentement de Relvo, ses jetons vivent
 // chiffrés dans sa configuration, la suppression du canal révoque l'accès ; le
 // courrier arrive par notification (`reception.ts`) et les pièces jointes se
-// relisent par l'API. La lecture à la connexion et l'envoi arrivent aux
-// tranches suivantes — d'ici là, ils le disent, ils ne se taisent pas.
+// relisent par l'API, la lecture à la connexion liste la boîte de réception
+// depuis la date. L'envoi arrive à la tranche suivante — d'ici là, il le dit,
+// il ne se tait pas.
 //
 // L'accès (`acces.ts`) et l'API se chargent à la demande : ce module reste
 // importable sans base, par les tests de la frontière.
@@ -25,8 +26,33 @@ function pasEncore(quoi: string): never {
 export const fournisseurGmail: FournisseurCourrier = {
   nom: "gmail",
 
-  async lireRecents() {
-    return pasEncore("lire le courrier d'une boîte");
+  /** La lecture à la connexion (M24.4) : la boîte de réception depuis la date, chaque message entier à la demande. */
+  async lireRecents(boite, { after, cursor, limit }) {
+    const [
+      { jetonDAcces },
+      { listerMessages, lireMessage },
+      { courrierDepuisGmail, requeteDeLecture },
+    ] = await Promise.all([
+      import("./acces"),
+      import("./api"),
+      import("./courrier"),
+    ]);
+    const acces = await jetonDAcces(boite.externalAccountId);
+    const page = await listerMessages(acces, {
+      q: requeteDeLecture(after),
+      pageToken: cursor,
+      maxResults: limit,
+    });
+    return {
+      cursor: page.nextPageToken,
+      items: page.ids.map((id) => ({
+        externalId: id,
+        lire: async () => {
+          const message = await lireMessage(acces, id);
+          return message ? courrierDepuisGmail(message, boite) : null;
+        },
+      })),
+    };
   },
 
   async lirePieceJointe({ externalAccountId }, { emailId, pieceId }) {

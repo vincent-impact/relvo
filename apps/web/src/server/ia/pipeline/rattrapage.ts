@@ -14,6 +14,7 @@ import {
   recordCatchupError,
   recordCatchupProgress,
   releaseCatchupTranche,
+  requestChannelCatchup,
   resumeCatchupAtNight,
   tenantDb,
   type CatchupStopReason,
@@ -24,6 +25,7 @@ import { notifierQuestion } from "@/server/push/questions";
 import { inferenceDisponible, RATTRAPAGE } from "../config";
 import {
   estEnPanne,
+  fenetreDeRattrapage,
   motifDArret,
   peutClore,
   type EtatRattrapage,
@@ -447,6 +449,47 @@ export async function lancerTranche(catchupId: string): Promise<boolean> {
 /** La ligne d'un rattrapage, dans la forme que la tranche attend ; null si elle n'est plus ouverte. */
 export function trouverLigne(catchupId: string): Promise<Ligne | null> {
   return findCatchupForTranche(catchupId);
+}
+
+/**
+ * Les LECTURES MANQUANTES : une boîte du relais Gmail reliée avant que le
+ * relais sache lire (M24.4) n'a jamais eu sa lecture — elle se demande ici,
+ * une fois, depuis la page des canaux, après la réponse. Une boîte de
+ * l'agrégateur a toujours la sienne, demandée par son webhook de connexion.
+ */
+export async function demanderLecturesManquantes(
+  db: TenantDb,
+): Promise<string[]> {
+  const boites = await db.channel.findMany({
+    where: {
+      type: "email",
+      config: {
+        provider: "gmail",
+        externalAccountId: { not: null },
+        status: { not: "disabled" },
+      },
+      catchups: { none: {} },
+    },
+    select: { id: true },
+  });
+  const demandees: string[] = [];
+  for (const b of boites) {
+    try {
+      const catchup = await requestChannelCatchup(db, {
+        channelId: b.id,
+        since: fenetreDeRattrapage(),
+      });
+      await lancerTranche(catchup.id);
+      demandees.push(b.id);
+    } catch (err) {
+      console.error(
+        "[ia] lecture manquante non demandée",
+        { channelId: b.id },
+        err,
+      );
+    }
+  }
+  return demandees;
 }
 
 /**
