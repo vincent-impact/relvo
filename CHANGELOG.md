@@ -4,6 +4,10 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-10-28
+
+- **Nouveau** — Relvo a son adresse : l'application est sur app.relvo.net, et relvo.net présente Relvo avec sa politique de confidentialité et ses conditions d'utilisation. L'ancienne adresse vous y conduit ; réinstallez l'application depuis la nouvelle adresse et réactivez les notifications.
+
 ## 2026-10-27
 
 - **Corrigé** — Dans un dossier, chaque sujet n'affiche plus le nom du dossier en double, et si un dossier ne peut pas être déplacé, Relvo vous dit pourquoi.

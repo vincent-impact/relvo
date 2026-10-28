@@ -211,6 +211,15 @@
   "en_cours": "Dix boîtes e-mail par compte",
   "journal": [
     {
+      "date": "2026-10-28",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "Relvo a son adresse : l'application est sur app.relvo.net, et relvo.net présente Relvo avec sa politique de confidentialité et ses conditions d'utilisation. L'ancienne adresse vous y conduit ; réinstallez l'application depuis la nouvelle adresse et réactivez les notifications."
+        }
+      ]
+    },
+    {
       "date": "2026-10-27",
       "entrees": [
         {
