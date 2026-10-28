@@ -215,6 +215,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Relier une boîte e-mail se fait désormais par Google : un bouton, un rappel que la boîte doit se lire dans Gmail (votre adresse professionnelle aussi), puis l'autorisation Google. Outlook et les autres boîtes ne sont plus proposés ; vos boîtes déjà reliées continuent comme avant."
+        },
+        {
+          "type": "new",
           "texte": "Vous pouvez relier plusieurs boîtes e-mail à votre compte, jusqu'à dix : le bouton « Relier une autre boîte e-mail » reste sur la page Canaux tant qu'il y a de la place."
         },
         {
