@@ -6,6 +6,7 @@
 
 ## 2026-10-28
 
+- **Nouveau** — Vous pouvez relier plusieurs boîtes e-mail à votre compte, jusqu'à dix : le bouton « Relier une autre boîte e-mail » reste sur la page Canaux tant qu'il y a de la place.
 - **Nouveau** — Relvo a son adresse : l'application est sur app.relvo.net, et relvo.net présente Relvo avec sa politique de confidentialité et ses conditions d'utilisation. L'ancienne adresse vous y conduit ; réinstallez l'application depuis la nouvelle adresse et réactivez les notifications.
 
 ## 2026-10-27
