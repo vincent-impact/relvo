@@ -178,8 +178,8 @@
     {
       "titre": "Dix boîtes e-mail par compte",
       "resume": "Vous confiez à Relvo toutes vos boîtes — jusqu'à dix par compte — sans que chacune coûte un abonnement. Relvo lit vos boîtes Gmail en direct, et WhatsApp continue comme aujourd'hui.",
-      "statut": "a-faire",
-      "gauche": null,
+      "statut": "en-cours",
+      "gauche": 69.63,
       "largeur": 0
     },
     {
@@ -208,7 +208,7 @@
     "date": "2026-12-23",
     "gauche": 95.79
   },
-  "en_cours": null,
+  "en_cours": "Dix boîtes e-mail par compte",
   "journal": [
     {
       "date": "2026-10-27",
