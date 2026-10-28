@@ -16,54 +16,46 @@ import { revalidateTenantData } from "@/server/cached";
 import { getCurrentAccountId } from "@/server/auth-context";
 import { relireSujet } from "@/server/ia/pipeline/relecture";
 import { courrierEmailSender } from "@/server/courrier";
-import { createEmailHostedAuthLink, type MailProvider } from "@/server/unipile";
-import { type RetourConnexion, urlsDeConnexion } from "@/server/unipile/retour";
+import type { RetourConnexion } from "@/server/courrier/retour";
+import { demarrerConnexionGmail } from "@/server/gmail/connexion";
+import { gmailConfigure } from "@/server/gmail/oauth";
 
-// Libellé de canal par provider (le vrai nom sera remplacé par l'adresse réelle
-// une fois la connexion finalisée par le webhook `notify`).
-const PROVIDER_LABEL: Record<MailProvider, string> = {
-  GOOGLE: "Gmail",
-  OUTLOOK: "Outlook",
-  MAIL: "Boîte email (IMAP)",
-};
-
-// Server Actions M5 — connexion d'une boîte email (hosted auth Unipile) et envoi
-// sortant depuis la vraie adresse de l'utilisateur.
+// Server Actions M5/M24 — connexion d'une boîte e-mail et envoi sortant depuis
+// la vraie adresse de l'utilisateur.
 
 /**
- * Démarre la connexion d'une boîte email : prépare un Channel `email` + sa
- * config `pending` — ou REPREND celui qu'un retour en arrière a laissé sans
- * compte (PITFALLS #70), jamais un second —, puis génère un lien de hosted
- * auth Unipile. Le client redirige vers l'URL renvoyée ; le webhook `notify`
- * finalisera la connexion (externalAccountId + statut connected + adresse
- * réelle). `retour` : la page où l'utilisateur revient — Canaux, ou l'échange
+ * Démarre la connexion d'une boîte e-mail — par le RELAIS GMAIL, et par lui
+ * seul (M24.2 ; `ecarts`, « L'e-mail, c'est Gmail ») : prépare un canal
+ * `email` de fournisseur `gmail` et sa configuration `pending` — ou REPREND
+ * celui qu'un retour en arrière a laissé sans compte (PITFALLS #70), jamais un
+ * second —, pose l'état du consentement et rend l'URL de Google. Le client y
+ * redirige ; `/api/gmail/retour` finalise (adresse, jetons chiffrés, statut
+ * connecté). `retour` : la page où l'utilisateur revient — Canaux, ou l'échange
  * quand c'est la prise en main qui demande la boîte (05 §11.11).
  */
 export async function connectEmailChannelAction(
-  provider?: MailProvider,
   retour: RetourConnexion = "canaux",
 ): Promise<ActionResult<{ url: string }>> {
+  if (!gmailConfigure()) {
+    return err(
+      "INVALID_STATE",
+      "Le relais Gmail n'est pas configuré (GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET).",
+    );
+  }
   const created = await domainAction((db) =>
     prepareChannelConnection(db, {
       type: "email",
-      name: provider ? PROVIDER_LABEL[provider] : "Boîte email",
-      mailProvider: provider,
+      name: "Boîte Gmail",
+      provider: "gmail",
     }),
   );
   if (!created.ok) return created;
 
   try {
-    const url = await createEmailHostedAuthLink({
+    const url = await demarrerConnexionGmail({
       channelId: created.data.channel.id,
-      ...urlsDeConnexion(retour),
-      provider,
+      retour,
     });
-    if (!url) {
-      return err(
-        "INVALID_STATE",
-        "Intégration email non configurée (UNIPILE_DSN / UNIPILE_API_KEY).",
-      );
-    }
     revalidatePath("/canaux");
     // Les états vides lisent le nombre de boîtes depuis le cache tenant
     // (M19.9) : une boîte reliée doit cesser d'être demandée tout de suite.

@@ -4,7 +4,10 @@ import {
   ensureOnboardingQuestions,
   listOpenQuestions,
 } from "@relvo/db";
+import { Suspense } from "react";
 import { RelvoChatShell } from "@/components/relvo-chat/relvo-chat-shell";
+import { ErreurDeConnexion } from "@/components/settings/erreur-de-connexion";
+import { MOTIFS_DE_RETOUR, estUnMotifDeRetour } from "@/server/courrier/retour";
 import {
   carteDepuisRattrapage,
   type CarteVivanteData,
@@ -55,6 +58,7 @@ export default async function ConversationPage({
     nouveau?: string;
     reprendre?: string;
     connected?: string;
+    erreur?: string;
   }>;
 }) {
   // `q` : une suggestion de l'accueil, posée comme premier tour (05 §11.12) —
@@ -63,7 +67,7 @@ export default async function ConversationPage({
   // l'historique de l'appareil (M10.3, M10.4). `connected` : le retour de la
   // page du fournisseur, la boîte confiée à la dernière étape de la prise en
   // main — la lecture se suit ici.
-  const { from, q, nouveau, reprendre, connected } = await searchParams;
+  const { from, q, nouveau, reprendre, connected, erreur } = await searchParams;
   const backHref = from && from !== "/relvo" ? from : "/";
   const accountId = await requireAccountId();
   const db = await getTenantDb();
@@ -154,18 +158,25 @@ export default async function ConversationPage({
   // invites, et une puce qui ne change rien est une rangée en trop.
 
   return (
-    <RelvoChatShell
-      backHref={backHref}
-      from={from ?? null}
-      contextLabel={contextLabel}
-      prompts={prompts}
-      initialText={q?.trim() || ""}
-      nouveau={nouveau === "1"}
-      reprendre={reprendre?.trim() || null}
-      questions={questions}
-      lecture={lecture}
-      sujets={sujets}
-      clePublique={clePubliquePush()}
-    />
+    <>
+      <RelvoChatShell
+        backHref={backHref}
+        from={from ?? null}
+        contextLabel={contextLabel}
+        prompts={prompts}
+        initialText={q?.trim() || ""}
+        nouveau={nouveau === "1"}
+        reprendre={reprendre?.trim() || null}
+        questions={questions}
+        lecture={lecture}
+        sujets={sujets}
+        clePublique={clePubliquePush()}
+      />
+      <Suspense fallback={null}>
+        <ErreurDeConnexion
+          message={estUnMotifDeRetour(erreur) ? MOTIFS_DE_RETOUR[erreur] : null}
+        />
+      </Suspense>
+    </>
   );
 }

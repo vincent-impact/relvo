@@ -101,6 +101,13 @@ export interface FournisseurCourrier {
   envoyer(courrier: OutboundEmail): Promise<{ emailId: string | null }>;
   /** L'état du compte chez le fournisseur ; `null` quand il ne le dit pas (#53). */
   etatDuCompte(externalAccountId: string): Promise<ChannelConfigStatus | null>;
-  /** Retire la boîte chez le fournisseur (suppression d'un canal, d'un compte). */
-  supprimerCompte(externalAccountId: string): Promise<boolean>;
+  /**
+   * Retire la boîte chez le fournisseur (suppression d'un canal, d'un compte).
+   * Les données de connexion de la ligne supprimée l'accompagnent : le relais
+   * Gmail y lit le jeton à révoquer, l'agrégateur n'en a pas besoin.
+   */
+  supprimerCompte(
+    externalAccountId: string,
+    connectionData?: unknown,
+  ): Promise<boolean>;
 }

@@ -9,6 +9,7 @@ import {
 import { PollRefresh } from "@/components/shared/poll-refresh";
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { ConnectEmailButton } from "@/components/settings/connect-email-button";
+import { ErreurDeConnexion } from "@/components/settings/erreur-de-connexion";
 import { ChannelConnectButton } from "@/components/settings/channel-connect-button";
 import { ChannelRemoveLink } from "@/components/settings/channel-delete-button";
 import { ListPanel } from "@/components/shared/list-panel";
@@ -19,6 +20,7 @@ import { Screen } from "@/components/layout/screen";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
 import { getTenantDb } from "@/server/auth-context";
 import { fournisseurDe } from "@/server/courrier";
+import { MOTIFS_DE_RETOUR, estUnMotifDeRetour } from "@/server/courrier/retour";
 import { relancerLignesEnPanne } from "@/server/ia/pipeline/rattrapage";
 import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
 import { boiteEnMiseEnRoute, carteEnAttente } from "@/server/lecture-en-cours";
@@ -133,12 +135,13 @@ async function ChannelList({ connected }: { connected: boolean }) {
   ];
   // Au retour de la page du fournisseur (`connected=1`), la page se rafraîchit
   // tant qu'un canal n'a pas fini de se mettre en route : le webhook de
-  // connexion, puis la première tranche de lecture.
+  // connexion, puis la première tranche de lecture — et plus du tout passé le
+  // délai de mise en route : une boîte sans lecture n'est plus en route.
   const miseEnRouteEnCours =
     connected &&
     channels.some((ch) =>
       ch.type === "email"
-        ? !ch.catchups[0]
+        ? boiteEnMiseEnRoute(ch, now)
         : statuts[channels.indexOf(ch)] !== "connected",
     );
   // Une ligne dont plus aucune tranche ne s'occupe est relancée après la
@@ -265,11 +268,12 @@ async function ChannelList({ connected }: { connected: boolean }) {
 export default async function CanauxPage({
   searchParams,
 }: {
-  searchParams: Promise<{ connected?: string }>;
+  searchParams: Promise<{ connected?: string; erreur?: string }>;
 }) {
   // `connected=1` : le retour de la page du fournisseur — la liste se
-  // rafraîchit jusqu'à voir la lecture commencer.
-  const { connected } = await searchParams;
+  // rafraîchit jusqu'à voir la lecture commencer. `erreur` : le motif d'un
+  // retour en échec, dit une fois (M24.2).
+  const { connected, erreur } = await searchParams;
   return (
     <Screen>
       <RelvoHeader
@@ -279,6 +283,11 @@ export default async function CanauxPage({
       />
       <Suspense fallback={<RowsSkeleton count={2} className="mt-8" />}>
         <ChannelList connected={connected === "1"} />
+      </Suspense>
+      <Suspense fallback={null}>
+        <ErreurDeConnexion
+          message={estUnMotifDeRetour(erreur) ? MOTIFS_DE_RETOUR[erreur] : null}
+        />
       </Suspense>
     </Screen>
   );

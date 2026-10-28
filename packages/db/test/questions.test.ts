@@ -254,11 +254,9 @@ describe("le script de la prise en main", () => {
       ouvertes[0]!.proposedAnswers.find((p) => p.key === "other")?.libre,
     ).toBe(true);
     expect(ouvertes[2]!.connecteBoite).toBe(true);
-    expect(ouvertes[2]!.proposedAnswers.map((p) => p.key)).toEqual([
-      "GOOGLE",
-      "OUTLOOK",
-      "MAIL",
-    ]);
+    // Une seule boîte proposée, Gmail (M24) — et proposée vivante : la liste
+    // du domaine, pas celle enregistrée avec la question.
+    expect(ouvertes[2]!.proposedAnswers.map((p) => p.key)).toEqual(["gmail"]);
 
     await answerQuestion(db, ouvertes[0]!.id, {
       key: "food",

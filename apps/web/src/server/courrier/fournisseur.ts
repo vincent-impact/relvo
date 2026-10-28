@@ -15,11 +15,10 @@ type Chargeur = () => Promise<FournisseurCourrier>;
 const CHARGEURS: Record<ChannelProvider, Chargeur> = {
   unipile: async () =>
     (await import("@/server/unipile/fournisseur")).fournisseurUnipile,
-  // Le relais Gmail (M24.2 à M24.6) arrive tranche par tranche ; d'ici là, un
-  // canal `gmail` ne peut rien lire ni envoyer, et le dit.
-  gmail: async () => {
-    throw new Error("Le relais Gmail n'est pas encore disponible.");
-  },
+  // Le relais Gmail (M24.2 à M24.6) arrive tranche par tranche : ce qu'il ne
+  // sait pas encore faire, il le dit.
+  gmail: async () =>
+    (await import("@/server/gmail/fournisseur")).fournisseurGmail,
 };
 
 const cache = new Map<ChannelProvider, Promise<FournisseurCourrier>>();

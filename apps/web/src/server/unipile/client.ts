@@ -106,9 +106,6 @@ export function appBaseUrl(): string {
   );
 }
 
-/** Fournisseurs mail proposés par Unipile (`MAIL` = IMAP/SMTP générique). */
-export type MailProvider = "GOOGLE" | "OUTLOOK" | "MAIL";
-
 type HostedAuthCommon = {
   channelId: string;
   notifyUrl: string;
@@ -166,32 +163,6 @@ async function createHostedAuthLink(
   } catch (error) {
     throw toHostedAuthError(error);
   }
-}
-
-export async function createEmailHostedAuthLink(
-  input: HostedAuthCommon & {
-    /** Provider unique choisi côté app → saute l'écran de sélection Unipile.
-     *  Omis → on propose les trois (Gmail/Outlook/IMAP). */
-    provider?: MailProvider;
-  },
-): Promise<string | null> {
-  return createHostedAuthLink({
-    ...input,
-    // Fournisseurs mail : Gmail/Outlook en OAuth un-clic, `MAIL` = IMAP/SMTP
-    // générique pour le reste (OVH, Orange, Free…). Si l'app a déjà fait choisir
-    // le type, on ne propose que celui-là → Unipile saute son écran de sélection.
-    providers: input.provider
-      ? [input.provider]
-      : ["GOOGLE", "OUTLOOK", "MAIL"],
-    // L'HISTORIQUE EST SYNCHRONISÉ à la connexion (M7.19) : c'est ce qui rend
-    // possible le rattrapage du courrier récent — Relvo lit les deux dernières
-    // semaines dès la connexion, par tranches (`ecarts`, « La première lecture
-    // est large »). L'arbitrage antérieur « nouveau courrier seulement »
-    // (`sync_limit.MAILING = NO_HISTORY_SYNC`) est levé ; le rattrapage borne
-    // lui-même sa fenêtre et son garde-fou. ⚠️ Un message d'historique qui
-    // arrive par le webhook — daté d'avant la demande d'un rattrapage ouvert —
-    // est rangé mais laissé à la tranche : jamais trié plein tarif à la volée.
-  });
 }
 
 /**

@@ -31,7 +31,9 @@ par `VAPID_SUBJECT` (push). Les pages lues hors de l'application vivent dans `(p
 **Ce qui est tranché avec le dirigeant** (à ne pas rouvrir) :
 
 - Relvo construit son webhook Gmail et se déclare auprès de Google. Pas de négociation
-  tarifaire à la place. L'agrégateur reste pour WhatsApp et les boîtes non Gmail.
+  tarifaire à la place. **L'e-mail, c'est Gmail** (tranché le 2026-10-28, à la livraison de la
+  tranche 2 ; `ecarts`) : l'agrégateur n'est plus proposé pour une boîte e-mail — il écoute
+  WhatsApp et garde les boîtes reliées avant l'épique jusqu'à leur migration.
 - **M24.10 d'abord** — le nom de domaine et l'infrastructure publique : Google l'exige avant
   tout. **M24.7**, la vérification Google, démarre **le premier jour**, en parallèle.
 - Toute ressource — projet Google Cloud, domaine, Pub/Sub, DNS — au nom de l'**organisation**,
@@ -111,8 +113,10 @@ métier, parce que Google veut l'adresse.
 3. **« Se connecter à Gmail »** — M24.2 : le consentement OAuth de Relvo (départ, retour, jetons
    chiffrés), la boîte créée ou reprise comme aujourd'hui (#70), son adresse pour identifiant,
    depuis Canaux **et** depuis l'étape « première boîte » de la prise en main, retour dans
-   l'échange. Observable : une boîte Gmail « Connectée » avec son adresse, sans passer par
-   l'agrégateur ; la lecture reste « en attente » jusqu'à la tranche 5.
+   l'échange ; **plus de choix de fournisseur** : un bouton, un avertissement (la boîte se lit
+   dans Gmail, une adresse pro aussi), Google. Observable : une boîte Gmail « Connectée » avec
+   son adresse, sans passer par l'agrégateur ; la lecture reste « en attente » jusqu'à la
+   tranche 5.
 4. **« Recevoir »** — M24.3 et M24.6 : `users.watch` à la connexion, `/api/webhooks/gmail`,
    lecture incrémentale, nature du courrier par étiquettes, pièces jointes relues par l'API et
    rangées par la fonction de M5, renouvellement au passage et au cron du matin. Observable : un
@@ -239,9 +243,74 @@ démonstration, le bouton « Relier une autre boîte e-mail ») en clair et en s
 fiche de compte du backoffice. Rien ne change pour l'utilisateur sauf la place pour une
 seconde boîte : la réception réelle se vérifie en production au prochain e-mail reçu.
 
+## Tranche 3 — « Se connecter à Gmail » (M24.2)
+
+**Livré.**
+- **Le domaine** : `completeChannelConnection` finalise un canal préparé quand le fournisseur a
+  dit oui — compte externe, adresse pour nom et identifiant, statut connecté, données de
+  connexion remplacées entières, journalisé ; une boîte déjà reliée (ce compte ou un autre,
+  l'unicité du compte externe tranche la course) est un **conflit** et le canal reste à
+  reprendre (#70) ; reconnecter un canal exige la même boîte. `deleteChannel` rend aussi les
+  données de connexion (le relais y lit le jeton à révoquer). `prepareChannelConnection` ne
+  retient plus de « fournisseur de messagerie » (il n'y en a plus qu'un). La prise en main ne
+  propose plus qu'**une** boîte (`BOITES_PROPOSEES` : « Relier ma boîte Gmail — une adresse pro
+  lue dans Gmail aussi »), et l'étape « première boîte » se lit **vivante** (texte et
+  proposition du script d'aujourd'hui, pas ceux enregistrés). Tests : `channel-connection`
+  (finaliser, conflits, reconnexion), `questions` (la seule proposition).
+- **Le relais** `apps/web/src/server/gmail/` : `chiffrement.ts` (AES-256-GCM,
+  `RELVO_CHIFFREMENT_CLE`, forme versionnée `v1.iv.tag.texte`), `oauth.ts` (sans SDK : l'URL du
+  consentement — `gmail.readonly`, `gmail.send`, `userinfo.email`, hors ligne, consentement
+  forcé pour le jeton de rafraîchissement, `login_hint` à la reconnexion —, l'échange du code,
+  le rafraîchissement, la révocation, l'adresse de la boîte, les périmètres manquants),
+  `jetons.ts` (la forme de `connectionData` pour un canal `gmail` : jetons chiffrés, échéance,
+  périmètres — la reconnexion garde le reste), `etat.ts` (l'état du départ dans un cookie
+  HttpOnly de dix minutes, le nonce qui est le `state`), `connexion.ts` (le départ depuis une
+  Server Action), `fournisseur.ts` (`fournisseurGmail` : connexion, reconnexion, révocation à la
+  suppression ; lire, pièces jointes, envoyer **disent** qu'ils arrivent ; l'état d'une boîte
+  n'est pas demandé à Google à chaque affichage). `/api/gmail/retour` : hors du proxy, la
+  session se lit là, l'état doit répondre dans le cookie, puis le code contre les jetons, les
+  périmètres vérifiés, l'adresse, le canal finalisé par le domaine, l'étape de la prise en main
+  fermée, la page de retour. `server/courrier/retour.ts` : la page de retour (Canaux ou
+  l'échange) et les **motifs** d'un échec (`refus`, `perimetres`, `deja-reliee`, `autre-boite`,
+  `google`, `perdu`, `fournisseur`), les mêmes pour l'agrégateur ; `ErreurDeConnexion` les dit en
+  toast, une fois, et retire le paramètre. `supprimerCompte` du contrat reçoit les données de
+  connexion de la ligne supprimée.
+- **Les actions** : `connectEmailChannelAction(retour)` prépare un canal `gmail` et part vers
+  Google ; `reconnectChannelAction` rouvre le consentement sur la même adresse pour un canal
+  `gmail`, l'agrégateur comme avant pour les autres ; `reprendreConnexionAction` d'un orphelin
+  e-mail repart par Gmail (WhatsApp chez l'agrégateur) ; `connecterBoiteDepuisEchangeAction`
+  n'a plus de fournisseur à choisir. Le lien de connexion e-mail de l'agrégateur
+  (`createEmailHostedAuthLink`, `MailProvider`) est retiré.
+- **L'interface** : la feuille de Canaux n'est plus un choix mais un **avertissement** —
+  « Relier une boîte Gmail », « Relvo lit les boîtes gérées par Google : une adresse Gmail, ou
+  votre adresse professionnelle si vous la consultez dans Gmail », ce que Google demandera,
+  « Continuer avec Google » ; la page Canaux ne se rafraîchit plus passé le délai de mise en
+  route d'une boîte sans lecture.
+- `@relvo/db/erreurs` : un sous-chemin du paquet sans Prisma, pour qu'un module testé sans base
+  importe `DomainError` (#73). `RELVO_CHIFFREMENT_CLE` posée en local et en production.
+  `README`, `.env.example`, `CLAUDE.md`, `02-modele-donnees.md` (les données de connexion
+  d'une boîte Gmail, la connexion en deux temps), l'épique, `ecarts` (« L'e-mail, c'est
+  Gmail »), `PITFALLS` #73. Tests web : `gmail.test.ts` (le chiffrement et son refus de
+  l'altération, la clé absente ou mal taillée, les jetons chiffrés dans les données du canal,
+  l'URL du consentement, les périmètres décochés, l'état du départ, la page de retour),
+  `courrier.test.ts` (le relais se charge et dit ce qu'il ne sait pas encore).
+
+**Vérification.** Typage, lint, 230 tests de l'application et 239 du domaine ; rendu headless
+de la feuille d'avertissement (clair et sombre), du départ vers Google (le navigateur part sur
+`accounts.google.com` avec notre client et notre adresse de retour), de l'étape « première
+boîte » de la prise en main avec sa seule proposition, du toast d'un retour en échec ; la route
+de retour sans état répond `303` vers Canaux avec le motif `perdu`, anonyme vers la connexion.
+**Pas vérifié en local** : le retour réel de Google (il faut un compte Google ; le dirigeant le
+fait en production avec sa boîte). D'ici la tranche 5, une boîte Gmail connectée reste « en
+attente » : rien n'est lu — c'est dit à la livraison.
+
 ## Où on en est
 
-**Chantier ouvert le 2026-10-28.** Le découpage est proposé au dirigeant ; rien n'est codé.
+**Chantier ouvert le 2026-10-28.** Découpage validé ; tranches 1 à 3 livrées en production le
+jour même. **Ce que la tranche 3 attend du dirigeant** : passer l'écran de consentement de
+**Test** à **Production** (les pages légales existent, leurs liens sont posés) — ou, en
+attendant, ajouter chaque testeur comme utilisateur de test ; puis relier sa propre boîte par
+Google depuis Canaux pour vérifier le retour réel.
 
 **L'infrastructure posée le 2026-10-28, avec le dirigeant** (tranche 0 et le socle de la
 tranche 1) : le domaine `relvo.net` acheté chez Ionos, au nom de l'organisation ; `relvo.net`,
@@ -262,7 +331,7 @@ production non vérifiée, Google avertit et plafonne à cent utilisateurs, sans
 - [ ] Tranche 0 — « Se déclarer » (M24.7, en continu)
 - [x] Tranche 1 — « L'adresse » (M24.10)
 - [x] Tranche 2 — « Le fournisseur derrière le canal » (M24.1)
-- [ ] Tranche 3 — « Se connecter à Gmail » (M24.2)
+- [x] Tranche 3 — « Se connecter à Gmail » (M24.2)
 - [ ] Tranche 4 — « Recevoir » (M24.3, M24.6)
 - [ ] Tranche 5 — « Lire les quatorze jours » (M24.4)
 - [ ] Tranche 6 — « Répondre » (M24.5)

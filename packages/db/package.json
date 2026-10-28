@@ -11,6 +11,10 @@
     "./temps": {
       "types": "./src/domain/temps.ts",
       "default": "./src/domain/temps.ts"
+    },
+    "./erreurs": {
+      "types": "./src/domain/errors.ts",
+      "default": "./src/domain/errors.ts"
     }
   },
   "main": "./src/index.ts",

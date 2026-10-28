@@ -106,8 +106,6 @@ export const prepareChannelConnectionSchema = z.object({
   name: z.string().trim().min(1).max(120),
   /** Le fournisseur derrière le canal (M24.1) : l'agrégateur par défaut. */
   provider: z.enum(CHANNEL_PROVIDERS).optional().default("unipile"),
-  /** Le fournisseur de messagerie choisi dans l'application, pour reprendre la même page. */
-  mailProvider: z.string().trim().min(1).max(40).optional(),
 });
 export type PrepareChannelConnectionInput = z.input<
   typeof prepareChannelConnectionSchema
@@ -142,9 +140,6 @@ export async function prepareChannelConnection(
         : `Dix boîtes e-mail sont déjà reliées à ce compte. Supprimez-en une pour en relier une autre.`,
     );
   }
-  const connectionData = data.mailProvider
-    ? { mailProvider: data.mailProvider }
-    : null;
   const orphelin = existants.find((c) => isNeverConnected(c));
   if (orphelin) {
     await db.channel.updateMany({
@@ -154,7 +149,7 @@ export async function prepareChannelConnection(
     await upsertChannelConfig(db, orphelin.id, {
       provider: data.provider,
       status: ChannelConfigStatus.pending,
-      connectionData,
+      connectionData: null,
     });
     return { channel: { id: orphelin.id, name: data.name }, reprise: true };
   }
@@ -166,19 +161,116 @@ export async function prepareChannelConnection(
   await upsertChannelConfig(db, channel.id, {
     provider: data.provider,
     status: ChannelConfigStatus.pending,
-    connectionData,
+    connectionData: null,
   });
   return { channel: { id: channel.id, name: channel.name }, reprise: false };
 }
 
-/** Le fournisseur de messagerie retenu à la préparation d'un canal, s'il y en a un. */
-export function mailProviderOf(
-  config: { connectionData: unknown } | null,
-): string | null {
-  const d = config?.connectionData;
-  if (!d || typeof d !== "object") return null;
-  const v = (d as { mailProvider?: unknown }).mailProvider;
-  return typeof v === "string" && v ? v : null;
+export const completeChannelConnectionSchema = z.object({
+  /** L'identifiant de la boîte chez le fournisseur — l'adresse, pour le relais Gmail. */
+  externalAccountId: z.string().trim().min(1).max(255),
+  /** Ce que la ligne affiche : l'adresse de la boîte. */
+  identifier: z.string().trim().min(1).max(255),
+  /** Les données de connexion du fournisseur (jetons chiffrés, échéances) — remplacées entières. */
+  connectionData: z.record(z.string(), z.unknown()).optional().nullable(),
+});
+export type CompleteChannelConnectionInput = z.input<
+  typeof completeChannelConnectionSchema
+>;
+
+/**
+ * FINALISE la connexion d'un canal préparé (`prepareChannelConnection`) quand
+ * le fournisseur a dit oui — le retour du consentement Google pour le relais
+ * (M24.2) ; l'agrégateur, lui, prévient par son webhook. Le canal prend le
+ * compte externe et l'adresse pour nom, sa configuration passe « connectée »
+ * et reçoit ses données de connexion. Une boîte déjà reliée ailleurs — le
+ * compte externe est unique, tous comptes confondus — est un conflit, et le
+ * canal reste à reprendre (#70). Reconnecter la même boîte sur le même canal
+ * est le même geste : rien d'autre que les données ne change.
+ */
+export async function completeChannelConnection(
+  db: TenantDb,
+  channelId: string,
+  input: CompleteChannelConnectionInput,
+) {
+  const data = completeChannelConnectionSchema.parse(input);
+  const channel = assertFound(
+    await db.channel.findFirst({
+      where: { id: channelId },
+      include: { config: true },
+    }),
+    "Canal",
+  );
+  if (!channel.config) {
+    throw new DomainError("INVALID_STATE", "Ce canal n'a pas été préparé.");
+  }
+  if (
+    channel.config.externalAccountId &&
+    channel.config.externalAccountId !== data.externalAccountId
+  ) {
+    throw new DomainError(
+      "CONFLICT",
+      `Ce canal est relié à ${channel.identifier} : reconnectez la même boîte, ou reliez l'autre à part.`,
+    );
+  }
+  const autre = await db.channelConfig.findFirst({
+    where: { externalAccountId: data.externalAccountId, NOT: { channelId } },
+    select: { channelId: true },
+  });
+  if (autre) {
+    throw new DomainError(
+      "CONFLICT",
+      `La boîte ${data.identifier} est déjà reliée à ce compte.`,
+    );
+  }
+  try {
+    return await db.$transaction(async (tx) => {
+      const now = new Date();
+      const { count } = await tx.channelConfig.updateMany({
+        where: { channelId },
+        data: {
+          externalAccountId: data.externalAccountId,
+          status: ChannelConfigStatus.connected,
+          lastSyncAt: now,
+          connectionData: (data.connectionData ??
+            Prisma.DbNull) as Prisma.InputJsonValue,
+        },
+      });
+      ensureAffected(count, "Configuration de canal");
+      await tx.channel.updateMany({
+        where: { id: channelId },
+        data: { identifier: data.identifier, name: data.identifier },
+      });
+      await logEvent(tx as Tx, {
+        entityType: "system",
+        entityId: channelId,
+        eventType: EVENT_TYPES.channelConfigUpdated,
+        title: `Boîte ${data.identifier} connectée`,
+        actor: "user",
+        metadata: { status: ChannelConfigStatus.connected },
+      });
+      return assertFound(
+        await tx.channel.findFirst({
+          where: { id: channelId },
+          include: { config: true },
+        }),
+        "Canal",
+      );
+    });
+  } catch (err) {
+    // Deux comptes qui relient la même boîte au même instant : l'unicité du
+    // compte externe tranche, et le second apprend que la boîte est prise.
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      throw new DomainError(
+        "CONFLICT",
+        `La boîte ${data.identifier} est déjà reliée à Relvo.`,
+      );
+    }
+    throw err;
+  }
 }
 
 export async function updateChannel(
@@ -219,9 +311,9 @@ export async function updateChannel(
  * Supprime un canal (Réglages → Canaux). HARD-DELETE assumé : les messages reçus
  * via ce canal — et leurs pièces jointes (→ trigger R2 → cron) — partent en
  * cascade. Tâches/actions/sujets rattachés survivent (FK en SetNull). Renvoie
- * l'`externalAccountId` (compte chez le fournisseur) et le fournisseur, pour
- * que l'appelant puisse aussi supprimer ce compte chez lui — le domaine ne
- * connaît pas le transport.
+ * l'`externalAccountId` (compte chez le fournisseur), le fournisseur et ses
+ * données de connexion, pour que l'appelant puisse aussi supprimer ce compte
+ * chez lui — le domaine ne connaît pas le transport.
  */
 export async function deleteChannel(db: TenantDb, id: string) {
   const channel = assertFound(
@@ -230,6 +322,9 @@ export async function deleteChannel(db: TenantDb, id: string) {
   );
   const externalAccountId = channel.config?.externalAccountId ?? null;
   const provider = channel.config?.provider ?? null;
+  // Les données de connexion partent avec la ligne : le relais Gmail en a
+  // besoin pour révoquer l'accès que la boîte lui avait donné.
+  const connectionData = channel.config?.connectionData ?? null;
   return db.$transaction(async (tx) => {
     // Journalisé AVANT la suppression (l'event n'a pas de FK vers le canal).
     await logEvent(tx as Tx, {
@@ -241,7 +336,7 @@ export async function deleteChannel(db: TenantDb, id: string) {
     });
     const { count } = await tx.channel.deleteMany({ where: { id } });
     ensureAffected(count, "Canal");
-    return { id, externalAccountId, provider };
+    return { id, externalAccountId, provider, connectionData };
   });
 }
 

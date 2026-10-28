@@ -1632,6 +1632,22 @@ contre** un second pipeline pour Gmail (c'est exactement la duplication que l'é
 et contre un port par fonction dans le paquet `db` (le domaine n'a pas à connaître la lecture
 d'une boîte : seule l'application lit chez un fournisseur).
 
+### L'e-mail, c'est Gmail : l'agrégateur ne garde que WhatsApp et les boîtes déjà reliées
+
+**`tranché`** · Par le dirigeant, le 2026-10-28, à la livraison de la tranche 2 de M24. Le plan
+initial gardait l'agrégateur pour les boîtes qui ne sont pas Gmail (Outlook, IMAP). Le dirigeant
+tranche plus net : **pour l'e-mail, l'agrégateur n'est plus proposé du tout** — toute nouvelle
+boîte se relie par le relais Gmail, et par lui seul ; l'agrégateur sert à écouter WhatsApp, et
+garde les boîtes des testeurs reliées avant l'épique, le temps de leur migration (M24.9). D'où :
+plus de choix « Gmail, Outlook, une autre boîte » dans Canaux ni dans la prise en main — un seul
+bouton, une feuille qui **avertit** que la boîte doit se lire dans Gmail, puis Google. Le doute à
+lever n'est pas « quel fournisseur » mais « mon adresse pro compte-t-elle ? » : l'avertissement
+le dit (« une adresse professionnelle si vous la consultez dans Gmail »), la prise en main aussi.
+L'étape « première boîte » d'un compte posée avant la décision se lit **vivante** — le texte et
+la proposition du script d'aujourd'hui, pas ceux enregistrés. **Retenu contre** une reformulation
+du choix à trois (la question du dirigeant portait sur l'ambiguïté de « Gmail » ; la réponse est
+de n'avoir plus qu'un chemin, pas de mieux nommer trois).
+
 ### Deux hôtes, un déployable : le site sur `relvo.net`, l'application sur `app.relvo.net`
 
 **`tranché`** · Avec le dirigeant, le 2026-10-28, à l'ouverture de M24 (M24.10). Le nom de

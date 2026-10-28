@@ -178,12 +178,20 @@ données de connexion opaques, statut de connexion, date de dernière synchronis
 l'identifiant du compte chez le fournisseur. Elle est séparée pour ne pas alourdir `Channel` de
 secrets et d'état de connexion.
 
-**Le fournisseur** est l'un de deux : l'**agrégateur** (`unipile`) — WhatsApp et les boîtes qui
-ne sont pas Gmail — ou le **relais Gmail** de Relvo (`gmail`), qui lit et envoie par l'API
-Google. Le domaine ne connaît que ce nom ; l'application tient un seul contrat de courrier
-entrant et un seul contrat d'envoi, avec une implémentation par fournisseur. L'identifiant du
-compte chez le fournisseur est **unique**, tous comptes confondus : c'est lui qui résout le
-compte d'un webhook — l'identifiant opaque de l'agrégateur, l'adresse de la boîte pour Gmail.
+**Le fournisseur** est l'un de deux : l'**agrégateur** (`unipile`) — WhatsApp, et les boîtes
+e-mail reliées avant le relais — ou le **relais Gmail** de Relvo (`gmail`), qui lit et envoie par
+l'API Google ; **toute nouvelle boîte e-mail est une boîte Gmail**, reliée par le relais. Le
+domaine ne connaît que ce nom ; l'application tient un seul contrat de courrier entrant et un
+seul contrat d'envoi, avec une implémentation par fournisseur. L'identifiant du compte chez le
+fournisseur est **unique**, tous comptes confondus : c'est lui qui résout le compte d'un
+webhook — l'identifiant opaque de l'agrégateur, l'adresse de la boîte pour Gmail. Pour une boîte
+Gmail, les données de connexion portent les **jetons OAuth chiffrés** (AES-256-GCM, la clé hors
+de la base), l'échéance du jeton d'accès et les périmètres accordés — jamais un jeton en clair,
+jamais dans le journal. Une boîte se **connecte** en deux temps : le canal est préparé « en
+attente » avant la page du fournisseur, puis **finalisé** quand le fournisseur a dit oui — le
+retour du consentement pour le relais, le webhook pour l'agrégateur — avec son adresse pour nom
+et pour identifiant ; une boîte déjà reliée, à ce compte ou à un autre, est un conflit, et
+reconnecter un canal exige la même boîte.
 
 **Dix boîtes e-mail par compte, un seul WhatsApp.** Le domaine refuse la onzième boîte et le
 second WhatsApp. Motif : l'exigence des testeurs pour l'e-mail — toutes leurs boîtes, sans qu'une

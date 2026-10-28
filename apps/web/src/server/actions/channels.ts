@@ -11,7 +11,6 @@ import {
   err,
   isDomainError,
   isNeverConnected,
-  mailProviderOf,
   ok,
   updateChannel,
   upsertChannelConfig,
@@ -19,12 +18,12 @@ import {
 import { revalidatePath } from "next/cache";
 import { revalidateTenantData } from "@/server/cached";
 import { domainAction } from "@/lib/action-result";
+import { connectEmailChannelAction } from "@/server/actions/email";
 import { fournisseurDe } from "@/server/courrier";
+import { demarrerConnexionGmail } from "@/server/gmail/connexion";
 import {
-  createEmailHostedAuthLink,
   createReconnectHostedAuthLink,
   createWhatsAppHostedAuthLink,
-  type MailProvider,
 } from "@/server/unipile";
 import { urlsDeConnexion } from "@/server/unipile/retour";
 
@@ -59,7 +58,10 @@ export async function deleteChannelAction(id: string) {
     // transaction) — l'agrégateur ou le relais Gmail, par le même contrat.
     if (result.data.externalAccountId) {
       const fournisseur = await fournisseurDe(result.data.provider);
-      await fournisseur.supprimerCompte(result.data.externalAccountId);
+      await fournisseur.supprimerCompte(
+        result.data.externalAccountId,
+        result.data.connectionData,
+      );
     }
     revalidateChannels();
   }
@@ -67,11 +69,11 @@ export async function deleteChannelAction(id: string) {
 }
 
 /**
- * Reconnecte un canal EXISTANT (M6quater) — ré-authentifie le même compte Unipile
- * sans rien supprimer. Résout l'`externalAccountId`, puis renvoie le lien de
- * hosted auth (mode reconnect). Le client redirige ; le webhook `notify`
- * finalise (statut connected). Fonctionne pour email ET WhatsApp (le mode
- * reconnect infère le provider du compte).
+ * Reconnecte un canal EXISTANT (M6quater) — ré-authentifie le même compte
+ * sans rien supprimer. Chez l'agrégateur : le lien de hosted auth en mode
+ * reconnect, le webhook `notify` finalise ; e-mail et WhatsApp. Par le relais
+ * Gmail (M24.2) : le consentement Google rouvert sur la même adresse, et le
+ * retour exige cette adresse — une autre boîte est refusée.
  *
  * ⚠️ Le statut stocké n'est PAS touché ici. Il l'était (« en attente ») avant
  * même que l'utilisateur ait vu la page Unipile : un bêta-testeur qui prenait
@@ -98,19 +100,19 @@ export async function reconnectChannelAction(
         "Ce canal n'a jamais été connecté — utilisez « Connecter ».",
       );
     }
-    // La page de reconnexion est celle du fournisseur : celle de l'agrégateur
-    // ici ; le relais Gmail rouvre son consentement (M24.2).
-    if (channel.config?.provider === "gmail") {
-      throw new DomainError(
-        "INVALID_STATE",
-        "Cette boîte Gmail se reconnecte par Google — bientôt disponible.",
-      );
-    }
-    return { externalAccountId };
+    return { externalAccountId, provider: channel.config?.provider ?? null };
   });
   if (!found.ok) return found;
 
   try {
+    if (found.data.provider === "gmail") {
+      const url = await demarrerConnexionGmail({
+        channelId,
+        retour: "canaux",
+        adresse: found.data.externalAccountId,
+      });
+      return ok({ url });
+    }
     const url = await createReconnectHostedAuthLink({
       channelId,
       accountId: found.data.externalAccountId,
@@ -131,15 +133,15 @@ export async function reconnectChannelAction(
   }
 }
 
-const MAIL_PROVIDERS: readonly MailProvider[] = ["GOOGLE", "OUTLOOK", "MAIL"];
-
 /**
  * REPREND la connexion d'un canal JAMAIS CONNECTÉ (PITFALLS #70) : l'utilisateur
  * est revenu en arrière de la page du fournisseur, le canal est resté « en
  * attente » sans compte externe. On rouvre la page du fournisseur sur le MÊME
- * canal, avec le fournisseur de messagerie choisi la première fois s'il est
- * connu — sinon Unipile propose les siens. Rien n'est supprimé, rien n'est
- * créé ; le webhook `notify` finalise comme pour une première connexion.
+ * canal : WhatsApp chez l'agrégateur, une boîte e-mail par le consentement
+ * Google — l'e-mail, c'est Gmail (M24), même pour un canal préparé avant ;
+ * `prepareChannelConnection` reprend l'orphelin sous ce fournisseur. Rien
+ * n'est supprimé, rien n'est créé ; le retour finalise comme pour une première
+ * connexion.
  */
 export async function reprendreConnexionAction(
   channelId: string,
@@ -156,22 +158,16 @@ export async function reprendreConnexionAction(
         "Ce canal est déjà connecté — utilisez « Reconnecter ».",
       );
     }
-    const stocke = mailProviderOf(channel.config);
-    const mailProvider = MAIL_PROVIDERS.find((p) => p === stocke);
-    return { type: channel.type, mailProvider };
+    return { type: channel.type };
   });
   if (!found.ok) return found;
+  if (found.data.type === "email") return connectEmailChannelAction("canaux");
 
   try {
-    const urls = urlsDeConnexion("canaux");
-    const url =
-      found.data.type === "whatsapp"
-        ? await createWhatsAppHostedAuthLink({ channelId, ...urls })
-        : await createEmailHostedAuthLink({
-            channelId,
-            ...urls,
-            provider: found.data.mailProvider,
-          });
+    const url = await createWhatsAppHostedAuthLink({
+      channelId,
+      ...urlsDeConnexion("canaux"),
+    });
     if (!url) {
       return err(
         "INVALID_STATE",

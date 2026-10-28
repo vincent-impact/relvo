@@ -74,7 +74,8 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   vivent dans l'application, leur unique consommateur, **derrière une seule frontière** :
   `server/courrier/` déclare le contrat (lire le récent, une pièce jointe, envoyer, l'état,
   supprimer) et choisit l'implémentation d'après `ChannelConfig.provider` ; `server/unipile/`
-  (l'agrégateur : WhatsApp, les boîtes non Gmail) et `server/gmail/` (le relais, M24)
+  (l'agrégateur : WhatsApp, et les boîtes e-mail reliées avant le relais) et `server/gmail/`
+  (le relais, M24 — **toute nouvelle boîte e-mail passe par lui**)
   l'implémentent. Tout ce qui suit la réception — `recevoirCourrier`, `rangerCourrier` — est
   le même code pour les deux ; un webhook de fournisseur ne fait que traduire sa matière en
   `CourrierEntrant`.

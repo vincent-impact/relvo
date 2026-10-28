@@ -8,31 +8,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { MailProvider } from "@/server/unipile/client";
 import { connectEmailChannelAction } from "@/server/actions/email";
 import { connectWhatsAppChannelAction } from "@/server/actions/whatsapp";
 
-// Relier une boîte — UN bouton primaire, et le choix technique (Gmail, Outlook,
-// une autre boîte) vient APRÈS le « oui », dans une feuille, pas avant sous
-// forme de quatre cases à égalité. WhatsApp en second, en puce blanche : le
-// brief dit « sa première adresse e-mail ». L'avertissement sur la session
-// WhatsApp vit dans sa feuille, pas sur la page.
-
-/** Les trois boîtes qu'on sait relier — la même liste sur la dernière
- * diapositive de la première connexion (M19.9). */
-export const MAIL_CHOICES: {
-  provider: MailProvider;
-  label: string;
-  hint: string;
-}[] = [
-  { provider: "GOOGLE", label: "Gmail", hint: "Google Workspace compris" },
-  { provider: "OUTLOOK", label: "Outlook", hint: "Microsoft 365 compris" },
-  {
-    provider: "MAIL",
-    label: "Une autre boîte",
-    hint: "OVH, Orange, Free, Gandi…",
-  },
-];
+// Relier une boîte — UN bouton primaire, et ce qui vient APRÈS le « oui »,
+// dans une feuille, n'est plus un choix : l'e-mail entre dans Relvo par le
+// relais Gmail, et par lui seul (M24 ; `ecarts`, « L'e-mail, c'est Gmail »).
+// La feuille AVERTIT — la boîte doit se lire dans Gmail, une adresse pro
+// aussi — puis ouvre le consentement Google. WhatsApp en second, en puce
+// blanche : le brief dit « sa première adresse e-mail ». L'avertissement sur
+// la session WhatsApp vit dans sa feuille, pas sur la page.
 
 export function ConnectEmailButton({
   peutAjouterEmail = true,
@@ -47,15 +32,15 @@ export function ConnectEmailButton({
   boitesEmail?: number;
 }) {
   const [pending, startTransition] = useTransition();
-  const [busy, setBusy] = useState<MailProvider | "WHATSAPP" | null>(null);
+  const [busy, setBusy] = useState<"GMAIL" | "WHATSAPP" | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sheet, setSheet] = useState<"email" | "whatsapp" | null>(null);
 
-  function connect(provider: MailProvider) {
+  function connect() {
     setError(null);
-    setBusy(provider);
+    setBusy("GMAIL");
     startTransition(async () => {
-      const result = await connectEmailChannelAction(provider);
+      const result = await connectEmailChannelAction("canaux");
       if (result.ok) {
         window.location.href = result.data.url;
         return;
@@ -120,31 +105,25 @@ export function ConnectEmailButton({
       >
         <DialogContent className="gap-3 p-5">
           <DialogHeader>
-            <DialogTitle>Quelle boîte e-mail ?</DialogTitle>
+            <DialogTitle>Relier une boîte Gmail</DialogTitle>
           </DialogHeader>
-          <div className="overflow-hidden rounded-(--rayon-carte) border border-(--filet)">
-            {MAIL_CHOICES.map((c) => (
-              <button
-                key={c.provider}
-                type="button"
-                onClick={() => connect(c.provider)}
-                disabled={pending}
-                className="flex h-13 w-full items-center gap-3 border-b border-(--filet) px-3.5 text-left last:border-b-0 active:bg-(--fond-enfonce) disabled:opacity-60"
-              >
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[14.5px] font-normal text-noir">
-                    {busy === c.provider ? "Ouverture…" : c.label}
-                  </span>
-                  <span className="block text-[12px] font-normal text-gris">
-                    {c.hint}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-          <p className="text-[12px] font-normal text-gris">
-            Relvo lit les nouveaux e-mails et répond depuis votre adresse.
+          <p className="text-[14px] leading-5 font-light text-noir">
+            Relvo lit les boîtes gérées par Google : une adresse Gmail, ou votre
+            adresse professionnelle si vous la consultez dans Gmail.
           </p>
+          <p className="text-[12px] leading-4 font-normal text-gris">
+            Google vous demandera d’autoriser Relvo à lire vos e-mails et à
+            répondre depuis votre adresse. Rien d’autre.
+          </p>
+          <button
+            type="button"
+            onClick={connect}
+            disabled={pending}
+            className="pressable flex h-11 w-full items-center justify-center gap-2 rounded-(--rayon-pilule) text-[15px] font-medium text-white disabled:opacity-60"
+            style={{ background: "var(--degrade-relvo)" }}
+          >
+            {busy === "GMAIL" ? "Ouverture…" : "Continuer avec Google"}
+          </button>
         </DialogContent>
       </Dialog>
 

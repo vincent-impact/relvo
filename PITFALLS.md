@@ -686,3 +686,18 @@ configuration, elles, lisent l'en-tête. Deux lectures de « l'hôte », deux r�
 `hoteDe`), `nextUrl` en repli ; et toute règle par hôte se vérifie en local au `curl -H Host:`
 sur les **deux** chemins — la configuration et le proxy — avant de pousser.
 
+### #73 — Importer une valeur de `@relvo/db` dans un module testé sans base instancie le client Prisma à l'import
+
+**Symptôme** : un test unitaire de l'application (`apps/web/test`, sans base par construction)
+échoue à la collecte avec « DATABASE_URL est absente : impossible d'initialiser le client
+Prisma » — alors que le module testé ne touche pas la base. Il importait `DomainError` depuis
+`@relvo/db`.
+
+**Cause** : l'index du paquet crée le client Prisma au chargement du module (singleton). Un
+`import type` est effacé à la compilation et ne coûte rien ; un import de **valeur** — une
+classe, une constante — charge l'index entier, donc le client, donc la variable.
+
+**Règle** : un module que l'on veut tester sans base n'importe de `@relvo/db` que des **types**.
+Ce qu'il lui faut en valeur vient d'un **sous-chemin sans Prisma** du paquet : `@relvo/db/temps`
+(les dates), `@relvo/db/erreurs` (`DomainError`, `isDomainError`). Un nouveau besoin ouvre un
+sous-chemin dans `packages/db/package.json`, jamais un second index.

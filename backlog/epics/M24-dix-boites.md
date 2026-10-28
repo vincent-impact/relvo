@@ -44,8 +44,10 @@ fabriquera le même). **Jamais de duplication** du domaine.
 | M24.10 | **Le nom de domaine et l'infrastructure publique** — **en premier**, parce que Google l'exige avant tout : le domaine de Relvo au nom de l'organisation (jamais un compte personnel, `CLAUDE.md`), l'application et les webhooks dessus, la page de politique de confidentialité et les conditions d'utilisation à l'adresse déclarée, le domaine vérifié chez Google, les variables d'environnement et `AUTH_URL` basculées, l'ancienne adresse redirigée ; `PITFALLS.md` relu pour tout ce qui cite l'adresse (proxy, routes publiques, push) |
 | M24.9 | **La migration** : une boîte Gmail connectée par l'agrégateur se **reconnecte** par le relais sans perdre ses conversations (même identifiant de boîte, même canal), puis se supprime chez l'agrégateur ; script, journalisé                                                   |
 
-**Ce qui reste à l'agrégateur** : WhatsApp, et les boîtes qui ne sont pas Gmail (Outlook, IMAP)
-tant que personne n'en demande dix.
+**Ce qui reste à l'agrégateur** : WhatsApp, et les boîtes e-mail reliées **avant** le relais, le
+temps de leur migration (M24.9). **L'e-mail, c'est Gmail** (`ecarts`) : une nouvelle boîte se
+relie par le relais, et par lui seul — l'application avertit que la boîte doit se lire dans Gmail,
+une adresse professionnelle aussi.
 
 ⚠️ **Le coût du relais n'est pas nul : il est en temps.** Deux semaines de construction, et une
 vérification Google qui se compte en semaines et se renouvelle chaque année. C'est ce que

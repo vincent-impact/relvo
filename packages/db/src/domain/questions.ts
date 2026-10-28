@@ -482,8 +482,18 @@ export async function listOpenQuestions(
   return rows.slice(0, opts.limit ?? 5).map((r) => ({
     id: r.id,
     scope: r.scope,
-    text: r.text,
-    proposedAnswers: readProposedAnswers(r.proposedAnswers),
+    // L'étape « première boîte » se lit VIVANTE — son texte et sa seule
+    // proposition sont ceux du script d'aujourd'hui, jamais ceux enregistrés
+    // quand l'étape a été posée : une boîte proposée avant la décision « l'e-mail,
+    // c'est Gmail » (M24) ne se propose plus.
+    text:
+      r.originStep === ETAPES.premiereBoite
+        ? texteDeLEtape(ETAPES.premiereBoite, r.text)
+        : r.text,
+    proposedAnswers:
+      r.originStep === ETAPES.premiereBoite
+        ? [...BOITES_PROPOSEES]
+        : readProposedAnswers(r.proposedAnswers),
     originStep: r.originStep,
     multiple: r.originStep === ETAPES.domainesTypiques,
     connecteBoite: r.originStep === ETAPES.premiereBoite,
@@ -503,6 +513,12 @@ export async function listOpenQuestions(
   }));
 }
 
+/** Le texte fixe d'une étape du script ; le texte enregistré quand l'étape se calcule depuis le compte. */
+function texteDeLEtape(step: string, enregistre: string): string {
+  const etape = SCRIPT_PRISE_EN_MAIN.find((e) => e.step === step);
+  return typeof etape?.text === "string" ? etape.text : enregistre;
+}
+
 export function countOpenQuestions(db: TenantDb): Promise<number> {
   return db.relvoQuestion.count({ where: { status: QuestionStatus.open } });
 }
@@ -514,11 +530,20 @@ export function countOpenQuestions(db: TenantDb): Promise<number> {
 export const CLE_AUTRE = "autre";
 /** « Un autre métier » : la réponse s'écrit, et le métier dit se retient. */
 export const CLE_AUTRE_METIER = "other";
-/** Les boîtes que la dernière étape propose — les clés sont celles du fournisseur. */
+/**
+ * La boîte que la dernière étape propose : UNE, Gmail — l'e-mail entre dans
+ * Relvo par le relais Gmail, et par lui seul (M24, `ecarts`, « L'e-mail, c'est
+ * Gmail »). L'indication lève le doute d'une adresse pro, qui n'a rien de
+ * google dans son nom et se lit pourtant dans Gmail. Proposée VIVANTE par
+ * `listOpenQuestions`, jamais relue de la question enregistrée : une étape
+ * posée avant la décision ne propose plus ce qui n'existe plus.
+ */
 export const BOITES_PROPOSEES = [
-  { key: "GOOGLE", label: "Gmail", hint: "Google Workspace compris" },
-  { key: "OUTLOOK", label: "Outlook", hint: "Microsoft 365 compris" },
-  { key: "MAIL", label: "Une autre boîte", hint: "OVH, Orange, Free, Gandi…" },
+  {
+    key: "gmail",
+    label: "Relier ma boîte Gmail",
+    hint: "Une adresse pro lue dans Gmail aussi",
+  },
 ] as const satisfies readonly ProposedAnswer[];
 
 export const ETAPES = {
@@ -622,7 +647,7 @@ export const SCRIPT_PRISE_EN_MAIN: readonly EtapeScript[] = [
     // la connexion (`resolveMailboxStep`), pas au clic — revenir en arrière la
     // laisse ouverte, et elle se repose.
     step: ETAPES.premiereBoite,
-    text: "Maintenant, confiez-moi la boîte où arrivent vos fournisseurs et vos clients : je lis le courrier des deux dernières semaines et j'ouvre vos premiers sujets. Laquelle ?",
+    text: "Maintenant, confiez-moi la boîte où arrivent vos fournisseurs et vos clients — une boîte lue dans Gmail, même avec votre adresse pro : je lis le courrier des deux dernières semaines et j'ouvre vos premiers sujets.",
     proposedAnswers: [...BOITES_PROPOSEES],
     applicable: (c) => c.boitesEmail === 0,
   },
