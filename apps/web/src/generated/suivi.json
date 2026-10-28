@@ -215,6 +215,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Dès qu'une boîte Gmail est reliée, Relvo lit le courrier des deux dernières semaines et ouvre vos premiers sujets, comme avant. Une boîte reliée ces derniers jours démarre sa lecture à votre prochaine visite de la page Canaux."
+        },
+        {
+          "type": "new",
           "texte": "Un e-mail qui arrive dans une boîte reliée par Google entre dans Relvo en quelques secondes, avec ses pièces jointes, et un e-mail que vous envoyez depuis Gmail rejoint le sujet comme une réponse. En attendant la lecture des deux dernières semaines, la carte de la boîte vous le dit clairement."
         },
         {

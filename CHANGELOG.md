@@ -6,6 +6,7 @@
 
 ## 2026-10-28
 
+- **Nouveau** — Dès qu'une boîte Gmail est reliée, Relvo lit le courrier des deux dernières semaines et ouvre vos premiers sujets, comme avant. Une boîte reliée ces derniers jours démarre sa lecture à votre prochaine visite de la page Canaux.
 - **Nouveau** — Un e-mail qui arrive dans une boîte reliée par Google entre dans Relvo en quelques secondes, avec ses pièces jointes, et un e-mail que vous envoyez depuis Gmail rejoint le sujet comme une réponse. En attendant la lecture des deux dernières semaines, la carte de la boîte vous le dit clairement.
 - **Nouveau** — Relier une boîte e-mail se fait désormais par Google : un bouton, un rappel que la boîte doit se lire dans Gmail (votre adresse professionnelle aussi), puis l'autorisation Google. Outlook et les autres boîtes ne sont plus proposés ; vos boîtes déjà reliées continuent comme avant.
 - **Nouveau** — Vous pouvez relier plusieurs boîtes e-mail à votre compte, jusqu'à dix : le bouton « Relier une autre boîte e-mail » reste sur la page Canaux tant qu'il y a de la place.
