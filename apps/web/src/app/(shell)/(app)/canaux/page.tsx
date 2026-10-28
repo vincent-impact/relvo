@@ -18,12 +18,13 @@ import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { RowsSkeleton } from "@/components/shared/screen-skeletons";
 import { getTenantDb } from "@/server/auth-context";
-import { getAccount } from "@/server/unipile";
+import { fournisseurDe } from "@/server/courrier";
 import { relancerLignesEnPanne } from "@/server/ia/pipeline/rattrapage";
 import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
 import { boiteEnMiseEnRoute, carteEnAttente } from "@/server/lecture-en-cours";
 import {
   type ChannelConfigStatus,
+  MAX_EMAIL_CHANNELS,
   isNeverConnected,
   setChannelConfigStatus,
 } from "@relvo/db";
@@ -77,6 +78,7 @@ async function ChannelList({ connected }: { connected: boolean }) {
     include: {
       config: {
         select: {
+          provider: true,
           status: true,
           lastSyncAt: true,
           externalAccountId: true,
@@ -95,17 +97,23 @@ async function ChannelList({ connected }: { connected: boolean }) {
     channels.map((ch) =>
       statutReconcilie(db, {
         channelId: ch.id,
+        provider: ch.config?.provider ?? null,
         stored: ch.config?.status ?? "pending",
         externalAccountId: ch.config?.externalAccountId ?? null,
       }),
     ),
   );
 
-  // Un seul canal par type (email / WhatsApp) : on masque la tuile de connexion
-  // correspondante quand un canal du type existe déjà (2026-07-28). Évite de
-  // complexifier l'usage et de multiplier les comptes Unipile.
-  const hasEmail = channels.some((c) => c.type === "email");
-  const hasWhatsApp = channels.some((c) => c.type === "whatsapp");
+  // Jusqu'à dix boîtes e-mail par compte (M24), un seul WhatsApp : la tuile
+  // de connexion reste tant qu'il y a de la place. Un canal jamais connecté ne
+  // compte pas — il se reprend, il n'occupe pas une place (#70).
+  const boitesEmail = channels.filter(
+    (c) => c.type === "email" && !isNeverConnected(c),
+  ).length;
+  const peutAjouterEmail = boitesEmail < MAX_EMAIL_CHANNELS;
+  const peutAjouterWhatsApp = !channels.some(
+    (c) => c.type === "whatsapp" && !isNeverConnected(c),
+  );
 
   // Le nom de la boîte n'est dit que s'il y a plusieurs cartes à distinguer.
   // Une boîte connectée à l'instant, sans encore sa lecture, a déjà sa carte —
@@ -237,7 +245,11 @@ async function ChannelList({ connected }: { connected: boolean }) {
         <PollRefresh />
       ) : null}
       <div className="px-4">
-        <ConnectEmailButton hasEmail={hasEmail} hasWhatsApp={hasWhatsApp} />
+        <ConnectEmailButton
+          peutAjouterEmail={peutAjouterEmail}
+          peutAjouterWhatsApp={peutAjouterWhatsApp}
+          boitesEmail={boitesEmail}
+        />
         <ChannelRemoveLink
           channels={channels.map((c) => ({
             id: c.id,
@@ -289,13 +301,19 @@ async function statutReconcilie(
   db: TenantDb,
   ch: {
     channelId: string;
+    provider: string | null;
     stored: ChannelConfigStatus;
     externalAccountId: string | null;
   },
 ): Promise<ChannelConfigStatus> {
   if (!ch.externalAccountId || ch.stored === "disabled") return ch.stored;
-  const live = await avecDelai(getAccount(ch.externalAccountId));
-  const status = live?.status ?? null;
+  // Le fournisseur derrière le canal dit l'état (M24.1) — l'agrégateur ou le
+  // relais Gmail, par le même contrat.
+  const status = await avecDelai(
+    fournisseurDe(ch.provider).then((f) =>
+      f.etatDuCompte(ch.externalAccountId!),
+    ),
+  );
   if (!status || status === ch.stored) return ch.stored;
   try {
     await setChannelConfigStatus(db, ch.channelId, status, new Date());

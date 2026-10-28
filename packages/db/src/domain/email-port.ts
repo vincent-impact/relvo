@@ -1,3 +1,5 @@
+import type { ChannelProvider } from "./channels";
+
 // Port d'envoi email vu par le domaine (M5.6).
 //
 // Comme `storage-port.ts`, le domaine ne dépend PAS du fournisseur (Unipile) :
@@ -7,10 +9,14 @@
 //   - aucun couplage db → intégration réseau, donc pas de cycle.
 //
 // `externalAccountId` = l'identifiant du compte chez le fournisseur (Unipile
-// `account_id`), résolu depuis ChannelConfig. C'est lui qui fait partir l'email
-// DE la vraie adresse de l'utilisateur.
+// `account_id`, l'adresse d'une boîte Gmail), résolu depuis ChannelConfig, et
+// `provider` dit QUEL fournisseur (M24.1) : l'adaptateur de l'application
+// choisit l'implémentation. C'est ce qui fait partir l'email DE la vraie
+// adresse de l'utilisateur.
 
 export type OutboundEmail = {
+  /** Le fournisseur derrière le canal (M24.1) : c'est lui qui envoie. */
+  provider: ChannelProvider;
   externalAccountId: string;
   to: { identifier: string; display_name?: string }[];
   subject: string;

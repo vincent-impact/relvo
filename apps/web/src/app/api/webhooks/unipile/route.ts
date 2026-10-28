@@ -1,9 +1,6 @@
 import {
   ensureOnboardingQuestions,
-  getOpenCatchup,
-  ingestInboundEmail,
   ingestInboundWhatsApp,
-  ingestOutboundEmail,
   ingestOutboundWhatsApp,
   requestChannelCatchup,
   resolveMailboxStep,
@@ -18,21 +15,14 @@ import { prisma } from "@/lib/db";
 import { tenantDb } from "@/lib/tenant-db";
 import { expireTenantData } from "@/server/cached";
 import { createAttachment } from "@relvo/db";
+import { type Boite, recevoirCourrier } from "@/server/courrier";
 import { lancerTranche } from "@/server/ia/pipeline/rattrapage";
-import {
-  estHistorique,
-  fenetreDeRattrapage,
-} from "@/server/ia/pipeline/rattrapage-regles";
-import { relireApresSalve, relireSujet } from "@/server/ia/pipeline/relecture";
+import { fenetreDeRattrapage } from "@/server/ia/pipeline/rattrapage-regles";
+import { relireApresSalve } from "@/server/ia/pipeline/relecture";
 import { trierConversation } from "@/server/ia/pipeline/tri";
-import { stockerPiecesJointes } from "@/server/unipile/attachments";
-import {
-  natureDuCourrier,
-  toEmailHeaders,
-  toInboundEmail,
-  toInboundWhatsApp,
-  toOutboundEmail,
-} from "@/server/unipile/map";
+import { courrierDepuisUnipile } from "@/server/unipile/courrier";
+import { fournisseurUnipile } from "@/server/unipile/fournisseur";
+import { toInboundWhatsApp } from "@/server/unipile/map";
 import {
   UNIPILE_AUTH_HEADER,
   verifyWebhookAuth,
@@ -223,21 +213,16 @@ async function handleAccountStatus(evt: UnipileAccountStatusWebhook) {
   return ok({ ok: true, status });
 }
 
-type CourrierConfig = { accountId: string; channelId: string };
-
 /**
- * Le courrier se range d'après ce qu'il EST, pas d'après l'événement : Gmail
- * pousse chaque enregistrement de brouillon en `mail_received`, et un e-mail
- * en cours d'écriture entrait en quatre messages « reçus » de soi-même, dans
- * le sujet, relus quatre fois. Un brouillon n'est jamais rangé ; l'indésirable
- * et la corbeille non plus ; un courrier du dossier des envoyés — ou venu de
- * l'une de nos adresses hors boîte de réception — est un envoi, quel que soit
- * l'événement ; le reste est reçu. `mail_moved` ne porte rien.
+ * Le COURRIER de l'agrégateur : résolu au tenant par le compte Unipile, traduit
+ * dans la forme pivot de la frontière (`courrierDepuisUnipile` : sa nature
+ * d'après `role` et `folders`, #69), puis confié à ce qui suit la réception —
+ * le même code que pour tout fournisseur (`recevoirCourrier`, M24.1) :
+ * rangement, pièces jointes, historique laissé à la tranche, tri ou relecture
+ * après la réponse. `mail_moved` ne porte rien.
  */
 async function handleMail(mail: UnipileMailWebhook) {
   if (mail.event === "mail_moved") return ok({ ok: true, ignored: mail.event });
-  // Résolution du tenant depuis le compte Unipile — avec nos adresses, pour
-  // reconnaître un envoi qui ne dit pas son nom.
   const config = await prisma.channelConfig.findUnique({
     where: { externalAccountId: mail.account_id },
     select: {
@@ -250,174 +235,28 @@ async function handleMail(mail: UnipileMailWebhook) {
   });
   if (!config) return ok({ ok: true, ignored: "unknown_account" });
 
-  const nature = natureDuCourrier(mail, [
-    config.channel.identifier,
-    config.channel.account?.email,
-  ]);
-  if (nature === "brouillon" || nature === "ecarte") {
-    return ok({ ok: true, ignored: nature, role: mail.role ?? null });
+  const boite: Boite = {
+    accountId: config.accountId,
+    channelId: config.channelId,
+    externalAccountId: mail.account_id,
+    nosAdresses: [config.channel.identifier, config.channel.account?.email],
+  };
+  const courrier = courrierDepuisUnipile(mail, boite);
+  const bilan = await recevoirCourrier(boite, courrier, fournisseurUnipile);
+  if (bilan.ignore === "brouillon" || bilan.ignore === "ecarte") {
+    return ok({ ok: true, ignored: bilan.ignore, role: mail.role ?? null });
   }
-  const resolved = { accountId: config.accountId, channelId: config.channelId };
-  return nature === "envoye"
-    ? handleMailSent(mail, resolved)
-    : handleMailReceived(mail, resolved);
-}
-
-async function handleMailReceived(
-  mail: UnipileMailWebhook,
-  config: CourrierConfig,
-) {
-  const db = tenantDb(config.accountId);
-
-  // Ingestion idempotente → Message rangé dans sa conversation (M6bis), rattaché
-  // au sujet si une fenêtre y est ouverte, « Sans sujet » sinon.
-  const { message, created } = await ingestInboundEmail(
-    db,
-    toInboundEmail(mail, config.channelId),
-  );
-
-  // Pièces jointes (M5.4) : au premier passage — ou à un passage suivant si le
-  // message est entré SANS elles (importé par la lecture de l'historique depuis
-  // une ligne de liste qui ne les détaillait pas) : le webhook qui les porte
-  // les range, une fois. Le fichier vit dans R2 (source de vérité) ; Unipile
-  // n'est qu'un transport. Si le message est rattaché à un sujet, la PJ en hérite.
-  const piecesManquantes =
-    !created &&
-    (mail.attachments?.length ?? 0) > 0 &&
-    (await db.attachment.count({ where: { messageId: message.id } })) === 0;
-  const stored =
-    (created || piecesManquantes) && mail.attachments?.length
-      ? await stockerPiecesJointes(db, {
-          accountId: config.accountId,
-          unipileAccountId: mail.account_id,
-          emailId: mail.email_id,
-          messageId: message.id,
-          subjectId: message.subjectId,
-          attachments: mail.attachments,
-        })
-      : 0;
-  if (piecesManquantes && stored > 0) expireTenantData();
-
-  // Un message d'HISTORIQUE — synchronisé à la connexion, daté d'avant la
-  // demande d'un rattrapage encore ouvert sur le canal — est rangé mais laissé
-  // à la tranche en cours (M7.19) : il ne se trie pas plein tarif à la volée,
-  // ni ne relit un sujet à contretemps. Sans rattrapage ouvert, ou daté
-  // d'après la demande, c'est du courrier vivant : trié à réception.
-  if (created) {
-    const ouvert = await getOpenCatchup(db, config.channelId);
-    if (ouvert && estHistorique(mail.date, ouvert.requestedAt)) {
-      expireTenantData();
-      return ok({ ok: true, messageId: message.id, historique: true, stored });
-    }
-  }
-
-  // Nouveau message → purge le Data Cache du tenant, sinon les KPI/fil (servis
-  // depuis `unstable_cache`) resteraient périmés jusqu'au revalidate 120 s et le
-  // polling client (router.refresh) relirait le cache sans rien voir.
-  if (created) expireTenantData();
-
-  // Tri automatique (M7, tranche 4) — APRÈS la réponse HTTP, une fois par
-  // message (`created`), et seulement si aucun sujet n'a capté le message au
-  // rangement : sinon la conversation n'est pas orpheline et il n'y a rien à
-  // trier. Le pipeline revérifie tout (assistant actif sur le compte, idempotence,
-  // orphelinat) et n'échoue jamais vers l'appelant : un échec laisse la
-  // conversation orpheline, journalisé.
-  if (created && !message.subjectId) {
-    const entetes = toEmailHeaders(mail);
-    after(async () => {
-      const resultat = await trierConversation({
-        accountId: config.accountId,
-        conversationId: message.conversationId,
-        messageId: message.id,
-        entetes,
-      });
-      console.info("[ia] tri", {
-        accountId: config.accountId,
-        messageId: message.id,
-        ...resultat,
-      });
-    });
-  }
-
-  // Relecture (M7, tranche 6) — le message a été capté par un sujet au
-  // rangement (écoute du fil, réouverture mécanique comprise) : Relvo relit
-  // le sujet à sa lumière. Même discipline : après la réponse HTTP, une fois
-  // par message, et un échec laisse le sujet tel qu'il était.
-  if (created && message.subjectId) {
-    const subjectId = message.subjectId;
-    after(async () => {
-      const resultat = await relireSujet({
-        accountId: config.accountId,
-        subjectId,
-        messageId: message.id,
-      });
-      console.info("[ia] relecture", {
-        accountId: config.accountId,
-        messageId: message.id,
-        ...resultat,
-      });
-    });
-  }
-
-  return ok({ ok: true, messageId: message.id, created, attachments: stored });
-}
-
-/**
- * Un e-mail ENVOYÉ par le compte connecté (M7 tranche 11, suite) : l'écho d'un
- * envoi fait depuis Relvo — en base sous sa référence de suivi, l'idempotence
- * l'arrête — ou un e-mail que le dirigeant a envoyé DEPUIS SON CLIENT DE
- * MESSAGERIE (Gmail, Outlook, le téléphone), qui entre comme un envoi : même
- * conversation, le sujet qui l'écoute, la tâche de réponse cochée par
- * correspondance, puis la relecture — comme un envoi depuis Relvo (05 §4.1).
- * Tant que le dirigeant ne répond pas toujours depuis Relvo, ce qu'il envoie
- * d'ailleurs compte autant. Les pièces jointes d'un envoi ne sont pas
- * rapatriées : le sujet se lit, elle ne stocke pas ce que le dirigeant a déjà.
- */
-async function handleMailSent(
-  mail: UnipileMailWebhook,
-  config: CourrierConfig,
-) {
-  const db = tenantDb(config.accountId);
-  const { message, created } = await ingestOutboundEmail(
-    db,
-    toOutboundEmail(mail, config.channelId),
-  );
-  if (!created || !message) {
+  if (bilan.ignore) {
     return ok({ ok: true, ignored: "own_message", created: false });
   }
-
-  // Un envoi d'HISTORIQUE — synchronisé à la connexion, daté d'avant la
-  // demande d'un rattrapage encore ouvert — est rangé, jamais relu à
-  // contretemps (même règle que la réception).
-  const ouvert = await getOpenCatchup(db, config.channelId);
-  if (ouvert && estHistorique(mail.date, ouvert.requestedAt)) {
-    expireTenantData();
-    return ok({ ok: true, messageId: message.id, historique: true, own: true });
-  }
-
-  expireTenantData();
-
-  // Capté par l'écoute d'un sujet : Relvo la relit à la lumière de ce qui
-  // vient de partir — ce qu'il a décidé, ce à quoi il s'engage. Un envoi sans
-  // sujet reste dans sa conversation : la réponse qui viendra se triera
-  // avec lui sous les yeux. Rien ne se trie sur un envoi seul.
-  if (message.subjectId) {
-    const subjectId = message.subjectId;
-    after(async () => {
-      const resultat = await relireSujet({
-        accountId: config.accountId,
-        subjectId,
-        messageId: message.id,
-      });
-      console.info("[ia] relecture après envoi", {
-        accountId: config.accountId,
-        messageId: message.id,
-        ...resultat,
-      });
-    });
-  }
-
-  return ok({ ok: true, messageId: message.id, created, own: true });
+  return ok({
+    ok: true,
+    messageId: bilan.messageId,
+    created: bilan.created,
+    historique: bilan.historique || undefined,
+    own: courrier.nature === "envoye" || undefined,
+    attachments: bilan.piecesStockees,
+  });
 }
 
 // Nom de fichier lisible pour un média WhatsApp (le webhook n'en fournit aucun).

@@ -35,13 +35,16 @@ export const MAIL_CHOICES: {
 ];
 
 export function ConnectEmailButton({
-  hasEmail = false,
-  hasWhatsApp = false,
+  peutAjouterEmail = true,
+  peutAjouterWhatsApp = true,
+  boitesEmail = 0,
 }: {
-  /** Un canal e-mail existe déjà → pas de bouton e-mail. */
-  hasEmail?: boolean;
-  /** Un canal WhatsApp existe déjà → pas de ligne WhatsApp. */
-  hasWhatsApp?: boolean;
+  /** Il reste de la place pour une boîte e-mail (dix par compte, M24). */
+  peutAjouterEmail?: boolean;
+  /** Aucun WhatsApp connecté → la ligne WhatsApp. */
+  peutAjouterWhatsApp?: boolean;
+  /** Les boîtes e-mail déjà reliées : le bouton dit « une autre » dès la deuxième. */
+  boitesEmail?: number;
 }) {
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState<MailProvider | "WHATSAPP" | null>(null);
@@ -78,11 +81,11 @@ export function ConnectEmailButton({
     });
   }
 
-  if (hasEmail && hasWhatsApp) return null;
+  if (!peutAjouterEmail && !peutAjouterWhatsApp) return null;
 
   return (
     <div className="mt-3 space-y-2">
-      {!hasEmail ? (
+      {peutAjouterEmail ? (
         <button
           type="button"
           onClick={() => setSheet("email")}
@@ -91,10 +94,12 @@ export function ConnectEmailButton({
           style={{ background: "var(--degrade-relvo)" }}
         >
           <Envelope className="size-[18px]" />
-          Connecter ma boîte e-mail
+          {boitesEmail > 0
+            ? "Relier une autre boîte e-mail"
+            : "Connecter ma boîte e-mail"}
         </button>
       ) : null}
-      {!hasWhatsApp ? (
+      {peutAjouterWhatsApp ? (
         <button
           type="button"
           onClick={() => setSheet("whatsapp")}

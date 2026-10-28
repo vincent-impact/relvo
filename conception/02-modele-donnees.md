@@ -173,12 +173,21 @@ oriente.
 ⚠️ **Le canal n'est pas le contact.** Un canal est « ma boîte fournisseurs » ; un contact est une
 personne extérieure qui peut écrire sur n'importe lequel de ces canaux.
 
-**`ChannelConfig`** porte la configuration technique — fournisseur, données de connexion
-opaques, statut de connexion, date de dernière synchronisation, et l'identifiant du compte chez
-l'agrégateur. Elle est séparée pour ne pas alourdir `Channel` de secrets et d'état de connexion.
+**`ChannelConfig`** porte la configuration technique — le **fournisseur** derrière le canal,
+données de connexion opaques, statut de connexion, date de dernière synchronisation, et
+l'identifiant du compte chez le fournisseur. Elle est séparée pour ne pas alourdir `Channel` de
+secrets et d'état de connexion.
 
-**Un seul canal connecté par type.** Le domaine refuse un second canal du même type. Motif :
-simplicité d'usage, et facturation à l'usage chez l'agrégateur.
+**Le fournisseur** est l'un de deux : l'**agrégateur** (`unipile`) — WhatsApp et les boîtes qui
+ne sont pas Gmail — ou le **relais Gmail** de Relvo (`gmail`), qui lit et envoie par l'API
+Google. Le domaine ne connaît que ce nom ; l'application tient un seul contrat de courrier
+entrant et un seul contrat d'envoi, avec une implémentation par fournisseur. L'identifiant du
+compte chez le fournisseur est **unique**, tous comptes confondus : c'est lui qui résout le
+compte d'un webhook — l'identifiant opaque de l'agrégateur, l'adresse de la boîte pour Gmail.
+
+**Dix boîtes e-mail par compte, un seul WhatsApp.** Le domaine refuse la onzième boîte et le
+second WhatsApp. Motif : l'exigence des testeurs pour l'e-mail — toutes leurs boîtes, sans qu'une
+seule coûte un abonnement chez l'agrégateur —, la simplicité pour la messagerie.
 
 **`ChannelCatchup`** porte le **rattrapage du courrier récent** d'un canal (cf. `05-ia.md`
 §9.6) : la fenêtre lue, l'état — demandé, en cours, terminé, arrêté au garde-fou, en échec —,
@@ -617,6 +626,7 @@ que le test lit.
 | `subjects_search_vector` | `subjects` | trigger : le vecteur plein texte (titre pondéré A, situation structurée pondérée B, dictionnaire français) est tenu à chaque écriture — le code ne l'écrit jamais |
 | `relvo_questions_scope_target_check` | `relvo_questions` | vérification : une question a exactement une cible, celle de sa portée |
 | `folders_parent_requis` | `folders` | vérification : seul le dossier « Général » n'a pas de père — tout autre dossier est rangé dans l'arbre |
+| `channel_configs_provider_check` | `channel_configs` | vérification : le fournisseur derrière un canal est l'agrégateur ou le relais Gmail — rien d'autre ne sait lire une boîte |
 
 ### Comment cette liste reste vraie
 

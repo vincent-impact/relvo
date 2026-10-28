@@ -47,7 +47,9 @@ export type AdminChannel = {
   name: string;
   type: ChannelType;
   identifier: string;
-  /** L'état de la connexion chez l'agrégateur ; null = canal sans configuration. */
+  /** Le fournisseur derrière le canal (M24.1) ; null = canal sans configuration. */
+  provider: string | null;
+  /** L'état de la connexion chez le fournisseur ; null = canal sans configuration. */
   status: ChannelConfigStatus | null;
   /** L'identifiant du compte chez l'agrégateur — à déconnecter avant toute suppression. */
   externalAccountId: string | null;
@@ -88,7 +90,9 @@ function findAccountWithChannels(id: string) {
       channels: {
         orderBy: { createdAt: "asc" },
         include: {
-          config: { select: { status: true, externalAccountId: true } },
+          config: {
+            select: { provider: true, status: true, externalAccountId: true },
+          },
         },
       },
     },
@@ -149,6 +153,7 @@ async function rowFor(
       name: c.name,
       type: c.type,
       identifier: c.identifier,
+      provider: c.config?.provider ?? null,
       status: c.config?.status ?? null,
       externalAccountId: c.config?.externalAccountId ?? null,
     })),
@@ -176,7 +181,9 @@ export async function listAccountsForAdmin(
         channels: {
           orderBy: { createdAt: "asc" },
           include: {
-            config: { select: { status: true, externalAccountId: true } },
+            config: {
+              select: { provider: true, status: true, externalAccountId: true },
+            },
           },
         },
       },

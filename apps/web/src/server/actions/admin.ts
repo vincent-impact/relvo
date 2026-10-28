@@ -18,7 +18,7 @@ import {
 import { sendAccountActivatedEmail } from "@/lib/email";
 import { requireAdmin } from "@/server/admin";
 import { MESSAGES_REFUS, refusSuppression } from "@/server/admin-regles";
-import { deleteUnipileAccount } from "@/server/unipile";
+import { fournisseurDe } from "@/server/courrier";
 
 // Les gestes du backoffice (M21.4, M21.6). Chaque action commence par
 // `requireAdmin()` — le proxy ne voit pas une Server Action (PITFALLS #30) — et
@@ -117,7 +117,8 @@ export async function adminDeleteAccountAction(
   const echecs: string[] = [];
   for (const canal of compte.channels) {
     if (!canal.externalAccountId) continue;
-    const fait = await deleteUnipileAccount(canal.externalAccountId);
+    const fournisseur = await fournisseurDe(canal.provider);
+    const fait = await fournisseur.supprimerCompte(canal.externalAccountId);
     (fait ? deconnectes : echecs).push(canal.externalAccountId);
   }
 

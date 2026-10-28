@@ -27,6 +27,7 @@ import {
   resolveWhatsAppChatIdentity,
 } from "./conversations";
 import { confirmChannelConnected } from "./channels";
+import { CHANNEL_PROVIDERS, type ChannelProvider } from "./channels";
 import type { EmailSenderPort } from "./email-port";
 import type {
   WhatsAppChatDirectoryPort,
@@ -850,6 +851,13 @@ async function markChannelUnhealthyIfNeeded(
   }
 }
 
+/** Le fournisseur d'un canal, tel que la base le garde (contrainte de vérification). */
+function providerOf(raw: string | null | undefined): ChannelProvider {
+  return CHANNEL_PROVIDERS.includes(raw as ChannelProvider)
+    ? (raw as ChannelProvider)
+    : "unipile";
+}
+
 export async function sendEmailReply(
   db: TenantDb,
   sender: EmailSenderPort,
@@ -895,6 +903,7 @@ export async function sendEmailReply(
   let emailId: string | null;
   try {
     ({ emailId } = await sender.sendEmail({
+      provider: providerOf(channel.config?.provider),
       externalAccountId,
       to: data.to.map((t) => ({
         identifier: t.identifier,

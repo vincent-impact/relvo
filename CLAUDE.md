@@ -70,8 +70,14 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
 - `conception/` ne contient **aucun code exécutable** ; `apps/` **aucune documentation produit**.
   La maquette n'est **jamais** buildée.
 - **Toute logique métier réutilisable passe par un paquet** : le domaine et l'accès aux données
-  d'un côté, le stockage de l'autre. **Jamais de duplication.** L'intégration de l'agrégateur
-  vit dans l'application, son unique consommateur.
+  d'un côté, le stockage de l'autre. **Jamais de duplication.** Les fournisseurs de courrier
+  vivent dans l'application, leur unique consommateur, **derrière une seule frontière** :
+  `server/courrier/` déclare le contrat (lire le récent, une pièce jointe, envoyer, l'état,
+  supprimer) et choisit l'implémentation d'après `ChannelConfig.provider` ; `server/unipile/`
+  (l'agrégateur : WhatsApp, les boîtes non Gmail) et `server/gmail/` (le relais, M24)
+  l'implémentent. Tout ce qui suit la réception — `recevoirCourrier`, `rangerCourrier` — est
+  le même code pour les deux ; un webhook de fournisseur ne fait que traduire sa matière en
+  `CourrierEntrant`.
 - **Aucun accès direct au stockage** : tout passe par le paquet dédié, jamais par un client
   instancié à la main — c'est ce qui garde le fournisseur remplaçable et ce qui évite de recréer
   un client sans les deux réglages obligatoires (`PITFALLS.md` #8).

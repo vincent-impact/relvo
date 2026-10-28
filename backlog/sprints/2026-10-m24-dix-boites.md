@@ -198,6 +198,47 @@ l'ancienne redirige.
 **Piège vu.** #72 : en développement, `nextUrl.hostname` ignore l'en-tête `Host` que les règles
 `has: host` lisent — l'hôte se lit dans l'en-tête d'abord.
 
+## Tranche 2 — « Le fournisseur derrière le canal » (M24.1)
+
+**Livré.**
+- **Le domaine** : `CHANNEL_PROVIDERS` (`unipile`, `gmail`) et `ChannelProvider` typent
+  `ChannelConfig.provider`, tenu en base par la contrainte `channel_configs_provider_check`
+  (migration `20261028150000_m24_channel_provider_check`, cataloguée dans `02`) ;
+  `prepareChannelConnection` prend le fournisseur et applique **dix boîtes e-mail par compte,
+  un seul WhatsApp** (`MAX_EMAIL_CHANNELS`) — un orphelin se reprend même à côté de boîtes
+  connectées ; `deleteChannel` rend le fournisseur avec l'identifiant externe ; le port
+  d'envoi `OutboundEmail` porte `provider`, posé par `sendEmailReply` ; la ligne de rattrapage
+  et le backoffice (`AdminChannel.provider`) lisent le fournisseur. Tests :
+  `channel-connection.test.ts` (seconde boîte, onzième refusée, contrainte en base).
+- **La frontière** `apps/web/src/server/courrier/` (`ecarts`, « Un contrat de courrier
+  entrant… ») : `types.ts` (le contrat `FournisseurCourrier`, la forme pivot `CourrierEntrant`,
+  `Boite`, `ResumeCourrier`), `fournisseur.ts` (`fournisseurDe`, chargement à la demande, le
+  relais Gmail déclaré et « pas encore disponible »), `reception.ts` (`rangerCourrier`,
+  `recevoirCourrier` — ce qui suit la réception, extrait du webhook de l'agrégateur),
+  `pieces-jointes.ts` (le stockage dans R2 par le fournisseur), `envoi.ts`
+  (`courrierEmailSender`, le port d'envoi qui choisit). L'agrégateur l'implémente
+  (`server/unipile/fournisseur.ts`) et traduit sa matière (`server/unipile/courrier.ts`) ;
+  `unipile/attachments.ts` n'est plus qu'une traduction pour `pj:rattraper`.
+- **Les consommateurs** parlent au contrat : le webhook de l'agrégateur (le courrier passe par
+  `courrierDepuisUnipile` puis `recevoirCourrier` ; WhatsApp inchangé), la lecture par
+  tranches (`importerUnePasse` lit par `lireRecents` et range par `rangerCourrier`), l'envoi
+  (`courrierEmailSender`), la suppression d'un canal et d'un compte (`supprimerCompte`), le
+  statut réconcilié de la page Canaux (`etatDuCompte`). Reconnecter une boîte `gmail` dit que
+  c'est pour la tranche 3.
+- **L'interface** : la page Canaux garde son bouton tant qu'il reste de la place — « Relier
+  une autre boîte e-mail » dès la deuxième —, WhatsApp jusqu'à un ; la fiche de compte du
+  backoffice dit le fournisseur de chaque canal (« agrégateur », « relais Gmail »), la liste
+  comptait déjà les canaux.
+- `CLAUDE.md` (la frontière), `02-modele-donnees.md` (le fournisseur, dix boîtes, la
+  contrainte), tests web `courrier.test.ts` (le choix par le nom, le port d'envoi qui choisit,
+  la traduction de l'agrégateur).
+
+**Vérification.** Typage, lint, les 223 tests de l'application et les 238 du domaine (dont le
+catalogue du schéma, dans les deux sens) ; rendu headless de la page Canaux (quatre canaux de
+démonstration, le bouton « Relier une autre boîte e-mail ») en clair et en sombre, et de la
+fiche de compte du backoffice. Rien ne change pour l'utilisateur sauf la place pour une
+seconde boîte : la réception réelle se vérifie en production au prochain e-mail reçu.
+
 ## Où on en est
 
 **Chantier ouvert le 2026-10-28.** Le découpage est proposé au dirigeant ; rien n'est codé.
@@ -220,7 +261,7 @@ production non vérifiée, Google avertit et plafonne à cent utilisateurs, sans
 
 - [ ] Tranche 0 — « Se déclarer » (M24.7, en continu)
 - [x] Tranche 1 — « L'adresse » (M24.10)
-- [ ] Tranche 2 — « Le fournisseur derrière le canal » (M24.1)
+- [x] Tranche 2 — « Le fournisseur derrière le canal » (M24.1)
 - [ ] Tranche 3 — « Se connecter à Gmail » (M24.2)
 - [ ] Tranche 4 — « Recevoir » (M24.3, M24.6)
 - [ ] Tranche 5 — « Lire les quatorze jours » (M24.4)

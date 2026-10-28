@@ -5,7 +5,6 @@ import {
   ensureFolderProposalQuestions,
   findCatchupForTranche,
   finishCatchup,
-  ingestInboundEmail,
   isAssistantEnabled,
   listCatchupCandidates,
   listDueCatchups,
@@ -29,13 +28,7 @@ import {
   peutClore,
   type EtatRattrapage,
 } from "./rattrapage-regles";
-import { stockerPiecesJointes } from "@/server/unipile/attachments";
-import { getEmail, listInboxEmails } from "@/server/unipile/client";
-import {
-  apiMailToWebhook,
-  doitRelireEmail,
-  toInboundEmail,
-} from "@/server/unipile/map";
+import { type Boite, fournisseurDe, rangerCourrier } from "@/server/courrier";
 import { trierConversation } from "./tri";
 
 // LE RATTRAPAGE DU COURRIER RÉCENT (M7.19) : « Relvo lit le courrier récent
@@ -117,7 +110,7 @@ export async function executerTranche(
     fin: "budget-temps",
     clos: false,
   };
-  const unipileAccountId = due.channel.config?.externalAccountId ?? null;
+  const externalAccountId = due.channel.config?.externalAccountId ?? null;
 
   // Une ligne arrêtée au garde-fou ne se reprend que la nuit, en lot.
   if (due.status === "capped") {
@@ -152,12 +145,17 @@ export async function executerTranche(
     // ── 1. Import ─────────────────────────────────────────────────────────
     let importDone = catchup.importDone;
     let emptyRounds = catchup.emptyRounds;
-    if (!importDone && unipileAccountId) {
+    if (!importDone && externalAccountId) {
       // Des passes tant que le budget le permet : une passe qui importe
       // continue aussitôt, une passe vide attend un peu avant la suivante.
       for (;;) {
         if (tempsRestant(chrono) < 30_000) break;
-        const passe = await importerUnePasse(db, due, unipileAccountId, chrono);
+        const passe = await importerUnePasse(
+          db,
+          due,
+          externalAccountId,
+          chrono,
+        );
         bilan.importes += passe.importes;
         if (passe.importes > 0) {
           emptyRounds = 0;
@@ -192,8 +190,8 @@ export async function executerTranche(
         if (tempsRestant(chrono) < RATTRAPAGE.attenteImportMs + 30_000) break;
         await dormir(RATTRAPAGE.attenteImportMs);
       }
-    } else if (!unipileAccountId && !importDone) {
-      // Sans compte chez l'agrégateur, rien à importer ni à attendre : on trie
+    } else if (!externalAccountId && !importDone) {
+      // Sans compte chez le fournisseur, rien à importer ni à attendre : on trie
       // ce qui est là, et la ligne se clôt dès qu'il n'y a plus de candidat.
       importDone = true;
       emptyRounds = RATTRAPAGE.passesVidesPourClore;
@@ -312,7 +310,7 @@ export async function executerTranche(
         channelId: due.channelId,
         since: due.since,
       });
-      const cloturable = unipileAccountId
+      const cloturable = externalAccountId
         ? peutClore({ emptyRounds, requestedAt: due.requestedAt, restants })
         : restants === 0;
       if (importDone && cloturable) {
@@ -359,20 +357,28 @@ export async function executerTranche(
   return bilan;
 }
 
-/** Une passe d'import : les pages de l'agrégateur jusqu'à épuisement ou budget. */
+/** Une passe d'import : les pages du fournisseur jusqu'à épuisement ou budget. */
 async function importerUnePasse(
   db: TenantDb,
   due: Ligne,
-  unipileAccountId: string,
+  externalAccountId: string,
   chrono: Chrono,
 ): Promise<{ importes: number; epuise: boolean }> {
+  // Le fournisseur derrière le canal (M24.1) : l'agrégateur ou le relais
+  // Gmail, lus par le même contrat.
+  const fournisseur = await fournisseurDe(due.channel.config?.provider);
+  const boite: Boite = {
+    accountId: due.accountId,
+    channelId: due.channelId,
+    externalAccountId,
+    nosAdresses: [due.channel.identifier],
+  };
   let importes = 0;
   let cursor: string | null = null;
   let epuise = false;
   do {
     if (tempsRestant(chrono) < 20_000) break;
-    const page = await listInboxEmails({
-      accountId: unipileAccountId,
+    const page = await fournisseur.lireRecents(boite, {
       after: due.since,
       cursor,
       limit: RATTRAPAGE.pageImport,
@@ -380,35 +386,20 @@ async function importerUnePasse(
     cursor = page.cursor;
     const connus = await listKnownExternalIds(db, {
       channelId: due.channelId,
-      externalIds: page.items.map((m) => m.id),
+      externalIds: page.items.map((m) => m.externalId),
     });
     for (const item of page.items) {
-      if (connus.has(item.id)) continue;
+      if (connus.has(item.externalId)) continue;
       if (tempsRestant(chrono) < 15_000) return { importes, epuise: false };
-      // La liste ne porte pas toujours le corps, ni le détail des pièces
-      // jointes qu'elle annonce : on relit alors l'e-mail entier.
-      const complet = doitRelireEmail(item) ? await getEmail(item.id) : item;
-      if (!complet) continue;
-      const mail = apiMailToWebhook({
-        ...complet,
-        account_id: complet.account_id || unipileAccountId,
-      });
-      const { message, created } = await ingestInboundEmail(
+      const courrier = await item.lire();
+      if (!courrier) continue;
+      const { created } = await rangerCourrier(
         db,
-        toInboundEmail(mail, due.channelId),
+        boite,
+        courrier,
+        fournisseur,
       );
-      if (!created) continue;
-      importes += 1;
-      if (mail.attachments?.length) {
-        await stockerPiecesJointes(db, {
-          accountId: due.accountId,
-          unipileAccountId,
-          emailId: mail.email_id,
-          messageId: message.id,
-          subjectId: message.subjectId,
-          attachments: mail.attachments,
-        });
-      }
+      if (created) importes += 1;
     }
     if (page.items.length < RATTRAPAGE.pageImport || !cursor) epuise = true;
   } while (!epuise);

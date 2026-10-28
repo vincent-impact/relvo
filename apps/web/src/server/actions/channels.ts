@@ -19,11 +19,11 @@ import {
 import { revalidatePath } from "next/cache";
 import { revalidateTenantData } from "@/server/cached";
 import { domainAction } from "@/lib/action-result";
+import { fournisseurDe } from "@/server/courrier";
 import {
   createEmailHostedAuthLink,
   createReconnectHostedAuthLink,
   createWhatsAppHostedAuthLink,
-  deleteUnipileAccount,
   type MailProvider,
 } from "@/server/unipile";
 import { urlsDeConnexion } from "@/server/unipile/retour";
@@ -55,9 +55,11 @@ export async function deleteChannelAction(id: string) {
   const result = await domainAction((db) => deleteChannel(db, id));
   if (result.ok) {
     // Le canal (et ses messages) ont été supprimés en base ; on déconnecte aussi
-    // le compte chez Unipile s'il y en avait un (best-effort, hors transaction).
+    // le compte chez son fournisseur s'il y en avait un (best-effort, hors
+    // transaction) — l'agrégateur ou le relais Gmail, par le même contrat.
     if (result.data.externalAccountId) {
-      await deleteUnipileAccount(result.data.externalAccountId);
+      const fournisseur = await fournisseurDe(result.data.provider);
+      await fournisseur.supprimerCompte(result.data.externalAccountId);
     }
     revalidateChannels();
   }
@@ -84,7 +86,9 @@ export async function reconnectChannelAction(
   const found = await domainAction(async (db) => {
     const channel = await db.channel.findFirst({
       where: { id: channelId },
-      include: { config: { select: { externalAccountId: true } } },
+      include: {
+        config: { select: { externalAccountId: true, provider: true } },
+      },
     });
     if (!channel) throw new DomainError("NOT_FOUND", "Canal introuvable.");
     const externalAccountId = channel.config?.externalAccountId;
@@ -92,6 +96,14 @@ export async function reconnectChannelAction(
       throw new DomainError(
         "INVALID_STATE",
         "Ce canal n'a jamais été connecté — utilisez « Connecter ».",
+      );
+    }
+    // La page de reconnexion est celle du fournisseur : celle de l'agrégateur
+    // ici ; le relais Gmail rouvre son consentement (M24.2).
+    if (channel.config?.provider === "gmail") {
+      throw new DomainError(
+        "INVALID_STATE",
+        "Cette boîte Gmail se reconnecte par Google — bientôt disponible.",
       );
     }
     return { externalAccountId };

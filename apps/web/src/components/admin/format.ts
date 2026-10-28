@@ -64,3 +64,8 @@ export const LIBELLE_SECTEUR: Record<string, string> = {
 export function pluriel(n: number, un: string, des: string): string {
   return `${n} ${n > 1 ? des : un}`;
 }
+
+/** Le fournisseur derrière un canal (M24.1), dans les mots du backoffice. */
+export function libelleFournisseur(provider: string): string {
+  return provider === "gmail" ? "relais Gmail" : "agrégateur";
+}

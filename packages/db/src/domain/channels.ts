@@ -25,8 +25,22 @@ export const updateChannelSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
+/**
+ * Le FOURNISSEUR derrière un canal (M24.1) : qui lit la boîte et qui envoie.
+ * `unipile`, l'agrégateur — WhatsApp et les boîtes qui ne sont pas Gmail ;
+ * `gmail`, le relais de Relvo, par l'API Google. Un seul contrat de courrier
+ * entrant et un seul contrat d'envoi dans l'application, une implémentation
+ * par fournisseur ; le domaine ne connaît que ce nom. Tenu en base par une
+ * contrainte de vérification (`02-modele-donnees.md`).
+ */
+export const CHANNEL_PROVIDERS = ["unipile", "gmail"] as const;
+export type ChannelProvider = (typeof CHANNEL_PROVIDERS)[number];
+
+/** Dix boîtes e-mail par compte (M24) — l'exigence des testeurs ; un seul WhatsApp. */
+export const MAX_EMAIL_CHANNELS = 10;
+
 export const channelConfigSchema = z.object({
-  provider: z.string().trim().min(1).max(80),
+  provider: z.enum(CHANNEL_PROVIDERS),
   connectionData: z.record(z.string(), z.unknown()).optional().nullable(),
   status: z.enum(ChannelConfigStatus).optional(),
   lastSyncAt: z.date().optional().nullable(),
@@ -90,6 +104,8 @@ export function isNeverConnected(ch: {
 export const prepareChannelConnectionSchema = z.object({
   type: z.enum(ChannelType),
   name: z.string().trim().min(1).max(120),
+  /** Le fournisseur derrière le canal (M24.1) : l'agrégateur par défaut. */
+  provider: z.enum(CHANNEL_PROVIDERS).optional().default("unipile"),
   /** Le fournisseur de messagerie choisi dans l'application, pour reprendre la même page. */
   mailProvider: z.string().trim().min(1).max(40).optional(),
 });
@@ -98,12 +114,13 @@ export type PrepareChannelConnectionInput = z.input<
 >;
 
 /**
- * PRÉPARE la connexion d'un canal avant d'ouvrir la page du fournisseur : un
- * seul canal par type en V1. S'il en existe un déjà connecté, c'est un
- * conflit ; s'il en existe un jamais connecté — l'utilisateur est revenu en
- * arrière —, c'est LUI qu'on reprend, sous le nom et le fournisseur choisis
- * cette fois, jamais un second à côté (PITFALLS #70). Sinon, le canal et sa
- * configuration `pending` sont créés. Rend le canal et si c'est une reprise.
+ * PRÉPARE la connexion d'un canal avant d'ouvrir la page du fournisseur.
+ * Jusqu'à DIX boîtes e-mail par compte (M24), un seul WhatsApp : au-delà,
+ * c'est un conflit. S'il existe un canal du type jamais connecté —
+ * l'utilisateur est revenu en arrière —, c'est LUI qu'on reprend, sous le nom
+ * et le fournisseur choisis cette fois, jamais un second à côté (PITFALLS
+ * #70). Sinon, le canal et sa configuration `pending` sont créés, avec le
+ * fournisseur derrière le canal. Rend le canal et si c'est une reprise.
  */
 export async function prepareChannelConnection(
   db: TenantDb,
@@ -115,26 +132,27 @@ export async function prepareChannelConnection(
     include: { config: { select: { externalAccountId: true } } },
     orderBy: { createdAt: "asc" },
   });
-  const connecte = existants.find((c) => !isNeverConnected(c));
-  if (connecte) {
+  const connectes = existants.filter((c) => !isNeverConnected(c)).length;
+  const plafond = data.type === ChannelType.whatsapp ? 1 : MAX_EMAIL_CHANNELS;
+  if (connectes >= plafond) {
     throw new DomainError(
       "CONFLICT",
       data.type === ChannelType.whatsapp
         ? "Un canal WhatsApp est déjà connecté. Supprimez-le pour en connecter un autre."
-        : "Une boîte e-mail est déjà connectée. Supprimez-la pour en connecter une autre.",
+        : `Dix boîtes e-mail sont déjà reliées à ce compte. Supprimez-en une pour en relier une autre.`,
     );
   }
   const connectionData = data.mailProvider
     ? { mailProvider: data.mailProvider }
     : null;
-  const orphelin = existants[0];
+  const orphelin = existants.find((c) => isNeverConnected(c));
   if (orphelin) {
     await db.channel.updateMany({
       where: { id: orphelin.id },
       data: { name: data.name },
     });
     await upsertChannelConfig(db, orphelin.id, {
-      provider: "unipile",
+      provider: data.provider,
       status: ChannelConfigStatus.pending,
       connectionData,
     });
@@ -146,7 +164,7 @@ export async function prepareChannelConnection(
     identifier: "En attente de connexion…",
   });
   await upsertChannelConfig(db, channel.id, {
-    provider: "unipile",
+    provider: data.provider,
     status: ChannelConfigStatus.pending,
     connectionData,
   });
@@ -201,8 +219,8 @@ export async function updateChannel(
  * Supprime un canal (Réglages → Canaux). HARD-DELETE assumé : les messages reçus
  * via ce canal — et leurs pièces jointes (→ trigger R2 → cron) — partent en
  * cascade. Tâches/actions/sujets rattachés survivent (FK en SetNull). Renvoie
- * l'`externalAccountId` (compte chez le fournisseur d'intégration) pour que
- * l'appelant puisse aussi supprimer ce compte côté Unipile — le domaine ne
+ * l'`externalAccountId` (compte chez le fournisseur) et le fournisseur, pour
+ * que l'appelant puisse aussi supprimer ce compte chez lui — le domaine ne
  * connaît pas le transport.
  */
 export async function deleteChannel(db: TenantDb, id: string) {
@@ -211,6 +229,7 @@ export async function deleteChannel(db: TenantDb, id: string) {
     "Canal",
   );
   const externalAccountId = channel.config?.externalAccountId ?? null;
+  const provider = channel.config?.provider ?? null;
   return db.$transaction(async (tx) => {
     // Journalisé AVANT la suppression (l'event n'a pas de FK vers le canal).
     await logEvent(tx as Tx, {
@@ -222,7 +241,7 @@ export async function deleteChannel(db: TenantDb, id: string) {
     });
     const { count } = await tx.channel.deleteMany({ where: { id } });
     ensureAffected(count, "Canal");
-    return { id, externalAccountId };
+    return { id, externalAccountId, provider };
   });
 }
 

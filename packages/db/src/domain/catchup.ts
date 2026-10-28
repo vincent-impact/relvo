@@ -193,7 +193,8 @@ const SELECTION_TRANCHE = {
   costEur: true,
   channel: {
     select: {
-      config: { select: { externalAccountId: true } },
+      identifier: true,
+      config: { select: { externalAccountId: true, provider: true } },
     },
   },
 } as const;

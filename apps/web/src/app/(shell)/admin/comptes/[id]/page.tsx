@@ -9,6 +9,7 @@ import {
   dateCourte,
   depuis,
   eur,
+  libelleFournisseur,
   libelleStatutCanal,
   LIBELLE_SECTEUR,
 } from "@/components/admin/format";
@@ -171,7 +172,10 @@ export default async function CompteAdminPage({
                       {c.name}
                     </div>
                     <div className="truncate text-[12.5px] font-light text-gris">
-                      {c.type === "email" ? "e-mail" : c.type} · {c.identifier}
+                      {c.type === "email" ? "e-mail" : c.type}
+                      {c.provider ? ` · ${libelleFournisseur(c.provider)}` : ""}
+                      {" · "}
+                      {c.identifier}
                     </div>
                   </div>
                   <span

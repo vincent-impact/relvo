@@ -15,11 +15,8 @@ import { domainAction } from "@/lib/action-result";
 import { revalidateTenantData } from "@/server/cached";
 import { getCurrentAccountId } from "@/server/auth-context";
 import { relireSujet } from "@/server/ia/pipeline/relecture";
-import {
-  createEmailHostedAuthLink,
-  type MailProvider,
-  unipileEmailSender,
-} from "@/server/unipile";
+import { courrierEmailSender } from "@/server/courrier";
+import { createEmailHostedAuthLink, type MailProvider } from "@/server/unipile";
 import { type RetourConnexion, urlsDeConnexion } from "@/server/unipile/retour";
 
 // Libellé de canal par provider (le vrai nom sera remplacé par l'adresse réelle
@@ -90,7 +87,7 @@ export async function sendEmailReplyAction(
   input: SendEmailReplyInput,
 ): Promise<ActionResult<{ id: string }>> {
   const result = await domainAction(async (db) => {
-    const message = await sendEmailReply(db, unipileEmailSender, input);
+    const message = await sendEmailReply(db, courrierEmailSender, input);
     return { id: message.id };
   });
   if (result.ok) {

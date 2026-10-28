@@ -1612,6 +1612,26 @@ avec l'agrégateur : la marge ne dépend pas d'une négociation. L'agrégateur r
 Épique **M24**, dont M24.10 porte le domaine et l'infrastructure ; **M23 passe devant**, M24
 suit, tout le reste est moins urgent.
 
+### Un contrat de courrier entrant, un contrat d'envoi, deux fournisseurs derrière le canal
+
+**`tranché`** · Avec le dirigeant, le 2026-10-28, à l'ouverture de M24 (M24.1). Le relais Gmail
+ne doit rien dupliquer du domaine ni de ce qui suit la réception. La frontière vit dans
+l'application, qui est l'unique consommatrice des fournisseurs : `server/courrier/` déclare un
+contrat `FournisseurCourrier` — lire le courrier récent depuis une date (la lecture à la
+connexion), lire une pièce jointe, envoyer, l'état du compte, supprimer le compte — et
+`fournisseurDe(config.provider)` rend l'implémentation : l'agrégateur (`server/unipile/`) ou le
+relais Gmail (`server/gmail/`). **La forme pivot est celle du domaine** : chaque fournisseur
+fabrique `IngestInboundEmailInput` ou `IngestOutboundEmailInput` et dit la nature du courrier
+d'après ce qu'il est (#69) ; `rangerCourrier` (l'ingestion idempotente et les pièces jointes,
+ce que la lecture par tranches appelle) et `recevoirCourrier` (plus le cache, l'historique
+laissé à la tranche, le tri ou la relecture après la réponse) sont le même code pour tous. Le
+port d'envoi du domaine porte désormais le fournisseur, et c'est la frontière qui choisit.
+`ChannelConfig.provider` est tenu en base par une contrainte de vérification (`unipile` ou
+`gmail`). **Dix boîtes e-mail par compte, un seul WhatsApp**, dans le domaine. **Retenu
+contre** un second pipeline pour Gmail (c'est exactement la duplication que l'épique interdit)
+et contre un port par fonction dans le paquet `db` (le domaine n'a pas à connaître la lecture
+d'une boîte : seule l'application lit chez un fournisseur).
+
 ### Deux hôtes, un déployable : le site sur `relvo.net`, l'application sur `app.relvo.net`
 
 **`tranché`** · Avec le dirigeant, le 2026-10-28, à l'ouverture de M24 (M24.10). Le nom de
