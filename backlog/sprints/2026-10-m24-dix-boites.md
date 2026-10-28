@@ -170,6 +170,22 @@ d'abord ; Prisma 7 avec adaptateur ; `db:migrate` puis `db:generate` après tout
 
 **Chantier ouvert le 2026-10-28.** Le découpage est proposé au dirigeant ; rien n'est codé.
 
+**L'infrastructure posée le 2026-10-28, avec le dirigeant** (tranche 0 et le socle de la
+tranche 1) : le domaine `relvo.net` acheté chez Ionos, au nom de l'organisation ; `relvo.net`,
+`www.relvo.net` (308 vers la racine) et `app.relvo.net` ajoutés au projet Vercel `relvo` de
+l'équipe `vcc-impact-labs`, DNS posé chez Ionos, certificats émis ; le domaine prouvé dans la
+Search Console avec le compte Workspace de l'organisation. Le projet Google Cloud est celui de la
+connexion Google (`Relvo`, identifiant `relvo-498914`, organisation `vccimpact.fr`) : Gmail API
+et Pub/Sub activées, écran de consentement « Relvo » sur `relvo.net` en état **Test** (les liens
+de confidentialité et de conditions se posent quand les pages existent), périmètres
+`gmail.readonly`, `gmail.send`, `userinfo.email`. Le client OAuth est `Relvo Web`
+(`885986354227-uomp09k5e85kn39vd7uh5u4tibbl128d.apps.googleusercontent.com`), avec les retours
+`https://app.relvo.net/api/gmail/retour` et `http://localhost:3100/api/gmail/retour` ; son
+secret se pose sous `GMAIL_CLIENT_SECRET`, jamais sous `AUTH_GOOGLE_SECRET`, qui allumerait la
+connexion Google à l'application. **Le passage en production de l'écran de consentement** se
+fait à la livraison de la tranche 3 : en état Test, les jetons expirent en sept jours ; en
+production non vérifiée, Google avertit et plafonne à cent utilisateurs, sans expiration.
+
 - [ ] Tranche 0 — « Se déclarer » (M24.7, en continu)
 - [ ] Tranche 1 — « L'adresse » (M24.10)
 - [ ] Tranche 2 — « Le fournisseur derrière le canal » (M24.1)
