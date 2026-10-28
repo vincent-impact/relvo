@@ -1632,6 +1632,29 @@ contre** un second pipeline pour Gmail (c'est exactement la duplication que l'é
 et contre un port par fonction dans le paquet `db` (le domaine n'a pas à connaître la lecture
 d'une boîte : seule l'application lit chez un fournisseur).
 
+### La réception Gmail : par notification, incrémentale, authentifiée par Google
+
+**`tranché`** · Le 2026-10-28, à la livraison de la tranche 4 de M24 (M24.3, M24.6), d'après
+les décisions posées à l'ouverture du chantier. **Le courrier entre par notification** : la
+boîte publie ses changements sur un sujet Pub/Sub du projet de l'organisation (`users.watch`),
+Pub/Sub pousse sur `/api/webhooks/gmail`, le webhook répond aussitôt et travaille après sa
+réponse — aucun processus permanent, aucun troisième cron. **La lecture est incrémentale par
+`historyId`** : la notification ne porte que l'adresse et un numéro ; on relit l'historique
+depuis le **dernier numéro retenu**, jamais depuis celui de la notification, puis chaque message
+ajouté — une notification perdue ne perd rien, deux notifications à la fois relisent le même bout
+et l'ingestion idempotente n'entre rien deux fois. Un numéro trop ancien (Google n'en garde
+qu'une semaine) repart du numéro reçu ; ce qui manque relève d'une lecture de la boîte (M24.4),
+pas de l'historique. **L'abonnement expire en sept jours et se renouvelle au passage** : par le
+webhook sous deux jours, par le cron du matin pour toute boîte, et par la page Canaux — l'état
+d'une boîte du relais, c'est son abonnement. **La notification est authentifiée** par le jeton
+OIDC que Google signe pour le compte de service de l'abonnement, vérifié contre les clés de Google
+avec notre adresse pour audience et notre compte pour auteur — jamais un secret dans l'URL. **La
+nature du courrier se lit dans ses étiquettes** (`DRAFT`, `SPAM`, `TRASH`, `SENT`, `INBOX`), la
+même décision que les dossiers de l'agrégateur (#69) ; l'hygiène du corps (le fil cité, le HTML)
+est celle de la frontière, la même pour les deux. **Retenu contre** une relecture périodique des
+boîtes (un processus ou un cron de plus, et des minutes de retard) et contre un secret partagé
+dans l'URL du webhook (c'est ce que l'agrégateur impose ; Google sait signer).
+
 ### L'e-mail, c'est Gmail : l'agrégateur ne garde que WhatsApp et les boîtes déjà reliées
 
 **`tranché`** · Par le dirigeant, le 2026-10-28, à la livraison de la tranche 2 de M24. Le plan

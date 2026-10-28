@@ -187,7 +187,9 @@ fournisseur est **unique**, tous comptes confondus : c'est lui qui résout le co
 webhook — l'identifiant opaque de l'agrégateur, l'adresse de la boîte pour Gmail. Pour une boîte
 Gmail, les données de connexion portent les **jetons OAuth chiffrés** (AES-256-GCM, la clé hors
 de la base), l'échéance du jeton d'accès et les périmètres accordés — jamais un jeton en clair,
-jamais dans le journal. Une boîte se **connecte** en deux temps : le canal est préparé « en
+jamais dans le journal —, puis ce que la réception par notification retient : le **dernier numéro
+d'historique** relu et l'**échéance de l'abonnement** aux changements. Ces deux-là sont de
+l'infrastructure, écrits au passage sans journal ; une reconnexion les garde. Une boîte se **connecte** en deux temps : le canal est préparé « en
 attente » avant la page du fournisseur, puis **finalisé** quand le fournisseur a dit oui — le
 retour du consentement pour le relais, le webhook pour l'agrégateur — avec son adresse pour nom
 et pour identifiant ; une boîte déjà reliée, à ce compte ou à un autre, est un conflit, et

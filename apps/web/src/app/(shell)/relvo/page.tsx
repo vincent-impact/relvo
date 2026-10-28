@@ -106,12 +106,15 @@ export default async function ConversationPage({
     const boites = await db.channel.findMany({
       where: { type: "email", config: { externalAccountId: { not: null } } },
       include: {
-        config: { select: { externalAccountId: true, updatedAt: true } },
+        config: {
+          select: { externalAccountId: true, updatedAt: true, provider: true },
+        },
         catchups: { select: { id: true }, take: 1 },
       },
     });
     const enRoute = boites.find((b) => boiteEnMiseEnRoute(b));
-    if (enRoute) lecture = carteEnAttente(enRoute.name);
+    if (enRoute)
+      lecture = carteEnAttente(enRoute.name, enRoute.config?.provider);
     else if (connected === "1" && boites.length === 0) {
       // Revenu du fournisseur avant son webhook : rien en base encore, la
       // carte dit que ça commence, le rafraîchissement fera le reste.

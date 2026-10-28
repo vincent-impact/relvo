@@ -304,13 +304,65 @@ de retour sans état répond `303` vers Canaux avec le motif `perdu`, anonyme ve
 fait en production avec sa boîte). D'ici la tranche 5, une boîte Gmail connectée reste « en
 attente » : rien n'est lu — c'est dit à la livraison.
 
+## Tranche 4 — « Recevoir » (M24.3, M24.6)
+
+**Livré.**
+- **La frontière** : `server/courrier/corps.ts` — l'hygiène du corps (le fil cité retiré, le
+  HTML aplati ou gardé fidèle, les adresses lues d'un en-tête), extraite de l'agrégateur et
+  partagée ; `server/unipile/map.ts` l'appelle.
+- **Le relais** `server/gmail/` : `api.ts` (l'API Gmail en `fetch` : profil, `users.watch`,
+  l'historique depuis un numéro, un message entier, une pièce jointe ; un 404 rend `null` là
+  où il a un sens), `donnees.ts` (ce que le relais sait d'une boîte, lu hors tenant par
+  l'adresse — la clé d'une notification sans session —, et l'écriture d'infrastructure de ses
+  données), `acces.ts` (le jeton d'accès valide : rafraîchi sous la minute, réécrit chiffré ;
+  `invalid_grant` passe le canal « en erreur » par le domaine), `courrier.ts` (Gmail → la
+  forme pivot : nature par étiquettes, arbre MIME, pièces nommées, date de la boîte, fil
+  `threadId`), `abonnement.ts` + `abonnement-regles.ts` (`poserLAbonnement` à la connexion et
+  au renouvellement, `renouvelerLesAbonnements` pour le cron, sous deux jours ; le numéro
+  d'historique retenu ne bouge pas au renouvellement), `reception.ts`
+  (`recevoirNotification` : l'historique depuis le dernier numéro, les brouillons sautés,
+  chaque message par `recevoirCourrier` — le même chemin que l'agrégateur —, le numéro
+  avancé, l'abonnement renouvelé au passage), `verification.ts` (le jeton OIDC de Pub/Sub
+  vérifié avec `jose` : émetteur Google, audience = notre webhook, auteur = notre compte de
+  service, vérifié ; le corps Pub/Sub décodé). `/api/webhooks/gmail` : `POST`, répond
+  aussitôt, travaille dans `after` ; 503 sans compte de service configuré, 401 sans jeton
+  valable, 200 pour un corps illisible ou une boîte inconnue (rien à rejouer).
+- **Le fournisseur** : `lirePieceJointe` lit par l'API ; `etatDuCompte` dit l'état par
+  l'abonnement — et le repose s'il manque, la page Canaux étant le second filet. Le retour du
+  consentement pose l'abonnement ; le cron du matin renouvelle toutes les boîtes (pas de
+  troisième cron).
+- **L'interface** : pour une boîte du relais sans lecture, la carte dit « La boîte est
+  reliée : je reçois chaque nouveau message. La lecture des deux dernières semaines arrive
+  avec une prochaine mise à jour » (`a-venir`), sans compteurs ni respiration, et la page ne se
+  rafraîchit pas pour elle (`lectureAttendue`) — honnête jusqu'à la tranche 5.
+- `jose` en dépendance directe. `GMAIL_PUBSUB_TOPIC`, `GMAIL_PUSH_SERVICE_ACCOUNT` (`README`,
+  `.env.example`). `02-modele-donnees.md` (le numéro d'historique et l'échéance dans les
+  données de connexion), `ecarts` (« La réception Gmail : par notification, incrémentale,
+  authentifiée par Google »). Tests web : `gmail-courrier.test.ts` (nature par étiquettes,
+  un reçu complet avec sa pièce et son fil, un envoi externe, brouillon et indésirable, la
+  date, l'arbre MIME, les adresses), `gmail-webhook.test.ts` (le jeton OIDC accepté puis
+  refusé pour un autre compte, non vérifié, une autre audience, une autre clé ; le corps
+  Pub/Sub ; le renouvellement sous deux jours).
+
+**Vérification.** Typage, lint, 240 tests de l'application ; rendu headless de la carte
+« lecture à venir » sur Canaux (clair et sombre), l'échange et l'accueil, avec une boîte Gmail
+posée par le domaine sur le compte local ; le webhook local répond 503 sans compte de service et
+405 en `GET`. **Pas vérifié en local** : une notification réelle (Pub/Sub ne pousse que sur une
+adresse publique). Se vérifie en production, une fois le sujet, le compte de service et
+l'abonnement push créés par le dirigeant et les deux variables posées : un e-mail envoyé à la
+boîte apparaît dans Relvo en quelques secondes, avec sa pièce jointe.
+
 ## Où on en est
 
-**Chantier ouvert le 2026-10-28.** Découpage validé ; tranches 1 à 3 livrées en production le
-jour même. **Ce que la tranche 3 attend du dirigeant** : passer l'écran de consentement de
-**Test** à **Production** (les pages légales existent, leurs liens sont posés) — ou, en
-attendant, ajouter chaque testeur comme utilisateur de test ; puis relier sa propre boîte par
-Google depuis Canaux pour vérifier le retour réel.
+**Chantier ouvert le 2026-10-28.** Découpage validé ; tranches 1 à 4 livrées en production le
+jour même. L'écran de consentement est **en production** (non vérifiée : avertissement Google,
+cent comptes), le branding soumis ; le dirigeant a relié une seconde boîte par le relais, le
+retour réel de Google est vérifié. **Ce que la tranche 4 attend du dirigeant** : dans la
+console Google, le sujet Pub/Sub `gmail-relvo` avec le droit « Éditeur Pub/Sub » pour
+`gmail-api-push@system.gserviceaccount.com`, le compte de service `relvo-webhook` sans rôle ni
+clé, l'abonnement push `gmail-relvo-app` vers `https://app.relvo.net/api/webhooks/gmail` avec
+l'authentification par ce compte ; puis les deux variables en production — l'abonnement de sa
+boîte se pose à l'ouverture de Canaux ou au cron du matin.
 
 **L'infrastructure posée le 2026-10-28, avec le dirigeant** (tranche 0 et le socle de la
 tranche 1) : le domaine `relvo.net` acheté chez Ionos, au nom de l'organisation ; `relvo.net`,
@@ -332,7 +384,7 @@ production non vérifiée, Google avertit et plafonne à cent utilisateurs, sans
 - [x] Tranche 1 — « L'adresse » (M24.10)
 - [x] Tranche 2 — « Le fournisseur derrière le canal » (M24.1)
 - [x] Tranche 3 — « Se connecter à Gmail » (M24.2)
-- [ ] Tranche 4 — « Recevoir » (M24.3, M24.6)
+- [x] Tranche 4 — « Recevoir » (M24.3, M24.6)
 - [ ] Tranche 5 — « Lire les quatorze jours » (M24.4)
 - [ ] Tranche 6 — « Répondre » (M24.5)
 - [ ] Tranche 7 — « Dix boîtes dans l'interface » (M24.8)

@@ -12,7 +12,11 @@ export const MISE_EN_ROUTE_MS = 30 * 60 * 1000;
 
 type CanalEnRoute = {
   type: string;
-  config: { externalAccountId: string | null; updatedAt: Date } | null;
+  config: {
+    externalAccountId: string | null;
+    updatedAt: Date;
+    provider?: string | null;
+  } | null;
   catchups: { id: string }[];
 };
 
@@ -26,10 +30,22 @@ export function boiteEnMiseEnRoute(
   return now - ch.config.updatedAt.getTime() < MISE_EN_ROUTE_MS;
 }
 
-/** La carte d'une lecture qui n'a pas encore commencé : les compteurs à zéro, Relvo qui respire. */
-export function carteEnAttente(channelName: string | null): CarteVivanteData {
+/** Une boîte en mise en route dont la lecture va VENIR : pas celle du relais Gmail, qui ne lit pas encore à la connexion (M24.4). */
+export function lectureAttendue(ch: CanalEnRoute, now?: number): boolean {
+  return boiteEnMiseEnRoute(ch, now) && ch.config?.provider !== "gmail";
+}
+
+/**
+ * La carte d'une lecture qui n'a pas encore commencé : les compteurs à zéro,
+ * Relvo qui respire. Pour une boîte du relais Gmail, la lecture n'est pas en
+ * route : elle arrive avec M24.4, et la carte le dit plutôt que de respirer.
+ */
+export function carteEnAttente(
+  channelName: string | null,
+  provider?: string | null,
+): CarteVivanteData {
   return {
-    status: "pending",
+    status: provider === "gmail" ? "a-venir" : "pending",
     messagesImported: 0,
     messagesTriaged: 0,
     subjectsOpened: 0,

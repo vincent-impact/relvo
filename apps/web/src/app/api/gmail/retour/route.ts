@@ -11,6 +11,7 @@ import { type MotifDeRetour, pageDeRetour } from "@/server/courrier/retour";
 import { getCurrentAccountId } from "@/server/auth-context";
 import { tenantDb } from "@/lib/tenant-db";
 import { reprendreEtat } from "@/server/gmail/etat";
+import { poserLAbonnement } from "@/server/gmail/abonnement";
 import { donneesDepuisJetons } from "@/server/gmail/jetons";
 import {
   adresseDuJeton,
@@ -72,6 +73,18 @@ export async function GET(req: Request) {
     // qui vaut réponse, jamais le clic ; les étapes qui restent se posent.
     await resolveMailboxStep(db, adresse);
     await ensureOnboardingQuestions(db, accountId);
+    // La boîte publie ses changements dès maintenant (M24.3). Sans sujet
+    // configuré, ou si Google refuse, la connexion tient quand même : le cron
+    // du matin reposera l'abonnement.
+    try {
+      await poserLAbonnement(adresse);
+    } catch (err) {
+      console.error(
+        "[gmail] abonnement non posé à la connexion",
+        { adresse },
+        err,
+      );
+    }
   } catch (err) {
     if (isDomainError(err)) {
       console.warn("[gmail] connexion refusée", {

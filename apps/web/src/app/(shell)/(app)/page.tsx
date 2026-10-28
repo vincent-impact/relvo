@@ -85,13 +85,14 @@ async function lectureEnDirect() {
   const boites = await db.channel.findMany({
     where: { type: "email", config: { externalAccountId: { not: null } } },
     include: {
-      config: { select: { externalAccountId: true, updatedAt: true } },
+      config: {
+        select: { externalAccountId: true, updatedAt: true, provider: true },
+      },
       catchups: { select: { id: true }, take: 1 },
     },
   });
-  return boites.some((b) => boiteEnMiseEnRoute(b))
-    ? carteEnAttente(null)
-    : null;
+  const enRoute = boites.find((b) => boiteEnMiseEnRoute(b));
+  return enRoute ? carteEnAttente(null, enRoute.config?.provider) : null;
 }
 
 async function Brief({

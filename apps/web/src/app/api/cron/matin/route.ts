@@ -9,6 +9,7 @@ import {
   wasPushSentSince,
 } from "@relvo/db";
 import { getStorage } from "@relvo/storage";
+import { renouvelerLesAbonnements } from "@/server/gmail/abonnement";
 import { notificationDuMatin } from "@/server/push/brief";
 import { envoyerNotification } from "@/server/push/envoyer";
 
@@ -22,6 +23,9 @@ import { envoyerNotification } from "@/server/push/envoyer";
 //      les compteurs du jour en une phrase, poussés vers l'accueil. Un calcul,
 //      aucune génération ; une fois par jour, le journal fait foi ; rien quand
 //      tout est à zéro.
+//   3. Les abonnements Gmail (M24.3) : `users.watch` expire en sept jours ; toute
+//      boîte du relais dont l'abonnement manque ou expire sous deux jours le
+//      repose ici — le webhook le fait aussi au passage, pas de troisième cron.
 //
 // Appelable à la main avec le même secret :
 //   curl -H "Authorization: Bearer $CRON_SECRET" https://<app>/api/cron/matin
@@ -65,5 +69,12 @@ export async function GET(request: Request) {
   }
   console.info("[cron] matin — briefs", briefs);
 
-  return NextResponse.json({ drainage: { ...drainage, remaining }, briefs });
+  const abonnements = await renouvelerLesAbonnements();
+  console.info("[cron] matin — abonnements Gmail", abonnements);
+
+  return NextResponse.json({
+    drainage: { ...drainage, remaining },
+    briefs,
+    abonnements,
+  });
 }

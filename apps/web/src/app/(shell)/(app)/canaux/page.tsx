@@ -23,7 +23,11 @@ import { fournisseurDe } from "@/server/courrier";
 import { MOTIFS_DE_RETOUR, estUnMotifDeRetour } from "@/server/courrier/retour";
 import { relancerLignesEnPanne } from "@/server/ia/pipeline/rattrapage";
 import { estEnPanne } from "@/server/ia/pipeline/rattrapage-regles";
-import { boiteEnMiseEnRoute, carteEnAttente } from "@/server/lecture-en-cours";
+import {
+  boiteEnMiseEnRoute,
+  carteEnAttente,
+  lectureAttendue,
+} from "@/server/lecture-en-cours";
 import {
   type ChannelConfigStatus,
   MAX_EMAIL_CHANNELS,
@@ -130,7 +134,7 @@ async function ChannelList({ connected }: { connected: boolean }) {
     })),
     ...enMiseEnRoute.map((ch) => ({
       channelId: ch.id,
-      ...carteEnAttente(plusieurs ? ch.name : null),
+      ...carteEnAttente(plusieurs ? ch.name : null, ch.config?.provider),
     })),
   ];
   // Au retour de la page du fournisseur (`connected=1`), la page se rafraîchit
@@ -141,7 +145,7 @@ async function ChannelList({ connected }: { connected: boolean }) {
     connected &&
     channels.some((ch) =>
       ch.type === "email"
-        ? boiteEnMiseEnRoute(ch, now)
+        ? lectureAttendue(ch, now)
         : statuts[channels.indexOf(ch)] !== "connected",
     );
   // Une ligne dont plus aucune tranche ne s'occupe est relancée après la

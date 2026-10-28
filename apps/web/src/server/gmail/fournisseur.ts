@@ -5,11 +5,15 @@ import type { FournisseurCourrier } from "@/server/courrier/types";
 import { jetonsDepuisDonnees } from "./jetons";
 import { revoquer } from "./oauth";
 
-// Le RELAIS GMAIL, derrière le contrat de la frontière (M24). Tranche 3 : la
-// boîte se connecte et se reconnecte par le consentement de Relvo, ses jetons
-// vivent chiffrés dans sa configuration, et la suppression du canal révoque
-// l'accès. La lecture, les pièces jointes et l'envoi arrivent aux tranches
-// suivantes — d'ici là, ils le disent, ils ne se taisent pas.
+// Le RELAIS GMAIL, derrière le contrat de la frontière (M24). La boîte se
+// connecte et se reconnecte par le consentement de Relvo, ses jetons vivent
+// chiffrés dans sa configuration, la suppression du canal révoque l'accès ; le
+// courrier arrive par notification (`reception.ts`) et les pièces jointes se
+// relisent par l'API. La lecture à la connexion et l'envoi arrivent aux
+// tranches suivantes — d'ici là, ils le disent, ils ne se taisent pas.
+//
+// L'accès (`acces.ts`) et l'API se chargent à la demande : ce module reste
+// importable sans base, par les tests de la frontière.
 
 function pasEncore(quoi: string): never {
   throw new DomainError(
@@ -25,8 +29,21 @@ export const fournisseurGmail: FournisseurCourrier = {
     return pasEncore("lire le courrier d'une boîte");
   },
 
-  async lirePieceJointe() {
-    return pasEncore("lire une pièce jointe");
+  async lirePieceJointe({ externalAccountId }, { emailId, pieceId }) {
+    const [{ jetonDAcces }, { lirePieceJointe }] = await Promise.all([
+      import("./acces"),
+      import("./api"),
+    ]);
+    const acces = await jetonDAcces(externalAccountId);
+    const bytes = await lirePieceJointe(acces, emailId, pieceId);
+    if (!bytes) {
+      throw new DomainError(
+        "NOT_FOUND",
+        "Cette pièce jointe n'existe plus chez Google.",
+      );
+    }
+    // Le type vient de la partie MIME, que le courrier porte déjà (`piece.mime`).
+    return { bytes, contentType: null };
   },
 
   async envoyer() {
@@ -34,13 +51,38 @@ export const fournisseurGmail: FournisseurCourrier = {
   },
 
   /**
-   * Le relais n'interroge pas Google pour dire l'état d'une boîte : il
-   * l'apprend quand un jeton se rafraîchit (tranche 4), et l'écrit alors. Sans
-   * réponse ici, la page garde ce qu'elle sait — jamais un appel par canal à
-   * chaque affichage.
+   * L'état d'une boîte du relais, c'est son ABONNEMENT aux changements : s'il
+   * tient, la boîte est connectée ; s'il manque ou expire, on le repose ici
+   * même — la page Canaux devient le second filet après le cron du matin — et
+   * Google dit alors si l'accès vaut encore. Sans sujet Pub/Sub configuré, le
+   * relais ne sait rien de plus que la base. Aucun appel à Google tant que
+   * l'abonnement tient.
    */
-  async etatDuCompte() {
-    return null;
+  async etatDuCompte(externalAccountId) {
+    const [
+      { donneesDeLaBoite },
+      { poserLAbonnement, sujetPubSub },
+      { doitRenouveler },
+    ] = await Promise.all([
+      import("./donnees"),
+      import("./abonnement"),
+      import("./abonnement-regles"),
+    ]);
+    if (!sujetPubSub()) return null;
+    const b = await donneesDeLaBoite(externalAccountId);
+    if (!b) return null;
+    if (!doitRenouveler(b.donnees.watchExpireA)) return "connected";
+    try {
+      await poserLAbonnement(externalAccountId);
+      return "connected";
+    } catch (err) {
+      console.error(
+        "[gmail] abonnement non posé depuis la page",
+        { externalAccountId },
+        err,
+      );
+      return "error";
+    }
   },
 
   /** L'accès révoqué chez Google, à partir du jeton que la ligne supprimée portait. */
