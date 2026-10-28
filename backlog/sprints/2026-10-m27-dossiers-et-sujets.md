@@ -216,12 +216,13 @@ mot avait laissé quatre élisions fautives devant une majuscule (« l'Sujet »)
 
 ## Où on en est
 
-**M27 terminée** le jour de son ouverture, en cinq commits poussés et déployés. À vérifier en
-production par le dirigeant, sur son compte : l'arbre de la page Dossiers (replier, entrer), la
-fiche d'un dossier (décrire, les quatre onglets, les ajouts), ranger un sujet d'un glissement et
-depuis sa fiche, déposer une connaissance (le dépôt touche le stockage réel). **Suivant : M24**
-(dix boîtes par compte), puis R9 à R12 du sprint de recette. Hors chantier : la lecture par Relvo
-d'une connaissance déposée (M11), et l'icône « Sujets » du dock à relire au téléphone.
+**M27 terminée et close.** Livrée le jour de son ouverture, en cinq commits poussés et
+déployés, plus la relecture de finition ; **testée et validée en production par le dirigeant sur
+son compte le 2026-10-28** : l'arbre de la page Dossiers (replier, entrer), la fiche d'un dossier
+(décrire, les quatre onglets, les ajouts), ranger un sujet d'un glissement et depuis sa fiche,
+déposer une connaissance avec le stockage réel. **Suivant : M24** (dix boîtes par compte), puis
+R9 à R12 du sprint de recette. Hors chantier : la lecture par Relvo d'une connaissance déposée
+(M11).
 
 - [x] Tranche 1 — « Le mot »
 - [x] Tranche 2 — « L'arbre »
