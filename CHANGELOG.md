@@ -6,6 +6,7 @@
 
 ## 2026-10-29
 
+- **Nouveau** — Si votre boîte était reliée par l'intermédiaire, Relvo vous propose de la relier à nouveau avec Google, quand vous voulez : vos conversations et vos sujets restent, rien ne se perd.
 - **Nouveau** — Quand vous écrivez le premier à un contact depuis un sujet, Relvo propose d'office la boîte par laquelle il vous joint, et vous pouvez en choisir une autre. Sa fiche le dit aussi. Après votre première boîte, Relvo vous demande une fois si vous en avez une autre à lui confier.
 - **Nouveau** — Depuis une boîte reliée par Google, votre réponse part de votre adresse et arrive chez votre interlocuteur dans le fil de son e-mail, comme si vous aviez répondu depuis Gmail. La conversation ne la montre qu'une fois.
 
