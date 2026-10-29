@@ -211,6 +211,15 @@
   "en_cours": "Dix boîtes e-mail par compte",
   "journal": [
     {
+      "date": "2026-10-29",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "Depuis une boîte reliée par Google, votre réponse part de votre adresse et arrive chez votre interlocuteur dans le fil de son e-mail, comme si vous aviez répondu depuis Gmail. La conversation ne la montre qu'une fois."
+        }
+      ]
+    },
+    {
       "date": "2026-10-28",
       "entrees": [
         {

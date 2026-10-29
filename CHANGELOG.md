@@ -4,6 +4,10 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-10-29
+
+- **Nouveau** — Depuis une boîte reliée par Google, votre réponse part de votre adresse et arrive chez votre interlocuteur dans le fil de son e-mail, comme si vous aviez répondu depuis Gmail. La conversation ne la montre qu'une fois.
+
 ## 2026-10-28
 
 - **Nouveau** — Dès qu'une boîte Gmail est reliée, Relvo lit le courrier des deux dernières semaines et ouvre vos premiers sujets, comme avant. Une boîte reliée ces derniers jours démarre sa lecture à votre prochaine visite de la page Canaux.
