@@ -59,18 +59,9 @@ describe("fournisseurDe", () => {
     expect((await fournisseurDe(null)).nom).toBe("unipile");
   });
 
-  it("charge le relais Gmail, qui dit ce qu'il ne sait pas encore faire", async () => {
+  it("charge le relais Gmail sans base ni réseau", async () => {
     const g = await fournisseurDe("gmail");
     expect(g.nom).toBe("gmail");
-    await expect(
-      g.envoyer({
-        provider: "gmail",
-        externalAccountId: "moi@gmail.com",
-        to: [{ identifier: "a@b.fr" }],
-        subject: "Re:",
-        body: "ok",
-      }),
-    ).rejects.toThrow(/relais Gmail/);
   });
 });
 

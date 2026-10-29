@@ -21,6 +21,13 @@ export type OutboundEmail = {
   to: { identifier: string; display_name?: string }[];
   subject: string;
   body: string;
+  /**
+   * Le message auquel on répond, tel que le fournisseur le nomme — le dernier
+   * reçu de la conversation sur ce canal —, pour que la réponse parte DANS le
+   * fil (M24.5 : `threadId`, `In-Reply-To`, `References`). Absent quand on
+   * écrit le premier.
+   */
+  enReponseA?: { externalId: string; externalThreadId: string | null } | null;
 };
 
 export type EmailSenderPort = {

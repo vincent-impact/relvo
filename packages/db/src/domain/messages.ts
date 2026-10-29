@@ -28,7 +28,7 @@ import {
 } from "./conversations";
 import { confirmChannelConnected } from "./channels";
 import { CHANNEL_PROVIDERS, type ChannelProvider } from "./channels";
-import type { EmailSenderPort } from "./email-port";
+import type { EmailSenderPort, OutboundEmail } from "./email-port";
 import type {
   WhatsAppChatDirectoryPort,
   WhatsAppSenderPort,
@@ -889,6 +889,9 @@ export async function sendEmailReply(
   // L'objet : celui du FIL de départ quand on l'a (« Re: <objet> »), sinon
   // celui que l'appelant impose.
   let subjectLine = data.subject ?? "Re:";
+  // Le message auquel on répond : le dernier reçu de la conversation sur ce
+  // canal — c'est par lui que le fournisseur met la réponse dans le fil.
+  let enReponseA: OutboundEmail["enReponseA"] = null;
   if (data.conversationId) {
     const conversation = assertFound(
       await db.conversation.findFirst({
@@ -898,6 +901,22 @@ export async function sendEmailReply(
       "Conversation",
     );
     subjectLine = replySubjectLine(conversation.title);
+    const dernierRecu = await db.message.findFirst({
+      where: {
+        conversationId: data.conversationId,
+        channelId: data.channelId,
+        direction: MessageDirection.incoming,
+        externalId: { not: null },
+      },
+      orderBy: { receivedAt: "desc" },
+      select: { externalId: true, externalThreadId: true },
+    });
+    if (dernierRecu?.externalId) {
+      enReponseA = {
+        externalId: dernierRecu.externalId,
+        externalThreadId: dernierRecu.externalThreadId ?? null,
+      };
+    }
   }
 
   let emailId: string | null;
@@ -911,6 +930,7 @@ export async function sendEmailReply(
       })),
       subject: subjectLine,
       body: data.body,
+      enReponseA,
     }));
   } catch (error) {
     await markChannelUnhealthyIfNeeded(db, data.channelId, error);
@@ -930,19 +950,37 @@ export async function sendEmailReply(
     )?.id ??
     null;
 
-  return createMessage(db, {
-    channelId: data.channelId,
-    direction: MessageDirection.outgoing,
-    subjectId: data.subjectId,
-    recipientContactId,
-    // Le SET complet → `participantsRaw` recalculé = celui de la conversation
-    // d'origine → le sortant retombe dans LA MÊME conversation e-mail.
-    recipients: identifiers,
-    externalId: emailId,
-    subjectLine,
-    content: data.body,
-    status: MessageStatus.sent,
-  });
+  try {
+    return await createMessage(db, {
+      channelId: data.channelId,
+      direction: MessageDirection.outgoing,
+      subjectId: data.subjectId,
+      recipientContactId,
+      // Le SET complet → `participantsRaw` recalculé = celui de la conversation
+      // d'origine → le sortant retombe dans LA MÊME conversation e-mail.
+      recipients: identifiers,
+      externalId: emailId,
+      subjectLine,
+      content: data.body,
+      status: MessageStatus.sent,
+    });
+  } catch (err) {
+    // L'écho de notre envoi a pu entrer AVANT nous (le relais Gmail notifie en
+    // quelques secondes, M24.5) : le message est en base sous le même
+    // identifiant, c'est lui qu'on rend — jamais un doublon, jamais une
+    // erreur sur un e-mail parti.
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002" &&
+      emailId
+    ) {
+      const echo = await db.message.findFirst({
+        where: { channelId: data.channelId, externalId: emailId },
+      });
+      if (echo) return echo;
+    }
+    throw err;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────

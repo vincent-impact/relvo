@@ -6,14 +6,20 @@ import {
   ingestInboundEmail,
   ingestInboundWhatsApp,
   prisma,
+  type OutboundEmail,
   sendEmailReply,
   stopListeningOnConversation,
   tenantDb,
 } from "../src/index";
 
 // Faux port d'envoi e-mail : aucun credential, aucun réseau (cf. email-port.ts).
+// Il retient ce qu'on lui a demandé d'envoyer : la réponse dit dans quel fil.
+let dernierEnvoi: OutboundEmail | null = null;
 const FAKE_EMAIL_SENDER = {
-  sendEmail: async () => ({ emailId: "out-1" }),
+  sendEmail: async (courrier: OutboundEmail) => {
+    dernierEnvoi = courrier;
+    return { emailId: "out-1" };
+  },
 };
 
 /** Marque un canal comme CONNECTÉ (externalAccountId requis par l'envoi). */
@@ -181,11 +187,15 @@ describe("envoi e-mail — reply-all reste dans la MÊME conversation (M6quater)
     const out = await sendEmailReply(db, FAKE_EMAIL_SENDER, {
       subjectId: subject.id,
       channelId: channel.id,
+      conversationId: group.message.conversationId,
       to: [{ identifier: KARIM }, { identifier: SOPHIE }],
       subject: "Re: Commande palettes",
       body: "Bien noté",
     });
 
+    // La réponse part DANS le fil : le dernier reçu de la conversation, tel
+    // que le fournisseur le nomme (M24.5).
+    expect(dernierEnvoi?.enReponseA?.externalId).toBe(group.message.externalId);
     expect(out.conversationId).toBe(group.message.conversationId);
     expect(out.subjectId).toBe(subject.id);
     // Aucun fil fantôme : toujours une seule conversation e-mail.

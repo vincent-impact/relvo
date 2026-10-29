@@ -153,3 +153,24 @@ export function adressesDe(ligne: string | null | undefined): string[] {
     .map((p) => adresseEtNom(p).adresse)
     .filter((a): a is string => Boolean(a));
 }
+
+/**
+ * Un texte brut (retours à la ligne, tabulations) en HTML qui préserve la mise
+ * en forme — ce que les deux fournisseurs envoient à côté du texte. On échappe
+ * le HTML puis on rétablit sauts de ligne (`<br>`), tabulations et indentations
+ * (`&nbsp;`) ; `white-space:pre-wrap` en ceinture-bretelles pour les clients
+ * tolérants.
+ */
+export function htmlDepuisTexte(text: string): string {
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  const inner = escaped
+    .replace(/\r\n?/g, "\n")
+    .replace(/\t/g, "&nbsp;&nbsp;&nbsp;&nbsp;")
+    // Les espaces consécutifs sont fusionnés par le rendu HTML → on les fige.
+    .replace(/ {2,}/g, (run) => "&nbsp;".repeat(run.length))
+    .replace(/\n/g, "<br>");
+  return `<div style="white-space:pre-wrap">${inner}</div>`;
+}

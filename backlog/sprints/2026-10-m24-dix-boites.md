@@ -373,10 +373,35 @@ boîte apparaît dans Relvo en quelques secondes, avec sa pièce jointe.
 production : ouvrir Canaux demande la lecture de la boîte reliée avant la tranche ; la carte
 vivante compte, le disque du dock respire, les premiers sujets s'ouvrent.
 
+## Tranche 6 — « Répondre » (M24.5)
+
+**Livré.**
+- **Le domaine** : le port d'envoi `OutboundEmail` porte `enReponseA` — le dernier message
+  reçu de la conversation sur ce canal, tel que le fournisseur le nomme —, posé par
+  `sendEmailReply` ; et si l'écho de l'envoi est entré avant que le domaine n'écrive le sien
+  (l'unicité de l'identifiant tranche), c'est l'écho qui est rendu, jamais un doublon ni une
+  erreur sur un e-mail parti. Test : `m6quater` (la réponse dit dans quel fil elle part).
+- **Le relais** : `server/gmail/mime.ts` (le message MIME à la main — texte et HTML en
+  `multipart/alternative`, base64 plié à 76, RFC 2047 pour l'objet et les noms, un
+  destinataire par ligne pliée, `In-Reply-To` et `References`), `api.ts` (`lireEnTetesDeFil`
+  en `format=metadata`, `envoyerMessage` avec `threadId` ; un 401/403 marque le canal malade,
+  comme chez l'agrégateur), `fournisseur.ts` (`envoyer` : les en-têtes de fil relus chez
+  Google, le MIME, l'envoi dans le fil, l'identifiant rendu = celui de l'écho). Le relais n'a
+  plus rien « pas encore ».
+- **La frontière** : `htmlDepuisTexte` dans `courrier/corps.ts`, le même HTML pour les deux
+  fournisseurs (l'agrégateur l'appelle).
+- `ecarts` (« L'envoi par le relais »), `05-ia.md` (l'écho, par le fournisseur). Tests web :
+  `gmail-mime.test.ts` (les en-têtes, l'encodage, le fil, les deux corps relus, les lignes).
+
+**Vérification.** Typage, lint, 244 tests de l'application, les tests du domaine de l'envoi.
+L'envoi réel se vérifie en production par le dirigeant : une réponse depuis Relvo sur un sujet
+de la boîte reliée par le relais arrive chez l'interlocuteur **dans le fil**, et la conversation
+ne la montre qu'une fois.
+
 ## Où on en est
 
 **Chantier ouvert le 2026-10-28.** Découpage validé ; tranches 1 à 5 livrées en production le
-jour même. L'écran de consentement est **en production** (non vérifiée : avertissement Google,
+jour même, la tranche 6 le 2026-10-29. L'écran de consentement est **en production** (non vérifiée : avertissement Google,
 cent comptes), le branding soumis. **La réception par le relais est vérifiée en production** :
 le dirigeant a relié une seconde boîte par Google, créé le sujet Pub/Sub `gmail-relvo` (la
 règle d'organisation « Partage restreint au domaine » levée le temps d'y autoriser
@@ -384,9 +409,7 @@ règle d'organisation « Partage restreint au domaine » levée le temps d'y aut
 `relvo-webhook` et l'abonnement push authentifié ; `GMAIL_PUBSUB_TOPIC` et
 `GMAIL_PUSH_SERVICE_ACCOUNT` sont posées, et un e-mail reçu sur la boîte apparaît dans Relvo.
 **La lecture des quatorze jours par le relais est validée en production** par le dirigeant.
-**Reprise** : la tranche 6, « Répondre » — l'envoi par `gmail.send` dans le fil (`threadId`,
-`In-Reply-To`, `References`), l'écho de notre envoi reconnu par l'identifiant du message
-envoyé ; puis 7 et 8. ⚠️ Pour la tranche 8 : les identifiants de message du relais ne sont pas
+**Reprise** : la tranche 7, « Dix boîtes dans l'interface », puis la 8, « Migrer ». ⚠️ Pour la tranche 8 : les identifiants de message du relais ne sont pas
 ceux de l'agrégateur — une boîte migrée ne doit **pas** redemander une lecture, sinon ses
 messages entrent deux fois.
 
@@ -412,6 +435,6 @@ production non vérifiée, Google avertit et plafonne à cent utilisateurs, sans
 - [x] Tranche 3 — « Se connecter à Gmail » (M24.2)
 - [x] Tranche 4 — « Recevoir » (M24.3, M24.6)
 - [x] Tranche 5 — « Lire les quatorze jours » (M24.4)
-- [ ] Tranche 6 — « Répondre » (M24.5)
+- [x] Tranche 6 — « Répondre » (M24.5)
 - [ ] Tranche 7 — « Dix boîtes dans l'interface » (M24.8)
 - [ ] Tranche 8 — « Migrer » (M24.9)

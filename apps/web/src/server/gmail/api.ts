@@ -63,12 +63,20 @@ async function appel<T>(
       status: res.status,
       message: erreur?.message,
     });
+    const refus = res.status === 401 || res.status === 403;
     throw new DomainError(
       "INVALID_STATE",
-      res.status === 401 || res.status === 403
-        ? "Google refuse l'accès à cette boîte : reconnectez-la."
+      refus
+        ? "Google refuse l'accès à cette boîte : reconnectez-la depuis la page Canaux."
         : "Google n'a pas répondu. Réessayez dans un instant.",
-      { details: { google: res.status } },
+      // `channelUnhealthy` : le domaine bascule le canal « en erreur » et la
+      // page Canaux montre « Reconnecter » (comme chez l'agrégateur).
+      {
+        details: {
+          google: res.status,
+          ...(refus ? { channelUnhealthy: true } : {}),
+        },
+      },
     );
   }
   return { status: res.status, json };
@@ -181,6 +189,58 @@ export async function lireMessage(
   });
   if (status === 404 || !json?.id) return null;
   return json;
+}
+
+/** Les en-têtes de fil d'un message — pour répondre dedans. `null` s'il n'existe plus. */
+export async function lireEnTetesDeFil(
+  acces: string,
+  id: string,
+): Promise<{
+  threadId: string | null;
+  messageId: string | null;
+  references: string | null;
+} | null> {
+  const url = new URL(`${BASE}/messages/${id}`);
+  url.searchParams.set("format", "metadata");
+  for (const h of ["Message-ID", "References"]) {
+    url.searchParams.append("metadataHeaders", h);
+  }
+  const res = await fetch(url, {
+    headers: { authorization: `Bearer ${acces}` },
+  });
+  if (res.status === 404) return null;
+  const json = (await res.json().catch(() => null)) as MessageGmail | null;
+  if (!res.ok || !json?.id) return null;
+  const entete = (nom: string) =>
+    json.payload?.headers?.find((h) => h.name.toLowerCase() === nom)?.value ??
+    null;
+  return {
+    threadId: json.threadId ?? null,
+    messageId: entete("message-id"),
+    references: entete("references"),
+  };
+}
+
+/** `users.messages.send` : le message MIME, dans le fil quand on le connaît. */
+export async function envoyerMessage(
+  acces: string,
+  args: { raw: string; threadId: string | null },
+): Promise<{ id: string; threadId: string | null }> {
+  const { json } = await appel<{ id?: string; threadId?: string }>(
+    acces,
+    "messages/send",
+    {
+      method: "POST",
+      body: {
+        raw: args.raw,
+        ...(args.threadId ? { threadId: args.threadId } : {}),
+      },
+    },
+  );
+  if (!json?.id) {
+    throw new DomainError("INVALID_STATE", "Google n'a pas confirmé l'envoi.");
+  }
+  return { id: json.id, threadId: json.threadId ?? null };
 }
 
 export async function lirePieceJointe(

@@ -1632,6 +1632,25 @@ contre** un second pipeline pour Gmail (c'est exactement la duplication que l'é
 et contre un port par fonction dans le paquet `db` (le domaine n'a pas à connaître la lecture
 d'une boîte : seule l'application lit chez un fournisseur).
 
+### L'envoi par le relais : dans le fil, l'écho reconnu par l'identifiant
+
+**`tranché`** · Le 2026-10-29, à la livraison de la tranche 6 de M24 (M24.5). **Le message
+part en MIME construit à la main** — texte et HTML côte à côte, l'objet et les noms encodés
+quand ils portent un accent, un destinataire par ligne pliée — par `users.messages.send`, sans
+SDK : rien de lourd dans le bundle, et le message se teste sans réseau. **La réponse part dans
+le fil** : le port d'envoi du domaine porte désormais le message auquel on répond (le dernier
+reçu de la conversation sur ce canal, tel que le fournisseur le nomme), et le relais relit ses
+en-têtes de fil chez Google — `threadId`, `Message-ID` en `In-Reply-To`, `References`
+prolongées — plutôt que de les garder en base : un appel à l'envoi, aucune colonne de plus.
+**L'écho est reconnu par l'identifiant** : l'identifiant que Google rend à l'envoi est celui
+sous lequel l'historique rejouera le message sous `SENT`, et c'est lui que le domaine garde ;
+l'écho trouve le message en base et n'entre pas deux fois. Si l'écho arrive **avant** que le
+domaine ait écrit l'envoi (le relais notifie en quelques secondes), l'unicité de l'identifiant
+tranche et le domaine rend l'écho déjà entré — jamais un doublon, jamais une erreur sur un e-mail
+parti. **Retenu contre** une colonne `Message-ID` sur les messages (de l'inventaire pour un
+seul usage) et contre un envoi « à plat » hors du fil (c'est ce que l'agrégateur fait, et c'est
+ce que les clients de messagerie affichent le plus mal).
+
 ### La réception Gmail : par notification, incrémentale, authentifiée par Google
 
 **`tranché`** · Le 2026-10-28, à la livraison de la tranche 4 de M24 (M24.3, M24.6), d'après

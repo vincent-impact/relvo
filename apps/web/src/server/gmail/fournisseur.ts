@@ -10,18 +10,10 @@ import { revoquer } from "./oauth";
 // chiffrés dans sa configuration, la suppression du canal révoque l'accès ; le
 // courrier arrive par notification (`reception.ts`) et les pièces jointes se
 // relisent par l'API, la lecture à la connexion liste la boîte de réception
-// depuis la date. L'envoi arrive à la tranche suivante — d'ici là, il le dit,
-// il ne se tait pas.
+// depuis la date, l'envoi part en MIME dans le fil.
 //
 // L'accès (`acces.ts`) et l'API se chargent à la demande : ce module reste
 // importable sans base, par les tests de la frontière.
-
-function pasEncore(quoi: string): never {
-  throw new DomainError(
-    "INVALID_STATE",
-    `Le relais Gmail ne sait pas encore ${quoi} — bientôt disponible.`,
-  );
-}
 
 export const fournisseurGmail: FournisseurCourrier = {
   nom: "gmail",
@@ -72,8 +64,44 @@ export const fournisseurGmail: FournisseurCourrier = {
     return { bytes, contentType: null };
   },
 
-  async envoyer() {
-    return pasEncore("envoyer un e-mail");
+  /**
+   * L'envoi (M24.5) : le message MIME construit à la main, dans le fil du
+   * message auquel on répond — son `threadId`, son `Message-ID` en
+   * `In-Reply-To`, ses `References` prolongées. L'identifiant rendu est celui
+   * que l'historique rejouera sous `SENT` : l'écho est reconnu, jamais
+   * dupliqué.
+   */
+  async envoyer(courrier) {
+    const [
+      { jetonDAcces },
+      { envoyerMessage, lireEnTetesDeFil },
+      { construireMime, rawPourGmail },
+      { htmlDepuisTexte },
+    ] = await Promise.all([
+      import("./acces"),
+      import("./api"),
+      import("./mime"),
+      import("@/server/courrier/corps"),
+    ]);
+    const acces = await jetonDAcces(courrier.externalAccountId);
+    const fil = courrier.enReponseA
+      ? await lireEnTetesDeFil(acces, courrier.enReponseA.externalId)
+      : null;
+    const mime = construireMime({
+      de: courrier.externalAccountId,
+      a: courrier.to,
+      objet: courrier.subject,
+      texte: courrier.body,
+      html: htmlDepuisTexte(courrier.body),
+      enReponseA: fil
+        ? { messageId: fil.messageId, references: fil.references }
+        : null,
+    });
+    const envoye = await envoyerMessage(acces, {
+      raw: rawPourGmail(mime),
+      threadId: fil?.threadId ?? courrier.enReponseA?.externalThreadId ?? null,
+    });
+    return { emailId: envoye.id };
   },
 
   /**
