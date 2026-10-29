@@ -1,6 +1,11 @@
 import { z } from "zod";
 import { Prisma } from "../generated/prisma/client";
-import { Actor, ContactStatus } from "../generated/prisma/enums";
+import {
+  Actor,
+  type ChannelType,
+  ContactStatus,
+  MessageDirection,
+} from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
 import { assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
@@ -286,4 +291,63 @@ export async function deleteContact(db: TenantDb, id: string) {
   const { count } = await db.contact.deleteMany({ where: { id } });
   ensureAffected(count, "Contact");
   return { id };
+}
+
+/**
+ * LE CANAL PAR LEQUEL UN CONTACT NOUS JOINT (M24.8) : celui du dernier message
+ * reçu de lui. Déduit, jamais saisi — un champ se maintiendrait à la main et
+ * finirait faux ; le dernier message reçu est toujours juste. C'est la boîte
+ * par défaut pour lui écrire le premier, et ce que la fiche dit de lui.
+ * `null` tant qu'on n'a rien reçu de ce contact.
+ */
+export type CanalDuContact = {
+  channelId: string;
+  type: ChannelType;
+  name: string;
+  identifier: string;
+};
+
+export async function canalPrioritaireDuContact(
+  db: TenantDb,
+  contactId: string,
+): Promise<CanalDuContact | null> {
+  const dernier = await db.message.findFirst({
+    where: { senderContactId: contactId, direction: MessageDirection.incoming },
+    orderBy: { receivedAt: "desc" },
+    select: {
+      channel: {
+        select: { id: true, type: true, name: true, identifier: true },
+      },
+    },
+  });
+  if (!dernier) return null;
+  const c = dernier.channel;
+  return {
+    channelId: c.id,
+    type: c.type,
+    name: c.name,
+    identifier: c.identifier,
+  };
+}
+
+/** Le même canal, pour plusieurs contacts à la fois : `contactId` → `channelId`. Une requête. */
+export async function canauxPrioritairesDesContacts(
+  db: TenantDb,
+  contactIds: readonly string[],
+): Promise<Record<string, string>> {
+  if (contactIds.length === 0) return {};
+  const derniers = await db.message.findMany({
+    where: {
+      senderContactId: { in: [...contactIds] },
+      direction: MessageDirection.incoming,
+    },
+    orderBy: { receivedAt: "desc" },
+    distinct: ["senderContactId"],
+    select: { senderContactId: true, channelId: true },
+  });
+  const out: Record<string, string> = {};
+  for (const d of derniers) {
+    if (d.senderContactId) out[d.senderContactId] = d.channelId;
+  }
+  return out;
 }

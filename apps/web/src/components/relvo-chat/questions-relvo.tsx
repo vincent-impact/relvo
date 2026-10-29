@@ -119,9 +119,11 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
       setCleLibre(key);
       return setLibre(true);
     }
-    if (question.connecteBoite) {
-      // La boîte à lire (05 §11.11) : la réponse ouvre la page du fournisseur,
-      // et c'est la connexion qui fermera la question — pas ce clic.
+    // La boîte à lire (05 §11.11) : la clé « gmail » ouvre le consentement
+    // Google (la même que `CLE_RELIER_BOITE` du domaine — pas d'import d'une
+    // valeur de `@relvo/db` dans un composant client), et c'est la connexion
+    // qui fermera la question — pas ce clic. « Non, c'est tout » répond.
+    if (question.connecteBoite && key === "gmail") {
       setBusyKey(key);
       setError(null);
       start(async () => {

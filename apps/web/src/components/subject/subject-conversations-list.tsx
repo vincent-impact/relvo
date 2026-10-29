@@ -18,6 +18,7 @@ import {
   type AddConvContact,
   type AddConvGroup,
   type AddConversationSubmit,
+  type AddConvBoite,
 } from "@/components/subject/add-conversation-dialog";
 import {
   attachConversationToSubjectAction,
@@ -127,6 +128,8 @@ export function SubjectConversationsList({
   availableChannels,
   addContacts,
   groups,
+  boites,
+  boiteParContact,
 }: {
   subjectId: string;
   subjectTitle: string;
@@ -134,6 +137,8 @@ export function SubjectConversationsList({
   availableChannels: ("email" | "whatsapp")[];
   addContacts: AddConvContact[];
   groups: AddConvGroup[];
+  boites: AddConvBoite[];
+  boiteParContact: Record<string, string>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -153,6 +158,7 @@ export function SubjectConversationsList({
               contactId: input.contactId,
               channelType: "email",
               subjectLine: input.subjectLine,
+              channelId: input.channelId ?? undefined,
             })
           : input.kind === "whatsapp-contact"
             ? await extendSubjectToConversationAction({
@@ -211,6 +217,8 @@ export function SubjectConversationsList({
         availableChannels={availableChannels}
         contacts={addContacts}
         groups={groups}
+        boites={boites}
+        boiteParContact={boiteParContact}
         pending={pending}
         onSubmit={handleAdd}
       />

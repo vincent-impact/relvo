@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { canalPrioritaireDuContact } from "@relvo/db";
 import { ContactDetail } from "@/components/contacts/contact-detail";
 import { getTenantDb } from "@/server/auth-context";
 
@@ -42,6 +43,8 @@ export default async function ContactPage({
     },
   });
   if (!contact) notFound();
+  // Le canal par lequel il nous joint (M24.8) : déduit du dernier message reçu.
+  const joint = await canalPrioritaireDuContact(db, contact.id);
 
-  return <ContactDetail contact={contact} backHref={backHref} />;
+  return <ContactDetail contact={contact} backHref={backHref} joint={joint} />;
 }

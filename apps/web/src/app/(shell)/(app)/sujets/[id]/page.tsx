@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Hourglass } from "@/components/shared/picto";
 import {
   getSubjectDetail,
+  canauxPrioritairesDesContacts,
   listChannels,
   listConversationGroups,
   listSubjectConversationRows,
@@ -83,6 +84,19 @@ export default async function SujetPage({
         .map((c) => c.type),
     ),
   ].filter((t): t is "email" | "whatsapp" => t === "email" || t === "whatsapp");
+
+  // Les boîtes e-mail connectées, et celle par laquelle chaque contact nous
+  // joint (M24.8) : le dialog propose celle-là d'office quand il y en a plusieurs.
+  const boites = channels
+    .filter((c) => c.type === "email" && c.config?.status === "connected")
+    .map((c) => ({ id: c.id, name: c.name, identifier: c.identifier }));
+  const boiteParContact =
+    boites.length > 1
+      ? await canauxPrioritairesDesContacts(
+          db,
+          allContacts.map((c) => c.id),
+        )
+      : {};
 
   const { subject, contacts, tasks, events, attachments } = detail;
   // Le fil dans lequel chaque tâche se répond d'un appui (M7.7).
@@ -198,6 +212,8 @@ export default async function SujetPage({
             availableChannels={availableChannels}
             addContacts={addContacts}
             groups={groups.map((g) => ({ id: g.id, title: g.title }))}
+            boites={boites}
+            boiteParContact={boiteParContact}
           />
         }
         documentsCount={attachments.length}

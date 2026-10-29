@@ -90,8 +90,11 @@ function initForm(contact: Contact): EditState {
 export function ContactDetail({
   contact,
   backHref = "/contacts",
+  joint = null,
 }: {
   contact: Contact;
+  /** Le canal par lequel il nous joint — la boîte ou WhatsApp —, déduit du dernier message reçu (M24.8). */
+  joint?: { type: string; identifier: string } | null;
   /** Où revenir au « Retour » — l'origine (conversation/liste) si on vient de là,
    *  sinon l'annuaire. */
   backHref?: string;
@@ -157,7 +160,7 @@ export function ContactDetail({
         <RelvoHeader
           back={backHref}
           title={fullName}
-          hero={<CarteDeVisite contact={contact} auto={auto} />}
+          hero={<CarteDeVisite contact={contact} auto={auto} joint={joint} />}
           action={
             editing ? null : (
               <button
@@ -286,7 +289,15 @@ export function ContactDetail({
 // numéro). Le nom est le titre de la page, centré ; la ligne dessous dit le
 // rôle et l'entreprise, ou la fonction — ce qu'on sait, rien d'autre.
 
-function CarteDeVisite({ contact, auto }: { contact: Contact; auto: boolean }) {
+function CarteDeVisite({
+  contact,
+  auto,
+  joint,
+}: {
+  contact: Contact;
+  auto: boolean;
+  joint: { type: string; identifier: string } | null;
+}) {
   const fullName = contactFullName(contact);
   const initials = initialsFor(fullName);
   const role = contact.role ? (ROLE_LABEL[contact.role] ?? null) : null;
@@ -314,6 +325,14 @@ function CarteDeVisite({ contact, auto }: { contact: Contact; auto: boolean }) {
       {ligne ? (
         <p className="mt-1 max-w-full truncate text-[14px] font-normal text-white/85">
           {ligne}
+        </p>
+      ) : null}
+      {joint ? (
+        // Par où il nous joint : la boîte qui recevra sa prochaine lettre, et
+        // celle qui lui écrira la première (M24.8).
+        <p className="mt-1 max-w-full truncate text-[12.5px] font-normal text-white/70">
+          Vous joint par{" "}
+          {joint.type === "whatsapp" ? "WhatsApp" : joint.identifier}
         </p>
       ) : null}
       {auto ? (

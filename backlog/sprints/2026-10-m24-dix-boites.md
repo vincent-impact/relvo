@@ -398,10 +398,37 @@ L'envoi réel se vérifie en production par le dirigeant : une réponse depuis R
 de la boîte reliée par le relais arrive chez l'interlocuteur **dans le fil**, et la conversation
 ne la montre qu'une fois.
 
+## Tranche 7 — « Dix boîtes dans l'interface » (M24.8)
+
+**Tranché avec le dirigeant** (2026-10-29) : une réponse part toujours par la boîte qui a reçu
+le message — une conversation appartient à un canal, rien à choisir dans le composer. Le choix
+n'existe que pour **écrire le premier** à un contact depuis un sujet ; et là, la boîte proposée
+d'office est **celle par laquelle le contact nous joint**, déduite du dernier message reçu de
+lui, jamais saisie (`ecarts`, « Un dossier pour un contact, un dossier pour une boîte », pour
+ce qui reste à creuser).
+
+**Livré.**
+- **Le domaine** : `canalPrioritaireDuContact` et `canauxPrioritairesDesContacts`
+  (`contacts.ts`) ; `extendSubjectToConversation` prend une boîte (`channelId`) et, sans elle,
+  celle par laquelle le contact nous joint si elle est du bon type, sinon la plus ancienne. La
+  prise en main pose **« Une autre boîte à me confier ? »** après la première
+  (`ETAPES.autreBoite`, une fois, tant qu'il reste de la place) : « Relier une autre boîte
+  Gmail » ouvre le consentement, « Non, c'est tout pour l'instant » répond ; la connexion ferme
+  l'une ou l'autre étape de boîte (`resolveMailboxStep`, `ETAPES_BOITE`), et les deux se lisent
+  vivantes. Tests : `contact-canal.test.ts`, `questions.test.ts` (cinq étapes).
+- **L'interface** : la fiche contact dit « Vous joint par <boîte> » (ou WhatsApp) dans sa carte
+  de visite ; « Ajouter une conversation » montre « Depuis » dès deux boîtes connectées, la
+  boîte du contact présélectionnée et nommée (« Il vous joint par cette boîte ») ; l'échange
+  n'ouvre Google que sur la clé « gmail » ; le backoffice dit « n boîtes » dès la deuxième.
+
+**Vérification.** Typage, lint, 244 tests de l'application, les tests du domaine touchés ;
+rendu headless (clair et sombre) de la fiche contact, du dialog avec le choix de la boîte, de
+l'étape « une autre boîte ? » dans l'échange, de la liste du backoffice.
+
 ## Où on en est
 
 **Chantier ouvert le 2026-10-28.** Découpage validé ; tranches 1 à 5 livrées en production le
-jour même, la tranche 6 le 2026-10-29. L'écran de consentement est **en production** (non vérifiée : avertissement Google,
+jour même, les tranches 6 et 7 le 2026-10-29 ; l'envoi par le relais est **validé en production**. L'écran de consentement est **en production** (non vérifiée : avertissement Google,
 cent comptes), le branding soumis. **La réception par le relais est vérifiée en production** :
 le dirigeant a relié une seconde boîte par Google, créé le sujet Pub/Sub `gmail-relvo` (la
 règle d'organisation « Partage restreint au domaine » levée le temps d'y autoriser
@@ -409,7 +436,7 @@ règle d'organisation « Partage restreint au domaine » levée le temps d'y aut
 `relvo-webhook` et l'abonnement push authentifié ; `GMAIL_PUBSUB_TOPIC` et
 `GMAIL_PUSH_SERVICE_ACCOUNT` sont posées, et un e-mail reçu sur la boîte apparaît dans Relvo.
 **La lecture des quatorze jours par le relais est validée en production** par le dirigeant.
-**Reprise** : la tranche 7, « Dix boîtes dans l'interface », puis la 8, « Migrer ». ⚠️ Pour la tranche 8 : les identifiants de message du relais ne sont pas
+**Reprise** : la tranche 8, « Migrer » — sans relecture des quatorze jours. ⚠️ Pour la tranche 8 : les identifiants de message du relais ne sont pas
 ceux de l'agrégateur — une boîte migrée ne doit **pas** redemander une lecture, sinon ses
 messages entrent deux fois.
 
@@ -436,5 +463,5 @@ production non vérifiée, Google avertit et plafonne à cent utilisateurs, sans
 - [x] Tranche 4 — « Recevoir » (M24.3, M24.6)
 - [x] Tranche 5 — « Lire les quatorze jours » (M24.4)
 - [x] Tranche 6 — « Répondre » (M24.5)
-- [ ] Tranche 7 — « Dix boîtes dans l'interface » (M24.8)
+- [x] Tranche 7 — « Dix boîtes dans l'interface » (M24.8)
 - [ ] Tranche 8 — « Migrer » (M24.9)

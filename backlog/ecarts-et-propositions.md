@@ -2051,6 +2051,19 @@ traverse toutes les routes protégées.
 ⚠️ **La protection par ricochet reste la ligne qui compte** hors navigation de page : le proxy
 raisonne sur des chemins, or une Server Action n'en a pas et le filtre exclut les routes d'API.
 
+### Un dossier pour un contact, un dossier pour une boîte
+
+**`proposé`** · Par le dirigeant, le 2026-10-29, à la livraison de la tranche 6 de M24. Le
+modèle du **contact** a été peu travaillé, et il compte : à l'usage, les dirigeants relient une
+boîte **par activité** — une pour le magasin d'Aubervilliers, une pour celui de Matignon — et
+créent naturellement les dossiers « Aubervilliers » et « Matignon ». Un contact devrait donc
+pouvoir être **rangé dans un dossier**, comme un sujet ; et une **boîte** aussi, ce qui donnerait
+à Relvo un rangement par défaut pour ce qui arrive par elle. À creuser ensemble : ce que le
+dossier d'un contact change au tri (un indice pour Relvo, jamais une règle dure), ce que le
+dossier d'une boîte change au rangement, et comment les deux se contredisent. Ce qui est déjà
+tranché et n'attend pas : le **canal par lequel un contact nous joint** se déduit du dernier
+message reçu de lui, il ne se saisit pas (M24.8).
+
 ### Mesurer le compte réel du premier utilisateur
 
 **`proposé`** · La source la plus fiable sur les données réelles — volumes, proportion de

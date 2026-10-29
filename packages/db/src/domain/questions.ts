@@ -19,6 +19,7 @@ import {
   listFolderProposals,
 } from "./folders";
 import { createNote } from "./knowledge";
+import { MAX_EMAIL_CHANNELS } from "./channels";
 import { domainesTypiquesDe } from "./prise-en-main";
 
 // Domaine QUESTIONS DE RELVO (M18.9, livré par M10 — 02 RelvoQuestion, 05
@@ -230,9 +231,10 @@ async function appliquerDestination(
     // Une réponse libre sur les secteurs : on la note, rien de plus.
     return { kind: "noted" };
   }
-  if (q.originStep === ETAPES.premiereBoite) {
+  if (estUneEtapeBoite(q.originStep)) {
     // La boîte se connecte par la page du fournisseur, et c'est la connexion
-    // qui ferme l'étape (`resolveMailboxStep`) ; une réponse directe est notée.
+    // qui ferme l'étape (`resolveMailboxStep`) ; une réponse directe — « non,
+    // c'est tout » — est notée.
     return { kind: "noted" };
   }
   if (q.originStep?.startsWith(`${ETAPES.finDeLecture}/`)) {
@@ -482,21 +484,21 @@ export async function listOpenQuestions(
   return rows.slice(0, opts.limit ?? 5).map((r) => ({
     id: r.id,
     scope: r.scope,
-    // L'étape « première boîte » se lit VIVANTE — son texte et sa seule
-    // proposition sont ceux du script d'aujourd'hui, jamais ceux enregistrés
-    // quand l'étape a été posée : une boîte proposée avant la décision « l'e-mail,
-    // c'est Gmail » (M24) ne se propose plus.
+    // Les étapes de la boîte se lisent VIVANTES — leur texte et leurs
+    // propositions sont ceux du script d'aujourd'hui, jamais ceux enregistrés
+    // quand l'étape a été posée : une boîte proposée avant la décision
+    // « l'e-mail, c'est Gmail » (M24) ne se propose plus.
     text:
-      r.originStep === ETAPES.premiereBoite
-        ? texteDeLEtape(ETAPES.premiereBoite, r.text)
+      r.originStep && estUneEtapeBoite(r.originStep)
+        ? texteDeLEtape(r.originStep, r.text)
         : r.text,
     proposedAnswers:
-      r.originStep === ETAPES.premiereBoite
-        ? [...BOITES_PROPOSEES]
+      r.originStep && estUneEtapeBoite(r.originStep)
+        ? propositionsDeLEtape(r.originStep, r.proposedAnswers)
         : readProposedAnswers(r.proposedAnswers),
     originStep: r.originStep,
     multiple: r.originStep === ETAPES.domainesTypiques,
-    connecteBoite: r.originStep === ETAPES.premiereBoite,
+    connecteBoite: estUneEtapeBoite(r.originStep),
     about: r.subject
       ? { kind: "subject", label: r.subject.title }
       : r.contact
@@ -517,6 +519,21 @@ export async function listOpenQuestions(
 function texteDeLEtape(step: string, enregistre: string): string {
   const etape = SCRIPT_PRISE_EN_MAIN.find((e) => e.step === step);
   return typeof etape?.text === "string" ? etape.text : enregistre;
+}
+
+/** Les propositions fixes d'une étape ; celles enregistrées quand elles se calculent. */
+function propositionsDeLEtape(
+  step: string,
+  enregistrees: unknown,
+): ProposedAnswer[] {
+  const etape = SCRIPT_PRISE_EN_MAIN.find((e) => e.step === step);
+  return Array.isArray(etape?.proposedAnswers)
+    ? [...etape.proposedAnswers]
+    : readProposedAnswers(enregistrees);
+}
+
+export function estUneEtapeBoite(step: string | null): boolean {
+  return step != null && (ETAPES_BOITE as readonly string[]).includes(step);
 }
 
 export function countOpenQuestions(db: TenantDb): Promise<number> {
@@ -546,6 +563,27 @@ export const BOITES_PROPOSEES = [
   },
 ] as const satisfies readonly ProposedAnswer[];
 
+/**
+ * « Une autre boîte ? » (M24.8) : posée après la première, une fois. Les
+ * dirigeants ont souvent une boîte par activité — un magasin, un chantier.
+ */
+export const AUTRE_BOITE_PROPOSEE = [
+  {
+    key: "gmail",
+    label: "Relier une autre boîte Gmail",
+    hint: "Une adresse pro lue dans Gmail aussi",
+  },
+  { key: "non", label: "Non, c'est tout pour l'instant" },
+] as const satisfies readonly ProposedAnswer[];
+
+/** Les étapes dont une réponse ouvre le consentement de la boîte, et que la connexion ferme. */
+export const ETAPES_BOITE = [
+  "prise-en-main/premiere-boite",
+  "prise-en-main/autre-boite",
+] as const;
+/** La clé qui, dans ces étapes, ouvre la page du fournisseur. */
+export const CLE_RELIER_BOITE = "gmail";
+
 export const ETAPES = {
   secteurs: "prise-en-main/secteurs",
   /** À choix multiples (`keys`) : l'échange le sait par l'étape. */
@@ -553,6 +591,8 @@ export const ETAPES = {
   premiereInstruction: "prise-en-main/premiere-instruction",
   /** La boîte à lire, en dernier : se ferme à la connexion, pas par une réponse. */
   premiereBoite: "prise-en-main/premiere-boite",
+  /** « Une autre boîte ? », après la première (M24.8) ; « non » répond, la connexion ferme. */
+  autreBoite: "prise-en-main/autre-boite",
   /** Préfixe : l'étape porte l'identifiant du rattrapage — une par lecture. */
   finDeLecture: "prise-en-main/fin-de-lecture",
 } as const;
@@ -651,6 +691,13 @@ export const SCRIPT_PRISE_EN_MAIN: readonly EtapeScript[] = [
     proposedAnswers: [...BOITES_PROPOSEES],
     applicable: (c) => c.boitesEmail === 0,
   },
+  {
+    // Après la première boîte, une fois : le même geste, et « non » répond.
+    step: ETAPES.autreBoite,
+    text: "Une autre boîte à me confier ? Beaucoup de dirigeants en ont une par activité — un magasin, un chantier, une marque. Je la lirai de la même façon.",
+    proposedAnswers: [...AUTRE_BOITE_PROPOSEE],
+    applicable: (c) => c.boitesEmail >= 1 && c.boitesEmail < MAX_EMAIL_CHANNELS,
+  },
 ];
 
 /**
@@ -720,18 +767,22 @@ export async function ensureOnboardingQuestions(
 }
 
 /**
- * La BOÎTE EST CONNECTÉE : l'étape « première boîte » encore ouverte se ferme,
- * répondue par la connexion elle-même — c'est le geste qui vaut réponse, pas
- * le clic sur l'option (revenir en arrière de la page du fournisseur ne ferme
- * rien). Appelé par le webhook de connexion ; sans étape ouverte, ne fait rien.
+ * La BOÎTE EST CONNECTÉE : l'étape de boîte encore ouverte — « première
+ * boîte » ou « une autre boîte ? » — se ferme, répondue par la connexion
+ * elle-même — c'est le geste qui vaut réponse, pas le clic sur l'option
+ * (revenir en arrière de la page du fournisseur ne ferme rien). Appelé par le
+ * retour de connexion ; sans étape ouverte, ne fait rien.
  */
 export async function resolveMailboxStep(
   db: TenantDb,
   identifier: string | null,
 ): Promise<{ resolved: boolean }> {
   const q = await db.relvoQuestion.findFirst({
-    where: { originStep: ETAPES.premiereBoite, status: QuestionStatus.open },
-    select: { id: true, text: true },
+    where: {
+      originStep: { in: [...ETAPES_BOITE] },
+      status: QuestionStatus.open,
+    },
+    select: { id: true, text: true, originStep: true },
   });
   if (!q) return { resolved: false };
   const answer = identifier
@@ -750,7 +801,7 @@ export async function resolveMailboxStep(
     actor: Actor.system,
     metadata: {
       outcome: "mailbox-connected",
-      originStep: ETAPES.premiereBoite,
+      originStep: q.originStep,
     },
   });
   return { resolved: true };

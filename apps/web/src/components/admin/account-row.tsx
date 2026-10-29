@@ -25,6 +25,8 @@ export function AccountRow({
     (c) => c.status === "connected",
   ).length;
   const canauxKo = compte.channels.filter((c) => c.status === "error").length;
+  // Dix boîtes par compte (M24) : le nombre se lit ici dès la deuxième.
+  const boites = compte.channels.filter((c) => c.type === "email").length;
 
   return (
     <div
@@ -78,6 +80,7 @@ export function AccountRow({
                   {compte.channels.length === 0
                     ? "aucun canal"
                     : `${canauxOk}/${compte.channels.length} ${compte.channels.length > 1 ? "canaux" : "canal"}`}
+                  {boites > 1 ? ` · ${boites} boîtes` : ""}
                   {canauxKo ? (
                     <span className="text-urgent"> · {canauxKo} en erreur</span>
                   ) : null}

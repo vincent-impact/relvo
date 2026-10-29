@@ -8,6 +8,7 @@ import {
   MessageStatus,
   SubjectStatus,
 } from "../generated/prisma/enums";
+import { canalPrioritaireDuContact } from "./contacts";
 import type { TenantDb, Tx } from "../tenant";
 import { conversationIdentity, resolveConversation } from "./conversations";
 import { DomainError, assertFound } from "./errors";
@@ -517,6 +518,12 @@ export const extendSubjectSchema = z.object({
   /** Canal par lequel on veut le joindre. */
   channelType: z.enum(ChannelType),
   /**
+   * La BOÎTE d'émission (M24.8), quand le compte en a plusieurs. Par défaut,
+   * celle par laquelle le contact nous joint (`canalPrioritaireDuContact`),
+   * sinon la plus ancienne du type.
+   */
+  channelId: z.uuid().optional(),
+  /**
    * Objet de la conversation email (clé + « Re: »). Par défaut = titre du sujet ;
    * un objet saisi par l'utilisateur le remplace (dialog « Ajouter une
    * conversation » de la fiche sujet, 2026-07-24). Sans effet en WhatsApp.
@@ -595,10 +602,21 @@ export async function extendSubjectToConversation(
     );
   }
 
-  // Canal d'émission du compte pour ce type (le plus ancien = le principal).
+  // La boîte d'émission : celle choisie ; sinon celle par laquelle le contact
+  // nous joint, si elle est du bon type ; sinon la plus ancienne du type.
+  const prioritaire = data.channelId
+    ? null
+    : await canalPrioritaireDuContact(db, contact.id);
   const channel = assertFound(
     await db.channel.findFirst({
-      where: { type: data.channelType },
+      where: {
+        type: data.channelType,
+        ...(data.channelId
+          ? { id: data.channelId }
+          : prioritaire?.type === data.channelType
+            ? { id: prioritaire.channelId }
+            : {}),
+      },
       orderBy: { createdAt: "asc" },
       select: { id: true, type: true },
     }),

@@ -29,11 +29,19 @@ export type AddConvContact = {
 export type AddConvGroup = { id: string; title: string };
 
 export type AddConversationSubmit =
-  | { kind: "email"; contactId: string; subjectLine: string }
+  | {
+      kind: "email";
+      contactId: string;
+      subjectLine: string;
+      channelId: string | null;
+    }
   | { kind: "whatsapp-contact"; contactId: string }
   | { kind: "whatsapp-group"; conversationId: string };
 
 type Channel = "email" | "whatsapp";
+
+/** Une boîte e-mail connectée du compte, parmi lesquelles on choisit celle qui écrit (M24.8). */
+export type AddConvBoite = { id: string; name: string; identifier: string };
 
 function fold(s: string): string {
   return s
@@ -50,6 +58,8 @@ export function AddConversationDialog({
   forceChannel,
   contacts,
   groups,
+  boites = [],
+  boiteParContact = {},
   pending = false,
   onSubmit,
 }: {
@@ -63,6 +73,10 @@ export function AddConversationDialog({
   forceChannel?: Channel;
   contacts: AddConvContact[];
   groups: AddConvGroup[];
+  /** Les boîtes e-mail connectées ; le choix ne se montre qu'à partir de deux. */
+  boites?: AddConvBoite[];
+  /** La boîte par laquelle chaque contact nous joint — la proposée par défaut. */
+  boiteParContact?: Record<string, string>;
   pending?: boolean;
   onSubmit: (input: AddConversationSubmit) => void;
 }) {
@@ -72,6 +86,9 @@ export function AddConversationDialog({
   // Sous-mode WhatsApp : direct (contact) ou groupe.
   const [waMode, setWaMode] = useState<"contact" | "group">("contact");
   const [contactId, setContactId] = useState<string | null>(null);
+  // La boîte qui écrit : choisie à la main, sinon celle par laquelle le
+  // contact nous joint, sinon la première (la plus ancienne) du compte.
+  const [boiteChoisie, setBoiteChoisie] = useState<string | null>(null);
   const [groupId, setGroupId] = useState<string | null>(null);
   const [subjectLine, setSubjectLine] = useState(subjectTitle);
   const [query, setQuery] = useState("");
@@ -88,6 +105,7 @@ export function AddConversationDialog({
       setChannel(forceChannel ?? availableChannels[0] ?? "email");
       setWaMode("contact");
       setContactId(null);
+      setBoiteChoisie(null);
       setGroupId(null);
       setSubjectLine(subjectTitle);
       setQuery("");
@@ -110,6 +128,18 @@ export function AddConversationDialog({
     return q ? groups.filter((g) => fold(g.title).includes(q)) : groups;
   }, [groups, query]);
 
+  // La boîte par laquelle le contact nous joint, si elle est connectée —
+  // sinon la première (la plus ancienne) : jamais une boîte hors de la liste.
+  const prioritaire = contactId ? boiteParContact[contactId] : undefined;
+  const boiteParDefaut =
+    (prioritaire && boites.some((b) => b.id === prioritaire)
+      ? prioritaire
+      : boites[0]?.id) ?? null;
+  const boiteId =
+    boiteChoisie && boites.some((b) => b.id === boiteChoisie)
+      ? boiteChoisie
+      : boiteParDefaut;
+
   const canSubmit =
     !pending &&
     (wantGroup
@@ -123,7 +153,12 @@ export function AddConversationDialog({
     } else if (contactId) {
       onSubmit(
         isEmail
-          ? { kind: "email", contactId, subjectLine: subjectLine.trim() }
+          ? {
+              kind: "email",
+              contactId,
+              subjectLine: subjectLine.trim(),
+              channelId: boiteId,
+            }
           : { kind: "whatsapp-contact", contactId },
       );
     }
@@ -283,6 +318,45 @@ export function AddConversationDialog({
             )}
           </div>
         </div>
+
+        {/* La boîte qui écrit (M24.8) — seulement quand il y en a plusieurs :
+            celle par laquelle le contact nous joint est proposée d'office. */}
+        {isEmail && boites.length > 1 ? (
+          <div>
+            <label className="mb-1 block text-[12.5px] font-bold text-(--text-secondary)">
+              Depuis
+            </label>
+            <div className="overflow-hidden rounded-xl border border-(--border)">
+              {boites.map((b) => {
+                const active = boiteId === b.id;
+                const joint =
+                  contactId != null && boiteParContact[contactId] === b.id;
+                return (
+                  <button
+                    key={b.id}
+                    type="button"
+                    onClick={() => setBoiteChoisie(b.id)}
+                    className={cn(
+                      "flex w-full items-center gap-2.5 border-b border-(--border-light) px-3 py-2.5 text-left last:border-b-0",
+                      active ? "bg-(--blue-50)" : "active:bg-(--surface-2)",
+                    )}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[14px] font-semibold">
+                        {b.identifier}
+                      </span>
+                      {joint ? (
+                        <span className="block text-[12px] text-(--text-tertiary)">
+                          Il vous joint par cette boîte
+                        </span>
+                      ) : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
 
         {/* Objet (email uniquement) — porte la clé de la conversation. */}
         {isEmail ? (

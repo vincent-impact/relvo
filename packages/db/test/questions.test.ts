@@ -236,9 +236,10 @@ describe("répondre, écarter", () => {
 describe("le script de la prise en main", () => {
   it("pose les étapes qui ont quelque chose à apprendre, une fois, jamais après une réponse ou un écart", async () => {
     const { account, db } = await makeAccount("q-script@test.fr");
-    // Sans métier connu, les domaines typiques ne se proposent pas encore :
-    // trois étapes sur les quatre du script, la boîte en dernier.
-    expect(SCRIPT_PRISE_EN_MAIN).toHaveLength(4);
+    // Sans métier connu, les domaines typiques ne se proposent pas encore, et
+    // « une autre boîte ? » attend la première : trois étapes sur les cinq du
+    // script, la boîte en dernier.
+    expect(SCRIPT_PRISE_EN_MAIN).toHaveLength(5);
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(3);
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(0);
     const ouvertes = await listOpenQuestions(db);
@@ -369,13 +370,36 @@ describe("le script de la prise en main", () => {
     expect((await listOpenQuestions(db)).map((o) => o.originStep)).toEqual([
       ETAPES.premiereBoite,
     ]);
-    // Connectée : plus rien à répondre.
+    // Connectée : il reste « une autre boîte ? » (M24.8), une fois ; « non »
+    // y répond, et plus rien ne se pose.
     await prisma.channelConfig.updateMany({
       where: { channelId: boite.id },
       data: { externalAccountId: "acc_rien", status: "connected" },
     });
     await resolveMailboxStep(db, "rien@test.fr");
+    expect(await ensureOnboardingQuestions(db, account.id)).toBe(1);
+    const autre = (await listOpenQuestions(db)).find(
+      (o) => o.originStep === ETAPES.autreBoite,
+    );
+    expect(autre?.connecteBoite).toBe(true);
+    expect(autre?.proposedAnswers.map((p) => p.key)).toEqual(["gmail", "non"]);
+    await answerQuestion(db, autre!.id, { key: "non", answer: "Non" });
     expect(await ensureOnboardingQuestions(db, account.id)).toBe(0);
+    // Une seconde boîte reliée ferme aussi une étape « une autre boîte ? » ouverte.
+    const encore = await prisma.relvoQuestion.update({
+      where: { id: autre!.id },
+      data: { status: "open", answer: null, answeredAt: null },
+    });
+    expect(await resolveMailboxStep(db, "deux@test.fr")).toEqual({
+      resolved: true,
+    });
+    expect(
+      (
+        await prisma.relvoQuestion.findUniqueOrThrow({
+          where: { id: encore.id },
+        })
+      ).answer,
+    ).toContain("deux@test.fr");
   });
 });
 

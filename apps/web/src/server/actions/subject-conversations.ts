@@ -27,6 +27,8 @@ export async function extendSubjectToConversationAction(input: {
   channelType: ChannelType;
   /** Objet de la conversation email (défaut = titre du sujet). */
   subjectLine?: string;
+  /** La boîte qui écrit (M24.8) ; sinon celle par laquelle le contact nous joint. */
+  channelId?: string;
   /** WhatsApp : n'attacher qu'un fil déjà existant (pas de nouveau fil). */
   openExistingOnly?: boolean;
 }) {

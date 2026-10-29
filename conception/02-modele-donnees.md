@@ -139,6 +139,10 @@ Porte un prénom **nullable** (nul pour une raison sociale) et un nom — ce der
 de tri et de sectionnement de l'annuaire —, une entreprise, un dossier d'affinité **nullable**
 qui oriente la qualification de ses messages, un statut, la source de sa création, et des notes.
 
+**Le canal par lequel il nous joint** n'est pas un champ : c'est celui du **dernier message
+reçu** de lui — déduit, jamais saisi, donc jamais faux. La fiche le dit, et c'est la boîte qui
+lui écrit la première quand le compte en a plusieurs ; une autre se choisit à ce moment-là.
+
 **Coordonnées primaires et secondaires.** L'adresse et le téléphone **primaires** sont des
 champs simples ; les **secondaires** sont des tableaux. L'auto-rattachement des messages entrants
 consulte **les deux**.
