@@ -425,6 +425,41 @@ ce qui reste à creuser).
 rendu headless (clair et sombre) de la fiche contact, du dialog avec le choix de la boîte, de
 l'étape « une autre boîte ? » dans l'échange, de la liste du backoffice.
 
+## Tranche 8 — « Migrer » (M24.9)
+
+**Tranché avec le dirigeant** (2026-10-29) : la migration se **propose**, elle ne bascule pas
+(`ecarts`, « La migration se propose, elle ne bascule pas »). Les jetons d'une boîte reliée par
+l'agrégateur sont les siens, personne ne peut les transférer : le consentement Google est le seul
+geste demandé, et tant qu'il n'est pas fait, la boîte continue par l'agrégateur, sans coupure.
+Elle se déclenche compte par compte, par le script, **une fois l'écran de consentement vérifié
+par Google** — l'avertissement ferait reculer un testeur — ; le dirigeant teste d'abord sur sa
+propre boîte.
+
+**Livré.**
+- **Le domaine** (`migration-gmail.ts`) : `proposeGmailMigration` pose la question de Relvo —
+  « Je lis désormais votre courrier moi-même, sans intermédiaire. Pour continuer avec <boîte>,
+  reliez-la à nouveau avec Google » —, une par canal (`migration-gmail/<canal>`), en tête des
+  questions ouvertes ; `listPendingGmailMigrations` dit à la page des canaux quelles boîtes
+  attendent le geste ; `migrateChannelToGmail` bascule le canal au retour de Google **en gardant
+  son identité** (mêmes conversations, mêmes sujets), exige la même adresse, refuse une adresse
+  déjà reliée, pose la trace `migreDe`, ferme la question, journalise, rend l'ancien compte.
+  `estUneBoiteMigree` : **aucune lecture des quatorze jours** pour une boîte migrée
+  (`demanderLecturesManquantes`, `boiteEnMiseEnRoute` la laissent). Tests :
+  `migration-gmail.test.ts`.
+- **L'application** : le script `boites:migrer <e-mail> [adresse]` propose et pousse la question
+  (M12.9) ; dans l'échange, « Relier avec Google maintenant » rouvre le consentement sur ce canal
+  (`migrerBoiteAction`) ; sur Canaux, la puce « Relier avec Google » remplace le badge tant que
+  la boîte attend ; le retour Google, voyant un canal de l'agrégateur, **migre au lieu de
+  finaliser**, pose l'abonnement, et efface l'ancien compte chez l'agrégateur après la réponse.
+  La fiche d'un compte au backoffice dit déjà le fournisseur de chaque boîte.
+
+**Vérification.** Typage, lint, 244 tests de l'application, les tests du domaine touchés ; rendu
+headless (clair et sombre) de la question dans l'échange et de la page Canaux, avant et après une
+bascule simulée.
+
+**À faire par le dirigeant** : une fois la validation Google obtenue, `boites:migrer` sur son
+compte, puis sur chaque testeur ; relancer qui tarde (la fiche admin dit « agrégateur »).
+
 ## Où on en est
 
 **Chantier ouvert le 2026-10-28.** Découpage validé ; tranches 1 à 5 livrées en production le
@@ -436,9 +471,10 @@ règle d'organisation « Partage restreint au domaine » levée le temps d'y aut
 `relvo-webhook` et l'abonnement push authentifié ; `GMAIL_PUBSUB_TOPIC` et
 `GMAIL_PUSH_SERVICE_ACCOUNT` sont posées, et un e-mail reçu sur la boîte apparaît dans Relvo.
 **La lecture des quatorze jours par le relais est validée en production** par le dirigeant.
-**Reprise** : la tranche 8, « Migrer » — sans relecture des quatorze jours. ⚠️ Pour la tranche 8 : les identifiants de message du relais ne sont pas
-ceux de l'agrégateur — une boîte migrée ne doit **pas** redemander une lecture, sinon ses
-messages entrent deux fois.
+**Les huit tranches sont livrées.** Ce qui reste est entre les mains du dirigeant : la
+vérification Google de l'écran de consentement (tranche 0), puis `boites:migrer` sur sa boîte et
+sur celles des testeurs — l'épique se ferme quand la facture de l'agrégateur ne compte plus que
+WhatsApp.
 
 **L'infrastructure posée le 2026-10-28, avec le dirigeant** (tranche 0 et le socle de la
 tranche 1) : le domaine `relvo.net` acheté chez Ionos, au nom de l'organisation ; `relvo.net`,
@@ -464,4 +500,4 @@ production non vérifiée, Google avertit et plafonne à cent utilisateurs, sans
 - [x] Tranche 5 — « Lire les quatorze jours » (M24.4)
 - [x] Tranche 6 — « Répondre » (M24.5)
 - [x] Tranche 7 — « Dix boîtes dans l'interface » (M24.8)
-- [ ] Tranche 8 — « Migrer » (M24.9)
+- [x] Tranche 8 — « Migrer » (M24.9) — à exécuter en production après la vérification Google

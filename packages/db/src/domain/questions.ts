@@ -237,6 +237,11 @@ async function appliquerDestination(
     // c'est tout » — est notée.
     return { kind: "noted" };
   }
+  if (canalDeLEtapeDeMigration(q.originStep)) {
+    // La migration d'une boîte (M24.9) se fait par le consentement Google, et
+    // c'est la bascule qui ferme la question (`migrateChannelToGmail`).
+    return { kind: "noted" };
+  }
   if (q.originStep?.startsWith(`${ETAPES.finDeLecture}/`)) {
     return appliquerFinDeLecture(db, q, data, origine);
   }
@@ -448,13 +453,16 @@ export type OpenQuestion = {
   multiple: boolean;
   /** La boîte à lire : chaque réponse ouvre la page de connexion du fournisseur. */
   connecteBoite: boolean;
+  /** La boîte à passer au relais Gmail (M24.9) : la réponse rouvre le consentement sur ce canal. */
+  migreBoite: string | null;
   /** La fiche concernée, pour la nommer dans l'échange. */
   about: { kind: "subject" | "contact" | "folder"; label: string } | null;
   askedAt: string;
 };
 
 /**
- * Les questions ouvertes, dans l'ordre où l'on y répond : les étapes du
+ * Les questions ouvertes, dans l'ordre où l'on y répond : la migration d'une boîte
+ * d'abord (M24.9), puis les étapes du
  * script dans l'ordre du script — les domaines typiques naissent après le
  * métier mais se posent avant la règle et la boîte —, puis les autres, les
  * plus anciennes d'abord.
@@ -473,6 +481,9 @@ export async function listOpenQuestions(
     },
   });
   const rang = (step: string | null) => {
+    // La migration d'une boîte (M24.9) passe devant tout : elle a été poussée
+    // au dirigeant, c'est pour elle qu'il ouvre l'échange.
+    if (canalDeLEtapeDeMigration(step)) return -1;
     const i = SCRIPT_PRISE_EN_MAIN.findIndex((e) => e.step === step);
     return i === -1 ? SCRIPT_PRISE_EN_MAIN.length : i;
   };
@@ -499,6 +510,7 @@ export async function listOpenQuestions(
     originStep: r.originStep,
     multiple: r.originStep === ETAPES.domainesTypiques,
     connecteBoite: estUneEtapeBoite(r.originStep),
+    migreBoite: canalDeLEtapeDeMigration(r.originStep),
     about: r.subject
       ? { kind: "subject", label: r.subject.title }
       : r.contact
@@ -583,6 +595,25 @@ export const ETAPES_BOITE = [
 ] as const;
 /** La clé qui, dans ces étapes, ouvre la page du fournisseur. */
 export const CLE_RELIER_BOITE = "gmail";
+
+/**
+ * La MIGRATION d'une boîte de l'agrégateur vers le relais Gmail (M24.9,
+ * `migration-gmail.ts`) : une question par canal, hors script, dont l'étape
+ * porte l'identifiant du canal ; la même clé que les étapes de boîte ouvre le
+ * consentement Google — sur ce canal, pas sur un nouveau.
+ */
+export const ETAPE_MIGRATION_GMAIL = "migration-gmail";
+export const CLE_MIGRER_BOITE = CLE_RELIER_BOITE;
+
+export function etapeDeMigration(channelId: string): string {
+  return `${ETAPE_MIGRATION_GMAIL}/${channelId}`;
+}
+
+/** Le canal que vise une étape de migration ; null pour toute autre étape. */
+export function canalDeLEtapeDeMigration(step: string | null): string | null {
+  const prefixe = `${ETAPE_MIGRATION_GMAIL}/`;
+  return step?.startsWith(prefixe) ? step.slice(prefixe.length) : null;
+}
 
 export const ETAPES = {
   secteurs: "prise-en-main/secteurs",

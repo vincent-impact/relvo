@@ -11,6 +11,7 @@ import {
   requestChannelCatchup,
 } from "@relvo/db";
 import { domainAction } from "@/lib/action-result";
+import { migrerBoiteAction } from "@/server/actions/channels";
 import { connectEmailChannelAction } from "@/server/actions/email";
 import { getTenantDb } from "@/server/auth-context";
 import { revalidateTenantData } from "@/server/cached";
@@ -79,6 +80,15 @@ export async function connecterBoiteDepuisEchangeAction(choix: string) {
     };
   }
   return connectEmailChannelAction("relvo");
+}
+
+/**
+ * La boîte à passer au relais Gmail (M24.9), depuis la question de Relvo :
+ * le consentement Google rouvert sur ce canal, retour dans l'échange. La
+ * question n'est pas répondue ici : c'est la bascule qui la ferme.
+ */
+export async function migrerBoiteDepuisEchangeAction(channelId: string) {
+  return migrerBoiteAction(channelId, "relvo");
 }
 
 /** Écarte une question : jamais reposée. */

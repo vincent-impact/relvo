@@ -106,7 +106,13 @@ export default async function ConversationPage({
     const boites = await db.channel.findMany({
       where: { type: "email", config: { externalAccountId: { not: null } } },
       include: {
-        config: { select: { externalAccountId: true, updatedAt: true } },
+        config: {
+          select: {
+            externalAccountId: true,
+            updatedAt: true,
+            connectionData: true,
+          },
+        },
         catchups: { select: { id: true }, take: 1 },
       },
     });

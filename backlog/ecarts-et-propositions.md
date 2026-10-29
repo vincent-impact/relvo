@@ -1651,6 +1651,25 @@ parti. **Retenu contre** une colonne `Message-ID` sur les messages (de l'inventa
 seul usage) et contre un envoi « à plat » hors du fil (c'est ce que l'agrégateur fait, et c'est
 ce que les clients de messagerie affichent le plus mal).
 
+
+### La migration se propose, elle ne bascule pas
+
+**`tranché`** · Le 2026-10-29, à la livraison de la tranche 8 de M24 (M24.9). Les boîtes reliées
+par l'agrégateur avant le relais y restent **jusqu'au geste du dirigeant** : Relvo lui pose la
+question — relier la boîte à nouveau, avec Google —, poussée en notification, montrée aussi sur
+la page des canaux ; rien ne bascule avant son retour de Google, aucune coupure, aucune boîte
+orpheline chez qui tarde. Motif : les jetons de l'agrégateur sont les siens, personne ne peut les
+transférer ; le consentement est le seul geste, autant qu'il soit choisi. **Au retour, le canal
+garde son identité** — mêmes conversations, mêmes sujets, même nom — et seule sa configuration
+change ; l'ancien compte s'efface chez l'agrégateur. **Jamais de relecture des quatorze jours** :
+les identifiants du relais ne sont pas ceux de l'agrégateur, une relecture ferait entrer chaque
+message deux fois ; la boîte porte la trace de sa migration et les lectures manquantes la
+laissent. **Le script propose compte par compte**, quand le dirigeant le décide — après la
+vérification Google de l'écran de consentement, dont l'avertissement ferait reculer un testeur.
+Écarté : basculer par script sans le dirigeant (impossible sans ses jetons) ; dédoublonner par
+`Message-ID` pour autoriser une relecture (une colonne et une règle de plus pour une lecture dont
+la boîte n'a pas besoin).
+
 ### La réception Gmail : par notification, incrémentale, authentifiée par Google
 
 **`tranché`** · Le 2026-10-28, à la livraison de la tranche 4 de M24 (M24.3, M24.6), d'après

@@ -2,12 +2,14 @@ import {
   completeChannelConnection,
   ensureOnboardingQuestions,
   isDomainError,
+  migrateChannelToGmail,
   requestChannelCatchup,
   resolveMailboxStep,
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { expireTenantData } from "@/server/cached";
+import { fournisseurDe } from "@/server/courrier";
 import { type MotifDeRetour, pageDeRetour } from "@/server/courrier/retour";
 import { getCurrentAccountId } from "@/server/auth-context";
 import { tenantDb } from "@/lib/tenant-db";
@@ -59,22 +61,56 @@ export async function GET(req: Request) {
     const db = tenantDb(accountId);
     const canal = await db.channel.findFirst({
       where: { id: etat.channelId },
-      select: { config: { select: { connectionData: true } } },
+      select: { config: { select: { provider: true, connectionData: true } } },
     });
-    const existantes = canal?.config?.connectionData;
-    await completeChannelConnection(db, etat.channelId, {
-      externalAccountId: adresse,
-      identifier: adresse,
-      connectionData: donneesDepuisJetons(
-        jetons,
-        existantes && typeof existantes === "object"
-          ? (existantes as Record<string, unknown>)
-          : null,
-      ),
-    });
-    // La boîte confiée ferme l'étape « première boîte » : c'est la connexion
-    // qui vaut réponse, jamais le clic ; les étapes qui restent se posent.
-    await resolveMailboxStep(db, adresse);
+    if (canal?.config?.provider === "unipile") {
+      // La MIGRATION (M24.9) : le canal vient de l'agrégateur et passe au
+      // relais en gardant son identité — ses conversations, ses sujets. Pas
+      // de lecture des quatorze jours : il a déjà ses messages. L'ancien
+      // compte s'efface chez l'agrégateur après la réponse, best-effort — une
+      // boîte lue par les deux ne dure que ces secondes-là, et l'écho d'un
+      // message déjà entré est reconnu.
+      const { ancienCompte } = await migrateChannelToGmail(db, etat.channelId, {
+        externalAccountId: adresse,
+        connectionData: donneesDepuisJetons(jetons, null),
+      });
+      after(async () => {
+        try {
+          const agregateur = await fournisseurDe("unipile");
+          const efface = await agregateur.supprimerCompte(ancienCompte);
+          console.info(
+            "[gmail] boîte migrée, ancien compte chez l'agrégateur",
+            {
+              adresse,
+              ancienCompte,
+              efface,
+            },
+          );
+        } catch (err) {
+          console.error(
+            "[gmail] ancien compte non effacé chez l'agrégateur",
+            { adresse, ancienCompte },
+            err,
+          );
+        }
+      });
+    } else {
+      const existantes = canal?.config?.connectionData;
+      await completeChannelConnection(db, etat.channelId, {
+        externalAccountId: adresse,
+        identifier: adresse,
+        connectionData: donneesDepuisJetons(
+          jetons,
+          existantes && typeof existantes === "object"
+            ? (existantes as Record<string, unknown>)
+            : null,
+        ),
+      });
+      // La boîte confiée ferme l'étape « première boîte » : c'est la
+      // connexion qui vaut réponse, jamais le clic.
+      await resolveMailboxStep(db, adresse);
+    }
+    // Les étapes qui restent se posent.
     await ensureOnboardingQuestions(db, accountId);
     // La boîte publie ses changements dès maintenant (M24.3). Sans sujet
     // configuré, ou si Google refuse, la connexion tient quand même : le cron

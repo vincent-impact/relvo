@@ -197,7 +197,12 @@ l'infrastructure, écrits au passage sans journal ; une reconnexion les garde. U
 attente » avant la page du fournisseur, puis **finalisé** quand le fournisseur a dit oui — le
 retour du consentement pour le relais, le webhook pour l'agrégateur — avec son adresse pour nom
 et pour identifiant ; une boîte déjà reliée, à ce compte ou à un autre, est un conflit, et
-reconnecter un canal exige la même boîte.
+reconnecter un canal exige la même boîte. Une boîte reliée par l'agrégateur **migre** vers le
+relais au retour du même consentement, sur le même canal — ses conversations et ses sujets
+restent, seule sa configuration change : le fournisseur, le compte externe, les données de
+connexion, et la trace de sa migration (`migreDe`), qui dit qu'aucune lecture du courrier récent
+ne doit être demandée pour elle. La migration se **propose** par une question de Relvo, elle ne
+s'impose pas.
 
 **Dix boîtes e-mail par compte, un seul WhatsApp.** Le domaine refuse la onzième boîte et le
 second WhatsApp. Motif : l'exigence des testeurs pour l'e-mail — toutes leurs boîtes, sans qu'une

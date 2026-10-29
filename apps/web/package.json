@@ -24,6 +24,7 @@
     "push:essai": "node --env-file=.env.local --import tsx scripts/push/essai.ts",
     "admin:role": "node --env-file=.env.local --import tsx scripts/admin/role.ts",
     "pj:rattraper": "node --env-file=.env.local --import tsx scripts/unipile/pieces-jointes.ts",
+    "boites:migrer": "node --env-file=.env.local --import tsx scripts/gmail/migrer.ts",
     "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {

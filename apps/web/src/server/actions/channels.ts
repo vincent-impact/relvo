@@ -20,7 +20,9 @@ import { revalidateTenantData } from "@/server/cached";
 import { domainAction } from "@/lib/action-result";
 import { connectEmailChannelAction } from "@/server/actions/email";
 import { fournisseurDe } from "@/server/courrier";
+import type { RetourConnexion } from "@/server/courrier/retour";
 import { demarrerConnexionGmail } from "@/server/gmail/connexion";
+import { gmailConfigure } from "@/server/gmail/oauth";
 import {
   createReconnectHostedAuthLink,
   createWhatsAppHostedAuthLink,
@@ -179,6 +181,63 @@ export async function reprendreConnexionAction(
   } catch (error) {
     if (isDomainError(error)) return err(error.code, error.message);
     return err("INVALID_STATE", "La connexion du canal a échoué.");
+  }
+}
+
+/**
+ * DÉMARRE LA MIGRATION d'une boîte de l'agrégateur vers le relais Gmail
+ * (M24.9) : le consentement Google rouvert sur l'adresse de ce canal — le
+ * retour exige cette adresse et, voyant un canal de l'agrégateur, le bascule
+ * (`migrateChannelToGmail`) au lieu d'en finaliser un nouveau. Rien ne change
+ * tant que le dirigeant n'est pas revenu de Google : sa boîte continue par
+ * l'agrégateur. Depuis la page des canaux ou depuis la question de Relvo dans
+ * l'échange.
+ */
+export async function migrerBoiteAction(
+  channelId: string,
+  retour: RetourConnexion = "canaux",
+): Promise<ActionResult<{ url: string }>> {
+  if (!gmailConfigure()) {
+    return err(
+      "INVALID_STATE",
+      "Le relais Gmail n'est pas configuré (GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET).",
+    );
+  }
+  const found = await domainAction(async (db) => {
+    const channel = await db.channel.findFirst({
+      where: { id: channelId },
+      select: {
+        type: true,
+        identifier: true,
+        config: { select: { externalAccountId: true, provider: true } },
+      },
+    });
+    if (!channel) throw new DomainError("NOT_FOUND", "Canal introuvable.");
+    if (channel.type !== "email" || !channel.config?.externalAccountId) {
+      throw new DomainError(
+        "INVALID_STATE",
+        "Cette boîte n'est pas connectée : rien à migrer.",
+      );
+    }
+    if (channel.config.provider !== "unipile") {
+      throw new DomainError(
+        "INVALID_STATE",
+        "Cette boîte est déjà lue par le relais Gmail.",
+      );
+    }
+    return { adresse: channel.identifier.trim().toLowerCase() };
+  });
+  if (!found.ok) return found;
+  try {
+    const url = await demarrerConnexionGmail({
+      channelId,
+      retour,
+      adresse: found.data.adresse,
+    });
+    return ok({ url });
+  } catch (error) {
+    if (isDomainError(error)) return err(error.code, error.message);
+    return err("INVALID_STATE", "La migration de la boîte a échoué.");
   }
 }
 

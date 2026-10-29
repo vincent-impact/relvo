@@ -14,6 +14,7 @@ import { ChannelConnectButton } from "@/components/settings/channel-connect-butt
 import { ChannelRemoveLink } from "@/components/settings/channel-delete-button";
 import { ListPanel } from "@/components/shared/list-panel";
 import { ZoneHeading } from "@/components/shared/zone-heading";
+import { ChannelMigrateButton } from "@/components/settings/channel-migrate-button";
 import { ChannelReconnectButton } from "@/components/settings/channel-reconnect-button";
 import { RelvoHeader } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
@@ -31,6 +32,7 @@ import {
   type ChannelConfigStatus,
   MAX_EMAIL_CHANNELS,
   isNeverConnected,
+  listPendingGmailMigrations,
   setChannelConfigStatus,
 } from "@relvo/db";
 import type { TenantDb } from "@relvo/db";
@@ -88,6 +90,7 @@ async function ChannelList({ connected }: { connected: boolean }) {
           lastSyncAt: true,
           externalAccountId: true,
           updatedAt: true,
+          connectionData: true,
         },
       },
       // Le dernier rattrapage du courrier récent (M7.19) : ce que Relvo lit
@@ -95,6 +98,11 @@ async function ChannelList({ connected }: { connected: boolean }) {
       catchups: { orderBy: { requestedAt: "desc" }, take: 1 },
     },
   });
+
+  // Les boîtes de l'agrégateur dont la migration vers le relais a été
+  // proposée (M24.9) : le geste se montre ici aussi, pour qui n'ouvre pas
+  // l'échange — tant que la boîte n'est pas passée.
+  const aMigrer = new Set(await listPendingGmailMigrations(db));
 
   // Le badge dit ce que le fournisseur dit du compte, pas ce qu'on en a retenu
   // (PITFALLS #53) : une lecture par canal, en parallèle, best-effort.
@@ -225,6 +233,11 @@ async function ChannelList({ connected }: { connected: boolean }) {
                 </div>
                 {jamaisConnecte && !enConnexion ? (
                   <ChannelConnectButton
+                    channelId={ch.id}
+                    channelName={ch.name}
+                  />
+                ) : aMigrer.has(ch.id) ? (
+                  <ChannelMigrateButton
                     channelId={ch.id}
                     channelName={ch.name}
                   />

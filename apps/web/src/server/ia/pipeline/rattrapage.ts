@@ -7,6 +7,7 @@ import {
   finishCatchup,
   isAssistantEnabled,
   listCatchupCandidates,
+  estUneBoiteMigree,
   listDueCatchups,
   listKnownExternalIds,
   listOpenCatchups,
@@ -456,6 +457,9 @@ export function trouverLigne(catchupId: string): Promise<Ligne | null> {
  * relais sache lire (M24.4) n'a jamais eu sa lecture — elle se demande ici,
  * une fois, depuis la page des canaux, après la réponse. Une boîte de
  * l'agrégateur a toujours la sienne, demandée par son webhook de connexion.
+ * ⚠️ Une boîte PASSÉE au relais depuis l'agrégateur (M24.9) n'en manque pas :
+ * elle a déjà ses messages, et les identifiants du relais ne sont pas ceux de
+ * l'agrégateur — une lecture les ferait entrer deux fois.
  */
 export async function demanderLecturesManquantes(
   db: TenantDb,
@@ -470,10 +474,11 @@ export async function demanderLecturesManquantes(
       },
       catchups: { none: {} },
     },
-    select: { id: true },
+    select: { id: true, config: { select: { connectionData: true } } },
   });
   const demandees: string[] = [];
   for (const b of boites) {
+    if (estUneBoiteMigree(b.config?.connectionData)) continue;
     try {
       const catchup = await requestChannelCatchup(db, {
         channelId: b.id,

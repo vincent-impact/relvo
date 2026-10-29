@@ -10,6 +10,7 @@ import { EtapeFormulaire } from "@/components/relvo-chat/etape-formulaire";
 import {
   connecterBoiteDepuisEchangeAction,
   ecarterQuestionAction,
+  migrerBoiteDepuisEchangeAction,
   repondreQuestionAction,
 } from "@/server/actions/relvo";
 
@@ -137,6 +138,23 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
       });
       return;
     }
+    // La boîte à passer au relais (M24.9) : la même clé rouvre le consentement
+    // Google sur CE canal, et c'est la bascule qui fermera la question.
+    if (question.migreBoite && key === "gmail") {
+      const channelId = question.migreBoite;
+      setBusyKey(key);
+      setError(null);
+      start(async () => {
+        const res = await migrerBoiteDepuisEchangeAction(channelId);
+        if (res.ok) {
+          window.location.href = res.data.url;
+          return;
+        }
+        setBusyKey(null);
+        setError(res.message);
+      });
+      return;
+    }
     repondre(key, option?.label ?? key);
   }
 
@@ -193,6 +211,7 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
                 // Et quand une réponse proposée s'écrit déjà (« Un autre
                 // métier », « Il en manque »), « Autre… » ferait doublon.
                 ...(question.connecteBoite ||
+                question.migreBoite ||
                 question.proposedAnswers.some((p) => p.libre)
                   ? []
                   : [

@@ -135,6 +135,7 @@ pnpm db:generate     # régénérer le client Prisma — après TOUTE migration
 pnpm db:seed         # jeu de démonstration
 pnpm db:studio       # explorer la base
 pnpm --filter web admin:role <e-mail> admin|ceo   # rôle admin (backoffice /admin), par le domaine
+pnpm --filter web boites:migrer <e-mail> [adresse]   # propose la migration d'une boîte de l'agrégateur au relais Gmail (M24.9)
 pnpm --filter web eval:dictee --dossier <hors dépôt> [--compte <e-mail>]   # benchmark de la transcription (M22.1)
 ```
 

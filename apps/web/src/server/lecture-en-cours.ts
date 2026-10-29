@@ -1,3 +1,4 @@
+import { estUneBoiteMigree } from "@relvo/db";
 import type { CarteVivanteData } from "@/components/shared/carte-vivante";
 
 // La MISE EN ROUTE d'une boîte : entre le retour de la page du fournisseur et
@@ -12,17 +13,26 @@ export const MISE_EN_ROUTE_MS = 30 * 60 * 1000;
 
 type CanalEnRoute = {
   type: string;
-  config: { externalAccountId: string | null; updatedAt: Date } | null;
+  config: {
+    externalAccountId: string | null;
+    updatedAt: Date;
+    connectionData?: unknown;
+  } | null;
   catchups: { id: string }[];
 };
 
-/** Une boîte e-mail connectée chez le fournisseur à l'instant, sans encore sa lecture. */
+/**
+ * Une boîte e-mail connectée chez le fournisseur à l'instant, sans encore sa
+ * lecture. Une boîte qui vient de passer au relais (M24.9) n'en est pas une :
+ * elle a déjà ses messages, aucune lecture ne viendra.
+ */
 export function boiteEnMiseEnRoute(
   ch: CanalEnRoute,
   now: number = Date.now(),
 ): boolean {
   if (ch.type !== "email" || !ch.config?.externalAccountId) return false;
   if (ch.catchups.length > 0) return false;
+  if (estUneBoiteMigree(ch.config.connectionData)) return false;
   return now - ch.config.updatedAt.getTime() < MISE_EN_ROUTE_MS;
 }
 

@@ -21,6 +21,8 @@ export type DonneesGmail = {
   historyId?: string;
   /** L'échéance de `users.watch`, ISO (tranche 4). */
   watchExpireA?: string;
+  /** Posée par le domaine quand la boîte vient de l'agrégateur (M24.9) : aucune lecture à redemander. */
+  migreDe?: { fournisseur: "unipile"; compte: string; le: string };
 };
 
 export function donneesDepuisJetons(

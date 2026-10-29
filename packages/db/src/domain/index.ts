@@ -38,6 +38,7 @@ export * from "./prise-en-main";
 export * from "./brief";
 export * from "./echange";
 export * from "./questions";
+export * from "./migration-gmail";
 export * from "./notifications";
 export * from "./admin";
 export * from "./dictee";
