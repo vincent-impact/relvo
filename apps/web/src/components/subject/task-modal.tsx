@@ -4,7 +4,13 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronRight, Search, X } from "lucide-react";
-import { CalendarDots, Clock, Trash } from "@/components/shared/picto";
+import {
+  CalendarDots,
+  CheckSquare,
+  Clock,
+  PencilSimple,
+  Trash,
+} from "@/components/shared/picto";
 import { toast } from "sonner";
 import type { Actor } from "@relvo/db";
 import { ActorPill } from "@/components/shared/actor-pill";
@@ -25,13 +31,15 @@ import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 
 // Feuille d'une tâche — PARTAGÉE entre la ligne (TaskItem) et la création
-// (bouton + de l'Accueil). Un tap sur une ligne OUVRE LA TÂCHE POUR LA LIRE
-// (recette de l'alpha, R16) : le titre, son sujet, sa date, pourquoi Relvo la
-// propose et d'après quoi (M7.20), et le MESSAGE d'où elle vient — « Voir le
-// message » ouvre le fil sur lui, surligné, parce que le résumé de Relvo ne
-// suffit pas toujours à retrouver le contexte. « Modifier » (ou un tap sur un
-// champ) passe au formulaire : titre, date/heure, sujet rattaché (affiché,
-// (ré)assignable, ou détaché — une tâche peut ne pas avoir de sujet). Le
+// (bouton + de l'Accueil). Un tap sur une ligne OUVRE LA TÂCHE (recette de
+// l'alpha, R16) : son titre en tête, à côté du pictogramme de tâche, un crayon
+// pour le récrire ; son sujet (affiché, (ré)assignable, ou détaché — une tâche
+// peut ne pas avoir de sujet) ; sa date et son heure, qui se changent d'un tap
+// sur elles ; pourquoi Relvo la propose et d'après quoi (M7.20) ; et le MESSAGE
+// d'où elle vient — « Voir le message d'origine » ouvre le fil sur lui,
+// surligné, parce que le résumé de Relvo ne suffit pas toujours à retrouver le
+// contexte. Pas de second tap pour « modifier » : tout se touche là où ça se
+// lit, et « Enregistrer » ne s'allume que si quelque chose a changé. Le
 // créateur (Relvo/Moi) est rappelé ici, retiré des lignes pour ne pas les
 // surcharger.
 
@@ -71,8 +79,8 @@ export function TaskModal({
   const router = useRouter();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
-  // Une tâche existante s'ouvre en LECTURE ; le formulaire vient après.
-  const [editing, setEditing] = useState(mode === "create");
+  // Le titre d'une tâche existante se lit en tête ; le crayon le récrit.
+  const [editingTitle, setEditingTitle] = useState(false);
 
   const [title, setTitle] = useState(initial.title ?? "");
   const [date, setDate] = useState(initial.date ?? "");
@@ -222,117 +230,62 @@ export function TaskModal({
       </div>
     ) : null;
 
-  if (!editing) {
-    // LECTURE — chaque champ se tape pour passer au formulaire.
-    const quand = initial.date
-      ? `${new Date(`${initial.date}T00:00:00.000Z`).toLocaleDateString(
-          "fr-FR",
-          { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" },
-        )}${initial.time ? ` · ${initial.time}` : ""}`
-      : null;
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="gap-4 p-5">
-          <DialogHeader>
-            <DialogTitle>Tâche</DialogTitle>
-          </DialogHeader>
-
-          <button
-            type="button"
-            onClick={() => setEditing(true)}
-            className="w-full text-left text-[17px] leading-[22px] font-medium text-noir"
-          >
-            {initial.title}
-          </button>
-
-          <div className="overflow-hidden rounded-xl border border-(--border)">
-            <div className="flex items-center gap-2 border-b border-(--border-light) px-3 py-2.5">
-              {initial.subjectId ? (
-                <span
-                  aria-hidden
-                  className="size-2.5 flex-none rounded-full"
-                  style={{
-                    background: folderVisual({
-                      slug: initial.subjectFolderSlug ?? null,
-                    }).color,
-                  }}
-                />
-              ) : null}
-              {initial.subjectId && initial.subjectTitle ? (
-                <Link
-                  href={`/sujets/${initial.subjectId}?from=${encodeURIComponent(pathname)}`}
-                  className="min-w-0 flex-1 truncate text-[14px] font-semibold"
-                >
-                  {initial.subjectTitle}
-                </Link>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setEditing(true)}
-                  className="min-w-0 flex-1 text-left text-[14px] text-(--text-tertiary) italic"
-                >
-                  Aucun sujet
-                </button>
-              )}
-            </div>
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
-            >
-              <CalendarDots className="size-4 flex-none text-(--text-tertiary)" />
-              <span
-                className={cn(
-                  "min-w-0 flex-1 text-[14px]",
-                  quand ? "chiffre text-noir" : "text-(--text-tertiary) italic",
-                )}
-              >
-                {quand ?? "Sans date"}
-              </span>
-            </button>
-          </div>
-
-          {relvoBlock}
-
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setEditing(true)}
-              className="flex-1 rounded-xl bg-relvo py-2.5 text-[14px] font-bold text-white"
-            >
-              Modifier
-            </button>
-            <button
-              type="button"
-              onClick={remove}
-              disabled={pending}
-              aria-label="Supprimer la tâche"
-              className="grid size-[42px] flex-none place-items-center rounded-xl border border-(--red-200) text-(--red-600) disabled:opacity-60"
-            >
-              <Trash className="size-[18px]" />
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-4 p-5">
-        <DialogHeader>
-          <DialogTitle>
-            {mode === "create" ? "Nouvelle tâche" : "Modifier la tâche"}
-          </DialogTitle>
-        </DialogHeader>
-
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="Intitulé de la tâche"
-          autoFocus={mode === "create"}
-          className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[15px] font-semibold outline-none focus:border-relvo"
-        />
+        {mode === "create" ? (
+          <>
+            <DialogHeader>
+              <DialogTitle>Nouvelle tâche</DialogTitle>
+            </DialogHeader>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Intitulé de la tâche"
+              autoFocus
+              className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[15px] font-semibold outline-none focus:border-relvo"
+            />
+          </>
+        ) : (
+          /* En tête : le pictogramme de tâche, le titre, le crayon — la croix
+             du dialog occupe le coin, d'où la marge droite. */
+          <DialogHeader className="pr-9">
+            <div className="flex items-start gap-2.5">
+              <CheckSquare className="mt-[3px] size-5 flex-none text-relvo" />
+              {editingTitle ? (
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  onBlur={() => {
+                    if (title.trim()) setEditingTitle(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && title.trim())
+                      setEditingTitle(false);
+                  }}
+                  placeholder="Intitulé de la tâche"
+                  autoFocus
+                  aria-label="Intitulé de la tâche"
+                  className="min-w-0 flex-1 border-b-2 border-relvo bg-transparent pb-0.5 text-[17px] leading-[22px] font-medium outline-none"
+                />
+              ) : (
+                <>
+                  <DialogTitle className="min-w-0 flex-1 text-[17px] leading-[22px] font-medium text-noir">
+                    {title}
+                  </DialogTitle>
+                  <button
+                    type="button"
+                    onClick={() => setEditingTitle(true)}
+                    aria-label="Récrire le titre"
+                    className="relative grid size-7 flex-none place-items-center rounded-full text-(--text-tertiary) before:absolute before:-inset-2 before:content-[''] active:bg-(--fond-puce)"
+                  >
+                    <PencilSimple className="size-[18px]" />
+                  </button>
+                </>
+              )}
+            </div>
+          </DialogHeader>
+        )}
         {/* Sujet rattaché — affiché + (ré)assignable / détachable. */}
         <div className="min-w-0">
           <div className="mb-1.5 text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">

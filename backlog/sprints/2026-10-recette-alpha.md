@@ -234,22 +234,26 @@ testeur**, `--simuler` d'abord.
 **Constat.** Les testeurs lisent leurs sujets en action ; la ligne de 58 px, son titre de
 14,5 px et sa ligne fine de 12 px sont trop petits.
 
-**À trancher.** Trois propositions en artefact (« Lignes de sujets »), aux vraies tailles d'un
-iPhone : A un cran au-dessus (titre 16,5 px, une ligne), **B le titre sur deux lignes (18 px,
-graisse 500, ligne fine gardée — recommandée)**, C gros caractères (20 px, sans ligne fine). Le
-réglage retenu vaudra ensuite pour les lignes de tâches et de conversations. **Rien ne part en
-production avant le choix du dirigeant.**
+**Tranché.** Trois propositions en artefact (« Lignes de sujets »), aux vraies tailles d'un
+iPhone ; le dirigeant a retenu **C, gros caractères** : titre 20 px en graisse 500 sur deux
+lignes au plus, nom du dossier 12,5 px, chiffres 22 px, bande plus large, **sans ligne de
+résumé** — « autant trancher net ». Livré sur `SubjectRow`, partout où la ligne se rend
+(Sujets, Dossiers, recherche, échange). Les lignes de tâches et de conversations ne bougent
+pas tant que les testeurs ne le demandent pas.
 
 ### R16 — Une tâche s'ouvre pour être lue, et mène à son message
 
 **Constat.** Un tap sur une tâche ouvrait directement le formulaire de modification ; et le résumé
 de Relvo ne suffit pas : le testeur veut le message qui a fait naître la tâche, pour le contexte.
 
-**Livraison.** La feuille d'une tâche s'ouvre **en lecture** : titre, sujet, date, pourquoi Relvo
-la propose et d'après quoi, et **« Voir le message d'origine »**, qui ouvre la conversation
-**sur ce message**, surligné. « Modifier », ou un tap sur un champ, passe au formulaire : tous
-les champs restent modifiables. Le domaine remonte le fil du message d'origine de chaque tâche
-(`resolveSourceConversations`), pour toutes les listes.
+**Livraison.** La feuille d'une tâche s'ouvre sur **la tâche elle-même**, pas sur un
+formulaire : son titre en tête à côté du pictogramme de tâche, un **crayon** pour le récrire ;
+le sujet, la date et l'heure se changent **d'un tap sur eux** ; pourquoi Relvo la propose et
+d'après quoi ; et **« Voir le message d'origine »**, qui ouvre la conversation **sur ce
+message**, surligné. « Enregistrer » ne s'allume que si quelque chose a changé. Une première
+version en deux états (lecture puis « Modifier ») a été refusée par le dirigeant : un tap de
+plus pour toucher ce qu'on lit déjà. Le domaine remonte le fil du message d'origine de chaque
+tâche (`resolveSourceConversations`), pour toutes les listes.
 
 ## Où on en est
 
@@ -265,8 +269,7 @@ les champs restent modifiables. Le domaine remonte le fil du message d'origine d
 - [x] M23 démarrée dans son propre chantier (`2026-10-m23-dossiers.md`).
 - [x] M23 terminée ; M27 (dossiers et sujets, tranché sur maquettes) démarrée dans son propre chantier (`2026-10-m27-dossiers-et-sujets.md`), avant M24 — **terminée le jour même**.
 - [ ] R9, R10, R11, R12 à livrer.
-- [x] Troisième vague enregistrée (R13 à R16) ; R13, R14 et R16 livrées, R15 en attente du
-      choix du dirigeant sur l'artefact.
-- [ ] R13 et R14 à vérifier en production par le dirigeant ; `wa:reparer` à lancer sur les comptes
-      de testeurs.
+- [x] Troisième vague enregistrée et livrée (R13 à R16) ; R13 et R14 vérifiées en production
+      par le dirigeant ; R15 tranchée C ; R16 reprise sur son retour.
+- [ ] `wa:reparer` à lancer en production sur les comptes de testeurs.
 - [ ] Vagues de recette suivantes : à ajouter ici.
