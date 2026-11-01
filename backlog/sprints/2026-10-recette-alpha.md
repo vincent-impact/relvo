@@ -236,7 +236,7 @@ testeur**, `--simuler` d'abord.
 
 **Tranché.** Trois propositions en artefact (« Lignes de sujets »), aux vraies tailles d'un
 iPhone ; le dirigeant a retenu **C, gros caractères** : titre 20 px en graisse 500 sur deux
-lignes au plus, nom du dossier 12,5 px, chiffres 22 px, bande plus large, **sans ligne de
+lignes au plus — **ramené à 18 px après un jour d'usage**, la graisse et les deux lignes gardées —, nom du dossier 12,5 px, chiffres 22 px, bande plus large, **sans ligne de
 résumé** — « autant trancher net ». Livré sur `SubjectRow`, partout où la ligne se rend
 (Sujets, Dossiers, recherche, échange). Les lignes de tâches et de conversations ne bougent
 pas tant que les testeurs ne le demandent pas.

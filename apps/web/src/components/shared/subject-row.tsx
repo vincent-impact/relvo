@@ -11,8 +11,8 @@ import { cn } from "@/lib/utils";
 // « Urgent · » en rouge quand la priorité l'est — l'état se lit au mot et à la
 // couleur), et à droite un chiffre condensé (non-lus ou tâches) avec ce qu'on
 // attend dessous. Elle se lit DEBOUT, en voiture, sur un chantier (recette de
-// l'alpha, R15, proposition C tranchée) : le titre en 20 px, graisse 500, sur
-// deux lignes au plus — plus rien ne se coupe —, les chiffres en 22 px, et
+// l'alpha, R15, proposition C tranchée puis ramenée d'un cran à l'usage) : le
+// titre en 18 px, graisse 500, sur deux lignes au plus — plus rien ne se coupe —, les chiffres en 22 px, et
 // PAS de résumé : le contexte vit sur la fiche, la ligne sert à reconnaître.
 
 export type SubjectRowData = {
@@ -79,7 +79,7 @@ export function SubjectRow({
     <article
       data-list-row
       className={cn(
-        "relative flex min-h-[74px] items-center gap-3 border-b border-(--filet) py-2.5 pr-3.5 pl-3.5",
+        "relative flex min-h-[70px] items-center gap-3 border-b border-(--filet) py-2.5 pr-3.5 pl-3.5",
         done && "bg-(--fond-enfonce)",
       )}
     >
@@ -106,7 +106,7 @@ export function SubjectRow({
         </div>
         <h3
           className={cn(
-            "line-clamp-2 text-[20px] leading-[24px] font-medium text-noir",
+            "line-clamp-2 text-[18px] leading-[22px] font-medium text-noir",
             done && "text-gris line-through",
           )}
         >
