@@ -6,6 +6,7 @@
 
 ## 2026-11-01
 
+- **Corrigé** — Dans la liste des sujets, les titres restent gros et sur deux lignes, mais un cran plus petits, pour un meilleur équilibre.
 - **Corrigé** — Une tâche s'ouvre directement sur son contenu : son titre en tête, un crayon pour le récrire, la date et l'heure qui se changent d'un appui.
 - **Nouveau** — La liste des sujets est plus lisible en voiture ou debout : les titres sont plus gros, tiennent sur deux lignes et ne sont plus coupés.
 - **Nouveau** — Un appui sur une tâche l'ouvre pour la lire, avec un bouton « Voir le message d'origine » qui vous amène au message dont elle vient ; « Modifier » reste à portée.
