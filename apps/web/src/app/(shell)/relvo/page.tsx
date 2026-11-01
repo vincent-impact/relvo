@@ -55,6 +55,7 @@ export default async function ConversationPage({
   searchParams: Promise<{
     from?: string;
     q?: string;
+    dicte?: string;
     nouveau?: string;
     reprendre?: string;
     connected?: string;
@@ -63,11 +64,14 @@ export default async function ConversationPage({
 }) {
   // `q` : une suggestion de l'accueil, posée comme premier tour (05 §11.12) —
   // le texte arrive dans le composer, l'utilisateur l'envoie ou le corrige.
+  // `dicte` : une dictée depuis le disque du dock (M22.8), envoyée d'elle-même
+  // en premier tour d'un nouvel échange.
   // `nouveau` force un nouvel échange ; `reprendre` rouvre un échange de
   // l'historique de l'appareil (M10.3, M10.4). `connected` : le retour de la
   // page du fournisseur, la boîte confiée à la dernière étape de la prise en
   // main — la lecture se suit ici.
-  const { from, q, nouveau, reprendre, connected, erreur } = await searchParams;
+  const { from, q, dicte, nouveau, reprendre, connected, erreur } =
+    await searchParams;
   const backHref = from && from !== "/relvo" ? from : "/";
   const accountId = await requireAccountId();
   const db = await getTenantDb();
@@ -171,7 +175,8 @@ export default async function ConversationPage({
         contextLabel={contextLabel}
         prompts={prompts}
         initialText={q?.trim() || ""}
-        nouveau={nouveau === "1"}
+        dicte={dicte?.trim() || null}
+        nouveau={nouveau === "1" || Boolean(dicte?.trim())}
         reprendre={reprendre?.trim() || null}
         questions={questions}
         lecture={lecture}

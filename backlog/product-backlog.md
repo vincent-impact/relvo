@@ -37,7 +37,7 @@ frontmatter l'est.
 | [M9 — Pages applicatives](epics/M9-pages-applicatives.md)                  | ✅                                               | démo client                     |
 | [M16 — Consolidation](epics/M16-consolidation.md)                          | ✅                                               | —                               |
 | **[M21 — Mini backoffice](epics/M21-mini-backoffice.md)**                  | ✅ — accès, liste, gestes, porte de l'alpha, fiche, vue d'ensemble | l'alpha                         |
-| **[M22 — Parler à Relvo](epics/M22-voix.md)**                              | ✅ socle livré — reste M22.8 (maintenir le bouton du dock pour parler) | M20.1                           |
+| **[M22 — Parler à Relvo](epics/M22-voix.md)**                              | ✅                                               | M20.1                           |
 | **[M7 — Pipeline IA d'arrivée](epics/M7-pipeline-ia.md)**                  | ✅ — vérifié en production par le dirigeant ; reste hors épique la lecture de l'historique de la messagerie à la connexion | M8, M10                         |
 | **[M18 — Disposition générale](epics/M18-disposition-generale.md)**       | ✅ — M18.9 livré par M10 ; M18.11 glissé vers M12.9 (pas de socle push) | M19, M10, M13 |
 | **[M19 — Direction artistique, allègement et prise en main](epics/M19-direction-artistique.md)** | ✅                                               | M10, M13.2                      |

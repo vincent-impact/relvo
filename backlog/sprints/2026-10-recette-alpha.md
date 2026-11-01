@@ -181,6 +181,13 @@ test sur `questions.test.ts`.
 Item **M22.8**. Le disque Relvo se maintient, on parle, relâcher ouvre l'échange sur une
 nouvelle conversation avec la transcription envoyée. Même socle que le composer.
 
+**Livré.** Le disque du dock porte les deux gestes : le tap ouvre l'échange, le maintien passé
+un seuil court ouvre le micro (même `useDictee`, même route), la durée se dit au-dessus du
+disque, relâcher envoie et l'échange s'ouvre en nouvel échange, la dictée partie d'elle-même
+(`?dicte=`, effacée de l'adresse aussitôt). Un maintien trop court ou un micro refusé se
+disent en toast. **À éprouver sur le téléphone** : le micro en PWA installée, le geste sur le
+disque qui déborde de la pilule.
+
 ### R11 — Une notification à chaque nouvelle affaire
 
 Item **M12.10**. Née du tri à réception, jamais de la lecture à la connexion ; une par salve.
@@ -268,7 +275,8 @@ tâche (`resolveSourceConversations`), pour toutes les listes.
 - [x] M25 tranchée solution par solution : toutes les recommandations, S5 à éprouver, S10 et S17 écartées.
 - [x] M23 démarrée dans son propre chantier (`2026-10-m23-dossiers.md`).
 - [x] M23 terminée ; M27 (dossiers et sujets, tranché sur maquettes) démarrée dans son propre chantier (`2026-10-m27-dossiers-et-sujets.md`), avant M24 — **terminée le jour même**.
-- [ ] R9, R10, R11, R12 à livrer.
+- [x] R10 livrée (2026-11-01).
+- [ ] R9, R11, R12 à livrer.
 - [x] Troisième vague enregistrée, livrée et **validée en production par le dirigeant** (R13 à
       R16) ; R15 tranchée C puis ramenée à 18 px ; R16 reprise sur son retour.
 - [ ] `wa:reparer` à lancer en production sur les comptes de testeurs.

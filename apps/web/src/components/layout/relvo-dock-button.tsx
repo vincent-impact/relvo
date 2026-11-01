@@ -1,8 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { RELVO_LOGO_PATHS } from "@/components/layout/relvo-logo";
+import { useDictee } from "@/hooks/use-dictee";
+import { formatDuree, PHRASES_DICTEE } from "@/lib/dictee-regles";
+import { SEUIL_MAINTIEN_MS, urlEchangeDicte } from "@/lib/echanges-regles";
 import { cn } from "@/lib/utils";
 
 // Le bouton Relvo — centre du dock, SEUL objet coloré du dock (design-system/
@@ -22,6 +26,14 @@ import { cn } from "@/lib/utils";
 // transmettant la page d'origine (`?from=`) pour le chip de contexte, les
 // prompts et le retour.
 //
+// Deux gestes (M22.8, recette R10). Le TAP ouvre l'échange comme toujours. Le
+// MAINTIEN parle : passé le seuil, le micro s'ouvre — le même crochet que le
+// disque du composer, la même route —, le disque respire et dit la durée ;
+// RELÂCHER envoie, et l'échange s'ouvre sur un NOUVEL échange avec la dictée
+// déjà posée en premier tour. Un maintien trop court, un micro refusé : la
+// phrase du crochet, en toast, et rien d'autre ne bouge. Sans micro sur
+// l'appareil, le disque n'est qu'un bouton. Le badge ne change pas.
+//
 // Quand Relvo LIT le courrier (rattrapage en cours), les étoiles RESPIRENT
 // (`.respire`, le seul mouvement qui dit « Relvo travaille ») : le travail se
 // voit d'où qu'on soit, sans ouvrir la page des canaux. Le disque, lui, ne
@@ -39,27 +51,99 @@ export function RelvoDockButton({
   className?: string;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const href = `/relvo?from=${encodeURIComponent(pathname)}`;
+
+  const d = useDictee({
+    onTexte: (texte) => {
+      const url = urlEchangeDicte(texte, pathname);
+      if (url) router.push(url);
+    },
+  });
+  const enregistre = d.etat === "enregistre";
+  const ecoute = d.etat === "transcrit";
+
+  // Ce que la dictée a à dire hors enregistrement — « Maintenez pour parler »,
+  // le micro refusé, le réseau — passe en toast : le dock n'a pas de bandeau.
+  const { phrase, etat, effacerPhrase } = d;
+  useEffect(() => {
+    if (etat !== "repos" || !phrase) return;
+    toast(phrase);
+    effacerPhrase();
+  }, [etat, phrase, effacerPhrase]);
+
+  // Le seuil entre le tap et le maintien : un minuteur posé à l'appui.
+  const minuteur = useRef<number | null>(null);
+  const maintenu = useRef(false);
+  useEffect(
+    () => () => {
+      if (minuteur.current) window.clearTimeout(minuteur.current);
+    },
+    [],
+  );
+
+  function appui(e: React.PointerEvent<HTMLButtonElement>) {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    maintenu.current = false;
+    if (!d.disponible || !d.pret || ecoute) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    minuteur.current = window.setTimeout(() => {
+      minuteur.current = null;
+      maintenu.current = true;
+      void d.appuyer();
+    }, SEUIL_MAINTIEN_MS);
+  }
+  function fin(annule: boolean) {
+    if (minuteur.current) {
+      window.clearTimeout(minuteur.current);
+      minuteur.current = null;
+    }
+    if (maintenu.current) {
+      d.relacher();
+      return;
+    }
+    if (!annule && !ecoute) router.push(href);
+  }
+
   const label = [
     pending > 0
       ? `Parler à Relvo, ${pending} question${pending > 1 ? "s" : ""} en attente`
       : "Parler à Relvo",
+    d.disponible ? "maintenir pour dicter" : null,
     reading ? "Relvo lit votre courrier" : null,
   ]
     .filter(Boolean)
     .join(" — ");
 
   return (
-    <Link
-      href={`/relvo?from=${encodeURIComponent(pathname)}`}
-      aria-label={label}
+    <button
+      type="button"
+      onPointerDown={appui}
+      onPointerUp={() => fin(false)}
+      onPointerCancel={() => fin(true)}
+      onContextMenu={(e) => e.preventDefault()}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          router.push(href);
+        }
+      }}
+      aria-label={enregistre ? "Relâchez pour envoyer" : label}
+      aria-busy={ecoute || undefined}
       className={cn(
-        "relative grid size-(--disque-relvo) flex-none place-items-center rounded-full text-white transition-transform duration-(--dur-presse) active:translate-y-px active:scale-[0.97]",
+        "relative grid size-(--disque-relvo) flex-none place-items-center rounded-full text-white transition-transform duration-(--dur-presse) select-none [-webkit-touch-callout:none] active:translate-y-px active:scale-[0.97]",
+        "touch-none",
+        enregistre && "scale-110 active:scale-110",
         className,
       )}
       style={{ background: "var(--degrade-disque)" }}
     >
       <svg viewBox="116 104 296 296" width="30" height="30" aria-hidden="true">
-        <g fill="currentColor" className={cn(reading && "respire")}>
+        <g
+          fill="currentColor"
+          className={cn((reading || enregistre || ecoute) && "respire")}
+        >
           {RELVO_LOGO_PATHS.stars.map((d) => (
             <path key={d} d={d} />
           ))}
@@ -70,6 +154,23 @@ export function RelvoDockButton({
           {pending}
         </span>
       ) : null}
-    </Link>
+      {/* La dictée se dit au-dessus du disque : la durée pendant qu'on parle,
+          « Relvo écoute… » le temps de la transcription. */}
+      {enregistre || ecoute ? (
+        <span
+          aria-live="polite"
+          className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 rounded-(--rayon-pilule) bg-noir px-3.5 py-1.5 text-[13px] whitespace-nowrap text-white shadow-dock"
+        >
+          {enregistre ? (
+            <>
+              {PHRASES_DICTEE.ecoute}{" "}
+              <span className="chiffre">{formatDuree(d.dureeS)}</span>
+            </>
+          ) : (
+            PHRASES_DICTEE.ecoute
+          )}
+        </span>
+      ) : null}
+    </button>
   );
 }

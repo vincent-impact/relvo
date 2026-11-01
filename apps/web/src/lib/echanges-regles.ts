@@ -61,3 +61,26 @@ export function nettoyerTitre(titre: string): string {
     .trim();
   return t ? titreParDefaut(t) : "Échange";
 }
+
+/**
+ * Le disque du dock se MAINTIENT pour parler (M22.8) : en dessous de ce délai,
+ * c'est un tap — l'échange s'ouvre comme d'habitude — ; au-delà, le micro
+ * s'ouvre et relâcher envoie.
+ */
+export const SEUIL_MAINTIEN_MS = 220;
+
+/**
+ * L'échange ouvert sur un NOUVEL échange, la dictée déjà envoyée comme premier
+ * tour, la page d'origine gardée pour le retour et le contexte. Une dictée
+ * vide ne mène nulle part : null.
+ */
+export function urlEchangeDicte(
+  texte: string,
+  from: string | null,
+): string | null {
+  const t = texte.trim();
+  if (!t) return null;
+  const params = new URLSearchParams({ nouveau: "1", dicte: t });
+  if (from) params.set("from", from);
+  return `/relvo?${params.toString()}`;
+}

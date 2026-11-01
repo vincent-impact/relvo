@@ -59,6 +59,7 @@ export function RelvoChatShell({
   contextLabel,
   prompts,
   initialText = "",
+  dicte = null,
   nouveau = false,
   reprendre = null,
   questions = [],
@@ -74,6 +75,8 @@ export function RelvoChatShell({
   prompts: string[];
   /** Premier tour proposé (une suggestion de l'accueil) : pré-rempli, jamais envoyé seul. */
   initialText?: string;
+  /** Une dictée depuis le disque du dock (M22.8) : ENVOYÉE en premier tour, sans relecture. */
+  dicte?: string | null;
   /** « + Nouvel échange » : on ne rouvre rien. */
   nouveau?: boolean;
   /** Un échange de l'historique à rouvrir. */
@@ -136,6 +139,7 @@ export function RelvoChatShell({
       contextLabel={contextLabel}
       prompts={prompts}
       initialText={initialText}
+      dicte={dicte}
       questions={questions}
       lecture={lecture}
       sujets={sujets}
@@ -151,6 +155,7 @@ function RelvoSession({
   contextLabel,
   prompts,
   initialText,
+  dicte,
   questions,
   lecture,
   sujets,
@@ -162,6 +167,7 @@ function RelvoSession({
   contextLabel: string | null;
   prompts: string[];
   initialText: string;
+  dicte: string | null;
   questions: OpenQuestion[];
   lecture: CarteVivanteData | null;
   sujets: SubjectRowData[];
@@ -208,6 +214,19 @@ function RelvoSession({
       },
     });
   const busy = status === "submitted" || status === "streaming";
+
+  // La dictée du dock part d'elle-même, une fois, dans un échange vide : le
+  // geste, c'est relâcher — pas relire (M22.3). L'adresse perd ensuite la
+  // dictée, pour qu'un rechargement ne la renvoie pas.
+  const dicteEnvoyee = useRef(false);
+  useEffect(() => {
+    if (!dicte || dicteEnvoyee.current || messages.length > 0) return;
+    dicteEnvoyee.current = true;
+    void sendMessage({ text: dicte }, { body: { from, general } });
+    const url = new URL(window.location.href);
+    url.searchParams.delete("dicte");
+    window.history.replaceState(null, "", url.toString());
+  }, [dicte, messages.length, sendMessage, from, general]);
 
   // La sauvegarde sur l'appareil, à chaque tour posé — jamais en plein flux.
   useEffect(() => {
