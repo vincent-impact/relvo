@@ -164,9 +164,9 @@
     {
       "titre": "Parler à Relvo",
       "resume": "Dicter votre demande à Relvo plutôt que la taper : vous maintenez le micro, vous parlez, vous relâchez, et Relvo reçoit votre demande. Pour la cuisine et le chantier, où l'on n'écrit pas.",
-      "statut": "partiel",
+      "statut": "termine",
       "gauche": 65.42,
-      "largeur": 0
+      "largeur": 6.08
     },
     {
       "titre": "Vos dossiers, rangés comme sur votre ordinateur",
@@ -213,6 +213,10 @@
     {
       "date": "2026-11-01",
       "entrees": [
+        {
+          "type": "fix",
+          "texte": "Dans la liste des sujets, les titres restent gros et sur deux lignes, mais un cran plus petits, pour un meilleur équilibre."
+        },
         {
           "type": "fix",
           "texte": "Une tâche s'ouvre directement sur son contenu : son titre en tête, un crayon pour le récrire, la date et l'heure qui se changent d'un appui."
