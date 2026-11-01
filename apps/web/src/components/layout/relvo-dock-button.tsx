@@ -4,8 +4,8 @@ import { useEffect, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { RELVO_LOGO_PATHS } from "@/components/layout/relvo-logo";
+import { VoileEcoute } from "@/components/shared/voile-ecoute";
 import { useDictee } from "@/hooks/use-dictee";
-import { formatDuree, PHRASES_DICTEE } from "@/lib/dictee-regles";
 import { SEUIL_MAINTIEN_MS, urlEchangeDicte } from "@/lib/echanges-regles";
 import { cn } from "@/lib/utils";
 
@@ -28,11 +28,13 @@ import { cn } from "@/lib/utils";
 //
 // Deux gestes (M22.8, recette R10). Le TAP ouvre l'échange comme toujours. Le
 // MAINTIEN parle : passé le seuil, le micro s'ouvre — le même crochet que le
-// disque du composer, la même route —, le disque respire et dit la durée ;
-// RELÂCHER envoie, et l'échange s'ouvre sur un NOUVEL échange avec la dictée
-// déjà posée en premier tour. Un maintien trop court, un micro refusé : la
-// phrase du crochet, en toast, et rien d'autre ne bouge. Sans micro sur
-// l'appareil, le disque n'est qu'un bouton. Le badge ne change pas.
+// disque du composer, la même route —, le téléphone vibre, et LA PAGE ENTIÈRE
+// se met à l'écoute (`VoileEcoute` : le voile qui souffle depuis le disque,
+// « Relvo écoute… » et la durée au milieu de l'écran) ; RELÂCHER envoie, et
+// l'échange s'ouvre sur un NOUVEL échange avec la dictée déjà posée en premier
+// tour. Un maintien trop court, un micro refusé : la phrase du crochet, en
+// toast, et rien d'autre ne bouge. Sans micro sur l'appareil, le disque n'est
+// qu'un bouton. Le badge ne change pas.
 //
 // Quand Relvo LIT le courrier (rattrapage en cours), les étoiles RESPIRENT
 // (`.respire`, le seul mouvement qui dit « Relvo travaille ») : le travail se
@@ -154,23 +156,8 @@ export function RelvoDockButton({
           {pending}
         </span>
       ) : null}
-      {/* La dictée se dit au-dessus du disque : la durée pendant qu'on parle,
-          « Relvo écoute… » le temps de la transcription. */}
-      {enregistre || ecoute ? (
-        <span
-          aria-live="polite"
-          className="pointer-events-none absolute -top-12 left-1/2 -translate-x-1/2 rounded-(--rayon-pilule) bg-noir px-3.5 py-1.5 text-[13px] whitespace-nowrap text-white shadow-dock"
-        >
-          {enregistre ? (
-            <>
-              {PHRASES_DICTEE.ecoute}{" "}
-              <span className="chiffre">{formatDuree(d.dureeS)}</span>
-            </>
-          ) : (
-            PHRASES_DICTEE.ecoute
-          )}
-        </span>
-      ) : null}
+      {/* L'écoute se dit sur toute la page, pas au-dessus du disque. */}
+      <VoileEcoute etat={d.etat} dureeS={d.dureeS} dureeMaxS={d.dureeMaxS} />
     </button>
   );
 }

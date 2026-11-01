@@ -8,6 +8,10 @@ import {
   Paperclip,
 } from "@/components/shared/picto";
 import { RelvoLogo } from "@/components/layout/relvo-logo";
+import {
+  PointsQuiRespirent as ThinkingDots,
+  VoileEcoute,
+} from "@/components/shared/voile-ecoute";
 import { useDictee } from "@/hooks/use-dictee";
 import { formatDuree, PHRASES_DICTEE } from "@/lib/dictee-regles";
 import { cn } from "@/lib/utils";
@@ -67,20 +71,6 @@ export type Recipient = {
   initials?: string;
   sublabel?: string;
 };
-
-/** Trois points qui respirent — « Relvo rédige ». */
-function ThinkingDots() {
-  return (
-    <span
-      className="respire ml-0.5 inline-flex items-center gap-[3px]"
-      aria-hidden
-    >
-      {[0, 1, 2].map((i) => (
-        <span key={i} className="size-[4px] rounded-full bg-current" />
-      ))}
-    </span>
-  );
-}
 
 // Métriques du champ, partagées avec le skeleton de rédaction.
 const FIELD_METRICS =
@@ -229,7 +219,7 @@ export function RecipientComposer({
   const barLabel = loading ? (
     <>
       Relvo rédige votre réponse
-      <ThinkingDots />
+      <ThinkingDots className="ml-0.5" />
     </>
   ) : (
     "Brouillon de Relvo"
@@ -307,8 +297,13 @@ export function RecipientComposer({
         paddingBottom: "max(env(safe-area-inset-bottom), 16px)",
       }}
     >
-      {/* La dictée (M22.3) : « Relvo écoute… », ou la phrase d'un échec —
-          jamais une erreur technique. */}
+      {/* La dictée (M22.3) : la page entière se met à l'écoute tant qu'on
+          maintient le micro (M22.8, le même voile que le dock). */}
+      {micro ? (
+        <VoileEcoute etat={d.etat} dureeS={d.dureeS} dureeMaxS={d.dureeMaxS} />
+      ) : null}
+      {/* « Relvo écoute… », ou la phrase d'un échec — jamais une erreur
+          technique. */}
       {phraseDictee && !showDraftBar ? (
         <div
           className="flex items-center gap-2 rounded-(--rayon-option) bg-relvo-pale px-3 py-1.5 text-[12.5px] font-medium text-relvo"
@@ -322,7 +317,7 @@ export function RecipientComposer({
           />
           <span className="flex min-w-0 flex-1 items-center truncate">
             {phraseDictee}
-            {ecoute ? <ThinkingDots /> : null}
+            {ecoute ? <ThinkingDots className="ml-0.5" /> : null}
           </span>
           {!ecoute ? (
             <button

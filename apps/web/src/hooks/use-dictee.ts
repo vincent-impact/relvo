@@ -20,6 +20,7 @@ import {
   phraseDictee,
   typeAudioSupporte,
 } from "@/lib/dictee-regles";
+import { vibrer } from "@/lib/haptique";
 
 // LA DICTÉE côté appareil (M22.2, M22.3) — le crochet que le composer de
 // l'échange et la page d'essai du backoffice partagent. Trois états : repos,
@@ -30,7 +31,9 @@ import {
 // premier essai : pas de relecture). Un relâcher arrivé pendant que le micro
 // s'ouvre est honoré dès qu'il est ouvert. L'écran qui s'éteint, l'app en
 // arrière-plan, la piste coupée : c'est un relâcher, ce qui est enregistré se
-// transcrit.
+// transcrit. Le téléphone VIBRE quand le micro s'ouvre et quand le doigt se
+// lève (R10, `lib/haptique.ts`) : sur la route, on sent que Relvo écoute sans
+// regarder l'écran.
 //
 // L'audio ne vit que dans la mémoire de l'appareil le temps de l'appel ;
 // `dernierAudio` le garde pour la feuille de partage de la page d'essai.
@@ -207,6 +210,7 @@ export function useDictee({
       await enregistreur.demarrer();
       setDureeS(0);
       setEtat("enregistre");
+      vibrer();
       if (relacheRef.current) void finir("geste");
     } catch (err) {
       setEtat("repos");
@@ -223,8 +227,9 @@ export function useDictee({
   /** Le doigt se lève : on arrête, on transcrit, l'appelant envoie. */
   const relacher = useCallback(() => {
     relacheRef.current = true;
+    if (enregistreur?.enCours) vibrer();
     void finir("geste");
-  }, [finir]);
+  }, [enregistreur, finir]);
 
   // L'écran qui s'éteint, l'app en arrière-plan : « un appui pour finir ».
   useEffect(() => {

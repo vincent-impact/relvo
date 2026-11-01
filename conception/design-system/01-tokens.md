@@ -193,7 +193,10 @@ propriétés qui ne redessinent pas la page :
   s'interrompt. Un aplat de couleur n'est jamais le seul signal d'un état.
 - **Une nouvelle se pose** (`.arrive`) : un chiffre qui change, une nouvelle qui se pose,
   descend de 4 px sur la durée d'accompagnement. **Relvo travaille** (`.respire`) : trois
-  points qui respirent, la seule boucle du produit.
+  points qui respirent. **Relvo écoute** (`.voile-ecoute`) : quand on maintient un disque pour
+  parler, la page entière se met à l'écoute — un voile qui souffle depuis le disque, du violet
+  vers le transparent, sur le double du souffle des étoiles. Ce sont les deux seules boucles du
+  produit, et elles battent ensemble.
 
 Le mouvement **réduit** du téléphone est respecté : moins et plus doux, pas zéro — ce qui aide
 à comprendre (un fondu) reste, ce qui se déplace ne se déplace plus.

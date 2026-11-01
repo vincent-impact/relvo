@@ -185,8 +185,18 @@ nouvelle conversation avec la transcription envoyée. Même socle que le compose
 un seuil court ouvre le micro (même `useDictee`, même route), la durée se dit au-dessus du
 disque, relâcher envoie et l'échange s'ouvre en nouvel échange, la dictée partie d'elle-même
 (`?dicte=`, effacée de l'adresse aussitôt). Un maintien trop court ou un micro refusé se
-disent en toast. **À éprouver sur le téléphone** : le micro en PWA installée, le geste sur le
-disque qui déborde de la pilule.
+disent en toast.
+
+**Repris sur le retour du dirigeant.** Le signal d'écoute était à peine perceptible (une
+pilule au-dessus du disque) ; demandé : le vibreur, et un écran d'écoute organique. Livré :
+le téléphone **vibre** à l'ouverture du micro et au relâcher (l'API Vibration sur Android ;
+sur iOS, le détour de l'interrupteur, que les versions récentes peuvent fermer — rien n'en
+dépend), et **la page entière se met à l'écoute** : un voile qui souffle depuis le disque, du
+violet vers le transparent, « Relvo écoute… » et la durée au milieu de l'écran, le geste qui
+reste en dessous — le même voile dans l'échange quand on maintient le micro du composer. Pas
+un changement de page pendant le maintien : le doigt tient le disque, une navigation
+démonterait le bouton et perdrait le micro ; l'échange vient au relâcher. **À éprouver sur le
+téléphone** : le vibreur, le geste sur le disque qui déborde de la pilule.
 
 ### R11 — Une notification à chaque nouvelle affaire
 
@@ -281,7 +291,10 @@ tâche (`resolveSourceConversations`), pour toutes les listes.
 - [x] M25 tranchée solution par solution : toutes les recommandations, S5 à éprouver, S10 et S17 écartées.
 - [x] M23 démarrée dans son propre chantier (`2026-10-m23-dossiers.md`).
 - [x] M23 terminée ; M27 (dossiers et sujets, tranché sur maquettes) démarrée dans son propre chantier (`2026-10-m27-dossiers-et-sujets.md`), avant M24 — **terminée le jour même**.
-- [x] R10 et R11 livrées (2026-11-01).
+- [x] R10 et R11 livrées (2026-11-01) ; R10 reprise le jour même sur le retour du dirigeant
+      (vibreur, écran d'écoute) — à éprouver sur le téléphone.
+- [ ] Les échanges proposés par Relvo, séparés de la discussion : proposition dans `ecarts`
+      (« Relvo propose des échanges, il ne les mélange pas »), à trancher avant R12.
 - [ ] R9 et R12 à livrer.
 - [x] Troisième vague enregistrée, livrée et **validée en production par le dirigeant** (R13 à
       R16) ; R15 tranchée C puis ramenée à 18 px ; R16 reprise sur son retour.

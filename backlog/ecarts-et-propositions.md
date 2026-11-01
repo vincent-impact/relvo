@@ -2070,6 +2070,24 @@ traverse toutes les routes protégées.
 ⚠️ **La protection par ricochet reste la ligne qui compte** hors navigation de page : le proxy
 raisonne sur des chemins, or une Server Action n'en a pas et le filtre exclut les routes d'API.
 
+### Relvo propose des échanges, il ne les mélange pas
+
+**`proposé`** · Par le dirigeant, le 2026-11-01, sur la recette de l'alpha. Aujourd'hui, tout ce
+que Relvo veut dire — une étape de la prise en main, la carte de lecture d'une boîte, une
+question née de la structuration, bientôt « ce qui a changé » (M13.6) — se pose **en tête du
+même fil**, au-dessus de la discussion que le dirigeant mène, et les deux se mélangent : la
+question de la boîte reste affichée pendant qu'on demande ses tâches du jour. Le dirigeant
+l'avait noté pendant la prise en main. Proposition : **chaque chose que Relvo a à dire est un
+échange à part**, avec son titre — « Prise en main », « Lecture de votre boîte », « Narbonne
+est-il une franchise ? », « Ce qui a changé » —, groupé par son origine (l'étape du script, la
+lecture, le sujet). Le disque ouvre toujours un échange vide ; ce que Relvo attend se lit en
+tête en **une ligne par échange**, à ouvrir, jamais déplié dans le fil ; le badge et la
+notification mènent à l'échange concerné. Ce que ça déplace : les questions (`RelvoQuestion`)
+restent l'état persisté, c'est leur **regroupement** qui change, et l'échange de Relvo n'est
+plus un fil de l'appareil mais une vue sur ce groupe. R9 (retenir les questions de la lecture
+tant que le script est ouvert) en devient presque inutile. À trancher avec le dirigeant avant
+R12, qui en dépend.
+
 ### Un dossier pour un contact, un dossier pour une boîte
 
 **`proposé`** · Par le dirigeant, le 2026-10-29, à la livraison de la tranche 6 de M24. Le

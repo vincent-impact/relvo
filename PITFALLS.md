@@ -737,3 +737,16 @@ d'une réponse du téléphone (`ingestOutboundWhatsApp`). Toute nouvelle voie d'
 test qui vérifie que le sortant **retombe dans la conversation de l'entrant**. Les fantômes déjà
 créés se fondent par `pnpm --filter web wa:reparer <e-mail>` (`reparerConversationsFantomes`).
 
+### #76 — Un serveur de dev qui tourne depuis des jours ne recharge plus `globals.css`
+
+**Symptôme** : un composant neuf se rend (le DOM est là, les classes sont posées) mais ses règles
+écrites dans `globals.css` n'arrivent pas : fond absent, animation `none`. Les fichiers `.tsx`,
+eux, se rechargent — on cherche une erreur de CSS qui n'existe pas.
+
+**Cause** : le serveur `next dev` sur le port 3100 tournait depuis plusieurs jours ; son observateur
+avait lâché la feuille de style globale. Un `touch` ne la réveille pas.
+
+**Règle** : avant de douter d'une règle CSS, comparer la feuille **servie** (`/_next/static/…css`)
+au fichier ; si elle est en retard, redémarrer le serveur de dev (`PORT=3100
+AUTH_URL=http://localhost:3100 pnpm dev`) — c'est tout.
+

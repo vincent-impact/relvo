@@ -706,6 +706,49 @@
   animation-delay: 320ms;
 }
 
+/* L'écoute (M22.8) : quand on maintient un disque pour parler, la page entière
+   se met à l'écoute — un voile monte du disque et SOUFFLE, du violet vers le
+   transparent, sur le DOUBLE du souffle des étoiles : « Relvo travaille »
+   respire, « Relvo écoute » souffle, et les deux battent ensemble. La seconde
+   boucle du produit, et la dernière. Opacité et transform seulement ; le fond
+   blanc fait reculer la page sans la cacher. */
+.voile-ecoute {
+  background: rgb(255 255 255 / 0.55);
+  animation: fondu var(--dur-moyen) var(--courbe-sortie) both;
+}
+.voile-ecoute-souffle {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 72% at 50% 100%,
+    var(--relvo) 0%,
+    color-mix(in oklab, var(--relvo) 55%, transparent) 38%,
+    transparent 72%
+  );
+  transform-origin: 50% 100%;
+  animation: souffle 1800ms var(--courbe-deplacement) infinite;
+}
+@keyframes souffle {
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.08);
+  }
+}
+@keyframes souffle-fondu {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
 /* Mouvement réduit : moins et plus doux, pas zéro. Ce qui aide à comprendre
    (un fondu) reste ; ce qui se déplace ne se déplace plus. */
 @media (prefers-reduced-motion: reduce) {
@@ -722,6 +765,10 @@
   .respire > * {
     animation: none;
     opacity: 0.6;
+  }
+  /* L'écoute reste lisible : le voile souffle en opacité, sans grandir. */
+  .voile-ecoute-souffle {
+    animation-name: souffle-fondu;
   }
   .pressable:active {
     transform: none;
