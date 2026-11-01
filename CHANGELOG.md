@@ -4,6 +4,12 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-11-01
+
+- **Nouveau** — Un appui sur une tâche l'ouvre pour la lire, avec un bouton « Voir le message d'origine » qui vous amène au message dont elle vient ; « Modifier » reste à portée.
+- **Corrigé** — Quand vous répondez à un message WhatsApp depuis Relvo, votre réponse apparaît maintenant dans la conversation, comme celle que vous écrivez depuis votre téléphone.
+- **Corrigé** — Dans Safari sur iPhone, sans installer Relvo sur l'écran d'accueil, la barre du bas (Accueil, Calendrier, Relvo, Sujets, Conversations) est de nouveau visible.
+
 ## 2026-10-29
 
 - **Nouveau** — Si votre boîte était reliée par l'intermédiaire, Relvo vous propose de la relier à nouveau avec Google, quand vous voulez : vos conversations et vos sujets restent, rien ne se perd.
