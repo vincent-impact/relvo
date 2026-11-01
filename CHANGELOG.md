@@ -6,6 +6,7 @@
 
 ## 2026-11-01
 
+- **Nouveau** — Quand vous maintenez le disque Relvo pour parler, tout l'écran se met à l'écoute et votre téléphone vibre, dans l'application comme depuis le dock.
 - **Nouveau** — Quand Relvo ouvre un nouveau sujet à partir d'un message reçu, votre téléphone vous prévient ; un appui ouvre le sujet. Pendant la lecture d'une boîte qu'on vient de relier, rien ne sonne.
 - **Nouveau** — Vous pouvez parler à Relvo depuis n'importe quelle page : maintenez le disque violet du bas, dites ce que vous voulez, relâchez. Relvo reçoit votre demande et vous répond dans un nouvel échange.
 - **Corrigé** — Dans la liste des sujets, les titres restent gros et sur deux lignes, mais un cran plus petits, pour un meilleur équilibre.
