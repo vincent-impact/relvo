@@ -1050,12 +1050,17 @@ export async function getConversationThread(
     "Conversation",
   );
 
-  const rows = await db.message.findMany({
-    where: { conversationId: id },
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    take: CONVERSATION_THREAD_MAX,
-    include: CONVERSATION_MESSAGE_INCLUDE,
-  });
+  // Les PLUS RÉCENTS d'abord pour borner, puis remis dans l'ordre de lecture :
+  // borner en ordre croissant garderait les 200 plus anciens et couperait
+  // tout ce qui arrive ensuite — la réponse qu'on vient d'envoyer comprise.
+  const rows = (
+    await db.message.findMany({
+      where: { conversationId: id },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: CONVERSATION_THREAD_MAX,
+      include: CONVERSATION_MESSAGE_INCLUDE,
+    })
+  ).reverse();
 
   // Résolution d'appartenance au READ TIME (contact enregistré APRÈS la création
   // du fil, cf. buildContactResolver) — construite UNIQUEMENT s'il reste quelque
@@ -1250,7 +1255,83 @@ export async function getConversationThread(
 // efface, et le journal le dit. Idempotent : sans fantôme, rien ne bouge.
 // ─────────────────────────────────────────────────────────────
 
-const PHANTOM_KEY_PREFIX = "wa-direct:thread:";
+export const PHANTOM_KEY_PREFIX = "wa-direct:thread:";
+
+export type ConversationDuFil = {
+  id: string;
+  type: ConversationType;
+  key: string;
+  title: string;
+  contactId: string | null;
+  interlocutorRaw: string | null;
+};
+
+/**
+ * LA conversation d'un fil WhatsApp (`chat_id`) sur un canal — celle qu'un
+ * message reçu a créée, qui connaît l'interlocuteur. C'est à elle qu'un sortant
+ * demande son identité pour retomber dans le même fil (PITFALLS #75).
+ *
+ * Un fil peut porter PLUSIEURS conversations : la vraie et un fantôme
+ * (`wa-direct:thread:<chat_id>`, un sortant d'avant le correctif, laissé en
+ * place quand le dirigeant choisit de ne pas réécrire l'historique). Une
+ * recherche « la première qui vient » retombait sur le fantôme une fois sur
+ * deux — et le sortant y retournait. Ici l'ordre est tranché : la conversation
+ * que l'écran désigne si on la connaît, sinon celle dont la clé n'est pas le
+ * fil, sinon celle qui a un interlocuteur, le fantôme en tout dernier.
+ */
+export async function conversationDuFil(
+  db: TenantDb | Tx,
+  args: {
+    channelId: string;
+    externalThreadId: string;
+    /** La conversation que l'écran a ouverte, quand il la connaît. */
+    conversationId?: string | null;
+    types?: ConversationType[];
+  },
+): Promise<ConversationDuFil | null> {
+  const types = args.types ?? [
+    ConversationType.whatsapp_direct,
+    ConversationType.whatsapp_group,
+  ];
+  const select = {
+    id: true,
+    type: true,
+    key: true,
+    title: true,
+    contactId: true,
+    interlocutorRaw: true,
+  } as const;
+  if (args.conversationId) {
+    const designee = await db.conversation.findFirst({
+      where: {
+        id: args.conversationId,
+        channelId: args.channelId,
+        externalThreadId: args.externalThreadId,
+        type: { in: types },
+      },
+      select,
+    });
+    if (designee) return designee;
+  }
+  const candidates = await db.conversation.findMany({
+    where: {
+      channelId: args.channelId,
+      externalThreadId: args.externalThreadId,
+      type: { in: types },
+    },
+    orderBy: { createdAt: "asc" },
+    take: 10,
+    select,
+  });
+  const rang = (c: ConversationDuFil) =>
+    (c.key.startsWith(PHANTOM_KEY_PREFIX) ? 2 : 0) +
+    (c.interlocutorRaw ? 0 : 1);
+  return (
+    candidates
+      .map((c, i) => ({ c, i }))
+      .sort((a, b) => rang(a.c) - rang(b.c) || a.i - b.i)[0]?.c ?? null
+  );
+}
 
 export type ConversationFantome = {
   fantomeId: string;

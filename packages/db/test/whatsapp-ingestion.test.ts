@@ -533,3 +533,91 @@ describe("sendWhatsAppReply — la réponse envoyée depuis Relvo (PITFALLS #75)
     expect(await reparerConversationsFantomes(db)).toHaveLength(0);
   });
 });
+
+// Le fil porte ENCORE un fantôme (le dirigeant a choisi de ne pas réécrire
+// l'historique) : la réponse ne doit pas y retomber — ni depuis Relvo, ni
+// depuis le téléphone.
+async function filAvecFantome(email: string) {
+  const { account, channel, db } = await makeAccountWithChannel(email);
+  await connecter(account.id, channel.id);
+  const { message: entrant } = await ingestInboundWhatsApp(db, {
+    channelId: channel.id,
+    externalId: "in-p1",
+    externalThreadId: "chat-sami",
+    senderRaw: "33677777777@s.whatsapp.net",
+    senderName: "Sami",
+    content: "On se voit demain ?",
+  });
+  const subject = await createSubjectFromMessage(db, entrant.id);
+  const fantome = await createMessage(db, {
+    channelId: channel.id,
+    direction: MessageDirection.outgoing,
+    subjectId: subject.id,
+    externalId: "sent-old",
+    externalThreadId: "chat-sami",
+    content: "Oui",
+  });
+  expect(fantome.conversationId).not.toBe(entrant.conversationId);
+  expect(await db.conversation.count()).toBe(2);
+  // La vraie conversation continue de vivre APRÈS le fantôme : chaque message
+  // reçu la met à jour. C'est ce qui, en production, faisait rendre le
+  // fantôme par une recherche « la première qui vient ».
+  for (let i = 2; i <= 4; i++) {
+    await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: `in-p${i}`,
+      externalThreadId: "chat-sami",
+      senderRaw: "33677777777@s.whatsapp.net",
+      senderName: "Sami",
+      content: `Message ${i}`,
+    });
+  }
+  return { channel, db, entrant, subject, fantome };
+}
+
+describe("un fil qui porte encore une conversation fantôme (PITFALLS #75)", () => {
+  it("la réponse envoyée depuis Relvo retombe dans la vraie conversation, désignée par l'écran", async () => {
+    const { channel, db, entrant, subject } = await filAvecFantome(
+      "wa-fantome-ecran@test.fr",
+    );
+    const envoye = await sendWhatsAppReply(db, fauxEnvoyeur(), {
+      subjectId: subject.id,
+      channelId: channel.id,
+      chatId: "chat-sami",
+      conversationId: entrant.conversationId,
+      body: "À 10 h.",
+    });
+    expect(envoye.conversationId).toBe(entrant.conversationId);
+    expect(await db.conversation.count()).toBe(2);
+  });
+
+  it("…et même sans conversation désignée, le fantôme n'est jamais choisi", async () => {
+    const { channel, db, entrant, subject } = await filAvecFantome(
+      "wa-fantome-fil@test.fr",
+    );
+    const envoye = await sendWhatsAppReply(db, fauxEnvoyeur(), {
+      subjectId: subject.id,
+      channelId: channel.id,
+      chatId: "chat-sami",
+      body: "À 10 h.",
+    });
+    expect(envoye.conversationId).toBe(entrant.conversationId);
+    expect(envoye.recipientContactId).toBe(subject.contactIds[0]);
+    expect(await db.conversation.count()).toBe(2);
+  });
+
+  it("la réponse écrite depuis le téléphone retombe aussi dans la vraie conversation", async () => {
+    const { channel, db, entrant } = await filAvecFantome(
+      "wa-fantome-tel@test.fr",
+    );
+    const { message, created } = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "sent-phone",
+      externalThreadId: "chat-sami",
+      content: "Je confirme.",
+    });
+    expect(created).toBe(true);
+    expect(message?.conversationId).toBe(entrant.conversationId);
+    expect(await db.conversation.count()).toBe(2);
+  });
+});

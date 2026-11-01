@@ -20,6 +20,7 @@ import {
   splitFullName,
 } from "./contacts";
 import {
+  conversationDuFil,
   findInSetEmailSubject,
   findListeningSubjectForConversation,
   replySubjectLine,
@@ -618,13 +619,11 @@ export async function ingestOutboundWhatsApp(
   });
   if (existing) return { message: existing, created: false };
 
-  const conversation = await db.conversation.findFirst({
-    where: {
-      channelId: data.channelId,
-      externalThreadId: data.externalThreadId,
-      type: ConversationType.whatsapp_direct,
-    },
-    select: { id: true, contactId: true, interlocutorRaw: true },
+  // La conversation du fil — la vraie, jamais un fantôme (PITFALLS #75).
+  const conversation = await conversationDuFil(db, {
+    channelId: data.channelId,
+    externalThreadId: data.externalThreadId,
+    types: [ConversationType.whatsapp_direct],
   });
   if (!conversation) return { message: null, created: false };
 
@@ -995,6 +994,9 @@ export const sendWhatsAppReplySchema = z.object({
   channelId: z.uuid(),
   // Fil WhatsApp cible (chat_id Unipile), connu via un message entrant.
   chatId: z.string().trim().min(1).max(255),
+  // La conversation que l'écran a ouverte : quand elle est là, c'est elle qui
+  // reçoit la réponse — sans la chercher par le fil (PITFALLS #75).
+  conversationId: z.uuid().optional().nullable(),
   // Interlocuteur destinataire (contact sélectionné dans le composer) : sans lui
   // le message sortant ne serait rattaché à personne et disparaîtrait du fil
   // filtré par interlocuteur.
@@ -1047,22 +1049,14 @@ export async function sendWhatsAppReply(
   // que la réponse retombe dans LA MÊME conversation. Sans cela, le sortant
   // se rangeait sous `wa-direct:thread:<chat_id>` — une conversation fantôme
   // que personne n'ouvre, et la réponse « disparaissait » du fil (PITFALLS
-  // #75). Le même chemin que l'écho d'une réponse écrite depuis le téléphone
-  // (`ingestOutboundWhatsApp`).
-  const fil = await db.conversation.findFirst({
-    where: {
-      channelId: data.channelId,
-      externalThreadId: data.chatId,
-      type: {
-        in: [ConversationType.whatsapp_direct, ConversationType.whatsapp_group],
-      },
-    },
-    select: {
-      type: true,
-      title: true,
-      contactId: true,
-      interlocutorRaw: true,
-    },
+  // #75). Un fil qui porte encore un fantôme ne doit pas le rendre : c'est
+  // `conversationDuFil` qui tranche — la conversation que l'écran désigne
+  // d'abord. Le même chemin que l'écho d'une réponse écrite depuis le
+  // téléphone (`ingestOutboundWhatsApp`).
+  const fil = await conversationDuFil(db, {
+    channelId: data.channelId,
+    externalThreadId: data.chatId,
+    conversationId: data.conversationId,
   });
   const groupe = fil?.type === ConversationType.whatsapp_group;
 

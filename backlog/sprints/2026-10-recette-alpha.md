@@ -256,6 +256,14 @@ et la réponse retombe dans le même fil — direct ou groupe ; test de régress
 `pnpm --filter web wa:reparer <e-mail>` — **à lancer en production sur chaque compte de
 testeur**, `--simuler` d'abord.
 
+**Reprise.** Le dirigeant a choisi de garder l'historique des testeurs, fantômes compris — et la
+réponse ne se voyait toujours pas : la recherche du fil par `chat_id` rendait le fantôme dès que la
+vraie conversation avait reçu d'autres messages (reproduit en test). La réponse va désormais dans
+la **conversation ouverte à l'écran**, et toute recherche par fil écarte un fantôme tant qu'une
+autre conversation existe (`conversationDuFil`), pour l'envoi depuis Relvo comme pour l'écho du
+téléphone. Au passage, le fil n'affichait que ses 200 messages **les plus anciens** : il montre
+maintenant les 200 plus récents.
+
 ### R15 — La liste des sujets se lit mal debout ou en voiture
 
 **Constat.** Les testeurs lisent leurs sujets en action ; la ligne de 58 px, son titre de
@@ -319,5 +327,6 @@ de la lecture.
 - [x] Troisième vague enregistrée, livrée et **validée en production par le dirigeant** (R13 à
       R16) ; R15 tranchée C puis ramenée à 18 px, puis 16 px à l'essai ; R16 reprise sur son retour.
 - [x] `wa:reparer` : le dirigeant a choisi de ne pas réécrire l'historique des testeurs — les
-      fantômes restent, le script reste disponible.
+      fantômes restent, le script reste disponible ; R14 reprise pour tenir avec eux (2026-11-01),
+      à revérifier en production par le dirigeant.
 - [ ] Vagues de recette suivantes : à ajouter ici.

@@ -731,11 +731,21 @@ le contact : `createMessage` retombait sur `wa-direct:thread:<chat_id>`, une **s
 conversation sur le même fil, invisible, où le dirigeant se parle tout seul. Un contact passé par
 l'écran n'aurait pas suffi : son téléphone enregistré n'a pas la forme brute de l'agrégateur.
 
-**Règle** : un sortant WhatsApp **demande à la conversation du fil** (par `chat_id`) son
-interlocuteur, son contact et sa nature de groupe, et les passe à `createMessage` — comme l'écho
-d'une réponse du téléphone (`ingestOutboundWhatsApp`). Toute nouvelle voie d'envoi s'éprouve par un
-test qui vérifie que le sortant **retombe dans la conversation de l'entrant**. Les fantômes déjà
-créés se fondent par `pnpm --filter web wa:reparer <e-mail>` (`reparerConversationsFantomes`).
+**Cause bis — le fantôme, une fois là, se fait passer pour le fil.** Un fil qui porte déjà un
+fantôme a **deux** conversations sous le même `chat_id`. Une recherche « la première qui vient »
+(`findFirst` sans ordre) rend le fantôme dès que la vraie conversation a bougé — et elle bouge à
+chaque message reçu. Le fantôme n'a pas d'interlocuteur : le sortant y retombe, et le correctif
+semble n'avoir rien changé. Les tests passaient : une base neuve rend la vraie en premier.
+
+**Règle** : un sortant WhatsApp va dans **la conversation que l'écran désigne** (`conversationId`)
+et, à défaut, dans celle que `conversationDuFil` tranche — jamais une clé `wa-direct:thread:`
+quand une autre existe. C'est elle qui donne l'interlocuteur, le contact et la nature de groupe à
+`createMessage` — pour l'envoi depuis Relvo comme pour l'écho d'une réponse du téléphone
+(`ingestOutboundWhatsApp`). Toute nouvelle voie d'envoi s'éprouve par un test qui vérifie que le
+sortant **retombe dans la conversation de l'entrant, un fantôme étant présent et la vraie
+conversation ayant reçu des messages depuis**. Les fantômes se fondent par
+`pnpm --filter web wa:reparer <e-mail>` (`reparerConversationsFantomes`) — mais le code doit tenir
+sans ce geste : le dirigeant peut choisir de ne pas réécrire l'historique.
 
 ### #76 — Une modification de `globals.css` n'est pas servie par le serveur de dev en cours
 

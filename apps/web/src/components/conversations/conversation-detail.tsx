@@ -354,6 +354,9 @@ export function ConversationDetail({
         subjectId: activeListening.subjectId,
         channelId,
         chatId: externalThreadId,
+        // La conversation ouverte reçoit la réponse — pas « la première du
+        // fil », qui peut être un fantôme (PITFALLS #75).
+        conversationId,
         body: text,
       });
       if (!res.ok) {
