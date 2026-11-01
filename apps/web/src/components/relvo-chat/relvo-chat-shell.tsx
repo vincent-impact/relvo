@@ -16,14 +16,11 @@ import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { RecipientComposer } from "@/components/shared/recipient-composer";
 import { RelvoFil } from "@/components/relvo-chat/relvo-fil";
 import { InvitationNotifications } from "@/components/relvo-chat/invitation-notifications";
-import { QuestionsRelvo } from "@/components/relvo-chat/questions-relvo";
-import { PriseEnMain } from "@/components/relvo-chat/prise-en-main";
-import type { CarteVivanteData } from "@/components/shared/carte-vivante";
-import { PollRefresh } from "@/components/shared/poll-refresh";
-import type { SubjectRowData } from "@/components/shared/subject-row";
-import type { OpenQuestion } from "@relvo/db";
+import { AttenteRelvo } from "@/components/relvo-chat/attente-relvo";
+import type { EchangeRelvo } from "@relvo/db";
 import type { RelvoUIMessage } from "@/server/ia/echange/outils";
 import { doitReprendre, titreParDefaut } from "@/lib/echanges-regles";
+import { cn } from "@/lib/utils";
 import {
   dernierEchange,
   lireEchange,
@@ -47,9 +44,11 @@ import {
 // échange — `?nouveau=1` en force un, `?reprendre=<id>` rouvre un échange de
 // l'historique. Le titre est demandé à la fin du premier tour (M10.4).
 //
-// Relvo parle en premier (invariant 36) : ses questions ouvertes se posent en
-// tête, en formulaire (M18.9), et la lecture du courrier en cours se montre
-// en carte vivante qui se rafraîchit (M10.16) — avant le fil, quel qu'il soit.
+// Relvo parle en premier (invariant 36), mais il NE MÉLANGE PAS ce qu'il a à
+// dire avec la discussion du dirigeant (05 §11.12, recette de l'alpha) : ses
+// questions, la lecture du courrier, chaque chose est un ÉCHANGE À PART
+// (`EchangeRelvo`). Ici, dans l'échange vide, une ligne par échange qui
+// attend ; l'horloge porte le badge de ceux qui attendent une réponse.
 
 type Initial = Pick<EchangeStocke, "id" | "titre" | "creeLe" | "messages">;
 
@@ -62,9 +61,8 @@ export function RelvoChatShell({
   dicte = null,
   nouveau = false,
   reprendre = null,
-  questions = [],
-  lecture = null,
-  sujets = [],
+  attend = [],
+  pending = 0,
   clePublique = null,
 }: {
   backHref: string;
@@ -81,13 +79,11 @@ export function RelvoChatShell({
   nouveau?: boolean;
   /** Un échange de l'historique à rouvrir. */
   reprendre?: string | null;
-  /** Les questions de Relvo en attente, dans l'ordre où il les a posées. */
-  questions?: OpenQuestion[];
-  /** La lecture du courrier en cours, ou null. */
-  lecture?: CarteVivanteData | null;
-  /** Les sujets nés de cette lecture, sous la carte. */
-  sujets?: SubjectRowData[];
-  /** La clé publique VAPID : l'invitation à activer les notifications, quand les questions sont traitées. */
+  /** Les échanges de Relvo qui attendent — une ligne chacun en tête de l'échange vide. */
+  attend?: EchangeRelvo[];
+  /** Ceux qui attendent une RÉPONSE : le badge de l'horloge. */
+  pending?: number;
+  /** La clé publique VAPID : l'invitation à activer les notifications, quand rien n'attend de réponse. */
   clePublique?: string | null;
 }) {
   // Ce que l'appareil sait de l'échange à ouvrir — lu AVANT de monter le fil,
@@ -140,9 +136,8 @@ export function RelvoChatShell({
       prompts={prompts}
       initialText={initialText}
       dicte={dicte}
-      questions={questions}
-      lecture={lecture}
-      sujets={sujets}
+      attend={attend}
+      pending={pending}
       clePublique={clePublique}
     />
   );
@@ -156,9 +151,8 @@ function RelvoSession({
   prompts,
   initialText,
   dicte,
-  questions,
-  lecture,
-  sujets,
+  attend,
+  pending,
   clePublique,
 }: {
   initial: Initial;
@@ -168,9 +162,8 @@ function RelvoSession({
   prompts: string[];
   initialText: string;
   dicte: string | null;
-  questions: OpenQuestion[];
-  lecture: CarteVivanteData | null;
-  sujets: SubjectRowData[];
+  attend: EchangeRelvo[];
+  pending: number;
   clePublique: string | null;
 }) {
   // Une invite touchée se pose dans le composer : le composant repart avec
@@ -276,10 +269,19 @@ function RelvoSession({
             ) : null}
             <Link
               href="/relvo/historique"
-              aria-label="Mes échanges"
-              className={SKY_BTN}
+              aria-label={
+                pending > 0
+                  ? `Mes échanges, ${pending} de Relvo en attente`
+                  : "Mes échanges"
+              }
+              className={cn(SKY_BTN, "relative")}
             >
               <ClockCounterClockwise className="size-[18px]" />
+              {pending > 0 ? (
+                <span className="chiffre absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full border-2 border-(--relvo) bg-urgent px-1 text-[10px] text-white">
+                  {pending}
+                </span>
+              ) : null}
             </Link>
           </div>
         }
@@ -306,18 +308,12 @@ function RelvoSession({
           </div>
         ) : null}
 
-        {lecture ? (
-          <>
-            <PriseEnMain lecture={lecture} sujets={sujets} />
-            {lecture.status === "pending" || lecture.status === "running" ? (
-              <PollRefresh intervalMs={20_000} />
-            ) : null}
-          </>
-        ) : null}
-        <QuestionsRelvo questions={questions} />
+        {/* Ce que Relvo attend, une ligne par échange — dans l'échange vide
+            seulement : un fil en cours reste celui du dirigeant. */}
+        {vide ? <AttenteRelvo echanges={attend} className="mb-3" /> : null}
         {/* La dernière étape de la prise en main : les notifications de CET
-            appareil, une fois les questions du compte traitées. */}
-        {questions.length === 0 ? (
+            appareil, une fois que rien n'attend de réponse. */}
+        {pending === 0 ? (
           <InvitationNotifications clePublique={clePublique} />
         ) : null}
 

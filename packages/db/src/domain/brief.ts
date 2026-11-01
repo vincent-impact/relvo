@@ -1,3 +1,4 @@
+import { cleDeLaQuestion } from "./echanges-relvo";
 import { debutDuJourParis } from "./temps";
 import { loadFolderTree, presentationDe } from "./folders";
 import {
@@ -48,6 +49,8 @@ export type BriefSuggestion = {
   text: string;
   /** Identifiant de la RelvoQuestion, pour une suggestion de nature question. */
   questionId?: string;
+  /** La clé de l'échange de Relvo qui porte la question : la ligne y mène. */
+  echange?: string;
 };
 
 /** Un sujet qui attend l'utilisateur : une réponse à donner ou une décision à prendre. */
@@ -163,12 +166,18 @@ export async function getBriefSuggestions(
       db.channelCatchup.findFirst({
         where: { status: { in: ["pending", "running"] } },
         orderBy: { requestedAt: "desc" },
-        select: { messagesImported: true, subjectsOpened: true },
+        select: { id: true, messagesImported: true, subjectsOpened: true },
       }),
       db.relvoQuestion.findFirst({
         where: { status: QuestionStatus.open },
         orderBy: { askedAt: "asc" },
-        select: { id: true, text: true },
+        select: {
+          id: true,
+          text: true,
+          originStep: true,
+          subjectId: true,
+          originSubjectId: true,
+        },
       }),
       db.subject.count({
         where: {
@@ -189,6 +198,7 @@ export async function getBriefSuggestions(
     const ouvertes = lecture.subjectsOpened;
     out.push({
       kind: "lecture",
+      echange: `lecture:${lecture.id}`,
       text:
         lus === 0
           ? "Je lis encore votre courrier."
@@ -200,6 +210,7 @@ export async function getBriefSuggestions(
       kind: "question",
       text: question.text,
       questionId: question.id,
+      echange: cleDeLaQuestion(question),
     });
   }
   if (staleReplies > 0) {

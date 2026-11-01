@@ -20,6 +20,7 @@ import {
   tenantDb,
   type CatchupStopReason,
   type TenantDb,
+  cleDeLaQuestion,
 } from "@relvo/db";
 import { expireTenantData } from "@/server/cached";
 import { notifierQuestion } from "@/server/push/questions";
@@ -295,9 +296,11 @@ export async function executerTranche(
     }) => {
       const q = await poserFinDeLecture(db, { id: due.id, ...ligne });
       if (q) {
-        await notifierQuestion(due.accountId, { id: q.id, text: q.text }).catch(
-          (e) => console.error("[push] fin de lecture non notifiée", e),
-        );
+        await notifierQuestion(due.accountId, {
+          id: q.id,
+          text: q.text,
+          echange: cleDeLaQuestion(q),
+        }).catch((e) => console.error("[push] fin de lecture non notifiée", e));
       }
     };
     if (arret) {

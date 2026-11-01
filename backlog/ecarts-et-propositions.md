@@ -2072,7 +2072,8 @@ raisonne sur des chemins, or une Server Action n'en a pas et le filtre exclut le
 
 ### Relvo propose des échanges, il ne les mélange pas
 
-**`proposé`** · Par le dirigeant, le 2026-11-01, sur la recette de l'alpha. Aujourd'hui, tout ce
+**`tranché`** · Par le dirigeant, le 2026-11-01, sur la recette de l'alpha ; maquettes sur un
+canevas le jour même, mise en production demandée telle quelle pour juger à l'usage. Aujourd'hui, tout ce
 que Relvo veut dire — une étape de la prise en main, la carte de lecture d'une boîte, une
 question née de la structuration, bientôt « ce qui a changé » (M13.6) — se pose **en tête du
 même fil**, au-dessus de la discussion que le dirigeant mène, et les deux se mélangent : la
@@ -2085,8 +2086,10 @@ tête en **une ligne par échange**, à ouvrir, jamais déplié dans le fil ; le
 notification mènent à l'échange concerné. Ce que ça déplace : les questions (`RelvoQuestion`)
 restent l'état persisté, c'est leur **regroupement** qui change, et l'échange de Relvo n'est
 plus un fil de l'appareil mais une vue sur ce groupe. R9 (retenir les questions de la lecture
-tant que le script est ouvert) en devient presque inutile. À trancher avec le dirigeant avant
-R12, qui en dépend.
+tant que le script est ouvert) en devient inutile : les questions de la lecture vivent dans
+l'échange de la lecture. Livré : `domain/echanges-relvo.ts` (la clé d'une question, le
+regroupement, le compte du badge), `/relvo/echanges/[cle]`, la tête de l'échange vide,
+l'historique en deux sections, la notification et l'accueil qui mènent à l'échange.
 
 ### Un dossier pour un contact, un dossier pour une boîte
 

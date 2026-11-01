@@ -254,19 +254,24 @@ describe("le brief du matin (M12.7) — une phrase, ou le silence", async () => 
 describe("une question de Relvo s'ouvre (M12.9)", async () => {
   const { notificationQuestion, TAG_QUESTION } =
     await import("@/server/push/questions");
-  it("la notification porte la question, ouvre l'échange, et remplace la précédente", () => {
+  it("la notification porte la question, ouvre SON échange, et remplace la précédente", () => {
     expect(
       notificationQuestion({
         id: "q1",
         text: "Narbonne est-il une franchise ?",
+        echange: "sujet:s-1",
       }),
     ).toEqual({
       kind: "question",
       titre: "Une question pour vous",
       corps: "Narbonne est-il une franchise ?",
-      url: "/relvo?from=%2F",
+      url: "/relvo/echanges/sujet%3As-1?from=%2F",
       tag: TAG_QUESTION,
     });
+    // Sans clé — un producteur d'avant —, l'échange vide, où la ligne attend.
+    expect(notificationQuestion({ id: "q1", text: "Narbonne ?" }).url).toBe(
+      "/relvo?from=%2F",
+    );
   });
 });
 

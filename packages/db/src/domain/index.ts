@@ -38,6 +38,7 @@ export * from "./prise-en-main";
 export * from "./brief";
 export * from "./echange";
 export * from "./questions";
+export * from "./echanges-relvo";
 export * from "./migration-gmail";
 export * from "./notifications";
 export * from "./admin";

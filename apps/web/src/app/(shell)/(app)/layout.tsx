@@ -2,7 +2,11 @@ import { redirect } from "next/navigation";
 import { AppDock } from "@/components/layout/app-dock";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { SideMenu, SideMenuProvider } from "@/components/layout/side-menu";
-import { countActiveCatchups, countOpenQuestions, tenantDb } from "@relvo/db";
+import {
+  countActiveCatchups,
+  countEchangesEnAttente,
+  tenantDb,
+} from "@relvo/db";
 import { getSession, requireAccount } from "@/server/auth-context";
 
 // Chrome mobile-first commun aux vues structurées : colonne unique pleine
@@ -28,15 +32,16 @@ export default async function AppLayout({
   // montre pas. La trace est sur le compte, jamais dans le navigateur.
   if (!account.welcomeSeenAt) redirect("/bienvenue");
 
-  // Le badge du bouton Relvo : les questions qu'il a posées et qui attendent
-  // (invariant 36). Compté à chaque rendu, sans cache : une question naît
-  // aussi hors de toute action de l'écran (une structuration, le rattrapage),
-  // et un badge en retard est un badge faux. Un décompte indexé, rien de plus.
+  // Le badge du bouton Relvo : les ÉCHANGES de Relvo qui attendent une
+  // réponse (invariant 36, 05 §11.12) — pas les questions une à une : la
+  // prise en main est un seul échange. Compté à chaque rendu, sans cache : une
+  // question naît aussi hors de toute action de l'écran (une structuration,
+  // le rattrapage), et un badge en retard est un badge faux.
   const db = tenantDb(account.id);
   // Relvo lit le courrier : le disque du dock RESPIRE, d'où qu'on soit — le
   // travail se voit sans ouvrir la page des canaux. Un décompte indexé aussi.
   const [pendingQuestions, lecturesActives] = await Promise.all([
-    countOpenQuestions(db),
+    countEchangesEnAttente(db),
     countActiveCatchups(db),
   ]);
 

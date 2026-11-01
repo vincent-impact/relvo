@@ -14,13 +14,19 @@ import {
   repondreQuestionAction,
 } from "@/server/actions/relvo";
 
-// Les QUESTIONS DE RELVO dans l'échange (M18.9, 05 §11.12) : Relvo parle en
-// premier. Une question ouverte se pose en tête de l'échange, en FORMULAIRE
-// (05 §11.11) — une question courte, des réponses complètes, « Je vous
-// l'écris… » pour une réponse libre, « Plus tard » qui la laisse ouverte,
-// « Ne plus demander » qui l'écarte. Une seule à la fois, dans l'ordre où
-// Relvo les a posées. La réponse passe par la même fonction du domaine que la
-// fiche ; ce qu'elle a fait s'affiche en une phrase.
+// Les QUESTIONS DE RELVO dans un échange (M18.9, 05 §11.12) : Relvo parle en
+// premier. Une question ouverte se pose en FORMULAIRE (05 §11.11) — une
+// question courte, des réponses complètes, « Je vous l'écris… » pour une
+// réponse libre, « Plus tard » qui la laisse ouverte, « Ne plus demander » qui
+// l'écarte. Une seule à la fois, dans l'ordre où Relvo les a posées. La
+// réponse passe par la même fonction du domaine que la fiche ; ce qu'elle a
+// fait s'affiche en une phrase.
+//
+// Depuis la recette de l'alpha, les questions ne se posent plus en tête du fil
+// du dirigeant : chaque chose que Relvo a à dire est un ÉCHANGE À PART
+// (`EchangeRelvo`), qui reçoit ici les questions de son groupe. L'état et les
+// gestes vivent dans le crochet, pour que l'échange y branche aussi son
+// composer : une réponse tapée en bas est une réponse libre.
 
 const CLE_AUTRE = "autre";
 const PLUS_TARD = "__plus_tard";
@@ -47,7 +53,7 @@ function phraseOutcome(o: QuestionOutcome): string {
   }
 }
 
-export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
+export function useQuestionsRelvo(questions: OpenQuestion[]) {
   const router = useRouter();
   // Les questions TRAITÉES dans cette session — répondues, écartées, remises
   // à plus tard — par identifiant, jamais par rang : la liste se rafraîchit
@@ -66,7 +72,6 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
   const [, start] = useTransition();
 
   const question = questions.find((q) => !traitees.has(q.id)) ?? null;
-  if (!question && !reponduEn) return null;
 
   function suivante() {
     if (!question) return;
@@ -158,8 +163,47 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
     repondre(key, option?.label ?? key);
   }
 
+  /** Une réponse tapée dans le composer : libre, sous la clé en cours. */
+  function repondreLibre(t: string) {
+    const propre = t.trim();
+    if (!propre || !question) return false;
+    repondre(libre ? cleLibre : CLE_AUTRE, propre);
+    return true;
+  }
+
+  /** La question en cours accepte une réponse écrite — pas une boîte, pas des cases à cocher. */
+  const accepteTexteLibre =
+    question != null &&
+    !question.connecteBoite &&
+    !question.migreBoite &&
+    !question.multiple;
+
+  return {
+    question,
+    reponduEn,
+    libre,
+    texte,
+    setTexte,
+    busyKey,
+    error,
+    choisir,
+    repondre,
+    repondreLibre,
+    accepteTexteLibre,
+    /** Les questions sont traitées, ou il n'y en avait pas. */
+    fini: question == null,
+    cleLibre,
+  };
+}
+
+export type QuestionsRelvoEtat = ReturnType<typeof useQuestionsRelvo>;
+
+export function QuestionsRelvoVue({ q }: { q: QuestionsRelvoEtat }) {
+  const { question, reponduEn, libre, texte, setTexte, busyKey, error } = q;
+  if (!question && !reponduEn) return null;
+
   return (
-    <div className="mb-3 space-y-3">
+    <div className="space-y-3">
       {reponduEn ? (
         <RelvoBlock className="pb-2.5" label="Relvo a noté votre réponse">
           <RelvoSentence>✦ {reponduEn}</RelvoSentence>
@@ -191,11 +235,11 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
                 { key: PLUS_TARD, label: "Plus tard", secondary: true },
               ]}
               onChoose={(keys) => {
-                if (keys.includes(PLUS_TARD)) return suivante();
+                if (keys.includes(PLUS_TARD)) return q.choisir(PLUS_TARD);
                 const labels = question.proposedAnswers
                   .filter((p) => keys.includes(p.key))
                   .map((p) => p.label);
-                repondre(keys[0] ?? null, labels.join(", "), keys);
+                q.repondre(keys[0] ?? null, labels.join(", "), keys);
               }}
               busy={busyKey !== null}
               error={error}
@@ -233,7 +277,7 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
                   secondary: true,
                 },
               ]}
-              onChoose={choisir}
+              onChoose={q.choisir}
               busyKey={busyKey}
               error={error}
             />
@@ -243,7 +287,7 @@ export function QuestionsRelvo({ questions }: { questions: OpenQuestion[] }) {
               className="mt-2.5 flex items-end gap-2"
               onSubmit={(e) => {
                 e.preventDefault();
-                if (texte.trim()) repondre(cleLibre, texte.trim());
+                if (texte.trim()) q.repondre(q.cleLibre, texte.trim());
               }}
             >
               <textarea

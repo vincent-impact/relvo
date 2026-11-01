@@ -2,12 +2,16 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import { RelvoHeader } from "@/components/layout/relvo-header";
+import { AttenteRelvo } from "@/components/relvo-chat/attente-relvo";
 import { HistoriqueLocal } from "@/components/relvo-chat/historique-local";
-import { requireAccount } from "@/server/auth-context";
+import { getTenantDb, requireAccount } from "@/server/auth-context";
+import { echangesDeRelvo } from "@/server/echanges-relvo";
 
-// Historique des ÉCHANGES avec Relvo (M10.4). Ils sont éphémères, en
-// IndexedDB sur l'appareil (05 §11.3) : la page serveur ne porte que l'entrée
-// « Nouvel échange » ; la liste se lit côté client (`HistoriqueLocal`).
+// Historique des ÉCHANGES avec Relvo (M10.4). Deux sections (05 §11.12) : ce
+// que RELVO attend — ses échanges ouverts, lus en base, signés des étoiles —,
+// puis VOS échanges, éphémères, en IndexedDB sur l'appareil (05 §11.3) : la
+// page serveur ne porte que l'entrée « Nouvel échange » ; la liste se lit
+// côté client (`HistoriqueLocal`).
 //
 // « Échange » et non « conversation » : depuis M6bis, une Conversation est une
 // ENTITÉ DE DONNÉES — le fil avec un interlocuteur externe. Garder le même mot
@@ -16,6 +20,8 @@ import { requireAccount } from "@/server/auth-context";
 
 export default async function RelvoHistoryPage() {
   await requireAccount();
+  const db = await getTenantDb();
+  const { echanges } = await echangesDeRelvo(db);
 
   return (
     <MobileFrame>
@@ -23,6 +29,11 @@ export default async function RelvoHistoryPage() {
         <RelvoHeader back="/relvo" title="Mes échanges avec Relvo" />
 
         <div className="pt-5">
+          <AttenteRelvo
+            echanges={echanges}
+            from="/relvo/historique"
+            className="mx-4 mb-5"
+          />
           {/* Une action de l'utilisateur : carte blanche, jamais le violet pâle
               signé, réservé à la voix de Relvo (01-tokens). */}
           <Link

@@ -1,3 +1,4 @@
+import { urlEchangeRelvo } from "@/lib/echanges-regles";
 import { envoyerNotification, type BilanEnvoi } from "./envoyer";
 import type { NotificationRelvo } from "./regles";
 
@@ -8,7 +9,12 @@ import type { NotificationRelvo } from "./regles";
 // posée pendant que l'échange est ouvert, ne l'appelle pas : on ne prévient pas
 // quelqu'un qui regarde déjà.
 
-export type QuestionANotifier = { id: string; text: string };
+export type QuestionANotifier = {
+  id: string;
+  text: string;
+  /** La clé de l'échange de Relvo qui porte la question (`cleDeLaQuestion`) : la notification y mène. */
+  echange?: string | null;
+};
 
 /** Un seul `tag` : une question visible à la fois, la dernière remplace la précédente. */
 export const TAG_QUESTION = "question";
@@ -19,8 +25,8 @@ export function notificationQuestion(q: QuestionANotifier): NotificationRelvo {
     kind: "question",
     titre: "Une question pour vous",
     corps: q.text,
-    // L'échange, qui pose la question en formulaire en tête (05 §11.12).
-    url: "/relvo?from=%2F",
+    // L'échange de Relvo qui porte la question, pas l'échange vide (05 §11.12).
+    url: q.echange ? urlEchangeRelvo(q.echange, "/") : "/relvo?from=%2F",
     tag: TAG_QUESTION,
   };
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { urlEchangeRelvo } from "@/lib/echanges-regles";
 import { LienNotifications } from "@/components/home/lien-notifications";
 import {
   RELVO_LINK,
@@ -72,9 +73,12 @@ export function newsSentence(news: CachedNews, hasChannels = true): string {
 }
 
 function suggestionHref(s: BriefSuggestion): string {
-  // Une question de Relvo se répond dans l'échange, en formulaire (05 §11.12) ;
-  // une suggestion par règles y entre comme premier tour, à envoyer.
-  if (s.kind === "question" || s.kind === "lecture") return "/relvo?from=%2F";
+  // Une question de Relvo se répond dans SON échange, en formulaire
+  // (05 §11.12) ; une suggestion par règles entre dans l'échange vide comme
+  // premier tour, à envoyer.
+  if (s.kind === "question" || s.kind === "lecture") {
+    return s.echange ? urlEchangeRelvo(s.echange, "/") : "/relvo?from=%2F";
+  }
   return `/relvo?from=%2F&q=${encodeURIComponent(s.text)}`;
 }
 
@@ -91,6 +95,7 @@ export function NewsPanel({
   suggestions,
   hasChannels = true,
   lecture = null,
+  lectureHref = "/relvo?from=%2F",
   clePublique = null,
 }: {
   news: CachedNews;
@@ -103,6 +108,8 @@ export function NewsPanel({
    * bloc le dit en premier, avec ses compteurs, et mène à l'échange où la
    * lecture se suit. Le travail doit se voir d'où qu'on soit. */
   lecture?: CarteVivanteData | null;
+  /** L'échange de Relvo où cette lecture se suit. */
+  lectureHref?: string;
 }) {
   const questions = suggestions.filter((s) => s.kind === "question");
   // La ligne « je lis encore » du brief vient du cache : la lecture en direct
@@ -119,7 +126,7 @@ export function NewsPanel({
             {phraseLecture(lecture)}
             <PointsQuiRespirent />
           </RelvoSentence>
-          <Link href="/relvo?from=%2F" className={RELVO_LINK}>
+          <Link href={lectureHref} className={RELVO_LINK}>
             → Suivre la lecture{compteurs ? ` : ${compteurs}` : ""}
           </Link>
         </>

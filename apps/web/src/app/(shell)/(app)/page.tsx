@@ -21,6 +21,8 @@ import {
 } from "@/server/cached";
 import { getTenantDb, requireAccount } from "@/server/auth-context";
 import { boiteEnMiseEnRoute, carteEnAttente } from "@/server/lecture-en-cours";
+import { CLE_LECTURE_EN_ATTENTE } from "@/server/echanges-relvo";
+import { urlEchangeRelvo } from "@/lib/echanges-regles";
 import { clePubliquePush } from "@/server/push/envoyer";
 import { FUSEAU, calendrierParis, jourParis } from "@relvo/db/temps";
 
@@ -51,7 +53,7 @@ async function News({
   sinceISO: string | null;
   todayKey: string;
 }) {
-  const [news, suggestions, channels, lecture] = await Promise.all([
+  const [news, suggestions, channels, enDirect] = await Promise.all([
     cachedBriefNews(accountId, sinceISO),
     cachedBriefSuggestions(accountId, todayKey),
     cachedChannelCount(accountId),
@@ -62,7 +64,10 @@ async function News({
       news={news}
       suggestions={suggestions}
       hasChannels={channels > 0}
-      lecture={lecture}
+      lecture={enDirect?.carte ?? null}
+      lectureHref={
+        enDirect ? urlEchangeRelvo(enDirect.cle, "/") : "/relvo?from=%2F"
+      }
       clePublique={clePubliquePush()}
     />
   );
@@ -81,7 +86,12 @@ async function lectureEnDirect() {
     orderBy: { requestedAt: "desc" },
     include: { channel: { select: { name: true } } },
   });
-  if (enCours) return carteDepuisRattrapage(enCours, null);
+  if (enCours) {
+    return {
+      carte: carteDepuisRattrapage(enCours, null),
+      cle: `lecture:${enCours.id}`,
+    };
+  }
   const boites = await db.channel.findMany({
     where: { type: "email", config: { externalAccountId: { not: null } } },
     include: {
@@ -96,7 +106,7 @@ async function lectureEnDirect() {
     },
   });
   return boites.some((b) => boiteEnMiseEnRoute(b))
-    ? carteEnAttente(null)
+    ? { carte: carteEnAttente(null), cle: CLE_LECTURE_EN_ATTENTE }
     : null;
 }
 

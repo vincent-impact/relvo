@@ -176,6 +176,9 @@ script est ouverte (`originStep` le sait), et la posent quand le script se ferme
 sépare visuellement ce que Relvo demande pour se configurer de ce qu'il dit de sa lecture ;
 test sur `questions.test.ts`.
 
+**Couverte par R17.** Les questions de la lecture vivent dans l'échange de la lecture, celles du
+script dans « Prise en main » : plus rien à retenir.
+
 ### R10 — Maintenir le bouton central du dock pour parler
 
 Item **M22.8**. Le disque Relvo se maintient, on parle, relâcher ouvre l'échange sur une
@@ -279,6 +282,20 @@ version en deux états (lecture puis « Modifier ») a été refusée par le dir
 plus pour toucher ce qu'on lit déjà. Le domaine remonte le fil du message d'origine de chaque
 tâche (`resolveSourceConversations`), pour toutes les listes.
 
+### R17 — Relvo propose des échanges, il ne les mélange pas
+
+**Constat.** Tout ce que Relvo a à dire — une étape de la prise en main, la carte de lecture,
+une question née d'un sujet — se posait en tête du même fil que la discussion du dirigeant, et
+les deux se mélangeaient. Proposition maquettée sur un canevas, mise en production demandée
+telle quelle, à juger à l'usage (`ecarts`, « Relvo propose des échanges, il ne les mélange pas »).
+
+**Livré.** Chaque chose que Relvo a à dire est un échange à part, nommé par son origine
+(`/relvo/echanges/[cle]`) ; l'échange vide n'en montre qu'une ligne chacun en tête ; l'historique
+s'ouvre sur ce que Relvo attend ; le badge du disque et de l'horloge compte ces échanges ; la
+notification d'une question et la ligne de l'accueil y mènent. Le regroupement est pur et testé
+(`domain/echanges-relvo.ts`). R9 tombe avec : les questions de la lecture vivent dans l'échange
+de la lecture.
+
 ## Où on en est
 
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
@@ -294,9 +311,9 @@ tâche (`resolveSourceConversations`), pour toutes les listes.
 - [x] M23 terminée ; M27 (dossiers et sujets, tranché sur maquettes) démarrée dans son propre chantier (`2026-10-m27-dossiers-et-sujets.md`), avant M24 — **terminée le jour même**.
 - [x] R10 et R11 livrées (2026-11-01) ; R10 reprise le jour même sur le retour du dirigeant
       (vibreur, écran d'écoute) — à éprouver sur le téléphone.
-- [ ] Les échanges proposés par Relvo, séparés de la discussion : proposition dans `ecarts`
-      (« Relvo propose des échanges, il ne les mélange pas »), à trancher avant R12.
-- [ ] R9 et R12 à livrer.
+- [x] R17 livrée (2026-11-01) : les échanges de Relvo, séparés de la discussion — tranchée sur
+      canevas, à juger à l'usage ; R9 tombe avec.
+- [ ] R12 à livrer (R9 est couverte par R17).
 - [x] Troisième vague enregistrée, livrée et **validée en production par le dirigeant** (R13 à
       R16) ; R15 tranchée C puis ramenée à 18 px ; R16 reprise sur son retour.
 - [x] `wa:reparer` : le dirigeant a choisi de ne pas réécrire l'historique des testeurs — les

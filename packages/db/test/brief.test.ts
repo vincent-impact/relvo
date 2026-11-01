@@ -140,7 +140,11 @@ describe("suggestions par règles", () => {
     const since = new Date(Date.now() - 14 * 86_400_000);
     const c = await requestChannelCatchup(db, { channelId: channel.id, since });
     expect(await getBriefSuggestions(db)).toEqual([
-      { kind: "lecture", text: "Je lis encore votre courrier." },
+      {
+        kind: "lecture",
+        echange: `lecture:${c.id}`,
+        text: "Je lis encore votre courrier.",
+      },
     ]);
     await prisma.channelCatchup.update({
       where: { id: c.id },

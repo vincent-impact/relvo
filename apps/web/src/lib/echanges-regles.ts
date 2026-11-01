@@ -84,3 +84,14 @@ export function urlEchangeDicte(
   if (from) params.set("from", from);
   return `/relvo?${params.toString()}`;
 }
+
+/**
+ * L'adresse d'un ÉCHANGE DE RELVO (05 §11.12) — ce que Relvo a à dire, un
+ * échange à part, nommé par sa clé —, la page d'origine gardée pour le retour.
+ */
+export function urlEchangeRelvo(cle: string, from?: string | null): string {
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  const q = params.toString();
+  return `/relvo/echanges/${encodeURIComponent(cle)}${q ? `?${q}` : ""}`;
+}
