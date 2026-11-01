@@ -269,7 +269,7 @@ tâche (`resolveSourceConversations`), pour toutes les listes.
 - [x] M23 démarrée dans son propre chantier (`2026-10-m23-dossiers.md`).
 - [x] M23 terminée ; M27 (dossiers et sujets, tranché sur maquettes) démarrée dans son propre chantier (`2026-10-m27-dossiers-et-sujets.md`), avant M24 — **terminée le jour même**.
 - [ ] R9, R10, R11, R12 à livrer.
-- [x] Troisième vague enregistrée et livrée (R13 à R16) ; R13 et R14 vérifiées en production
-      par le dirigeant ; R15 tranchée C ; R16 reprise sur son retour.
+- [x] Troisième vague enregistrée, livrée et **validée en production par le dirigeant** (R13 à
+      R16) ; R15 tranchée C puis ramenée à 18 px ; R16 reprise sur son retour.
 - [ ] `wa:reparer` à lancer en production sur les comptes de testeurs.
 - [ ] Vagues de recette suivantes : à ajouter ici.
