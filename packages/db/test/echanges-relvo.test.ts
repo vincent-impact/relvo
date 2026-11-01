@@ -158,6 +158,8 @@ describe("regrouper les échanges de Relvo", () => {
     expect(echanges[2]!.sousTitre).toBe(
       "En cours · 3 sujets ouverts, 41 messages lus",
     );
+    expect(echanges[2]!.enCours).toBe(true);
+    expect(prise.enCours).toBe(false);
     const sujet = echanges[4]!;
     expect(sujet.titre).toBe("Narbonne est-il une franchise ?");
     expect(sujet.sousTitre).toBe("Une question sur le sujet Devis Kiloutou");
@@ -197,6 +199,7 @@ describe("regrouper les échanges de Relvo", () => {
       "lecture:catchup-2",
     ]);
     expect(echanges[0]!.ouvertes).toEqual(["fin"]);
+    expect(echanges[0]!.enCours).toBe(false);
   });
 
   it("une chose finie ne se montre plus", () => {

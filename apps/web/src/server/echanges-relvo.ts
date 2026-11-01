@@ -163,6 +163,7 @@ export async function echangesDeRelvo(
         lectureId: CLE_LECTURE_EN_ATTENTE,
         channelId: enRoute?.id ?? null,
         subjectId: null,
+        enCours: true,
         depuis: now.toISOString(),
       });
     }

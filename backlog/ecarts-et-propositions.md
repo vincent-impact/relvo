@@ -2088,8 +2088,9 @@ restent l'état persisté, c'est leur **regroupement** qui change, et l'échange
 plus un fil de l'appareil mais une vue sur ce groupe. R9 (retenir les questions de la lecture
 tant que le script est ouvert) en devient inutile : les questions de la lecture vivent dans
 l'échange de la lecture. Livré : `domain/echanges-relvo.ts` (la clé d'une question, le
-regroupement, le compte du badge), `/relvo/echanges/[cle]`, la tête de l'échange vide,
-l'historique en deux sections, la notification et l'accueil qui mènent à l'échange.
+regroupement, le compte du badge), `/relvo/echanges/[cle]`, la tête de l'échange vide, la
+notification et l'accueil qui mènent à l'échange. Premier retour à l'usage : l'historique reste
+celui du dirigeant, sans pastille ni rappel, et la ligne d'une lecture en cours respire.
 
 ### Un dossier pour un contact, un dossier pour une boîte
 

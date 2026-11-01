@@ -2,14 +2,17 @@ import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import type { EchangeRelvo } from "@relvo/db";
 import { RelvoLogo } from "@/components/layout/relvo-logo";
+import { PointsQuiRespirent } from "@/components/shared/carte-vivante";
 import { RelvoBlock, RelvoSentence } from "@/components/shared/relvo-block";
 import { urlEchangeRelvo } from "@/lib/echanges-regles";
 
 // CE QUE RELVO ATTEND (05 §11.12, recette de l'alpha) : en tête de l'échange
-// vide et de l'historique, un bloc de Relvo qui dit combien de choses il a à
+// vide, un bloc de Relvo qui dit combien de choses il a à
 // dire, puis UNE LIGNE PAR ÉCHANGE — jamais la question dépliée dans le fil du
 // dirigeant. Chaque ligne ouvre l'échange de Relvo qui la porte. Les lignes
 // sont blanches dans le bloc violet pâle, comme les réponses d'un formulaire.
+// Quand Relvo TRAVAILLE dans un échange (une lecture qui tourne), sa ligne
+// respire — les trois points, le seul mouvement qui dit « Relvo travaille ».
 
 function phrase(n: number): string {
   if (n === 1) return "J’ai une chose pour vous. Ouvrez-la quand vous voulez.";
@@ -47,8 +50,9 @@ export function AttenteRelvo({
               <span className="block truncate text-[15px] leading-[19px] font-medium text-noir">
                 {e.titre}
               </span>
-              <span className="block truncate text-[12px] leading-4 font-normal text-gris">
-                {e.sousTitre}
+              <span className="flex items-center text-[12px] leading-4 font-normal text-gris">
+                <span className="truncate">{e.sousTitre}</span>
+                {e.enCours ? <PointsQuiRespirent /> : null}
               </span>
             </span>
             <ChevronRight className="size-4 flex-none text-(--gris-clair)" />

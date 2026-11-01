@@ -64,6 +64,8 @@ export type EchangeRelvo = {
   lectureId: string | null;
   channelId: string | null;
   subjectId: string | null;
+  /** Relvo TRAVAILLE dans cet échange (une lecture qui tourne) : la ligne respire. */
+  enCours: boolean;
   /** Le début de l'échange, ISO 8601. */
   depuis: string;
 };
@@ -176,6 +178,7 @@ export function regrouperEchangesRelvo(input: {
       lectureId: l.id,
       channelId: null,
       subjectId: null,
+      enCours: l.status === "pending" || l.status === "running",
       depuis: l.requestedAt.toISOString(),
     });
   }
@@ -211,6 +214,7 @@ export function regrouperEchangesRelvo(input: {
       lectureId: null,
       channelId: null,
       subjectId: null,
+      enCours: false,
       depuis: qs[0]!.askedAt.toISOString(),
     };
     switch (nature) {

@@ -20,7 +20,6 @@ import { AttenteRelvo } from "@/components/relvo-chat/attente-relvo";
 import type { EchangeRelvo } from "@relvo/db";
 import type { RelvoUIMessage } from "@/server/ia/echange/outils";
 import { doitReprendre, titreParDefaut } from "@/lib/echanges-regles";
-import { cn } from "@/lib/utils";
 import {
   dernierEchange,
   lireEchange,
@@ -48,7 +47,8 @@ import {
 // dire avec la discussion du dirigeant (05 §11.12, recette de l'alpha) : ses
 // questions, la lecture du courrier, chaque chose est un ÉCHANGE À PART
 // (`EchangeRelvo`). Ici, dans l'échange vide, une ligne par échange qui
-// attend ; l'horloge porte le badge de ceux qui attendent une réponse.
+// attend — et nulle part ailleurs : l'accueil et le dock les annoncent déjà,
+// l'historique est celui des échanges du dirigeant.
 
 type Initial = Pick<EchangeStocke, "id" | "titre" | "creeLe" | "messages">;
 
@@ -81,7 +81,7 @@ export function RelvoChatShell({
   reprendre?: string | null;
   /** Les échanges de Relvo qui attendent — une ligne chacun en tête de l'échange vide. */
   attend?: EchangeRelvo[];
-  /** Ceux qui attendent une RÉPONSE : le badge de l'horloge. */
+  /** Ceux qui attendent une RÉPONSE : tant qu'il y en a, pas d'invitation aux notifications. */
   pending?: number;
   /** La clé publique VAPID : l'invitation à activer les notifications, quand rien n'attend de réponse. */
   clePublique?: string | null;
@@ -269,19 +269,10 @@ function RelvoSession({
             ) : null}
             <Link
               href="/relvo/historique"
-              aria-label={
-                pending > 0
-                  ? `Mes échanges, ${pending} de Relvo en attente`
-                  : "Mes échanges"
-              }
-              className={cn(SKY_BTN, "relative")}
+              aria-label="Mes échanges"
+              className={SKY_BTN}
             >
               <ClockCounterClockwise className="size-[18px]" />
-              {pending > 0 ? (
-                <span className="chiffre absolute -top-1 -right-1 grid h-[18px] min-w-[18px] place-items-center rounded-full border-2 border-(--relvo) bg-urgent px-1 text-[10px] text-white">
-                  {pending}
-                </span>
-              ) : null}
             </Link>
           </div>
         }

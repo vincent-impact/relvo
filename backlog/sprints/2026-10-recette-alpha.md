@@ -290,9 +290,11 @@ les deux se mélangeaient. Proposition maquettée sur un canevas, mise en produc
 telle quelle, à juger à l'usage (`ecarts`, « Relvo propose des échanges, il ne les mélange pas »).
 
 **Livré.** Chaque chose que Relvo a à dire est un échange à part, nommé par son origine
-(`/relvo/echanges/[cle]`) ; l'échange vide n'en montre qu'une ligne chacun en tête ; l'historique
-s'ouvre sur ce que Relvo attend ; le badge du disque et de l'horloge compte ces échanges ; la
-notification d'une question et la ligne de l'accueil y mènent. Le regroupement est pur et testé
+(`/relvo/echanges/[cle]`) ; l'échange vide n'en montre qu'une ligne chacun en tête ; le badge du
+disque compte ces échanges ; la notification d'une question et la ligne de l'accueil y mènent.
+**Premier retour du dirigeant, appliqué** : pas de pastille sur l'horloge ni de rappel dans
+l'historique (l'accueil les annonce déjà), pas de bouton « Nouvel échange » dans l'historique,
+et la ligne d'une lecture en cours respire. Le regroupement est pur et testé
 (`domain/echanges-relvo.ts`). R9 tombe avec : les questions de la lecture vivent dans l'échange
 de la lecture.
 
