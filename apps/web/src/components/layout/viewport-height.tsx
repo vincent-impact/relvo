@@ -26,12 +26,22 @@ export function ViewportHeight() {
     const root = document.documentElement;
     let raf = 0;
 
-    // `screen.height` n'est pertinent QU'EN PWA standalone (où la webview occupe
-    // tout l'écran) — sinon, dans un onglet navigateur étroit (fenêtre « portrait »
-    // mais plus courte que l'écran), il sur-dimensionnerait le cadre.
+    // Ce correctif ne vaut QU'EN PWA standalone (la webview occupe tout
+    // l'écran, rien ne bouge autour). Dans un NAVIGATEUR, les barres d'outils
+    // se replient et se déplient, et c'est le navigateur qui connaît la hauteur
+    // visible à chaque instant : `100dvh` (le repli de `MobileFrame`) la suit
+    // par construction. Un `max` de mesures JS, lui, ne peut que retenir une
+    // hauteur plus GRANDE que l'aire visible — et le dock, ancré au bas du
+    // cadre, passe sous la barre d'outils de Safari (PITFALLS #74). On ne pose
+    // donc rien hors standalone, et on efface ce qu'un passage précédent aurait
+    // laissé.
     const standalone =
       window.matchMedia?.("(display-mode: standalone)").matches === true ||
       (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (!standalone) {
+      root.style.removeProperty("--app-height");
+      return;
+    }
 
     // ⚠️ Le terme `screen.height` corrige un bug PROPRE À iOS (cadre trop court
     // au lancement à froid). Sur ANDROID il est nuisible : le viewport y suit
@@ -53,7 +63,7 @@ export function ViewportHeight() {
             window.innerHeight,
             document.documentElement.clientHeight,
             window.visualViewport?.height ?? 0,
-            isIOS && standalone && portrait ? window.screen.height : 0,
+            isIOS && portrait ? window.screen.height : 0,
           ),
         );
         if (h > 0) root.style.setProperty("--app-height", `${h}px`);

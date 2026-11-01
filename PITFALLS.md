@@ -656,7 +656,7 @@ requêtes constantes » (Neon, latence par requête).
 | **Base UI** | #40 |
 | **Zod** | #42 |
 | **React** | #41 |
-| **WebKit (iOS)** | #65 |
+| **WebKit (iOS)** | #65, #74 |
 | **Chrome headless** | #67 |
 
 Les pièges **#3, #12, #13, #17, #24, #25, #26** relèvent de la **plateforme de déploiement**, pas
@@ -701,3 +701,20 @@ classe, une constante — charge l'index entier, donc le client, donc la variabl
 Ce qu'il lui faut en valeur vient d'un **sous-chemin sans Prisma** du paquet : `@relvo/db/temps`
 (les dates), `@relvo/db/erreurs` (`DomainError`, `isDomainError`). Un nouveau besoin ouvre un
 sous-chemin dans `packages/db/package.json`, jamais un second index.
+
+### #74 — Une hauteur de cadre calculée en JS fait passer le dock sous la barre d'outils de Safari
+
+**Symptôme** : un testeur ouvre `app.relvo.net` dans Safari sur iPhone, sans l'avoir installée
+sur l'écran d'accueil : le dock n'est **nulle part**. Le contenu défile jusque sous la barre
+d'outils flottante du navigateur, et rien ne dépasse. En PWA installée, tout est en place.
+
+**Cause** : `ViewportHeight` posait `--app-height` comme le **maximum** de plusieurs mesures
+(`innerHeight`, `clientHeight`, `visualViewport.height`). Ce `max` est le bon remède au bug du
+lancement à froid en standalone (#65) ; dans un navigateur, où les barres d'outils se replient et
+se déplient, il ne peut que retenir une hauteur **plus grande** que l'aire visible — et le dock,
+ancré au bas du cadre, part sous la barre d'outils.
+
+**Règle** : hors standalone, **aucune hauteur pilotée par JS** : `MobileFrame` retombe sur
+`100dvh`, que le navigateur tient à jour par construction, et `--app-height` est effacée. Le
+`max`, `screen.height` compris, n'existe qu'en PWA installée. Toute vérification du cadre se fait
+**dans les deux modes** : Safari (onglet) et écran d'accueil.
