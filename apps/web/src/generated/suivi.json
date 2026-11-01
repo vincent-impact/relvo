@@ -215,6 +215,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Relvo ne mélange plus ce qu'il a à vous dire avec votre discussion : la prise en main, la lecture d'une boîte, une question sur un sujet sont chacune un échange à part, listées en tête quand vous ouvrez Relvo, et la notification vous y mène directement."
+        },
+        {
+          "type": "new",
           "texte": "Quand vous maintenez le disque Relvo pour parler, des ondes violettes partent de votre pouce et traversent l'écran : on voit que Relvo écoute."
         },
         {
