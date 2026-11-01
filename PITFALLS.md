@@ -737,16 +737,17 @@ d'une réponse du téléphone (`ingestOutboundWhatsApp`). Toute nouvelle voie d'
 test qui vérifie que le sortant **retombe dans la conversation de l'entrant**. Les fantômes déjà
 créés se fondent par `pnpm --filter web wa:reparer <e-mail>` (`reparerConversationsFantomes`).
 
-### #76 — Un serveur de dev qui tourne depuis des jours ne recharge plus `globals.css`
+### #76 — Une modification de `globals.css` n'est pas servie par le serveur de dev en cours
 
 **Symptôme** : un composant neuf se rend (le DOM est là, les classes sont posées) mais ses règles
 écrites dans `globals.css` n'arrivent pas : fond absent, animation `none`. Les fichiers `.tsx`,
 eux, se rechargent — on cherche une erreur de CSS qui n'existe pas.
 
-**Cause** : le serveur `next dev` sur le port 3100 tournait depuis plusieurs jours ; son observateur
-avait lâché la feuille de style globale. Un `touch` ne la réveille pas.
+**Cause** : le serveur `next dev` (Turbopack) ne reprend pas une modification de la feuille globale
+faite pendant qu'il tourne — observé trois fois de suite dans une même session, serveur fraîchement
+démarré ou vieux de plusieurs jours, `touch` compris. La cause exacte n'est pas élucidée.
 
 **Règle** : avant de douter d'une règle CSS, comparer la feuille **servie** (`/_next/static/…css`)
 au fichier ; si elle est en retard, redémarrer le serveur de dev (`PORT=3100
-AUTH_URL=http://localhost:3100 pnpm dev`) — c'est tout.
-
+AUTH_URL=http://localhost:3100 pnpm dev`) — c'est tout. Toute vérification visuelle d'un
+changement de `globals.css` passe par ce redémarrage.

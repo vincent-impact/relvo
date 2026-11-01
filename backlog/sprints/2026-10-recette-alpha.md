@@ -191,9 +191,10 @@ disent en toast.
 pilule au-dessus du disque) ; demandé : le vibreur, et un écran d'écoute organique. Livré :
 le téléphone **vibre** à l'ouverture du micro et au relâcher (l'API Vibration sur Android ;
 sur iOS, le détour de l'interrupteur, que les versions récentes peuvent fermer — rien n'en
-dépend), et **la page entière se met à l'écoute** : un voile qui souffle depuis le disque, du
-violet vers le transparent, « Relvo écoute… » et la durée au milieu de l'écran, le geste qui
-reste en dessous — le même voile dans l'échange quand on maintient le micro du composer. Pas
+dépend), et **la page entière se met à l'écoute** : le disque tenu est le point de chute du pouce,
+un impact y pulse et des ondes violettes en partent jusqu'en haut de l'écran (deuxième retour du
+dirigeant : « ondulatoire, forcer sur le violet »), « Relvo écoute… » et la durée au milieu de
+l'écran, le geste qui reste en dessous — le même voile dans l'échange quand on maintient le micro du composer. Pas
 un changement de page pendant le maintien : le doigt tient le disque, une navigation
 démonterait le bouton et perdrait le micro ; l'échange vient au relâcher. **À éprouver sur le
 téléphone** : le vibreur, le geste sur le disque qui déborde de la pilule.

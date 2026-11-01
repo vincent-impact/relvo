@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { RELVO_LOGO_PATHS } from "@/components/layout/relvo-logo";
-import { VoileEcoute } from "@/components/shared/voile-ecoute";
+import {
+  pointDeChute,
+  VoileEcoute,
+  type PointDeChute,
+} from "@/components/shared/voile-ecoute";
 import { useDictee } from "@/hooks/use-dictee";
 import { SEUIL_MAINTIEN_MS, urlEchangeDicte } from "@/lib/echanges-regles";
 import { cn } from "@/lib/utils";
@@ -65,6 +69,14 @@ export function RelvoDockButton({
   const enregistre = d.etat === "enregistre";
   const ecoute = d.etat === "transcrit";
 
+  // Le point de chute des ondes : le centre du disque, mesuré à l'ouverture
+  // du micro — le dock bouge avec la zone sûre et la largeur de l'écran.
+  const disque = useRef<HTMLButtonElement>(null);
+  const [origine, setOrigine] = useState<PointDeChute | null>(null);
+  useEffect(() => {
+    if (enregistre) setOrigine(pointDeChute(disque.current));
+  }, [enregistre]);
+
   // Ce que la dictée a à dire hors enregistrement — « Maintenez pour parler »,
   // le micro refusé, le réseau — passe en toast : le dock n'a pas de bandeau.
   const { phrase, etat, effacerPhrase } = d;
@@ -120,6 +132,7 @@ export function RelvoDockButton({
 
   return (
     <button
+      ref={disque}
       type="button"
       onPointerDown={appui}
       onPointerUp={() => fin(false)}
@@ -157,7 +170,12 @@ export function RelvoDockButton({
         </span>
       ) : null}
       {/* L'écoute se dit sur toute la page, pas au-dessus du disque. */}
-      <VoileEcoute etat={d.etat} dureeS={d.dureeS} dureeMaxS={d.dureeMaxS} />
+      <VoileEcoute
+        etat={d.etat}
+        dureeS={d.dureeS}
+        dureeMaxS={d.dureeMaxS}
+        origine={origine}
+      />
     </button>
   );
 }

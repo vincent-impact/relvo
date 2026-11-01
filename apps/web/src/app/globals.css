@@ -707,45 +707,92 @@
 }
 
 /* L'écoute (M22.8) : quand on maintient un disque pour parler, la page entière
-   se met à l'écoute — un voile monte du disque et SOUFFLE, du violet vers le
-   transparent, sur le DOUBLE du souffle des étoiles : « Relvo travaille »
-   respire, « Relvo écoute » souffle, et les deux battent ensemble. La seconde
-   boucle du produit, et la dernière. Opacité et transform seulement ; le fond
-   blanc fait reculer la page sans la cacher. */
+   se met à l'écoute. Le disque qu'on tient est le POINT DE CHUTE (`--chute-x`,
+   `--chute-y`, mesurés sur le bouton) : un impact violet y pulse au tempo des
+   étoiles, et des ONDES en partent — trois vagues décalées d'un souffle, qui
+   s'étalent jusqu'en haut de l'écran et s'éteignent en s'éloignant, comme
+   dans l'eau. « Relvo travaille » respire, « Relvo écoute » ondule : les deux
+   seules boucles du produit, au même tempo. Opacité et transform seulement ;
+   la vague est un anneau dégradé dont l'épaisseur grandit avec elle. */
 .voile-ecoute {
-  background: rgb(255 255 255 / 0.55);
+  /* Un voile violet translucide : la page recule, elle ne disparaît pas. */
+  background: color-mix(in srgb, var(--relvo) 34%, rgb(255 255 255 / 0.5));
   animation: fondu var(--dur-moyen) var(--courbe-sortie) both;
 }
-.voile-ecoute-souffle {
+.voile-ecoute-impact,
+.voile-ecoute-onde {
   position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    120% 72% at 50% 100%,
-    var(--relvo) 0%,
-    color-mix(in oklab, var(--relvo) 55%, transparent) 38%,
-    transparent 72%
-  );
-  transform-origin: 50% 100%;
-  animation: souffle 1800ms var(--courbe-deplacement) infinite;
+  left: var(--chute-x);
+  top: var(--chute-y);
+  translate: -50% -50%;
+  border-radius: 50%;
+  will-change: transform, opacity;
 }
-@keyframes souffle {
+.voile-ecoute-impact {
+  width: 360px;
+  height: 360px;
+  background: radial-gradient(
+    circle closest-side,
+    var(--relvo) 0%,
+    color-mix(in oklab, var(--relvo) 70%, transparent) 40%,
+    transparent 100%
+  );
+  animation: impact 900ms var(--courbe-deplacement) infinite;
+}
+@keyframes impact {
   0%,
   100% {
-    opacity: 0.5;
+    opacity: 0.85;
     transform: scale(1);
   }
-  50% {
-    opacity: 0.95;
-    transform: scale(1.08);
+  40% {
+    opacity: 1;
+    transform: scale(1.22);
   }
 }
-@keyframes souffle-fondu {
+.voile-ecoute-onde {
+  width: 2400px;
+  height: 2400px;
+  /* `closest-side` : le rayon du dégradé est celui du disque, pas celui de
+     son coin — sinon la vague tombe hors du cercle et ne se voit jamais. */
+  background: radial-gradient(
+    circle closest-side,
+    transparent 56%,
+    color-mix(in oklab, var(--relvo) 45%, transparent) 62%,
+    var(--relvo) 66%,
+    color-mix(in oklab, var(--relvo) 45%, transparent) 70%,
+    transparent 76%
+  );
+  opacity: 0;
+  transform: scale(0.04);
+  animation: onde 2700ms var(--courbe-sortie) infinite;
+}
+.voile-ecoute-onde:nth-child(2) {
+  animation-delay: 900ms;
+}
+.voile-ecoute-onde:nth-child(3) {
+  animation-delay: 1800ms;
+}
+@keyframes onde {
+  0% {
+    opacity: 0.95;
+    transform: scale(0.04);
+  }
+  60% {
+    opacity: 0.55;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+@keyframes impact-fondu {
   0%,
   100% {
-    opacity: 0.5;
+    opacity: 0.6;
   }
-  50% {
-    opacity: 0.9;
+  40% {
+    opacity: 1;
   }
 }
 
@@ -766,9 +813,13 @@
     animation: none;
     opacity: 0.6;
   }
-  /* L'écoute reste lisible : le voile souffle en opacité, sans grandir. */
-  .voile-ecoute-souffle {
-    animation-name: souffle-fondu;
+  /* L'écoute reste lisible : l'impact pulse en opacité, sans grandir ; les
+     ondes ne partent pas. */
+  .voile-ecoute-impact {
+    animation-name: impact-fondu;
+  }
+  .voile-ecoute-onde {
+    animation: none;
   }
   .pressable:active {
     transform: none;

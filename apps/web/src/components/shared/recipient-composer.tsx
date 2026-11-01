@@ -9,8 +9,10 @@ import {
 } from "@/components/shared/picto";
 import { RelvoLogo } from "@/components/layout/relvo-logo";
 import {
+  pointDeChute,
   PointsQuiRespirent as ThinkingDots,
   VoileEcoute,
+  type PointDeChute,
 } from "@/components/shared/voile-ecoute";
 import { useDictee } from "@/hooks/use-dictee";
 import { formatDuree, PHRASES_DICTEE } from "@/lib/dictee-regles";
@@ -151,6 +153,12 @@ export function RecipientComposer({
   const micro = dictee && d.disponible;
   const enregistre = d.etat === "enregistre";
   const ecoute = d.etat === "transcrit";
+  // Le point de chute des ondes du voile : le micro, mesuré à l'ouverture.
+  const disqueMicro = useRef<HTMLButtonElement>(null);
+  const [origine, setOrigine] = useState<PointDeChute | null>(null);
+  useEffect(() => {
+    if (enregistre) setOrigine(pointDeChute(disqueMicro.current));
+  }, [enregistre]);
   // Le bandeau de la dictée (« Relvo écoute… », la phrase d'un échec) se
   // masque d'un ×, à la frappe ou à l'envoi ; une phrase nouvelle le rouvre.
   const [phraseMasquee, setPhraseMasquee] = useState<string | null>(null);
@@ -262,6 +270,7 @@ export function RecipientComposer({
   );
   const sendButton = disqueDictee ? (
     <button
+      ref={disqueMicro}
       type="button"
       {...appuiDictee}
       disabled={ecoute || !d.pret || sending || loading}
@@ -300,7 +309,12 @@ export function RecipientComposer({
       {/* La dictée (M22.3) : la page entière se met à l'écoute tant qu'on
           maintient le micro (M22.8, le même voile que le dock). */}
       {micro ? (
-        <VoileEcoute etat={d.etat} dureeS={d.dureeS} dureeMaxS={d.dureeMaxS} />
+        <VoileEcoute
+          etat={d.etat}
+          dureeS={d.dureeS}
+          dureeMaxS={d.dureeMaxS}
+          origine={origine}
+        />
       ) : null}
       {/* « Relvo écoute… », ou la phrase d'un échec — jamais une erreur
           technique. */}
