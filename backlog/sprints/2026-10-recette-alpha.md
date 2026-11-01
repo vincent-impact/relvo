@@ -202,6 +202,55 @@ passage, en un message, une fois.
   solution dans l'épique ; après M23 et M24.
 - **M26 — Des chiffres vrais** : le Bilan et l'Usage reliés au journal et au compteur.
 
+## Troisième vague — remontées du 2026-11-01, après la première semaine de tests
+
+Quatre remontées, tranchées par le dirigeant **avant** M24 et les épiques : ce sont des
+correctifs d'usage, pas des chantiers.
+
+### R13 — Le dock n'apparaît pas dans Safari sur iPhone
+
+**Constat.** Un testeur consulte `app.relvo.net` dans le navigateur, sans l'installer : le dock
+est absent, le contenu passe sous la barre d'outils de Safari. En PWA installée, rien à redire.
+
+**Cause et livraison.** La hauteur de cadre pilotée par JS (le `max` de plusieurs mesures, remède
+au lancement à froid en standalone) ne vaut qu'en PWA installée ; hors standalone, le cadre
+retombe sur `100dvh` et la variable est effacée (`PITFALLS` #74). Livré. **À vérifier par le
+dirigeant dans Safari, sur son iPhone**, onglet et écran d'accueil.
+
+### R14 — Une réponse WhatsApp envoyée depuis Relvo n'apparaît pas dans le fil
+
+**Constat.** La réponse écrite depuis le téléphone s'affiche ; celle écrite dans Relvo part bien
+mais ne se voit nulle part.
+
+**Cause et livraison.** Le sortant se rangeait dans une conversation fantôme (`PITFALLS` #75).
+L'envoi demande désormais à la conversation du fil son interlocuteur, son contact et sa nature,
+et la réponse retombe dans le même fil — direct ou groupe ; test de régression dans
+`whatsapp-ingestion.test.ts`. Les fantômes déjà créés se fondent par
+`pnpm --filter web wa:reparer <e-mail>` — **à lancer en production sur chaque compte de
+testeur**, `--simuler` d'abord.
+
+### R15 — La liste des sujets se lit mal debout ou en voiture
+
+**Constat.** Les testeurs lisent leurs sujets en action ; la ligne de 58 px, son titre de
+14,5 px et sa ligne fine de 12 px sont trop petits.
+
+**À trancher.** Trois propositions en artefact (« Lignes de sujets »), aux vraies tailles d'un
+iPhone : A un cran au-dessus (titre 16,5 px, une ligne), **B le titre sur deux lignes (18 px,
+graisse 500, ligne fine gardée — recommandée)**, C gros caractères (20 px, sans ligne fine). Le
+réglage retenu vaudra ensuite pour les lignes de tâches et de conversations. **Rien ne part en
+production avant le choix du dirigeant.**
+
+### R16 — Une tâche s'ouvre pour être lue, et mène à son message
+
+**Constat.** Un tap sur une tâche ouvrait directement le formulaire de modification ; et le résumé
+de Relvo ne suffit pas : le testeur veut le message qui a fait naître la tâche, pour le contexte.
+
+**Livraison.** La feuille d'une tâche s'ouvre **en lecture** : titre, sujet, date, pourquoi Relvo
+la propose et d'après quoi, et **« Voir le message d'origine »**, qui ouvre la conversation
+**sur ce message**, surligné. « Modifier », ou un tap sur un champ, passe au formulaire : tous
+les champs restent modifiables. Le domaine remonte le fil du message d'origine de chaque tâche
+(`resolveSourceConversations`), pour toutes les listes.
+
 ## Où on en est
 
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
@@ -216,4 +265,8 @@ passage, en un message, une fois.
 - [x] M23 démarrée dans son propre chantier (`2026-10-m23-dossiers.md`).
 - [x] M23 terminée ; M27 (dossiers et sujets, tranché sur maquettes) démarrée dans son propre chantier (`2026-10-m27-dossiers-et-sujets.md`), avant M24 — **terminée le jour même**.
 - [ ] R9, R10, R11, R12 à livrer.
+- [x] Troisième vague enregistrée (R13 à R16) ; R13, R14 et R16 livrées, R15 en attente du
+      choix du dirigeant sur l'artefact.
+- [ ] R13 et R14 à vérifier en production par le dirigeant ; `wa:reparer` à lancer sur les comptes
+      de testeurs.
 - [ ] Vagues de recette suivantes : à ajouter ici.
