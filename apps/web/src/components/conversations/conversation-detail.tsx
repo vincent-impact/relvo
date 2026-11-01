@@ -480,17 +480,29 @@ export function ConversationDetail({
 
   // Le fil s'ouvre EN BAS, sur le dernier message (retour du 2026-09-18) : c'est
   // ce qu'on vient lire. Une fois, quand la place du composer est connue.
+  // Sauf quand on vient d'une TÂCHE (« Voir le message », R16) : le fil
+  // s'ouvre sur le message qui l'a fait naître, et le surligne le temps de le
+  // trouver — c'est le contexte que le résumé de Relvo ne donne pas.
+  const messageDemande = searchParams.get("message");
   const finDuFil = useRef<HTMLDivElement>(null);
   const scrolled = useRef(false);
   useEffect(() => {
     if (scrolled.current) return;
     if (attached && composerHeight === null) return;
     scrolled.current = true;
+    const cible = messageDemande
+      ? document.getElementById(`message-${messageDemande}`)
+      : null;
+    if (cible) {
+      cible.scrollIntoView({ block: "center" });
+      cible.classList.add("surligne");
+      return;
+    }
     // Jusqu'au BOUT du conteneur (marge du composer comprise), pas jusqu'au
     // repère : le repère se calerait sous le composer.
     const scroller = finDuFil.current?.closest("main");
     if (scroller) scroller.scrollTop = scroller.scrollHeight;
-  }, [attached, composerHeight]);
+  }, [attached, composerHeight, messageDemande]);
 
   // Ce que Relvo pose DANS le fil, sous le message qui l'a fait naître : le
   // formulaire d'une tâche ouverte, ce qui a été décidé pour une tâche close.

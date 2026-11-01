@@ -93,7 +93,10 @@ export function ConversationThread({
         {empty}
         {messages.map((m) => (
           <div key={m.id} className="contents">
-            <EmailMessage data={m} />
+            {/* L'ancre d'un message : une tâche y mène (« Voir le message »). */}
+            <div id={`message-${m.id}`} className="rounded-(--rayon-carte)">
+              <EmailMessage data={m} />
+            </div>
             {after[m.id] ?? null}
           </div>
         ))}
@@ -109,6 +112,7 @@ export function ConversationThread({
         {messages.map((m, i) => (
           <div key={m.id} className="contents">
             <div
+              id={`message-${m.id}`}
               className={cn(
                 "flex flex-col px-[18px]",
                 follows(messages[i - 1], m) ? "pt-0.5 pb-[7px]" : "py-[7px]",
@@ -142,6 +146,7 @@ export function ConversationThread({
         return (
           <button
             key={m.id}
+            id={`message-${m.id}`}
             type="button"
             onClick={() => onSelect?.(m.id)}
             className="flex w-full items-stretch gap-2 px-3.5 py-[7px] text-left active:bg-(--surface-2)"

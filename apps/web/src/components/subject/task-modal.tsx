@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { Search, X } from "lucide-react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { ChevronRight, Search, X } from "lucide-react";
 import { CalendarDots, Clock, Trash } from "@/components/shared/picto";
 import { toast } from "sonner";
 import type { Actor } from "@relvo/db";
@@ -23,12 +24,16 @@ import {
 import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 
-// Modale d'une tâche — PARTAGÉE entre édition (TaskItem) et création (bouton +
-// de l'Accueil). Champs : titre, date/heure, et SUJET rattaché (affiché + (re)
-// assignable, ou détaché — une tâche peut ne pas avoir de sujet). Le créateur
-// (Relvo/Moi) est rappelé ici (retiré des lignes pour ne pas les surcharger) —
-// et, pour une tâche de Relvo, POURQUOI il la propose et D'APRÈS QUOI (M7.20) :
-// c'est ce qui rend une suggestion vérifiable d'un appui, sans rouvrir le fil.
+// Feuille d'une tâche — PARTAGÉE entre la ligne (TaskItem) et la création
+// (bouton + de l'Accueil). Un tap sur une ligne OUVRE LA TÂCHE POUR LA LIRE
+// (recette de l'alpha, R16) : le titre, son sujet, sa date, pourquoi Relvo la
+// propose et d'après quoi (M7.20), et le MESSAGE d'où elle vient — « Voir le
+// message » ouvre le fil sur lui, surligné, parce que le résumé de Relvo ne
+// suffit pas toujours à retrouver le contexte. « Modifier » (ou un tap sur un
+// champ) passe au formulaire : titre, date/heure, sujet rattaché (affiché,
+// (ré)assignable, ou détaché — une tâche peut ne pas avoir de sujet). Le
+// créateur (Relvo/Moi) est rappelé ici, retiré des lignes pour ne pas les
+// surcharger.
 
 type SubjectOption = {
   id: string;
@@ -58,10 +63,16 @@ export function TaskModal({
     sourceActor?: Actor;
     /** Raison et provenance d'une tâche de Relvo, en clair (M7.20). */
     relvo?: RelvoTaskInfo | null;
+    /** Le message d'où la tâche vient, et son fil (R16) — « Voir le message ». */
+    sourceMessageId?: string | null;
+    sourceConversationId?: string | null;
   };
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [pending, startTransition] = useTransition();
+  // Une tâche existante s'ouvre en LECTURE ; le formulaire vient après.
+  const [editing, setEditing] = useState(mode === "create");
 
   const [title, setTitle] = useState(initial.title ?? "");
   const [date, setDate] = useState(initial.date ?? "");
@@ -162,6 +173,150 @@ export function TaskModal({
     );
   });
 
+  const messageHref = initial.sourceConversationId
+    ? `/conversations/${initial.sourceConversationId}?${new URLSearchParams({
+        ...(initial.sourceMessageId
+          ? { message: initial.sourceMessageId }
+          : {}),
+        from: pathname,
+      }).toString()}`
+    : null;
+
+  // Ce que Relvo dit de la tâche, et d'où elle vient — dans les deux états.
+  const relvoBlock =
+    mode === "edit" && initial.sourceActor ? (
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2 text-[12.5px] text-(--text-tertiary)">
+          <ActorPill actor={initial.sourceActor} />
+          Créée par {initial.sourceActor === "ai" ? "Relvo" : "vous"}
+        </div>
+        {initial.sourceActor === "ai" && initial.relvo ? (
+          <div className="rounded-xl border border-(--purple-100) bg-relvo-bg px-3 py-2.5 text-[13px] leading-[1.45]">
+            {initial.relvo.raison ? (
+              <p className="text-brand-dark">{initial.relvo.raison}</p>
+            ) : null}
+            {initial.relvo.provenance ? (
+              <p
+                className={cn(
+                  "text-[12.5px] text-relvo",
+                  initial.relvo.raison && "mt-1",
+                )}
+              >
+                {initial.relvo.provenance}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        {messageHref ? (
+          <Link
+            href={messageHref}
+            className="flex items-center gap-2 rounded-xl border border-(--border) px-3 py-2.5 text-[14px] font-medium text-relvo active:bg-(--fond-puce)"
+          >
+            <span className="min-w-0 flex-1">Voir le message d’origine</span>
+            <ChevronRight
+              className="size-[18px] flex-none text-(--gris-clair)"
+              strokeWidth={2.2}
+            />
+          </Link>
+        ) : null}
+      </div>
+    ) : null;
+
+  if (!editing) {
+    // LECTURE — chaque champ se tape pour passer au formulaire.
+    const quand = initial.date
+      ? `${new Date(`${initial.date}T00:00:00.000Z`).toLocaleDateString(
+          "fr-FR",
+          { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" },
+        )}${initial.time ? ` · ${initial.time}` : ""}`
+      : null;
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="gap-4 p-5">
+          <DialogHeader>
+            <DialogTitle>Tâche</DialogTitle>
+          </DialogHeader>
+
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="w-full text-left text-[17px] leading-[22px] font-medium text-noir"
+          >
+            {initial.title}
+          </button>
+
+          <div className="overflow-hidden rounded-xl border border-(--border)">
+            <div className="flex items-center gap-2 border-b border-(--border-light) px-3 py-2.5">
+              {initial.subjectId ? (
+                <span
+                  aria-hidden
+                  className="size-2.5 flex-none rounded-full"
+                  style={{
+                    background: folderVisual({
+                      slug: initial.subjectFolderSlug ?? null,
+                    }).color,
+                  }}
+                />
+              ) : null}
+              {initial.subjectId && initial.subjectTitle ? (
+                <Link
+                  href={`/sujets/${initial.subjectId}?from=${encodeURIComponent(pathname)}`}
+                  className="min-w-0 flex-1 truncate text-[14px] font-semibold"
+                >
+                  {initial.subjectTitle}
+                </Link>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="min-w-0 flex-1 text-left text-[14px] text-(--text-tertiary) italic"
+                >
+                  Aucun sujet
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left"
+            >
+              <CalendarDots className="size-4 flex-none text-(--text-tertiary)" />
+              <span
+                className={cn(
+                  "min-w-0 flex-1 text-[14px]",
+                  quand ? "chiffre text-noir" : "text-(--text-tertiary) italic",
+                )}
+              >
+                {quand ?? "Sans date"}
+              </span>
+            </button>
+          </div>
+
+          {relvoBlock}
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setEditing(true)}
+              className="flex-1 rounded-xl bg-relvo py-2.5 text-[14px] font-bold text-white"
+            >
+              Modifier
+            </button>
+            <button
+              type="button"
+              onClick={remove}
+              disabled={pending}
+              aria-label="Supprimer la tâche"
+              className="grid size-[42px] flex-none place-items-center rounded-xl border border-(--red-200) text-(--red-600) disabled:opacity-60"
+            >
+              <Trash className="size-[18px]" />
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="gap-4 p-5">
@@ -178,7 +333,6 @@ export function TaskModal({
           autoFocus={mode === "create"}
           className="w-full rounded-xl border border-(--border) px-3 py-2.5 text-[15px] font-semibold outline-none focus:border-relvo"
         />
-
         {/* Sujet rattaché — affiché + (ré)assignable / détachable. */}
         <div className="min-w-0">
           <div className="mb-1.5 text-[12px] font-bold tracking-[0.4px] text-(--text-tertiary) uppercase">
@@ -328,33 +482,7 @@ export function TaskModal({
           ) : null}
         </div>
 
-        {/* Créateur (édition seulement) — rappel discret ; pour Relvo, la
-            raison et la provenance de la proposition (M7.20). */}
-        {mode === "edit" && initial.sourceActor ? (
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-[12.5px] text-(--text-tertiary)">
-              <ActorPill actor={initial.sourceActor} />
-              Créée par {initial.sourceActor === "ai" ? "Relvo" : "vous"}
-            </div>
-            {initial.sourceActor === "ai" && initial.relvo ? (
-              <div className="rounded-xl border border-(--purple-100) bg-relvo-bg px-3 py-2.5 text-[13px] leading-[1.45]">
-                {initial.relvo.raison ? (
-                  <p className="text-brand-dark">{initial.relvo.raison}</p>
-                ) : null}
-                {initial.relvo.provenance ? (
-                  <p
-                    className={cn(
-                      "text-[12.5px] text-relvo",
-                      initial.relvo.raison && "mt-1",
-                    )}
-                  >
-                    {initial.relvo.provenance}
-                  </p>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-        ) : null}
+        {relvoBlock}
 
         <div className="flex items-center gap-2">
           <button

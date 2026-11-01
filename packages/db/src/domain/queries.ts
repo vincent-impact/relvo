@@ -245,7 +245,39 @@ export type EnrichedTask = {
   overdue: boolean;
   /** Le fil dans lequel la tâche se répond d'un appui (M7.7), ou null. */
   replyConversationId: string | null;
+  /** Le message qui a fait naître la tâche, et son fil — ce que le dirigeant
+   *  ouvre quand le résumé de Relvo ne suffit pas (recette, R16). */
+  sourceMessageId: string | null;
+  sourceConversationId: string | null;
 };
+
+/**
+ * Le fil du message d'origine de chaque tâche (`Task.messageId`), en lot :
+ * `taskId → conversationId`. Une tâche sans message, ou dont le message a
+ * disparu, n'y figure pas.
+ */
+export async function resolveSourceConversations(
+  db: TenantDb,
+  tasks: readonly { id: string; messageId: string | null }[],
+): Promise<Map<string, string>> {
+  const sources = new Map<string, string>();
+  const messageIds = [
+    ...new Set(
+      tasks.map((t) => t.messageId).filter((id): id is string => !!id),
+    ),
+  ];
+  if (messageIds.length === 0) return sources;
+  const messages = await db.message.findMany({
+    where: { id: { in: messageIds } },
+    select: { id: true, conversationId: true },
+  });
+  const byMessage = new Map(messages.map((m) => [m.id, m.conversationId]));
+  for (const t of tasks) {
+    const conversationId = t.messageId ? byMessage.get(t.messageId) : undefined;
+    if (conversationId) sources.set(t.id, conversationId);
+  }
+  return sources;
+}
 
 export async function enrichTasks(
   db: TenantDb,
@@ -282,7 +314,10 @@ export async function enrichTasks(
       })
     : [];
   const nameById = new Map(contacts.map((c) => [c.id, contactDisplayName(c)]));
-  const replyTargets = await resolveReplyTargets(db, tasks);
+  const [replyTargets, sources] = await Promise.all([
+    resolveReplyTargets(db, tasks),
+    resolveSourceConversations(db, tasks),
+  ]);
 
   return tasks.map((task) => {
     const s = task.subjectId ? subById.get(task.subjectId) : undefined;
@@ -300,6 +335,8 @@ export async function enrichTasks(
         : null,
       overdue: task.startDate != null && task.startDate < start,
       replyConversationId: replyTargets.get(task.id) ?? null,
+      sourceMessageId: sources.has(task.id) ? task.messageId : null,
+      sourceConversationId: sources.get(task.id) ?? null,
     };
   });
 }

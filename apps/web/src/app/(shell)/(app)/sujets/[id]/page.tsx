@@ -7,6 +7,7 @@ import {
   listConversationGroups,
   listSubjectConversationRows,
   resolveReplyTargets,
+  resolveSourceConversations,
   listFolderOptions,
 } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
@@ -100,7 +101,11 @@ export default async function SujetPage({
 
   const { subject, contacts, tasks, events, attachments } = detail;
   // Le fil dans lequel chaque tâche se répond d'un appui (M7.7).
-  const replyTargets = await resolveReplyTargets(db, tasks);
+  const [replyTargets, sources] = await Promise.all([
+    resolveReplyTargets(db, tasks),
+    // Le message d'origine de chaque tâche : « Voir le message » (R16).
+    resolveSourceConversations(db, tasks),
+  ]);
   // Contacts joignables pour le dialog « Ajouter une conversation ».
   const addContacts = allContacts.map((c) => ({
     id: c.id,
@@ -175,6 +180,8 @@ export default async function SujetPage({
               relvo: relvoTaskInfo(t.metadata),
               replyConversationId: replyTargets.get(t.id) ?? null,
               decisions: taskDecisionsInfo(t.metadata),
+              sourceMessageId: sources.has(t.id) ? t.messageId : null,
+              sourceConversationId: sources.get(t.id) ?? null,
             }))}
             // Ce que Relvo a rédigé à la structuration (M7.6) : le résumé court,
             // affiché tant que l'utilisateur n'a pas écrit le sien.

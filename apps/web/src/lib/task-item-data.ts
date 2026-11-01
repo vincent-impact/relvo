@@ -33,6 +33,9 @@ export type TaskItemData = {
   replyConversationId?: string | null;
   /** Les décisions que la tâche porte (05 §3.1) : ce qui reste à décider, ce qui l'est. */
   decisions?: TaskDecisionInfo[];
+  /** Le message d'où la tâche vient et son fil : « Voir le message » depuis la feuille (R16). */
+  sourceMessageId?: string | null;
+  sourceConversationId?: string | null;
 };
 
 export type TaskDecisionInfo = { question: string; reponse: string | null };
@@ -94,5 +97,7 @@ export function toTaskItemData(e: EnrichedTask): TaskItemData {
     relvo: relvoTaskInfo(e.task.metadata),
     replyConversationId: e.replyConversationId,
     decisions: taskDecisionsInfo(e.task.metadata),
+    sourceMessageId: e.sourceMessageId,
+    sourceConversationId: e.sourceConversationId,
   };
 }

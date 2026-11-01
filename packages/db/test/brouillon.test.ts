@@ -6,12 +6,14 @@ import {
   applyTriageMatter,
   createDraftReply,
   createTask,
+  enrichTasks,
   getDraftProjection,
   ingestInboundEmail,
   logTriageFailure,
   prisma,
   readDraftSources,
   resolveReplyTargets,
+  resolveSourceConversations,
   sendEmailReply,
   tenantDb,
 } from "../src/index";
@@ -123,6 +125,30 @@ describe("où une tâche se répond", () => {
       { ...repondre, status: "done" },
     ]);
     expect(apres.size).toBe(0);
+  });
+});
+
+describe("d'où vient une tâche (R16)", () => {
+  it("remonte le message d'origine et son fil, pour toutes les listes ; rien sans message", async () => {
+    const { db, channel } = await makeAccount("origine@test.fr");
+    const { message, repondre, decider, verifier } = await sujetAvecTaches(
+      db,
+      channel.id,
+    );
+    const sources = await resolveSourceConversations(db, [
+      repondre,
+      decider,
+      verifier,
+    ]);
+    expect(sources.get(repondre.id)).toBe(message.conversationId);
+    expect(sources.has(decider.id)).toBe(false);
+    expect(sources.has(verifier.id)).toBe(false);
+
+    const [r, d] = await enrichTasks(db, [repondre, decider]);
+    expect(r.sourceMessageId).toBe(message.id);
+    expect(r.sourceConversationId).toBe(message.conversationId);
+    expect(d.sourceMessageId).toBeNull();
+    expect(d.sourceConversationId).toBeNull();
   });
 });
 

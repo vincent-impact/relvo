@@ -22,7 +22,7 @@ import { jourDecale, jourParis } from "@relvo/db/temps";
 //   meta="time"  → heure (ou « — »)            (ex. agenda « Aujourd'hui »)
 //   meta="date"  → date + heure                (ex. « En retard », liste d'un sujet)
 // Cocher = terminer / décocher = remettre « à faire » (état fait : barré + gris).
-// Tap sur la ligne = modale d'édition. « Répondre » (M7.7) sur une tâche qui se
+// Tap sur la ligne = la feuille de la tâche, en lecture d'abord (R16). « Répondre » (M7.7) sur une tâche qui se
 // règle par un message : ouvre le fil avec le brouillon de Relvo en rédaction.
 
 export type { TaskItemData };
@@ -263,6 +263,8 @@ export function TaskItem({
             subjectFolderSlug: task.folderSlug,
             sourceActor: task.sourceActor,
             relvo: task.relvo ?? null,
+            sourceMessageId: task.sourceMessageId ?? null,
+            sourceConversationId: task.sourceConversationId ?? null,
           }}
         />
       ) : null}

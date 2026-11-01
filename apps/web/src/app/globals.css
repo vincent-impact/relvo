@@ -635,6 +635,22 @@
     opacity: 0;
   }
 }
+/* Le message qu'on vient voir depuis une tâche : posé en violet pâle, qui
+   s'efface une fois l'œil arrivé — la tenue est fixe, seul le retrait bouge
+   (sur la durée d'accompagnement). */
+.surligne {
+  animation: surligne var(--dur-accompagnement) var(--courbe-sortie) 1200ms both;
+}
+@keyframes surligne {
+  from {
+    box-shadow: 0 0 0 6px var(--relvo-pale);
+    background: var(--relvo-pale);
+  }
+  to {
+    box-shadow: 0 0 0 6px transparent;
+    background: transparent;
+  }
+}
 @keyframes respire {
   0%,
   80%,
