@@ -9,14 +9,17 @@ import { cn } from "@/lib/utils";
 // d'artisan » : la BANDE de son domaine sur la tranche gauche, le nom du
 // domaine en capitales condensées de la même couleur, le titre (précédé de
 // « Urgent · » en rouge quand la priorité l'est — l'état se lit au mot et à la
-// couleur), une ligne fine qui dit où en est le sujet, et à droite un chiffre
-// condensé (non-lus ou tâches) avec ce qu'on attend dessous. Pas de résumé :
-// la ligne doit laisser neuf sujets visibles, le résumé vit sur la fiche.
+// couleur), et à droite un chiffre condensé (non-lus ou tâches) avec ce qu'on
+// attend dessous. Elle se lit DEBOUT, en voiture, sur un chantier (recette de
+// l'alpha, R15, proposition C tranchée) : le titre en 20 px, graisse 500, sur
+// deux lignes au plus — plus rien ne se coupe —, les chiffres en 22 px, et
+// PAS de résumé : le contexte vit sur la fiche, la ligne sert à reconnaître.
 
 export type SubjectRowData = {
   id: string;
   reference: string;
   title: string;
+  /** Le résumé court — porté pour la fiche et l'échange, jamais écrit sur la ligne (R15). */
   summary?: string | null;
   /** Les clés de logo du PREMIER NIVEAU du dossier (M23.4) — la bande. */
   folderSlug?: string | null;
@@ -40,14 +43,6 @@ export type SubjectRowData = {
   /** Relvo suggère de valider le sujet ; le geste reste au swipe (05 §5.5). */
   resolutionSuggested: boolean;
 };
-
-// La ligne fine sous le titre ne redit rien de la colonne droite (le compte de
-// tâches y est en condensé, l'attente y est écrite) : elle porte le résumé
-// court du sujet quand il existe, sinon rien — jamais une référence, personne
-// ne reconnaît un sujet à son code.
-function statusLine(d: SubjectRowData): string | null {
-  return d.summary?.trim() || null;
-}
 
 export function SubjectRow({
   data,
@@ -80,25 +75,28 @@ export function SubjectRow({
         : data.waitingForReply
           ? { kind: "neutre", label: "attend" }
           : null;
-  const line = statusLine(data);
-
   return (
     <article
       data-list-row
       className={cn(
-        "relative flex h-[58px] items-center gap-2.5 border-b border-(--filet) pr-3.5 pl-3.5",
+        "relative flex min-h-[74px] items-center gap-3 border-b border-(--filet) py-2.5 pr-3.5 pl-3.5",
         done && "bg-(--fond-enfonce)",
       )}
     >
       <span
         aria-hidden
         className={cn("bande-ligne", done && "opacity-40")}
-        style={{ background: color }}
+        // Plus large et plus haute que sur une ligne de dossier : la ligne de
+        // sujet est plus haute, la bande suit.
+        style={{ background: color, width: 8, height: 48 }}
       />
 
       <div className="min-w-0 flex-1">
         <div
-          className={cn("domaine truncate", done && "opacity-60")}
+          className={cn(
+            "domaine truncate text-[12.5px] leading-4",
+            done && "opacity-60",
+          )}
           style={{ color: text }}
         >
           {data.folderPath ??
@@ -108,7 +106,7 @@ export function SubjectRow({
         </div>
         <h3
           className={cn(
-            "truncate text-[14.5px] leading-[18px] font-normal text-noir",
+            "line-clamp-2 text-[20px] leading-[24px] font-medium text-noir",
             done && "text-gris line-through",
           )}
         >
@@ -126,27 +124,22 @@ export function SubjectRow({
             data.title
           )}
         </h3>
-        {line ? (
-          <p className="truncate text-[12px] leading-[14px] font-normal text-gris">
-            {line}
-          </p>
-        ) : null}
       </div>
 
       <div className="flex flex-none flex-col items-end gap-0.5 text-right">
         {data.unreadCount > 0 ? (
-          <span className="chiffre grid h-[22px] min-w-[22px] place-items-center rounded-full bg-relvo px-1.5 text-[12px] text-white">
+          <span className="chiffre grid h-[26px] min-w-[26px] place-items-center rounded-full bg-relvo px-2 text-[14px] text-white">
             {data.unreadCount}
           </span>
         ) : data.taskTotal > 0 && !done ? (
-          <span className="chiffre text-[16px] leading-[18px] text-noir">
+          <span className="chiffre text-[22px] leading-[24px] text-noir">
             {data.taskDone}/{data.taskTotal}
           </span>
         ) : null}
         {right ? (
           <span
             className={cn(
-              "inline-flex items-center gap-1 text-[11px] leading-3.5",
+              "inline-flex items-center gap-1 text-[12.5px] leading-4",
               right.kind === "relvo"
                 ? "font-medium text-relvo"
                 : "font-normal text-gris",
