@@ -77,7 +77,7 @@ pastilles d'état et les avatars ne portent jamais la couleur d'un domaine.
 **Les chiffres sont gros et condensés, le texte est fin.** Un indicateur, un horaire, un délai,
 un compte à droite d'une ligne sont en condensé gras ; un titre de ligne est en graisse normale,
 une explication en graisse fine. **La ligne de sujet se lit debout** — en voiture, sur un
-chantier : son titre est en 18 px, graisse 500, sur deux lignes au plus, son chiffre en 22 px,
+chantier : son titre est en 16 px, graisse 500, sur deux lignes au plus, son chiffre en 22 px,
 et elle ne porte **aucun résumé** ; reconnaître un sujet est son seul travail, le contexte vit
 sur la fiche. C'est ce qui permet de lire un écran debout : l'œil attrape
 les chiffres d'abord. Un même chiffre n'est jamais rendu deux fois sur un écran.

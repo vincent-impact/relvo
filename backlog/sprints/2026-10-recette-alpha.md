@@ -263,7 +263,7 @@ testeur**, `--simuler` d'abord.
 
 **Tranché.** Trois propositions en artefact (« Lignes de sujets »), aux vraies tailles d'un
 iPhone ; le dirigeant a retenu **C, gros caractères** : titre 20 px en graisse 500 sur deux
-lignes au plus — **ramené à 18 px après un jour d'usage**, la graisse et les deux lignes gardées —, nom du dossier 12,5 px, chiffres 22 px, bande plus large, **sans ligne de
+lignes au plus — **ramené à 18 px après un jour d'usage, puis à 16 px le lendemain, à l'essai**, la graisse et les deux lignes gardées —, nom du dossier 12,5 px, chiffres 22 px, bande plus large, **sans ligne de
 résumé** — « autant trancher net ». Livré sur `SubjectRow`, partout où la ligne se rend
 (Sujets, Dossiers, recherche, échange). Les lignes de tâches et de conversations ne bougent
 pas tant que les testeurs ne le demandent pas.
@@ -317,7 +317,7 @@ de la lecture.
       canevas, à juger à l'usage ; R9 tombe avec.
 - [ ] R12 à livrer (R9 est couverte par R17).
 - [x] Troisième vague enregistrée, livrée et **validée en production par le dirigeant** (R13 à
-      R16) ; R15 tranchée C puis ramenée à 18 px ; R16 reprise sur son retour.
+      R16) ; R15 tranchée C puis ramenée à 18 px, puis 16 px à l'essai ; R16 reprise sur son retour.
 - [x] `wa:reparer` : le dirigeant a choisi de ne pas réécrire l'historique des testeurs — les
       fantômes restent, le script reste disponible.
 - [ ] Vagues de recette suivantes : à ajouter ici.

@@ -106,7 +106,7 @@ export function SubjectRow({
         </div>
         <h3
           className={cn(
-            "line-clamp-2 text-[18px] leading-[22px] font-medium text-noir",
+            "line-clamp-2 text-[16px] leading-5 font-medium text-noir",
             done && "text-gris line-through",
           )}
         >
