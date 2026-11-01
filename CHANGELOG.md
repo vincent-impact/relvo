@@ -6,6 +6,7 @@
 
 ## 2026-11-01
 
+- **Nouveau** — Relvo ne mélange plus ce qu'il a à vous dire avec votre discussion : la prise en main, la lecture d'une boîte, une question sur un sujet sont chacune un échange à part, listées en tête quand vous ouvrez Relvo, et la notification vous y mène directement.
 - **Nouveau** — Quand vous maintenez le disque Relvo pour parler, des ondes violettes partent de votre pouce et traversent l'écran : on voit que Relvo écoute.
 - **Nouveau** — Quand vous maintenez le disque Relvo pour parler, tout l'écran se met à l'écoute et votre téléphone vibre, dans l'application comme depuis le dock.
 - **Nouveau** — Quand Relvo ouvre un nouveau sujet à partir d'un message reçu, votre téléphone vous prévient ; un appui ouvre le sujet. Pendant la lecture d'une boîte qu'on vient de relier, rien ne sonne.

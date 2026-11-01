@@ -215,6 +215,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Quand vous maintenez le disque Relvo pour parler, des ondes violettes partent de votre pouce et traversent l'écran : on voit que Relvo écoute."
+        },
+        {
+          "type": "new",
           "texte": "Quand vous maintenez le disque Relvo pour parler, tout l'écran se met à l'écoute et votre téléphone vibre, dans l'application comme depuis le dock."
         },
         {
