@@ -211,6 +211,31 @@
   "en_cours": "Dix boîtes e-mail par compte",
   "journal": [
     {
+      "date": "2026-11-01",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "Une tâche s'ouvre directement sur son contenu : son titre en tête, un crayon pour le récrire, la date et l'heure qui se changent d'un appui."
+        },
+        {
+          "type": "new",
+          "texte": "La liste des sujets est plus lisible en voiture ou debout : les titres sont plus gros, tiennent sur deux lignes et ne sont plus coupés."
+        },
+        {
+          "type": "new",
+          "texte": "Un appui sur une tâche l'ouvre pour la lire, avec un bouton « Voir le message d'origine » qui vous amène au message dont elle vient ; « Modifier » reste à portée."
+        },
+        {
+          "type": "fix",
+          "texte": "Quand vous répondez à un message WhatsApp depuis Relvo, votre réponse apparaît maintenant dans la conversation, comme celle que vous écrivez depuis votre téléphone."
+        },
+        {
+          "type": "fix",
+          "texte": "Dans Safari sur iPhone, sans installer Relvo sur l'écran d'accueil, la barre du bas (Accueil, Calendrier, Relvo, Sujets, Conversations) est de nouveau visible."
+        }
+      ]
+    },
+    {
       "date": "2026-10-29",
       "entrees": [
         {
