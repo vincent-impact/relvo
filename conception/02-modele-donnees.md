@@ -584,7 +584,8 @@ compte ou une instruction ; la question elle-même n'est jamais injectée dans l
 ## PushSubscription
 
 Un **abonnement push** : un appareil qui a accepté de recevoir les notifications de Relvo — le
-brief du matin et une question qui s'ouvre, rien d'autre (`05 §11.12`, invariant 36). Il porte le
+brief du matin, une question qui s'ouvre et un sujet né du tri à réception, rien d'autre
+(`05 §11.12`, invariant 36). Il porte le
 compte, l'adresse donnée par le service de push du navigateur (unique : elle désigne un appareil,
 jamais un compte), les deux clés de chiffrement, l'agent utilisateur, et la date du dernier envoi.
 

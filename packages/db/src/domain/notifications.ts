@@ -31,7 +31,7 @@ export type PushTarget = {
 };
 
 /** Les natures de notification que Relvo envoie — et rien d'autre. */
-export const PUSH_KINDS = ["bienvenue", "brief", "question"] as const;
+export const PUSH_KINDS = ["bienvenue", "brief", "question", "sujet"] as const;
 export type PushKind = (typeof PUSH_KINDS)[number];
 
 /**

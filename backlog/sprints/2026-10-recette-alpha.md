@@ -192,6 +192,12 @@ disque qui déborde de la pilule.
 
 Item **M12.10**. Née du tri à réception, jamais de la lecture à la connexion ; une par salve.
 
+**Livré.** « Nouveau sujet : <titre> », qui ouvre la fiche, poussée par `trierConversation`
+quand un sujet s'ouvre hors lot — la lecture à la connexion ne pousse rien. Des sujets nés à
+moins de deux minutes d'écart font une seule notification (« 3 nouveaux sujets », la liste),
+et le même tag remplace la précédente sur le téléphone. Nature de push `sujet`, journalisée
+comme les autres.
+
 ### R12 — Relvo dit ce qui a changé
 
 Item **M13.6**, avancé dans ce sprint parce que les testeurs de l'alpha en ont besoin
@@ -275,9 +281,10 @@ tâche (`resolveSourceConversations`), pour toutes les listes.
 - [x] M25 tranchée solution par solution : toutes les recommandations, S5 à éprouver, S10 et S17 écartées.
 - [x] M23 démarrée dans son propre chantier (`2026-10-m23-dossiers.md`).
 - [x] M23 terminée ; M27 (dossiers et sujets, tranché sur maquettes) démarrée dans son propre chantier (`2026-10-m27-dossiers-et-sujets.md`), avant M24 — **terminée le jour même**.
-- [x] R10 livrée (2026-11-01).
-- [ ] R9, R11, R12 à livrer.
+- [x] R10 et R11 livrées (2026-11-01).
+- [ ] R9 et R12 à livrer.
 - [x] Troisième vague enregistrée, livrée et **validée en production par le dirigeant** (R13 à
       R16) ; R15 tranchée C puis ramenée à 18 px ; R16 reprise sur son retour.
-- [ ] `wa:reparer` à lancer en production sur les comptes de testeurs.
+- [x] `wa:reparer` : le dirigeant a choisi de ne pas réécrire l'historique des testeurs — les
+      fantômes restent, le script reste disponible.
 - [ ] Vagues de recette suivantes : à ajouter ici.

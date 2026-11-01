@@ -1,6 +1,6 @@
 import type { PushKind } from "@relvo/db";
 
-// LES RÈGLES DU PUSH (M12.7, M12.9) — module PUR, sans réseau ni base, tenu par
+// LES RÈGLES DU PUSH (M12.7, M12.9, M12.10) — module PUR, sans réseau ni base, tenu par
 // `test/push.test.ts` : ce qu'une notification de Relvo contient, et quand un
 // service de push nous dit qu'un appareil n'existe plus.
 
@@ -41,6 +41,9 @@ export const TTL_SECONDES: Readonly<Record<PushKind, number>> = {
   // Un brief du matin qui arriverait le soir ne sert à rien.
   brief: 60 * 60 * 4,
   question: 60 * 60 * 24,
+  // Un sujet qui vient de naître : s'il n'est pas lu dans la journée, le
+  // brief du matin le dira autrement.
+  sujet: 60 * 60 * 4,
 };
 
 export const BIENVENUE: NotificationRelvo = {

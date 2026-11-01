@@ -292,3 +292,42 @@ describe("l'invitation à activer les notifications (recette 2026-10-21)", () =>
     ).toBe(true);
   });
 });
+
+describe("un sujet vient de naître (M12.10) — une notification par salve", async () => {
+  const { notificationNouveauSujet } = await import("@/server/push/sujets");
+
+  it("un sujet seul : son titre, et le tap ouvre sa fiche", () => {
+    expect(
+      notificationNouveauSujet({ id: "s-1", titre: "Devis chambre froide" }),
+    ).toEqual({
+      kind: "sujet",
+      titre: "Nouveau sujet",
+      corps: "Devis chambre froide",
+      url: "/sujets/s-1",
+      tag: "sujet",
+    });
+  });
+
+  it("plusieurs sujets dans la salve : le compte, le dernier titre, la liste — et le même tag remplace", () => {
+    expect(
+      notificationNouveauSujet(
+        { id: "s-3", titre: "Rupture sauce blanche" },
+        3,
+      ),
+    ).toEqual({
+      kind: "sujet",
+      titre: "3 nouveaux sujets",
+      corps: "Rupture sauce blanche, et 2 autres",
+      url: "/fil",
+      tag: "sujet",
+    });
+    expect(
+      notificationNouveauSujet({ id: "s-2", titre: "Renfort samedi" }, 2).corps,
+    ).toBe("Renfort samedi, et 1 autre");
+  });
+
+  it("un sujet qui tient la demi-journée, pas plus", async () => {
+    const { TTL_SECONDES } = await import("@/server/push/regles");
+    expect(TTL_SECONDES.sujet).toBe(60 * 60 * 4);
+  });
+});

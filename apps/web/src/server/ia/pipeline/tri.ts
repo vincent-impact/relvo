@@ -32,6 +32,7 @@ import {
   peutFaireTaire,
 } from "./messagerie-regles";
 import { estHistorique } from "./rattrapage-regles";
+import { notifierNouveauSujet } from "@/server/push/sujets";
 import { relireSujet, type IssueRelecture } from "./relecture";
 import { structurerSujet, type IssueStructuration } from "./structuration";
 
@@ -407,6 +408,22 @@ async function trierFil(p: {
       messageId,
       lot,
     });
+    // Un sujet est né du tri À RÉCEPTION : le téléphone le dit (M12.10). En
+    // lot — la lecture à la connexion —, non : la fin de lecture résume. Le
+    // titre est relu après la structuration, qui a pu le préciser ; un échec
+    // d'envoi ne touche pas au tri, qui a réussi.
+    if (!lot) {
+      const ne = await db.subject.findFirst({
+        where: { id: applied.subjectId },
+        select: { id: true, title: true },
+      });
+      if (ne) {
+        await notifierNouveauSujet(accountId, {
+          id: ne.id,
+          titre: ne.title,
+        }).catch((e) => console.error("[push] nouveau sujet non notifié", e));
+      }
+    }
     return {
       issue: "ouvert",
       detail: applied.reference,

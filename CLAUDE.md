@@ -127,7 +127,8 @@ relvo/
 > générale »), livrée par l'épique **M18**. **En place** : le dock, le menu, le header, l'accueil
 > en brief, le Calendrier, le Bilan, les Dossiers, l'Usage, les redirections, le badge du bouton
 > Relvo et la `RelvoQuestion` élargie (M10), la notification push — un abonnement par appareil
-> dans Préférences, le brief du matin et les questions nées hors écran (M12.7, M12.9). ⚠️ Le
+> dans Préférences, le brief du matin, les questions nées hors écran et chaque sujet né du tri à
+> réception (M12.7, M12.9, M12.10). ⚠️ Le
 > **Bilan** et l'**Usage** affichent des **chiffres de démonstration** (`lib/demo-bilan.ts`) et
 > le disent en tête : ils ne sont pas reliés au journal ni au compteur d'inférence.
 
