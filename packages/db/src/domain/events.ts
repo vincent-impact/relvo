@@ -43,6 +43,8 @@ export const EVENT_TYPES = {
   conversationReactivated: "conversation_reactivated",
   conversationAttached: "conversation_attached",
   conversationDetached: "conversation_detached",
+  /** Une conversation fantôme (un sortant rangé sous une clé de fil) fondue dans la vraie (PITFALLS #75). */
+  conversationMerged: "conversation_merged",
   anchorMoved: "anchor_moved",
   // Écoute d'un sujet sur une conversation (M6ter) — début (ancre) et fin.
   listeningClosed: "listening_closed",

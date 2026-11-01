@@ -1040,11 +1040,40 @@ export async function sendWhatsAppReply(
     throw error;
   }
 
+  // La conversation CIBLE est celle du fil (`chat_id`), connue par un message
+  // reçu. Son identité est l'INTERLOCUTEUR pour un fil direct (`wa-direct:
+  // <numéro brut>`) et le fil pour un groupe (`wa-group:<chat_id>`) : c'est à
+  // elle qu'on demande l'interlocuteur, le contact et la nature du fil, pour
+  // que la réponse retombe dans LA MÊME conversation. Sans cela, le sortant
+  // se rangeait sous `wa-direct:thread:<chat_id>` — une conversation fantôme
+  // que personne n'ouvre, et la réponse « disparaissait » du fil (PITFALLS
+  // #75). Le même chemin que l'écho d'une réponse écrite depuis le téléphone
+  // (`ingestOutboundWhatsApp`).
+  const fil = await db.conversation.findFirst({
+    where: {
+      channelId: data.channelId,
+      externalThreadId: data.chatId,
+      type: {
+        in: [ConversationType.whatsapp_direct, ConversationType.whatsapp_group],
+      },
+    },
+    select: {
+      type: true,
+      title: true,
+      contactId: true,
+      interlocutorRaw: true,
+    },
+  });
+  const groupe = fil?.type === ConversationType.whatsapp_group;
+
   return createMessage(db, {
     channelId: data.channelId,
     direction: MessageDirection.outgoing,
     subjectId: data.subjectId,
-    recipientContactId: data.recipientContactId ?? null,
+    recipientContactId: data.recipientContactId ?? fil?.contactId ?? null,
+    interlocutorRaw: groupe ? null : (fil?.interlocutorRaw ?? null),
+    isGroup: groupe,
+    groupTitle: groupe ? (fil?.title ?? null) : null,
     externalId: messageId,
     // On garde le fil pour recoller l'écho entrant (anti-loop) et filtrer la
     // conversation par interlocuteur.

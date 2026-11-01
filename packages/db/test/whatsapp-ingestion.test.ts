@@ -10,7 +10,10 @@ import {
   createTask,
   ingestInboundWhatsApp,
   ingestOutboundWhatsApp,
+  listerConversationsFantomes,
   prisma,
+  reparerConversationsFantomes,
+  sendWhatsAppReply,
   tenantDb,
   updateSubjectStatus,
 } from "../src/index";
@@ -393,5 +396,140 @@ describe("ingestOutboundWhatsApp — la réponse envoyée depuis le téléphone"
     expect(sortant.created).toBe(true);
     expect(sortant.message?.conversationId).toBe(entrant.conversationId);
     expect(sortant.message?.subjectId).toBeNull();
+  });
+});
+
+// Un faux agrégateur : rend un identifiant par envoi, comme Unipile.
+function fauxEnvoyeur() {
+  let n = 0;
+  return { sendMessage: async () => ({ messageId: `sent-${++n}` }) };
+}
+
+async function connecter(accountId: string, channelId: string) {
+  await prisma.channelConfig.create({
+    data: {
+      accountId,
+      channelId,
+      provider: "unipile",
+      externalAccountId: `unipile-${channelId}`,
+      status: "connected",
+    },
+  });
+}
+
+describe("sendWhatsAppReply — la réponse envoyée depuis Relvo (PITFALLS #75)", () => {
+  it("retombe dans la conversation DIRECTE du fil, sans contact passé par l'écran", async () => {
+    const { account, channel, db } =
+      await makeAccountWithChannel("wa-reply@test.fr");
+    await connecter(account.id, channel.id);
+    const { message: entrant } = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "in-1",
+      externalThreadId: "chat-hamou",
+      // La forme brute de l'agrégateur, qui ne ressemble pas au téléphone du contact.
+      senderRaw: "33611223344@s.whatsapp.net",
+      senderName: "Hamou",
+      content: "Le devis est prêt ?",
+    });
+    const subject = await createSubjectFromMessage(db, entrant.id);
+
+    const envoye = await sendWhatsAppReply(db, fauxEnvoyeur(), {
+      subjectId: subject.id,
+      channelId: channel.id,
+      chatId: "chat-hamou",
+      body: "Oui, je vous l'envoie ce soir.",
+    });
+    expect(envoye.conversationId).toBe(entrant.conversationId);
+    expect(envoye.subjectId).toBe(subject.id);
+    expect(envoye.recipientContactId).toBe(subject.contactIds[0]);
+    expect(await db.conversation.count()).toBe(1);
+    // L'écho de l'agrégateur ne duplique rien.
+    const echo = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "sent-1",
+      externalThreadId: "chat-hamou",
+      content: "Oui, je vous l'envoie ce soir.",
+    });
+    expect(echo.created).toBe(false);
+    expect(await db.message.count()).toBe(2);
+  });
+
+  it("retombe dans le GROUPE quand le fil est un groupe", async () => {
+    const { account, channel, db } = await makeAccountWithChannel(
+      "wa-reply-grp@test.fr",
+    );
+    await connecter(account.id, channel.id);
+    const { message: entrant } = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "in-g1",
+      externalThreadId: "chat-equipe",
+      senderRaw: "33611223344@s.whatsapp.net",
+      senderName: "Karim",
+      isGroup: true,
+      content: "Qui ouvre demain ?",
+    });
+    const subject = await createSubjectFromMessage(db, entrant.id);
+    const envoye = await sendWhatsAppReply(db, fauxEnvoyeur(), {
+      subjectId: subject.id,
+      channelId: channel.id,
+      chatId: "chat-equipe",
+      body: "Moi.",
+    });
+    expect(envoye.conversationId).toBe(entrant.conversationId);
+    expect(envoye.isGroup).toBe(true);
+    expect(await db.conversation.count()).toBe(1);
+  });
+
+  it("réparation : une conversation fantôme se fond dans celle du fil, écoutes comprises", async () => {
+    const { channel, db } = await makeAccountWithChannel("wa-fantome@test.fr");
+    const { message: entrant } = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "in-f1",
+      externalThreadId: "chat-lila",
+      senderRaw: "33699999999@s.whatsapp.net",
+      senderName: "Lila",
+      content: "Bonjour",
+    });
+    const subject = await createSubjectFromMessage(db, entrant.id);
+    // Le fantôme, tel que l'ancien code le fabriquait : un sortant sans
+    // interlocuteur, rangé sous la clé de fil.
+    const fantome = await createMessage(db, {
+      channelId: channel.id,
+      direction: MessageDirection.outgoing,
+      subjectId: subject.id,
+      externalId: "sent-old",
+      externalThreadId: "chat-lila",
+      content: "Bonjour Lila",
+    });
+    expect(fantome.conversationId).not.toBe(entrant.conversationId);
+    await db.subjectConversation.create({
+      data: { subjectId: subject.id, conversationId: fantome.conversationId },
+    });
+    expect(await db.conversation.count()).toBe(2);
+
+    const avant = await listerConversationsFantomes(db);
+    expect(avant).toHaveLength(1);
+    expect(avant[0].cibleId).toBe(entrant.conversationId);
+    expect(avant[0].messages).toBe(1);
+
+    const fondues = await reparerConversationsFantomes(db);
+    expect(fondues).toHaveLength(1);
+    expect(await db.conversation.count()).toBe(1);
+    const deplace = await db.message.findFirstOrThrow({
+      where: { id: fantome.id },
+    });
+    expect(deplace.conversationId).toBe(entrant.conversationId);
+    const cible = await db.conversation.findFirstOrThrow({
+      where: { id: entrant.conversationId },
+    });
+    expect(cible.lastMessageId).toBe(fantome.id);
+    // L'écoute du sujet existait déjà sur la vraie conversation : une seule reste.
+    expect(
+      await db.subjectConversation.count({
+        where: { subjectId: subject.id },
+      }),
+    ).toBe(1);
+    // Une seconde passe ne fait rien.
+    expect(await reparerConversationsFantomes(db)).toHaveLength(0);
   });
 });

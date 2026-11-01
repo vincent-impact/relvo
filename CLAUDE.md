@@ -221,6 +221,7 @@ pnpm --filter web push:essai <e-mail>   # pose une question de test et la pousse
 pnpm --filter web admin:role <e-mail> admin|ceo   # donne ou retire le rôle admin, journalisé (M21.1) — effectif à la prochaine connexion
 pnpm --filter web boites:migrer <e-mail> [adresse]   # propose à un compte de passer une boîte de l'agrégateur au relais Gmail (M24.9) — question poussée, rien ne bascule avant son retour de Google
 pnpm --filter web pj:rattraper <e-mail> [--filtre kiloutou] [--tout] [--simuler]   # relit chez l'agrégateur les e-mails reçus sans pièce jointe et stocke celles qu'il porte
+pnpm --filter web wa:reparer <e-mail> [--simuler]   # fond les conversations WhatsApp fantômes d'un compte dans le fil (PITFALLS #75), journalisé
 pnpm --filter web eval:dictee --dossier <hors dépôt> [--compte <e-mail>]   # benchmark de la transcription, dictées HORS dépôt (M22.1)
 curl -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' -d '{"catchupId":"…"}' <app>/api/rattrapage/tranche   # relance une tranche de lecture du courrier (M7.19) ; le cron /api/cron/catch-up n'est qu'un filet
 ```

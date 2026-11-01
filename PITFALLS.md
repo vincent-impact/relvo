@@ -664,7 +664,7 @@ d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revér
 documentation de la plateforme, jamais de mémoire. Le piège **#54** relève du **navigateur du
 téléphone** : il se périme avec la version de Chrome, dans le bon sens.
 
-Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58, #59, #68, #70** sont des **règles de conception ou d'hygiène** :
+Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58, #59, #68, #70, #75** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
 
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et
@@ -718,3 +718,22 @@ ancré au bas du cadre, part sous la barre d'outils.
 `100dvh`, que le navigateur tient à jour par construction, et `--app-height` est effacée. Le
 `max`, `screen.height` compris, n'existe qu'en PWA installée. Toute vérification du cadre se fait
 **dans les deux modes** : Safari (onglet) et écran d'accueil.
+
+### #75 — Un message sortant WhatsApp sans interlocuteur crée une conversation fantôme
+
+**Symptôme** : une réponse WhatsApp écrite depuis Relvo part bien (le contact la reçoit, l'écho de
+l'agrégateur ne la duplique pas) mais **n'apparaît jamais dans le fil** de la conversation ; la
+réponse écrite depuis le téléphone, elle, s'affiche.
+
+**Cause** : la clé d'une conversation directe est l'**interlocuteur** (`wa-direct:<numéro brut>`),
+et seule la messagerie le connaît sous cette forme. L'envoi ne transmettait ni l'interlocuteur ni
+le contact : `createMessage` retombait sur `wa-direct:thread:<chat_id>`, une **seconde**
+conversation sur le même fil, invisible, où le dirigeant se parle tout seul. Un contact passé par
+l'écran n'aurait pas suffi : son téléphone enregistré n'a pas la forme brute de l'agrégateur.
+
+**Règle** : un sortant WhatsApp **demande à la conversation du fil** (par `chat_id`) son
+interlocuteur, son contact et sa nature de groupe, et les passe à `createMessage` — comme l'écho
+d'une réponse du téléphone (`ingestOutboundWhatsApp`). Toute nouvelle voie d'envoi s'éprouve par un
+test qui vérifie que le sortant **retombe dans la conversation de l'entrant**. Les fantômes déjà
+créés se fondent par `pnpm --filter web wa:reparer <e-mail>` (`reparerConversationsFantomes`).
+

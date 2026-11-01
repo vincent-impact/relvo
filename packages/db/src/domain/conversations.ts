@@ -1240,3 +1240,133 @@ export async function getConversationThread(
     })),
   };
 }
+
+// ─────────────────────────────────────────────────────────────
+// Réparation des conversations FANTÔMES (PITFALLS #75) : avant le correctif,
+// une réponse WhatsApp envoyée depuis Relvo se rangeait sous la clé
+// `wa-direct:thread:<chat_id>` — une seconde conversation sur le même fil,
+// que personne n'ouvre, où le dirigeant « se parle tout seul ». Ce qui suit
+// les fond dans la conversation du fil, messages et écoutes compris, puis les
+// efface, et le journal le dit. Idempotent : sans fantôme, rien ne bouge.
+// ─────────────────────────────────────────────────────────────
+
+const PHANTOM_KEY_PREFIX = "wa-direct:thread:";
+
+export type ConversationFantome = {
+  fantomeId: string;
+  cibleId: string;
+  cibleTitre: string;
+  messages: number;
+};
+
+/** Les conversations fantômes et la conversation du fil où chacune doit se fondre. */
+export async function listerConversationsFantomes(
+  db: TenantDb,
+): Promise<ConversationFantome[]> {
+  const fantomes = await db.conversation.findMany({
+    where: {
+      type: ConversationType.whatsapp_direct,
+      key: { startsWith: PHANTOM_KEY_PREFIX },
+      externalThreadId: { not: null },
+    },
+    select: {
+      id: true,
+      channelId: true,
+      externalThreadId: true,
+      _count: { select: { messages: true } },
+    },
+  });
+  const resultat: ConversationFantome[] = [];
+  for (const f of fantomes) {
+    const cible = await db.conversation.findFirst({
+      where: {
+        id: { not: f.id },
+        channelId: f.channelId,
+        externalThreadId: f.externalThreadId,
+        key: { not: { startsWith: PHANTOM_KEY_PREFIX } },
+      },
+      select: { id: true, title: true },
+    });
+    if (!cible) continue;
+    resultat.push({
+      fantomeId: f.id,
+      cibleId: cible.id,
+      cibleTitre: cible.title,
+      messages: f._count.messages,
+    });
+  }
+  return resultat;
+}
+
+/**
+ * Fond chaque conversation fantôme dans la conversation de son fil : ses
+ * messages y passent, ses écoutes aussi (ou se retirent si le sujet y écoute
+ * déjà), le dernier message de la cible est recalculé, le fantôme est effacé.
+ * Rend ce qui a été fondu.
+ */
+export async function reparerConversationsFantomes(
+  db: TenantDb,
+): Promise<ConversationFantome[]> {
+  const fantomes = await listerConversationsFantomes(db);
+  for (const f of fantomes) {
+    await db.$transaction(async (tx) => {
+      await tx.message.updateMany({
+        where: { conversationId: f.fantomeId },
+        data: { conversationId: f.cibleId },
+      });
+      const ecoutes = await tx.subjectConversation.findMany({
+        where: { conversationId: f.fantomeId },
+        select: { id: true, subjectId: true },
+      });
+      for (const e of ecoutes) {
+        const deja = await tx.subjectConversation.findFirst({
+          where: { subjectId: e.subjectId, conversationId: f.cibleId },
+          select: { id: true },
+        });
+        if (deja) {
+          await tx.subjectConversation.deleteMany({ where: { id: e.id } });
+        } else {
+          await tx.subjectConversation.updateMany({
+            where: { id: e.id },
+            data: { conversationId: f.cibleId },
+          });
+        }
+      }
+      // Le dernier message de la cible : le plus récent, reçu ou envoyé.
+      const dernier = await tx.message.findFirst({
+        where: { conversationId: f.cibleId },
+        orderBy: [
+          { receivedAt: "desc" },
+          { sentAt: "desc" },
+          { createdAt: "desc" },
+        ],
+        select: { id: true, receivedAt: true, sentAt: true, createdAt: true },
+      });
+      await tx.conversation.updateMany({
+        where: { id: f.fantomeId },
+        data: { lastMessageId: null },
+      });
+      if (dernier) {
+        await tx.conversation.updateMany({
+          where: { id: f.cibleId },
+          data: {
+            lastMessageId: dernier.id,
+            lastMessageAt:
+              dernier.receivedAt ?? dernier.sentAt ?? dernier.createdAt,
+          },
+        });
+      }
+      await tx.conversation.deleteMany({ where: { id: f.fantomeId } });
+      await logEvent(tx as Tx, {
+        entityType: "system",
+        entityId: f.cibleId,
+        eventType: EVENT_TYPES.conversationMerged,
+        title: `Conversation réparée — ${f.cibleTitre}`,
+        description: `${f.messages} message(s) envoyé(s) depuis Relvo remis dans le fil.`,
+        actor: Actor.system,
+        metadata: { fantomeId: f.fantomeId, messages: f.messages },
+      });
+    });
+  }
+  return fantomes;
+}
