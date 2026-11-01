@@ -215,6 +215,10 @@
       "entrees": [
         {
           "type": "fix",
+          "texte": "Dans la liste des sujets, le titre est un peu plus petit, pour voir à l'usage."
+        },
+        {
+          "type": "fix",
           "texte": "Dans Relvo, l'historique ne liste plus que vos échanges, sans pastille ; et quand Relvo lit encore une boîte, sa ligne en tête de l'échange respire pour le dire."
         },
         {
