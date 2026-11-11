@@ -6,6 +6,7 @@
 
 ## 2026-11-11
 
+- **Corrigé** — Quand Relvo retrouve un message, toucher sa carte ouvre la conversation directement sur ce message, mis en évidence.
 - **Nouveau** — Quand vous demandez à Relvo de retrouver un message, il cherche d'abord chez la personne que vous nommez, sans se laisser arrêter par un accent ou un pluriel, et ne vous montre que le message qu'il retient.
 - **Corrigé** — L'onglet Documents d'un sujet montre maintenant toutes les pièces jointes reçues dans ses conversations, y compris celles déjà arrivées.
 - **Corrigé** — Un e-mail reçu avec plusieurs pièces jointes les affiche maintenant toutes, et chaque fichier se reconnaît à son icône : PDF en rouge, Excel en vert, Word en bleu.
