@@ -406,9 +406,12 @@ export async function enrichSubjects(
         where: { subjectId: { in: ids }, status: ActionStatus.open },
         select: { subjectId: true },
       }),
+      // Les documents d'un sujet sont les pièces de SES MESSAGES, par
+      // référence : on lit le sujet du message, jamais la colonne recopiée
+      // sur la pièce, qui peut avoir dérivé.
       db.attachment.findMany({
-        where: { subjectId: { in: ids } },
-        select: { subjectId: true },
+        where: { message: { is: { subjectId: { in: ids } } } },
+        select: { message: { select: { subjectId: true } } },
       }),
       db.message.findMany({
         where: { subjectId: { in: ids }, direction: MessageDirection.incoming },
@@ -441,8 +444,9 @@ export async function enrichSubjects(
       openTaskCount: openTasks.length,
       suggestionCount: aiOpenTasks.length + actionCount,
       unreadCount,
-      attachmentCount: attachments.filter((a) => a.subjectId === subject.id)
-        .length,
+      attachmentCount: attachments.filter(
+        (a) => a.message.subjectId === subject.id,
+      ).length,
       progress:
         subTasks.length === 0 ? null : doneTasks.length / subTasks.length,
       taskTotal: subTasks.length,
@@ -524,8 +528,9 @@ export async function getSubjectDetail(db: TenantDb, id: string) {
         orderBy: { createdAt: "desc" },
         take: 50,
       }),
+      // Par référence au message (cf. `enrichSubjects`).
       db.attachment.findMany({
-        where: { subjectId: id },
+        where: { message: { is: { subjectId: id } } },
         orderBy: { createdAt: "desc" },
       }),
       db.action.findFirst({

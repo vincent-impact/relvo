@@ -2154,14 +2154,18 @@ chose. L'onglet Documents d'un sujet **répertorie toutes les pièces jointes tr
 conversations** — des **références** aux pièces des messages, jamais des copies. Écarté : le
 classement à la main, pièce par pièce.
 
-⚠️ **Un défaut reste ouvert, cause non prouvée.** Le 2026-11-11, un e-mail de test à quatre
-pièces, dans une conversation suivie par un sujet, n'en a montré **aucune** dans l'onglet.
-L'onglet lit une colonne recopiée sur la pièce (`Attachment.subjectId`), posée au stockage puis
-propagée par chaque geste de rattachement ; tous les chemins d'écriture lus la propagent, donc
-la pièce a manqué le sujet autrement — sans accès à la production, on ne sait pas comment. La
-décision elle-même indique le correctif : puisque ce sont des références, la liste devrait se
-**déduire des messages du sujet** au lieu de se fier à une colonne recopiée qui peut dériver.
-À faire après avoir regardé le cas en base.
+**Ce que la décision a corrigé (2026-11-11).** Un e-mail de test à quatre pièces n'en montrait
+aucune dans l'onglet. Regardé en base de production (accès en lecture seule ouvert ce jour-là) :
+les quatre pièces étaient stockées, leur message était dans le sujet, mais elles-mêmes non —
+**860 pièces dans ce cas, sur huit comptes**. Cause : le balayage qui rattache une conversation
+à un sujet mettait à jour les messages « encore sans sujet », **puis** les pièces « dont le
+message est encore sans sujet » — qui, à ce moment, n'existaient plus (`PITFALLS.md` #78).
+Corrigé de deux façons, qui se tiennent : le balayage traite les pièces d'abord ; et l'onglet,
+son compteur et `listAttachments` **lisent le sujet du message**, plus la colonne recopiée sur
+la pièce. C'est la décision prise au mot — une référence, pas une copie — et c'est ce qui rend
+les 860 pièces à leur sujet sans rien réécrire en production. La colonne `Attachment.subjectId`
+reste tenue à jour, mais plus rien d'affiché n'en dépend ; elle pourra partir à la prochaine
+migration qui touche la table.
 
 ### Le journal d'un sujet ne sert pas
 

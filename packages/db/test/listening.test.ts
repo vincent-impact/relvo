@@ -3,6 +3,10 @@ import {
   ChannelType,
   SubjectStatus,
   attachEmailConversationToSubject,
+  createAttachment,
+  detachConversationFromSubject,
+  enrichSubjects,
+  getSubjectDetail,
   closeSubject,
   createSubject,
   createSubjectFromConversation,
@@ -83,6 +87,86 @@ function waInto(
 // ─────────────────────────────────────────────────────────────
 // Email — le sujet EST le fil
 // ─────────────────────────────────────────────────────────────
+
+describe("les pièces jointes suivent leur message dans le sujet", () => {
+  async function filAvecPieces(email: string) {
+    const { db, emailChannel } = await makeAccount(email);
+    const { message } = await mailInto(db, emailChannel.id, "pj-1", "Ci-joint");
+    // Comme à la réception : les pièces sont stockées AVANT qu'un sujet existe.
+    for (const name of [
+      "devis.pdf",
+      "cockpit.xlsx",
+      "logo.png",
+      "contrat.docx",
+    ]) {
+      await createAttachment(db, {
+        messageId: message.id,
+        subjectId: null,
+        name,
+        mimeType: null,
+        storageKey: `accounts/test/attachments/${email}-${name}`,
+        fileSize: 10,
+      });
+    }
+    return { db, message };
+  }
+
+  it("ouvrir un sujet sur le fil rattache aussi les pièces déjà stockées", async () => {
+    const { db, message } = await filAvecPieces("pj-sweep@test.fr");
+    const subject = await createSubjectFromConversation(
+      db,
+      message.conversationId,
+    );
+
+    const pieces = await db.attachment.findMany({
+      where: { messageId: message.id },
+    });
+    expect(pieces).toHaveLength(4);
+    expect(pieces.map((p) => p.subjectId)).toEqual(Array(4).fill(subject.id));
+
+    const detail = await getSubjectDetail(db, subject.id);
+    expect(detail?.attachments).toHaveLength(4);
+    const [enrichi] = await enrichSubjects(db, [subject]);
+    expect(enrichi?.attachmentCount).toBe(4);
+  });
+
+  it("l'onglet Documents lit le sujet du MESSAGE, même si la pièce a dérivé", async () => {
+    const { db, message } = await filAvecPieces("pj-derive@test.fr");
+    const subject = await createSubjectFromConversation(
+      db,
+      message.conversationId,
+    );
+    // L'état laissé en production par l'ancien balayage : le message est dans
+    // le sujet, ses pièces ne le savent pas.
+    await prisma.attachment.updateMany({
+      where: { messageId: message.id },
+      data: { subjectId: null },
+    });
+
+    expect((await getSubjectDetail(db, subject.id))?.attachments).toHaveLength(
+      4,
+    );
+    const [enrichi] = await enrichSubjects(db, [subject]);
+    expect(enrichi?.attachmentCount).toBe(4);
+  });
+
+  it("détacher le fil retire les pièces du sujet", async () => {
+    const { db, message } = await filAvecPieces("pj-detache@test.fr");
+    const subject = await createSubjectFromConversation(
+      db,
+      message.conversationId,
+    );
+    await detachConversationFromSubject(db, subject.id, message.conversationId);
+
+    const pieces = await db.attachment.findMany({
+      where: { messageId: message.id },
+    });
+    expect(pieces.every((p) => p.subjectId === null)).toBe(true);
+    expect((await getSubjectDetail(db, subject.id))?.attachments).toHaveLength(
+      0,
+    );
+  });
+});
 
 describe("email : ouvrir un sujet balaie le fil ENTIER", () => {
   it("les SIX messages d'un fil rejoignent le sujet (fin du balayage partiel)", async () => {

@@ -30,7 +30,10 @@ export function listAttachments(
   return db.attachment.findMany({
     where: {
       ...(opts.messageId ? { messageId: opts.messageId } : {}),
-      ...(opts.subjectId ? { subjectId: opts.subjectId } : {}),
+      // Les pièces d'un sujet sont celles de ses messages (par référence).
+      ...(opts.subjectId
+        ? { message: { is: { subjectId: opts.subjectId } } }
+        : {}),
     },
     orderBy: { createdAt: "asc" },
   });

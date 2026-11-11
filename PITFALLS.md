@@ -664,7 +664,7 @@ d'un paquet : ils changent sans qu'aucun numéro de version ne bouge. Les revér
 documentation de la plateforme, jamais de mémoire. Le piège **#54** relève du **navigateur du
 téléphone** : il se périme avec la version de Chrome, dans le bon sens.
 
-Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58, #59, #68, #70, #75** sont des **règles de conception ou d'hygiène** :
+Les pièges **#18, #20, #23, #27, #28, #30, #45, #50, #53, #55, #57, #58, #59, #68, #70, #75, #78** sont des **règles de conception ou d'hygiène** :
 ils ne se périment pas.
 
 > **Quand un piège devient faux, le corriger ici au moment où on s'en aperçoit** — et
@@ -798,4 +798,28 @@ politique : on ne le découvre qu'en sondant.
   **dépôt** par URL signée —, **sonder le pré-vol** (`OPTIONS` avec `Origin` et
   `Access-Control-Request-Method`) contre le vrai bucket. Une règle CORS se pose dans la
   console du fournisseur, pas dans le code.
+
+
+---
+
+### #78 — Deux mises à jour groupées dont la seconde filtre sur ce que la première vient de changer
+
+**Symptôme** : l'onglet Documents d'un sujet reste vide alors que ses conversations portent des
+pièces jointes. Les pièces sont stockées, leur message est bien dans le sujet ; rien ne lève, les
+tests passent. En production : des centaines de pièces hors de leur sujet, depuis des mois.
+
+**Cause** : le balayage d'une conversation vers un sujet groupait deux `updateMany` dans une
+transaction — les messages « encore sans sujet » reçoivent le sujet, puis les pièces « dont le
+message est encore sans sujet » le reçoivent aussi. Le même filtre servait aux deux. Mais une
+transaction exécute ses requêtes **dans l'ordre** : quand la seconde part, la première a déjà
+retiré tous les messages du filtre. Elle met à jour zéro ligne, ce qui n'est pas une erreur. Le
+test existant ne regardait que les messages.
+
+**Règle** :
+- Quand deux écritures partagent un filtre et que l'une **modifie la colonne filtrée**, celle-là
+  passe **en dernier** — ou on fige d'abord les identifiants et on écrit par identifiant.
+- Une valeur **recopiée** d'une table sur une autre (le sujet du message, redit sur sa pièce)
+  dérive tôt ou tard : la lecture suit la relation, pas la copie.
+- Un test de rattachement vérifie **tout ce qui doit suivre** — ici les pièces —, pas seulement
+  l'objet principal.
 

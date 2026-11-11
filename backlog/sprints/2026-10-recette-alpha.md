@@ -389,11 +389,14 @@ réception** : un sujet né après n'en hérite pas.
 (`AttachmentList`). Chaque pièce porte l'**icône de son type** (`PieceIcone`) — PDF rouge,
 classeur vert au tableau, document bleu, présentation orange, les autres en gris à leur forme —
 dans la conversation, les documents d'un sujet, les connaissances d'un dossier et l'écran du
-fichier. **Reste ouvert : l'onglet Documents.** Tranché le même jour (`ecarts`,
-« Les documents d'un sujet sont les pièces de ses conversations, par référence ») : il liste
-toutes les pièces des conversations du sujet, on n'y dépose rien. Or les quatre pièces du test
-n'y sont pas — cause non prouvée, à regarder en base avant de corriger. Le journal d'un sujet,
-jugé inutile, est noté dans `ecarts`.
+fichier. **L'onglet Documents, corrigé le même jour.** Tranché (`ecarts`, « Les documents d'un sujet
+sont les pièces de ses conversations, par référence ») : il liste toutes les pièces des
+conversations du sujet, on n'y dépose rien. Diagnostiqué en base de production, en lecture
+seule : les pièces étaient stockées et leur message rangé, mais le balayage d'une conversation
+vers un sujet ne les emportait jamais (ordre de deux mises à jour, `PITFALLS.md` #78) — 860
+pièces sur huit comptes. Le balayage est corrigé, et l'onglet lit désormais le sujet du
+**message** : les pièces déjà reçues reparaissent sans reprise de données. Le journal d'un
+sujet, jugé inutile, est noté dans `ecarts`.
 
 ### R19 — Relvo ne retrouve pas un message et en affiche des dizaines sans rapport
 
@@ -457,8 +460,8 @@ changements d'état ; prévenir le dirigeant du compte quand un canal tombe.
       dirigeant (aperçu, « Ouvrir avec… », « Télécharger », retour sans écran blanc).
 - [x] R21 livrée (2026-11-11) : toutes les pièces d'un message, et l'icône de leur type ; l'onglet
       Documents est tranché (toutes les pièces des conversations, par référence).
-- [ ] Onglet Documents d'un sujet : les pièces du test du 2026-11-11 n'y paraissent pas — à
-      diagnostiquer en base, puis corriger.
+- [x] Onglet Documents d'un sujet : les pièces des conversations y paraissent toutes
+      (2026-11-11) — à constater par le dirigeant sur « Alpha Test ».
 - [ ] **Quatrième vague (2026-11-11) : R19 à livrer en premier**, R20 à vérifier en production
       par le dirigeant.
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).

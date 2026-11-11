@@ -66,14 +66,18 @@ export async function sweepConversationIntoSubject(
     ...(anchorAt ? { createdAt: { gte: anchorAt } } : {}),
   } satisfies Prisma.MessageWhereInput;
 
-  const [{ count: swept }] = await db.$transaction([
-    db.message.updateMany({
-      where: covered,
-      data: { subjectId: opts.subjectId, status: MessageStatus.linked },
-    }),
+  // ⚠️ LES PIÈCES D'ABORD. `covered` désigne les messages « encore sans
+  // sujet » : une fois les messages rattachés, plus aucun ne l'est, et une
+  // mise à jour des pièces posée APRÈS ne trouverait jamais rien — c'est ce
+  // qui a laissé, en production, des centaines de pièces hors de leur sujet.
+  const [, { count: swept }] = await db.$transaction([
     db.attachment.updateMany({
       where: { message: { is: covered } },
       data: { subjectId: opts.subjectId },
+    }),
+    db.message.updateMany({
+      where: covered,
+      data: { subjectId: opts.subjectId, status: MessageStatus.linked },
     }),
   ]);
   return { swept };
@@ -392,6 +396,12 @@ export async function detachConversationFromSubject(
     // (rattrapage d'erreur — le fil ne fait plus partie du sujet, cf. n°13bis).
     // L'« arrêter l'écoute » d'un fil de messagerie passe, lui, par une borne de
     // fin (closing_message_id), pas par ce détachement.
+    // Les pièces suivent leur message — avant lui, tant qu'il désigne encore
+    // le sujet (même raison que dans `sweepConversationIntoSubject`).
+    await tx.attachment.updateMany({
+      where: { message: { is: { conversationId, subjectId } } },
+      data: { subjectId: null },
+    });
     await tx.message.updateMany({
       where: { conversationId, subjectId },
       data: { subjectId: null },
