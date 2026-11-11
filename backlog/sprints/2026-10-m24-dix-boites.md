@@ -170,6 +170,86 @@ d'abord ; Prisma 7 avec adaptateur ; `db:migrate` puis `db:generate` après tout
 - **Plus tard, pour la tranche 8** : la liste des boîtes Gmail à migrer, et le feu vert, parce que
   la migration supprime des comptes chez l'agrégateur.
 
+## Tranche 0 — « Se déclarer » : le dossier de vérification (M24.7)
+
+**État au 2026-11-11.** Dans le Centre de validation de la console (projet `Relvo`), le
+**branding est validé**. L'**accès aux données ne l'est pas** : Google attend, pour
+`gmail.send` (sensible) et `gmail.readonly` (restreint), une justification, les fonctionnalités
+utilisées et une **vidéo de démonstration**. Le formulaire a été rempli une fois avec le
+dirigeant mais **n'a pas pu être enregistré** : sans lien YouTube, « Save » reste gris. Tout est
+donc à ressaisir le jour de la soumission — les textes sont ci-dessous pour cela. Tant que le
+dossier n'est pas accepté, rien n'est bloqué : avertissement Google, cent comptes.
+
+**La tâche, de bout en bout — cinq étapes, dans l'ordre.**
+
+1. **Préparer la boîte de test.** Une boîte Gmail qui n'est pas celle du dirigeant (les
+   examinateurs voient le contenu), et une seconde adresse d'où lui écrire.
+2. **Enregistrer** (le dirigeant ; Mac, Chrome, Cmd + Maj + 5, barre d'adresse toujours
+   visible, sur `app.relvo.net`). Trois prises, nommées dans l'ordre :
+   - `1-connexion` — `relvo.net`, connexion à l'application, Canaux, relier la boîte Gmail.
+     **Plan continu** du clic « Connecter » jusqu'au retour dans Relvo. Écran Google passé en
+     **anglais** (sélecteur en bas de page), laissé quelques secondes : `client_id=885986354227-…`
+     lisible dans l'adresse, l'avertissement « application non validée » (Google demande qu'il
+     apparaisse ; « Paramètres avancés » puis « Accéder à Relvo »), la liste des autorisations.
+   - `2-reception` — un vrai e-mail envoyé à la boîte de test, rédigé comme une demande (un
+     devis, une date), qui apparaît dans Conversations, puis le sujet que Relvo en tire.
+   - `3-reponse` — la réponse écrite dans Relvo, Envoyer, puis le message dans les « Messages
+     envoyés » de Gmail.
+3. **Monter** (en session, avec `ffmpeg` du poste) : couper les temps morts **hors** de la
+   séquence de consentement, un titre anglais par étape, assembler. ⚠️ Ce `ffmpeg` n'a pas le
+   filtre qui écrit du texte (`drawtext`) : les titres se fabriquent en images et s'incrustent.
+   Le découpage et les titres sont montrés au dirigeant avant l'export.
+4. **Publier** sur YouTube en **« Non répertoriée »** (pas « Privée »), avec la description
+   ci-dessous aux minutages réels.
+5. **Soumettre** : Centre de validation → « Prepare for verification », ressaisir les trois
+   champs, coller le lien, « Save », puis envoyer. Google répond **par e-mail** au contact de
+   l'écran de consentement ; on répond dans le même fil. Une fois ces pièces acceptées, il
+   demande l'**évaluation de sécurité** (CASA, laboratoire agréé, annuelle) — c'est l'étape
+   longue.
+
+**Les textes à coller.**
+
+*Champ sensible, `gmail.send` :*
+
+> Relvo is an assistant for small-business owners that shows their email threads and lets them
+> reply from inside the app. gmail.send is used only to send the replies the user writes or
+> approves in Relvo, from their own Gmail address, when they press Send. Relvo never sends an
+> email on its own initiative. gmail.send is already the narrowest scope for sending on the
+> user's behalf: it gives no read access to the mailbox. We do not request gmail.compose or
+> gmail.modify.
+
+*Champ restreint, `gmail.readonly` — « Quelles fonctionnalités utiliserez-vous ? » :* l'entrée
+qui dit l'amélioration de la messagerie pour la productivité ; le client de messagerie en plus
+si la liste accepte plusieurs choix. Ni sauvegarde ni reporting.
+
+*Champ restreint, `gmail.readonly` — la justification :*
+
+> Relvo is an assistant for small-business owners. It reads the user's received and sent emails,
+> including attachments, to (1) display each thread inside the app so the user can read and
+> answer it, and (2) group messages into structured topics with tasks, summaries and a log, so
+> the owner sees what needs action. Sent mail is read so that replies written from another mail
+> client appear in the thread. Full message content is required: gmail.metadata exposes headers
+> only, which can neither display a conversation nor determine what a message asks for. Relvo
+> never modifies, labels or deletes anything in the mailbox, which is why we request
+> gmail.readonly rather than gmail.modify or mail.google.com. Data is used only to provide these
+> features to the mailbox owner, in line with the Limited Use requirements.
+
+*Description de la vidéo (l'application est en français ; les minutages sont à ajuster) :*
+
+> The app interface is in French; each step is listed here in English.
+> 0:20 Connecting a Gmail mailbox from Relvo (Canaux = Channels)
+> 0:40 Google consent screen, client ID visible in the URL
+> 1:10 gmail.readonly: the received email appears in Relvo and becomes a topic ("sujet")
+> 1:50 gmail.send: the user replies from Relvo; the reply is in Gmail's Sent folder
+
+- [x] Branding validé.
+- [ ] Boîte de test prête.
+- [ ] Trois prises enregistrées par le dirigeant.
+- [ ] Montage, validé par le dirigeant.
+- [ ] Vidéo en ligne, non répertoriée.
+- [ ] Formulaire ressaisi et dossier soumis.
+- [ ] Réponses aux demandes de Google ; évaluation de sécurité.
+
 ## Tranche 1 — « L'adresse » (M24.10)
 
 **Livré.**
@@ -472,7 +552,8 @@ règle d'organisation « Partage restreint au domaine » levée le temps d'y aut
 `GMAIL_PUSH_SERVICE_ACCOUNT` sont posées, et un e-mail reçu sur la boîte apparaît dans Relvo.
 **La lecture des quatorze jours par le relais est validée en production** par le dirigeant.
 **Les huit tranches sont livrées.** Ce qui reste est entre les mains du dirigeant : la
-vérification Google de l'écran de consentement (tranche 0), puis `boites:migrer` sur sa boîte et
+vérification Google de l'accès aux données (tranche 0 — branding validé, **dossier à soumettre,
+vidéo à produire** : la marche à suivre et les textes sont dans sa section), puis `boites:migrer` sur sa boîte et
 sur celles des testeurs — l'épique se ferme quand la facture de l'agrégateur ne compte plus que
 WhatsApp.
 
