@@ -382,6 +382,20 @@ WhatsApp de ce compte (Canaux, backoffice), puis la date du dernier message What
 canal est tombé sans que rien ne le dise, c'est un défaut à part : un canal qui n'écoute plus
 doit se voir.
 
+**Complément du 2026-11-11.** Le testeur dit que Relvo se déconnecte parfois de son WhatsApp ;
+le dirigeant regarde le backoffice chaque jour et voit le canal connecté. Les deux sont
+compatibles, et **rien aujourd'hui ne permet de trancher** :
+- l'état du canal est **écrasé en place** (`setChannelConfigStatus`), sans historique ni entrée
+  au journal ; un canal en erreur **repasse connecté tout seul** au premier message livré
+  (`confirmChannelConnected`). Une coupure de quelques heures ne laisse aucune trace ;
+- les journaux de l'hébergeur ne remontent que sur quelques jours, ne disent pas quel compte un
+  webhook concerne, et sont noyés sous deux avertissements de Node classés en erreur.
+
+**Proposé, pas urgent.** Tracer chaque changement d'état d'un canal (avant, après, libellé brut
+du fournisseur, horodatage) ; dire le compte et le type d'événement dans la ligne de journal du
+webhook ; montrer au backoffice, par canal, la date du **dernier message reçu** et les derniers
+changements d'état ; prévenir le dirigeant du compte quand un canal tombe.
+
 ## Où on en est
 
 - [ ] **Quatrième vague enregistrée (2026-11-11) : R18 et R19 à livrer en premier**, R20 à
