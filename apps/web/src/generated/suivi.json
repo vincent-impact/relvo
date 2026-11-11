@@ -123,8 +123,8 @@
       "titre": "Connaissances métier",
       "resume": "Vous déposez vos documents de référence et vos consignes — organigramme, procédures, ton de réponse, particularités d'un fournisseur. Relvo s'en sert pour proposer des réponses justes plutôt que génériques.",
       "statut": "a-faire",
-      "gauche": 71.96,
-      "largeur": 5.14
+      "gauche": null,
+      "largeur": 0
     },
     {
       "titre": "Échange avec Relvo",
@@ -213,6 +213,10 @@
     {
       "date": "2026-11-01",
       "entrees": [
+        {
+          "type": "fix",
+          "texte": "Votre réponse WhatsApp envoyée depuis Relvo apparaît dans la conversation, même sur un fil où une réponse plus ancienne s'était perdue."
+        },
         {
           "type": "fix",
           "texte": "Dans la liste des sujets, le titre est un peu plus petit, pour voir à l'usage."

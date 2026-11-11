@@ -54,7 +54,7 @@ frontmatter l'est.
 | [M12 — Mécanismes transverses](epics/M12-transverses.md)                   | 🟡 partiellement livré au fil de l'eau           | —                               |
 | [M13 — Onboarding et bêta](epics/M13-onboarding-beta.md)                   | ⬜                                               | mise en service                 |
 | [M14 — Qualité et exploitation](epics/M14-qualite-exploitation.md)         | ⬜                                               | —                               |
-| [M15 — Suivi de projet](epics/M15-suivi-client.md)                         | ⬜                                               | la relation client              |
+| [M15 — Suivi de projet](epics/M15-suivi-client.md)                         | ✅                                               | la relation client              |
 
 ## Le chemin critique
 

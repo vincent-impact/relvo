@@ -8,8 +8,6 @@ resume_client: >
   réponse, particularités d'un fournisseur. Relvo s'en sert pour proposer des réponses justes
   plutôt que génériques.
 statut: a-faire
-debut: 2026-11-02
-fin: 2026-11-13
 ---
 
 # M11 — Connaissances
