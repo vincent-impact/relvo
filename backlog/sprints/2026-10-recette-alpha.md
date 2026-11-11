@@ -488,6 +488,8 @@ changements d'état ; prévenir le dirigeant du compte quand un canal tombe.
 - [x] R19 livrée (2026-11-11) : la personne d'abord, le texte classé, un message relu avec ses
       voisins, et le fil ne montre que ce que Relvo désigne — à éprouver par le dirigeant
       (« retrouve le message de … sur … »).
+- [x] R19, retour du dirigeant (2026-11-11) : la carte d'un message trouvé ouvrait la conversation
+      en bas du fil ; elle mène maintenant au message, surligné, chargé même hors des récents.
 - [ ] R20 à vérifier en production par le dirigeant.
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
 - [x] R5 et R6 livrées (assistant actif par défaut, invitation aux notifications dans l'échange et sur l'accueil).

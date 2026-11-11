@@ -25,13 +25,21 @@ export default async function ConversationDetailPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ filtre?: string; from?: string; repondre?: string }>;
+  searchParams: Promise<{
+    filtre?: string;
+    from?: string;
+    repondre?: string;
+    message?: string;
+  }>;
 }) {
   const { id } = await params;
-  const { filtre, from, repondre } = await searchParams;
+  const { filtre, from, repondre, message } = await searchParams;
 
   const db = await getTenantDb();
-  const thread = await getConversationThread(db, id).catch(() => null);
+  // Un message visé (`?message=`) est chargé même s'il sort des récents.
+  const thread = await getConversationThread(db, id, {
+    autourDe: message,
+  }).catch(() => null);
   if (!thread) notFound();
 
   // Domaines (dialog de création) + sujets ouverts (« Lier à un sujet existant »).

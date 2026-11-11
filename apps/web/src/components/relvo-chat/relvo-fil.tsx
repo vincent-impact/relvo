@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { getToolName, isToolUIPart, type UIMessagePart } from "ai";
 import { toast } from "sonner";
 import type { ConnaissanceTrouvee, MessageTrouve } from "@relvo/db";
@@ -190,14 +191,20 @@ function BlocAction({
   );
 }
 
+// La carte d'un message mène AU message (le fil s'ouvre dessus et le
+// surligne), et le retour ramène à l'échange d'où l'on vient.
 function Messages({ messages }: { messages: MessageTrouve[] }) {
+  const pathname = usePathname();
   if (messages.length === 0) return null;
   return (
     <SousCarte>
       {messages.map((m) => (
         <Link
           key={m.id}
-          href={`/conversations/${m.conversationId}`}
+          href={`/conversations/${m.conversationId}?${new URLSearchParams({
+            message: m.id,
+            from: pathname,
+          }).toString()}`}
           data-list-row
           className="block border-b border-(--filet) px-3.5 py-2.5 active:bg-(--fond-enfonce)"
         >

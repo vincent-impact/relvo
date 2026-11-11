@@ -1034,10 +1034,13 @@ const CONVERSATION_MESSAGE_INCLUDE = {
  * dur protège malgré tout le cas pathologique du groupe très bavard.
  */
 const CONVERSATION_THREAD_MAX = 200;
+/** Ce qu'on garde AVANT un message visé qui sort de la fenêtre des récents. */
+const CONVERSATION_THREAD_AVANT = 20;
 
 export async function getConversationThread(
   db: TenantDb,
   id: string,
+  options: { autourDe?: string | null } = {},
 ): Promise<ConversationThread> {
   const conversation = assertFound(
     await db.conversation.findFirst({
@@ -1053,7 +1056,7 @@ export async function getConversationThread(
   // Les PLUS RÉCENTS d'abord pour borner, puis remis dans l'ordre de lecture :
   // borner en ordre croissant garderait les 200 plus anciens et couperait
   // tout ce qui arrive ensuite — la réponse qu'on vient d'envoyer comprise.
-  const rows = (
+  let rows = (
     await db.message.findMany({
       where: { conversationId: id },
       orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -1061,6 +1064,35 @@ export async function getConversationThread(
       include: CONVERSATION_MESSAGE_INCLUDE,
     })
   ).reverse();
+
+  // Un message VISÉ (la carte de l'échange, « Voir le message » d'une tâche)
+  // plus ancien que la fenêtre : le fil se charge alors AUTOUR de lui — un peu
+  // d'avant, puis la suite — sinon la page s'ouvrirait sans lui, en bas, loin
+  // de ce qu'on est venu lire. La suite est bornée par le même plafond.
+  const vise = options.autourDe;
+  if (vise && !rows.some((m) => m.id === vise)) {
+    const cible = await db.message.findFirst({
+      where: { id: vise, conversationId: id },
+      select: { createdAt: true },
+    });
+    if (cible) {
+      const [avant, suite] = await Promise.all([
+        db.message.findMany({
+          where: { conversationId: id, createdAt: { lt: cible.createdAt } },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: CONVERSATION_THREAD_AVANT,
+          include: CONVERSATION_MESSAGE_INCLUDE,
+        }),
+        db.message.findMany({
+          where: { conversationId: id, createdAt: { gte: cible.createdAt } },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          take: CONVERSATION_THREAD_MAX - CONVERSATION_THREAD_AVANT,
+          include: CONVERSATION_MESSAGE_INCLUDE,
+        }),
+      ]);
+      rows = [...avant.reverse(), ...suite];
+    }
+  }
 
   // Résolution d'appartenance au READ TIME (contact enregistré APRÈS la création
   // du fil, cf. buildContactResolver) — construite UNIQUEMENT s'il reste quelque

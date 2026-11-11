@@ -561,4 +561,54 @@ describe("liste et fil de la page /conversations", () => {
     expect(thread.messages[1]!.subject?.id).toBeTruthy();
     expect(thread.channelType).toBe(ChannelType.whatsapp);
   });
+
+  it("un message visé plus ancien que la fenêtre est chargé, avec ce qui le précède et le suit", async () => {
+    const { db, waChannel } =
+      await makeAccountWithChannels("conv-long@test.fr");
+    const ids: string[] = [];
+    for (let i = 0; i < 230; i++) {
+      const r = await ingestInboundWhatsApp(db, {
+        channelId: waChannel.id,
+        externalId: `long-${i}`,
+        externalThreadId: "chat-long",
+        senderRaw: "33600000011@s.whatsapp.net",
+        content: `Message ${i}`,
+      });
+      ids.push(r.message.id);
+    }
+    // L'ordre du fil est celui des dates : on les espace d'une minute.
+    const debut = Date.now() - 230 * 60_000;
+    for (const [i, id] of ids.entries()) {
+      await db.message.update({
+        where: { id },
+        data: { createdAt: new Date(debut + i * 60_000) },
+      });
+    }
+    const conversationId = (
+      await db.message.findFirstOrThrow({
+        where: { id: ids[0]! },
+      })
+    ).conversationId;
+
+    // Sans visée : les récents, le cinquième message n'y est pas.
+    const recents = await getConversationThread(db, conversationId);
+    expect(recents.messages).toHaveLength(200);
+    expect(recents.messages.some((m) => m.id === ids[5])).toBe(false);
+
+    // Visé : il y est, précédé de ses voisins, suivi de la suite, dans l'ordre.
+    const vise = await getConversationThread(db, conversationId, {
+      autourDe: ids[5],
+    });
+    const rendus = vise.messages.map((m) => m.id);
+    expect(rendus.slice(0, 7)).toEqual(ids.slice(0, 7));
+    expect(rendus).toHaveLength(5 + 180);
+
+    // Un message déjà dans la fenêtre, ou d'un autre fil, ne change rien.
+    const dedans = await getConversationThread(db, conversationId, {
+      autourDe: ids[229],
+    });
+    expect(dedans.messages.map((m) => m.id)).toEqual(
+      recents.messages.map((m) => m.id),
+    );
+  });
 });
