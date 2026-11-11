@@ -53,6 +53,11 @@ const tokensAttendus = [
   "--fait",
   "--attente",
   "--attente-texte",
+  // les fichiers
+  "--fichier-pdf",
+  "--fichier-tableur",
+  "--fichier-document",
+  "--fichier-presentation",
   // le noir, les gris, le blanc
   "--noir",
   "--gris",

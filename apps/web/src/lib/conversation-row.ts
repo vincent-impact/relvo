@@ -158,12 +158,13 @@ export type ThreadMessageData = {
     title: string;
     folder: { slug: string; color: string | null; icon: string | null } | null;
   } | null;
-  attachment: {
+  /** TOUTES les pièces du message, dans l'ordre où elles sont arrivées. */
+  attachments: {
     id: string;
     name: string;
     label: string | null;
     mimeType: string | null;
-  } | null;
+  }[];
 };
 
 export function toThreadMessageData(
@@ -177,9 +178,9 @@ export function toThreadMessageData(
     contentHtml: m.contentHtml,
     time: formatRelative(m.sentAt) ?? "",
     subject: m.subject,
-    // Une seule pièce jointe rendue sous la bulle, comme dans le fil d'un sujet
-    // (la fiche du message porte le détail complet).
-    attachment: m.attachments[0] ?? null,
+    // Toutes : la conversation est la seule surface où un message se lit, une
+    // pièce qui n'y paraît pas n'existe nulle part pour le dirigeant.
+    attachments: m.attachments,
   };
 }
 

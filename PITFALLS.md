@@ -753,14 +753,16 @@ sans ce geste : le dirigeant peut choisir de ne pas réécrire l'historique.
 écrites dans `globals.css` n'arrivent pas : fond absent, animation `none`. Les fichiers `.tsx`,
 eux, se rechargent — on cherche une erreur de CSS qui n'existe pas.
 
-**Cause** : le serveur `next dev` (Turbopack) ne reprend pas une modification de la feuille globale
-faite pendant qu'il tourne — observé trois fois de suite dans une même session, serveur fraîchement
-démarré ou vieux de plusieurs jours, `touch` compris. La cause exacte n'est pas élucidée.
+**Cause** : le serveur `next dev` (Turbopack) garde sa feuille globale dans un cache **sur
+disque** (`.next/dev`), qui survit au redémarrage. Une modification de `globals.css` — une règle,
+ou un simple token dans `:root` — peut donc ne jamais être servie, serveur en cours ou
+fraîchement relancé, `touch` compris. Un token absent ne lève rien : `var(--…)` indéfini rend la
+couleur héritée, et le composant paraît juste « sans couleur ».
 
 **Règle** : avant de douter d'une règle CSS, comparer la feuille **servie** (`/_next/static/…css`)
-au fichier ; si elle est en retard, redémarrer le serveur de dev (`PORT=3100
-AUTH_URL=http://localhost:3100 pnpm dev`) — c'est tout. Toute vérification visuelle d'un
-changement de `globals.css` passe par ce redémarrage.
+au fichier. Si elle est en retard : arrêter le serveur, **supprimer `apps/web/.next/dev`**, le
+relancer (`PORT=3100 AUTH_URL=http://localhost:3100 pnpm dev`). Redémarrer sans vider le cache ne
+suffit pas toujours. Toute vérification visuelle d'un changement de `globals.css` passe par là.
 
 ---
 

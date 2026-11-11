@@ -129,6 +129,10 @@ domaine. Les gestes et ce qu'ils déclenchent font foi dans
 canal. Un tap qui ouvre une modale sur une liste qu'on parcourt au pouce transforme chaque
 défilement en champ de mines.
 
+**Un message montre toutes ses pièces.** Images en vignettes, fichiers en cartes, dans l'ordre
+d'arrivée, chacune avec l'icône de son type : la conversation est la seule surface où un message
+se lit, et une pièce qui n'y paraît pas n'existe nulle part pour le dirigeant.
+
 **Une pièce s'ouvre dans Relvo, selon ce qu'elle est, et sans étape entre le tap et elle.**
 Une image s'agrandit sur place ; un PDF part au lecteur du navigateur, qui les rend bien ; un
 classeur montre son tableau en plein écran, une puce par feuille ; tout autre fichier, et tout

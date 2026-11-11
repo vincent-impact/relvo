@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "@/components/shared/picto";
+import { PieceIcone } from "@/components/shared/piece-icone";
 import { AttachmentViewer } from "@/components/shared/attachment-viewer";
 
 // Une ligne de l'onglet Documents de la fiche : l'icône, le nom, ce que Relvo
@@ -31,9 +31,7 @@ export function DocumentRow({
       mimeType={mimeType}
       className="flex w-full cursor-pointer items-center gap-3 px-3.5 py-2.5 text-left active:bg-(--fond-enfonce)"
     >
-      <span className="grid size-[34px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-gris">
-        <FileText className="size-[18px]" />
-      </span>
+      <PieceIcone name={name} mimeType={mimeType} />
       <span className="block min-w-0 flex-1">
         <span className="block truncate text-[14.5px] leading-[18px] font-normal text-noir">
           {name}

@@ -3,12 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, X } from "lucide-react";
 import type { FeuilleApercu } from "@relvo/storage/classeur";
-import {
-  DownloadSimple,
-  Export,
-  FileText,
-  Table as TablePicto,
-} from "@/components/shared/picto";
+import { PieceIcone } from "@/components/shared/piece-icone";
+import { DownloadSimple, Export } from "@/components/shared/picto";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -301,13 +297,7 @@ function Contenu({
       ) : (
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <div className="flex flex-1 flex-col items-center justify-center px-7 py-8 text-center">
-            <span className="grid size-[72px] place-items-center rounded-(--rayon-carte) bg-(--fond-puce) text-gris">
-              {genre === "classeur" ? (
-                <TablePicto className="size-9" />
-              ) : (
-                <FileText className="size-9" />
-              )}
-            </span>
+            <PieceIcone name={name} mimeType={mimeType} size="lg" />
             <p className="mt-5 text-[18px] leading-6 font-medium [overflow-wrap:anywhere] break-words text-noir">
               {name}
             </p>

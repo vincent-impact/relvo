@@ -84,6 +84,16 @@ fait ou connecté · `--attente` (ambre) pour ce qui attend un tiers. Ces trois-
 une pastille **cerclée**, en retard un horaire **barré**, fait une coche sur disque violet et un
 titre barré. Un daltonien lit l'écran.
 
+## Les fichiers — la couleur qu'on leur connaît déjà
+
+Un fichier se reconnaît à son **icône** avant son nom (`PieceIcone`) : une forme par famille, et
+pour les quatre que tout le monde identifie à leur couleur, cette couleur — `--fichier-pdf`
+(rouge), `--fichier-tableur` (vert), `--fichier-document` (bleu), `--fichier-presentation`
+(orange) —, l'icône dans la teinte, sa puce dans la même teinte très éclaircie. Une image, un
+son, une vidéo, une archive, un fichier inconnu gardent la puce grise : leur forme suffit, et un
+arc-en-ciel n'apprendrait plus rien. Ces couleurs ne servent qu'à ça ; ce ne sont ni celles des
+domaines ni celles des états, même quand elles leur ressemblent.
+
 ## La sélection — un cerclage
 
 Un indicateur actif (Sujets, Calendrier, Conversations, Contacts) est un chiffre **cerclé** d'un

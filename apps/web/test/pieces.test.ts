@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   adresseDePiece,
   estUnNombre,
+  familleDeFichier,
   formatPoids,
   genreDePiece,
   lettreDeColonne,
@@ -110,5 +111,31 @@ describe("adresseDePiece", () => {
   it("choisit la route à la source, jamais une clé de stockage", () => {
     expect(adresseDePiece("attachment", "a1")).toBe("/api/attachments/a1");
     expect(adresseDePiece("document", "d1")).toBe("/api/documents/d1");
+  });
+});
+
+describe("familleDeFichier — l'icône et la couleur d'un fichier", () => {
+  it("reconnaît les quatre familles colorées à leur nom", () => {
+    expect(familleDeFichier("devis.pdf", null)).toBe("pdf");
+    expect(familleDeFichier("Cockpit_Financier.xlsx", null)).toBe("tableur");
+    expect(familleDeFichier("ventes.csv", null)).toBe("tableur");
+    expect(familleDeFichier("contrat.docx", null)).toBe("document");
+    expect(familleDeFichier("offre.pptx", null)).toBe("presentation");
+  });
+
+  it("fait passer le nom avant un type trop large", () => {
+    expect(familleDeFichier("devis.PDF", "application/octet-stream")).toBe(
+      "pdf",
+    );
+    expect(familleDeFichier("photo.jpg", "application/octet-stream")).toBe(
+      "image",
+    );
+  });
+
+  it("se fie au type quand le nom ne dit rien", () => {
+    expect(familleDeFichier("piece-jointe", "application/pdf")).toBe("pdf");
+    expect(familleDeFichier("note", "audio/ogg")).toBe("son");
+    expect(familleDeFichier("clip", "video/mp4")).toBe("video");
+    expect(familleDeFichier("piece-jointe", null)).toBe("autre");
   });
 });

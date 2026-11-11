@@ -375,6 +375,24 @@ ailleurs :
 remonter. Et le **dépôt d'une connaissance** envoie le fichier du navigateur au stockage : sans
 règle CORS, ce dépôt ne peut pas aboutir — **à vérifier en production**, c'est hors de R18.
 
+### R21 — Un e-mail à quatre pièces jointes n'en montre qu'une
+
+**Constat (dirigeant, 2026-11-11, en éprouvant R18).** Un e-mail envoyé avec quatre pièces
+jointes n'en affiche qu'une dans la conversation, et aucune dans l'onglet Documents du sujet.
+
+**Causes, deux, distinctes.** La conversation ne rendait que la **première** pièce d'un message
+(`toThreadMessageData`), en renvoyant le reste à une fiche de message qui n'existe plus.
+L'onglet Documents, lui, ne liste que les pièces dont le message a été capté par le sujet **à la
+réception** : un sujet né après n'en hérite pas.
+
+**Livré (2026-11-11).** Un message montre **toutes** ses pièces, e-mail comme messagerie
+(`AttachmentList`). Chaque pièce porte l'**icône de son type** (`PieceIcone`) — PDF rouge,
+classeur vert au tableau, document bleu, présentation orange, les autres en gris à leur forme —
+dans la conversation, les documents d'un sujet, les connaissances d'un dossier et l'écran du
+fichier. **Pas touché : l'onglet Documents**, que le dirigeant veut repenser (`ecarts`, « Les
+documents d'un sujet : ce que le dirigeant y classe… ») ; le journal d'un sujet, jugé inutile,
+est noté au même endroit.
+
 ### R19 — Relvo ne retrouve pas un message et en affiche des dizaines sans rapport
 
 **Constat.** Le testeur demande à Relvo de retrouver le message d'Olivier lui demandant un retour
@@ -435,6 +453,8 @@ changements d'état ; prévenir le dirigeant du compte quand un canal tombe.
 
 - [x] R18 livrée (2026-11-11) : un fichier s'ouvre dans Relvo — à éprouver sur l'iPhone par le
       dirigeant (aperçu, « Ouvrir avec… », « Télécharger », retour sans écran blanc).
+- [x] R21 livrée (2026-11-11) : toutes les pièces d'un message, et l'icône de leur type ; l'onglet
+      Documents et le journal d'un sujet sont à repenser (`ecarts`, proposés).
 - [ ] **Quatrième vague (2026-11-11) : R19 à livrer en premier**, R20 à vérifier en production
       par le dirigeant.
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).

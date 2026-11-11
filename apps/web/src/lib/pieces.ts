@@ -36,6 +36,84 @@ export function genreDePiece(
   return "autre";
 }
 
+/**
+ * La famille d'un fichier — ce qui choisit son icône et sa couleur
+ * (`PieceIcone`). Le nom d'abord, le type à défaut : une pièce d'e-mail arrive
+ * souvent typée « flux d'octets ».
+ */
+export type FamilleFichier =
+  | "pdf"
+  | "tableur"
+  | "document"
+  | "presentation"
+  | "image"
+  | "son"
+  | "video"
+  | "archive"
+  | "autre";
+
+const FAMILLES_PAR_EXTENSION: Record<string, FamilleFichier> = {
+  pdf: "pdf",
+  xlsx: "tableur",
+  xlsm: "tableur",
+  xls: "tableur",
+  csv: "tableur",
+  ods: "tableur",
+  numbers: "tableur",
+  doc: "document",
+  docx: "document",
+  odt: "document",
+  rtf: "document",
+  pages: "document",
+  txt: "document",
+  md: "document",
+  ppt: "presentation",
+  pptx: "presentation",
+  odp: "presentation",
+  key: "presentation",
+  jpg: "image",
+  jpeg: "image",
+  png: "image",
+  gif: "image",
+  webp: "image",
+  heic: "image",
+  svg: "image",
+  mp3: "son",
+  m4a: "son",
+  ogg: "son",
+  opus: "son",
+  wav: "son",
+  mp4: "video",
+  mov: "video",
+  webm: "video",
+  zip: "archive",
+  rar: "archive",
+  "7z": "archive",
+};
+
+export function familleDeFichier(
+  nom: string,
+  mimeType?: string | null,
+): FamilleFichier {
+  const connue = FAMILLES_PAR_EXTENSION[extensionDe(nom)];
+  if (connue) return connue;
+  const type = (mimeType ?? "").toLowerCase();
+  if (type.startsWith("application/pdf")) return "pdf";
+  if (estUnClasseur(nom, mimeType)) return "tableur";
+  if (type.startsWith("image/")) return "image";
+  if (type.startsWith("audio/")) return "son";
+  if (type.startsWith("video/")) return "video";
+  if (type.startsWith("text/")) return "document";
+  if (type.includes("wordprocessingml") || type === "application/msword") {
+    return "document";
+  }
+  if (type.includes("presentationml") || type.includes("powerpoint")) {
+    return "presentation";
+  }
+  if (type.includes("zip") || type.includes("compressed")) return "archive";
+  return "autre";
+}
+
 const TYPES_PAR_EXTENSION: Record<string, string> = {
   xlsx: "Classeur Excel",
   xlsm: "Classeur Excel",

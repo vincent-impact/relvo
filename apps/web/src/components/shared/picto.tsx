@@ -73,6 +73,17 @@ export const FileText = plein(P.FileText, "FileText");
 export const Table = plein(P.Table, "Table");
 export const Export = plein(P.Export, "Export");
 export const DownloadSimple = plein(P.DownloadSimple, "DownloadSimple");
+/** Les familles de fichiers (`PieceIcone`) : une forme par type, la couleur confirme. */
+export const FilePdf = plein(P.FilePdf, "FilePdf");
+export const PresentationChart = plein(
+  P.PresentationChart,
+  "PresentationChart",
+);
+export const ImageSquare = plein(P.Image, "ImageSquare");
+export const Waveform = plein(P.Waveform, "Waveform");
+export const FilmStrip = plein(P.FilmStrip, "FilmStrip");
+export const FileZip = plein(P.FileZip, "FileZip");
+export const FileBlank = plein(P.File, "FileBlank");
 export const ClockCounterClockwise = plein(
   P.ClockCounterClockwise,
   "ClockCounterClockwise",

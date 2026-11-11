@@ -1,4 +1,7 @@
-import { AttachmentPreview } from "@/components/shared/attachment-preview";
+import {
+  AttachmentList,
+  type AttachmentPreviewData,
+} from "@/components/shared/attachment-preview";
 import { EmailHtmlFrame } from "@/components/conversations/email-html-frame";
 import { LinkifiedText } from "@/components/shared/linkified-text";
 import { initialsFor } from "@/lib/display";
@@ -20,12 +23,8 @@ export type EmailMessageData = {
   time?: string | null;
   content: string;
   contentHtml?: string | null;
-  attachment?: {
-    id?: string;
-    name: string;
-    label?: string | null;
-    mimeType?: string | null;
-  } | null;
+  /** Toutes les pièces du message — jamais la première seulement. */
+  attachments?: AttachmentPreviewData[];
 };
 
 export function EmailMessage({ data }: { data: EmailMessageData }) {
@@ -74,12 +73,10 @@ export function EmailMessage({ data }: { data: EmailMessageData }) {
         </div>
       ) : null}
 
-      {data.attachment ? (
-        <AttachmentPreview
-          attachment={data.attachment}
-          className={data.content.trim() ? "mt-2.5" : undefined}
-        />
-      ) : null}
+      <AttachmentList
+        attachments={data.attachments}
+        className={data.content.trim() ? "mt-2.5" : undefined}
+      />
     </article>
   );
 }

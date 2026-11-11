@@ -36,7 +36,7 @@ function Bubble({
         senderName: m.senderName,
         time: m.time,
         content: m.content,
-        attachment: m.attachment,
+        attachments: m.attachments,
         continued,
       }}
     />

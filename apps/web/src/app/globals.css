@@ -298,6 +298,12 @@
   --attente: #f5b400; /* pastille cerclée */
   --attente-texte: #9a6f00;
 
+  /* ── Les fichiers : la couleur que tout le monde connaît à un type ──────── */
+  --fichier-pdf: #d93025; /* le rouge d'un PDF */
+  --fichier-tableur: #1a7f43; /* le vert d'un classeur */
+  --fichier-document: #2b5fc7; /* le bleu d'un document de traitement de texte */
+  --fichier-presentation: #c8511b; /* l'orange d'une présentation */
+
   /* ── Le noir, les gris, le blanc ────────────────────────────────────────── */
   --noir: #111111; /* le texte courant et le dock */
   --gris: #6b7280; /* texte secondaire, ≥ 4.5:1 sur blanc */

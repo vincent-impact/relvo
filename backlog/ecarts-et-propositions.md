@@ -2144,6 +2144,32 @@ des sujets ; un message trouvé vient avec ses **voisins** ; le cas entre au ban
 l'échange. Écarté : la recherche sémantique par vecteurs — l'invariant 29 tient, et le défaut
 vu n'en relève pas. À livrer.
 
+### Les documents d'un sujet : ce que le dirigeant y classe, pas tout ce qui arrive
+
+**`proposé`** · Par le dirigeant, le 2026-11-11, en éprouvant R18. L'onglet Documents d'un sujet
+était pensé comme un lieu d'**enrichissement** : le dirigeant y dépose ses propres fichiers
+(téléphone, ordinateur), y classe une pièce jointe choisie parmi celles des conversations du
+sujet, y dicte une note. C'est une **base descriptive** sur laquelle Relvo s'appuie. Aujourd'hui
+l'onglet est une vue dérivée : il liste les pièces jointes dont le message a été capté par le
+sujet **à la réception** — donc ni ce que le dirigeant veut y mettre, ni même toutes les pièces
+du sujet (celles arrivées avant que le sujet existe n'y entrent jamais ; vu le 2026-11-11, quatre
+pièces reçues, aucune dans l'onglet). Le réflexe du dirigeant : « quand j'estime qu'une pièce est
+intéressante, c'est à moi de la classer ». À creuser ensemble : ce qu'est un document de sujet
+dans le modèle (une entité à lui, ou une pièce jointe marquée « classée ») ; le geste de classer
+depuis une conversation et celui de chercher parmi les pièces du sujet ; si Relvo **propose** de
+classer (un devis signé) sans jamais le faire seul ; ce que Relvo lit d'office (les documents
+classés) et à la demande (les pièces des conversations) ; la frontière avec les connaissances
+d'un dossier et ses instructions ; et un préalable technique — déposer un fichier depuis le
+téléphone envoie l'octet du navigateur au stockage, que le bucket refuse aujourd'hui
+(`PITFALLS.md` #77).
+
+### Le journal d'un sujet ne sert pas
+
+**`proposé`** · Par le dirigeant, le 2026-11-11 : à l'usage, l'onglet Journal de la fiche d'un
+sujet est inutile. À retirer dans une prochaine mise à jour. À regarder avant : ce que le journal
+porte que rien d'autre ne montre (qui a fait quoi, Relvo ou le dirigeant — l'annulation et la
+confiance s'y appuient), et si cette trace doit rester consultable ailleurs ou seulement en base.
+
 ### Un dossier pour un contact, un dossier pour une boîte
 
 **`proposé`** · Par le dirigeant, le 2026-10-29, à la livraison de la tranche 6 de M24. Le

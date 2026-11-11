@@ -2,7 +2,10 @@ import Link from "next/link";
 import type { Actor } from "@relvo/db";
 import { cn } from "@/lib/utils";
 import { initialsFor } from "@/lib/display";
-import { AttachmentPreview } from "@/components/shared/attachment-preview";
+import {
+  AttachmentList,
+  type AttachmentPreviewData,
+} from "@/components/shared/attachment-preview";
 import { LinkifiedText } from "@/components/shared/linkified-text";
 
 // Bulle de message partagée (fil d'un sujet, fil de conversation par contact),
@@ -23,12 +26,8 @@ export type MessageBubbleData = {
   contentHtml?: string | null;
   /** `email` | `whatsapp` — décide du rendu (e-mail pleine largeur vs bulle). */
   channelType?: string | null;
-  attachment?: {
-    id?: string;
-    name: string;
-    label?: string | null;
-    mimeType?: string | null;
-  } | null;
+  /** Toutes les pièces du message — jamais la première seulement. */
+  attachments?: AttachmentPreviewData[];
   /** Si fourni, la bulle est cliquable et mène à la page détail du message. */
   href?: string | null;
   /** Interlocuteur du message (pour filtrer le fil par conversation) : expéditeur
@@ -123,12 +122,10 @@ export function MessageBubble({ data }: { data: MessageBubbleData }) {
           })()
         : null}
 
-      {data.attachment ? (
-        <AttachmentPreview
-          attachment={data.attachment}
-          className={data.content.trim() ? "mt-[7px]" : undefined}
-        />
-      ) : null}
+      <AttachmentList
+        attachments={data.attachments}
+        className={data.content.trim() ? "mt-[7px]" : undefined}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { FileText } from "@/components/shared/picto";
+import { PieceIcone } from "@/components/shared/piece-icone";
 import { AttachmentViewer } from "@/components/shared/attachment-viewer";
 import { cn } from "@/lib/utils";
 
@@ -55,9 +55,7 @@ export function AttachmentPreview({
 
   const card = (
     <>
-      <span className="grid size-[30px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-gris">
-        <FileText className="size-4" />
-      </span>
+      <PieceIcone name={name} mimeType={mimeType} size="sm" />
       <span className="min-w-0">
         <span className="block truncate text-[13px] font-semibold">{name}</span>
         {/* Ce que Relvo a lu dans la pièce : un libellé gris, pas la couleur
@@ -71,7 +69,7 @@ export function AttachmentPreview({
     </>
   );
   const cardClass = cn(
-    "inline-flex items-center gap-2.5 rounded-(--rayon-sous-carte) border border-(--filet) bg-white px-[11px] py-2",
+    "inline-flex max-w-full items-center gap-2.5 rounded-(--rayon-sous-carte) border border-(--filet) bg-white px-[11px] py-2",
     className,
   );
 
@@ -89,5 +87,28 @@ export function AttachmentPreview({
     </AttachmentViewer>
   ) : (
     <span className={cardClass}>{card}</span>
+  );
+}
+
+/**
+ * Les pièces d'un message — TOUTES. Un e-mail en porte couramment plusieurs ;
+ * n'en montrer qu'une, c'est en cacher trois, et la conversation est la seule
+ * surface où elles se lisent. Images en vignettes, fichiers en cartes, dans
+ * l'ordre d'arrivée, qui passent à la ligne.
+ */
+export function AttachmentList({
+  attachments,
+  className,
+}: {
+  attachments?: AttachmentPreviewData[] | null;
+  className?: string;
+}) {
+  if (!attachments || attachments.length === 0) return null;
+  return (
+    <div className={cn("flex flex-wrap items-start gap-2", className)}>
+      {attachments.map((a, i) => (
+        <AttachmentPreview key={a.id ?? `${i}-${a.name}`} attachment={a} />
+      ))}
+    </div>
   );
 }
