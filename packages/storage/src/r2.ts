@@ -9,6 +9,7 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { loadStorageConfig, type StorageConfig } from "./config";
 import type {
   ObjectMetadata,
+  ObjectRead,
   PresignedUpload,
   StorageProvider,
 } from "./provider";
@@ -141,6 +142,39 @@ export function createR2Storage(
       await client.send(
         new DeleteObjectCommand({ Bucket: config.bucket, Key: key }),
       );
+    },
+
+    async read({ key, maxBytes }): Promise<ObjectRead> {
+      // Le signal coupe la connexion quand l'objet dépasse le plafond : sans
+      // lui, un corps qu'on ne lit pas garderait sa prise ouverte.
+      const abandon = new AbortController();
+      try {
+        const result = await client.send(
+          new GetObjectCommand({ Bucket: config.bucket, Key: key }),
+          { abortSignal: abandon.signal },
+        );
+        const size = result.ContentLength ?? 0;
+        if (size > maxBytes || !result.Body) {
+          abandon.abort();
+          return result.Body
+            ? { status: "trop_lourd", size }
+            : { status: "absent" };
+        }
+        const body = await result.Body.transformToByteArray();
+        // La taille annoncée n'est pas une garantie : on recompte ce qu'on a lu.
+        if (body.byteLength > maxBytes) {
+          return { status: "trop_lourd", size: body.byteLength };
+        }
+        return {
+          status: "ok",
+          body,
+          size: body.byteLength,
+          contentType: result.ContentType ?? null,
+        };
+      } catch (error) {
+        if (isNotFound(error)) return { status: "absent" };
+        throw error;
+      }
     },
 
     async head(key: string): Promise<ObjectMetadata | null> {

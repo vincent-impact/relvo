@@ -514,6 +514,9 @@ au stockage en direct, puis il s'inscrit dans le dossier, **à lire**. Il porte 
 d'absorption décidé par Relvo : **lu** (injecté dans les prompts) ou
 **écarté**.
 
+Un document déposé **s'ouvre** au tap, par le même geste qu'une pièce jointe (design system,
+« Une pièce s'ouvre dans Relvo »).
+
 ⚠️ **Deux stockages, jamais un seul.** Le fichier vit dans le stockage objet — **source de
 vérité et seule voie d'affichage**. Une copie part vers la Files API pour l'inférence : elle est
 en **écriture seule** et n'est jamais relisible. Si l'identifiant d'inférence est perdu, on

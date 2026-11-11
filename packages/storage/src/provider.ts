@@ -20,6 +20,12 @@ export type ObjectMetadata = {
   contentType: string | null;
 };
 
+/** Le résultat d'une lecture bornée — trois issues, aucune ne lève. */
+export type ObjectRead =
+  | { status: "ok"; body: Uint8Array; size: number; contentType: string | null }
+  | { status: "absent" }
+  | { status: "trop_lourd"; size: number };
+
 export interface StorageProvider {
   /**
    * Émet une URL d'upload direct navigateur → stockage.
@@ -63,6 +69,18 @@ export interface StorageProvider {
 
   /** Idempotent : supprimer une clé absente ne lève pas. */
   delete(key: string): Promise<void>;
+
+  /**
+   * Lit un objet EN MÉMOIRE, depuis le serveur, sous un plafond.
+   *
+   * Le plafond est obligatoire : celui qui lit dit combien il accepte de
+   * charger, et un objet plus lourd n'est jamais téléchargé — sa taille est lue
+   * dans l'en-tête, le corps est abandonné. Sert à ce que l'application LIT
+   * elle-même : l'aperçu d'un classeur, les octets d'un fichier à partager
+   * (recette R18), plus tard la lecture d'une pièce par Relvo (M8). L'affichage
+   * d'une image ou d'un PDF, lui, reste une redirection (`presignDownload`).
+   */
+  read(input: { key: string; maxBytes: number }): Promise<ObjectRead>;
 
   /** `null` si l'objet n'existe pas. Sert à vérifier qu'un upload a abouti. */
   head(key: string): Promise<ObjectMetadata | null>;

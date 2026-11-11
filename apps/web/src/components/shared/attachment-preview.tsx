@@ -7,8 +7,9 @@ import { cn } from "@/lib/utils";
 // (email, WhatsApp). Deux rendus :
 //   • IMAGE → MINIATURE inline (façon messagerie : la photo tient dans le fil),
 //     clic = lightbox plein écran in-app (cf. AttachmentViewer) ;
-//   • PDF / autre → carte fichier (icône + nom + étiquette IA), clic = navigateur.
-// Le geste (lightbox vs navigateur) est délégué à AttachmentViewer.
+//   • tout autre fichier → carte fichier (icône + nom + étiquette IA).
+// Le geste d'ouverture — visionneuse, lecteur de PDF, aperçu d'un classeur,
+// écran du fichier — est délégué à AttachmentViewer, qui le choisit au type.
 
 export type AttachmentPreviewData = {
   id?: string;

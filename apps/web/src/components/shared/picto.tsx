@@ -69,6 +69,10 @@ export const LinkBreak = plein(P.LinkBreak, "LinkBreak");
 export const ListChecks = plein(P.ListChecks, "ListChecks");
 export const ChatsCircle = plein(P.ChatsCircle, "ChatsCircle");
 export const FileText = plein(P.FileText, "FileText");
+/** Une pièce qu'on ouvre (recette R18) : le classeur, « Ouvrir avec… », « Télécharger ». */
+export const Table = plein(P.Table, "Table");
+export const Export = plein(P.Export, "Export");
+export const DownloadSimple = plein(P.DownloadSimple, "DownloadSimple");
 export const ClockCounterClockwise = plein(
   P.ClockCounterClockwise,
   "ClockCounterClockwise",

@@ -1,8 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { FileText } from "@/components/shared/picto";
-import { RelvoLogo } from "@/components/layout/relvo-logo";
 import { ListPanel } from "@/components/shared/list-panel";
 import { RelvoBlock } from "@/components/shared/relvo-block";
 import { folderVisual } from "@/lib/folders";
@@ -24,6 +22,7 @@ import {
   type OngletDossier,
 } from "@/components/memoire/dossier-tabs";
 import { AddFolderRow } from "@/components/memoire/folder-row";
+import { ConnaissanceRow } from "@/components/memoire/connaissance-row";
 import { DeposerConnaissance } from "@/components/memoire/deposer-connaissance";
 import { FolderDescription } from "@/components/memoire/folder-description";
 import { FolderTree } from "@/components/memoire/folder-tree";
@@ -177,34 +176,15 @@ async function DossierTabs({
                   <div
                     key={f.id}
                     data-list-row
-                    className="flex items-center gap-3 border-b border-(--filet) px-3.5 py-2.5"
+                    className="border-b border-(--filet)"
                   >
-                    <span className="grid size-[34px] flex-none place-items-center rounded-(--rayon-bouton-ciel) bg-(--fond-puce) text-gris">
-                      <FileText className="size-[18px]" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[14.5px] leading-[18px] font-normal text-noir">
-                        {f.name}
-                      </div>
-                      <div className="mt-0.5 text-[12px] leading-4 font-normal text-gris">
-                        {formatRelative(f.updatedAt)}
-                        {f.aiLabel ? ` · ${f.aiLabel}` : ""}
-                      </div>
-                    </div>
-                    {f.absorptionStatus === "read" ? (
-                      <span className="inline-flex flex-none items-center gap-1 rounded-(--rayon-pilule) bg-relvo-pale px-2 py-0.5 text-[11px] font-medium text-relvo">
-                        <RelvoLogo size={11} variant="full" title="" />
-                        Lu
-                      </span>
-                    ) : f.absorptionStatus === "pending" ? (
-                      <span className="flex-none rounded-(--rayon-pilule) border border-dashed border-(--gris-clair) px-2 py-0.5 text-[11px] font-medium text-gris">
-                        À lire
-                      </span>
-                    ) : (
-                      <span className="flex-none rounded-(--rayon-pilule) bg-(--fond-puce) px-2 py-0.5 text-[11px] font-medium text-gris">
-                        Écarté
-                      </span>
-                    )}
+                    <ConnaissanceRow
+                      id={f.id}
+                      name={f.name}
+                      mimeType={f.mimeType}
+                      detail={`${formatRelative(f.updatedAt)}${f.aiLabel ? ` · ${f.aiLabel}` : ""}`}
+                      etat={f.absorptionStatus}
+                    />
                   </div>
                 ))
               )}

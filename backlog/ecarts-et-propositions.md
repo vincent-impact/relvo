@@ -2104,7 +2104,31 @@ avec… » et « Télécharger ». Ce que ça déplace : une bibliothèque de le
 projet, et l'application lit elle-même le fichier au lieu de rediriger le navigateur vers le
 stockage. Écarté : s'en remettre au téléchargement seul — plusieurs gestes hors de
 l'application pour lire trois colonnes, à rebours de « l'UI sert à accéder à l'info ».
-À livrer.
+
+**Livré le 2026-11-11.** Trois choix faits en livrant, chacun contraint par un fait vérifié :
+- **Le fichier passe par le serveur, pas par une lecture directe du stockage.** Sondé contre le
+  bucket de production : il ne porte **aucune règle CORS** (pré-vol refusé pour toute origine,
+  en lecture comme en dépôt ; `PITFALLS.md` #77). L'aperçu d'un classeur est donc **calculé par
+  le serveur** — qui lit le fichier entier dans le stockage, sans plafond de réponse, et n'envoie
+  que les premières lignes — et les octets nécessaires à « Ouvrir avec… » sont servis par une
+  fonction **jusqu'à 4 Mo** (la réponse d'une fonction plafonne à 4,5 Mo). Au-delà, l'écran le
+  dit et garde « Télécharger ». C'est une dérogation bornée à « jamais de fichier servi par une
+  fonction » (`PITFALLS.md` #11), assumée : le partage exige le fichier dans la page. Une règle
+  CORS sur le bucket lèverait ce plafond sans toucher au code — l'écran tente déjà la lecture
+  directe quand le serveur refuse.
+- **La bibliothèque est SheetJS (`xlsx`) 0.20.3, prise à sa source et embarquée dans le dépôt**
+  (`packages/storage/vendor/`). C'est la seule qui lit les trois formats décidés, l'ancien `.xls`
+  compris. La version du registre npm (0.18.5) est **abandonnée et porte deux failles hautes**
+  (pollution de prototype, déni de service par expression régulière), corrigées en 0.19.3 et
+  0.20.2 : l'éditeur ne publie plus que sur son propre site. L'archive est donc versionnée ici,
+  son empreinte figée dans le verrou — aucune construction ne dépend de ce site. Écartées :
+  ExcelJS (plus de version depuis 2023, neuf dépendances, pas de `.xls`), `read-excel-file`
+  (entretenue, sans faille connue, mais `.xlsx` seulement), une republication tierce de SheetJS
+  sur npm (un intermédiaire de confiance en plus). Ce que ça coûte : aucune nouvelle version
+  depuis 2024 — à surveiller à la main, l'audit du registre ne la suit que par son nom.
+- **Le lecteur vit dans le paquet de stockage** (`@relvo/storage/classeur`), côté serveur
+  seulement : il n'entre jamais dans le navigateur, il est borné (poids, feuilles, lignes,
+  colonnes, volume), et la lecture d'une pièce par Relvo (M8) prendra le même.
 
 ### La recherche de l'échange : la personne d'abord, la pertinence ensuite, et seulement ce que Relvo retient
 

@@ -19,6 +19,8 @@ export type ResolvedFile = {
   key: string;
   name: string;
   mimeType: string | null;
+  /** Le poids connu de la base, en octets ; `null` s'il n'a pas été noté. */
+  size: number | null;
 };
 
 /**
@@ -37,14 +39,19 @@ export async function resolveKnowledgeFile(
   const db = tenantDb(accountId);
   const doc = await db.knowledgeDocument.findFirst({
     where: { id: documentId, kind: "file" },
-    select: { storageKey: true, name: true, mimeType: true },
+    select: { storageKey: true, name: true, mimeType: true, fileSize: true },
   });
 
   if (!doc?.storageKey) return { ok: false, error: "not_found" };
 
   return {
     ok: true,
-    file: { key: doc.storageKey, name: doc.name, mimeType: doc.mimeType },
+    file: {
+      key: doc.storageKey,
+      name: doc.name,
+      mimeType: doc.mimeType,
+      size: doc.fileSize,
+    },
   };
 }
 
@@ -60,7 +67,7 @@ export async function resolveAttachmentFile(
   const db = tenantDb(accountId);
   const attachment = await db.attachment.findFirst({
     where: { id: attachmentId },
-    select: { storageKey: true, name: true, mimeType: true },
+    select: { storageKey: true, name: true, mimeType: true, fileSize: true },
   });
 
   if (!attachment) return { ok: false, error: "not_found" };
@@ -71,6 +78,7 @@ export async function resolveAttachmentFile(
       key: attachment.storageKey,
       name: attachment.name,
       mimeType: attachment.mimeType,
+      size: attachment.fileSize,
     },
   };
 }
@@ -103,7 +111,23 @@ export async function signDownloadUrl(
 }
 
 /**
- * En-têtes d'une réponse de redirection vers une URL signée.
+ * Lit un fichier déjà résolu, en mémoire, sous le plafond donné — pour ce que
+ * l'application lit elle-même (aperçu, partage : `server/pieces.ts`).
+ */
+export async function readFile(file: ResolvedFile, maxBytes: number) {
+  return getStorage().read({ key: file.key, maxBytes });
+}
+
+/** Le poids réel d'un fichier résolu, demandé au stockage ; `null` s'il n'y est plus. */
+export async function fileSizeInStorage(
+  file: ResolvedFile,
+): Promise<number | null> {
+  return (await getStorage().head(file.key))?.size ?? null;
+}
+
+/**
+ * En-têtes d'une réponse de redirection vers une URL signée — et de toute
+ * réponse qui porte la donnée d'un compte (aperçu, contenu d'une pièce).
  *
  * `private` + `Vercel-CDN-Cache-Control: no-store` : défense en profondeur. Par
  * défaut, la clé de cache d'un CDN est méthode + URL — aucun header de requête,

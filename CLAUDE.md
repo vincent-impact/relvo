@@ -81,7 +81,12 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   `CourrierEntrant`.
 - **Aucun accès direct au stockage** : tout passe par le paquet dédié, jamais par un client
   instancié à la main — c'est ce qui garde le fournisseur remplaçable et ce qui évite de recréer
-  un client sans les deux réglages obligatoires (`PITFALLS.md` #8).
+  un client sans les deux réglages obligatoires (`PITFALLS.md` #8). **Une pièce s'ouvre dans
+  Relvo** (recette R18) : `AttachmentViewer` choisit le geste au type, et ce que l'application
+  lit elle-même — l'aperçu d'un classeur, les octets d'un fichier à partager — passe par
+  `server/pieces.ts` (routes `/apercu` et `/contenu`), jamais par une lecture du stockage
+  depuis le navigateur, que le bucket refuse (`PITFALLS.md` #77). Le lecteur de classeurs vit
+  dans `@relvo/storage/classeur`, **serveur seulement**.
 - **Deux layouts racine, par groupes de routes** : `app/(shell)/` porte la coquille de
   l'application (PWA, verrous de viewport, garde anti-rebond, session) ; `app/(public)/` porte ce
   qui se lit **hors** de l'application (le suivi client, le **site** `relvo.net` et ses pages

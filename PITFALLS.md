@@ -77,7 +77,7 @@ Les autres viennent du kit et sont conservés ici parce qu'ils s'appliquent à c
 | **8** | **Deux réglages du SDK, non négociables** | **(a)** Sans contrainte explicite sur l'en-tête de type de contenu, la signature ne contraint **rien** : un dépôt en HTML sur une URL signée pour un PDF renvoyait **200**, et le mauvais type était stocké. L'allowlist ne servait à rien. **(b)** Sans passer les sommes de contrôle en « à la demande », le SDK signe le CRC du **corps vide** — le fournisseur les ignore aujourd'hui, mais nos dépôts passaient **par chance**. ⚠️ Ces deux propriétés dépendent de **défauts du SDK qui ont déjà changé une fois** et cassent en silence : l'envoi continue de marcher, seule la garantie disparaît. **Verrouillées par un test.** |
 | **9** | **Juridiction du bucket figée** | Elle change l'endpoint et **ne se change plus** après création. Se tromper donne des erreurs opaques, pas un message explicite. |
 | **10** | **Afficher un fichier = une URL stable, jamais signée** | Route de téléchargement → **redirection** vers le stockage. Jamais d'URL signée dans l'optimiseur d'images : la clé de cache inclut la chaîne de requête, donc une signature qui tourne = manque de cache + transformation **facturée** à chaque rendu. Cas documenté : dix images, plus de cent cinquante transformations en douze heures. |
-| **11** | **Jamais de fichier streamé par une fonction** | Redirection, pas proxy. Le corps d'une réponse est plafonné, et une fonction serverless est « une couche d'API légère, pas un serveur de médias ». |
+| **11** | **Jamais de fichier streamé par une fonction** | Redirection, pas proxy. Le corps d'une réponse est plafonné, et une fonction serverless est « une couche d'API légère, pas un serveur de médias ». **Une seule dérogation, bornée** : ce que la page doit tenir **en main** — les octets d'un fichier à partager (`server/pieces.ts`, #77) — passe par une fonction, sous un plafond inférieur à celui de la réponse, avec un refus explicite au-delà. Jamais pour afficher. |
 | **12** | **Cache CDN et cookies** | Toute route servant de la donnée d'un compte envoie un cache **privé** et interdit le cache CDN. La clé de cache d'un CDN est méthode + URL, **sans aucun en-tête de requête** : une route authentifiée par cookie a donc la **même clé pour tous les utilisateurs**. Incident public documenté : un cache activé par accident a servi les requêtes d'un utilisateur à un autre ; seules les applications qui envoyaient explicitement un cache privé ont été épargnées. |
 | 13 | **Tâche périodique publique** | La route vérifie un secret et répond 401 sinon. Sans ça, elle est ouverte. |
 
@@ -656,7 +656,7 @@ requêtes constantes » (Neon, latence par requête).
 | **Base UI** | #40 |
 | **Zod** | #42 |
 | **React** | #41 |
-| **WebKit (iOS)** | #65, #74 |
+| **WebKit (iOS)** | #65, #74, #77 |
 | **Chrome headless** | #67 |
 
 Les pièges **#3, #12, #13, #17, #24, #25, #26** relèvent de la **plateforme de déploiement**, pas
@@ -761,3 +761,39 @@ démarré ou vieux de plusieurs jours, `touch` compris. La cause exacte n'est pa
 au fichier ; si elle est en retard, redémarrer le serveur de dev (`PORT=3100
 AUTH_URL=http://localhost:3100 pnpm dev`) — c'est tout. Toute vérification visuelle d'un
 changement de `globals.css` passe par ce redémarrage.
+
+---
+
+### #77 — Envoyer au navigateur un fichier qu'il ne sait pas afficher ouvre une page blanche ; et la page ne peut pas lire le stockage
+
+**Symptôme** : sur iPhone, en application installée, un testeur touche un classeur Excel reçu par
+e-mail. Le volet de navigation s'ouvre sur l'adresse du stockage, la barre de chargement se fige,
+la page reste blanche. À la fermeture du volet, l'application elle-même reste blanche plusieurs
+secondes. Aucune erreur, nulle part.
+
+**Cause** : le visualiseur n'avait que deux cas — l'image dans l'application, **tout le reste** en
+`target="_blank"` vers la route de téléchargement en affichage dans la page. Ce chemin ne vaut
+que pour ce qu'un navigateur sait rendre (un PDF). Un classeur y arrive sans nom ni consigne de
+téléchargement : le volet n'a rien à montrer et ne propose rien.
+
+Le correctif naturel — que la page lise le fichier elle-même — bute sur un second fait : **le
+bucket ne porte aucune règle CORS**. Une redirection suivie par `<img>` ou par une navigation
+passe ; un `fetch()` de la page vers l'URL signée est refusé (pré-vol en 403, aucune origine
+autorisée). Rien dans le dépôt ne le dit, et le jeton de l'application n'a pas le droit de lire la
+politique : on ne le découvre qu'en sondant.
+
+**Règle** :
+- **Le navigateur n'est une issue que pour ce qu'il affiche.** Le geste d'ouverture se choisit au
+  type (`genreDePiece`), et tout ce qui n'est ni image ni PDF s'ouvre **dans** l'application —
+  aperçu, ou écran qui nomme le fichier et propose « Ouvrir avec… » et « Télécharger ».
+- **Ce que la page doit lire passe par le serveur** (`server/pieces.ts`) : l'aperçu d'un classeur
+  est calculé côté serveur et voyage en JSON ; les octets à partager sont servis sous plafond
+  (dérogation bornée à #11), en type opaque et en téléchargement imposé — un fichier venu de
+  l'extérieur ne s'exécute jamais sur notre origine.
+- **Sur iOS, la feuille de partage exige le geste** : le fichier se charge à l'ouverture de
+  l'écran, pas au tap, sinon l'appel est refusé.
+- Avant de compter sur une lecture directe du stockage depuis le navigateur — la lecture comme le
+  **dépôt** par URL signée —, **sonder le pré-vol** (`OPTIONS` avec `Origin` et
+  `Access-Control-Request-Method`) contre le vrai bucket. Une règle CORS se pose dans la
+  console du fournisseur, pas dans le code.
+

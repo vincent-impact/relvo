@@ -129,6 +129,16 @@ domaine. Les gestes et ce qu'ils déclenchent font foi dans
 canal. Un tap qui ouvre une modale sur une liste qu'on parcourt au pouce transforme chaque
 défilement en champ de mines.
 
+**Une pièce s'ouvre dans Relvo, selon ce qu'elle est, et sans étape entre le tap et elle.**
+Une image s'agrandit sur place ; un PDF part au lecteur du navigateur, qui les rend bien ; un
+classeur montre son tableau en plein écran, une puce par feuille ; tout autre fichier, et tout
+aperçu qui échoue, donne l'écran du fichier — son nom, son type dit en clair, son poids, la
+raison quand il n'y a pas d'aperçu, puis « Ouvrir avec… » (la feuille de partage de l'appareil)
+et « Télécharger » sous son vrai nom. Le navigateur n'est une issue que pour ce qu'il sait
+afficher : y envoyer le reste ouvre une page blanche. Le geste est le même partout où une pièce
+se touche — conversation, message, documents d'un sujet, connaissances d'un dossier — et il vit
+dans un seul composant (`AttachmentViewer`).
+
 **Une confirmation nomme ce qu'elle met en jeu.** Jamais « une ou plusieurs sujets » : une
 confirmation sans information se clique sans être lue, ce qui la rend pire qu'absente.
 

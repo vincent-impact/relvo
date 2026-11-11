@@ -6,8 +6,8 @@
 dirigeant, `2026-10-m7-tranche11-whatsapp-direct.md`). L'application est **en recette** : des
 testeurs la prennent en main pour la première fois, et leurs remontées sont le « où on en est »
 du dépôt le temps de ce chantier. Ce fichier tient la **liste des remontées**, ce qui a été
-tranché pour chacune et ce qui est livré. **À faire en premier : R18 et R19 (quatrième vague),
-tranchées, pas encore livrées.** Il s'allonge à chaque vague de recette ; quand la
+tranché pour chacune et ce qui est livré. **À faire en premier : R19 (quatrième vague), tranchée, pas
+encore livrée** ; R18 est livrée, à éprouver par le dirigeant sur l'iPhone. Il s'allonge à chaque vague de recette ; quand la
 recette se clôt, le chantier d'après est la lecture de l'historique de la messagerie à la
 connexion (reliquat de M7), puis M13 (ouverture de la bêta).
 
@@ -312,7 +312,8 @@ de la lecture.
 Deux remontées filmées par un testeur le 2026-11-01, tranchées par le dirigeant le 2026-11-11
 (`ecarts`, « Un fichier s'ouvre dans Relvo, jamais sur une page blanche » et « La recherche de
 l'échange : la personne d'abord, la pertinence ensuite, et seulement ce que Relvo retient »).
-**Enregistrées, pas livrées : elles passent en premier**, devant R12 et devant la suite de M24.
+Elles passent en premier, devant R12 et devant la suite de M24 : **R18 est livrée, R19 reste à
+livrer.**
 
 ### R18 — Un fichier Excel reçu ne s'ouvre pas : page blanche
 
@@ -333,12 +334,46 @@ classeur arrive sans nom ni consigne de téléchargement, et le navigateur ne pr
   **« Ouvrir avec… »** (la feuille de partage de l'appareil) et **« Télécharger »** sous le vrai
   nom du fichier. Jamais de page blanche, jamais d'échec muet.
 
-**À livrer.** Le visualiseur par type dans `components/shared/attachment-viewer.tsx` (registre de
-composants d'abord) ; le fichier lu par l'application pour l'aperçu et le partage — vérifier ce
-que le stockage autorise depuis le navigateur avant de choisir entre lecture directe et passage
-par le serveur ; la même carte partout où une pièce se touche (conversation, détail d'un
-message, documents d'un sujet, connaissances). **À vérifier sur l'iPhone, en application
-installée** : l'aperçu, « Ouvrir avec… », et que l'application ne reste plus blanche au retour.
+**Livré (2026-11-11).**
+- **Le geste se choisit au type** (`lib/pieces.ts`, `genreDePiece`) dans
+  `components/shared/attachment-viewer.tsx`, sans étape entre le tap et l'écran. Un classeur se
+  reconnaît à son **nom** d'abord : une pièce d'e-mail arrive souvent typée « flux d'octets ».
+- **L'aperçu d'un classeur** (`components/shared/piece-ecran.tsx`) : plein écran, une puce par
+  feuille, colonnes lettrées et lignes numérotées qui restent en place quand on défile, nombres
+  et dates écrits à la française. Les feuilles masquées sont passées ; un classeur très long est
+  coupé, et l'écran dit ce qu'il montre sur ce que la feuille compte.
+- **L'écran du fichier**, pour tout autre fichier et tout aperçu en échec : nom, type dit en
+  clair, poids, la **raison** (type non affiché, classeur illisible, protégé, vide, trop lourd,
+  fichier disparu), « Ouvrir avec… » et « Télécharger » sous le vrai nom.
+- **Le fichier est lu par le serveur** (`server/pieces.ts`, routes `/apercu` et `/contenu` des
+  pièces jointes et des connaissances) : le bucket ne porte **aucune règle CORS** — sondé, pas
+  supposé (`PITFALLS.md` #77). L'aperçu est calculé côté serveur ; les octets du partage sont
+  plafonnés à **4 Mo**. Le fichier se charge **à l'ouverture de l'écran**, pour que le tap sur
+  « Ouvrir avec… » partage dans le geste.
+- **Le lecteur** : `@relvo/storage/classeur` (SheetJS 0.20.3, embarquée ; choix motivé dans
+  `ecarts`), et une lecture bornée `read` au contrat du stockage — ce que M8 reprendra.
+- **Partout où une pièce se touche** : conversation et détail d'un message (`AttachmentPreview`),
+  documents d'un sujet (`DocumentRow`), et les **connaissances d'un dossier**, qui ne s'ouvraient
+  pas du tout (`ConnaissanceRow`).
+
+**Vérifié.** Typage, lint, tests (le lecteur sur xlsx, xls, csv, encodages, coupes, fichiers
+illisibles ; les règles de l'écran). Rendu headless à 390 × 844 : classeur à cinq feuilles,
+fichier sans aperçu, aperçu en échec, fichier trop lourd. Lecture par le serveur éprouvée contre
+le vrai stockage ; lecture directe refusée, constatée dans un navigateur.
+
+**Reste au dirigeant, sur l'iPhone, en application installée** — rien de ceci ne se vérifie
+ailleurs :
+1. l'**aperçu** de « TASTY CRA 2026.xlsx » depuis la conversation, et le défilement du tableau ;
+2. **« Ouvrir avec… »** : la feuille de partage s'ouvre au premier tap et propose Excel, Numbers
+   ou Fichiers ;
+3. **« Télécharger »** : le fichier arrive sous son vrai nom sans quitter Relvo ;
+4. que **Relvo ne reste plus blanc** au retour ;
+5. un fichier de **plus de 4 Mo** : l'écran doit le dire et « Télécharger » aboutir.
+
+**Ce qui n'a pas bougé, et se verra.** Un **PDF** part toujours au volet du navigateur
+(décision) : si Relvo reste blanc au retour d'un PDF, c'est le même défaut par l'autre porte, à
+remonter. Et le **dépôt d'une connaissance** envoie le fichier du navigateur au stockage : sans
+règle CORS, ce dépôt ne peut pas aboutir — **à vérifier en production**, c'est hors de R18.
 
 ### R19 — Relvo ne retrouve pas un message et en affiche des dizaines sans rapport
 
@@ -398,8 +433,10 @@ changements d'état ; prévenir le dirigeant du compte quand un canal tombe.
 
 ## Où on en est
 
-- [ ] **Quatrième vague enregistrée (2026-11-11) : R18 et R19 à livrer en premier**, R20 à
-      vérifier en production par le dirigeant.
+- [x] R18 livrée (2026-11-11) : un fichier s'ouvre dans Relvo — à éprouver sur l'iPhone par le
+      dirigeant (aperçu, « Ouvrir avec… », « Télécharger », retour sans écran blanc).
+- [ ] **Quatrième vague (2026-11-11) : R19 à livrer en premier**, R20 à vérifier en production
+      par le dirigeant.
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
 - [x] R5 et R6 livrées (assistant actif par défaut, invitation aux notifications dans l'échange et sur l'accueil).
 - [x] R7 livrée (suppression d'un compte robuste, PITFALLS #71) — à relancer en production sur le compte concerné.

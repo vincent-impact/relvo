@@ -102,6 +102,9 @@ Un aller-retour réel contre le bucket — upload pré-signé, lecture, contrôl
 pnpm --filter @relvo/storage smoke
 ```
 
+> Le bucket ne porte **aucune règle CORS** : le navigateur n'y lit rien par `fetch()`. Ce que
+> l'application lit d'un fichier passe par le serveur (`PITFALLS.md` #77).
+
 ## Déploiement
 
 - **`apps/web` → Vercel**, *Root Directory = `apps/web`*. **Déployable unique** : e-mail et
@@ -143,4 +146,4 @@ pnpm --filter web eval:dictee --dossier <hors dépôt> [--compte <e-mail>]   # b
 
 Next.js (App Router) · TypeScript · Tailwind + shadcn/ui sur Base UI · Prisma + PostgreSQL ·
 Auth.js · Vercel AI SDK + API OpenAI en direct · Cloudflare R2 · Unipile (e-mail + WhatsApp) ·
-Resend · dnd-kit · dexie.
+Resend · dnd-kit · dexie · SheetJS (lecture des classeurs, embarquée dans `packages/storage/vendor/`).

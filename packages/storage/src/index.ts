@@ -14,6 +14,7 @@ export { loadStorageConfig, type StorageConfig } from "./config";
 export { buildObjectKey, type StorageScope } from "./keys";
 export type {
   ObjectMetadata,
+  ObjectRead,
   PresignedUpload,
   StorageProvider,
 } from "./provider";
