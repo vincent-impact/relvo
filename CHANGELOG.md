@@ -6,6 +6,7 @@
 
 ## 2026-11-11
 
+- **Corrigé** — Un e-mail reçu avec plusieurs pièces jointes les affiche maintenant toutes, et chaque fichier se reconnaît à son icône : PDF en rouge, Excel en vert, Word en bleu.
 - **Nouveau** — Un fichier Excel reçu s'ouvre maintenant dans Relvo, en tableau, avec ses onglets ; tout autre fichier vous propose « Ouvrir avec… » et « Télécharger ».
 
 ## 2026-11-01
