@@ -389,9 +389,11 @@ réception** : un sujet né après n'en hérite pas.
 (`AttachmentList`). Chaque pièce porte l'**icône de son type** (`PieceIcone`) — PDF rouge,
 classeur vert au tableau, document bleu, présentation orange, les autres en gris à leur forme —
 dans la conversation, les documents d'un sujet, les connaissances d'un dossier et l'écran du
-fichier. **Pas touché : l'onglet Documents**, que le dirigeant veut repenser (`ecarts`, « Les
-documents d'un sujet : ce que le dirigeant y classe… ») ; le journal d'un sujet, jugé inutile,
-est noté au même endroit.
+fichier. **Reste ouvert : l'onglet Documents.** Tranché le même jour (`ecarts`,
+« Les documents d'un sujet sont les pièces de ses conversations, par référence ») : il liste
+toutes les pièces des conversations du sujet, on n'y dépose rien. Or les quatre pièces du test
+n'y sont pas — cause non prouvée, à regarder en base avant de corriger. Le journal d'un sujet,
+jugé inutile, est noté dans `ecarts`.
 
 ### R19 — Relvo ne retrouve pas un message et en affiche des dizaines sans rapport
 
@@ -454,7 +456,9 @@ changements d'état ; prévenir le dirigeant du compte quand un canal tombe.
 - [x] R18 livrée (2026-11-11) : un fichier s'ouvre dans Relvo — à éprouver sur l'iPhone par le
       dirigeant (aperçu, « Ouvrir avec… », « Télécharger », retour sans écran blanc).
 - [x] R21 livrée (2026-11-11) : toutes les pièces d'un message, et l'icône de leur type ; l'onglet
-      Documents et le journal d'un sujet sont à repenser (`ecarts`, proposés).
+      Documents est tranché (toutes les pièces des conversations, par référence).
+- [ ] Onglet Documents d'un sujet : les pièces du test du 2026-11-11 n'y paraissent pas — à
+      diagnostiquer en base, puis corriger.
 - [ ] **Quatrième vague (2026-11-11) : R19 à livrer en premier**, R20 à vérifier en production
       par le dirigeant.
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).

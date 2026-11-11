@@ -2144,24 +2144,24 @@ des sujets ; un message trouvé vient avec ses **voisins** ; le cas entre au ban
 l'échange. Écarté : la recherche sémantique par vecteurs — l'invariant 29 tient, et le défaut
 vu n'en relève pas. À livrer.
 
-### Les documents d'un sujet : ce que le dirigeant y classe, pas tout ce qui arrive
+### Les documents d'un sujet sont les pièces de ses conversations, par référence
 
-**`proposé`** · Par le dirigeant, le 2026-11-11, en éprouvant R18. L'onglet Documents d'un sujet
-était pensé comme un lieu d'**enrichissement** : le dirigeant y dépose ses propres fichiers
-(téléphone, ordinateur), y classe une pièce jointe choisie parmi celles des conversations du
-sujet, y dicte une note. C'est une **base descriptive** sur laquelle Relvo s'appuie. Aujourd'hui
-l'onglet est une vue dérivée : il liste les pièces jointes dont le message a été capté par le
-sujet **à la réception** — donc ni ce que le dirigeant veut y mettre, ni même toutes les pièces
-du sujet (celles arrivées avant que le sujet existe n'y entrent jamais ; vu le 2026-11-11, quatre
-pièces reçues, aucune dans l'onglet). Le réflexe du dirigeant : « quand j'estime qu'une pièce est
-intéressante, c'est à moi de la classer ». À creuser ensemble : ce qu'est un document de sujet
-dans le modèle (une entité à lui, ou une pièce jointe marquée « classée ») ; le geste de classer
-depuis une conversation et celui de chercher parmi les pièces du sujet ; si Relvo **propose** de
-classer (un devis signé) sans jamais le faire seul ; ce que Relvo lit d'office (les documents
-classés) et à la demande (les pièces des conversations) ; la frontière avec les connaissances
-d'un dossier et ses instructions ; et un préalable technique — déposer un fichier depuis le
-téléphone envoie l'octet du navigateur au stockage, que le bucket refuse aujourd'hui
-(`PITFALLS.md` #77).
+**`tranché`** · Par le dirigeant, le 2026-11-11, après avoir envisagé l'inverse le même jour
+(un onglet que le dirigeant remplit lui-même : dépôts, pièces choisies, notes dictées).
+Décision : **on ne dépose rien dans un sujet.** Ajouter de la connaissance appartient au
+**dossier**, le niveau au-dessus ; l'offrir aussi au sujet ferait deux endroits pour la même
+chose. L'onglet Documents d'un sujet **répertorie toutes les pièces jointes transmises dans ses
+conversations** — des **références** aux pièces des messages, jamais des copies. Écarté : le
+classement à la main, pièce par pièce.
+
+⚠️ **Un défaut reste ouvert, cause non prouvée.** Le 2026-11-11, un e-mail de test à quatre
+pièces, dans une conversation suivie par un sujet, n'en a montré **aucune** dans l'onglet.
+L'onglet lit une colonne recopiée sur la pièce (`Attachment.subjectId`), posée au stockage puis
+propagée par chaque geste de rattachement ; tous les chemins d'écriture lus la propagent, donc
+la pièce a manqué le sujet autrement — sans accès à la production, on ne sait pas comment. La
+décision elle-même indique le correctif : puisque ce sont des références, la liste devrait se
+**déduire des messages du sujet** au lieu de se fier à une colonne recopiée qui peut dériver.
+À faire après avoir regardé le cas en base.
 
 ### Le journal d'un sujet ne sert pas
 
