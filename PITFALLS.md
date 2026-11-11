@@ -577,6 +577,18 @@ désigne plusieurs contacts est rendu en candidats, jamais tranché en silence. 
 nouveau entre dans le jeu d'évaluation (`eval:echange`) avec la question qui l'a motivé :
 c'est le jeu, pas la vigilance, qui tient la palette (`05 §10.3`, §11.6).
 
+**La même pente, un cran plus loin (R19)** : « retrouve le message d'Olivier sur la sauce
+curry » rendait quarante messages sans rapport, puis celui d'un autre sur le seul mot
+« oublie ». Trois causes, trois règles. Une recherche qui **exige** chaque mot tel quel ne
+trouve rien (« sauces currys », « gouter »), et le modèle, bredouille, retire des critères
+jusqu'à recevoir n'importe quoi : la recherche **classe** (plein texte de la base, accents et
+pluriels indifférents) et dit quels mots chaque résultat porte. Un nom mis dans le mot-clé ne
+vaut rien : la **personne** est un critère à part, résolue avant le texte — fiche de
+l'annuaire **ou** expéditeur sans fiche —, et on ne l'ôte pas pour élargir. Enfin **ce qu'un
+outil de recherche rend n'est pas une réponse** : rendu en cartes, chaque tentative s'étale à
+l'écran ; le fil n'en garde qu'une ligne, et seul ce que le modèle **désigne**
+(`show_messages`) se montre.
+
 ### #69 — Un `mail_received` de l'agrégateur n'est pas toujours une réception : les brouillons Gmail arrivent par là
 
 **Symptôme** : le dirigeant écrit un e-mail dans Gmail ; dans Relvo, la conversation montre

@@ -801,57 +801,62 @@ model Subject {
 // ─────────────────────────────────────────────────────────────
 
 model Message {
-  id                 String           @id @default(uuid()) @db.Uuid
-  accountId          String           @map("account_id") @db.Uuid
+  id                 String                   @id @default(uuid()) @db.Uuid
+  accountId          String                   @map("account_id") @db.Uuid
   /// NON NULLABLE : tout message appartient à une conversation, déterminée à la
   /// réception (cf. Conversation). C'est ce qui fait qu'il n'existe PLUS de
   /// message orphelin — le rangement ne peut pas échouer.
-  conversationId     String           @map("conversation_id") @db.Uuid
+  conversationId     String                   @map("conversation_id") @db.Uuid
   /// APPARTENANCE SÉMANTIQUE, décidée message par message. Null = ce message
   /// n'est couvert par aucune fenêtre de sujet. Ce n'est plus « message que
   /// Relvo n'a pas su traiter » : c'est la granularité fine qui permet de
   /// séparer des sujets ENTRELACÉS dans un même fil (Karim parle de la sauce
   /// blanche et de la facture emballages en alternance), ce qu'aucune fenêtre
   /// purement temporelle ne saurait faire.
-  subjectId          String?          @map("subject_id") @db.Uuid
+  subjectId          String?                  @map("subject_id") @db.Uuid
   // Domaine assigné au message à la réception (classification Relvo). Donne
   // ensuite son domaine au sujet créé à partir du message. Null = non classé.
-  folderId           String?          @map("folder_id") @db.Uuid
-  channelId          String           @map("channel_id") @db.Uuid
-  senderContactId    String?          @map("sender_contact_id") @db.Uuid
-  senderRaw          String?          @map("sender_raw")
+  folderId           String?                  @map("folder_id") @db.Uuid
+  channelId          String                   @map("channel_id") @db.Uuid
+  senderContactId    String?                  @map("sender_contact_id") @db.Uuid
+  senderRaw          String?                  @map("sender_raw")
   // Nom d'affichage de l'expéditeur tel que fourni par le canal à la réception
   // (nom de profil WhatsApp, display-name email) — quand l'expéditeur n'est pas
   // encore un Contact. Sert de label lisible avant la création du contact (M7).
-  senderName         String?          @map("sender_name")
-  recipientContactId String?          @map("recipient_contact_id") @db.Uuid
+  senderName         String?                  @map("sender_name")
+  recipientContactId String?                  @map("recipient_contact_id") @db.Uuid
   direction          MessageDirection
-  externalId         String?          @map("external_id")
-  externalThreadId   String?          @map("external_thread_id")
+  externalId         String?                  @map("external_id")
+  externalThreadId   String?                  @map("external_thread_id")
   // true = message reçu dans une conversation de GROUPE (WhatsApp). Hypothèse
   // métier pré-M7 : 1 groupe = 1 sujet, et on répond toujours au GROUPE entier
   // (composer par défaut « Tous » = un envoi au chat_id), pas à un membre.
-  isGroup            Boolean          @default(false) @map("is_group")
-  subjectLine        String?          @map("subject_line")
-  content            String?          @db.Text
+  isGroup            Boolean                  @default(false) @map("is_group")
+  subjectLine        String?                  @map("subject_line")
+  content            String?                  @db.Text
   /// Corps HTML original d'un e-mail (M6ter+). `content` reste le texte brut
   /// (aperçus de liste, recherche, IA) ; `contentHtml` porte la mise en forme
   /// d'origine, rendue dans un iframe ISOLÉ (le CSS d'un e-mail est envahissant,
   /// son JS hostile). Null pour WhatsApp et nos envois (texte simple).
-  contentHtml        String?          @map("content_html") @db.Text
+  contentHtml        String?                  @map("content_html") @db.Text
   /// Saisi, ou transcrit d'un message vocal (02).
-  contentOrigin      ContentOrigin    @default(typed) @map("content_origin")
-  receivedAt         DateTime?        @map("received_at")
-  sentAt             DateTime?        @map("sent_at")
+  contentOrigin      ContentOrigin            @default(typed) @map("content_origin")
+  receivedAt         DateTime?                @map("received_at")
+  sentAt             DateTime?                @map("sent_at")
   // Lecture d'un message (incoming) : posé quand on ouvre la CONVERSATION (et
   // non plus le sujet — M6bis). C'est là que les messages arrivent, et tout
   // message a une conversation : plus de message condamné à rester non-lu faute
   // de sujet. Null = non-lu → pastille et remontée en tête de liste.
-  readAt             DateTime?        @map("read_at")
-  status             MessageStatus    @default(received)
-  triageHint         TriageHint?      @map("triage_hint")
-  createdAt          DateTime         @default(now()) @map("created_at")
-  updatedAt          DateTime         @updatedAt @map("updated_at")
+  readAt             DateTime?                @map("read_at")
+  status             MessageStatus            @default(received)
+  triageHint         TriageHint?              @map("triage_hint")
+  /// Vecteur plein texte (français, avec et sans accents) sur l'objet, le nom de
+  /// l'expéditeur et le texte brut, tenu par un TRIGGER (`messages_search_vector`)
+  /// — sert la recherche de l'échange (05 §11.6), sans base vectorielle.
+  /// Colonne non supportée par l'ORM : jamais écrite par le code.
+  searchVector       Unsupported("tsvector")? @map("search_vector")
+  createdAt          DateTime                 @default(now()) @map("created_at")
+  updatedAt          DateTime                 @updatedAt @map("updated_at")
 
   account          Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
   conversation     Conversation          @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -879,6 +884,7 @@ model Message {
   @@index([accountId, conversationId])
   @@index([accountId, externalId])
   @@index([accountId, externalThreadId])
+  @@index([searchVector], type: Gin)
   @@map("messages")
 }
 

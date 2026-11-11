@@ -35,6 +35,11 @@ type Cas = {
     outil?: string | string[];
     args?: Record<string, unknown>;
     tier?: "extraction" | "raisonnement";
+    /**
+     * Ce que Relvo DÉSIGNE au dirigeant (`show_messages`, R19) : « ~mot » — un
+     * seul message montré, dont l'extrait porte ce mot ; `false` — rien montré.
+     */
+    montre?: string | false;
   };
 };
 
@@ -127,7 +132,7 @@ async function main() {
       },
     );
     // Les appels d'outils observés : chaque `execute` est enveloppé.
-    const appels: { nom: string; args: unknown }[] = [];
+    const appels: { nom: string; args: unknown; sortie?: unknown }[] = [];
     const outils = Object.fromEntries(
       Object.entries(tour.outils as Record<string, object>).map(
         ([nom, outil]) => [
@@ -135,12 +140,14 @@ async function main() {
           {
             ...outil,
             execute: async (args: unknown, options: unknown) => {
-              appels.push({ nom, args });
-              return (
+              const appel: (typeof appels)[number] = { nom, args };
+              appels.push(appel);
+              appel.sortie = await (
                 outil as {
                   execute: (a: unknown, o: unknown) => Promise<unknown>;
                 }
               ).execute(args, options);
+              return appel.sortie;
             },
           },
         ],
@@ -180,7 +187,21 @@ async function main() {
           correspond(v, (premier.args as Record<string, unknown>)[k]),
         ));
     const tierOk = !c.attendu.tier || c.attendu.tier === tour.tier;
-    const reussi = outilOk && argsOk && tierOk;
+    // Ce qui est MONTRÉ : les extraits des messages désignés, tous appels confondus.
+    const montres = appels
+      .filter((a) => a.nom === "show_messages")
+      .flatMap(
+        (a) =>
+          (a.sortie as { messages?: { extrait: string }[] } | undefined)
+            ?.messages ?? [],
+      )
+      .map((m) => m.extrait);
+    const montreOk =
+      c.attendu.montre === undefined ||
+      (c.attendu.montre === false
+        ? montres.length === 0
+        : montres.length === 1 && correspond(c.attendu.montre, montres[0]));
+    const reussi = outilOk && argsOk && tierOk && montreOk;
     total++;
     if (reussi) ok++;
     // Les arguments réellement passés se lisent toujours : c'est eux qui
@@ -191,6 +212,11 @@ async function main() {
     console.log(
       `| ${c.id} ${reussi ? "✅" : "❌"} | ${question.slice(0, 48)} | ${attendus.join(" ou ") || "—"} | ${appels.map((a) => a.nom).join(" → ") || "aucun"} | ${argsOk ? argsVus || "—" : `≠ ${argsVus}`} | ${c.attendu.tier ?? "—"} | ${tour.tier} | ${m.cout.eur.toFixed(4)} | ${m.jetons.cacheLecture}/${tour.prefixeStable} | ${m.dureeMs} |`,
     );
+    if (c.attendu.montre !== undefined) {
+      console.log(
+        `  ↳ montré ${montreOk ? "✅" : "❌"} : ${montres.map((m) => `« ${m.slice(0, 70)} »`).join(" ; ") || "rien"}`,
+      );
+    }
     if (process.argv.includes("--reponses")) {
       console.log(
         `  ↳ ${(await flux.text).replace(/\s+/g, " ").slice(0, 300)}`,

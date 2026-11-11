@@ -644,6 +644,7 @@ que le test lit.
 | `attachments_enqueue_file_deletion` | `attachments` | trigger : toute suppression, cascade comprise, enfile la clé d'objet dans l'outbox de suppression de fichiers |
 | `knowledge_documents_enqueue_file_deletion` | `knowledge_documents` | trigger : même garantie pour les documents de connaissance |
 | `subjects_search_vector` | `subjects` | trigger : le vecteur plein texte (titre pondéré A, situation structurée pondérée B, dictionnaire français) est tenu à chaque écriture — le code ne l'écrit jamais |
+| `messages_search_vector` | `messages` | trigger : le vecteur plein texte d'un message (objet, nom de l'expéditeur, texte brut borné ; dictionnaire français, chaque texte indexé tel quel **et** sans accents) est tenu à chaque écriture — le code ne l'écrit jamais ; c'est lui que lit la recherche de l'échange |
 | `relvo_questions_scope_target_check` | `relvo_questions` | vérification : une question a exactement une cible, celle de sa portée |
 | `folders_parent_requis` | `folders` | vérification : seul le dossier « Général » n'a pas de père — tout autre dossier est rangé dans l'arbre |
 | `channel_configs_provider_check` | `channel_configs` | vérification : le fournisseur derrière un canal est l'agrégateur ou le relais Gmail — rien d'autre ne sait lire une boîte |

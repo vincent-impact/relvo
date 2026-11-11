@@ -37,8 +37,12 @@ export function estimerJetons(texte: string): number {
 export const BUDGET_PRODUIT = {
   socle: 1_500,
   parSecteur: 1_100,
-  /** Le socle de l'échange, ajouté au message système de l'échange seulement (M10). */
-  echange: 700,
+  /**
+   * Le socle de l'échange, ajouté au message système de l'échange seulement
+   * (M10). Relevé d'un bloc délibéré (R19) : une recherche de messages n'est
+   * pas une réponse — la personne d'abord, ne montrer que ce qui répond.
+   */
+  echange: 800,
 } as const;
 
 export function coucheProduit(secteurs: readonly Secteur[]): string {

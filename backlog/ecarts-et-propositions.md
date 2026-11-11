@@ -2142,7 +2142,11 @@ dit se résout en **contact** puis en conversations, tous canaux confondus ; la 
 **plein texte et classée** (français, accents et pluriels indifférents), sur le modèle de celle
 des sujets ; un message trouvé vient avec ses **voisins** ; le cas entre au banc d'essai de
 l'échange. Écarté : la recherche sémantique par vecteurs — l'invariant 29 tient, et le défaut
-vu n'en relève pas. À livrer.
+vu n'en relève pas. **Livré le 2026-11-11** (`sprints/2026-10-recette-alpha.md`, R19). Deux
+choix faits en livrant : la personne se résout aussi parmi les **expéditeurs sans fiche** — un
+contact ne naît qu'à l'ouverture d'un sujet, et le message cherché était justement hors sujet ;
+et Relvo **désigne** par un outil (`show_messages`), ce qui coûte un aller-retour au modèle par
+message montré — le prix d'un fil qui ne montre que la réponse.
 
 ### Les documents d'un sujet sont les pièces de ses conversations, par référence
 

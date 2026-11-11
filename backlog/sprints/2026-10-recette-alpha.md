@@ -6,8 +6,8 @@
 dirigeant, `2026-10-m7-tranche11-whatsapp-direct.md`). L'application est **en recette** : des
 testeurs la prennent en main pour la première fois, et leurs remontées sont le « où on en est »
 du dépôt le temps de ce chantier. Ce fichier tient la **liste des remontées**, ce qui a été
-tranché pour chacune et ce qui est livré. **À faire en premier : R19 (quatrième vague), tranchée, pas
-encore livrée** ; R18 est livrée, à éprouver par le dirigeant sur l'iPhone. Il s'allonge à chaque vague de recette ; quand la
+tranché pour chacune et ce qui est livré. **La quatrième vague est livrée** : R18 et R19, à éprouver par le
+dirigeant sur l'iPhone ; R20 reste à vérifier en production. **À faire ensuite : R12.** Il s'allonge à chaque vague de recette ; quand la
 recette se clôt, le chantier d'après est la lecture de l'historique de la messagerie à la
 connexion (reliquat de M7), puis M13 (ouverture de la bêta).
 
@@ -312,8 +312,7 @@ de la lecture.
 Deux remontées filmées par un testeur le 2026-11-01, tranchées par le dirigeant le 2026-11-11
 (`ecarts`, « Un fichier s'ouvre dans Relvo, jamais sur une page blanche » et « La recherche de
 l'échange : la personne d'abord, la pertinence ensuite, et seulement ce que Relvo retient »).
-Elles passent en premier, devant R12 et devant la suite de M24 : **R18 est livrée, R19 reste à
-livrer.**
+Elles sont passées en premier, devant R12 et devant la suite de M24 : **R18 et R19 sont livrées.**
 
 ### R18 — Un fichier Excel reçu ne s'ouvre pas : page blanche
 
@@ -429,9 +428,33 @@ montre dans WhatsApp, reçu la veille.
 5. **Le cas au banc d'essai** (`eval:echange`) : une personne, un contexte, un canal, et un
    message que le mot à mot manque.
 
-**À livrer.** Le domaine (`domain/echange.ts`), l'outil et sa description (`outils.ts`), le rendu
-du fil, `05` §11.6 récrit, tests d'intégration sur la recherche. La règle des outils par critères
-(`PITFALLS` #68) tient et s'étend.
+**Livré (2026-11-11).**
+- **Le fil** (`relvo-fil.tsx`) : une recherche aboutie — ou plusieurs de suite — est **une ligne
+  grise** (« J'ai cherché dans vos messages : Olivier Garnier · sauce curry retour. ») ; les
+  cartes ne viennent que de `show_messages`, l'outil par lequel Relvo **désigne** ce qu'il
+  retient. Le socle de l'échange le lui dit : un message qui ne partage qu'un mot, ou qui vient
+  d'un autre, ne se propose pas ; introuvable, il le dit sans rien montrer.
+- **La personne** (`trouverPersonnes`, `resoudrePersonne`) : `search_messages` prend `personne`
+  à la place d'`expediteur`. Un nom se résout en fiche de l'annuaire **ou** en expéditeur sans
+  fiche (un contact ne naît qu'à l'ouverture d'un sujet), accents indifférents ; les adresses et
+  numéros d'un même nom font une personne ; plusieurs candidats, Relvo demande. La recherche se
+  borne à ses messages et à ses conversations, tous canaux ; ses derniers messages remontent
+  même sans mot porté.
+- **Le classement** : colonne `messages.search_vector`, tenue par le trigger
+  `messages_search_vector` (objet, expéditeur, texte ; chaque texte indexé tel quel et sans
+  accents, par la fonction `sans_accents` — sans extension à installer), index GIN, messages
+  existants remplis par la migration. Un mot porté suffit à remonter, le plus de mots sort en
+  premier, puis le plus récent ; `motsPortes` dit à Relvo lesquels.
+- **Les voisins** : `get_message` rend un message en entier et trois messages de chaque côté.
+- **Le banc d'essai** : `eval:echange` sait vérifier **ce qui est montré** (`attendu.montre`).
+  E24 — le message WhatsApp d'Olivier, sans fiche, « sauces currys », « gouter », avec un rappel
+  d'une autre qui partage « oublie » et « retour » — et E25 — personne de ce nom, rien montré.
+  Le jeu de démonstration porte les trois messages. Joués le 2026-11-11 avec E8, E11, E12, E17 :
+  six sur six.
+- `05` §11.6 (« Retrouver un message »), `02` (le trigger), `PITFALLS` #68 étendu.
+
+**Ce que ça ne règle pas.** Le message de la vidéo n'était sans doute pas entré (R20) : une
+recherche juste ne retrouve pas ce que le canal n'a pas reçu.
 
 ### R20 — WhatsApp semble ne plus entrer sur le compte du testeur depuis le 22 octobre
 
@@ -462,8 +485,10 @@ changements d'état ; prévenir le dirigeant du compte quand un canal tombe.
       Documents est tranché (toutes les pièces des conversations, par référence).
 - [x] Onglet Documents d'un sujet : les pièces des conversations y paraissent toutes
       (2026-11-11) — à constater par le dirigeant sur « Alpha Test ».
-- [ ] **Quatrième vague (2026-11-11) : R19 à livrer en premier**, R20 à vérifier en production
-      par le dirigeant.
+- [x] R19 livrée (2026-11-11) : la personne d'abord, le texte classé, un message relu avec ses
+      voisins, et le fil ne montre que ce que Relvo désigne — à éprouver par le dirigeant
+      (« retrouve le message de … sur … »).
+- [ ] R20 à vérifier en production par le dirigeant.
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
 - [x] R5 et R6 livrées (assistant actif par défaut, invitation aux notifications dans l'échange et sur l'accueil).
 - [x] R7 livrée (suppression d'un compte robuste, PITFALLS #71) — à relancer en production sur le compte concerné.

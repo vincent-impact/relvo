@@ -25,6 +25,9 @@ import {
   loadSubjectSheet,
   resolveSubject,
   searchKnowledge,
+  getMessageEnContexte,
+  getMessagesDesignes,
+  resoudrePersonne,
   searchMessages,
   searchSubjects,
   searchTasks,
@@ -36,7 +39,9 @@ import {
   type Annulation,
   type ConnaissanceTrouvee,
   type Contact,
+  type MessageEnContexte,
   type MessageTrouve,
+  type Personne,
   type Origine,
   type TacheSnapshot,
   type Task,
@@ -133,7 +138,19 @@ export type SortieOutil =
       precision?: string;
     }
   | { type: "contact"; contact: ContactLigne; sujets: SubjectRowData[] }
-  | { type: "messages"; messages: MessageTrouve[] }
+  /**
+   * Une RECHERCHE de messages : de la matière pour Relvo, une ligne discrète
+   * dans le fil — jamais des cartes (R19). `criteres` dit ce qui a été cherché.
+   */
+  | { type: "messages"; messages: MessageTrouve[]; criteres?: string }
+  /** Un message relu avec ses voisins : une ligne discrète, comme une recherche. */
+  | {
+      type: "message";
+      message: MessageTrouve;
+      fil: MessageEnContexte["fil"];
+    }
+  /** Les messages que Relvo DÉSIGNE : les seuls qui se rendent en cartes. */
+  | { type: "messages-montres"; messages: MessageTrouve[] }
   | {
       type: "conversations";
       titre: string;
@@ -801,12 +818,12 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
 
     search_messages: tool({
       description:
-        "Les messages reçus et envoyés, les plus récents d'abord. Sans aucun critère : les derniers messages. `recherche` : des mots de l'objet, du texte ou de l'expéditeur — jamais une date ni « email ». `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française, pour « aujourd'hui », « hier », « cette semaine » (la date du jour est dans le contexte). `expediteur` : un nom ou une adresse. `sens` : entrant ou sortant. `canal` : email ou whatsapp. `non_lus` : seulement les messages reçus non lus. Un sujet désigné (référence ou titre) limite à ses messages. Les horodatages rendus sont à l'heure française.",
+        "Cherche dans les messages reçus et envoyés. Le résultat est pour TOI : le dirigeant n'en voit rien tant que tu n'as pas désigné un message avec show_messages. `personne` : le nom que le dirigeant dit (« Olivier », « Karim Benali »), une adresse ou un numéro — TOUJOURS la poser quand il nomme quelqu'un, jamais dans `recherche` : elle borne la recherche à ses messages et à ses conversations, tous canaux confondus, et ses derniers messages remontent même si aucun ne porte les mots. Si le nom désigne plusieurs personnes, l'outil rend les candidats : demander laquelle. `recherche` : les mots du SUJET cherché (« sauce curry retour ») — accents et pluriels indifférents, le message qui porte le plus de mots sort en premier, et `motsPortes` dit lesquels chaque message porte ; jamais une date, un nom de personne ni « email ». `depuis` / `jusquAu` : des jours AAAA-MM-JJ en heure française, pour « aujourd'hui », « hier », « cette semaine » (la date du jour est dans le contexte). `sens` : entrant (ce qu'il a reçu) ou sortant. `canal` : email ou whatsapp, seulement si le dirigeant le dit. `non_lus` : seulement les messages reçus non lus. Un sujet désigné (référence ou titre) limite à ses messages. Sans aucun critère : les derniers messages. Les horodatages rendus sont à l'heure française. Si rien ne correspond, ne retire pas la personne pour élargir : dis que tu ne trouves pas.",
       inputSchema: z.object({
+        personne: z.string().nullable(),
         recherche: z.string().nullable(),
         depuis: z.string().regex(DATE_NUE).nullable(),
         jusquAu: z.string().regex(DATE_NUE).nullable(),
-        expediteur: z.string().nullable(),
         sens: z.enum(["entrant", "sortant"]).nullable(),
         canal: z.enum(["email", "whatsapp"]).nullable(),
         non_lus: z.boolean().nullable(),
@@ -815,10 +832,10 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
         limite: z.number().int().min(1).max(20).nullable(),
       }),
       execute: async ({
+        personne: nomDit,
         recherche,
         depuis,
         jusquAu,
-        expediteur,
         sens,
         canal,
         non_lus: nonLus,
@@ -837,13 +854,28 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
             }
             subjectId = cible.id;
           }
+          // La personne AVANT le texte : un nom dit devient une personne, ou
+          // des candidats que le modèle soumet au dirigeant.
+          let personne: Personne | null = null;
+          if (nomDit?.trim()) {
+            const r = await resoudrePersonne(db, {
+              accountId: ctx.accountId,
+              nom: nomDit,
+            });
+            if (!r.personne) return introuvable(r.message);
+            personne = r.personne;
+          }
           return {
             type: "messages",
+            criteres: [personne?.nom, recherche?.trim() || null]
+              .filter(Boolean)
+              .join(" · "),
             messages: await searchMessages(db, {
+              accountId: ctx.accountId,
               recherche,
               depuis: depuis ? instantDebutJourParis(depuis) : null,
               jusquA: jusquAu ? instantFinJourParis(jusquAu) : null,
-              expediteur,
+              personne,
               sens,
               canal,
               subjectId,
@@ -857,9 +889,44 @@ export function outilsRelvo(db: TenantDb, ctx: ContexteOutils) {
       },
     }),
 
+    get_message: tool({
+      description:
+        "Relit UN message trouvé (son `id`, rendu par search_messages) : son texte en entier et ses voisins dans la conversation, du plus ancien au plus récent. Pour vérifier que tu tiens le bon avant d'en parler ou d'y répondre — un message court ne se comprend qu'avec ce qui le précède. Le dirigeant n'en voit rien.",
+      inputSchema: z.object({ id: z.string().uuid() }),
+      execute: async ({ id }): Promise<SortieOutil> => {
+        try {
+          const lu = await getMessageEnContexte(db, id);
+          if (!lu)
+            return introuvable("Aucun message ne porte cet identifiant.");
+          return { type: "message", message: lu.message, fil: lu.fil };
+        } catch (e) {
+          return erreur(e);
+        }
+      },
+    }),
+
+    show_messages: tool({
+      description:
+        "MONTRE au dirigeant les messages que tu retiens, en cartes qu'il peut ouvrir : `ids`, leurs identifiants rendus par search_messages, dans l'ordre où tu veux les montrer. C'est le seul moyen qu'il voie un message — désigne seulement ceux qui répondent à sa question (un seul s'il cherche un message précis), jamais toute une recherche, et rien si aucun ne convient.",
+      inputSchema: z.object({
+        ids: z.array(z.string().uuid()).min(1).max(10),
+      }),
+      execute: async ({ ids }): Promise<SortieOutil> => {
+        try {
+          const messages = await getMessagesDesignes(db, ids);
+          if (messages.length === 0) {
+            return introuvable("Aucun message ne porte ces identifiants.");
+          }
+          return { type: "messages-montres", messages };
+        } catch (e) {
+          return erreur(e);
+        }
+      },
+    }),
+
     list_conversations: tool({
       description:
-        "Les conversations du dirigeant, la plus récente d'abord. `filtre` : a_trier (défaut — aucun sujet ne couvre leur dernier message : c'est ce que « à trier » veut dire), suivies (couvertes par un sujet), ignorees. `canal` : email ou whatsapp. Pour « qu'est-ce qui est à trier », « mes conversations WhatsApp ». Pour chercher dans le contenu : search_messages.",
+        "Les conversations du dirigeant, la plus récente d'abord. `filtre` : a_trier (défaut — aucun sujet ne couvre leur dernier message : c'est ce que « à trier » veut dire), suivies (couvertes par un sujet), ignorees. `canal` : email ou whatsapp. Pour « qu'est-ce qui est à trier », « mes conversations WhatsApp ». Pour chercher dans le contenu, ou les messages d'une personne : search_messages.",
       inputSchema: z.object({
         filtre: z.enum(["a_trier", "suivies", "ignorees"]).nullable(),
         canal: z.enum(["email", "whatsapp"]).nullable(),

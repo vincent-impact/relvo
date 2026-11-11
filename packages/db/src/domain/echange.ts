@@ -10,7 +10,7 @@ import {
   TaskStatus,
 } from "../generated/prisma/enums";
 import { MessageDirection } from "../generated/prisma/enums";
-import type { Prisma, Subject, Task } from "../generated/prisma/client";
+import { Prisma, type Subject, type Task } from "../generated/prisma/client";
 import type { TenantDb } from "../tenant";
 import { cancelAction } from "./actions";
 import type { Origine } from "./events";
@@ -225,6 +225,7 @@ export type MessageTrouve = {
   conversationId: string;
   /** La conversation, telle que la liste la nomme. */
   conversation: string;
+  canal: "email" | "whatsapp";
   subjectId: string | null;
   sujet: string | null;
   sens: "entrant" | "sortant";
@@ -234,22 +235,188 @@ export type MessageTrouve = {
   objet: string | null;
   /** Les premiers mots du contenu, bornés. */
   extrait: string;
+  /**
+   * Les mots demandés que ce message porte — posé seulement quand la recherche
+   * avait des mots. Vide : le message remonte par la personne, pas par le texte.
+   */
+  motsPortes?: string[];
 };
 
 /** Messages rendus au plus par une recherche de l'échange. */
 export const SEARCH_MESSAGES_MAX = 20;
-/** Lus en base avant le tri par date de réception, puis coupés à `limite`. */
-const SEARCH_MESSAGES_FETCH = 60;
+/** Mots d'une recherche pris en compte, au plus. */
+const SEARCH_MESSAGES_MOTS = 12;
 const EXTRAIT_MAX = 240;
 
+/**
+ * Une PERSONNE que le dirigeant nomme (R19, 05 §11.6) : un contact de
+ * l'annuaire, ou quelqu'un qui a écrit sans y être encore — un contact ne naît
+ * qu'à l'ouverture d'un sujet, et « le message d'Olivier » doit se retrouver
+ * avant. Ses repères sont ses adresses et ses numéros, en minuscules.
+ */
+export type Personne = {
+  contactId: string | null;
+  nom: string;
+  /** Ce qui la distingue d'un homonyme : son entreprise, sinon son adresse ou son numéro. */
+  precision: string | null;
+  reperes: string[];
+};
+
+/** Candidats rendus au plus quand un nom désigne plusieurs personnes. */
+const PERSONNES_MAX = 6;
+
+/** Minuscules, sans accents, espaces réduits — le pendant de `sans_accents(lower(…))` en base. */
+function normaliser(texte: string): string {
+  return texte
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * Les personnes qu'un nom dit peut désigner, tous canaux confondus : les
+ * contacts dont le prénom, le nom ou l'entreprise portent chaque mot (une
+ * adresse ou un numéro marche aussi), puis les expéditeurs sans fiche dont le
+ * nom d'affichage ou l'adresse les portent. Accents et casse indifférents.
+ * Un expéditeur sans fiche qui porte le nom d'un contact trouvé, ou une de ses
+ * adresses, EST ce contact ; deux expéditeurs du même nom sont une personne.
+ */
+export async function trouverPersonnes(
+  db: TenantDb,
+  args: { accountId: string; nom: string },
+): Promise<Personne[]> {
+  const mots = normaliser(args.nom)
+    .split(" ")
+    .filter((m) => m.length > 1);
+  if (mots.length === 0) return [];
+  const porte = (texte: Prisma.Sql) =>
+    Prisma.join(
+      mots.map((m) => Prisma.sql`position(${m} in ${texte}) > 0`),
+      " AND ",
+    );
+
+  // Requêtes brutes (`sans_accents` vit en base) : le filtre tenant est posé À LA MAIN.
+  const [fiches, expediteurs] = await Promise.all([
+    db.$queryRaw<{ id: string }[]>`
+      SELECT c."id"
+      FROM "contacts" c
+      WHERE c."account_id" = ${args.accountId}::uuid
+        AND ${porte(Prisma.sql`"sans_accents"(lower(concat_ws(' ',
+              c."first_name", c."last_name", c."company", c."email", c."phone",
+              array_to_string(c."additional_emails", ' '),
+              array_to_string(c."additional_phones", ' '))))`)}
+      ORDER BY c."updated_at" DESC
+      LIMIT ${PERSONNES_MAX}`,
+    db.$queryRaw<{ repere: string; nom: string | null }[]>`
+      SELECT lower(m."sender_raw") AS repere, max(m."sender_name") AS nom
+      FROM "messages" m
+      WHERE m."account_id" = ${args.accountId}::uuid
+        AND m."direction" = 'incoming'
+        AND m."sender_contact_id" IS NULL
+        AND m."sender_raw" IS NOT NULL
+        AND ${porte(Prisma.sql`"sans_accents"(lower(concat_ws(' ', m."sender_name", m."sender_raw")))`)}
+      GROUP BY lower(m."sender_raw")
+      ORDER BY max(m."created_at") DESC
+      LIMIT ${PERSONNES_MAX * 4}`,
+  ]);
+
+  const contacts = fiches.length
+    ? await db.contact.findMany({
+        where: { id: { in: fiches.map((f) => f.id) } },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          company: true,
+          email: true,
+          phone: true,
+          additionalEmails: true,
+          additionalPhones: true,
+        },
+      })
+    : [];
+  const rangFiche = new Map(fiches.map((f, i) => [f.id, i]));
+  const personnes: Personne[] = contacts
+    .sort((a, b) => (rangFiche.get(a.id) ?? 0) - (rangFiche.get(b.id) ?? 0))
+    .map((c) => ({
+      contactId: c.id,
+      nom: c.firstName ? `${c.firstName} ${c.lastName}` : c.lastName,
+      precision: c.company ?? c.email ?? c.phone,
+      reperes: [
+        ...new Set(
+          [c.email, c.phone, ...c.additionalEmails, ...c.additionalPhones]
+            .filter((r): r is string => !!r?.trim())
+            .map((r) => r.trim().toLowerCase()),
+        ),
+      ],
+    }));
+
+  for (const e of expediteurs) {
+    const nom = e.nom?.trim() || e.repere;
+    const meme = personnes.find(
+      (p) =>
+        p.reperes.includes(e.repere) || normaliser(p.nom) === normaliser(nom),
+    );
+    if (meme) {
+      if (!meme.reperes.includes(e.repere)) meme.reperes.push(e.repere);
+      continue;
+    }
+    personnes.push({
+      contactId: null,
+      nom,
+      precision: e.repere === nom ? null : e.repere,
+      reperes: [e.repere],
+    });
+  }
+  return personnes.slice(0, PERSONNES_MAX);
+}
+
+/**
+ * UNE personne, ou ce qui empêche de la choisir : aucune, ou plusieurs — un
+ * nom complet qui correspond exactement à une seule tranche. Un homonyme n'est
+ * jamais choisi en silence (PITFALLS #68) : le message nomme les candidats.
+ */
+export async function resoudrePersonne(
+  db: TenantDb,
+  args: { accountId: string; nom: string },
+): Promise<
+  | { personne: Personne }
+  | { personne: null; candidats: Personne[]; message: string }
+> {
+  const candidats = await trouverPersonnes(db, args);
+  if (candidats.length === 1) return { personne: candidats[0]! };
+  const dit = normaliser(args.nom);
+  const exacts = candidats.filter((p) => normaliser(p.nom) === dit);
+  if (exacts.length === 1) return { personne: exacts[0]! };
+  if (candidats.length === 0) {
+    return {
+      personne: null,
+      candidats,
+      message: `Personne ne s'appelle « ${args.nom.trim()} » dans l'annuaire ni parmi ceux qui ont écrit.`,
+    };
+  }
+  return {
+    personne: null,
+    candidats,
+    message: `Plusieurs personnes correspondent : ${candidats
+      .map((p) => p.nom + (p.precision ? ` (${p.precision})` : ""))
+      .join(", ")}. Demander laquelle.`,
+  };
+}
+
 export type RechercheMessages = {
+  accountId: string;
   /** Des mots de l'objet, du texte ou de l'expéditeur ; vide = pas de critère de texte. */
   recherche?: string | null;
   /** Bornes sur l'INSTANT de réception (ou d'envoi) — à calculer en heure française. */
   depuis?: Date | null;
   jusquA?: Date | null;
-  /** Un nom ou une adresse d'expéditeur. */
-  expediteur?: string | null;
+  /** La personne, déjà résolue (`resoudrePersonne`) : ses messages et ses conversations. */
+  personne?: Personne | null;
   sens?: "entrant" | "sortant" | null;
   /** Le canal : e-mail ou WhatsApp. */
   canal?: "email" | "whatsapp" | null;
@@ -260,12 +427,16 @@ export type RechercheMessages = {
   limite?: number;
 };
 
-/** Les mots d'une recherche : chacun doit se trouver quelque part, pas la phrase entière. */
+/** Les mots d'une recherche, dédoublonnés et bornés. */
 function motsDe(recherche: string | null | undefined): string[] {
-  return (recherche ?? "")
-    .trim()
-    .split(/\s+/)
-    .filter((m) => m.length > 1);
+  return [
+    ...new Set(
+      (recherche ?? "")
+        .trim()
+        .split(/\s+/)
+        .filter((m) => m.length > 1),
+    ),
+  ].slice(0, SEARCH_MESSAGES_MOTS);
 }
 
 function contient(mot: string) {
@@ -281,144 +452,287 @@ function instantDuMessage(m: {
   return m.receivedAt ?? m.sentAt ?? m.createdAt;
 }
 
+/** Un instant en littéral `timestamp` UTC — les colonnes sont sans fuseau, la comparaison ne doit pas dépendre de celui de la session. */
+function horodatageSql(d: Date): Prisma.Sql {
+  return Prisma.sql`${d.toISOString().slice(0, 23).replace("T", " ")}::timestamp`;
+}
+
+/** Ce qu'un message trouvé rend à l'échange, champ par champ. */
+const MESSAGE_TROUVE_SELECT = {
+  id: true,
+  conversationId: true,
+  subjectId: true,
+  direction: true,
+  senderName: true,
+  senderRaw: true,
+  createdAt: true,
+  receivedAt: true,
+  sentAt: true,
+  subjectLine: true,
+  content: true,
+  conversation: { select: { title: true } },
+  channel: { select: { type: true } },
+  subject: { select: { title: true } },
+} satisfies Prisma.MessageSelect;
+
+type MessageLu = Prisma.MessageGetPayload<{
+  select: typeof MESSAGE_TROUVE_SELECT;
+}>;
+
+function versMessageTrouve(m: MessageLu, extraitMax: number): MessageTrouve {
+  const texte = (m.content ?? "").replace(/\s+/g, " ").trim();
+  return {
+    id: m.id,
+    conversationId: m.conversationId,
+    conversation: m.conversation.title,
+    canal: m.channel.type === ChannelType.whatsapp ? "whatsapp" : "email",
+    subjectId: m.subjectId,
+    sujet: m.subject?.title ?? null,
+    sens: m.direction === "outgoing" ? "sortant" : "entrant",
+    expediteur: m.senderName ?? m.senderRaw,
+    recuLe: horodatageParis(instantDuMessage(m)),
+    objet: m.subjectLine,
+    extrait:
+      texte.length > extraitMax ? `${texte.slice(0, extraitMax)}…` : texte,
+  };
+}
+
 /**
- * La recherche de messages de l'échange (`search_messages`, 05 §11.6) :
- * mot à mot sur l'objet, le texte brut et l'expéditeur — pas de recherche
- * vectorielle (invariant 29) —, et des FILTRES que le modèle peut poser sans
- * inventer un mot-clé : une plage de jours, un expéditeur, un sens. Sans
- * aucun critère, les derniers messages. Les plus récents d'abord, par
- * instant de réception.
+ * La recherche de messages de l'échange (`search_messages`, 05 §11.6), dans
+ * cet ordre :
+ *
+ *   1. LA PERSONNE AVANT LE TEXTE — une personne résolue borne la recherche à
+ *      ses messages et à ses conversations, tous canaux confondus. C'est un
+ *      petit ensemble : ses messages remontent même quand aucun ne porte les
+ *      mots, les plus récents d'abord, et `motsPortes` le dit.
+ *   2. LE TEXTE, CLASSÉ — plein texte français de la base (vecteur
+ *      `search_vector`, tenu par trigger), accents et pluriels indifférents :
+ *      un message qui porte un mot demandé remonte, celui qui en porte le plus
+ *      sort en premier. Pas de recherche vectorielle (invariant 29).
+ *   3. LES FILTRES que le modèle pose sans inventer un mot-clé (PITFALLS #68) :
+ *      une plage de jours, un sens, un canal, un sujet, les non-lus.
+ *
+ * Sans aucun critère, les derniers messages. À égalité de mots, les plus
+ * récents d'abord, par instant de réception.
  */
 export async function searchMessages(
   db: TenantDb,
   args: RechercheMessages,
 ): Promise<MessageTrouve[]> {
-  // Chaque mot doit se trouver quelque part — objet, texte ou expéditeur —,
-  // pas la phrase entière : « Karim sauce blanche » retrouve le message de
-  // Karim qui parle de sauce blanche.
-  const mots = motsDe(args.recherche);
   const take = Math.min(Math.max(args.limite ?? 10, 1), SEARCH_MESSAGES_MAX);
-  const plage =
-    args.depuis || args.jusquA
-      ? {
-          ...(args.depuis ? { gte: args.depuis } : {}),
-          ...(args.jusquA ? { lte: args.jusquA } : {}),
-        }
-      : null;
-  const expediteur = args.expediteur?.trim() || null;
+
+  // Les mots UTILES et leur requête : le dictionnaire écarte les mots vides
+  // (« la », « sur »), et chaque mot se cherche tel quel OU sans accents.
+  const dits = motsDe(args.recherche);
+  const mots = dits.length
+    ? await db.$queryRaw<{ mot: string; requete: string }[]>`
+        SELECT w AS mot, q::text AS requete
+        FROM (
+          SELECT w, plainto_tsquery('french', w)
+                    || plainto_tsquery('french', "sans_accents"(w)) AS q
+          FROM unnest(${dits}::text[]) AS w
+        ) s
+        WHERE numnode(q) > 0`
+    : [];
+
+  const instant = Prisma.sql`coalesce(m."received_at", m."sent_at", m."created_at")`;
+  const conditions: Prisma.Sql[] = [
+    // Requête brute : le filtre tenant est posé À LA MAIN.
+    Prisma.sql`m."account_id" = ${args.accountId}::uuid`,
+  ];
+  if (args.sens) {
+    conditions.push(
+      Prisma.sql`m."direction" = ${args.sens === "sortant" ? "outgoing" : "incoming"}::"MessageDirection"`,
+    );
+  }
+  if (args.canal) {
+    conditions.push(Prisma.sql`ch."type" = ${args.canal}::"ChannelType"`);
+  }
+  if (args.subjectId) {
+    conditions.push(Prisma.sql`m."subject_id" = ${args.subjectId}::uuid`);
+  }
+  if (args.nonLus) {
+    conditions.push(
+      Prisma.sql`m."read_at" IS NULL AND m."direction" = 'incoming'`,
+    );
+  }
+  if (args.depuis) {
+    conditions.push(Prisma.sql`${instant} >= ${horodatageSql(args.depuis)}`);
+  }
+  if (args.jusquA) {
+    conditions.push(Prisma.sql`${instant} <= ${horodatageSql(args.jusquA)}`);
+  }
+
+  const p = args.personne ?? null;
+  if (p) {
+    const reperes = Prisma.sql`${p.reperes}::text[]`;
+    // Ce qu'elle a écrit : rattaché à sa fiche, ou parti d'un de ses repères.
+    const ecritParElle = p.contactId
+      ? Prisma.sql`(m."sender_contact_id" = ${p.contactId}::uuid OR lower(m."sender_raw") = ANY(${reperes}))`
+      : Prisma.sql`lower(m."sender_raw") = ANY(${reperes})`;
+    // Ses conversations : celle dont elle est l'interlocutrice, celles dont
+    // elle est destinataire.
+    const saConversation = p.contactId
+      ? Prisma.sql`(c."contact_id" = ${p.contactId}::uuid
+            OR ${p.contactId}::uuid = ANY(c."contact_ids")
+            OR lower(c."interlocutor_raw") = ANY(${reperes})
+            OR c."participants_raw" && ${reperes})`
+      : Prisma.sql`(lower(c."interlocutor_raw") = ANY(${reperes})
+            OR c."participants_raw" && ${reperes})`;
+    // Dans un fil à plusieurs, « reçu d'elle » ne vaut que pour ce qu'elle a
+    // écrit ; dans un fil à deux, tout ce qui est reçu vient d'elle.
+    const aDeux = Prisma.sql`(c."type" <> 'whatsapp_group' AND cardinality(c."participants_raw") <= 1)`;
+    conditions.push(
+      args.sens === "entrant"
+        ? Prisma.sql`(${ecritParElle} OR (${saConversation} AND ${aDeux}))`
+        : p.contactId
+          ? Prisma.sql`(${ecritParElle} OR ${saConversation}
+                OR m."recipient_contact_id" = ${p.contactId}::uuid)`
+          : Prisma.sql`(${ecritParElle} OR ${saConversation})`,
+    );
+  }
+
+  const portes = mots.length
+    ? Prisma.sql`(${Prisma.join(
+        mots.map(
+          (m) => Prisma.sql`(m."search_vector" @@ ${m.requete}::tsquery)::int`,
+        ),
+        " + ",
+      )})`
+    : Prisma.sql`0::int`;
+  const drapeaux = mots.length
+    ? Prisma.sql`ARRAY[${Prisma.join(
+        mots.map(
+          (m) =>
+            Prisma.sql`coalesce(m."search_vector" @@ ${m.requete}::tsquery, false)`,
+        ),
+      )}]`
+    : Prisma.sql`ARRAY[]::boolean[]`;
+  // Sans personne, le texte FILTRE : un message doit porter au moins un mot
+  // (une seule requête en OU — c'est elle que l'index sert). Avec une
+  // personne, il ne fait que classer.
+  if (mots.length && !p) {
+    conditions.push(
+      Prisma.sql`m."search_vector" @@ ${mots.map((m) => `(${m.requete})`).join(" | ")}::tsquery`,
+    );
+  }
+
+  const classes = await db.$queryRaw<{ id: string; drapeaux: boolean[] }[]>`
+    SELECT m."id", ${drapeaux} AS drapeaux, ${portes} AS portes
+    FROM "messages" m
+    JOIN "conversations" c ON c."id" = m."conversation_id"
+    JOIN "channels" ch ON ch."id" = m."channel_id"
+    WHERE ${Prisma.join(conditions, " AND ")}
+    ORDER BY portes DESC, ${instant} DESC, m."id" DESC
+    LIMIT ${take}`;
+  if (classes.length === 0) return [];
+
   const rows = await db.message.findMany({
-    where: {
-      AND: [
-        ...mots.map((mot) => ({
-          OR: [
-            { subjectLine: { contains: mot, mode: "insensitive" as const } },
-            { content: { contains: mot, mode: "insensitive" as const } },
-            { senderName: { contains: mot, mode: "insensitive" as const } },
-          ],
-        })),
-        ...(expediteur
-          ? [
-              {
-                OR: [
-                  {
-                    senderName: {
-                      contains: expediteur,
-                      mode: "insensitive" as const,
-                    },
-                  },
-                  {
-                    senderRaw: {
-                      contains: expediteur,
-                      mode: "insensitive" as const,
-                    },
-                  },
-                ],
-              },
-            ]
-          : []),
-        ...(args.sens
-          ? [
-              {
-                direction:
-                  args.sens === "sortant"
-                    ? MessageDirection.outgoing
-                    : MessageDirection.incoming,
-              },
-            ]
-          : []),
-        ...(args.canal
-          ? [
-              {
-                channel: {
-                  is: {
-                    type:
-                      args.canal === "whatsapp"
-                        ? ChannelType.whatsapp
-                        : ChannelType.email,
-                  },
-                },
-              },
-            ]
-          : []),
-        ...(args.subjectId ? [{ subjectId: args.subjectId }] : []),
-        ...(args.nonLus
-          ? [{ readAt: null, direction: MessageDirection.incoming }]
-          : []),
-        // La plage porte sur l'instant du message : reçu, sinon envoyé, sinon ingéré.
-        ...(plage
-          ? [
-              {
-                OR: [
-                  { receivedAt: plage },
-                  { receivedAt: null, sentAt: plage },
-                  { receivedAt: null, sentAt: null, createdAt: plage },
-                ],
-              },
-            ]
-          : []),
-      ],
-    },
-    orderBy: [{ createdAt: "desc" }],
-    take: SEARCH_MESSAGES_FETCH,
-    select: {
-      id: true,
-      conversationId: true,
-      subjectId: true,
-      direction: true,
-      senderName: true,
-      senderRaw: true,
-      createdAt: true,
-      receivedAt: true,
-      sentAt: true,
-      subjectLine: true,
-      content: true,
-      conversation: { select: { title: true } },
-      subject: { select: { title: true } },
-    },
+    where: { id: { in: classes.map((c) => c.id) } },
+    select: MESSAGE_TROUVE_SELECT,
   });
-  return rows
-    .sort(
-      (a, b) => instantDuMessage(b).getTime() - instantDuMessage(a).getTime(),
-    )
-    .slice(0, take)
-    .map((m) => {
-      const texte = (m.content ?? "").replace(/\s+/g, " ").trim();
-      return {
-        id: m.id,
+  const parId = new Map(rows.map((r) => [r.id, r]));
+  return classes.flatMap((c) => {
+    const m = parId.get(c.id);
+    if (!m) return [];
+    return [
+      {
+        ...versMessageTrouve(m, EXTRAIT_MAX),
+        ...(mots.length
+          ? {
+              motsPortes: mots
+                .filter((_, i) => c.drapeaux[i])
+                .map((x) => x.mot),
+            }
+          : {}),
+      },
+    ];
+  });
+}
+
+/** Voisins rendus de chaque côté d'un message lu. */
+export const MESSAGE_VOISINS = 3;
+const MESSAGE_LU_MAX = 2000;
+const VOISIN_MAX = 400;
+
+export type MessageEnContexte = {
+  /** Le message, son texte en entier (borné). */
+  message: MessageTrouve;
+  /** Ses voisins dans la conversation, du plus ancien au plus récent — lui compris, à sa place. */
+  fil: (MessageTrouve & { estLeMessage: boolean })[];
+};
+
+/**
+ * Un message et ses VOISINS dans sa conversation (`get_message`, R19) : de
+ * quoi vérifier qu'on tient le bon avant d'en parler ou d'y répondre — un
+ * « ok pour demain » ne dit rien sans ce qui le précède. Dans l'ordre du fil
+ * tel que la conversation l'affiche.
+ */
+export async function getMessageEnContexte(
+  db: TenantDb,
+  id: string,
+): Promise<MessageEnContexte | null> {
+  const m = await db.message.findFirst({
+    where: { id },
+    select: MESSAGE_TROUVE_SELECT,
+  });
+  if (!m) return null;
+  const [avant, apres] = await Promise.all([
+    db.message.findMany({
+      where: {
         conversationId: m.conversationId,
-        conversation: m.conversation.title,
-        subjectId: m.subjectId,
-        sujet: m.subject?.title ?? null,
-        sens: m.direction === "outgoing" ? "sortant" : "entrant",
-        expediteur: m.senderName ?? m.senderRaw,
-        recuLe: horodatageParis(instantDuMessage(m)),
-        objet: m.subjectLine,
-        extrait:
-          texte.length > EXTRAIT_MAX
-            ? `${texte.slice(0, EXTRAIT_MAX)}…`
-            : texte,
-      };
-    });
+        id: { not: m.id },
+        createdAt: { lte: m.createdAt },
+      },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      take: MESSAGE_VOISINS,
+      select: MESSAGE_TROUVE_SELECT,
+    }),
+    db.message.findMany({
+      where: {
+        conversationId: m.conversationId,
+        id: { not: m.id },
+        createdAt: { gt: m.createdAt },
+      },
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      take: MESSAGE_VOISINS,
+      select: MESSAGE_TROUVE_SELECT,
+    }),
+  ]);
+  const voisin = (v: MessageLu) => ({
+    ...versMessageTrouve(v, VOISIN_MAX),
+    estLeMessage: false,
+  });
+  return {
+    message: versMessageTrouve(m, MESSAGE_LU_MAX),
+    fil: [
+      ...avant.reverse().map(voisin),
+      { ...versMessageTrouve(m, VOISIN_MAX), estLeMessage: true },
+      ...apres.map(voisin),
+    ],
+  };
+}
+
+/**
+ * Les messages que Relvo DÉSIGNE (`show_messages`, R19), dans l'ordre où il
+ * les nomme : seuls ceux-là se rendent en cartes dans le fil. Un identifiant
+ * inconnu du compte est ignoré.
+ */
+export async function getMessagesDesignes(
+  db: TenantDb,
+  ids: string[],
+): Promise<MessageTrouve[]> {
+  const uniques = [...new Set(ids)].slice(0, SEARCH_MESSAGES_MAX);
+  if (uniques.length === 0) return [];
+  const rows = await db.message.findMany({
+    where: { id: { in: uniques } },
+    select: MESSAGE_TROUVE_SELECT,
+  });
+  const parId = new Map(rows.map((r) => [r.id, r]));
+  return uniques.flatMap((id) => {
+    const m = parId.get(id);
+    return m ? [versMessageTrouve(m, EXTRAIT_MAX)] : [];
+  });
 }
 
 // ─────────────────────────────────────────────────────────────

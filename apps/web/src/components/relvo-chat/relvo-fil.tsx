@@ -42,6 +42,11 @@ import { cn } from "@/lib/utils";
 // que l'écran (`defaireGeste`), et reste actif quelques minutes — au-delà, le
 // geste se défait par les écrans habituels.
 //
+// EXCEPTION, la recherche de messages (R19) : ce que Relvo trouve en cherchant
+// est sa matière, pas sa réponse. Une recherche — ou plusieurs de suite — tient
+// en UNE ligne grise ; seuls les messages qu'il DÉSIGNE (`show_messages`) se
+// rendent en cartes. Sinon chaque tentative s'étale à l'écran avant la phrase.
+//
 // Un sujet ou une tâche citée dans un bloc de Relvo est une SOUS-CARTE à
 // filet, sans ombre (02-composants : une carte ne contient pas une carte).
 
@@ -98,6 +103,8 @@ const EN_COURS: Record<keyof OutilsRelvoUI, string> = {
   list_contacts: "Je cherche dans l'annuaire",
   get_contact: "Je cherche dans l'annuaire",
   search_messages: "Je cherche dans vos messages",
+  get_message: "Je relis la conversation",
+  show_messages: "Je vous montre le message",
   list_conversations: "Je regarde vos conversations",
   search_knowledge: "Je cherche dans la Mémoire",
   get_mail_reading: "Je regarde où j'en suis",
@@ -426,6 +433,11 @@ function Sortie({ sortie }: { sortie: SortieOutil }) {
         </>
       );
     case "messages":
+    case "message":
+      // Une recherche est de la matière pour Relvo : elle tient en une ligne
+      // discrète, posée par le tour (`LigneRecherche`), jamais en cartes (R19).
+      return null;
+    case "messages-montres":
       return <Messages messages={sortie.messages} />;
     case "conversations":
       return <Conversations conversations={sortie.conversations} />;
@@ -600,20 +612,87 @@ function BlocOutil({ part }: { part: Part }) {
   }
 }
 
-function TourRelvo({ message }: { message: RelvoUIMessage }) {
+/** Les outils par lesquels Relvo CHERCHE un message : leur résultat ne se montre pas (R19). */
+const OUTILS_DE_RECHERCHE = new Set<string>(["search_messages", "get_message"]);
+
+/** Une recherche ABOUTIE — sa sortie est là. En cours, elle garde son « je cherche… ». */
+function estRechercheFinie(p: Part): boolean {
+  return (
+    isToolUIPart<OutilsRelvoUI>(p) &&
+    OUTILS_DE_RECHERCHE.has(getToolName(p)) &&
+    p.state === "output-available"
+  );
+}
+
+/**
+ * Ce que le dirigeant voit d'une recherche de Relvo : UNE ligne grise, quel
+ * que soit le nombre de tentatives qui se suivent — avec ce qui a été cherché
+ * en dernier. Les messages eux-mêmes ne paraissent que si Relvo les désigne.
+ */
+function LigneRecherche({
+  parts,
+  enCours,
+}: {
+  parts: Part[];
+  /** Le tour court encore et rien ne suit cette recherche : Relvo lit ce qu'il a trouvé. */
+  enCours: boolean;
+}) {
+  const criteres = parts
+    .map((p) => {
+      const sortie = (p as { output?: SortieOutil }).output;
+      return sortie?.type === "messages" ? sortie.criteres : null;
+    })
+    .filter(Boolean)
+    .pop();
+  return (
+    <RelvoSentence className="text-[13px] text-gris">
+      {enCours
+        ? "Je cherche dans vos messages"
+        : "J’ai cherché dans vos messages"}
+      {criteres ? ` : ${criteres}` : ""}
+      {enCours ? <Respire className="ml-1" /> : "."}
+    </RelvoSentence>
+  );
+}
+
+function TourRelvo({
+  message,
+  enCours = false,
+}: {
+  message: RelvoUIMessage;
+  /** Le flux de ce tour n'est pas fini. */
+  enCours?: boolean;
+}) {
   const parts = message.parts as Part[];
   const visibles = parts.filter(
     (p) => (p.type === "text" && p.text.trim()) || isToolUIPart(p),
   );
   const arret = message.metadata?.arret ?? null;
   if (visibles.length === 0 && !arret) return null;
+  // Les recherches abouties qui se suivent se fondent en une ligne.
+  const blocs: (Part | Part[])[] = [];
+  for (const p of visibles) {
+    const dernier = blocs[blocs.length - 1];
+    if (estRechercheFinie(p)) {
+      if (Array.isArray(dernier)) dernier.push(p);
+      else blocs.push([p]);
+    } else {
+      blocs.push(p);
+    }
+  }
   return (
     <RelvoBlock className="pb-2.5">
-      {visibles.map((p, i) =>
-        p.type === "text" ? (
-          <TexteRelvo key={i} texte={p.text} />
+      {blocs.map((b, i) =>
+        Array.isArray(b) ? (
+          <LigneRecherche
+            key={i}
+            parts={b}
+            enCours={enCours && i === blocs.length - 1}
+          />
+        ) : b.type === "text" ? (
+          <TexteRelvo key={i} texte={b.text} />
         ) : (
-          <BlocOutil key={i} part={p} />
+          <BlocOutil key={i} part={b} />
         ),
       )}
       {arret ? (
@@ -691,7 +770,11 @@ export function RelvoFil({
         m.role === "user" ? (
           <TourDirigeant key={m.id} message={m} />
         ) : (
-          <TourRelvo key={m.id} message={m} />
+          <TourRelvo
+            key={m.id}
+            message={m}
+            enCours={status === "streaming" && m === dernier}
+          />
         ),
       )}
       {attend ? (

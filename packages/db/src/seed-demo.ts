@@ -1567,6 +1567,33 @@ export async function seedDemoAccount(storage?: SeedStorage) {
   await attachConversationToSubjectFromMessage(db, sub142.id, karimWaAnchor.id);
 
   // ===== 7. Messages « Sans sujet » =====
+  // Olivier n'a pas de fiche : il écrit sur WhatsApp, sans accents ni
+  // orthographe. C'est le cas de la recherche de l'échange (R19, `eval:echange`
+  // E24) : une personne, un contexte, un canal, et un message que le mot à mot
+  // manque — « sauces currys », « gouter ». Le rappel de Nadia partage « oublie »
+  // et « retour » : il ne doit jamais être proposé à sa place.
+  await createMessage(db, {
+    channelId: wa.id,
+    direction: "incoming",
+    senderRaw: "+33 6 51 52 53 54",
+    senderName: "Olivier Garnier",
+    content: "Hello, je passe au labo jeudi matin si tu veux voir les machines",
+  });
+  await createMessage(db, {
+    channelId: wa.id,
+    direction: "incoming",
+    senderRaw: "+33 6 51 52 53 54",
+    senderName: "Olivier Garnier",
+    content:
+      "T'as pu gouter les nouvelles sauces currys ? J'attends ton retour avant de lancer la prod, n'oublie pas 🙏",
+  });
+  await createMessage(db, {
+    channelId: wa.id,
+    direction: "incoming",
+    senderRaw: "+33 6 22 33 44 55",
+    senderName: "Nadia (Fleuriste)",
+    content: "N'oublie pas le retour des vases avant samedi stp",
+  });
   await createMessage(db, {
     channelId: emailCom.id,
     direction: "incoming",

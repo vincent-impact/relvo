@@ -19,6 +19,9 @@ import {
   instantDebutJourParis,
   instantFinJourParis,
   searchKnowledge,
+  getMessageEnContexte,
+  getMessagesDesignes,
+  resoudrePersonne,
   searchMessages,
   searchSubjects,
   searchTasks,
@@ -209,7 +212,7 @@ describe("la provenance d'un geste demandé dans l'échange (M10.13)", () => {
 });
 
 describe("la recherche de messages de l'échange", () => {
-  it("cherche dans l'objet, le texte et l'expéditeur, bornée, les plus récents d'abord", async () => {
+  it("cherche dans l'objet, le texte et l'expéditeur, classée par mots portés puis par date, bornée", async () => {
     const { account, db } = await makeAccount("echange-recherche@test.fr");
     const channel = await prisma.channel.create({
       data: {
@@ -243,23 +246,43 @@ describe("la recherche de messages de l'échange", () => {
         },
       });
     }
-    const trouves = await searchMessages(db, { recherche: "livraison" });
+    const trouves = await searchMessages(db, {
+      accountId: account.id,
+      recherche: "livraison",
+    });
     expect(trouves.map((m) => m.extrait)).toEqual([
       "Relance livraison",
       "Première livraison décalée",
     ]);
     expect(trouves[0]!.conversation).toContain("Livraison sauce blanche");
     expect(trouves[0]!.expediteur).toBe("Karim Benali");
-    expect(await searchMessages(db, { recherche: "karim" })).toHaveLength(3);
-    // Mot à mot : l'expéditeur ET un mot du texte, pas la phrase entière.
     expect(
-      await searchMessages(db, { recherche: "Karim relance" }),
-    ).toHaveLength(1);
+      await searchMessages(db, { accountId: account.id, recherche: "karim" }),
+    ).toHaveLength(3);
+    // Classé, pas exigé : un message qui porte un mot remonte, celui qui en
+    // porte le plus sort en premier — et dit lesquels.
+    const classes = await searchMessages(db, {
+      accountId: account.id,
+      recherche: "Karim relance",
+    });
+    expect(classes).toHaveLength(3);
+    expect(classes[0]!.extrait).toBe("Relance livraison");
+    expect(classes[0]!.motsPortes).toEqual(["Karim", "relance"]);
+    expect(classes[1]!.motsPortes).toEqual(["Karim"]);
+    // Aucun mot porté : rien — un mot absent ne ramène pas « les derniers ».
     expect(
-      await searchMessages(db, { recherche: "Karim camion" }),
+      await searchMessages(db, { accountId: account.id, recherche: "camion" }),
     ).toHaveLength(0);
+    // Un mot vide du français ne compte pas : seul, il vaut « sans critère de texte ».
     expect(
-      await searchMessages(db, { recherche: "karim", limite: 2 }),
+      await searchMessages(db, { accountId: account.id, recherche: "la" }),
+    ).toHaveLength(3);
+    expect(
+      await searchMessages(db, {
+        accountId: account.id,
+        recherche: "karim",
+        limite: 2,
+      }),
     ).toHaveLength(2);
 
     // L'horodatage rendu est à l'heure FRANÇAISE (PITFALLS #55) : minuit UTC
@@ -267,43 +290,52 @@ describe("la recherche de messages de l'échange", () => {
     expect(trouves[0]!.recuLe).toBe("2026-10-11 02:00");
 
     // Sans aucun critère : les derniers messages, les plus récents d'abord.
-    const tous = await searchMessages(db, {});
+    const tous = await searchMessages(db, {
+      accountId: account.id,
+    });
     expect(tous.map((m) => m.extrait)).toEqual([
       "Autre chose",
       "Relance livraison",
       "Première livraison décalée",
     ]);
-    expect(await searchMessages(db, { recherche: "   " })).toHaveLength(3);
+    expect(
+      await searchMessages(db, { accountId: account.id, recherche: "   " }),
+    ).toHaveLength(3);
 
     // Une plage de jours français, posée par ses bornes.
     expect(
       await searchMessages(db, {
+        accountId: account.id,
         depuis: instantDebutJourParis("2026-10-11"),
       }),
     ).toHaveLength(2);
     expect(
       await searchMessages(db, {
+        accountId: account.id,
         jusquA: instantFinJourParis("2026-10-10"),
       }),
     ).toHaveLength(1);
     expect(
       await searchMessages(db, {
+        accountId: account.id,
         depuis: instantDebutJourParis("2026-10-11"),
         jusquA: instantFinJourParis("2026-10-11"),
       }),
     ).toHaveLength(1);
     expect(
       await searchMessages(db, {
+        accountId: account.id,
         depuis: instantDebutJourParis("2026-10-13"),
       }),
     ).toHaveLength(0);
 
-    // L'expéditeur, par son nom ou son adresse ; le sens.
-    expect(await searchMessages(db, { expediteur: "sogood" })).toHaveLength(3);
-    expect(await searchMessages(db, { expediteur: "Benali" })).toHaveLength(3);
-    expect(await searchMessages(db, { expediteur: "inconnu" })).toHaveLength(0);
-    expect(await searchMessages(db, { sens: "entrant" })).toHaveLength(3);
-    expect(await searchMessages(db, { sens: "sortant" })).toHaveLength(0);
+    // Le sens.
+    expect(
+      await searchMessages(db, { accountId: account.id, sens: "entrant" }),
+    ).toHaveLength(3);
+    expect(
+      await searchMessages(db, { accountId: account.id, sens: "sortant" }),
+    ).toHaveLength(0);
   });
 
   it("se filtre par canal, par sujet et sur les non-lus", async () => {
@@ -341,10 +373,14 @@ describe("la recherche de messages de l'échange", () => {
       content: "Par WhatsApp.",
     });
     expect(
-      (await searchMessages(db, { canal: "whatsapp" })).map((m) => m.extrait),
+      (
+        await searchMessages(db, { accountId: account.id, canal: "whatsapp" })
+      ).map((m) => m.extrait),
     ).toEqual(["Par WhatsApp."]);
     expect(
-      (await searchMessages(db, { canal: "email" })).map((m) => m.extrait),
+      (await searchMessages(db, { accountId: account.id, canal: "email" })).map(
+        (m) => m.extrait,
+      ),
     ).toEqual(["Par e-mail."]);
 
     // Les messages d'UNE sujet : ceux que sa fenêtre couvre.
@@ -354,18 +390,333 @@ describe("la recherche de messages de l'échange", () => {
       data: { subjectId: sujet.id },
     });
     expect(
-      (await searchMessages(db, { subjectId: sujet.id })).map((m) => m.extrait),
+      (
+        await searchMessages(db, { accountId: account.id, subjectId: sujet.id })
+      ).map((m) => m.extrait),
     ).toEqual(["Par e-mail."]);
 
     // Les non-lus : reçus, jamais ouverts.
-    expect(await searchMessages(db, { nonLus: true })).toHaveLength(2);
+    expect(
+      await searchMessages(db, { accountId: account.id, nonLus: true }),
+    ).toHaveLength(2);
     await prisma.message.update({
       where: { id: mail.id },
       data: { readAt: new Date() },
     });
     expect(
-      (await searchMessages(db, { nonLus: true })).map((m) => m.extrait),
+      (await searchMessages(db, { accountId: account.id, nonLus: true })).map(
+        (m) => m.extrait,
+      ),
     ).toEqual(["Par WhatsApp."]);
+  });
+
+  it("ignore les accents et les pluriels : le plein texte français de la base (R19)", async () => {
+    const { account, db } = await makeAccount("echange-plein-texte@test.fr");
+    const whatsapp = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "WhatsApp",
+        type: "whatsapp",
+        identifier: "+33600000000",
+      },
+    });
+    await ingestInboundWhatsApp(db, {
+      channelId: whatsapp.id,
+      externalId: "wa-curry",
+      externalThreadId: "chat-olivier",
+      senderRaw: "+33622222222",
+      senderName: "Olivier Garnier",
+      content:
+        "Salut, t'as pu gouter les sauces currys ? J'attends ton retour, n'oublie pas",
+    });
+    // Le mot à mot manquait ce message : « sauce » ≠ « sauces », « goûter » ≠ « gouter ».
+    const trouves = await searchMessages(db, {
+      accountId: account.id,
+      recherche: "goûter sauce curry",
+    });
+    expect(trouves).toHaveLength(1);
+    expect(trouves[0]!.motsPortes).toEqual(["goûter", "sauce", "curry"]);
+    expect(trouves[0]!.canal).toBe("whatsapp");
+    // Et dans l'autre sens : un texte accentué, cherché sans accents.
+    await ingestInboundWhatsApp(db, {
+      channelId: whatsapp.id,
+      externalId: "wa-reponse",
+      externalThreadId: "chat-olivier",
+      senderRaw: "+33622222222",
+      senderName: "Olivier Garnier",
+      content: "Merci pour ta réponse, c'est réglé.",
+    });
+    expect(
+      (
+        await searchMessages(db, {
+          accountId: account.id,
+          recherche: "reponse regle",
+        })
+      ).map((m) => m.extrait),
+    ).toEqual(["Merci pour ta réponse, c'est réglé."]);
+    // Le vecteur suit le texte : un contenu récrit se retrouve par ses nouveaux mots.
+    await prisma.message.updateMany({
+      where: { externalId: "wa-reponse" },
+      data: { content: "Le camion passe mardi." },
+    });
+    expect(
+      await searchMessages(db, { accountId: account.id, recherche: "camions" }),
+    ).toHaveLength(1);
+    expect(
+      await searchMessages(db, { accountId: account.id, recherche: "réponse" }),
+    ).toHaveLength(0);
+  });
+
+  it("la personne avant le texte : un nom dit borne la recherche à ses messages, tous canaux (R19)", async () => {
+    const { account, db } = await makeAccount("echange-personne@test.fr");
+    const email = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "Boîte email",
+        type: "email",
+        identifier: "contact@tastycrousty.fr",
+      },
+    });
+    const whatsapp = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "WhatsApp",
+        type: "whatsapp",
+        identifier: "+33600000000",
+      },
+    });
+    // Olivier n'a pas de fiche : il a écrit sur WhatsApp et par e-mail.
+    const olivier = [
+      "Tu passes au labo jeudi ?",
+      "T'as pu gouter les sauces currys ? J'attends ton retour, n'oublie pas",
+    ];
+    for (const [i, content] of olivier.entries()) {
+      const { message } = await ingestInboundWhatsApp(db, {
+        channelId: whatsapp.id,
+        externalId: `wa-olivier-${i}`,
+        externalThreadId: "chat-olivier",
+        senderRaw: "+33622222222",
+        senderName: "Olivier Garnier",
+        content,
+      });
+      await prisma.message.update({
+        where: { id: message.id },
+        data: {
+          createdAt: new Date(Date.UTC(2026, 9, 10 + i)),
+          receivedAt: new Date(Date.UTC(2026, 9, 10 + i)),
+        },
+      });
+    }
+    await ingestInboundEmail(db, {
+      channelId: email.id,
+      externalId: "mail-olivier",
+      senderRaw: "Olivier.Garnier@labo.fr",
+      senderName: "Olivier Garnier",
+      subjectLine: "Tarifs",
+      content: "La grille tarifaire en pièce jointe.",
+    });
+    // Un autre, plus récent, qui partage un mot : il ne doit jamais remonter.
+    await ingestInboundEmail(db, {
+      channelId: email.id,
+      externalId: "mail-autre",
+      senderRaw: "nadia@fleurs.fr",
+      senderName: "Nadia Fleury",
+      subjectLine: "Rappel",
+      content: "N'oublie pas le retour des vases.",
+    });
+
+    const r = await resoudrePersonne(db, {
+      accountId: account.id,
+      nom: "olivier",
+    });
+    // Un seul Olivier : ses deux adresses sont une personne, pas deux homonymes.
+    expect(r.personne?.nom).toBe("Olivier Garnier");
+    expect(r.personne?.contactId).toBeNull();
+    expect(r.personne?.reperes.sort()).toEqual([
+      "+33622222222",
+      "olivier.garnier@labo.fr",
+    ]);
+
+    const trouves = await searchMessages(db, {
+      accountId: account.id,
+      personne: r.personne,
+      recherche: "retour sauce curry oublie",
+    });
+    // Ses trois messages, et rien de Nadia ; celui qui porte les mots d'abord,
+    // puis ses autres messages, les plus récents d'abord, sans mot porté.
+    expect(trouves.map((m) => m.expediteur)).toEqual([
+      "Olivier Garnier",
+      "Olivier Garnier",
+      "Olivier Garnier",
+    ]);
+    expect(trouves[0]!.extrait).toContain("sauces currys");
+    expect(trouves[0]!.motsPortes).toEqual([
+      "retour",
+      "sauce",
+      "curry",
+      "oublie",
+    ]);
+    expect(trouves[1]!.motsPortes).toEqual([]);
+    // Le canal se croise avec la personne.
+    expect(
+      await searchMessages(db, {
+        accountId: account.id,
+        personne: r.personne,
+        canal: "email",
+      }),
+    ).toHaveLength(1);
+
+    // Personne de ce nom : un message qui le dit, aucun candidat.
+    const absent = await resoudrePersonne(db, {
+      accountId: account.id,
+      nom: "Bertrand",
+    });
+    expect(absent.personne).toBeNull();
+    expect("candidats" in absent && absent.candidats).toEqual([]);
+  });
+
+  it("un contact se résout sans accents, et un homonyme n'est jamais tranché en silence (R19)", async () => {
+    const { account, db } = await makeAccount("echange-homonymes@test.fr");
+    const email = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "Boîte email",
+        type: "email",
+        identifier: "contact@tastycrousty.fr",
+      },
+    });
+    const jerome = await prisma.contact.create({
+      data: {
+        accountId: account.id,
+        firstName: "Jérôme",
+        lastName: "Lefèvre",
+        email: "jerome@metro.fr",
+        company: "Metro",
+        sourceActor: "user",
+      },
+    });
+    const { message } = await ingestInboundEmail(db, {
+      channelId: email.id,
+      externalId: "mail-jerome",
+      senderRaw: "jerome@metro.fr",
+      senderName: "Jérôme Lefèvre",
+      subjectLine: "Commande",
+      content: "Votre commande part demain.",
+    });
+    // Ce que le dirigeant lui répond est aussi « un message avec Jérôme ».
+    await prisma.message.create({
+      data: {
+        accountId: account.id,
+        conversationId: message.conversationId,
+        channelId: email.id,
+        direction: "outgoing",
+        recipientContactId: jerome.id,
+        content: "Parfait, merci.",
+        sentAt: new Date(),
+      },
+    });
+    const r = await resoudrePersonne(db, {
+      accountId: account.id,
+      nom: "jerome lefevre",
+    });
+    expect(r.personne?.contactId).toBe(jerome.id);
+    expect(
+      await searchMessages(db, { accountId: account.id, personne: r.personne }),
+    ).toHaveLength(2);
+    expect(
+      (
+        await searchMessages(db, {
+          accountId: account.id,
+          personne: r.personne,
+          sens: "entrant",
+        })
+      ).map((m) => m.extrait),
+    ).toEqual(["Votre commande part demain."]);
+
+    // Un second Jérôme : le prénom seul ne tranche plus, le nom complet si.
+    await prisma.contact.create({
+      data: {
+        accountId: account.id,
+        firstName: "Jérôme",
+        lastName: "Petit",
+        company: "Sogood",
+        sourceActor: "user",
+      },
+    });
+    const deux = await resoudrePersonne(db, {
+      accountId: account.id,
+      nom: "Jérôme",
+    });
+    expect(deux.personne).toBeNull();
+    expect("message" in deux && deux.message).toContain(
+      "Jérôme Lefèvre (Metro)",
+    );
+    expect("message" in deux && deux.message).toContain(
+      "Jérôme Petit (Sogood)",
+    );
+    expect(
+      (
+        await resoudrePersonne(db, {
+          accountId: account.id,
+          nom: "Jérôme Petit",
+        })
+      ).personne?.nom,
+    ).toBe("Jérôme Petit");
+  });
+
+  it("un message se relit avec ses voisins, et seuls les messages désignés se rendent (R19)", async () => {
+    const { account, db } = await makeAccount("echange-voisins@test.fr");
+    const whatsapp = await prisma.channel.create({
+      data: {
+        accountId: account.id,
+        name: "WhatsApp",
+        type: "whatsapp",
+        identifier: "+33600000000",
+      },
+    });
+    const ids: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const { message } = await ingestInboundWhatsApp(db, {
+        channelId: whatsapp.id,
+        externalId: `wa-fil-${i}`,
+        externalThreadId: "chat-olivier",
+        senderRaw: "+33622222222",
+        senderName: "Olivier Garnier",
+        content: `Message ${i}`,
+      });
+      await prisma.message.update({
+        where: { id: message.id },
+        data: { createdAt: new Date(Date.UTC(2026, 9, 10, i)) },
+      });
+      ids.push(message.id);
+    }
+    const lu = await getMessageEnContexte(db, ids[4]!);
+    expect(lu?.message.extrait).toBe("Message 4");
+    // Trois avant, lui, un après — dans l'ordre du fil.
+    expect(lu?.fil.map((m) => m.extrait)).toEqual([
+      "Message 1",
+      "Message 2",
+      "Message 3",
+      "Message 4",
+      "Message 5",
+    ]);
+    expect(lu?.fil.map((m) => m.estLeMessage)).toEqual([
+      false,
+      false,
+      false,
+      true,
+      false,
+    ]);
+
+    // Désignés : dans l'ordre donné, sans doublon, et jamais ceux d'un autre compte.
+    const autre = await makeAccount("echange-voisins-autre@test.fr");
+    expect(
+      (await getMessagesDesignes(db, [ids[5]!, ids[0]!, ids[5]!])).map(
+        (m) => m.extrait,
+      ),
+    ).toEqual(["Message 5", "Message 0"]);
+    expect(await getMessagesDesignes(autre.db, ids)).toEqual([]);
+    expect(await getMessageEnContexte(autre.db, ids[0]!)).toBeNull();
   });
 
   it("le brief compte les messages reçus depuis minuit à Paris, et sur sept jours", async () => {
