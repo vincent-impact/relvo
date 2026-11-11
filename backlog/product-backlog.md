@@ -86,6 +86,12 @@ l'agrégateur en fait un poste à perte. **Tout le reste est moins urgent** : M2
 décisions solution par solution, M26 vient quand il vient. Les correctifs de la vague (R9,
 M22.8, M12.10, M13.6) se glissent dans le sprint de recette.
 
+**La quatrième vague de la recette passe en premier** (décision du 2026-11-11, `ecarts`, « Un
+fichier s'ouvre dans Relvo, jamais sur une page blanche » et « La recherche de l'échange… ») :
+**R18** (un classeur reçu s'ouvre dans Relvo) et **R19** (la recherche de messages de
+l'échange), dans `sprints/2026-10-recette-alpha.md`, se livrent **avant** R12, avant la fin de
+M24 et avant M25. Ce sont des défauts d'usage vus chez un testeur, pas des chantiers.
+
 **M19 suit M18, pour la même raison** : on habille et on allège **avant** de construire la
 surface de l'échange, pas après. La disposition ne rouvre pas ; c'est l'apparence, la densité et
 le mouvement qui changent. La tranche 10 de M7 et M10 passent après M19 ; M10 porte la tranche

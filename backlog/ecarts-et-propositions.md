@@ -2092,6 +2092,34 @@ regroupement, le compte du badge), `/relvo/echanges/[cle]`, la tête de l'échan
 notification et l'accueil qui mènent à l'échange. Premier retour à l'usage : l'historique reste
 celui du dirigeant, sans pastille ni rappel, et la ligne d'une lecture en cours respire.
 
+### Un fichier s'ouvre dans Relvo, jamais sur une page blanche
+
+**`tranché`** · Par le dirigeant, le 2026-11-11, sur la vidéo d'un testeur (recette, R18) : un
+classeur Excel reçu par e-mail ouvre une page blanche dans le volet de navigation de l'iPhone.
+Le visualiseur n'avait que deux cas — l'image dans l'application, tout le reste au navigateur —
+et le second ne vaut que pour ce que le navigateur sait afficher. Décision : l'image et le PDF
+ne bougent pas ; un **classeur se lit dans Relvo**, en tableau, avec ses onglets ; tout autre
+fichier, et tout aperçu qui échoue, donne un écran qui nomme le fichier et propose « Ouvrir
+avec… » et « Télécharger ». Ce que ça déplace : une bibliothèque de lecture Excel entre au
+projet, et l'application lit elle-même le fichier au lieu de rediriger le navigateur vers le
+stockage. Écarté : s'en remettre au téléchargement seul — plusieurs gestes hors de
+l'application pour lire trois colonnes, à rebours de « l'UI sert à accéder à l'info ».
+À livrer.
+
+### La recherche de l'échange : la personne d'abord, la pertinence ensuite, et seulement ce que Relvo retient
+
+**`tranché`** · Par le dirigeant, le 2026-11-11, sur la vidéo d'un testeur (recette, R19) :
+« retrouve le message d'Olivier sur la sauce curry » rend une quarantaine de messages sans
+rapport. Trois causes séparées : le message n'était sans doute pas entré (R20, à vérifier) ; la
+recherche exige chaque mot tel quel, sans classement, et le modèle, bredouille, relâche ses
+critères ; le fil affiche chaque tentative en cartes. Décision, dans cet ordre : le fil ne montre
+en cartes que **ce que Relvo désigne**, une recherche intermédiaire tient en une ligne ; un nom
+dit se résout en **contact** puis en conversations, tous canaux confondus ; la recherche devient
+**plein texte et classée** (français, accents et pluriels indifférents), sur le modèle de celle
+des sujets ; un message trouvé vient avec ses **voisins** ; le cas entre au banc d'essai de
+l'échange. Écarté : la recherche sémantique par vecteurs — l'invariant 29 tient, et le défaut
+vu n'en relève pas. À livrer.
+
 ### Un dossier pour un contact, un dossier pour une boîte
 
 **`proposé`** · Par le dirigeant, le 2026-10-29, à la livraison de la tranche 6 de M24. Le

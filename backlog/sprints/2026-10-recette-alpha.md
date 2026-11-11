@@ -6,7 +6,8 @@
 dirigeant, `2026-10-m7-tranche11-whatsapp-direct.md`). L'application est **en recette** : des
 testeurs la prennent en main pour la première fois, et leurs remontées sont le « où on en est »
 du dépôt le temps de ce chantier. Ce fichier tient la **liste des remontées**, ce qui a été
-tranché pour chacune et ce qui est livré. Il s'allonge à chaque vague de recette ; quand la
+tranché pour chacune et ce qui est livré. **À faire en premier : R18 et R19 (quatrième vague),
+tranchées, pas encore livrées.** Il s'allonge à chaque vague de recette ; quand la
 recette se clôt, le chantier d'après est la lecture de l'historique de la messagerie à la
 connexion (reliquat de M7), puis M13 (ouverture de la bêta).
 
@@ -306,8 +307,85 @@ et la ligne d'une lecture en cours respire. Le regroupement est pur et testé
 (`domain/echanges-relvo.ts`). R9 tombe avec : les questions de la lecture vivent dans l'échange
 de la lecture.
 
+## Quatrième vague — remontées du 2026-11-11, sur deux vidéos d'un testeur
+
+Deux remontées filmées par un testeur le 2026-11-01, tranchées par le dirigeant le 2026-11-11
+(`ecarts`, « Un fichier s'ouvre dans Relvo, jamais sur une page blanche » et « La recherche de
+l'échange : la personne d'abord, la pertinence ensuite, et seulement ce que Relvo retient »).
+**Enregistrées, pas livrées : elles passent en premier**, devant R12 et devant la suite de M24.
+
+### R18 — Un fichier Excel reçu ne s'ouvre pas : page blanche
+
+**Constat.** Dans une conversation e-mail, le testeur touche la pièce jointe
+« TASTY CRA 2026.xlsx ». Le volet de navigation de l'iPhone s'ouvre sur l'adresse du stockage, la
+barre de chargement se fige, la page reste blanche. À la fermeture du volet, l'application
+elle-même reste blanche plusieurs secondes.
+
+**Cause.** `AttachmentViewer` envoie tout ce qui n'est pas une image vers le navigateur en
+affichage dans la page (`?inline=1`, `target="_blank"`). Le chemin a été conçu pour les PDF ; un
+classeur arrive sans nom ni consigne de téléchargement, et le navigateur ne propose rien.
+
+**Tranché.** Un fichier s'ouvre dans Relvo.
+- Image et PDF : inchangés.
+- Classeur (xlsx, xls, csv) : **aperçu du tableau dans Relvo**, plein écran, avec ses onglets ;
+  une bibliothèque de lecture Excel entre au projet (la même lecture servira à M8).
+- Tout autre fichier, ou aperçu en échec : un écran qui dit le nom, le type et le poids, avec
+  **« Ouvrir avec… »** (la feuille de partage de l'appareil) et **« Télécharger »** sous le vrai
+  nom du fichier. Jamais de page blanche, jamais d'échec muet.
+
+**À livrer.** Le visualiseur par type dans `components/shared/attachment-viewer.tsx` (registre de
+composants d'abord) ; le fichier lu par l'application pour l'aperçu et le partage — vérifier ce
+que le stockage autorise depuis le navigateur avant de choisir entre lecture directe et passage
+par le serveur ; la même carte partout où une pièce se touche (conversation, détail d'un
+message, documents d'un sujet, connaissances). **À vérifier sur l'iPhone, en application
+installée** : l'aperçu, « Ouvrir avec… », et que l'application ne reste plus blanche au retour.
+
+### R19 — Relvo ne retrouve pas un message et en affiche des dizaines sans rapport
+
+**Constat.** Le testeur demande à Relvo de retrouver le message d'Olivier lui demandant un retour
+sur la sauce curry, puis d'y répondre. Relvo affiche une quarantaine de messages sans lien avec
+la personne ni le contexte (rapports d'activité, comptes rendus de réunion), ne trouve pas, puis
+propose le message d'un autre contact sur le seul mot « oublie ». Le message existe : la vidéo le
+montre dans WhatsApp, reçu la veille.
+
+**Causes, trois, distinctes.**
+1. **Le message n'est probablement pas dans Relvo** : sur la vidéo, les conversations WhatsApp
+   du compte s'arrêtent au 22 octobre alors que ses e-mails sont à jour. Non prouvé sans accès à
+   la production — c'est R20.
+2. **La recherche est rigide puis trop large** : `searchMessages` exige chaque mot tel quel
+   (`contains`), sans classement ; quand rien ne sort, le modèle relâche ses critères et reçoit
+   des messages récents quelconques. Un prénom n'est jamais rapproché d'un contact.
+3. **L'écran montre toutes les tentatives** : chaque appel de recherche se rend en cartes dans
+   le fil (`relvo-fil.tsx`), avant la phrase de Relvo.
+
+**Tranché — cinq points, dans cet ordre.**
+1. **N'afficher que ce que Relvo retient** : une recherche intermédiaire est une ligne discrète ;
+   seuls les messages que Relvo désigne dans sa réponse se rendent en cartes.
+2. **La personne avant le texte** : le nom dit devient un contact, puis ses conversations, tous
+   canaux confondus ; plusieurs homonymes, Relvo demande lequel.
+3. **Classer par pertinence** : recherche plein texte de la base, en français, sans accents ni
+   pluriels bloquants ; ce qui porte le plus de mots demandés sort en premier. Pas de vectoriel
+   (invariant 29) — le mécanisme existe déjà pour les sujets.
+4. **Le contexte d'un message trouvé** : ses voisins dans la conversation, pour que Relvo vérifie
+   qu'il tient le bon avant de répondre.
+5. **Le cas au banc d'essai** (`eval:echange`) : une personne, un contexte, un canal, et un
+   message que le mot à mot manque.
+
+**À livrer.** Le domaine (`domain/echange.ts`), l'outil et sa description (`outils.ts`), le rendu
+du fil, `05` §11.6 récrit, tests d'intégration sur la recherche. La règle des outils par critères
+(`PITFALLS` #68) tient et s'étend.
+
+### R20 — WhatsApp semble ne plus entrer sur le compte du testeur depuis le 22 octobre
+
+**Constat.** Vu sur la vidéo de R19 seulement. **À vérifier par le dirigeant** : l'état du canal
+WhatsApp de ce compte (Canaux, backoffice), puis la date du dernier message WhatsApp reçu. Si le
+canal est tombé sans que rien ne le dise, c'est un défaut à part : un canal qui n'écoute plus
+doit se voir.
+
 ## Où on en est
 
+- [ ] **Quatrième vague enregistrée (2026-11-11) : R18 et R19 à livrer en premier**, R20 à
+      vérifier en production par le dirigeant.
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
 - [x] R5 et R6 livrées (assistant actif par défaut, invitation aux notifications dans l'échange et sur l'accueil).
 - [x] R7 livrée (suppression d'un compte robuste, PITFALLS #71) — à relancer en production sur le compte concerné.
