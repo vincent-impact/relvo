@@ -4,6 +4,10 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-11-11
+
+- **Nouveau** — Un fichier Excel reçu s'ouvre maintenant dans Relvo, en tableau, avec ses onglets ; tout autre fichier vous propose « Ouvrir avec… » et « Télécharger ».
+
 ## 2026-11-01
 
 - **Corrigé** — Votre réponse WhatsApp envoyée depuis Relvo apparaît dans la conversation, même sur un fil où une réponse plus ancienne s'était perdue.
