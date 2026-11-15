@@ -46,9 +46,10 @@ jamais été essayée sur un téléphone — le glisser-déposer au doigt surtou
   inverse au retour : la sortie demande les View Transitions du routeur (ou une transition
   tenue côté client) — à cadrer avant d'écrire, et à éprouver sur iOS (geste de retour du
   bord, PWA).
-- **À éprouver sur l'iPhone, tranche 2** : la feuille de création monte du bas avec le champ
-  en autofocus — le clavier d'iOS peut recouvrir « Créer » ; la touche « OK » du clavier
-  valide le formulaire.
+- **Essai de la tranche 2 par le dirigeant** : le clavier montait par-dessus la feuille à
+  l'ouverture — le champ ne prend plus le focus de lui-même ; touché, le clavier pousse la
+  feuille, c'est bon. Les invites de l'arbre (« Ajouter dans… », « Nouveau dossier », « Tout
+  replier ») repassent en violet : **ce qui se touche est violet**, c'est le code de Relvo.
 
 **Laissé ouvert par le dirigeant** : les instructions par dossier ont-elles encore un sens ?
 Rien n'est retiré ; à regarder à l'usage.

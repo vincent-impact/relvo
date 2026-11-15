@@ -23,7 +23,9 @@ import { createSubjectAction } from "@/server/actions/subjects";
 // sujet / Un dossier, UN nom, Créer. Rien d'autre : ce qu'un sujet ou un
 // dossier portent de plus (contacts, description, couleur) se donne sur leur
 // fiche, après. La destination est dite par le titre — on ne la choisit pas
-// ici, on y est déjà.
+// ici, on y est déjà. Le champ ne prend PAS le focus à l'ouverture : sur
+// iPhone, le clavier montait par-dessus la feuille en train d'arriver ; touché
+// ensuite, il se glisse dessous et la pousse.
 
 export type DestinationAjout =
   /** Dans un dossier : un sujet, ou un dossier si l'arbre peut encore descendre. */
@@ -162,7 +164,6 @@ function Formulaire({
         </Label>
         <Input
           id="nom-ajout"
-          autoFocus
           autoComplete="off"
           enterKeyHint="done"
           maxLength={quoi === "sujet" ? 200 : 80}

@@ -38,7 +38,9 @@ import type { FolderChip } from "@/server/cached";
 //
 // La DERNIÈRE LIGNE de chaque branche dépliée est « Ajouter dans <dossier> »,
 // à tous les niveaux (M28.2) : elle ouvre la feuille de création, déjà posée
-// sur ce dossier. En gris — le violet est à ce qui a bougé. Un dossier vide se
+// sur ce dossier. En VIOLET, comme toute invite de l'application : ce qui se
+// touche est violet (retour du dirigeant à l'essai). Ce qui a bougé ne s'y
+// confond pas — c'est une pastille pleine et chiffrée, pas un mot. Un dossier vide se
 // déplie donc quand même : il contient sa ligne d'ajout. Elle n'existe que
 // sous les ouverts : on n'ajoute rien à ce qui est terminé.
 //
@@ -264,17 +266,17 @@ function LigneAjout({
       type="button"
       data-list-row
       onClick={onClick}
-      className="relative flex min-h-[46px] w-full items-center gap-[9px] border-b border-(--filet) pr-3.5 text-left active:bg-(--fond-enfonce)"
+      className="relative flex min-h-[46px] w-full items-center gap-[9px] border-b border-(--filet) pr-3.5 text-left active:bg-relvo-pale"
       style={{ paddingLeft: retrait(niveau) }}
     >
       <Traits niveau={niveau} color={color} />
       <span
         aria-hidden
-        className="grid size-[19px] flex-none place-items-center text-gris"
+        className="-mx-[2.5px] grid size-6 flex-none place-items-center rounded-full bg-relvo-pale text-relvo"
       >
         <Plus className="size-[15px]" strokeWidth={2.4} />
       </span>
-      <span className="min-w-0 flex-1 truncate text-[14.5px] leading-5 font-medium text-gris">
+      <span className="min-w-0 flex-1 truncate text-[14.5px] leading-5 font-medium text-relvo">
         {label}
       </span>
     </button>
@@ -435,7 +437,7 @@ export function SujetsArbre({
           <button
             type="button"
             onClick={() => remplace(unOuvert ? [] : pliables)}
-            className="min-h-11 px-0.5 text-[13.5px] font-medium text-gris"
+            className="min-h-11 px-0.5 text-[13.5px] font-medium text-relvo"
           >
             {unOuvert ? "Tout replier" : "Tout déplier"}
           </button>
@@ -549,7 +551,7 @@ export function SujetsArbre({
       <button
         type="button"
         onClick={aLaRacine}
-        className="mx-4 flex min-h-[52px] items-center justify-center gap-2.5 rounded-(--rayon-carte) border-[1.5px] border-dashed border-(--gris-clair) bg-white text-[15px] font-medium text-gris active:bg-(--fond-enfonce)"
+        className="mx-4 flex min-h-[52px] items-center justify-center gap-2.5 rounded-(--rayon-carte) border-[1.5px] border-dashed border-(--relvo-filet) bg-white text-[15px] font-medium text-relvo active:bg-relvo-pale"
       >
         <Plus className="size-[15px]" strokeWidth={2.4} />
         Nouveau dossier
