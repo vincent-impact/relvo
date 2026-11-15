@@ -23,8 +23,8 @@ import {
 } from "@/components/shared/relvo-block";
 
 // La page Sujets (client) — UNE page, DEUX VUES (M28.1) sur la même matière :
-// « Sujets », la liste à plat, où se valident et se ferment les sujets d'un
-// balayage ; « Dossiers », l'arbre complet (`SujetsArbre`). La carte KPI est
+// « Sujets », la liste à plat ; « Dossiers », l'arbre complet (`SujetsArbre`).
+// Dans les deux, un sujet se valide ou se ferme d'un balayage. La carte KPI est
 // une BARRE D'ONGLETS chiffrée par STATUT (Ouverts · Validés · Fermés) qui
 // agit sur les deux vues de la même façon. Tout est instantané côté client
 // sur les lignes déjà chargées — toutes : rien n'est coupé.
@@ -42,9 +42,8 @@ type Tagged = { row: SubjectRowData; basket: "ouvert" | "done" };
 const EMPTY: Record<SubjectTab, string> = {
   ouverts: "Aucun sujet ouvert.",
   valides:
-    "Aucun sujet validé. Dans la vue Sujets, glissez un sujet ouvert vers la droite pour le valider.",
-  fermes:
-    "Aucun sujet fermé. Dans la vue Sujets, glissez un sujet vers la gauche pour le fermer.",
+    "Aucun sujet validé. Glissez un sujet ouvert vers la droite pour le valider.",
+  fermes: "Aucun sujet fermé. Glissez un sujet vers la gauche pour le fermer.",
 };
 
 // Onglet initial déduit de l'URL. `?urgent=1` / `?nouveau=1` (anciens liens)

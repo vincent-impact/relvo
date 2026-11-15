@@ -35,11 +35,14 @@ export function SwipeRow({
   left,
   right,
   onTap,
+  gele,
   children,
 }: {
   left?: SwipeAction;
   right?: SwipeAction;
   onTap?: () => void;
+  /** Le geste est gelé (un glisser-déposer tient la ligne) : ni balayage, ni tap. */
+  gele?: () => boolean;
   children: React.ReactNode;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -82,6 +85,14 @@ export function SwipeRow({
   function onPointerMove(e: React.PointerEvent) {
     const s = g.current;
     if (!s.active) return;
+    if (gele?.()) {
+      if (s.dx !== 0) {
+        s.dx = 0;
+        setDir(0);
+        setX(0);
+      }
+      return;
+    }
     const mx = e.clientX - s.sx;
     const my = e.clientY - s.sy;
     if (!s.decided && (Math.abs(mx) > 8 || Math.abs(my) > 8)) {
@@ -105,6 +116,11 @@ export function SwipeRow({
     const s = g.current;
     if (!s.active) return;
     s.active = false;
+    if (gele?.()) {
+      setDir(0);
+      setX(0, true);
+      return;
+    }
     if (s.horiz && s.dx < -THRESHOLD && left) {
       if (left.keepOnAct) {
         // La ligne revient en place ; l'action (confirmation) prend le relais.

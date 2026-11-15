@@ -33,9 +33,12 @@ import {
 
 export function SwipeableDoneSubject({
   subjectId,
+  gele,
   children,
 }: {
   subjectId: string;
+  /** Le geste est gelé (un glisser-déposer tient la ligne) : ni balayage, ni tap. */
+  gele?: () => boolean;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -72,6 +75,7 @@ export function SwipeableDoneSubject({
     <>
       <SwipeRow
         onTap={() => router.push(`/sujets/${subjectId}`)}
+        gele={gele}
         left={{
           // `keepOnAct` : la ligne revient en place, la confirmation prend le
           // relais — on ne fait jamais disparaître ce qu'on n'a pas encore détruit.

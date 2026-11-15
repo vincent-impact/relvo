@@ -38,12 +38,19 @@ export function SwipeableSubject({
   subjectId,
   canClose,
   openTasks = 0,
+  gele,
   children,
 }: {
   subjectId: string;
   canClose: boolean;
   /** Tâches encore à faire — > 0 déclenche la confirmation avant de terminer. */
   openTasks?: number;
+  /**
+   * Le geste est-il GELÉ ? Vrai tant qu'un glisser-déposer tient la ligne
+   * (l'arbre de la page Sujets, M28.3) : le balayage ne suit plus le doigt et
+   * le lâcher n'ouvre ni ne valide rien — un seul geste parle à la fois.
+   */
+  gele?: () => boolean;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -162,6 +169,14 @@ export function SwipeableSubject({
   function onPointerMove(e: React.PointerEvent) {
     const s = g.current;
     if (!s.active) return;
+    if (gele?.()) {
+      if (s.dx !== 0) {
+        s.dx = 0;
+        setDir(0);
+        setX(0);
+      }
+      return;
+    }
     const mx = e.clientX - s.sx;
     const my = e.clientY - s.sy;
     if (!s.decided && (Math.abs(mx) > 8 || Math.abs(my) > 8)) {
@@ -210,6 +225,11 @@ export function SwipeableSubject({
     const s = g.current;
     if (!s.active) return;
     s.active = false;
+    if (gele?.()) {
+      setDir(0);
+      setX(0, true);
+      return;
+    }
     if (s.horiz && s.dx > THRESHOLD) {
       askOrRun("validate");
     } else if (canClose && s.horiz && s.dx < -THRESHOLD) {

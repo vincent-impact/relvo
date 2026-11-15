@@ -50,11 +50,16 @@ jamais été essayée sur un téléphone — le glisser-déposer au doigt surtou
   feuille, c'est bon. Les invites de l'arbre (« Ajouter dans… », « Nouveau dossier », « Tout
   replier ») repassent en violet : **ce qui se touche est violet**, c'est le code de Relvo.
 
-- **À éprouver sur l'iPhone, tranche 3** — rien de ceci n'a été vu sur un vrai téléphone, le
-  geste n'a été joué qu'en événements simulés dans Chrome : le maintien ne doit ouvrir ni
-  l'aperçu du lien ni la sélection de texte ; le défilement automatique près des bords (le dock
-  couvre le bas) ; la garde anti-rebond de la coquille pendant qu'on tient une ligne ; le
-  vibreur au moment de la prise.
+- **Essai de la tranche 3 par le dirigeant, et ce qui a été repris** : (1) la miniature se
+  recalait sous le doigt à la prise — elle est maintenant la ligne elle-même, à sa place et à sa
+  taille (aucun modificateur) ; (2) elle restait bloquée dès que la page défilait — elle est
+  rendue en portail sur `document.body`, hors de la zone qui défile ; **cause présumée, non
+  reproduite avant correction** (un ancêtre animé en `transform` sert de bloc conteneur au
+  `position: fixed` de la miniature) : si son essai confirme, l'écrire en piège ; (3) le
+  balayage manquait dans l'arbre — les lignes de sujet y sont enveloppées de
+  `SwipeableSubject` / `SwipeableDoneSubject`, gelés par `gele()` tant qu'un glisser tient la
+  ligne ; (4) le vibreur ne répond pas sur son iPhone — sans gravité, laissé. La cible est
+  jugée facile à viser.
 
 **Laissé ouvert par le dirigeant** : les instructions par dossier ont-elles encore un sens ?
 Rien n'est retiré ; à regarder à l'usage.

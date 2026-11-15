@@ -7,8 +7,10 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
 } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -23,7 +25,6 @@ import {
   useSensors,
   type DragOverEvent,
   type DragStartEvent,
-  type Modifier,
 } from "@dnd-kit/core";
 import { ChevronDown, ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -31,6 +32,8 @@ import {
   AjouterDansSheet,
   type DestinationAjout,
 } from "@/components/feed/ajouter-dans-sheet";
+import { SwipeableDoneSubject } from "@/components/feed/swipeable-done-subject";
+import { SwipeableSubject } from "@/components/feed/swipeable-subject";
 import { RELVO_LOGO_PATHS } from "@/components/layout/relvo-logo";
 import { ListPanel } from "@/components/shared/list-panel";
 import {
@@ -64,6 +67,11 @@ import type { FolderChip } from "@/server/cached";
 //    fait pas bouger un sujet, ses tâches si (domaine, `aBouge`) ;
 //  - « Urgent · » est en gras, jamais en rouge : la couleur est aux dossiers.
 //
+// Un sujet se BALAIE ici comme dans la liste à plat (retour du dirigeant à
+// l'essai : l'avoir perdu dans l'arbre était dommageable) : à droite valider, à
+// gauche fermer ; sous validés et fermés, remettre et supprimer. Le même geste
+// dit la même chose dans les deux vues.
+//
 // La DERNIÈRE LIGNE de chaque branche dépliée est « Ajouter dans <dossier> »,
 // à tous les niveaux (M28.2) : elle ouvre la feuille de création, déjà posée
 // sur ce dossier. En VIOLET, comme toute invite de l'application : ce qui se
@@ -79,7 +87,11 @@ import type { FolderChip } from "@/server/cached";
 // dossier replié survolé s'ouvre, la page défile près des bords, et un dossier
 // lâché sur le bouton du pied remonte au premier niveau. Un toast annule. Ce
 // geste n'est jamais le seul chemin : la feuille « Ranger dans… » reste, sur
-// la fiche d'un sujet et au crayon d'un dossier.
+// la fiche d'un sujet et au crayon d'un dossier. Ce qu'on tient NE BOUGE PAS à
+// la prise : la miniature est la ligne elle-même, là où elle était, et le point
+// touché reste le point d'accroche. Elle est rendue hors de la zone qui défile
+// (portail) : dedans, elle partait avec la page au premier défilement. Tant
+// qu'on tient une ligne, son balayage est gelé — un seul geste parle à la fois.
 //
 // L'arbre arrive REPLIÉ et retient sur l'appareil ce qu'on a déplié : sur un
 // compte réel, un arbre entièrement ouvert est une page sans fin, et la
@@ -91,39 +103,32 @@ export const EVENEMENT_AJOUT = "relvo:sujets:ajouter";
 /** L'identifiant de la carte « Sans dossier » dans l'état déplié. */
 const AUCUN = "aucun";
 
+const abonneARien = () => () => {};
+
 /** Ce qu'une ligne tenue montre sous le doigt. */
-type Prise = { glisse: Glisse; nom: string; color: string };
+type Prise = {
+  glisse: Glisse;
+  nom: string;
+  color: string;
+  /** Le retrait intérieur de ce qu'on a saisi : la miniature le reprend, rien ne saute. */
+  retrait: number;
+  /** Une tête de carte : son titre garde sa taille. */
+  tete: boolean;
+};
 
 /** L'état du geste, lu par chaque ligne : ce qu'on tient, et la cible permise survolée. */
-const Geste = createContext<{ pris: Prise | null; sur: Cible | null }>({
-  pris: null,
-  sur: null,
-});
+const Geste = createContext<{
+  pris: Prise | null;
+  sur: Cible | null;
+  /** Vrai du début de la prise jusqu'après le lâcher : gèle le balayage des lignes. */
+  gele: () => boolean;
+}>({ pris: null, sur: null, gele: () => false });
 
 // Une ligne qui se prend : pas de sélection de texte ni de menu d'aperçu au
 // maintien (iOS en ouvre un sur tout lien), pas de glissé natif du lien à la
 // souris.
 const PRENABLE = "select-none [-webkit-touch-callout:none]";
 const SURVOLEE = "bg-relvo-pale ring-2 ring-relvo ring-inset";
-
-// La miniature se tient à droite du doigt, à sa hauteur — jamais dessous, où
-// elle cacherait la cible.
-const sousLeDoigt: Modifier = ({
-  activatorEvent,
-  draggingNodeRect,
-  overlayNodeRect,
-  transform,
-}) => {
-  if (!activatorEvent || !draggingNodeRect) return transform;
-  const e = activatorEvent as MouseEvent & TouchEvent;
-  const point = e.touches?.[0] ?? e;
-  const haut = overlayNodeRect?.height ?? draggingNodeRect.height;
-  return {
-    ...transform,
-    x: transform.x + point.clientX - draggingNodeRect.left - 18,
-    y: transform.y + point.clientY - draggingNodeRect.top - haut / 2,
-  };
-};
 
 type Noeud = {
   folder: FolderChip;
@@ -266,7 +271,7 @@ function LigneSujet({
         : row.waitingForReply
           ? { relvo: false, label: "attend" }
           : null;
-  const { pris } = useContext(Geste);
+  const { pris, gele } = useContext(Geste);
   const { setNodeRef: prendre, listeners: poignee } = useDraggable({
     id: `sujet:${row.id}`,
     data: {
@@ -277,6 +282,8 @@ function LigneSujet({
       },
       nom: row.title,
       color,
+      retrait: retrait(niveau),
+      tete: false,
     } satisfies Prise,
   });
   const { setNodeRef: deposer } = useDroppable({
@@ -284,71 +291,77 @@ function LigneSujet({
     data: { cible },
   });
   const tenu = pris?.glisse.type === "sujet" && pris.glisse.id === row.id;
+  const Balayage = termine ? SwipeableDoneSubject : SwipeableSubject;
   return (
-    <Link
-      ref={(el) => {
-        prendre(el);
-        deposer(el);
-      }}
-      {...poignee}
-      draggable={false}
-      data-list-row
-      href={`/sujets/${row.id}`}
-      className={cn(
-        "relative flex min-h-12 items-center gap-[9px] border-b border-(--filet) pr-3.5 active:bg-(--fond-enfonce)",
-        PRENABLE,
-        tenu && "opacity-35",
-      )}
-      style={{ paddingLeft: retrait(niveau) }}
+    <Balayage
+      subjectId={row.id}
+      canClose
+      openTasks={Math.max(row.taskTotal - row.taskDone, 0)}
+      gele={gele}
     >
-      <Traits niveau={niveau} color={color} />
-      <FileTextTrait
-        aria-hidden
-        className="size-[19px] flex-none"
-        style={{ color }}
-      />
-      <span
+      <div
+        ref={(el) => {
+          prendre(el);
+          deposer(el);
+        }}
+        {...poignee}
+        data-list-row
         className={cn(
-          "min-w-0 flex-1 truncate text-[15.5px] leading-5 text-noir",
-          row.moved && !termine ? "font-semibold" : "font-normal",
-          termine && "text-gris",
+          "relative flex min-h-12 items-center gap-[9px] border-b border-(--filet) pr-3.5",
+          PRENABLE,
+          tenu && "opacity-35",
         )}
+        style={{ paddingLeft: retrait(niveau) }}
       >
-        {row.urgent && !termine ? (
-          <span className="font-bold">Urgent · </span>
-        ) : null}
-        {row.title}
-      </span>
-      {mot ? (
+        <Traits niveau={niveau} color={color} />
+        <FileTextTrait
+          aria-hidden
+          className="size-[19px] flex-none"
+          style={{ color }}
+        />
         <span
           className={cn(
-            "inline-flex flex-none items-center gap-1 text-[12.5px] leading-4",
-            mot.relvo ? "font-medium text-relvo" : "font-normal text-gris",
+            "min-w-0 flex-1 truncate text-[15.5px] leading-5 text-noir",
+            row.moved && !termine ? "font-semibold" : "font-normal",
+            termine && "text-gris",
           )}
         >
-          {mot.relvo ? (
-            <svg
-              viewBox="116 104 296 296"
-              width="10"
-              height="10"
-              fill="currentColor"
-              aria-hidden="true"
-            >
-              <path d={RELVO_LOGO_PATHS.stars[0]} />
-            </svg>
+          {row.urgent && !termine ? (
+            <span className="font-bold">Urgent · </span>
           ) : null}
-          {mot.label}
+          {row.title}
         </span>
-      ) : null}
-      {!termine && row.taskTotal > 0 ? (
-        <span
-          aria-label={`${row.taskDone} tâches faites sur ${row.taskTotal}`}
-          className="chiffre min-w-6 flex-none text-center text-[17px] leading-5 text-noir"
-        >
-          {row.taskDone}/{row.taskTotal}
-        </span>
-      ) : null}
-    </Link>
+        {mot ? (
+          <span
+            className={cn(
+              "inline-flex flex-none items-center gap-1 text-[12.5px] leading-4",
+              mot.relvo ? "font-medium text-relvo" : "font-normal text-gris",
+            )}
+          >
+            {mot.relvo ? (
+              <svg
+                viewBox="116 104 296 296"
+                width="10"
+                height="10"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path d={RELVO_LOGO_PATHS.stars[0]} />
+              </svg>
+            ) : null}
+            {mot.label}
+          </span>
+        ) : null}
+        {!termine && row.taskTotal > 0 ? (
+          <span
+            aria-label={`${row.taskDone} tâches faites sur ${row.taskTotal}`}
+            className="chiffre min-w-6 flex-none text-center text-[17px] leading-5 text-noir"
+          >
+            {row.taskDone}/{row.taskTotal}
+          </span>
+        ) : null}
+      </div>
+    </Balayage>
   );
 }
 
@@ -421,6 +434,8 @@ function LigneDossier({
       glisse: { type: "dossier", id: folder.id },
       nom: folder.name,
       color,
+      retrait: tete ? 16 : 0,
+      tete,
     } satisfies Prise,
   });
   const { setNodeRef: deposer } = useDroppable({
@@ -640,6 +655,14 @@ export function SujetsArbre({
     }
     remplace(ids);
   }
+  const gele = () => vientDeGlisser.current;
+  // Le portail n'existe que dans le navigateur : faux au rendu serveur et à
+  // l'hydratation, vrai ensuite — sans écart entre les deux.
+  const monte = useSyncExternalStore(
+    abonneARien,
+    () => true,
+    () => false,
+  );
   const permis = (g: Glisse, c: Cible) =>
     depotPermis(g, c, folders, profondeurMax);
 
@@ -812,7 +835,7 @@ export function SujetsArbre({
       onDragEnd={onDragEnd}
       onDragCancel={finDuGeste}
     >
-      <Geste.Provider value={{ pris, sur }}>
+      <Geste.Provider value={{ pris, sur, gele }}>
         <div
           className="flex flex-col gap-3"
           onClickCapture={(e) => {
@@ -906,34 +929,56 @@ export function SujetsArbre({
         </div>
       </Geste.Provider>
 
-      {/* La miniature de ce qu'on tient : son icône, son nom, sous le doigt. */}
-      <DragOverlay modifiers={[sousLeDoigt]} dropAnimation={null}>
-        {pris ? (
-          <div
-            className={cn(
-              "shadow-feuille flex min-h-[46px] w-fit max-w-[250px] -rotate-2 items-center gap-[9px] rounded-(--rayon-sous-carte) border bg-white pr-4 pl-3",
-              sur ? "border-relvo" : "border-(--filet)",
-            )}
-          >
-            {pris.glisse.type === "sujet" ? (
-              <FileTextTrait
-                aria-hidden
-                className="size-[19px] flex-none"
-                style={{ color: pris.color }}
-              />
-            ) : (
-              <FolderTrait
-                aria-hidden
-                className="size-5 flex-none"
-                style={{ color: pris.color }}
-              />
-            )}
-            <span className="min-w-0 truncate text-[15px] font-semibold text-noir">
-              {pris.nom}
-            </span>
-          </div>
-        ) : null}
-      </DragOverlay>
+      {/* La miniature de ce qu'on tient : LA LIGNE ELLE-MÊME, à sa place et à
+          sa taille — le point touché reste le point d'accroche. En portail :
+          dans la zone qui défile, elle partait avec la page. */}
+      {!monte
+        ? null
+        : createPortal(
+            <DragOverlay dropAnimation={null}>
+              {pris ? (
+                <div
+                  className={cn(
+                    "shadow-feuille flex h-full w-full items-center rounded-(--rayon-sous-carte) border bg-white pr-3.5",
+                    pris.tete ? "gap-2.5" : "gap-[9px]",
+                    sur ? "border-relvo" : "border-(--filet)",
+                  )}
+                  style={{ paddingLeft: pris.retrait }}
+                >
+                  {pris.glisse.type === "sujet" ? (
+                    <FileTextTrait
+                      aria-hidden
+                      className="size-[19px] flex-none"
+                      style={{ color: pris.color }}
+                    />
+                  ) : pris.tete ? (
+                    <Folder
+                      aria-hidden
+                      className="size-6 flex-none"
+                      style={{ color: pris.color }}
+                    />
+                  ) : (
+                    <FolderTrait
+                      aria-hidden
+                      className="size-5 flex-none"
+                      style={{ color: pris.color }}
+                    />
+                  )}
+                  <span
+                    className={cn(
+                      "min-w-0 flex-1 truncate text-noir",
+                      pris.tete
+                        ? "font-heading text-[21px] leading-6 font-semibold"
+                        : "text-[15.5px] leading-5 font-semibold",
+                    )}
+                  >
+                    {pris.nom}
+                  </span>
+                </div>
+              ) : null}
+            </DragOverlay>,
+            document.body,
+          )}
     </DndContext>
   );
 }

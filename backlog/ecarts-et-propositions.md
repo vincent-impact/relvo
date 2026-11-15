@@ -2007,6 +2007,10 @@ feuille « Ranger dans… » restant, parce qu'un geste maintenu n'est jamais le
 - **Rien n'est coupé.** La liste ne chargeait que quarante sujets ouverts ; cinq comptes en ont
   davantage, et l'indicateur mentait d'autant. La page charge tous les sujets, des trois états.
   Pas de « voir les autres » par branche : l'arbre arrive replié, et la pastille dit où aller.
+- **Le balayage vaut dans l'arbre aussi** (inversé à l'essai, le 2026-11-15). Le brief
+  l'écartait de la vue Dossiers ; le dirigeant l'y a jugé manquant dès la tranche 3 : valider
+  ou fermer un sujet ne doit pas obliger à changer de vue. Le même geste dit la même chose dans
+  les deux vues, et il se gèle tant qu'un glisser-déposer tient la ligne.
 - **« Urgent · » en gras, jamais en rouge**, partout où une ligne de sujet l'écrit : le rouge
   brouille le code couleur des dossiers. La loupe quitte le ciel de la page (la recherche est
   dans le menu, la rangée n'a pas la place).

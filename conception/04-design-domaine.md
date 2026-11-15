@@ -347,8 +347,8 @@ c'est une **source**.
 
 ### Où vivent ces transitions
 
-**Toutes dans les swipes de la liste des sujets — la vue à plat de la page Sujets —, aucune
-dans la fiche ni dans l'arbre.** Un sujet ouvert se
+**Toutes dans les swipes d'une ligne de sujet sur la page Sujets — dans la liste à plat comme
+dans l'arbre —, aucune dans la fiche.** Un sujet ouvert se
 valide ou se ferme au swipe ; un sujet terminal se **remet** au swipe droite, et se **supprime**
 au swipe gauche — cette dernière étant la seule destruction définitive, et la seule à demander
 une confirmation.
@@ -487,22 +487,24 @@ crayon d'un dossier. Un tap range ; un toast annule.
 
 **Les dossiers n'ont pas de page à eux : ils sont une vue de la page Sujets.** La même matière
 se lit de deux façons, qu'un interrupteur dans le ciel choisit et que l'appareil retient : la
-**liste à plat**, où un sujet se valide ou se ferme d'un balayage, et **l'arbre**, dossiers et
+**liste à plat** et **l'arbre**, dossiers et
 sujets ensemble — une carte par dossier de premier niveau, « Sans dossier » en tête quand il
 n'est pas vide. Les indicateurs d'état agissent sur les deux vues de la même façon. Dans
 l'arbre, chaque dossier porte deux gestes qui ne se confondent pas : **entrer** (son nom) et
 **plier** (la flèche, à droite) ; l'état déplié appartient à l'appareil, pas au compte — c'est
 un confort de lecture, pas une donnée —, et l'arbre arrive replié. Un dossier y dit **combien
 de ses sujets ont bougé**, les siens et ceux de ses dossiers, jamais combien il en contient ;
-un sujet qui a bougé s'y lit à la graisse de son titre. Le balayage n'existe pas dans l'arbre :
-un même geste ne dit pas deux choses sur une même page.
+un sujet qui a bougé s'y lit à la graisse de son titre. Un sujet s'y balaie comme dans la
+liste à plat : le même geste dit la même chose dans les deux vues.
 
 **Dans l'arbre, ranger se fait aussi en déposant.** Un sujet ou un dossier se tient puis se
 lâche sur un autre dossier ; au doigt, il faut d'abord maintenir — bouger avant annule le geste
 et laisse défiler la page. Seules les cibles permises se signalent : un dossier ne va ni dans
 lui-même, ni dans un de ses dossiers, ni au-delà de la profondeur bornée, ni « sans dossier » ;
 un sujet ne remonte pas « au premier niveau ». Un dossier lâché au pied de l'arbre redevient un
-premier niveau. Un toast annule. **Ce geste n'est jamais le seul chemin** : la feuille reste,
+premier niveau. Un toast annule. Ce qu'on tient ne saute pas à la prise : la ligne reste où elle
+était, et le point touché reste le point d'accroche. Tant qu'on tient une ligne, son balayage
+est gelé : un seul geste parle à la fois. **Ce geste n'est jamais le seul chemin** : la feuille reste,
 parce qu'un geste maintenu ne se découvre pas seul et ne se fait pas d'une main occupée.
 
 **On ajoute là où l'on est.** La dernière ligne de chaque branche dépliée propose d'ajouter
