@@ -71,11 +71,14 @@ describe("la règle, pure", () => {
 describe("sur un compte", () => {
   it("une tâche de Relvo allume le sujet, celle du dirigeant non, ouvrir éteint", async () => {
     const { db } = await makeAccount("bouge@relvo.test");
-    const s = await createSubject(db, { title: "Devis de la friteuse" });
+    const s = await createSubject(db, {
+      title: "Devis de la friteuse",
+      createdByActor: "ai",
+    });
     const enrichi = async () =>
       (await enrichSubjects(db, await listSubjectsByStatus(db, "open")))[0];
 
-    // Tout juste créé : nouveau, donc il a bougé.
+    // Ouvert par Relvo à l'instant : nouveau, donc il a bougé.
     expect(await enrichi()).toMatchObject({ isNew: true, moved: true });
 
     // Le dirigeant l'ouvre : plus nouveau, éteint.
@@ -102,6 +105,16 @@ describe("sur un compte", () => {
     // Il rouvre la fiche : éteint.
     await openSubject(db, s.id);
     expect((await enrichi()).moved).toBe(false);
+  });
+
+  it("un sujet que le dirigeant crée lui-même n'est ni nouveau ni allumé", async () => {
+    const { db } = await makeAccount("mien@relvo.test");
+    await createSubject(db, { title: "Devis du four" });
+    const [e] = await enrichSubjects(
+      db,
+      await listSubjectsByStatus(db, "open"),
+    );
+    expect(e).toMatchObject({ isNew: false, moved: false });
   });
 
   it("la liste rend tous les sujets d'un état, sans coupe", async () => {

@@ -285,6 +285,9 @@ async function createSubjectOnce(
         waitingForReply: data.waitingForReply,
         sourceChannelId: data.sourceChannelId ?? null,
         createdByActor: data.createdByActor,
+        // Un sujet que le dirigeant crée lui-même, il l'a vu : il n'est ni
+        // « nouveau » ni « a bougé » — on ne l'avertit pas de son propre geste.
+        lastOpenedAt: data.createdByActor === Actor.user ? now : null,
         openedAt: now,
         lastActivityAt: now,
       } as Prisma.SubjectUncheckedCreateInput,

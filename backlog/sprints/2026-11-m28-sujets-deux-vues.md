@@ -5,8 +5,9 @@
 **Où on en est.** L'alpha a parlé : l'application est jugée complexe, l'arborescence des
 dossiers est saluée. Le dirigeant a tranché le 2026-11-15 (`ecarts`, « Sujets : une page, deux
 vues ») : une seule porte, la page Sujets, avec deux vues. L'épique est
-`M28-sujets-deux-vues.md`. **La tranche 1 (M28.1) est livrée et poussée ; le dirigeant l'essaie
-sur son iPhone avant la tranche 2.** Ne pas enchaîner sans son retour.
+`M28-sujets-deux-vues.md`. **Les tranches 1 et 2 (M28.1, M28.2) sont livrées et poussées ; la
+tranche 1 est validée par le dirigeant, il essaie la tranche 2 sur son iPhone avant la
+tranche 3.** Ne pas enchaîner sans son retour.
 
 **La maquette** : planche B de l'artefact du dirigeant (« une carte par dossier »). Elle fait foi
 sur les flux, les libellés et la disposition ; pas sur le rendu, pas sur les volumes. Elle n'a
@@ -26,19 +27,28 @@ jamais été essayée sur un téléphone — le glisser-déposer au doigt surtou
 - `layout/header-switch.tsx` : `retenir` pose un cookie au toucher.
 - `shared/picto.tsx` : trois pictogrammes au trait, l'exception de l'arbre.
 - `app/(shell)/relvo/instructions/` : les instructions de Général, dans l'échange.
+- `components/feed/ajouter-dans-sheet.tsx` (M28.2) : la feuille de création, composée sur
+  `ui/sheet`, `ui/tabs`, `ui/input`, `ui/button` ; `feed/bouton-ajout-ciel.tsx` : le « + » du
+  ciel, qui parle à l'arbre par l'événement `relvo:sujets:ajouter`. `createSubject` pose
+  `lastOpenedAt` quand c'est le dirigeant qui crée.
 
 **Ce qui reste.**
 
-- **M28.2 — l'ajout en fin de branche.** Une feuille composée sur `ui/sheet.tsx` (comme
-  « Ranger dans… ») : bascule Un sujet / Un dossier, un nom, Créer — `createSubjectAction`,
-  `createFolderAction`. La ligne « Ajouter dans <dossier> » en **gris** (le violet est à ce qui
-  a bougé). Un dossier vide se déplie alors (il contient sa ligne). Le « + » du ciel et le
-  bouton du pied ouvrent la même feuille ; aujourd'hui ils mènent aux pages de création.
 - **M28.3 — le glisser-déposer.** dnd-kit (déjà au Calendrier ; un `id` stable, `PITFALLS`
   #62), maintien d'un tiers de seconde au doigt, tirer à la souris ; `moveFolderAction`,
   `updateSubjectAction` ; les interdits calculés comme les `exclus` de la feuille ; toast avec
   Annuler (`sujets-rangeables.tsx` en a la forme). La conception (`04` §Folder) se récrit à ce
   moment-là.
+
+- **M28.4 — la fiche qui glisse** (demandé à l'essai de la tranche 1). La fiche d'un sujet
+  n'a aujourd'hui aucune entrée animée (`Screen entree` n'y est pas posé), celle d'un dossier
+  entre de 16 px (`.entre-ecran`). Le dirigeant veut l'entrée pleine de la droite ET la sortie
+  inverse au retour : la sortie demande les View Transitions du routeur (ou une transition
+  tenue côté client) — à cadrer avant d'écrire, et à éprouver sur iOS (geste de retour du
+  bord, PWA).
+- **À éprouver sur l'iPhone, tranche 2** : la feuille de création monte du bas avec le champ
+  en autofocus — le clavier d'iOS peut recouvrir « Créer » ; la touche « OK » du clavier
+  valide le formulaire.
 
 **Laissé ouvert par le dirigeant** : les instructions par dossier ont-elles encore un sens ?
 Rien n'est retiré ; à regarder à l'usage.

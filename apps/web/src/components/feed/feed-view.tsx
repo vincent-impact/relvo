@@ -63,6 +63,7 @@ export function FeedView({
   valides,
   fermes,
   folders,
+  profondeurMax,
   hasChannels = true,
 }: {
   /** La vue choisie dans le ciel : la liste à plat, ou l'arbre. */
@@ -71,6 +72,8 @@ export function FeedView({
   valides: SubjectRowData[];
   fermes: SubjectRowData[];
   folders: FolderChip[];
+  /** La profondeur bornée de l'arbre des dossiers (domaine). */
+  profondeurMax: number;
   /** Aucune boîte reliée : l'état vide mène à Canaux. */
   hasChannels?: boolean;
 }) {
@@ -139,19 +142,28 @@ export function FeedView({
             </Link>
           ) : null}
         </RelvoBlock>
-      ) : base.length === 0 && tab !== "ouverts" ? (
+      ) : null}
+
+      {base.length === 0 && tab !== "ouverts" ? (
         <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
           {EMPTY[tab]}
         </p>
-      ) : vue === "dossiers" ? (
-        <SujetsArbre
-          folders={folders}
-          rows={base.map(({ row }) => row)}
-          ouverts={tab === "ouverts"}
-        />
-      ) : (
+      ) : null}
+
+      {vue === "dossiers" ? (
+        // L'arbre reste monté même vide : c'est lui qui porte « Nouveau
+        // dossier » et la feuille de création que le « + » du ciel ouvre.
+        <div className={base.length === 0 ? "pt-3" : undefined}>
+          <SujetsArbre
+            folders={folders}
+            rows={base.map(({ row }) => row)}
+            ouverts={tab === "ouverts"}
+            profondeurMax={profondeurMax}
+          />
+        </div>
+      ) : base.length > 0 ? (
         <ListPanel>{base.map(renderRow)}</ListPanel>
-      )}
+      ) : null}
     </>
   );
 }

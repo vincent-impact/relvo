@@ -369,7 +369,7 @@ stocké comme statut ; tous sont **dérivés** :
 
 | Marqueur | Dérivé de |
 |---|---|
-| **Nouveau** | `last_opened_at == null` sur un sujet ouvert **et frais** — ouvrir la fiche l'éteint ; passé le délai de fraîcheur, un sujet que personne n'a ouvert n'est plus une nouvelle, c'est un sujet ouvert |
+| **Nouveau** | `last_opened_at == null` sur un sujet ouvert **et frais** (la date est posée dès la création quand c'est le dirigeant qui crée : il n'est jamais nouveau pour lui) — ouvrir la fiche l'éteint ; passé le délai de fraîcheur, un sujet que personne n'a ouvert n'est plus une nouvelle, c'est un sujet ouvert |
 | **A bougé** | le sujet est nouveau, **ou** une de ses tâches a été ajoutée, modifiée ou retirée **par un autre que le dirigeant** depuis qu'il a ouvert la fiche — lu dans le journal, qui porte l'acteur. Ouvrir la fiche l'éteint |
 | **Urgent** | `priority = urgent` |
 | **À faire** | il reste au moins une tâche ouverte |
@@ -496,6 +496,14 @@ un confort de lecture, pas une donnée —, et l'arbre arrive replié. Un dossie
 de ses sujets ont bougé**, les siens et ceux de ses dossiers, jamais combien il en contient ;
 un sujet qui a bougé s'y lit à la graisse de son titre. Le balayage n'existe pas dans l'arbre :
 un même geste ne dit pas deux choses sur une même page.
+
+**On ajoute là où l'on est.** La dernière ligne de chaque branche dépliée propose d'ajouter
+dans ce dossier, à tous les niveaux — un dossier vide se déplie donc quand même. Elle ouvre une
+feuille qui ne demande qu'un choix (un sujet ou un dossier) et un nom : la destination est déjà
+dite, et tout le reste se donne sur la fiche, après. Un dossier ne se propose plus quand la
+profondeur bornée est atteinte ; hors de tout dossier, seul un sujet se crée ; au premier
+niveau, seul un dossier. **Un sujet que le dirigeant crée lui-même, il l'a vu** : il n'est ni
+nouveau, ni allumé.
 
 **Les instructions qui valent partout se donnent à Relvo, chez lui.** Ce sont celles de
 « Général », que toute la chaîne hérite ; elles se lisent et s'écrivent depuis l'échange, à

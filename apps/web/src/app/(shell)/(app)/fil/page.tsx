@@ -3,6 +3,8 @@ import { PollRefresh } from "@/components/shared/poll-refresh";
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { Plus } from "lucide-react";
+import { PROFONDEUR_MAX } from "@relvo/db";
+import { BoutonAjoutCiel } from "@/components/feed/bouton-ajout-ciel";
 import { FeedView, type VueSujets } from "@/components/feed/feed-view";
 import { HeaderSwitch } from "@/components/layout/header-switch";
 import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
@@ -59,6 +61,7 @@ async function FilFeed({
         valides={valides}
         fermes={fermes}
         folders={folders}
+        profondeurMax={PROFONDEUR_MAX}
         hasChannels={channels > 0}
       />
     </div>
@@ -95,15 +98,17 @@ export default async function FilPage({
                 },
               ]}
             />
-            <Link
-              href={vue === "dossiers" ? "/memoire/nouveau" : "/sujets/nouveau"}
-              aria-label={
-                vue === "dossiers" ? "Nouveau dossier" : "Nouveau sujet"
-              }
-              className={SKY_BTN}
-            >
-              <Plus className="size-4" strokeWidth={2.6} />
-            </Link>
+            {vue === "dossiers" ? (
+              <BoutonAjoutCiel />
+            ) : (
+              <Link
+                href="/sujets/nouveau"
+                aria-label="Nouveau sujet"
+                className={SKY_BTN}
+              >
+                <Plus className="size-4" strokeWidth={2.6} />
+              </Link>
+            )}
           </>
         }
       />

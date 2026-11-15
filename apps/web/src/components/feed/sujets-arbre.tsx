@@ -1,8 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Plus } from "lucide-react";
+import {
+  AjouterDansSheet,
+  type DestinationAjout,
+} from "@/components/feed/ajouter-dans-sheet";
 import { RELVO_LOGO_PATHS } from "@/components/layout/relvo-logo";
 import { ListPanel } from "@/components/shared/list-panel";
 import {
@@ -13,7 +17,7 @@ import {
 } from "@/components/shared/picto";
 import type { SubjectRowData } from "@/components/shared/subject-row";
 import { useIdsRetenus } from "@/hooks/use-ids-retenus";
-import { folderVisual } from "@/lib/folders";
+import { FOLDER_COLORS, folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 import type { FolderChip } from "@/server/cached";
 
@@ -32,11 +36,19 @@ import type { FolderChip } from "@/server/cached";
 //    fait pas bouger un sujet, ses tâches si (domaine, `aBouge`) ;
 //  - « Urgent · » est en gras, jamais en rouge : la couleur est aux dossiers.
 //
+// La DERNIÈRE LIGNE de chaque branche dépliée est « Ajouter dans <dossier> »,
+// à tous les niveaux (M28.2) : elle ouvre la feuille de création, déjà posée
+// sur ce dossier. En gris — le violet est à ce qui a bougé. Un dossier vide se
+// déplie donc quand même : il contient sa ligne d'ajout. Elle n'existe que
+// sous les ouverts : on n'ajoute rien à ce qui est terminé.
+//
 // L'arbre arrive REPLIÉ et retient sur l'appareil ce qu'on a déplié : sur un
 // compte réel, un arbre entièrement ouvert est une page sans fin, et la
 // pastille suffit à dire où aller.
 
 const CLE_DEPLIES = "relvo:sujets:deplies";
+/** L'événement que le « + » du ciel envoie à l'arbre : ajouter au premier niveau. */
+export const EVENEMENT_AJOUT = "relvo:sujets:ajouter";
 /** L'identifiant de la carte « Sans dossier » dans l'état déplié. */
 const AUCUN = "aucun";
 
@@ -236,10 +248,44 @@ function LigneSujet({
   );
 }
 
+function LigneAjout({
+  label,
+  niveau,
+  color,
+  onClick,
+}: {
+  label: string;
+  niveau: number;
+  color: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      data-list-row
+      onClick={onClick}
+      className="relative flex min-h-[46px] w-full items-center gap-[9px] border-b border-(--filet) pr-3.5 text-left active:bg-(--fond-enfonce)"
+      style={{ paddingLeft: retrait(niveau) }}
+    >
+      <Traits niveau={niveau} color={color} />
+      <span
+        aria-hidden
+        className="grid size-[19px] flex-none place-items-center text-gris"
+      >
+        <Plus className="size-[15px]" strokeWidth={2.4} />
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[14.5px] leading-5 font-medium text-gris">
+        {label}
+      </span>
+    </button>
+  );
+}
+
 export function SujetsArbre({
   folders,
   rows,
   ouverts,
+  profondeurMax,
 }: {
   /** Les dossiers, Général exclu, en ordre d'arbre. */
   folders: FolderChip[];
@@ -247,16 +293,59 @@ export function SujetsArbre({
   rows: SubjectRowData[];
   /** L'onglet des ouverts : tous les dossiers se montrent, et ce qui a bougé se compte. */
   ouverts: boolean;
+  /** La profondeur bornée de l'arbre (domaine) : au-delà, un dossier n'en reçoit plus. */
+  profondeurMax: number;
 }) {
   const { tetes, sansDossier } = useMemo(
     () => construire(folders, rows),
     [folders, rows],
   );
   const { ids: deplies, bascule, remplace } = useIdsRetenus(CLE_DEPLIES);
+  const [ajout, setAjout] = useState<DestinationAjout | null>(null);
+
+  // Un nouveau premier niveau reçoit la première teinte de la palette que
+  // ses voisins ne portent pas encore — il se recolore au crayon de sa fiche.
+  const prises = new Set(tetes.map((n) => n.folder.color));
+  const couleurLibre =
+    FOLDER_COLORS.find((c) => !prises.has(c.key))?.key ??
+    FOLDER_COLORS[tetes.length % FOLDER_COLORS.length].key;
+  const aLaRacine = () => setAjout({ type: "racine", couleur: couleurLibre });
+
+  // Le « + » du ciel vit dans l'en-tête de la page : il parle à l'arbre par
+  // un événement, sans état partagé à remonter.
+  useEffect(() => {
+    const ecoute = () => setAjout({ type: "racine", couleur: couleurLibre });
+    window.addEventListener(EVENEMENT_AJOUT, ecoute);
+    return () => window.removeEventListener(EVENEMENT_AJOUT, ecoute);
+  }, [couleurLibre]);
+
+  const parId = new Map(folders.map((f) => [f.id, f]));
+  /** Ce qu'il faut déplier pour voir ce qu'on vient de créer. */
+  function deplierVers(dest: DestinationAjout) {
+    if (dest.type === "racine") return;
+    const ids = new Set(deplies);
+    if (dest.type === "aucun") ids.add(AUCUN);
+    else {
+      let f = parId.get(dest.id);
+      while (f) {
+        ids.add(f.id);
+        f = f.parentId ? parId.get(f.parentId) : undefined;
+      }
+    }
+    remplace(ids);
+  }
+  const dans = (f: FolderChip): DestinationAjout => ({
+    type: "dossier",
+    id: f.id,
+    chemin: f.path,
+    dossierPossible: f.depth < profondeurMax,
+  });
 
   // Sous validés et fermés, un dossier qui n'en contient aucun ne se montre pas.
   const montre = (n: Noeud) => ouverts || n.total > 0;
-  const aDessous = (n: Noeud) => n.enfants.some(montre) || n.sujets.length > 0;
+  // Sous les ouverts, tout dossier se déplie : il contient au moins sa ligne d'ajout.
+  const aDessous = (n: Noeud) =>
+    ouverts || n.enfants.some(montre) || n.sujets.length > 0;
 
   const pliables: string[] = [];
   const recenser = (n: Noeud) => {
@@ -265,7 +354,8 @@ export function SujetsArbre({
     n.enfants.forEach(recenser);
   };
   tetes.forEach(recenser);
-  if (sansDossier.length > 0) pliables.push(AUCUN);
+  const montreAucun = sansDossier.length > 0;
+  if (montreAucun) pliables.push(AUCUN);
   const unOuvert = pliables.some((id) => deplies.has(id));
 
   function branche(n: Noeud, niveau: number, color: string): React.ReactNode[] {
@@ -324,6 +414,17 @@ export function SujetsArbre({
         />,
       );
     }
+    if (ouverts) {
+      lignes.push(
+        <LigneAjout
+          key={`ajout-${n.folder.id}`}
+          label={`Ajouter dans ${n.folder.name}`}
+          niveau={niveau}
+          color={color}
+          onClick={() => setAjout(dans(n.folder))}
+        />,
+      );
+    }
     return lignes;
   }
 
@@ -341,7 +442,7 @@ export function SujetsArbre({
         </div>
       ) : null}
 
-      {sansDossier.length > 0 ? (
+      {montreAucun ? (
         <ListPanel>
           <div
             data-list-row
@@ -385,6 +486,14 @@ export function SujetsArbre({
                 />
               ))
             : null}
+          {deplies.has(AUCUN) && ouverts ? (
+            <LigneAjout
+              label="Ajouter un sujet sans dossier"
+              niveau={0}
+              color="var(--gris-clair)"
+              onClick={() => setAjout({ type: "aucun" })}
+            />
+          ) : null}
         </ListPanel>
       ) : null}
 
@@ -437,13 +546,20 @@ export function SujetsArbre({
         );
       })}
 
-      <Link
-        href="/memoire/nouveau"
+      <button
+        type="button"
+        onClick={aLaRacine}
         className="mx-4 flex min-h-[52px] items-center justify-center gap-2.5 rounded-(--rayon-carte) border-[1.5px] border-dashed border-(--gris-clair) bg-white text-[15px] font-medium text-gris active:bg-(--fond-enfonce)"
       >
         <Plus className="size-[15px]" strokeWidth={2.4} />
         Nouveau dossier
-      </Link>
+      </button>
+
+      <AjouterDansSheet
+        destination={ajout}
+        onOpenChange={(o) => !o && setAjout(null)}
+        onCree={() => ajout && deplierVers(ajout)}
+      />
     </div>
   );
 }

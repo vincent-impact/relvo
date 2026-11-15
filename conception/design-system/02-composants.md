@@ -89,7 +89,8 @@ de la même couleur, reliés par un trait de branche par niveau. Tout ce qui se 
 droite : la **pastille violette** d'un dossier compte ses sujets qui ont bougé — jamais un
 total —, la flèche de pli tient toujours la même colonne, et un sujet porte son ratio de
 tâches. Un sujet qui a bougé a son titre en gras et aucune pastille : le violet chiffré est aux
-dossiers.
+dossiers. La ligne d'ajout qui ferme une branche est **grise** : le violet est à ce qui a bougé,
+une invite n'est pas une nouvelle.
 
 **Sur un sujet, « Urgent · » est en gras devant le titre, jamais en rouge** — le rouge
 brouillerait le code couleur des dossiers. Le rouge reste à ce qui est en retard.
