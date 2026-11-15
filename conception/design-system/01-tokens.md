@@ -76,7 +76,8 @@ La palette de domaines est distincte de la livrée : aucun domaine n'est violet.
 
 ## Les états
 
-`--urgent` (rouge) pour ce qui presse et ce qui est en retard · `--fait` (vert) pour ce qui est
+`--urgent` (rouge) pour ce qui presse et ce qui est en retard — jamais sur le titre d'un sujet,
+où l'urgence se dit en gras · `--fait` (vert) pour ce qui est
 fait ou connecté · `--attente` (ambre) pour ce qui attend un tiers. Ces trois-là ne servent qu'à
 ça : ils ne sont jamais empruntés pour de la mise en forme.
 

@@ -347,7 +347,8 @@ c'est une **source**.
 
 ### Où vivent ces transitions
 
-**Toutes dans les swipes de la liste des sujets, aucune dans la fiche.** Un sujet ouvert se
+**Toutes dans les swipes de la liste des sujets — la vue à plat de la page Sujets —, aucune
+dans la fiche ni dans l'arbre.** Un sujet ouvert se
 valide ou se ferme au swipe ; un sujet terminal se **remet** au swipe droite, et se **supprime**
 au swipe gauche — cette dernière étant la seule destruction définitive, et la seule à demander
 une confirmation.
@@ -368,13 +369,19 @@ stocké comme statut ; tous sont **dérivés** :
 
 | Marqueur | Dérivé de |
 |---|---|
-| **Nouveau** | `last_opened_at == null` sur un sujet ouvert — ouvrir la fiche l'éteint |
+| **Nouveau** | `last_opened_at == null` sur un sujet ouvert **et frais** — ouvrir la fiche l'éteint ; passé le délai de fraîcheur, un sujet que personne n'a ouvert n'est plus une nouvelle, c'est un sujet ouvert |
+| **A bougé** | le sujet est nouveau, **ou** une de ses tâches a été ajoutée, modifiée ou retirée **par un autre que le dirigeant** depuis qu'il a ouvert la fiche — lu dans le journal, qui porte l'acteur. Ouvrir la fiche l'éteint |
 | **Urgent** | `priority = urgent` |
 | **À faire** | il reste au moins une tâche ouverte |
 | **En attente** | `waiting_for_reply` — posé après un envoi quand il ne reste aucune tâche ouverte, levé par tout message entrant **ou quand l'utilisateur coche la dernière tâche ouverte** (§10). **Mécanique, sans IA** ; Relvo ne le pose lui-même qu'en relecture, quand un sujet attend un tiers sans qu'aucun envoi ne l'ait dit |
 
 Un sujet **ouverte** peut afficher en même temps Urgent et « À faire » — impossible à représenter
 dans un énuméré exclusif. C'est la preuve que les deux axes devaient être séparés.
+
+**Un message reçu ne fait pas bouger un sujet.** S'il change ce qu'il y a à faire, la relecture
+touche aux tâches, et ce sont elles qui allument ; s'il ne change rien, il n'y a rien à revoir.
+Une tâche que le dirigeant ajoute ou coche lui-même n'allume rien non plus : on ne l'avertit pas
+de son propre geste.
 
 **Le non-lu appartient à la conversation, pas à le sujet.** C'est là que les messages arrivent, et
 c'est l'ouverture de la **conversation** — non celle du sujet — qui marque un message comme lu.
@@ -462,7 +469,7 @@ suggère de créer le dossier et d'y ranger ces sujets — un geste, réversible
 secteurs du compte proposent par ailleurs des dossiers typiques à la prise en main, de premier
 niveau. Les dossiers **émergent du courrier** ; ils ne s'inventent pas devant un formulaire vide.
 Dans l'échange, Relvo liste, crée, déplace un dossier et range un sujet **à la demande du
-dirigeant**, par les fonctions de la page Dossiers.
+dirigeant**, par les fonctions de l'interface.
 
 **La fiche d'un dossier s'ouvre sur sa description** — c'est elle que Relvo lit, avec le
 chemin, pour décider qu'un sujet se range là plutôt qu'ailleurs ; quand elle manque, la fiche
@@ -471,20 +478,28 @@ ses sujets (les siens et ceux de ses fils), ses instructions, ses connaissances.
 commence par son geste d'ajout. Général, qui ne range aucun sujet, n'a ni description ni onglet
 Sujets.
 
-**Ranger un sujet, déplacer un dossier : une seule feuille.** Elle monte du bas et montre le
-même arbre que la page Dossiers, le dossier actuel cerclé ; pour un sujet, Général est grisé
-(la racine n'en range aucun) et « Sans dossier » reste possible ; pour un dossier, Général se
-choisit et ce que l'arbre refuse est grisé. Elle s'ouvre en glissant une ligne de sujet vers la
-droite dans un dossier, en tapant le dossier dans le ciel de la fiche d'un sujet, et depuis le
-crayon d'un dossier. Un tap range ; un toast annule. Pas de glisser-déposer entre dossiers : ce
-que deux taps font, un geste tenu à une main ne le fait pas mieux. Sur la page Sujets, les gestes
-de la ligne restent valider et fermer — un même geste ne dit pas deux choses sur une même page.
+**Ranger un sujet, déplacer un dossier : une seule feuille.** Elle monte du bas et montre
+l'arbre des dossiers, le dossier actuel cerclé ; pour un sujet, Général est grisé (la racine
+n'en range aucun) et « Sans dossier » reste possible ; pour un dossier, Général se choisit et ce
+que l'arbre refuse est grisé. Elle s'ouvre en glissant une ligne de sujet vers la droite dans
+la fiche d'un dossier, en tapant le dossier dans le ciel de la fiche d'un sujet, et depuis le
+crayon d'un dossier. Un tap range ; un toast annule.
 
-**La page Dossiers montre l'arbre entier, d'un coup**, Général en tête comme la racine qu'il
-est, et chaque branche porte deux gestes qui ne se confondent pas : **replier** (le triangle à
-gauche ; une branche sans dossier n'en a pas) et **entrer** (la ligne). L'état replié appartient
-à l'appareil, pas au compte : c'est un confort de lecture, pas une donnée. Ce que Relvo n'a pas
-su ranger se lit au pied de l'arbre, « Sans dossier », et mène aux sujets concernés.
+**Les dossiers n'ont pas de page à eux : ils sont une vue de la page Sujets.** La même matière
+se lit de deux façons, qu'un interrupteur dans le ciel choisit et que l'appareil retient : la
+**liste à plat**, où un sujet se valide ou se ferme d'un balayage, et **l'arbre**, dossiers et
+sujets ensemble — une carte par dossier de premier niveau, « Sans dossier » en tête quand il
+n'est pas vide. Les indicateurs d'état agissent sur les deux vues de la même façon. Dans
+l'arbre, chaque dossier porte deux gestes qui ne se confondent pas : **entrer** (son nom) et
+**plier** (la flèche, à droite) ; l'état déplié appartient à l'appareil, pas au compte — c'est
+un confort de lecture, pas une donnée —, et l'arbre arrive replié. Un dossier y dit **combien
+de ses sujets ont bougé**, les siens et ceux de ses dossiers, jamais combien il en contient ;
+un sujet qui a bougé s'y lit à la graisse de son titre. Le balayage n'existe pas dans l'arbre :
+un même geste ne dit pas deux choses sur une même page.
+
+**Les instructions qui valent partout se donnent à Relvo, chez lui.** Ce sont celles de
+« Général », que toute la chaîne hérite ; elles se lisent et s'écrivent depuis l'échange, à
+côté de l'historique. « Général » ne se montre pas dans l'arbre : il ne range aucun sujet.
 
 ### Label
 

@@ -1970,6 +1970,53 @@ vocabulaire du socle qui forçait « affaire » tombe, celle du « dossier » re
 se récrit en place. L'historique (sprints, journal du client, ce registre) n'est pas récrit.
 Chantier : `M27-dossiers-et-sujets.md`.
 
+### Sujets : une page, deux vues
+
+**`tranché`** · Par le dirigeant, le 2026-11-15, sur les retours de l'alpha : les testeurs
+trouvent l'application complexe — la navigation, le sentiment de contrôle — et saluent en
+revanche l'arborescence des dossiers. Il y avait **deux portes vers la même matière** : l'onglet
+Sujets (une liste à plat) et la page Dossiers du menu. Il n'y en a plus qu'**une**. Les entités
+ne fusionnent pas (un dossier reste une branche créée par le dirigeant, un sujet une feuille à
+cycle de vie) : la page Sujets reçoit une seconde vue, l'arbre complet, dossiers et sujets
+ensemble, choisie par un interrupteur dans le ciel et retenue sur l'appareil. « Dossiers » sort
+du menu ; `/memoire` renvoie à la vue Dossiers ; la fiche d'un dossier reste. La forme a été
+tranchée sur maquette (planche B, « une carte par dossier ») ; chantier :
+`M28-sujets-deux-vues.md`, en trois tranches — l'arbre en lecture, l'ajout en fin de branche,
+le glisser-déposer.
+
+Cela **inverse deux points** de « Un sujet se range dans un dossier » (2026-10-27) : la page
+Dossiers séparée, et le refus du glisser-déposer entre dossiers — retenu cette fois, la
+feuille « Ranger dans… » restant, parce qu'un geste maintenu n'est jamais le seul chemin.
+
+**Ce qui a été débattu et tranché avant le code**, mesures de production à l'appui :
+
+- **« A bougé » ne compte plus les messages.** La première définition (non lu ou nouveau)
+  désignait presque tout sur les comptes réels — sur les cinq plus garnis, entre 96 et 100 %
+  des sujets ouverts, parce que les testeurs ouvrent peu les fiches : la pastille aurait été le
+  total qu'on venait d'écarter. Le dirigeant a tranché : un sujet a bougé s'il est **nouveau**,
+  ou si **ses tâches ont été ajoutées, modifiées ou retirées en son absence**. Un message qui
+  ne change rien à faire n'est pas un mouvement ; une tâche qu'il coche lui-même n'allume
+  rien ; ouvrir la fiche éteint. Avec cette règle, les mêmes comptes passent de 110 sujets
+  sur 113 à une vingtaine.
+- **« Nouveau » a une fraîcheur : sept jours.** Un sujet jamais ouvert depuis deux semaines
+  n'est pas une nouvelle. Passé le délai, le mot tombe et le sujet reste ouvert.
+- **Dans l'arbre, la pastille violette chiffrée est aux dossiers.** Un sujet qui a bougé se lit
+  au gras de son titre. Il ne porte pas la pastille des non-lus : un dossier sans pastille au-
+  dessus d'une ligne à pastille se contredirait. Les non-lus restent dans la vue Sujets, dans
+  Conversations, et dans la fiche du sujet.
+- **Rien n'est coupé.** La liste ne chargeait que quarante sujets ouverts ; cinq comptes en ont
+  davantage, et l'indicateur mentait d'autant. La page charge tous les sujets, des trois états.
+  Pas de « voir les autres » par branche : l'arbre arrive replié, et la pastille dit où aller.
+- **« Urgent · » en gras, jamais en rouge**, partout où une ligne de sujet l'écrit : le rouge
+  brouille le code couleur des dossiers. La loupe quitte le ciel de la page (la recherche est
+  dans le menu, la rangée n'a pas la place).
+- **Les instructions générales passent chez Relvo.** Général n'a plus de porte dans l'arbre, et
+  c'est voulu : ses instructions — celles qui valent partout — se donnent à l'assistant, donc
+  elles se lisent dans l'échange, à côté de l'historique. Le modèle ne change pas (ce sont
+  toujours les instructions de Général). **Laissé ouvert** par le dirigeant : les instructions
+  par dossier ont-elles encore un sens — un dossier contient des données plus que des
+  consignes ? À voir à l'usage ; rien n'est retiré.
+
 ### La maquette ne fait plus foi sur le rendu
 
 **`tranché`** · Après l'habillage, l'application ne ressemble plus à la maquette, et la maquette

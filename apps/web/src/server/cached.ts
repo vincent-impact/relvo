@@ -10,6 +10,7 @@ import {
   enrichTasks,
   getKpis,
   getOpenFeed,
+  listSubjectsByStatus,
   getBriefActivity,
   getBriefNews,
   getBriefSuggestions,
@@ -65,7 +66,7 @@ export const TENANT_DATA_TAG = "tenant-data";
 // rendez-vous du Calendrier, CachedFolderRow (+ instructions/documents/
 // openSubjects, − sub).
 // Suivant = "v14".
-const CACHE_V = "v17";
+const CACHE_V = "v18";
 
 const CACHE = { tags: [TENANT_DATA_TAG], revalidate: 120 };
 
@@ -218,31 +219,25 @@ export type CachedFeed = {
 export const cachedFilFeed = unstable_cache(
   async (accountId: string): Promise<CachedFeed> => {
     const db = tenantDb(accountId);
-    const [openFeed, validatedSubjects, closedSubjects, unsortedCount] =
+    // TOUS les sujets, sans coupe (M28.1) : l'arbre de la vue Dossiers les
+    // range tous, et l'indicateur dit le vrai nombre.
+    const [openSubjects, validatedSubjects, closedSubjects, unsortedCount] =
       await Promise.all([
-        getOpenFeed(db, { limit: 40 }),
-        db.subject.findMany({
-          where: { status: "validated" },
-          orderBy: [{ closedAt: "desc" }],
-          take: 40,
-        }),
-        db.subject.findMany({
-          where: { status: "closed" },
-          orderBy: [{ closedAt: "desc" }],
-          take: 40,
-        }),
+        listSubjectsByStatus(db, "open"),
+        listSubjectsByStatus(db, "validated"),
+        listSubjectsByStatus(db, "closed"),
         countUnsortedConversations(db),
       ]);
 
     // Un seul enrichSubjects pour les 3 paniers (6 requêtes batchées), redécoupé
     // par longueur (enrichSubjects préserve l'ordre), puis mappé en formes plates.
     const enriched = await enrichSubjects(db, [
-      ...openFeed.items,
+      ...openSubjects,
       ...validatedSubjects,
       ...closedSubjects,
     ]);
     const rows = enriched.map(toSubjectRowData);
-    const openLen = openFeed.items.length;
+    const openLen = openSubjects.length;
     const validatedLen = validatedSubjects.length;
     return {
       ouverts: rows.slice(0, openLen),

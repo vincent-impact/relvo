@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import {
   type Picto,
-  Folder,
   ChartBar,
   Gauge,
   MagnifyingGlass,
@@ -83,7 +82,6 @@ type Entry = { href: string; label: string; icon: Picto };
 
 const MAIN: Entry[] = [
   { href: "/bilan", label: "Bilan", icon: ChartBar },
-  { href: "/memoire", label: "Dossiers", icon: Folder },
   { href: "/contacts", label: "Contacts", icon: Users },
 ];
 

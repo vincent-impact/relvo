@@ -32,6 +32,50 @@ function dayBounds(now: Date): { start: Date; next: Date } {
   return { start: debutDuJourParis(now), next: jourDecale(now, 1) };
 }
 
+/** Combien de jours un sujet jamais ouvert reste « nouveau » — ensuite, c'est un sujet ouvert comme les autres. */
+export const FRAICHEUR_JOURS = 7;
+
+function seuilDeFraicheur(now: Date): Date {
+  return new Date(now.getTime() - FRAICHEUR_JOURS * 24 * 60 * 60 * 1000);
+}
+
+/**
+ * « Nouveau » : un sujet ouvert, jamais consulté, et FRAIS. Passé le délai de
+ * fraîcheur, un sujet que personne n'a ouvert n'est plus une nouvelle — le mot
+ * tombe, le sujet reste ouvert.
+ */
+export function estNouveau(
+  subject: Pick<Subject, "status" | "lastOpenedAt" | "createdAt">,
+  now: Date = new Date(),
+): boolean {
+  return (
+    subject.status === SubjectStatus.open &&
+    subject.lastOpenedAt == null &&
+    subject.createdAt > seuilDeFraicheur(now)
+  );
+}
+
+/**
+ * « A bougé » : ce qui mérite qu'on revienne sur un sujet ouvert. Il est
+ * nouveau, ou une de ses TÂCHES a été ajoutée, modifiée ou retirée EN L'ABSENCE
+ * du dirigeant — par un autre que lui, depuis qu'il a ouvert le sujet (ou,
+ * s'il ne l'a jamais ouvert, dans le délai de fraîcheur). Un message reçu n'y
+ * suffit pas : s'il change ce qu'il y a à faire, la relecture touche aux
+ * tâches, et c'est elle qui allume. Une tâche que le dirigeant coche lui-même
+ * n'allume rien. Ouvrir la fiche éteint.
+ */
+export function aBouge(
+  subject: Pick<Subject, "status" | "lastOpenedAt" | "createdAt">,
+  /** La dernière écriture d'un AUTRE que le dirigeant sur une tâche du sujet. */
+  tachesToucheesLe: Date | null,
+  now: Date = new Date(),
+): boolean {
+  if (subject.status !== SubjectStatus.open) return false;
+  if (estNouveau(subject, now)) return true;
+  if (!tachesToucheesLe) return false;
+  return tachesToucheesLe > (subject.lastOpenedAt ?? seuilDeFraicheur(now));
+}
+
 export type Kpis = {
   /** Sujets critiques non clos (drapeau urgent rare — invariant n°8). */
   urgentSubjects: number;
@@ -83,8 +127,12 @@ export async function getKpis(
       },
     }),
     db.subject.count({
-      // « Nouveaux » = sujets ouverts jamais consultés (marqueur dérivé).
-      where: { status: { notIn: CLOSED_STATUSES }, lastOpenedAt: null },
+      // « Nouveaux » = sujets ouverts jamais consultés ET frais (`estNouveau`).
+      where: {
+        status: { notIn: CLOSED_STATUSES },
+        lastOpenedAt: null,
+        createdAt: { gt: seuilDeFraicheur(now) },
+      },
     }),
     db.subject.count({ where: { status: { notIn: CLOSED_STATUSES } } }),
     db.task.count({
@@ -167,6 +215,22 @@ export async function getOpenFeed(
     orderBy: [{ priority: "desc" }, { lastActivityAt: "desc" }],
   });
   return toPage(rows, limit);
+}
+
+/**
+ * TOUS les sujets d'un état, sans page (M28.1) : la page Sujets montre l'arbre
+ * entier, et un dossier dont les sujets tomberaient après une coupe paraîtrait
+ * vide. Les ouverts dans l'ordre du fil (l'urgent d'abord, puis le plus
+ * récemment actif) ; les terminaux du plus récemment refermé au plus ancien.
+ */
+export function listSubjectsByStatus(db: TenantDb, status: SubjectStatus) {
+  return db.subject.findMany({
+    where: { status },
+    orderBy:
+      status === SubjectStatus.open
+        ? [{ priority: "desc" }, { lastActivityAt: "desc" }]
+        : [{ closedAt: "desc" }],
+  });
 }
 
 // ── Tâches (page Accueil = plan d'action) ────────────────────────────────────
@@ -375,17 +439,22 @@ export type EnrichedSubject = {
   folderIcon: string | null;
   /** La chaîne du dossier, Général exclu — ce qui fait répondre au filtre d'un père. */
   folderChainIds: string[];
+  /** Marqueur dérivé « Nouveau » : jamais ouvert, et frais (`estNouveau`). */
+  isNew: boolean;
+  /** Marqueur dérivé « a bougé » : nouveau, ou ses tâches ont changé en l'absence du dirigeant (`aBouge`). */
+  moved: boolean;
 };
 
 export async function enrichSubjects(
   db: TenantDb,
   subjects: Subject[],
+  now: Date = new Date(),
 ): Promise<EnrichedSubject[]> {
   if (subjects.length === 0) return [];
   const ids = subjects.map((s) => s.id);
   const contactIds = [...new Set(subjects.flatMap((s) => s.contactIds))];
 
-  const [contacts, tree, tasks, openActions, attachments, incoming] =
+  const [contacts, tree, tasks, openActions, attachments, incoming, touchees] =
     await Promise.all([
       contactIds.length
         ? db.contact.findMany({
@@ -417,7 +486,21 @@ export async function enrichSubjects(
         where: { subjectId: { in: ids }, direction: MessageDirection.incoming },
         select: { subjectId: true, receivedAt: true },
       }),
+      // Ce qu'un AUTRE que le dirigeant a écrit sur les tâches du sujet — la
+      // dernière fois, par sujet : le journal porte l'acteur, la tâche non.
+      db.eventLog.groupBy({
+        by: ["subjectId"],
+        where: {
+          subjectId: { in: ids },
+          entityType: "task",
+          actor: { not: Actor.user },
+        },
+        _max: { createdAt: true },
+      }),
     ]);
+  const toucheesLe = new Map(
+    touchees.map((t) => [t.subjectId, t._max.createdAt ?? null]),
+  );
 
   const nameById = new Map(contacts.map((c) => [c.id, contactDisplayName(c)]));
 
@@ -457,6 +540,8 @@ export async function enrichSubjects(
       folderColor: folder?.color ?? null,
       folderIcon: folder?.icon ?? null,
       folderChainIds: folder?.chainIds ?? [],
+      isNew: estNouveau(subject, now),
+      moved: aBouge(subject, toucheesLe.get(subject.id) ?? null, now),
     };
   });
 }

@@ -193,11 +193,14 @@ on perd « ce qui se détache, c'est Relvo ».
   **Validé** avec coche. `fermé` : le sujet est écarté, hors du flux des ouverts. Validés et
   fermés vivent dans leurs onglets et ne sont jamais purgés : on les **remet**.
 - **Marqueurs = cumulables, dérivés au calcul, indépendants du statut** : **Nouveau** (sujet
-  jamais ouverte, disparaît à l'ouverture de la fiche), **Urgent** (pastille rouge pleine, levée
+  frais et jamais ouvert, disparaît à l'ouverture de la fiche), **A bougé** (nouveau, ou ses
+  tâches ont changé en l'absence du dirigeant : le titre en gras dans l'arbre, et le compte
+  sur la pastille violette de son dossier), **Urgent** (le mot, en gras, devant le titre — levé
   seulement sur la priorité `urgent` — **la rareté est le signal** : une ou deux sujets sur
   vingt-quatre), **À faire** (tâches ouvertes), **En attente** (pastille cerclée : on attend un
   retour d'un tiers), **En retard** (une échéance dépassée, l'horaire barré en rouge).
-- **Priorité à deux valeurs** : `normal` / `urgent`. Une seule pastille rouge.
+- **Priorité à deux valeurs** : `normal` / `urgent`. Sur un sujet, l'urgence se lit au mot et à la
+  graisse, jamais au rouge : la couleur d'une ligne de sujet est celle de son dossier.
 - **Le non-lu se compte sur la conversation et sur le sujet** : un sujet qui a reçu trois
   messages a bougé, et elle porte le chiffre partout où elle se rend, en ligne comme en carte —
   c'est ainsi qu'on le sait sans l'ouvrir.

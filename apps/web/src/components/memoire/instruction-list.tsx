@@ -49,10 +49,13 @@ function preview(content: string | null): string | null {
 export function InstructionList({
   folderId,
   notes,
+  vide = "Aucune instruction. Les consignes données ici valent pour ce dossier et ceux qu’il contient.",
   className,
 }: {
   folderId: string;
   notes: Instruction[];
+  /** Ce que la carte dit quand elle est vide — la portée des consignes données ici. */
+  vide?: string;
   className?: string;
 }) {
   const [editing, setEditing] = useState<Editing>(null);
@@ -74,10 +77,7 @@ export function InstructionList({
           Ajouter une instruction
         </button>
         {notes.length === 0 ? (
-          <p className="px-4 py-4 text-[14px] font-light text-gris">
-            Aucune instruction. Les consignes données ici valent pour ce dossier
-            et ceux qu’il contient.
-          </p>
+          <p className="px-4 py-4 text-[14px] font-light text-gris">{vide}</p>
         ) : (
           notes.map((n) => (
             <button

@@ -15,7 +15,7 @@ import { revalidateTenantData } from "@/server/cached";
 // Server Actions Folders (M3.4, M23.3 : l'arbre).
 
 function revalidateFolders() {
-  revalidatePath("/memoire");
+  revalidatePath("/fil");
   revalidatePath("/memoire/[id]", "page");
   // Le chemin d'un dossier s'écrit sur chaque ligne de sujet : tout le
   // tenant se relit.

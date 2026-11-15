@@ -5,7 +5,7 @@ import { IndicatorTabs } from "@/components/shared/indicator-tabs";
 // Les indicateurs de Sujets — UN SEUL AXE : le STATUT (Ouverts · Validés ·
 // Fermés). Les anciens onglets « Urgents » et « Nouveaux » ont été retirés : ce
 // sont des MARQUEURS, pas des états, et la liste les distingue déjà (« Urgent · »
-// en rouge devant le titre). La carte et son cerclage viennent d'IndicatorTabs.
+// en gras devant le titre). La carte et son cerclage viennent d'IndicatorTabs.
 
 export type SubjectTab = "ouverts" | "valides" | "fermes";
 

@@ -353,7 +353,7 @@ Elle porte enfin une série d'horodatages, chacun répondant à une question dis
 | ------------------------- | -------------------------------------------------------------------- |
 | `opened_at`               | quand le sujet a-t-elle commencé ?                                  |
 | `last_activity_at`        | quand s'est-il passé quelque chose ? — pilote le tri                 |
-| `last_opened_at`          | l'utilisateur a-t-il déjà regardé ? — **nul ⇒ marqueur « Nouveau »** |
+| `last_opened_at`          | l'utilisateur a-t-il déjà regardé ? — **nul, sur un sujet frais ⇒ marqueur « Nouveau »** ; borne de ce qui « a bougé » depuis |
 | `resolution_suggested_at` | Relvo a-t-il suggéré que c'était fini ?                              |
 | `resolved_at`             | quand a-t-elle été validée ?                                         |
 | `closed_at`               | quand a-t-elle été close ?                                           |

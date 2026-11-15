@@ -1,70 +1,28 @@
 "use client";
 
-import { useMemo, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { AddFolderRow } from "@/components/memoire/folder-row";
+import { useIdsRetenus } from "@/hooks/use-ids-retenus";
 import { ListPanel } from "@/components/shared/list-panel";
 import { folderVisual } from "@/lib/folders";
 import { cn } from "@/lib/utils";
 import type { CachedFolderRow } from "@/server/cached";
 
-// L'ARBRE des dossiers (M27.2) — la page Dossiers, telle que le dirigeant l'a
-// retenue sur maquettes (`ecarts`, « Un sujet se range dans un dossier ») :
-// UNE carte, tout l'arbre, Général en tête de carte (« la racine — tout est
-// dedans »). Chaque ligne porte DEUX gestes, séparés : le TRIANGLE à gauche
-// déplie ou replie la branche (une zone de frappe de 44 px autour d'un rond de
-// 26), LA LIGNE entre dans le dossier — le chevron à droite le dit. Une
-// branche sans dossier n'a pas de triangle. L'état replié se retient sur
-// l'appareil (localStorage) : l'arbre arrive déplié, le dirigeant replie ce
-// qui l'encombre, et le retrouve ainsi.
+// L'ARBRE des dossiers d'un dossier (M27.2, M27.3) — l'onglet Dossiers d'une
+// fiche : UNE carte, tout l'arbre sous ce dossier. Chaque ligne porte DEUX
+// gestes, séparés : le TRIANGLE à gauche déplie ou replie la branche (une zone
+// de frappe de 44 px autour d'un rond de 26), LA LIGNE entre dans le dossier —
+// le chevron à droite le dit. Une branche sans dossier n'a pas de triangle.
+// L'état replié se retient sur l'appareil : l'arbre arrive déplié, le
+// dirigeant replie ce qui l'encombre, et le retrouve ainsi. La vue d'ensemble
+// — tous les dossiers ET leurs sujets — est la vue Dossiers de la page Sujets
+// (`feed/sujets-arbre.tsx`, M28).
 //
 // Le compte au bout d'une ligne est celui des sujets ouverts du dossier, ses
-// dossiers compris (la portée, M23.4) ; un zéro ne s'écrit pas. « Sans
-// dossier », au pied, en bande pointillée (« à compléter »), mène à la page
-// Sujets filtrée sur ce que Relvo n'a pas su ranger — seulement s'il y en a.
+// dossiers compris (la portée, M23.4) ; un zéro ne s'écrit pas.
 
 const CLE_REPLIES = "relvo:dossiers:replies";
-const RIEN = "[]";
-
-// L'état replié est un magasin EXTERNE (le stockage de l'appareil), lu par
-// `useSyncExternalStore` : le serveur et la première peinture disent « tout
-// déplié », puis l'appareil impose ses plis, sans écart d'hydratation ni
-// `setState` dans un effet.
-const ecouteurs = new Set<() => void>();
-function abonner(cb: () => void) {
-  ecouteurs.add(cb);
-  window.addEventListener("storage", cb);
-  return () => {
-    ecouteurs.delete(cb);
-    window.removeEventListener("storage", cb);
-  };
-}
-function instantane(): string {
-  try {
-    return window.localStorage.getItem(CLE_REPLIES) ?? RIEN;
-  } catch {
-    return RIEN;
-  }
-}
-function analyser(brut: string): Set<string> {
-  try {
-    const ids = JSON.parse(brut) as unknown;
-    return new Set(
-      Array.isArray(ids) ? ids.filter((x) => typeof x === "string") : [],
-    );
-  } catch {
-    return new Set();
-  }
-}
-function ecrireReplies(ids: Set<string>) {
-  try {
-    window.localStorage.setItem(CLE_REPLIES, JSON.stringify([...ids]));
-  } catch {
-    // Navigation privée, stockage plein : l'arbre reste déplié, rien de grave.
-  }
-  ecouteurs.forEach((cb) => cb());
-}
 
 function plural(n: number, one: string, many = `${one}s`): string {
   return `${n} ${n > 1 ? many : one}`;
@@ -170,30 +128,17 @@ function Branche({
 
 /** Les branches repliées sur cet appareil, et le geste qui les bascule — partagés par la page Dossiers, l'onglet d'un dossier et la feuille « Ranger dans… ». */
 export function useRepliesDossiers() {
-  const brut = useSyncExternalStore(abonner, instantane, () => RIEN);
-  const replies = useMemo(() => analyser(brut), [brut]);
-  function bascule(id: string) {
-    const apres = new Set(replies);
-    if (apres.has(id)) apres.delete(id);
-    else apres.add(id);
-    ecrireReplies(apres);
-  }
+  const { ids: replies, bascule } = useIdsRetenus(CLE_REPLIES);
   return { replies, bascule };
 }
 
 export function FolderTree({
-  general = null,
   folders,
-  unfiled = 0,
   ajout,
   className,
 }: {
-  /** La racine en tête de carte : ses instructions et connaissances valent pour tous. */
-  general?: CachedFolderRow | null;
   /** Les dossiers à montrer, en ordre d'arbre (profondeur d'abord) ; le niveau se lit du plus haut d'entre eux. */
   folders: CachedFolderRow[];
-  /** Les sujets ouverts que Relvo n'a pas su ranger (la page Dossiers seulement). */
-  unfiled?: number;
   /** L'invite d'ajout : en pied (la page Dossiers) ou en tête (l'onglet d'un dossier, M27.3) ; absente quand l'arbre ne peut plus descendre. */
   ajout?: {
     label: string;
@@ -222,37 +167,6 @@ export function FolderTree({
 
   return (
     <ListPanel className={className}>
-      {general ? (
-        <Link
-          data-list-row
-          href={`/memoire/${general.id}`}
-          className="flex min-h-[56px] items-center gap-2.5 border-b border-(--filet) bg-(--fond-enfonce) px-3.5 py-2 active:bg-(--fond-puce)"
-        >
-          <div className="min-w-0 flex-1">
-            <div className="truncate font-heading text-[18px] leading-[22px] font-semibold text-noir">
-              {general.name}
-            </div>
-            <p className="truncate text-[12px] leading-[14px] font-normal text-gris">
-              {[
-                "La racine — tout est dedans",
-                general.instructions > 0
-                  ? plural(general.instructions, "instruction")
-                  : null,
-                general.documents > 0
-                  ? plural(general.documents, "connaissance")
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
-          </div>
-          <ChevronRight
-            className="size-4 flex-none text-(--gris-clair)"
-            strokeWidth={2}
-            aria-hidden
-          />
-        </Link>
-      ) : null}
       {ajout?.position === "haut" ? (
         <AddFolderRow parentId={ajout.parentId} label={ajout.label} />
       ) : null}
@@ -265,34 +179,6 @@ export function FolderTree({
           onBascule={() => bascule(f.id)}
         />
       ))}
-      {unfiled > 0 ? (
-        <Link
-          data-list-row
-          href="/fil?dossier=aucun"
-          className="flex min-h-[52px] items-center gap-2.5 border-b border-(--filet) py-1.5 pr-3.5 pl-[50px] active:bg-(--fond-enfonce)"
-        >
-          <span
-            aria-hidden
-            className="h-[34px] w-1.5 flex-none rounded-[3px] border-2 border-dashed border-(--gris-clair)"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-[14.5px] leading-[18px] font-normal text-noir">
-              Sans dossier
-            </div>
-            <p className="truncate text-[12px] leading-[14px] font-normal text-gris">
-              Ce que Relvo n’a pas su ranger
-            </p>
-          </div>
-          <span className="chiffre flex-none text-[16px] leading-[18px] text-noir">
-            {unfiled}
-          </span>
-          <ChevronRight
-            className="size-4 flex-none text-(--gris-clair)"
-            strokeWidth={2}
-            aria-hidden
-          />
-        </Link>
-      ) : null}
       {ajout?.position === "bas" ? (
         <AddFolderRow parentId={ajout.parentId} label={ajout.label} />
       ) : null}

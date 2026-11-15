@@ -8,8 +8,9 @@ import { cn } from "@/lib/utils";
 // (design-system/00-brief-da §7). Son anatomie, direction « Lettrage
 // d'artisan » : la BANDE de son domaine sur la tranche gauche, le nom du
 // domaine en capitales condensées de la même couleur, le titre (précédé de
-// « Urgent · » en rouge quand la priorité l'est — l'état se lit au mot et à la
-// couleur), et à droite un chiffre condensé (non-lus ou tâches) avec ce qu'on
+// « Urgent · » en GRAS quand la priorité l'est — l'état se lit au mot et à la
+// graisse, jamais au rouge, qui brouillerait le code couleur des dossiers), et
+// à droite un chiffre condensé (non-lus ou tâches) avec ce qu'on
 // attend dessous. Elle se lit DEBOUT, en voiture, sur un chantier (recette de
 // l'alpha, R15, proposition C tranchée puis ramenée d'un cran à l'usage) : le
 // titre en 18 px, graisse 500, sur deux lignes au plus — plus rien ne se coupe —, les chiffres en 22 px, et
@@ -31,8 +32,10 @@ export type SubjectRowData = {
   /** La chaîne du dossier, Général exclu : la ligne répond au filtre d'un père. */
   folderChainIds?: string[];
   urgent: boolean;
-  /** Marqueur DÉRIVÉ « Nouveau » (jamais ouvert). */
+  /** Marqueur DÉRIVÉ « Nouveau » : jamais ouvert, et frais (domaine, `estNouveau`). */
   isNew: boolean;
+  /** Marqueur DÉRIVÉ « a bougé » : nouveau, ou ses tâches ont changé en votre absence (`aBouge`). */
+  moved: boolean;
   /** Tâches terminées / total → progression. */
   taskDone: number;
   taskTotal: number;
@@ -110,9 +113,7 @@ export function SubjectRow({
             done && "text-gris line-through",
           )}
         >
-          {urgent ? (
-            <span className="font-medium text-urgent">Urgent · </span>
-          ) : null}
+          {urgent ? <span className="font-bold">Urgent · </span> : null}
           {linkable ? (
             <Link
               href={`/sujets/${data.id}`}
@@ -178,10 +179,8 @@ export function toSubjectRowData(e: EnrichedSubject): SubjectRowData {
     folderIcon: e.folderIcon,
     folderChainIds: e.folderChainIds,
     urgent: e.subject.priority === "urgent",
-    // « Nouveau » = sujet ouvert jamais consulté (marqueur dérivé de lastOpenedAt).
-    isNew:
-      e.subject.lastOpenedAt == null &&
-      !["validated", "closed"].includes(e.subject.status),
+    isNew: e.isNew,
+    moved: e.moved,
     taskDone: e.taskDone,
     taskTotal: e.taskTotal,
     suggestionCount: e.suggestionCount,

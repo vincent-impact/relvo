@@ -27,7 +27,7 @@ export default async function NouveauDomainePage({
   return (
     <Screen entree>
       <RelvoHeader
-        back={parent ? `/memoire/${parent.id}` : "/memoire"}
+        back={parent ? `/memoire/${parent.id}` : "/fil?vue=dossiers"}
         title="Nouveau dossier"
         subtitle={parent ? `Dans ${parent.path}` : "Nom et logo du dossier"}
         className="pb-9"

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Plus, X } from "lucide-react";
-import { ClockCounterClockwise } from "@/components/shared/picto";
+import { ClockCounterClockwise, Note } from "@/components/shared/picto";
 import { MobileFrame } from "@/components/layout/mobile-frame";
 import {
   RelvoHeader,
@@ -267,6 +267,13 @@ function RelvoSession({
                 <Plus className="size-[18px]" strokeWidth={2.4} />
               </Link>
             ) : null}
+            <Link
+              href="/relvo/instructions"
+              aria-label="Mes instructions"
+              className={SKY_BTN}
+            >
+              <Note className="size-[18px]" />
+            </Link>
             <Link
               href="/relvo/historique"
               aria-label="Mes échanges"

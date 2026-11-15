@@ -38,6 +38,22 @@ function plein(Forme: Icon, name: string): Picto {
   return Pictogramme;
 }
 
+/**
+ * L'exception AU TRAIT, tranchée par le dirigeant pour l'arbre de la page
+ * Sujets (M28) : le dossier de premier niveau est plein, ses dossiers et ses
+ * sujets sont au trait — la graisse dit le niveau. Rien d'autre ne s'en sert.
+ */
+function auTrait(Forme: Icon, name: string): Picto {
+  function Pictogramme(props: PictoProps) {
+    return <Forme weight="bold" {...props} />;
+  }
+  Pictogramme.displayName = `Picto(${name}, au trait)`;
+  return Pictogramme;
+}
+export const FolderTrait = auTrait(P.Folder, "Folder");
+export const FolderDashedTrait = auTrait(P.FolderDashed, "FolderDashed");
+export const FileTextTrait = auTrait(P.FileText, "FileText");
+
 // Le chrome et le menu
 export const Brain = plein(P.Brain, "Brain");
 export const ChartBar = plein(P.ChartBar, "ChartBar");

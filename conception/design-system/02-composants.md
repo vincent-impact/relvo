@@ -82,7 +82,19 @@ et elle ne porte **aucun résumé** ; reconnaître un sujet est son seul travail
 sur la fiche. C'est ce qui permet de lire un écran debout : l'œil attrape
 les chiffres d'abord. Un même chiffre n'est jamais rendu deux fois sur un écran.
 
-**L'état se lit à la forme avant la couleur.** Urgent est une pastille pleine, en attente une
+**L'arbre de la page Sujets** — sa vue Dossiers — est fait de cartes, une par dossier de premier
+niveau, et de lignes sur une seule ligne de texte. La graisse de l'icône dit le niveau : le
+dossier de premier niveau est plein, à sa couleur ; ses dossiers et ses sujets sont au trait,
+de la même couleur, reliés par un trait de branche par niveau. Tout ce qui se chiffre est à
+droite : la **pastille violette** d'un dossier compte ses sujets qui ont bougé — jamais un
+total —, la flèche de pli tient toujours la même colonne, et un sujet porte son ratio de
+tâches. Un sujet qui a bougé a son titre en gras et aucune pastille : le violet chiffré est aux
+dossiers.
+
+**Sur un sujet, « Urgent · » est en gras devant le titre, jamais en rouge** — le rouge
+brouillerait le code couleur des dossiers. Le rouge reste à ce qui est en retard.
+
+**L'état se lit à la forme avant la couleur.** Sur une tâche, urgent est une pastille pleine, en attente une
 pastille cerclée, en retard un horaire barré, fait une coche sur disque et un titre barré. La
 couleur confirme, la forme suffit. **La sélection est un cerclage** : l'indicateur actif d'une
 page est un chiffre cerclé, à distance de son libellé ; une puce de filtre active est pleine et

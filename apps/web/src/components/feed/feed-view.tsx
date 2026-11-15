@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { FeedDomainBar, SANS_DOSSIER } from "@/components/feed/feed-domain-bar";
+import { SujetsArbre } from "@/components/feed/sujets-arbre";
 import {
   SubjectKpiTabs,
   type SubjectTab,
@@ -21,12 +21,13 @@ import {
   RelvoBlock,
   RelvoSentence,
 } from "@/components/shared/relvo-block";
-import { ZoneHeading } from "@/components/shared/zone-heading";
 
-// Vue complète de Sujets (client) — la carte KPI est une BARRE D'ONGLETS chiffrée
-// par STATUT (Ouverts · Validés · Fermés), et la barre de filtres ne propose que
-// les DOMAINES (chips icône + couleur, défilables). Tout est instantané côté
-// client sur les lignes déjà chargées.
+// La page Sujets (client) — UNE page, DEUX VUES (M28.1) sur la même matière :
+// « Sujets », la liste à plat, où se valident et se ferment les sujets d'un
+// balayage ; « Dossiers », l'arbre complet (`SujetsArbre`). La carte KPI est
+// une BARRE D'ONGLETS chiffrée par STATUT (Ouverts · Validés · Fermés) qui
+// agit sur les deux vues de la même façon. Tout est instantané côté client
+// sur les lignes déjà chargées — toutes : rien n'est coupé.
 //
 // Onglets = un seul axe, le statut (2026-07-24) : « Urgents » et « Nouveaux » ont
 // été retirés (marqueurs, pas des états — déjà distingués dans la liste des
@@ -35,20 +36,15 @@ import { ZoneHeading } from "@/components/shared/zone-heading";
 
 type Tagged = { row: SubjectRowData; basket: "ouvert" | "done" };
 
-const TAB_LABEL: Record<SubjectTab, string> = {
-  ouverts: "Ouverts",
-  valides: "Validés",
-  fermes: "Fermés",
-};
-
 // L'état vide GUIDE : c'est dans un onglet vide qu'on apprend le geste. Les
 // ouverts, eux, sont dans la voix de Relvo (ci-dessous) : c'est lui qui les
 // remplit, et c'est lui qui dit par où commencer quand rien n'est arrivé.
 const EMPTY: Record<SubjectTab, string> = {
   ouverts: "Aucun sujet ouvert.",
   valides:
-    "Aucun sujet validé. Glissez un sujet ouvert vers la droite pour la valider.",
-  fermes: "Aucun sujet fermé. Glissez un sujet vers la gauche pour la fermer.",
+    "Aucun sujet validé. Dans la vue Sujets, glissez un sujet ouvert vers la droite pour le valider.",
+  fermes:
+    "Aucun sujet fermé. Dans la vue Sujets, glissez un sujet vers la gauche pour le fermer.",
 };
 
 // Onglet initial déduit de l'URL. `?urgent=1` / `?nouveau=1` (anciens liens)
@@ -59,13 +55,18 @@ function initialTab(params: URLSearchParams): SubjectTab {
   return "ouverts";
 }
 
+export type VueSujets = "sujets" | "dossiers";
+
 export function FeedView({
+  vue,
   ouverts,
   valides,
   fermes,
   folders,
   hasChannels = true,
 }: {
+  /** La vue choisie dans le ciel : la liste à plat, ou l'arbre. */
+  vue: VueSujets;
   ouverts: SubjectRowData[];
   valides: SubjectRowData[];
   fermes: SubjectRowData[];
@@ -75,11 +76,6 @@ export function FeedView({
 }) {
   const params = useSearchParams();
   const [tab, setTab] = useState<SubjectTab>(() => initialTab(params));
-  // Le dossier filtré, par identifiant : un dossier et tout ce qu'il contient.
-  const [domain, setDomain] = useState<string | null>(
-    params.get("dossier") || null,
-  );
-
   const counts: Record<SubjectTab, number> = useMemo(
     () => ({
       ouverts: ouverts.length,
@@ -97,29 +93,6 @@ export function FeedView({
       return fermes.map((row) => ({ row, basket: "done" as const }));
     return ouverts.map((row) => ({ row, basket: "ouvert" as const }));
   }, [tab, ouverts, valides, fermes]);
-
-  // `aucun` : les sujets sans dossier, ce que Relvo n'a pas su ranger — la
-  // ligne « Sans dossier » de la page Dossiers mène ici (M27.2).
-  const filtered = base.filter(({ row }) =>
-    domain == null
-      ? true
-      : domain === SANS_DOSSIER
-        ? (row.folderChainIds ?? []).length === 0
-        : (row.folderChainIds ?? []).includes(domain),
-  );
-  // Les dossiers qui ont au moins un sujet dans l'onglet — eux ou un de leurs
-  // fils : seuls ceux-là ont une puce (une puce vers une liste vide est une
-  // puce morte).
-  const present = useMemo(
-    () => new Set(base.flatMap(({ row }) => row.folderChainIds ?? [])),
-    [base],
-  );
-  const domainName =
-    domain == null
-      ? null
-      : domain === SANS_DOSSIER
-        ? "Sans dossier"
-        : (folders.find((f) => f.id === domain)?.path ?? null);
 
   function renderRow({ row, basket }: Tagged) {
     if (basket === "ouvert") {
@@ -147,31 +120,11 @@ export function FeedView({
     <>
       <SubjectKpiTabs active={tab} onChange={setTab} counts={counts} />
 
-      <FeedDomainBar
-        domain={domain}
-        onDomain={setDomain}
-        folders={folders}
-        present={present}
-        sansDossier={base.some(
-          ({ row }) => (row.folderChainIds ?? []).length === 0,
-        )}
-      />
+      <div className="pt-3" />
 
-      {/* Sans filtre, l'indicateur cerclé nomme déjà la zone et la compte : un
-          en-tête « Ouverts · 25 sujets » le redisait soixante pixels plus bas.
-          Sous filtre, l'en-tête dit ce que le filtre a retenu. */}
-      {domainName != null ? (
-        <div className="pt-3">
-          <ZoneHeading
-            label={domainName}
-            hint={`${filtered.length} sur ${base.length}`}
-          />
-        </div>
-      ) : (
-        <div className="pt-3" />
-      )}
-
-      {filtered.length === 0 && domainName == null && tab === "ouverts" ? (
+      {base.length === 0 &&
+      tab === "ouverts" &&
+      (vue === "sujets" || folders.length === 0) ? (
         // Rien d'ouvert : Relvo dit ce qu'il fera, et par où commencer. Le
         // « + » reste la porte de l'utilisateur, le bloc ne l'enferme pas.
         <RelvoBlock className="mx-4">
@@ -186,14 +139,18 @@ export function FeedView({
             </Link>
           ) : null}
         </RelvoBlock>
-      ) : filtered.length === 0 ? (
+      ) : base.length === 0 && tab !== "ouverts" ? (
         <p className="px-[22px] py-10 text-center text-[14px] font-light text-gris">
-          {domainName != null
-            ? `Aucun sujet « ${domainName} » parmi les ${TAB_LABEL[tab].toLowerCase()}.`
-            : EMPTY[tab]}
+          {EMPTY[tab]}
         </p>
+      ) : vue === "dossiers" ? (
+        <SujetsArbre
+          folders={folders}
+          rows={base.map(({ row }) => row)}
+          ouverts={tab === "ouverts"}
+        />
       ) : (
-        <ListPanel>{filtered.map(renderRow)}</ListPanel>
+        <ListPanel>{base.map(renderRow)}</ListPanel>
       )}
     </>
   );

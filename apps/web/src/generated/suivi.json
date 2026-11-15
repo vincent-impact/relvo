@@ -202,6 +202,13 @@
       "statut": "termine",
       "gauche": 69.16,
       "largeur": 0
+    },
+    {
+      "titre": "Vos sujets et vos dossiers sur une seule page",
+      "resume": "La page Sujets montre désormais deux vues de la même matière : la liste, comme avant, et l'arborescence de vos dossiers avec leurs sujets dedans. Une pastille sur un dossier vous dit combien de ses sujets ont bougé depuis votre dernier passage. Vos instructions générales se donnent maintenant directement à Relvo.",
+      "statut": "partiel",
+      "gauche": 78.04,
+      "largeur": 0
     }
   ],
   "livraison": {
@@ -213,6 +220,22 @@
     {
       "date": "2026-11-11",
       "entrees": [
+        {
+          "type": "fix",
+          "texte": "Quand Relvo retrouve un message, toucher sa carte ouvre la conversation directement sur ce message, mis en évidence."
+        },
+        {
+          "type": "new",
+          "texte": "Quand vous demandez à Relvo de retrouver un message, il cherche d'abord chez la personne que vous nommez, sans se laisser arrêter par un accent ou un pluriel, et ne vous montre que le message qu'il retient."
+        },
+        {
+          "type": "fix",
+          "texte": "L'onglet Documents d'un sujet montre maintenant toutes les pièces jointes reçues dans ses conversations, y compris celles déjà arrivées."
+        },
+        {
+          "type": "fix",
+          "texte": "Un e-mail reçu avec plusieurs pièces jointes les affiche maintenant toutes, et chaque fichier se reconnaît à son icône : PDF en rouge, Excel en vert, Word en bleu."
+        },
         {
           "type": "new",
           "texte": "Un fichier Excel reçu s'ouvre maintenant dans Relvo, en tableau, avec ses onglets ; tout autre fichier vous propose « Ouvrir avec… » et « Télécharger »."

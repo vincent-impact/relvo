@@ -285,7 +285,7 @@ export default async function DossierPage({
           fiche d'un sujet : le fil de couleur ne se rompt pas à sa porte. Les
           pères, à sa suite, se remontent d'un tap. */}
       <RelvoHeader
-        back={pere ? `/memoire/${pere.id}` : "/memoire"}
+        back={pere ? `/memoire/${pere.id}` : "/fil?vue=dossiers"}
         title={folder.name}
         eyebrow={
           <span className="inline-flex max-w-full items-center gap-2">
@@ -336,7 +336,7 @@ export default async function DossierPage({
               parentLabel={pere?.name ?? "Général"}
               targets={targets}
               arbre={options}
-              afterDelete={pere ? `/memoire/${pere.id}` : "/memoire"}
+              afterDelete={pere ? `/memoire/${pere.id}` : "/fil?vue=dossiers"}
               rootDelete={pere == null}
             />
           )

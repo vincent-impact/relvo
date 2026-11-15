@@ -104,7 +104,13 @@ const nextConfig: NextConfig = {
         destination: "/conversations",
         permanent: true,
       },
-      { source: "/dossiers", destination: "/memoire", permanent: true },
+      // La page Dossiers est devenue une VUE de la page Sujets (M28) ; la fiche
+      // d'un dossier (`/memoire/[id]`) reste.
+      {
+        source: "/:page(memoire|dossiers)",
+        destination: "/fil?vue=dossiers",
+        permanent: true,
+      },
       { source: "/dossiers/:id", destination: "/memoire/:id", permanent: true },
       // Les Réglages à onglets ont éclaté en quatre pages du menu (M18) ; les
       // liens profonds `?tab=` retombent sur la bonne page, le reste sur Profil.
