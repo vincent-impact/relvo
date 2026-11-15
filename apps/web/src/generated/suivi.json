@@ -222,6 +222,10 @@
       "entrees": [
         {
           "type": "fix",
+          "texte": "Quand vous maintenez une ligne pour la déplacer, elle se soulève nettement — un peu plus grande, ombrée et cerclée de violet — pour vous montrer qu'elle est prête à être déplacée."
+        },
+        {
+          "type": "fix",
           "texte": "Dans l'arborescence des sujets, la ligne que vous déplacez reste sous votre doigt, y compris quand la page défile, et vous pouvez de nouveau valider ou fermer un sujet d'un balayage."
         },
         {
