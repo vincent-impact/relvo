@@ -202,6 +202,9 @@ propriétés qui ne redessinent pas la page :
 - **Ce qui se presse s'enfonce** (`.pressable`, `active:scale-[0.97]`) : 1 px de translation et
   l'ombre portée qui se raccourcit, en transition — jamais en images-clés, un appui
   s'interrompt. Un aplat de couleur n'est jamais le seul signal d'un état.
+- **Ce qu'on saisit se soulève** (`.souleve`) : une ligne tenue pour être déplacée grandit d'un
+  rien, prend une ombre franche et un cerclage violet, sur la durée courte — le signal que le
+  maintien a pris.
 - **Une nouvelle se pose** (`.arrive`) : un chiffre qui change, une nouvelle qui se pose,
   descend de 4 px sur la durée d'accompagnement. **Relvo travaille** (`.respire`) : trois
   points qui respirent. **Relvo écoute** (`.voile-ecoute`) : quand on maintient un disque pour

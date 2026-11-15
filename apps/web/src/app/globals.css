@@ -94,6 +94,7 @@
   /* Ombres exposées en utilitaires : shadow-carte, shadow-dock, shadow-disque,
      shadow-haut (une barre ancrée en bas projette vers le haut), shadow-pressed. */
   --shadow-carte: var(--ombre-carte);
+  --shadow-feuille: var(--ombre-feuille);
   --shadow-dock: var(--ombre-dock);
   --shadow-disque: var(--ombre-disque);
   --shadow-haut: var(--ombre-haut);
@@ -630,6 +631,14 @@
     transform: translateX(16px);
   }
 }
+@keyframes souleve {
+  from {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 0 var(--relvo),
+      var(--ombre-carte);
+  }
+}
 @keyframes arrive {
   from {
     opacity: 0;
@@ -701,6 +710,16 @@
 }
 .arrive {
   animation: arrive var(--dur-accompagnement) var(--courbe-sortie) both;
+}
+/* Ce qu'on vient de SAISIR pour le déplacer (une ligne de l'arbre des sujets) :
+   il se soulève de la page — un peu plus grand, une ombre franche, cerclé de
+   violet — pour dire, sans un mot, que le maintien a pris. */
+.souleve {
+  transform: scale(1.04);
+  box-shadow:
+    0 0 0 2px var(--relvo),
+    var(--ombre-dock);
+  animation: souleve var(--dur-court) var(--courbe-sortie) both;
 }
 .respire > * {
   animation: respire 900ms var(--courbe-deplacement) infinite;
@@ -814,6 +833,9 @@
     animation-name: fondu;
     animation-duration: var(--dur-court);
     animation-delay: 0ms;
+  }
+  .souleve {
+    animation: none;
   }
   .respire > * {
     animation: none;

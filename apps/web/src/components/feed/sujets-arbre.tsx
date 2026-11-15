@@ -89,7 +89,9 @@ import type { FolderChip } from "@/server/cached";
 // geste n'est jamais le seul chemin : la feuille « Ranger dans… » reste, sur
 // la fiche d'un sujet et au crayon d'un dossier. Ce qu'on tient NE BOUGE PAS à
 // la prise : la miniature est la ligne elle-même, là où elle était, et le point
-// touché reste le point d'accroche. Elle est rendue hors de la zone qui défile
+// touché reste le point d'accroche ; elle se SOULÈVE (`.souleve` : un peu plus
+// grande, une ombre franche, cerclée de violet) pour dire que le maintien a
+// pris. Elle est rendue hors de la zone qui défile
 // (portail) : dedans, elle partait avec la page au premier défilement. Tant
 // qu'on tient une ligne, son balayage est gelé — un seul geste parle à la fois.
 //
@@ -114,6 +116,8 @@ type Prise = {
   retrait: number;
   /** Une tête de carte : son titre garde sa taille. */
   tete: boolean;
+  /** La graisse du titre saisi : la miniature ne la change pas. */
+  gras: boolean;
 };
 
 /** L'état du geste, lu par chaque ligne : ce qu'on tient, et la cible permise survolée. */
@@ -284,6 +288,7 @@ function LigneSujet({
       color,
       retrait: retrait(niveau),
       tete: false,
+      gras: row.moved && !termine,
     } satisfies Prise,
   });
   const { setNodeRef: deposer } = useDroppable({
@@ -436,6 +441,7 @@ function LigneDossier({
       color,
       retrait: tete ? 16 : 0,
       tete,
+      gras: true,
     } satisfies Prise,
   });
   const { setNodeRef: deposer } = useDroppable({
@@ -939,9 +945,8 @@ export function SujetsArbre({
               {pris ? (
                 <div
                   className={cn(
-                    "shadow-feuille flex h-full w-full items-center rounded-(--rayon-sous-carte) border bg-white pr-3.5",
+                    "souleve flex h-full w-full items-center rounded-(--rayon-sous-carte) bg-white pr-3.5",
                     pris.tete ? "gap-2.5" : "gap-[9px]",
-                    sur ? "border-relvo" : "border-(--filet)",
                   )}
                   style={{ paddingLeft: pris.retrait }}
                 >
@@ -968,8 +973,9 @@ export function SujetsArbre({
                     className={cn(
                       "min-w-0 flex-1 truncate text-noir",
                       pris.tete
-                        ? "font-heading text-[21px] leading-6 font-semibold"
-                        : "text-[15.5px] leading-5 font-semibold",
+                        ? "font-heading text-[21px] leading-6"
+                        : "text-[15.5px] leading-5",
+                      pris.gras ? "font-semibold" : "font-normal",
                     )}
                   >
                     {pris.nom}
