@@ -91,6 +91,8 @@ total —, la flèche de pli tient toujours la même colonne, et un sujet porte 
 tâches. Un sujet qui a bougé a son titre en gras et aucune pastille : le violet chiffré est aux
 dossiers. La ligne d'ajout qui ferme une branche est **violette**, comme toute invite : ce qui se touche
 est violet. Elle ne se confond pas avec ce qui a bougé, qui est une pastille pleine et chiffrée.
+Pendant un glisser-déposer, la ligne tenue s'efface à demi, sa miniature suit le doigt sans le
+recouvrir, et la cible permise se cercle de violet — la sélection est un cerclage, ici aussi.
 
 **Sur un sujet, « Urgent · » est en gras devant le titre, jamais en rouge** — le rouge
 brouillerait le code couleur des dossiers. Le rouge reste à ce qui est en retard.

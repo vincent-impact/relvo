@@ -5,9 +5,9 @@
 **Où on en est.** L'alpha a parlé : l'application est jugée complexe, l'arborescence des
 dossiers est saluée. Le dirigeant a tranché le 2026-11-15 (`ecarts`, « Sujets : une page, deux
 vues ») : une seule porte, la page Sujets, avec deux vues. L'épique est
-`M28-sujets-deux-vues.md`. **Les tranches 1 et 2 (M28.1, M28.2) sont livrées et poussées ; la
-tranche 1 est validée par le dirigeant, il essaie la tranche 2 sur son iPhone avant la
-tranche 3.** Ne pas enchaîner sans son retour.
+`M28-sujets-deux-vues.md`. **Les trois tranches (M28.1, M28.2, M28.3) sont livrées et poussées ;
+les deux premières sont validées par le dirigeant, il essaie le glisser-déposer sur son
+iPhone.** Reste M28.4 (la fiche qui glisse), à cadrer avec lui.
 
 **La maquette** : planche B de l'artefact du dirigeant (« une carte par dossier »). Elle fait foi
 sur les flux, les libellés et la disposition ; pas sur le rendu, pas sur les volumes. Elle n'a
@@ -31,14 +31,13 @@ jamais été essayée sur un téléphone — le glisser-déposer au doigt surtou
   `ui/sheet`, `ui/tabs`, `ui/input`, `ui/button` ; `feed/bouton-ajout-ciel.tsx` : le « + » du
   ciel, qui parle à l'arbre par l'événement `relvo:sujets:ajouter`. `createSubject` pose
   `lastOpenedAt` quand c'est le dirigeant qui crée.
+- Le glisser-déposer (M28.3) : `lib/arbre-depot.ts` dit ce qui se dépose où (pur, testé dans
+  `apps/web/test/arbre-depot.test.ts`) ; `sujets-arbre.tsx` porte le geste — dnd-kit, `id`
+  stable, souris à 6 px, doigt à 320 ms de maintien, collision au pointeur, ouverture d'un
+  dossier replié après 700 ms de survol, miniature décalée du doigt. Les lignes prenables
+  coupent la sélection de texte et le menu d'aperçu d'iOS (`-webkit-touch-callout`).
 
 **Ce qui reste.**
-
-- **M28.3 — le glisser-déposer.** dnd-kit (déjà au Calendrier ; un `id` stable, `PITFALLS`
-  #62), maintien d'un tiers de seconde au doigt, tirer à la souris ; `moveFolderAction`,
-  `updateSubjectAction` ; les interdits calculés comme les `exclus` de la feuille ; toast avec
-  Annuler (`sujets-rangeables.tsx` en a la forme). La conception (`04` §Folder) se récrit à ce
-  moment-là.
 
 - **M28.4 — la fiche qui glisse** (demandé à l'essai de la tranche 1). La fiche d'un sujet
   n'a aujourd'hui aucune entrée animée (`Screen entree` n'y est pas posé), celle d'un dossier
@@ -50,6 +49,12 @@ jamais été essayée sur un téléphone — le glisser-déposer au doigt surtou
   l'ouverture — le champ ne prend plus le focus de lui-même ; touché, le clavier pousse la
   feuille, c'est bon. Les invites de l'arbre (« Ajouter dans… », « Nouveau dossier », « Tout
   replier ») repassent en violet : **ce qui se touche est violet**, c'est le code de Relvo.
+
+- **À éprouver sur l'iPhone, tranche 3** — rien de ceci n'a été vu sur un vrai téléphone, le
+  geste n'a été joué qu'en événements simulés dans Chrome : le maintien ne doit ouvrir ni
+  l'aperçu du lien ni la sélection de texte ; le défilement automatique près des bords (le dock
+  couvre le bas) ; la garde anti-rebond de la coquille pendant qu'on tient une ligne ; le
+  vibreur au moment de la prise.
 
 **Laissé ouvert par le dirigeant** : les instructions par dossier ont-elles encore un sens ?
 Rien n'est retiré ; à regarder à l'usage.

@@ -497,6 +497,14 @@ de ses sujets ont bougé**, les siens et ceux de ses dossiers, jamais combien il
 un sujet qui a bougé s'y lit à la graisse de son titre. Le balayage n'existe pas dans l'arbre :
 un même geste ne dit pas deux choses sur une même page.
 
+**Dans l'arbre, ranger se fait aussi en déposant.** Un sujet ou un dossier se tient puis se
+lâche sur un autre dossier ; au doigt, il faut d'abord maintenir — bouger avant annule le geste
+et laisse défiler la page. Seules les cibles permises se signalent : un dossier ne va ni dans
+lui-même, ni dans un de ses dossiers, ni au-delà de la profondeur bornée, ni « sans dossier » ;
+un sujet ne remonte pas « au premier niveau ». Un dossier lâché au pied de l'arbre redevient un
+premier niveau. Un toast annule. **Ce geste n'est jamais le seul chemin** : la feuille reste,
+parce qu'un geste maintenu ne se découvre pas seul et ne se fait pas d'une main occupée.
+
 **On ajoute là où l'on est.** La dernière ligne de chaque branche dépliée propose d'ajouter
 dans ce dossier, à tous les niveaux — un dossier vide se déplie donc quand même. Elle ouvre une
 feuille qui ne demande qu'un choix (un sujet ou un dossier) et un nom : la destination est déjà
