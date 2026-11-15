@@ -221,6 +221,10 @@
       "date": "2026-11-15",
       "entrees": [
         {
+          "type": "fix",
+          "texte": "La fiche d'un sujet ou d'un dossier glisse plus posément : vous la voyez entrer, et repartir au retour."
+        },
+        {
           "type": "new",
           "texte": "Quand vous ouvrez un sujet ou un dossier depuis la page Sujets, sa fiche arrive en glissant de la droite, et le bouton retour la fait repartir dans l'autre sens."
         },
