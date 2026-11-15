@@ -6,6 +6,7 @@
 
 ## 2026-11-15
 
+- **Corrigé** — Dans l'arborescence des sujets, « Ajouter dans… » est maintenant en violet et bien visible, et le clavier ne recouvre plus la fenêtre d'ajout à son ouverture.
 - **Nouveau** — Dans l'arborescence de la page Sujets, chaque dossier déplié se termine par « Ajouter dans… » : vous y créez un sujet ou un dossier en lui donnant simplement un nom.
 - **Nouveau** — La page Sujets vous montre maintenant vos dossiers en arborescence, avec leurs sujets dedans : une pastille sur un dossier vous dit combien de ses sujets ont bougé. Vos instructions générales se donnent directement à Relvo, depuis l'échange.
 

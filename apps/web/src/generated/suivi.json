@@ -221,6 +221,10 @@
       "date": "2026-11-15",
       "entrees": [
         {
+          "type": "fix",
+          "texte": "Dans l'arborescence des sujets, « Ajouter dans… » est maintenant en violet et bien visible, et le clavier ne recouvre plus la fenêtre d'ajout à son ouverture."
+        },
+        {
           "type": "new",
           "texte": "Dans l'arborescence de la page Sujets, chaque dossier déplié se termine par « Ajouter dans… » : vous y créez un sujet ou un dossier en lui donnant simplement un nom."
         },
