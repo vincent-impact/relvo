@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { RotateCcw } from "lucide-react";
 import { Trash } from "@/components/shared/picto";
 import { toast } from "sonner";
+import { ECRAN_POUSSE } from "@/components/layout/ecran-transition";
 import { SwipeRow } from "@/components/shared/swipe-row";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import {
@@ -74,7 +75,11 @@ export function SwipeableDoneSubject({
   return (
     <>
       <SwipeRow
-        onTap={() => router.push(`/sujets/${subjectId}`)}
+        onTap={() =>
+          router.push(`/sujets/${subjectId}`, {
+            transitionTypes: [ECRAN_POUSSE],
+          })
+        }
         gele={gele}
         left={{
           // `keepOnAct` : la ligne revient en place, la confirmation prend le

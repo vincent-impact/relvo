@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
+import { ECRAN_RETOUR } from "@/components/layout/ecran-transition";
 import { MenuButton } from "@/components/layout/side-menu";
 import { cn } from "@/lib/utils";
 
@@ -115,7 +116,13 @@ export function RelvoHeader({
   );
 
   const backLink = pushed ? (
-    <Link href={back!} aria-label="Retour" className={SKY_BTN}>
+    <Link
+      href={back!}
+      aria-label="Retour"
+      className={SKY_BTN}
+      // L'écran repart vers la droite, la page d'avant réapparaît dessous.
+      transitionTypes={[ECRAN_RETOUR]}
+    >
       <ChevronLeft className="size-[18px]" strokeWidth={2.6} />
     </Link>
   ) : null;

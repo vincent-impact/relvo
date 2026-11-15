@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { EcranTransition } from "@/components/layout/ecran-transition";
 import { useNavScroll } from "@/components/layout/nav-visibility";
 import { cn } from "@/lib/utils";
 
@@ -32,24 +33,26 @@ export function Screen({
   const { onScroll, reset } = useNavScroll();
   useEffect(() => reset(), [reset]);
   return (
-    <main
-      onScroll={(e) => onScroll(e.currentTarget.scrollTop)}
-      // `overflow-x-hidden` : l'entrée de la droite déborde de 16 px pendant
-      // un quart de seconde, et un conteneur en `auto` offrirait ce débord au
-      // défilement.
-      className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-background"
-    >
-      <div
-        className={cn(entree && "entre-ecran", className)}
-        style={{
-          paddingBottom:
-            bottomInset != null
-              ? `${bottomInset + 12}px`
-              : "calc(var(--tab-h) + 20px + env(safe-area-inset-bottom))",
-        }}
+    <EcranTransition>
+      <main
+        onScroll={(e) => onScroll(e.currentTarget.scrollTop)}
+        // `overflow-x-hidden` : l'entrée de la droite déborde de 16 px pendant
+        // un quart de seconde, et un conteneur en `auto` offrirait ce débord au
+        // défilement.
+        className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto bg-background"
       >
-        {children}
-      </div>
-    </main>
+        <div
+          className={cn(entree && "entre-ecran", className)}
+          style={{
+            paddingBottom:
+              bottomInset != null
+                ? `${bottomInset + 12}px`
+                : "calc(var(--tab-h) + 20px + env(safe-area-inset-bottom))",
+          }}
+        >
+          {children}
+        </div>
+      </main>
+    </EcranTransition>
   );
 }

@@ -29,6 +29,9 @@ export function AppDock({
     <div
       className="absolute inset-x-(--dock-marge) z-20"
       style={{
+        // Le dock ne bouge pas pendant qu'un écran entre ou repart (M28.4) :
+        // il a son propre calque dans la transition, au-dessus des écrans.
+        viewTransitionName: "dock",
         bottom: "calc(var(--dock-marge) + env(safe-area-inset-bottom))",
       }}
     >

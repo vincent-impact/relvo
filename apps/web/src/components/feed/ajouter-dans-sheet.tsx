@@ -53,7 +53,7 @@ export function AjouterDansSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="shadow-feuille rounded-t-(--rayon-feuille) border-t-0 bg-white p-0"
+        className="rounded-t-(--rayon-feuille) border-t-0 bg-white p-0 shadow-feuille"
       >
         {destination ? (
           <Formulaire

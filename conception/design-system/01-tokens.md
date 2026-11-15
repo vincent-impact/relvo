@@ -193,9 +193,14 @@ propriétés qui ne redessinent pas la page :
 - **Ce qui arrive apparaît** (`.apparait`) : ce que le serveur livre après coup — une liste, un
   bloc — monte de 6 px en s'opacifiant ; `.apparait-liste` échelonne ses enfants de 35 ms,
   huit au plus. Rien n'apparaît de nulle part : jamais depuis une échelle nulle.
+- **Une fiche ouverte depuis la page Sujets glisse** (`layout/ecran-transition.tsx`) : elle entre
+  de la droite par-dessus la page qu'on quitte, et la flèche retour la fait repartir vers la
+  droite, la page d'avant déjà dessous — le retour défait le geste d'entrée. Le dock ne bouge
+  pas. C'est la navigation qui dit le sens ; sans lui (un onglet du dock, un retour au geste du
+  système), rien ne s'anime. Un navigateur qui ne sait pas faire change de page comme avant.
 - **Un écran poussé entre de la droite** (`.entre-ecran`, `<Screen entree>`) : une fiche, une
-  création, l'échange. Un onglet du dock, lui, ne s'anime pas. Limite assumée : le retour
-  arrière rejoue la même entrée — le CSS ne connaît pas le sens de la navigation.
+  création, l'échange. Un onglet du dock, lui, ne s'anime pas. Cette entrée courte vaut
+  là où la transition d'écran ne s'applique pas ; elle ne connaît pas le sens de la navigation.
 - **Une feuille monte, un menu s'ouvre** : les primitives du registre — la feuille sur
   `--dur-moyen` et la courbe de feuille ; un dialogue et un menu sur `--dur-court` et la courbe
   de sortie, le menu depuis son déclencheur, pas depuis son centre.

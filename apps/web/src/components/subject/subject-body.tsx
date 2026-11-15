@@ -1,5 +1,6 @@
 "use client";
 
+import { EcranTransition } from "@/components/layout/ecran-transition";
 import { useState } from "react";
 import {
   ChatsCircle,
@@ -100,21 +101,23 @@ export function SubjectBody({
 
   return (
     <>
-      <main className="entre-ecran min-h-0 flex-1 overflow-y-auto bg-background pb-[calc(92px+env(safe-area-inset-bottom))]">
-        {header}
-        <SegTabs
-          options={options}
-          value={tab}
-          onValueChange={(v) => setTab(v as SubjectTab)}
-          overlap
-          iconOnly
-        />
+      <EcranTransition>
+        <main className="entre-ecran min-h-0 flex-1 overflow-y-auto bg-background pb-[calc(92px+env(safe-area-inset-bottom))]">
+          {header}
+          <SegTabs
+            options={options}
+            value={tab}
+            onValueChange={(v) => setTab(v as SubjectTab)}
+            overlap
+            iconOnly
+          />
 
-        {tab === "informations" ? informationsPane : null}
-        {tab === "conversations" ? conversationsPane : null}
-        {tab === "documents" ? documentsPane : null}
-        {tab === "journal" ? journalPane : null}
-      </main>
+          {tab === "informations" ? informationsPane : null}
+          {tab === "conversations" ? conversationsPane : null}
+          {tab === "documents" ? documentsPane : null}
+          {tab === "journal" ? journalPane : null}
+        </main>
+      </EcranTransition>
     </>
   );
 }

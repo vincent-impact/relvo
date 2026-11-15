@@ -160,7 +160,7 @@ relvo/
 **Relvo** (bouton central, disque violet qui déborde du dock des deux côtés, le dock se soulevant autour de lui, badge = le nombre d'échanges de Relvo qui attendent une réponse) ·
 Sujets · Conversations. Le **menu latéral** (burger, discret, à droite du header) porte Bilan, Contacts, Canaux, Profil,
 Préférences, Usage, Rechercher. **Toute page du menu porte le burger** ; la flèche retour est
-réservée aux écrans poussés (fiches, création). Les boutons de page se posent **à droite**.
+réservée aux écrans poussés (fiches, création) : elle fait **repartir l'écran vers la droite**, et une fiche ouverte depuis la page Sujets **entre de la droite** (`layout/ecran-transition.tsx`, les transitions de vue — `experimental.viewTransition`). Les boutons de page se posent **à droite**.
 
 ⚠️ **`/messages`, `/planning`, `/dossiers`, `/memoire` et `/parametres` sont redirigées** (M18,
 M28) — vers Conversations, Calendrier, la vue Dossiers de `/fil` et les quatre pages du menu

@@ -5,9 +5,10 @@
 **Où on en est.** L'alpha a parlé : l'application est jugée complexe, l'arborescence des
 dossiers est saluée. Le dirigeant a tranché le 2026-11-15 (`ecarts`, « Sujets : une page, deux
 vues ») : une seule porte, la page Sujets, avec deux vues. L'épique est
-`M28-sujets-deux-vues.md`. **Les trois tranches (M28.1, M28.2, M28.3) sont livrées et poussées ;
-les deux premières sont validées par le dirigeant, il essaie le glisser-déposer sur son
-iPhone.** Reste M28.4 (la fiche qui glisse), à cadrer avec lui.
+`M28-sujets-deux-vues.md`. **Les quatre items (M28.1 à M28.4) sont livrés et poussés ; les trois
+premiers sont validés par le dirigeant sur son iPhone, il essaie M28.4 (la fiche qui
+glisse).** À sa validation : passer le frontmatter de l'épique à `termine` avec sa date de
+fin, et la ligne du backlog à ✅.
 
 **La maquette** : planche B de l'artefact du dirigeant (« une carte par dossier »). Elle fait foi
 sur les flux, les libellés et la disposition ; pas sur le rendu, pas sur les volumes. Elle n'a
@@ -39,17 +40,18 @@ jamais été essayée sur un téléphone — le glisser-déposer au doigt surtou
 
 **Ce qui reste.**
 
-- **M28.4 — la fiche qui glisse** (demandé à l'essai de la tranche 1). La fiche d'un sujet
-  n'a aujourd'hui aucune entrée animée (`Screen entree` n'y est pas posé), celle d'un dossier
-  entre de 16 px (`.entre-ecran`). Le dirigeant veut l'entrée pleine de la droite ET la sortie
-  inverse au retour : la sortie demande les View Transitions du routeur (ou une transition
-  tenue côté client) — à cadrer avant d'écrire, et à éprouver sur iOS (geste de retour du
-  bord, PWA).
-- **Essai de la tranche 2 par le dirigeant** : le clavier montait par-dessus la feuille à
-  l'ouverture — le champ ne prend plus le focus de lui-même ; touché, le clavier pousse la
-  feuille, c'est bon. Les invites de l'arbre (« Ajouter dans… », « Nouveau dossier », « Tout
-  replier ») repassent en violet : **ce qui se touche est violet**, c'est le code de Relvo.
-
+- **M28.4 — la fiche qui glisse** (livré). Les transitions de vue de React, branchées sur la
+  navigation par `experimental.viewTransition` (`next.config.ts`). `layout/ecran-transition.tsx`
+  enveloppe chaque écran (`Screen`, le corps de la fiche d'un sujet, son squelette) et nomme
+  les deux types : `ECRAN_POUSSE` — posé sur l'ouverture d'un sujet (`SwipeableSubject`,
+  `SwipeableDoneSubject`) et sur le nom d'un dossier de l'arbre — et `ECRAN_RETOUR`, posé sur
+  la flèche retour de `RelvoHeader`, donc sur **tout** écran poussé. Le dessin est dans
+  `globals.css` (« Transition d'écran ») ; le dock a son propre calque
+  (`viewTransitionName: "dock"`) pour rester immobile. Vu en local, animations ralenties,
+  dans Chrome ; **jamais sur iOS** — Safari sait faire depuis sa version 18, et un navigateur
+  qui ne sait pas change de page comme avant. Le retour au geste du système ne porte pas de
+  type : il ne s'anime pas. ⚠️ Vérifier un changement de `globals.css` en local demande de
+  vider `.next/dev` (`PITFALLS` #76) — je l'ai repayé ici.
 - **Essai de la tranche 3 par le dirigeant, et ce qui a été repris** : (1) la miniature se
   recalait sous le doigt à la prise — elle est maintenant la ligne elle-même, à sa place et à sa
   taille (aucun modificateur) ; (2) elle restait bloquée dès que la page défilait — elle est

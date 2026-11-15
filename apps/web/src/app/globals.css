@@ -823,7 +823,55 @@
 
 /* Mouvement réduit : moins et plus doux, pas zéro. Ce qui aide à comprendre
    (un fondu) reste ; ce qui se déplace ne se déplace plus. */
+/* ── Transition d'écran (M28.4, `layout/ecran-transition.tsx`) ──────────────
+   Une fiche ENTRE DE LA DROITE par-dessus la page qu'on quitte ; au retour,
+   elle REPART vers la droite et la page d'avant est déjà dessous. L'écran qui
+   ne bouge pas reste net, sans fondu ; celui qui bouge passe devant et ne
+   déborde pas de sa colonne. Le dock, lui, ne bouge jamais. */
+@keyframes ecran-glisse {
+  from {
+    translate: 100% 0;
+  }
+}
+::view-transition-new(.ecran-entre) {
+  animation: ecran-glisse var(--dur-moyen) var(--courbe-sortie) both;
+}
+::view-transition-old(.ecran-sort) {
+  animation: ecran-glisse var(--dur-moyen) var(--courbe-deplacement) both
+    reverse;
+}
+::view-transition-old(.ecran-dessous),
+::view-transition-new(.ecran-dessous) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+::view-transition-group(.ecran-entre),
+::view-transition-group(.ecran-sort) {
+  z-index: 1;
+  overflow: clip;
+}
+::view-transition-group(dock) {
+  z-index: 2;
+  animation: none;
+}
+::view-transition-old(dock) {
+  display: none;
+}
+::view-transition-new(dock) {
+  animation: none;
+}
+/* Pendant une transition d'écran, l'entrée de 16 px d'un écran poussé ne se
+   rejoue pas par-dessus. */
+:root:active-view-transition .entre-ecran {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+  }
   /* `:nth-child(n)` pour battre l'échelonnement (une media query n'ajoute
      aucune spécificité). */
   .apparait,

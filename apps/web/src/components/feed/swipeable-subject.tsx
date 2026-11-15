@@ -11,6 +11,7 @@ import {
 } from "@/server/actions/subjects";
 import { ignoreConversationAction } from "@/server/actions/conversations";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
+import { ECRAN_POUSSE } from "@/components/layout/ecran-transition";
 import { cn } from "@/lib/utils";
 
 // Carte-sujet swipable (approche retenue, cf. mockup/mobile/fil.html) :
@@ -246,7 +247,7 @@ export function SwipeableSubject({
       e.preventDefault();
       return;
     }
-    router.push(`/sujets/${subjectId}`);
+    router.push(`/sujets/${subjectId}`, { transitionTypes: [ECRAN_POUSSE] });
   }
 
   return (

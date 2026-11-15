@@ -34,6 +34,7 @@ import {
 } from "@/components/feed/ajouter-dans-sheet";
 import { SwipeableDoneSubject } from "@/components/feed/swipeable-done-subject";
 import { SwipeableSubject } from "@/components/feed/swipeable-subject";
+import { ECRAN_POUSSE } from "@/components/layout/ecran-transition";
 import { RELVO_LOGO_PATHS } from "@/components/layout/relvo-logo";
 import { ListPanel } from "@/components/shared/list-panel";
 import {
@@ -468,6 +469,7 @@ function LigneDossier({
         {...poignee}
         draggable={false}
         href={`/memoire/${folder.id}`}
+        transitionTypes={[ECRAN_POUSSE]}
         aria-label={`Ouvrir le dossier ${folder.name}`}
         className={cn(
           "flex min-w-0 flex-1 items-center gap-2.5 self-stretch pr-1.5",

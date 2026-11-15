@@ -144,6 +144,12 @@ const nextConfig: NextConfig = {
   },
 
   experimental: {
+    // Les transitions de vue de React, branchées sur les navigations (M28.4) :
+    // une fiche entre de la droite et repart au retour
+    // (`layout/ecran-transition.tsx`). Expérimental : sans support du
+    // navigateur, la page change comme avant.
+    viewTransition: true,
+
     // Cache client (Router Cache) : durée pendant laquelle un payload de route
     // déjà visité est réutilisé SANS aller-retour serveur (navigation/retour
     // instantanés). Le défaut Next pour les routes dynamiques est 0 — or toutes
