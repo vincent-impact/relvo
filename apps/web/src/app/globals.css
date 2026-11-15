@@ -343,10 +343,11 @@
     var(--dock-h) + var(--dock-marge)
   ); /* réservation sous une page */
 
-  /* ── Le mouvement : quatre durées, trois courbes ────────────────────────── */
+  /* ── Le mouvement : cinq durées, trois courbes ────────────────────────── */
   --dur-presse: 120ms; /* le retour d'un appui : on le sent, on ne le voit pas */
   --dur-court: 160ms; /* une couleur, un survol, un badge, une puce */
   --dur-moyen: 240ms; /* une feuille, un menu, un écran poussé, une liste qui arrive */
+  --dur-ecran: 400ms; /* un écran entier qui glisse : il traverse toute la largeur, on doit le voir passer */
   --dur-accompagnement: 480ms; /* la SEULE durée qu'on a le droit de voir : premiers pas, carte vivante */
   --courbe-sortie: cubic-bezier(
     0.23,
@@ -827,18 +828,20 @@
    Une fiche ENTRE DE LA DROITE par-dessus la page qu'on quitte ; au retour,
    elle REPART vers la droite et la page d'avant est déjà dessous. L'écran qui
    ne bouge pas reste net, sans fondu ; celui qui bouge passe devant et ne
-   déborde pas de sa colonne. Le dock, lui, ne bouge jamais. */
+   déborde pas de sa colonne. Le dock, lui, ne bouge jamais. Un écran traverse
+   toute la largeur : il lui faut sa durée (`--dur-ecran`) et la courbe d'une
+   feuille — sur la durée moyenne et la courbe de sortie, il est déjà arrivé
+   avant qu'on l'ait vu partir. */
 @keyframes ecran-glisse {
   from {
     translate: 100% 0;
   }
 }
 ::view-transition-new(.ecran-entre) {
-  animation: ecran-glisse var(--dur-moyen) var(--courbe-sortie) both;
+  animation: ecran-glisse var(--dur-ecran) var(--courbe-feuille) both;
 }
 ::view-transition-old(.ecran-sort) {
-  animation: ecran-glisse var(--dur-moyen) var(--courbe-deplacement) both
-    reverse;
+  animation: ecran-glisse var(--dur-ecran) var(--courbe-feuille) both reverse;
 }
 ::view-transition-old(.ecran-dessous),
 ::view-transition-new(.ecran-dessous) {

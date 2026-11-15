@@ -176,9 +176,11 @@ Une transition qu'on remarque est une transition trop longue sur une application
 trente fois par jour. Le mouvement courant **se sent, il ne se voit pas** ; seul
 l'**accompagnement** — les premiers pas, la carte vivante — a le droit d'être vu.
 
-**Quatre durées** : `--dur-presse` (le retour d'un appui), `--dur-court` (une couleur, un
+**Cinq durées** : `--dur-presse` (le retour d'un appui), `--dur-court` (une couleur, un
 badge, une puce ; c'est la durée par défaut de toute transition), `--dur-moyen` (une feuille,
-un menu, un écran poussé, une liste qui arrive), `--dur-accompagnement` (la seule qu'on voit).
+un menu, un écran poussé, une liste qui arrive), `--dur-ecran` (un écran entier qui glisse : il
+traverse toute la largeur, on doit le voir passer), `--dur-accompagnement` (la seule qu'on voit
+pour elle-même).
 **Trois courbes** : `--courbe-sortie` pour tout ce qui entre ou sort — vite d'abord, l'œil
 regarde ce moment-là —, `--courbe-deplacement` pour ce qui se déplace à l'écran,
 `--courbe-feuille` pour une feuille qui monte. Jamais une courbe qui **démarre lentement** sur
@@ -195,7 +197,8 @@ propriétés qui ne redessinent pas la page :
   huit au plus. Rien n'apparaît de nulle part : jamais depuis une échelle nulle.
 - **Une fiche ouverte depuis la page Sujets glisse** (`layout/ecran-transition.tsx`) : elle entre
   de la droite par-dessus la page qu'on quitte, et la flèche retour la fait repartir vers la
-  droite, la page d'avant déjà dessous — le retour défait le geste d'entrée. Le dock ne bouge
+  droite, la page d'avant déjà dessous — le retour défait le geste d'entrée — sur `--dur-ecran`
+  et la courbe de feuille, dans les deux sens. Le dock ne bouge
   pas. C'est la navigation qui dit le sens ; sans lui (un onglet du dock, un retour au geste du
   système), rien ne s'anime. Un navigateur qui ne sait pas faire change de page comme avant.
 - **Un écran poussé entre de la droite** (`.entre-ecran`, `<Screen entree>`) : une fiche, une

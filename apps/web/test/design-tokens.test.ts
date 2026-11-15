@@ -92,10 +92,11 @@ const tokensAttendus = [
   // la typographie
   "--font-barlow",
   "--font-barlow-condensed",
-  // le mouvement : quatre durées, trois courbes
+  // le mouvement : cinq durées, trois courbes
   "--dur-presse",
   "--dur-court",
   "--dur-moyen",
+  "--dur-ecran",
   "--dur-accompagnement",
   "--courbe-sortie",
   "--courbe-deplacement",
