@@ -221,6 +221,10 @@
       "date": "2026-11-15",
       "entrees": [
         {
+          "type": "fix",
+          "texte": "Dans l'arborescence des sujets, la ligne que vous déplacez reste sous votre doigt, y compris quand la page défile, et vous pouvez de nouveau valider ou fermer un sujet d'un balayage."
+        },
+        {
           "type": "new",
           "texte": "Dans l'arborescence de la page Sujets, vous pouvez déplacer un sujet ou un dossier en le glissant sur un autre dossier : maintenez la ligne un instant, puis déposez-la. Un bouton Annuler apparaît juste après."
         },
