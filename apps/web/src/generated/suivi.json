@@ -218,6 +218,15 @@
   "en_cours": "Dix boîtes e-mail par compte",
   "journal": [
     {
+      "date": "2026-11-15",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "La page Sujets vous montre maintenant vos dossiers en arborescence, avec leurs sujets dedans : une pastille sur un dossier vous dit combien de ses sujets ont bougé. Vos instructions générales se donnent directement à Relvo, depuis l'échange."
+        }
+      ]
+    },
+    {
       "date": "2026-11-11",
       "entrees": [
         {

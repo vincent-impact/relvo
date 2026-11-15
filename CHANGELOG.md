@@ -4,6 +4,10 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-11-15
+
+- **Nouveau** — La page Sujets vous montre maintenant vos dossiers en arborescence, avec leurs sujets dedans : une pastille sur un dossier vous dit combien de ses sujets ont bougé. Vos instructions générales se donnent directement à Relvo, depuis l'échange.
+
 ## 2026-11-11
 
 - **Corrigé** — Quand Relvo retrouve un message, toucher sa carte ouvre la conversation directement sur ce message, mis en évidence.
