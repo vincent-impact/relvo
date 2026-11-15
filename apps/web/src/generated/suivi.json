@@ -221,6 +221,10 @@
       "date": "2026-11-15",
       "entrees": [
         {
+          "type": "new",
+          "texte": "Quand vous ouvrez un sujet ou un dossier depuis la page Sujets, sa fiche arrive en glissant de la droite, et le bouton retour la fait repartir dans l'autre sens."
+        },
+        {
           "type": "fix",
           "texte": "Quand vous maintenez une ligne pour la déplacer, elle se soulève nettement — un peu plus grande, ombrée et cerclée de violet — pour vous montrer qu'elle est prête à être déplacée."
         },

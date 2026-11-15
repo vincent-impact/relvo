@@ -6,6 +6,7 @@
 
 ## 2026-11-15
 
+- **Nouveau** — Quand vous ouvrez un sujet ou un dossier depuis la page Sujets, sa fiche arrive en glissant de la droite, et le bouton retour la fait repartir dans l'autre sens.
 - **Corrigé** — Quand vous maintenez une ligne pour la déplacer, elle se soulève nettement — un peu plus grande, ombrée et cerclée de violet — pour vous montrer qu'elle est prête à être déplacée.
 - **Corrigé** — Dans l'arborescence des sujets, la ligne que vous déplacez reste sous votre doigt, y compris quand la page défile, et vous pouvez de nouveau valider ou fermer un sujet d'un balayage.
 - **Nouveau** — Dans l'arborescence de la page Sujets, vous pouvez déplacer un sujet ou un dossier en le glissant sur un autre dossier : maintenez la ligne un instant, puis déposez-la. Un bouton Annuler apparaît juste après.
