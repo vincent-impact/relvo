@@ -149,6 +149,56 @@ export function deciderGroupe(sortie: SortieTri): DecisionGroupe {
   };
 }
 
+/**
+ * La LECTURE DU JOUR d'un groupe (M29.5) : personne n'y interpelle le
+ * dirigeant, Relvo lit ce qui s'est dit depuis la dernière fois. Un sujet
+ * ouvert sur un groupe le fait suivre en direct jusqu'à sa clôture — à tort,
+ * il encombre : il ne s'ouvre, et ne se rattache, qu'en confiance HAUTE.
+ * Posée par défaut, à régler sur l'usage comme les deux autres frontières.
+ */
+export const FRONTIERE_LECTURE_GROUPE: Confiance = "haute";
+
+/**
+ * Ce que la lecture du jour fait d'un groupe. Les règles du tri, avec la
+ * frontière du groupe, et une ignorance plus étroite : un « rien à faire » sûr
+ * ne mène vers l'ignorance du groupe que s'il sort du champ PROFESSIONNEL —
+ * l'équipe qui s'organise sans le dirigeant reste lue.
+ *
+ * LE RATTACHEMENT NE PRIME PAS ICI. Sur un fil, un « rien à faire » qui
+ * prolonge un sujet s'y rattache — c'est l'accusé qu'il attendait. Sur un
+ * groupe, rattacher fait ÉCOUTER tout le groupe par ce sujet, en direct,
+ * jusqu'à sa clôture : un échange de services entre deux équipiers ne doit
+ * pas livrer le groupe de l'équipe au sujet « Plannings ». La lecture ne
+ * rattache donc que ce qui attend le dirigeant (« à traiter ») ; le reste se
+ * décide comme s'il n'y avait pas de sujet à prolonger.
+ *
+ * `sansSuite` : la lecture n'a rien à dire du GROUPE — rien à faire, ou une
+ * affaire personnelle qui n'ouvre rien. L'avis que porte le groupe (celui de
+ * son jugement, M29.3) ne doit alors pas être écrasé : le pipeline note la
+ * lecture au journal, sans plus. Dans tous les autres cas, l'avis s'écrit.
+ */
+export function deciderLectureGroupe(sortie: SortieTri): {
+  decision: DecisionTri;
+  sansSuite: boolean;
+} {
+  const tri = deciderTri(
+    sortie.action === "a_traiter"
+      ? sortie
+      : { ...sortie, sujet_existant: null },
+    { sujet: FRONTIERE_LECTURE_GROUPE },
+  );
+  const decision: DecisionTri =
+    tri.type === "ignorer" && sortie.nature === "professionnel"
+      ? { type: "avis-seul", motif: "rien-a-faire" }
+      : tri;
+  return {
+    decision,
+    sansSuite:
+      decision.type === "avis-seul" &&
+      (decision.motif === "rien-a-faire" || decision.motif === "personnel"),
+  };
+}
+
 function nonVide(s: string | null): string | null {
   const t = s?.trim();
   return t ? t : null;

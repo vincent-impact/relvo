@@ -1,4 +1,4 @@
-import { MESSAGERIE } from "../config";
+import { LECTURE_GROUPES, MESSAGERIE } from "../config";
 
 // Les RÈGLES du tri de la messagerie directe (M7, tranche 11), pures et
 // testées sans base : la salve, l'ancre de l'écoute, ce qui fait taire par
@@ -119,4 +119,19 @@ export function peutFaireTaire(args: {
     args.nature === "automatique" ||
     args.nature === "indesirable"
   );
+}
+
+/**
+ * Une passe de la lecture des groupes (M29.5) coupée par son budget en
+ * appelle-t-elle une autre ? Oui s'il reste des groupes ET qu'elle en a lu :
+ * une passe qui n'a rien lu ne se relance pas — le fournisseur est en panne,
+ * le cron suivant reprendra. Jamais au-delà de `passesMax`.
+ */
+export function passeSuivante(
+  bilan: { restants: number; lus: number },
+  passe: number,
+  passesMax: number = LECTURE_GROUPES.passesMax,
+): number | null {
+  if (bilan.restants === 0 || bilan.lus === 0) return null;
+  return passe < passesMax ? passe + 1 : null;
 }

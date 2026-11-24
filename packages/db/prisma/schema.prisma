@@ -670,6 +670,11 @@ model Conversation {
   /// et la réactivation, la remettent à zéro. C'est elle qui retient Relvo
   /// d'ignorer un interlocuteur de messagerie sur une seule salve.
   noiseStreak       Int                @default(0) @map("noise_streak")
+  /// GROUPE uniquement (M29.5) — jusqu'où la lecture du jour a lu ce groupe :
+  /// la date de création du dernier message qu'elle a montré à Relvo. Les
+  /// messages arrivés après sont ceux de la prochaine lecture. Null tant
+  /// qu'aucune lecture n'a eu lieu : le repère est alors la date de l'avis.
+  groupReadUntil    DateTime?          @map("group_read_until")
   /// Pilote le tri de la liste (plus récent en tête).
   lastMessageAt     DateTime?          @map("last_message_at")
   /// Dernier message reçu/envoyé — dénormalisé, et c'est délibéré : le KPI

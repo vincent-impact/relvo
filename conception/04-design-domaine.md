@@ -105,6 +105,13 @@ d'un message s'affiche — le fil, l'aperçu d'une ligne —, jamais dans ce qui
 message sait dès sa réception s'il mentionne le dirigeant, sans modèle ; la liste des
 conversations marque d'une arobase le fil où il est interpellé tant qu'il ne l'a pas lu.
 
+**Un groupe a trois rythmes de lecture, selon ce qu'il porte.** Sans sujet ouvert, Relvo le lit
+**deux fois par jour**, d'un coup, depuis son repère de lecture — et **aussitôt** quand le
+dirigeant y est mentionné. Dès qu'un sujet l'écoute, il se suit **en direct**, comme un fil :
+chaque message rejoint le sujet, qui se relit. La validation ou la fermeture du sujet libère le
+groupe, qui revient aux deux lectures du jour pour ce qui suit. Un groupe ignoré n'est ni
+importé ni lu, mention ou pas (`05 §1.2`).
+
 ### ⚠️ L'énoncé est DIRECTIONNEL
 
 C'est la lecture la plus facile à rater du modèle, et la rater **bloque l'implémentation**.

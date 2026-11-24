@@ -72,7 +72,7 @@ pnpm test           # tests d'intégration (base relvo_test, créée au besoin)
 | `R2_ACCESS_KEY_ID` · `R2_SECRET_ACCESS_KEY` | Token de **compte** R2, permission « Object Read & Write » **scopée au bucket** |
 | `R2_BUCKET` | Nom du bucket |
 | `R2_JURISDICTION` | `eu` — résidence RGPD. **Figée à la création du bucket** : elle conditionne l'endpoint et ne se change plus |
-| `CRON_SECRET` | Secret des crons et des tranches de fond : drainage de l'outbox de suppression de fichiers, le filet nocturne du rattrapage (`/api/cron/catch-up`) et chaque tranche du rattrapage du courrier récent (`POST /api/rattrapage/tranche`, lancée par le webhook de connexion puis par la tranche précédente) — appelables à la main avec `Authorization: Bearer <CRON_SECRET>`. `openssl rand -base64 32` |
+| `CRON_SECRET` | Secret des crons et des tranches de fond : drainage de l'outbox de suppression de fichiers, le cron de la mi-journée (`/api/cron/catch-up` : le filet du rattrapage, et la seconde lecture des groupes du jour), chaque passe de la lecture des groupes (`POST /api/groupes/lecture`) et chaque tranche du rattrapage du courrier récent (`POST /api/rattrapage/tranche`, lancée par le webhook de connexion puis par la tranche précédente) — appelables à la main avec `Authorization: Bearer <CRON_SECRET>`. `openssl rand -base64 32` |
 
 ### `packages/db/.env` et `packages/storage/.env`
 

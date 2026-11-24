@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   BUDGETS,
+  FIL_LECTURE,
   blocInstructions,
   blocMessage,
   coucheInstant,
@@ -715,5 +716,38 @@ describe("un groupe à juger (M29.3)", () => {
     );
     expect(c.prompt).toContain("Qui vient jeudi ?");
     expect(c.prompt).not.toContain("# Le fil à trier");
+  });
+
+  it("la lecture du jour montre TOUT ce qui s'est dit depuis la dernière, et compte ce que le plafond a laissé", () => {
+    const messages = Array.from({ length: 12 }, (_, i) => ({
+      expediteur: "Karim <+33612000001>",
+      recuLe: new Date(Date.UTC(2026, 10, 25, 8, i)).toISOString(),
+      objet: null,
+      contenu: `message numéro ${i + 1}`,
+      sens: "entrant" as const,
+    }));
+    const c = contexteTri({
+      compte,
+      conversation: {
+        canal: "whatsapp",
+        groupe: true,
+        lecture: { titre: "Chantier Dupont", omis: 5, nature: "professionnel" },
+        messages,
+      },
+      instant: { maintenant: "2026-11-25T11:00:00.000Z" },
+    });
+    expect(c.prompt).toContain(
+      "# Un groupe WhatsApp, lu depuis la dernière fois",
+    );
+    expect(c.prompt).toContain(
+      "Groupe : « Chantier Dupont » · 12 messages depuis la dernière lecture (5 plus anciens non montrés)",
+    );
+    // Pas le premier et les trois derniers d'un fil : les douze.
+    for (const m of messages) expect(c.prompt).toContain(m.contenu);
+    expect(c.prompt).not.toContain("# Le fil à trier");
+    expect(c.prompt).not.toContain("# Un groupe WhatsApp à juger");
+    // La nature qu'on connaît au groupe tient, sauf preuve du contraire.
+    expect(c.prompt).toContain("Il est tenu pour « professionnel »");
+    expect(FIL_LECTURE.derniers).toBe(40);
   });
 });

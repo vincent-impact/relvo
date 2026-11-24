@@ -229,7 +229,7 @@ pnpm db:migrate      # nouvelle migration
 pnpm db:generate     # ⚠️ après TOUTE migration (#33)
 pnpm db:seed         # jeu de démonstration
 pnpm --filter web ia:journal   # le compteur de l'inférence relu : coût, cache, silencieux
-curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/matin   # le cron du matin à la main : drainage, brief, abonnements Gmail, et le lundi le relevé de ce que Relvo a ignoré (M25.11)
+curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/matin   # le cron du matin à la main : drainage, brief, abonnements Gmail, le lundi le relevé de ce que Relvo a ignoré (M25.11), et la première lecture des groupes du jour (M29.5) — la seconde part du cron de la mi-journée, `/api/cron/catch-up`
 pnpm --filter web push:essai <e-mail>   # pose une question de test et la pousse (M12.9)
 pnpm --filter web admin:role <e-mail> admin|ceo   # donne ou retire le rôle admin, journalisé (M21.1) — effectif à la prochaine connexion
 pnpm --filter web boites:migrer <e-mail> [adresse]   # propose à un compte de passer une boîte de l'agrégateur au relais Gmail (M24.9) — question poussée, rien ne bascule avant son retour de Google
@@ -237,9 +237,11 @@ pnpm --filter web pj:rattraper <e-mail> [--filtre kiloutou] [--tout] [--simuler]
 pnpm --filter web medias:purger [<e-mail>] [--executer]   # retire les pièces et le HTML des conversations IGNORÉES, texte gardé (M25.12) — SIMULATION sans --executer ; irréversible dans Relvo, journalisé par conversation
 curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/drain-file-deletions   # vide la file de suppression du stockage sans attendre le matin (quatre minutes de drainage, PITFALLS #80)
 pnpm --filter web groupes:juger [<e-mail>] [--executer] [--titres] [--limite N]   # juge une fois les groupes WhatsApp jamais jugés (M29.3) : hors du champ professionnel et sans doute, ignorés — SIMULATION sans --executer ; --titres liste chaque groupe, à réserver à son propre compte
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" <app>/api/groupes/lecture   # lit tout de suite les groupes WhatsApp qui ont parlé depuis leur dernière lecture (M29.5), sans attendre l'un des deux crons — par passes enchaînées, au tarif différé
+pnpm --filter web groupes:lire [<e-mail>] [--heures N] [--titres] [--limite N]   # SIMULE la lecture des groupes sur les dernières heures : ce que Relvo ouvrirait, à quel coût — n'écrit jamais rien ; --titres à réserver à son propre compte
 pnpm --filter web wa:reparer <e-mail> [--simuler]   # fond les conversations WhatsApp fantômes d'un compte dans le fil (PITFALLS #75), journalisé
 pnpm --filter web eval:dictee --dossier <hors dépôt> [--compte <e-mail>]   # benchmark de la transcription, dictées HORS dépôt (M22.1)
-curl -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' -d '{"catchupId":"…"}' <app>/api/rattrapage/tranche   # relance une tranche de lecture du courrier (M7.19) ; le cron /api/cron/catch-up n'est qu'un filet
+curl -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' -d '{"catchupId":"…"}' <app>/api/rattrapage/tranche   # relance une tranche de lecture du courrier (M7.19) ; le cron de la mi-journée (/api/cron/catch-up) n'est qu'un filet
 ```
 
 Déploiement : pousser sur la branche de production. **Un seul déployable, deux hôtes** :

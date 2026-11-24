@@ -1969,6 +1969,34 @@ backoffice, décider avant de télécharger, images et expiration). M25 passe à
 page de suivi n'admet qu'une épique en cours — et reprend après M29. Ce que M25 laisse en
 attente du dirigeant ne change pas : lancer la purge du stock ignoré, sortir du palier gratuit.
 
+### La lecture des groupes : prudente par défaut
+
+**`tranché` par défaut, à régler sur l'usage** · Posé le 2026-11-24 en livrant M29.5, sur la
+foi d'une simulation en lecture seule sur la production (douze heures, 89 groupes, totaux
+seuls hors du compte du dirigeant). Quatre choix que l'épique ne fixait pas :
+
+- **Le second cron passe de 2 h à 11 h UTC** (midi ou 13 h à Paris). Le filet du rattrapage
+  qu'il portait la nuit tourne désormais à la mi-journée, une fois par jour comme avant. Les
+  messages de l'après-midi sont lus le lendemain matin, sauf mention.
+- **Un sujet ne s'ouvre qu'en confiance haute, et seulement si c'est le dirigeant qu'on
+  attend.** Le premier cadrage (« une demande, un problème… ») ouvrait 26 sujets sur 91
+  groupes, dont 23 pour un seul compte ; le cadrage resserré en ouvre 13, dont 11 pour ce
+  compte. Essayé à la main sur six situations écrites : la décision qui attend le patron et la
+  cliente restée sans réponse ouvrent ; l'équipe qui s'organise, la demande prise en charge par
+  un autre et le bavardage ne laissent rien.
+- **Au plus six sujets nés des groupes par compte et par lecture** (sur quatre heures
+  glissantes, les passes d'une même lecture comprises). Au-delà, l'avis « à traiter » s'écrit
+  sur le groupe, sans sujet. Le chiffre est arbitraire : il protège le compte qui vit dans des
+  centaines de groupes, en attendant de voir ses premières lectures.
+- **Une lecture sans suite ne touche pas à l'avis du groupe**, et **le rattachement ne prime
+  pas** sur un groupe. Deux défauts vus à l'essai : un « Top » faisait juger « personnel » le
+  groupe de travail du dirigeant, un pas vers son ignorance ; un échange de services entre
+  deux équipiers rattachait le groupe au sujet des plannings, qui l'aurait alors écouté en
+  direct.
+
+Ce que la simulation ne dit pas : si les sujets ouverts sont les bons. Seul chaque dirigeant
+peut le dire — `pnpm --filter web groupes:lire <e-mail> --titres` les lui montre sans rien écrire.
+
 ### Le plan de réalignement documentaire n'a jamais été exécuté
 
 **`tranché` — traité** · Un document de spécification listait explicitement les passages rendus

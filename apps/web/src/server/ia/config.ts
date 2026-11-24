@@ -255,3 +255,38 @@ export const MESSAGERIE = {
    */
   verdictsAvantIgnorance: 3,
 } as const;
+
+/**
+ * LA LECTURE DES GROUPES, DEUX FOIS PAR JOUR (M29.5 ; `05 §9.5`). Un groupe
+ * gardé, sans sujet ouvert, n'est pas trié au fil de l'eau : les deux crons du
+ * plan (le matin, la mi-journée) lancent une lecture de ce qui s'y est dit
+ * depuis la dernière, au tarif différé. La lecture tourne par PASSES, chacune
+ * sous la durée d'une fonction ; une passe coupée par son budget en relance
+ * une autre, dans la limite de `passesMax` — jamais une boucle sans fin sur un
+ * fournisseur en panne. `parCompte` borne ce qu'un compte lit en une passe,
+ * le plus récemment actif d'abord.
+ */
+export const LECTURE_GROUPES = {
+  /** Comptes lus en même temps, et groupes en même temps par compte. */
+  comptesDeFront: 4,
+  groupesDeFront: 3,
+  parCompte: 120,
+  /**
+   * Le GARDE-FOU des sujets : au plus tant de sujets nés des groupes, par
+   * compte, sur `fenetreSujetsMs` (une lecture et ses passes). Au-delà, la
+   * lecture n'ouvre plus : elle écrit « à traiter » sur le groupe, avec sa
+   * raison, et le dirigeant ouvre lui-même ce qu'il veut suivre. Un compte
+   * qui vit dans des centaines de groupes ne reçoit pas vingt sujets à midi.
+   * Posé par défaut, à régler sur l'usage.
+   */
+  sujetsParLecture: 6,
+  fenetreSujetsMs: 4 * 60 * 60 * 1000,
+  /** Un appel de lecture qui dépasse ce délai est abandonné : ses messages restent à lire. */
+  appelMaxMs: 60 * 1000,
+  /**
+   * Sous ce temps restant, plus aucune lecture n'est lancée : la dernière doit
+   * finir, et le sujet qu'elle ouvre être structuré (un second appel).
+   */
+  margeMs: 150 * 1000,
+  passesMax: 6,
+} as const;

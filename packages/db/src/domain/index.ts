@@ -24,6 +24,7 @@ export * from "./subject-conversations";
 export * from "./messages";
 export * from "./reception";
 export * from "./annuaire-messagerie";
+export * from "./lecture-groupes";
 export * from "./tasks";
 export * from "./attachments";
 export * from "./actions";

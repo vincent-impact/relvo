@@ -412,8 +412,8 @@ async function importerUnePasse(
   return { importes, epuise };
 }
 
-/** L'URL de l'application, pour qu'une tranche appelle la suivante. */
-function urlApplication(): string {
+/** L'URL de l'application, pour qu'une tranche — ou une passe de lecture des groupes — appelle la suivante. */
+export function urlApplication(): string {
   return (
     process.env.AUTH_URL ??
     process.env.NEXT_PUBLIC_APP_URL ??

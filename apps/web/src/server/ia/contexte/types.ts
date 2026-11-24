@@ -121,6 +121,17 @@ export type ConversationContexte = {
    * trie, c'est le groupe — son titre d'abord, sa taille, ses derniers messages.
    */
   decouverte?: { titre: string; membres: number | null };
+  /**
+   * Un groupe LU depuis la dernière fois (M29.5) : les messages donnés sont
+   * ceux arrivés depuis la dernière lecture, à montrer en entier ; `omis`
+   * compte ceux, plus anciens, que le plafond a laissés de côté.
+   */
+  lecture?: {
+    titre: string;
+    omis: number;
+    /** La nature qu'on connaît au groupe (son jugement, M29.3), dans les mots du schéma de tri ; null s'il n'a jamais été jugé. */
+    nature?: string | null;
+  };
 };
 
 export type TacheContexte = {

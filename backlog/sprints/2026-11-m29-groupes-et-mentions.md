@@ -7,7 +7,9 @@
 est ce que les testeurs remontent sans cesse. L'épique est `M29-groupes-et-mentions.md` ; ses
 décisions sont dans `ecarts`, « Ignorer veut dire ne plus importer ; un groupe se lit sur
 mention et deux fois par jour » et « La salve partout, et une minute ». M25 est en pause à sa
-tranche 5 (`2026-11-m25-maitrise-des-medias.md`).
+tranche 5 (`2026-11-m25-maitrise-des-medias.md`). **Les quatre tranches sont livrées** ; il
+reste M29.7, après l'usage, et à constater en production ce qui n'a été vu qu'en simulation —
+la liste est en fin de chaque tranche ci-dessous.
 
 **Le rythme de lecture tranché, à ne pas rouvrir.** Un fil direct se lit à la salve (une
 minute). Un groupe **sans sujet ouvert** se lit deux fois par jour, par lot, et **aussitôt
@@ -136,6 +138,55 @@ d'un webhook porte son LID (`attendee_provider_id`), son numéro et son nom.
   l'avis sur le groupe, pas une demande précise. À juger à l'usage.
 - Un groupe ignoré à tort ne se rattrape que par le relevé du lundi et le filtre « Ignorées ».
 
+**Ce qui existe après la tranche 4.**
+
+- **Les deux lectures du jour** (M29.5). `vercel.json` porte toujours deux crons : le matin
+  (6 h UTC) et la **mi-journée** (11 h UTC, l'ancien cron de 2 h). Chacun ne fait que LANCER
+  la lecture (`lancerLectureDesGroupes`) : elle tourne dans sa propre fonction,
+  `POST /api/groupes/lecture`, par passes enchaînées (`passeSuivante`, six au plus).
+- **Quels groupes** : `listGroupesALire` (`packages/db/src/domain/lecture-groupes.ts`) — jugé,
+  actif, aucun sujet ne l'écoute, un message entrant sans sujet depuis le repère. Le repère
+  est `Conversation.groupReadUntil` (migration `20261125100000_m29_lecture_des_groupes`),
+  réservé avant l'appel, rendu s'il échoue.
+- **La lecture d'un groupe** : `pipeline/groupe-lecture.ts` (`lireLeGroupe`, sans Next ni
+  `server-only`) — la projection sur une fenêtre (`getTriageProjection(…, { apres, plafond })`),
+  le cadrage « un groupe lu depuis la dernière fois » (`ConversationContexte.lecture`,
+  `FIL_LECTURE` : quarante messages), le même appel que le tri au tarif différé, borné à une
+  minute. La décision est pure : `deciderLectureGroupe` (`pipeline/decision.ts`).
+- **La passe** : `pipeline/groupes-du-jour.ts` — quatre comptes de front, trois groupes par
+  compte ; structuration du sujet ouvert, relecture du sujet rejoint, une notification par
+  compte ; le garde-fou des sujets (`LECTURE_GROUPES`, `compterSujetsNesDesGroupes`).
+- **Une lecture sans suite** se note au journal (`noterLectureSansSuite`, événement
+  `group_read`) et laisse l'avis du groupe intact.
+- **Le script de mesure** : `pnpm --filter web groupes:lire` — simulation seulement.
+- **Essayé de bout en bout en local**, vrai modèle, par la route : trois groupes posés par le
+  domaine — la panne qui attend le patron rejoint son sujet ouvert et y ajoute la tâche, la
+  cliente sans réponse ouvre un sujet structuré, l'échange de services ne laisse rien ; une
+  seconde passe ne relit rien.
+- **Simulé en production le 2026-11-24**, lecture seule, sur douze heures : 89 groupes lus
+  (484 messages), 13 sujets ouverts dont 11 pour le compte le plus chargé (6 après le
+  garde-fou), 1 rattaché, 28 doutes écrits sur le groupe, le reste sans suite ; 0,046 € au
+  tarif immédiat, la moitié en différé. Les décisions prises sur ces chiffres : `ecarts`,
+  « La lecture des groupes : prudente par défaut ».
+
+**Ce que la tranche 4 ne fait pas, et qu'il ne faut pas croire fait.**
+
+- **Aucune lecture réelle n'a encore tourné en production** : la première part au cron
+  suivant la livraison. À regarder dans les journaux de la fonction : `[ia] lecture des
+  groupes` — `dus`, `lus`, `ouverts`, `plafonnes`, `restants`, `echecs`.
+- **Presque aucun groupe n'est « à lire » tant qu'il n'est pas jugé** : la lecture ne prend
+  que les groupes qui portent un avis. Ils se jugent à leur prochain message (M29.3), ou par
+  le lot `groupes:juger`.
+- **La justesse des sujets ouverts n'a pas été relue** hors du compte du dirigeant : seuls des
+  comptes ont été lus, aucun titre.
+- **Un sujet par groupe et par lecture** : un groupe qui parle de trois affaires n'en ouvre
+  qu'une, et le sujet emporte tous les messages lus. Au-delà de quarante messages depuis la
+  dernière lecture, les plus anciens ne sont pas lus.
+- **Les messages de l'après-midi attendent le lendemain matin**, sauf mention.
+- **Le tarif différé peut faire attendre** : un appel de plus d'une minute est abandonné et le
+  groupe reste dû. Le débit réel des passes n'est pas mesuré.
+- Le filet du rattrapage du courrier tourne désormais à la mi-journée, plus la nuit.
+
 ## Le plan
 
 1. **« La mention se lit »** — M29.1, M29.2. Livrée.
@@ -147,7 +198,7 @@ d'un webhook porte son LID (`attendee_provider_id`), son numéro et son nom.
 3. **« Le groupe se juge à sa découverte »** — M29.3 : un appel sur le titre, la taille et les
    premiers messages ; les groupes déjà connus jugés une fois, par lot.
 4. **« Deux lectures par jour »** — M29.5 : greffées sur les deux crons existants, l'un
-   déplacé vers la mi-journée ; jamais un troisième.
+   déplacé vers la mi-journée ; jamais un troisième. Livrée.
 5. M29.7 (la réponse qui cite un message du dirigeant vaut mention) — après l'usage.
 
 ## Où on en est
@@ -158,5 +209,6 @@ d'un webhook porte son LID (`attendee_provider_id`), son numéro et son nom.
       essayer sur un vrai groupe.
 - [x] Tranche 3 — le groupe se juge, une fois (M29.3) — livrée le 2026-11-24 ; **le lot du
       stock reste à lancer par le dirigeant**.
-- [ ] Tranche 4 — deux lectures par jour (M29.5)
+- [x] Tranche 4 — deux lectures par jour (M29.5) — livrée le 2026-11-24 ; **la première
+      lecture réelle est à constater** dans les journaux, et ses sujets à juger par le dirigeant
 - [ ] M29.7 — la réponse qui cite un message du dirigeant

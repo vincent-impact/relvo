@@ -13,6 +13,7 @@ import {
 } from "@relvo/db";
 import { getStorage } from "@relvo/storage";
 import { renouvelerLesAbonnements } from "@/server/gmail/abonnement";
+import { lancerLectureDesGroupes } from "@/server/ia/pipeline/groupes-du-jour";
 import { notificationDuMatin } from "@/server/push/brief";
 import { envoyerNotification } from "@/server/push/envoyer";
 import { notifierQuestion } from "@/server/push/questions";
@@ -36,6 +37,9 @@ import { expireTenantData } from "@/server/cached";
 //      semaine, par raison, posé dans un échange de Relvo et poussé. Rien
 //      quand il n'a rien ignoré ; jamais deux relevés dans la même semaine
 //      (le domaine le garantit, le jour n'est qu'un rythme).
+//   5. La lecture des groupes (M29.5) — la première des deux du jour, l'autre
+//      part du cron de la mi-journée : ce cron ne fait que la LANCER, elle
+//      tourne dans sa propre fonction (`/api/groupes/lecture`).
 //
 // Appelable à la main avec le même secret :
 //   curl -H "Authorization: Bearer $CRON_SECRET" https://<app>/api/cron/matin
@@ -119,10 +123,14 @@ export async function GET(request: Request) {
   }
   console.info("[cron] matin — relevés des ignorées", releves);
 
+  const groupes = await lancerLectureDesGroupes();
+  console.info("[cron] matin — lecture des groupes lancée", groupes);
+
   return NextResponse.json({
     drainage: { ...drainage, remaining },
     briefs,
     abonnements,
     releves,
+    groupes,
   });
 }

@@ -43,8 +43,10 @@ import { structurerSujet, type IssueStructuration } from "./structuration";
 // tranche 11 — la messagerie directe, A8) : « un fil entrant devient un sujet
 // titré et classé ». Déclenché par le webhook APRÈS sa réponse HTTP, une fois
 // par message, sur une conversation orpheline. Un fil e-mail et un fil
-// WhatsApp DIRECT passent par le MÊME pipeline ; un groupe n'est jamais trié
-// (l'écoute s'y pose à la main, 05 §9.5).
+// WhatsApp DIRECT passent par le MÊME pipeline. Un GROUPE n'est pas trié au
+// fil de l'eau : il se juge une fois (`./groupe`, M29.3), se lit ici quand le
+// dirigeant y est mentionné (M29.4), et sinon deux fois par jour, par lot
+// (`./groupes-du-jour`, M29.5) — 05 §1.2.
 //
 // Ordre, et ce que chaque étape garantit :
 //   1. Assistant actif sur le compte, inférence joignable, idempotence — sinon rien.

@@ -215,8 +215,8 @@ conversations mises en sourdine), le coût en euros, la raison de l'arrêt, et c
 tranches exige : le **verrou** de la tranche en cours (une seule à la fois, pris par une mise à
 jour conditionnelle, expiré quand une tranche meurt), la fin de la dernière tranche, le compte
 des passes d'import vides, le total des candidats quand l'import se ferme (l'avancement en
-fraction), le niveau de service du tri — standard en direct, en lot la nuit — et le nombre de
-reprises nocturnes. Une ligne par rattrapage demandé ; la demande naît à la connexion d'un canal,
+fraction), le niveau de service du tri — standard en direct, en lot au passage quotidien — et le
+nombre de ces reprises. Une ligne par rattrapage demandé ; la demande naît à la connexion d'un canal,
 l'exécution commence aussitôt, par tranches, et reprend tant que la ligne n'est pas close. C'est
 ce que le premier échange avec Relvo raconte pendant qu'il lit, et ce que l'écran des canaux
 montre ensuite.
@@ -310,6 +310,14 @@ efface la raison et l'acteur ; le verdict de tri, lui, reste.
 La conversation tient aussi la **série** de ses avis « rien à faire » sûrs : combien, d'affilée,
 concluent qu'il n'y a rien à faire en confiance haute. Tout autre avis, et la réactivation, la
 remettent à zéro (cf. `05 §9.5`).
+
+Un **groupe** de messagerie porte en plus son **repère de lecture** (`group_read_until`) :
+jusqu'où la lecture du jour l'a lu — la date de création du dernier message qu'elle a montré à
+Relvo, pas l'heure de la lecture, pour qu'un message arrivé pendant l'appel ne soit pas sauté.
+Ce qui est arrivé après est à lire à la lecture suivante. Vide tant qu'aucune lecture n'a eu
+lieu : le repère est alors la date du dernier avis. Sur un groupe, l'avis est celui du
+**groupe** : une lecture qui ne trouve rien à faire ne l'écrase pas, elle se note au journal
+(cf. `05 §1.2`).
 
 Sur une conversation orpheline, Relvo dépose son **avis de tri** en deux parts — l'**action** :
 à traiter, à considérer, rien à faire ; la **nature**, toujours posée : professionnel, publicité,

@@ -87,6 +87,8 @@ export const EVENT_TYPES = {
   iaEchec: "ia_echec",
   /** Verdict de tri déposé sur une conversation orpheline (M7.14). */
   triageVerdict: "triage_verdict",
+  /** Une lecture du jour d'un groupe qui n'a rien trouvé à faire (M29.5) : l'avis du groupe ne bouge pas. */
+  groupRead: "group_read",
   /** Le tri a échoué : la conversation reste orpheline, rien n'est inventé (M7.15). */
   triageFailed: "triage_failed",
   /** Un sujet nouveau a reçu sa structuration — situation, résumé, tâches, contact (M7.6) ; la proposition intégrale est en métadonnée (05 §9.1). */

@@ -27,6 +27,7 @@
     "wa:reparer": "node --env-file=.env.local --import tsx scripts/unipile/conversations-fantomes.ts",
     "medias:purger": "node --env-file=.env.local --import tsx scripts/medias/purger-ignorees.ts",
     "groupes:juger": "node --env-file=.env.local --import tsx scripts/ia/juger-groupes.ts",
+    "groupes:lire": "node --env-file=.env.local --import tsx scripts/ia/lire-groupes.ts",
     "boites:migrer": "node --env-file=.env.local --import tsx scripts/gmail/migrer.ts",
     "icons": "node scripts/generate-icons.mjs"
   },

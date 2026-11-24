@@ -5,6 +5,8 @@ import {
   FRONTIERE_CONFIANCE,
   FRONTIERE_IGNORANCE,
   deciderGroupe,
+  deciderLectureGroupe,
+  FRONTIERE_LECTURE_GROUPE,
 } from "@/server/ia/pipeline/decision";
 import type { SortieTri } from "@/server/ia/schemas";
 
@@ -257,5 +259,96 @@ describe("juger un groupe (M29.3)", () => {
         deciderGroupe(groupe("professionnel", confiance, "rien_a_faire")),
       ).toMatchObject({ type: "garder", avis: { action: "a_considerer" } });
     }
+  });
+});
+
+describe("décision de la lecture du jour d'un groupe (M29.5)", () => {
+  it("un sujet ne s'ouvre, et ne se rattache, qu'en confiance haute", () => {
+    expect(FRONTIERE_LECTURE_GROUPE).toBe("haute");
+    expect(deciderLectureGroupe(aTraiter).decision.type).toBe("ouvrir");
+    // Le tri d'un fil direct ouvrirait ; la lecture d'un groupe, non.
+    const moyen: SortieTri = { ...aTraiter, confiance: "moyenne" };
+    expect(deciderTri(moyen).type).toBe("ouvrir");
+    expect(deciderLectureGroupe(moyen).decision).toEqual({
+      type: "avis-seul",
+      motif: "sous-la-frontiere",
+    });
+    const prolonge: SortieTri = { ...aTraiter, sujet_existant: "S-0042" };
+    expect(deciderLectureGroupe(prolonge).decision.type).toBe("rattacher");
+    expect(
+      deciderLectureGroupe({ ...prolonge, confiance: "moyenne" }).decision.type,
+    ).toBe("avis-seul");
+  });
+
+  it("ne rattache que ce qui attend le dirigeant : un bavardage qui touche un sujet ouvert ne lui livre pas le groupe", () => {
+    const echange: SortieTri = {
+      ...rienAFaire,
+      nature: "professionnel",
+      sujet_existant: "S-0242",
+      raison: "Échange de services réglé entre deux équipiers.",
+    };
+    // Sur un fil, le rattachement prime, quelle que soit l'action…
+    expect(deciderTri(echange).type).toBe("rattacher");
+    // … sur un groupe lu, non : rien n'attend le dirigeant, rien ne se rattache.
+    expect(deciderLectureGroupe(echange)).toEqual({
+      decision: { type: "avis-seul", motif: "rien-a-faire" },
+      sansSuite: true,
+    });
+    expect(
+      deciderLectureGroupe({ ...echange, action: "a_considerer" }).decision,
+    ).toEqual({ type: "avis-seul", motif: "a-considerer" });
+  });
+
+  it("l'équipe qui s'organise sans le dirigeant ne dit rien du groupe : son avis ne bouge pas", () => {
+    const entreEux: SortieTri = {
+      ...rienAFaire,
+      nature: "professionnel",
+      raison: "L'équipe règle le planning entre elle.",
+    };
+    expect(deciderLectureGroupe(entreEux)).toEqual({
+      decision: { type: "avis-seul", motif: "rien-a-faire" },
+      sansSuite: true,
+    });
+    // Une affaire personnelle dans un groupe n'ouvre rien, et ne requalifie pas le groupe.
+    expect(deciderLectureGroupe({ ...aTraiter, nature: "personnel" })).toEqual({
+      decision: { type: "avis-seul", motif: "personnel" },
+      sansSuite: true,
+    });
+  });
+
+  it("hors du champ professionnel et sans doute, la lecture avance vers l'ignorance — jamais dans le doute", () => {
+    for (const nature of [
+      "personnel",
+      "publicite",
+      "automatique",
+      "indesirable",
+    ] as const) {
+      const d = deciderLectureGroupe({ ...rienAFaire, nature });
+      expect(d.decision.type).toBe("ignorer");
+      expect(d.sansSuite).toBe(false);
+    }
+    expect(
+      deciderLectureGroupe({
+        ...rienAFaire,
+        nature: "personnel",
+        confiance: "moyenne",
+      }),
+    ).toEqual({
+      decision: { type: "avis-seul", motif: "rien-a-faire" },
+      sansSuite: true,
+    });
+  });
+
+  it("un doute s'écrit sur le groupe : le dirigeant le voit dans la liste à trier", () => {
+    expect(
+      deciderLectureGroupe({ ...aTraiter, action: "a_considerer" }),
+    ).toEqual({
+      decision: { type: "avis-seul", motif: "a-considerer" },
+      sansSuite: false,
+    });
+    expect(
+      deciderLectureGroupe({ ...aTraiter, confiance: "moyenne" }).sansSuite,
+    ).toBe(false);
+    expect(deciderLectureGroupe(aTraiter).sansSuite).toBe(false);
   });
 });

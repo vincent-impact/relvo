@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { MESSAGERIE } from "@/server/ia/config";
+import { LECTURE_GROUPES, MESSAGERIE } from "@/server/ia/config";
 import {
   ancreDeLaSalve,
   assezDAvisPourIgnorer,
   autourDeLaMention,
   estDernierDeLaSalve,
+  passeSuivante,
   peutFaireTaire,
 } from "@/server/ia/pipeline/messagerie-regles";
 import { estHistorique } from "@/server/ia/pipeline/rattrapage-regles";
@@ -253,5 +254,25 @@ describe("un groupe lu sur une mention (M29.4)", () => {
     expect(ancreDeLaSalve(autourDeLaMention(fil, mention.id), mention)).toBe(
       "g02",
     );
+  });
+});
+
+describe("groupes — les passes de la lecture du jour (M29.5)", () => {
+  it("une passe coupée par son budget en relance une autre, tant qu'elle a lu quelque chose", () => {
+    expect(passeSuivante({ restants: 12, lus: 30 }, 1)).toBe(2);
+    // Tout est lu : rien à relancer.
+    expect(passeSuivante({ restants: 0, lus: 30 }, 1)).toBeNull();
+    // Rien n'a pu être lu : le fournisseur est en panne, on ne boucle pas.
+    expect(passeSuivante({ restants: 12, lus: 0 }, 1)).toBeNull();
+  });
+
+  it("jamais au-delà du nombre de passes permis, et la marge laisse finir la dernière lecture", () => {
+    expect(
+      passeSuivante({ restants: 5, lus: 5 }, LECTURE_GROUPES.passesMax),
+    ).toBeNull();
+    expect(
+      passeSuivante({ restants: 5, lus: 5 }, LECTURE_GROUPES.passesMax - 1),
+    ).toBe(LECTURE_GROUPES.passesMax);
+    expect(LECTURE_GROUPES.margeMs).toBeGreaterThan(LECTURE_GROUPES.appelMaxMs);
   });
 });

@@ -148,6 +148,15 @@ export type TriageProjection = {
   titre: string;
   /** Relvo a déjà rendu un avis sur ce fil. Un groupe ne se juge qu'une fois. */
   dejaJuge: boolean;
+  /** La nature que porte le dernier avis — pour un groupe, celle qu'on lui connaît (M29.3). */
+  natureConnue: TriageNature | null;
+  /**
+   * Quand la projection a été demandée sur une FENÊTRE (la lecture d'un
+   * groupe, M29.5) : jusqu'où vont les messages chargés — la date de création
+   * du dernier — et combien de messages plus anciens de la fenêtre n'ont pas
+   * été chargés. Null hors fenêtre.
+   */
+  fenetre: { jusqua: Date | null; omis: number } | null;
   compte: TriageAccountProjection;
   expediteur: TriageSenderProfile;
   conversation: {
@@ -334,6 +343,12 @@ function displayContactName(c: {
 export async function getTriageProjection(
   db: TenantDb,
   conversationId: string,
+  /**
+   * La lecture d'un GROUPE (M29.5) ne lit pas « le premier et les derniers »
+   * d'un fil : elle lit ce qui est arrivé APRÈS son repère, les `plafond`
+   * derniers messages au plus.
+   */
+  fenetre?: { apres: Date; plafond: number },
 ): Promise<TriageProjection> {
   const conversation = assertFound(
     await db.conversation.findFirst({
@@ -345,6 +360,7 @@ export async function getTriageProjection(
         status: true,
         title: true,
         triagedAt: true,
+        triageNature: true,
         participantsRaw: true,
         interlocutorRaw: true,
         contact: {
@@ -408,7 +424,8 @@ export async function getTriageProjection(
       db.message.findMany({
         where: { conversationId },
         orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-        take: 1,
+        // Une fenêtre ne remonte pas au premier message du fil.
+        take: fenetre ? 0 : 1,
         include: {
           senderContact: {
             select: {
@@ -421,9 +438,11 @@ export async function getTriageProjection(
         },
       }),
       db.message.findMany({
-        where: { conversationId },
+        where: fenetre
+          ? { conversationId, createdAt: { gt: fenetre.apres } }
+          : { conversationId },
         orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-        take: TRIAGE_LAST_MESSAGES,
+        take: fenetre ? fenetre.plafond : TRIAGE_LAST_MESSAGES,
         include: {
           senderContact: {
             select: {
@@ -444,6 +463,12 @@ export async function getTriageProjection(
     const d = a.createdAt.getTime() - b.createdAt.getTime();
     return d !== 0 ? d : a.id.localeCompare(b.id);
   });
+
+  const dansLaFenetre = fenetre
+    ? await db.message.count({
+        where: { conversationId, createdAt: { gt: fenetre.apres } },
+      })
+    : 0;
 
   // Interlocuteur du fil, pour nos messages sortants : le contact enregistré,
   // sinon le set d'adresses brutes, sinon l'identifiant brut.
@@ -527,6 +552,13 @@ export async function getTriageProjection(
     connecteLe: conversation.channel.config?.lastSyncAt ?? null,
     titre: conversation.title,
     dejaJuge: conversation.triagedAt !== null,
+    natureConnue: conversation.triageNature,
+    fenetre: fenetre
+      ? {
+          jusqua: messages.at(-1)?.createdAt ?? null,
+          omis: Math.max(dansLaFenetre - messages.length, 0),
+        }
+      : null,
     compte: {
       dirigeant: `${account.firstName} ${account.lastName}`.trim(),
       // Le compte ne porte pas encore de raison sociale.
