@@ -87,6 +87,7 @@ const MOTS: Record<IgnoreReason, [un: string, plusieurs: string]> = {
   not_my_role: ["hors de votre rôle", "hors de votre rôle"],
   handled_elsewhere: ["traitée ailleurs", "traitées ailleurs"],
   other: ["autre", "autres"],
+  unwanted: ["indésirable", "indésirables"],
 };
 
 /** La phrase du relevé — pure, dans les mots du dirigeant. */

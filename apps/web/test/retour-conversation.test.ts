@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  compteCourt,
-  compteLong,
-  phraseDuRetour,
-  trouARelire,
-} from "@/lib/trou";
+import { compteLong, phraseDuRetour, trouARelire } from "@/lib/trou";
 import { annuaireDuFil, messageRelu } from "@/server/unipile/map";
 
 // LE RETOUR D'UNE CONVERSATION IGNORÉE (M25.10) — ce qui est pur : traduire un
@@ -113,9 +108,7 @@ describe("messageRelu", () => {
 });
 
 describe("les mots du trou", () => {
-  it("le compte, court en liste et en toutes lettres en tête du fil", () => {
-    expect(compteCourt({ count: 12, since: "3 nov." })).toBe("12 non importés");
-    expect(compteCourt({ count: 1, since: null })).toBe("1 non importé");
+  it("le compte, en toutes lettres en tête du fil", () => {
     expect(compteLong({ count: 12, since: "3 nov." })).toBe(
       "12 messages n'ont pas été importés depuis le 3 nov.",
     );

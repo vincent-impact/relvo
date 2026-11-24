@@ -71,7 +71,8 @@ export type NatureAvis =
   | "professionnel"
   | "publicite"
   | "automatique"
-  | "personnel";
+  | "personnel"
+  | "indesirable";
 export type ConfianceAvis = "haute" | "moyenne" | "basse";
 
 /**
@@ -79,9 +80,9 @@ export type ConfianceAvis = "haute" | "moyenne" | "basse";
  * `05 §9.5` : oui en confiance haute, quelle que soit la nature — une
  * newsletter, un accusé, un fil personnel n'ont pas à rester à trier. Sur un
  * fil WhatsApp direct, un « merci, bonne journée » n'est pas une raison de ne
- * plus écouter un client : seules la publicité et l'automatique mettent en
- * sourdine ; le professionnel et le personnel n'écrivent que l'avis, la
- * conversation reste vivante.
+ * plus écouter un client : seuls la publicité, l'automatique et l'indésirable
+ * mettent en sourdine ; le professionnel et le personnel n'écrivent que
+ * l'avis, la conversation reste vivante.
  */
 export function peutFaireTaire(args: {
   canal: Canal;
@@ -90,5 +91,9 @@ export function peutFaireTaire(args: {
 }): boolean {
   if (args.confiance !== "haute") return false;
   if (args.canal === "email") return true;
-  return args.nature === "publicite" || args.nature === "automatique";
+  return (
+    args.nature === "publicite" ||
+    args.nature === "automatique" ||
+    args.nature === "indesirable"
+  );
 }

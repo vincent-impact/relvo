@@ -132,11 +132,12 @@ et sort de la carte à deux chiffres. Le point du non-lu tient l'autre coin. Un 
 « 0 », en gris clair — un tiret ou un vide y laisserait croire à une donnée manquante.
 
 **L'avis de tri se lit en badges, jamais en phrase dans une liste.** Sur une ligne de
-conversation, deux informations, deux badges, chacun son pictogramme : la **nature** dans un
-badge plein et pâle, le **conseil** de Relvo dans un badge cerclé — le pouce levé pour « à
-considérer », baissé pour « à ignorer ». La forme sépare les deux familles ; la teinte dit
-l'acteur — violet pour Relvo, bleu pour ce que l'utilisateur a ignoré lui-même, gris pour
-« sans avis ». La phrase de Relvo se lit en tête du fil, sous les mêmes badges.
+conversation, deux informations, deux badges, chacun son pictogramme, le conseil d'abord. Le
+**conseil** de Relvo guide d'un coup d'œil, et c'est le seul badge qui porte une couleur de
+sens : vert et pouce levé pour « à traiter », rouge et pouce baissé pour « à ignorer » ; « sans
+avis » est cerclé de violet, neutre. La **nature** est toujours en violet plein : c'est son
+pictogramme qui la distingue, pas sa teinte. « Ignorée par vous » est bleu, la couleur de
+l'utilisateur. La phrase de Relvo se lit en tête du fil, sous les mêmes badges.
 
 **Une présentation unique par entité, partout.** Une tâche se rend de la même façon dans la
 liste d'un sujet et dans une liste à plat ; seul le contexte affiché varie (le titre du sujet

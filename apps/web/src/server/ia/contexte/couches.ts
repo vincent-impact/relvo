@@ -142,6 +142,7 @@ const RAISONS: Record<string, string> = {
   not_my_role: "pas son rôle",
   handled_elsewhere: "traité ailleurs",
   other: "autre",
+  unwanted: "indésirable",
 };
 
 /**

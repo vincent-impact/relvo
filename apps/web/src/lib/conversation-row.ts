@@ -11,58 +11,43 @@ import { formatRelative } from "@/lib/display";
 
 // ── Ce que Relvo a conclu sur un fil (M7) ───────────────────────────────────
 // Deux informations, jamais mêlées — deux badges à l'écran (`avis-badges`) :
+//   · le CONSEIL : ce que Relvo en ferait. C'est lui qui guide d'un coup
+//     d'œil ; il n'a de sens que tant que la conversation est à trier — une
+//     conversation ignorée n'attend plus d'avis.
 //   · la NATURE : de quoi il s'agit (professionnel, publicité…). Elle se lit
 //     partout où l'avis s'affiche, « à trier » comme « ignorées ».
-//   · le CONSEIL : ce que Relvo en ferait. Il n'a de sens que tant que la
-//     conversation est à trier — une conversation ignorée n'attend plus d'avis.
 // Les mots sont ceux de l'utilisateur, en un seul endroit, jamais ceux du
-// modèle ni de la base : « bruit » ou « autre » ne s'affichent nulle part
-// comme un verdict.
+// modèle ni de la base : « bruit » ne s'affiche nulle part.
 
 /** Ce que Relvo en ferait. Sans avis, il n'a pas lu la conversation. */
-export type Conseil = "considerer" | "ignorer";
+export type Conseil = "traiter" | "ignorer";
 
 export const CONSEIL_LABELS: Record<Conseil, string> = {
-  considerer: "À considérer",
+  traiter: "À traiter",
   ignorer: "À ignorer",
 };
 
 export const SANS_AVIS = "Sans avis";
 
-// Relvo ouvre lui-même un sujet quand il est sûr : une conversation encore à
-// trier avec un « à traiter » est donc, comme un « à considérer », une
-// conversation qu'il vous recommande de regarder.
+// Un seul conseil pour « à traiter » et « à considérer » : dans les deux cas
+// Relvo dit au dirigeant de regarder. La nuance — sûr ou hésitant — est dans
+// sa phrase, en tête du fil.
 const CONSEIL_DE: Record<ConversationTriage["verdict"], Conseil> = {
-  matter: "considerer",
-  uncertain: "considerer",
+  matter: "traiter",
+  uncertain: "traiter",
   noise: "ignorer",
 };
 
-/**
- * La nature d'une conversation : celle que Relvo a posée, ou la raison que
- * l'utilisateur a choisie en l'ignorant. Une seule liste, un seul libellé.
- */
-export type NatureCle =
-  | NonNullable<ConversationTriage["nature"]>
-  | "prospecting"
-  | "not_my_role"
-  | "handled_elsewhere"
-  | "other";
+/** La nature que Relvo pose sur une conversation — miroir de `TriageNature`. */
+export type NatureCle = NonNullable<ConversationTriage["nature"]>;
 
 export const NATURE_LABELS: Record<NatureCle, string> = {
   professional: "Professionnel",
   personal: "Personnel",
   advertising: "Publicité",
-  prospecting: "Prospection",
   automatic: "Automatique",
-  not_my_role: "Pas mon rôle",
-  handled_elsewhere: "Traité ailleurs",
-  other: "Autre",
+  unwanted: "Indésirable",
 };
-
-function natureCle(raw: string | null | undefined): NatureCle | null {
-  return raw && raw in NATURE_LABELS ? (raw as NatureCle) : null;
-}
 
 /** L'avis de Relvo, prêt à afficher — sérialisable (le temps est préformaté). */
 export type RelvoVerdictData = {
@@ -80,22 +65,21 @@ export function toRelvoVerdictData(
   if (!t) return null;
   return {
     conseil: CONSEIL_DE[t.verdict],
-    nature: natureCle(t.nature),
+    nature: t.nature,
     reason: t.reason,
     time: formatRelative(t.at) ?? "",
   };
 }
 
 /**
- * L'ignorance, prête à afficher : QUI a ignoré (la couleur du badge — violet
- * pour Relvo, bleu pour l'utilisateur) et la nature — celle de l'avis quand
- * c'est Relvo qui a fait taire, la raison choisie quand c'est l'utilisateur.
+ * L'ignorance, prête à afficher : QUI a ignoré, et la nature que Relvo avait
+ * posée — elle reste vraie quand c'est l'utilisateur qui a ignoré.
  */
 export type IgnoreData = {
   byRelvo: boolean;
   nature: NatureCle | null;
   note: string | null;
-  /** Ce que la conversation n'importe plus depuis qu'elle est ignorée (M25.10). */
+  /** Ce que la conversation n'importe plus depuis qu'elle est ignorée (M25.10) — dit en tête du fil. */
   unimported: TrouData | null;
 };
 
@@ -119,10 +103,9 @@ export function toIgnoreData(
   unimported: UnimportedGap | null = null,
 ): IgnoreData | null {
   if (!i) return null;
-  const byRelvo = i.by === "ai";
   return {
-    byRelvo,
-    nature: natureCle(byRelvo ? triage?.nature : i.reason),
+    byRelvo: i.by === "ai",
+    nature: triage?.nature ?? null,
     note: i.note,
     unimported: toTrouData(unimported),
   };

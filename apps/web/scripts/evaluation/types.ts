@@ -14,7 +14,12 @@ export type Cas = {
   verite: {
     /** L'ACTION attendue — « a_considerer » n'est jamais une vérité : c'est un renvoi au dirigeant. */
     action: "a_traiter" | "rien_a_faire";
-    nature: "professionnel" | "publicite" | "automatique" | "personnel";
+    nature:
+      | "professionnel"
+      | "publicite"
+      | "automatique"
+      | "personnel"
+      | "indesirable";
     /** Référence du sujet né de ce fil — exclu des « sujets ouverts » poussés au tri. */
     reference: string | null;
     /** Référence d'un sujet ouvert PRÉEXISTANT que ce fil prolonge et doit rejoindre, sinon null. */

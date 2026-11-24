@@ -48,7 +48,8 @@ export type DecisionTri =
         | "a-considerer"
         | "rien-a-faire"
         | "sous-la-frontiere"
-        | "personnel";
+        | "personnel"
+        | "indesirable";
     }
   | { type: "ignorer"; nature: Nature; raison: string }
   | {
@@ -91,6 +92,11 @@ export function deciderTri(
 
   if (sortie.action === "a_traiter") {
     if (personnel) return { type: "avis-seul", motif: "personnel" };
+    // Un indésirable n'ouvre jamais de sujet, quoi que dise l'action : un
+    // message jugé frauduleux et « à traiter » à la fois est un avis qui se
+    // contredit — le dirigeant tranche.
+    if (sortie.nature === "indesirable")
+      return { type: "avis-seul", motif: "indesirable" };
     if (!assezSur) return { type: "avis-seul", motif: "sous-la-frontiere" };
     return {
       type: "ouvrir",
@@ -139,6 +145,7 @@ export const NATURE_EN_BASE = {
   publicite: "advertising",
   automatique: "automatic",
   personnel: "personal",
+  indesirable: "unwanted",
 } as const;
 
 export const CONFIANCE_EN_BASE = {

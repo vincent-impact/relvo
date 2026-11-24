@@ -134,7 +134,8 @@ enum ConversationStatus {
 /// Raison d'ignorance d'une conversation, choisie par l'utilisateur en un appui
 /// (02, Conversation). Quand c'est Relvo qui fait taire, la raison dérive de la
 /// NATURE de son avis (`TriageNature`) : publicité → advertising, automatique →
-/// automatic, personnel → personal, professionnel → other. `not_my_role` et
+/// automatic, personnel → personal, indésirable → unwanted, professionnel → other.
+/// `prospecting` date d'avant : le démarchage est de la publicité. `not_my_role` et
 /// `handled_elsewhere` ne sont jamais posés par Relvo — seul l'utilisateur les
 /// connaît.
 enum IgnoreReason {
@@ -145,6 +146,7 @@ enum IgnoreReason {
   not_my_role
   handled_elsewhere
   other
+  unwanted
 }
 
 /// L'ACTION de l'avis de tri (05 §1.1) — ce que le fil demande au dirigeant :
@@ -162,12 +164,15 @@ enum TriageVerdict {
 /// quelle que soit l'action : `professional` = l'activité de l'entreprise (et
 /// alors un domaine peut se poser), `advertising` = envois de masse et
 /// démarchage, `automatic` = messages de machines, `personal` = hors du champ
-/// professionnel. Quatre valeurs, pas trente-six : c'est ce que l'utilisateur lit.
+/// professionnel, `unwanted` = l'indésirable — ce qui ne devrait pas être dans la
+/// boîte : spam, arnaque, tentative de fraude. Cinq valeurs, pas trente-six :
+/// c'est ce que l'utilisateur lit.
 enum TriageNature {
   professional
   advertising
   automatic
   personal
+  unwanted
 }
 
 /// Confiance d'un verdict — trois niveaux, JAMAIS un pourcentage (un modèle

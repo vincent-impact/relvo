@@ -570,6 +570,7 @@ export const IGNORE_REASON_OF_NATURE: Record<TriageNature, IgnoreReason> = {
   advertising: IgnoreReason.advertising,
   automatic: IgnoreReason.automatic,
   personal: IgnoreReason.personal,
+  unwanted: IgnoreReason.unwanted,
   professional: IgnoreReason.other,
 };
 
@@ -611,6 +612,7 @@ const NATURE_LABELS: Record<TriageNature, string> = {
   advertising: "publicité",
   automatic: "automatique",
   personal: "personnel",
+  unwanted: "indésirable",
 };
 
 /**

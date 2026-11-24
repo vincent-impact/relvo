@@ -116,6 +116,17 @@ describe("décision du tri", () => {
     );
   });
 
+  it("un indésirable n'ouvre jamais de sujet ; sûr et sans rien à faire, il se tait", () => {
+    expect(deciderTri({ ...aTraiter, nature: "indesirable" })).toEqual({
+      type: "avis-seul",
+      motif: "indesirable",
+    });
+    expect(deciderTri({ ...rienAFaire, nature: "indesirable" })).toMatchObject({
+      type: "ignorer",
+      nature: "indesirable",
+    });
+  });
+
   it("un « rien à faire » en confiance haute fait taire la source, avec sa nature et sa raison", () => {
     expect(FRONTIERE_IGNORANCE).toBe("haute");
     expect(deciderTri(rienAFaire)).toEqual({

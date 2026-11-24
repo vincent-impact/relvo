@@ -69,15 +69,19 @@ palier gratuit de son côté** (M25.2) : à vérifier avec lui avant de compter 
   `/conversations?filtre=ignorees`.
 - **L'avis en deux badges** (essai de la tranche 3 par le dirigeant, `ecarts`, « Deux badges
   plutôt qu'une phrase »). `components/conversations/avis-badges.tsx` : `AvisBadges` sur une
-  ligne de la liste — la **nature** (badge plein) et le **conseil** (badge cerclé, pouce levé
-  ou baissé), « Sans avis » en gris si Relvo n'a pas lu ; dans « Ignorées », la nature seule,
-  violette si Relvo a ignoré, bleue si c'est le dirigeant. `AvisDuFil` en tête du fil : les
-  mêmes badges puis la phrase de Relvo, qui ne se lit plus que là. Les mots sont dans
-  `lib/conversation-row.ts` (`NATURE_LABELS`, `CONSEIL_LABELS`). **Le filtre par raison de la
-  tranche 3 est retiré** — la rangée de puces, `?raison=`, et l'option `ignored` de
-  `listConversationItems`. ⚠️ **La liste des natures reste à trancher** : l'inventaire a été
-  proposé au dirigeant ; l'élargir, c'est une migration de `TriageNature`, la consigne du tri
-  et son jeu d'évaluation.
+  ligne de la liste — le **conseil** d'abord, coloré (« À traiter » vert, « À ignorer » rouge,
+  « Sans avis » cerclé de violet), puis la **nature** en violet plein ; dans « Ignorées », la
+  nature seule, précédée de « Ignorée par vous » (bleu) quand c'est le dirigeant. `AvisDuFil`
+  en tête du fil : les mêmes badges, la phrase de Relvo, et le compte non importé — qui ne se
+  lisent plus que là. Les mots sont dans `lib/conversation-row.ts` (`NATURE_LABELS`,
+  `CONSEIL_LABELS`). **Le filtre par raison de la tranche 3 est retiré** — la rangée de
+  puces, `?raison=`, et l'option `ignored` de `listConversationItems`.
+- **Cinq natures** : professionnel, personnel, publicité, automatique, **indésirable**
+  (`unwanted` dans `TriageNature` et `IgnoreReason`, migration
+  `20261124220000_nature_indesirable`). La consigne est dans `ia/produit/socle.ts`, la garde
+  dans `pipeline/decision.ts` (un indésirable n'ouvre jamais de sujet) et
+  `messagerie-regles.ts` (il met en sourdine sur WhatsApp). Les avis déjà rendus gardent leur
+  nature.
 
 **Ce que les tranches 1 à 3 ne font pas, et qu'il ne faut pas croire fait.**
 

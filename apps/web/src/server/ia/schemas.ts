@@ -23,7 +23,7 @@ export const CONFIANCES = ["haute", "moyenne", "basse"] as const;
 export const PRIORITES = ["normal", "urgent"] as const;
 /**
  * La NATURE — de quoi il s'agit, TOUJOURS posée, quelle que soit l'action.
- * Quatre valeurs, pas trente-six : c'est ce que l'utilisateur lit. Un domaine
+ * Cinq valeurs, pas trente-six : c'est ce que l'utilisateur lit. Un domaine
  * ne se pose que sur « professionnel ». Miroir de `TriageNature` (Prisma).
  */
 export const NATURES = [
@@ -31,6 +31,7 @@ export const NATURES = [
   "publicite",
   "automatique",
   "personnel",
+  "indesirable",
 ] as const;
 /** Miroir de `TaskKind` (Prisma) — le schéma de sortie n'importe pas le client. */
 export const TYPES_TACHE = [

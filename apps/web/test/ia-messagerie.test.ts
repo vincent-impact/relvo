@@ -110,7 +110,7 @@ describe("messagerie — ce qui fait taire, par canal", () => {
     ).toBe(false);
   });
 
-  it("sur WhatsApp, seules la publicité et l'automatique mettent en sourdine ; un « merci » professionnel ou personnel laisse le fil vivant", () => {
+  it("sur WhatsApp, seuls la publicité, l'automatique et l'indésirable mettent en sourdine ; un « merci » professionnel ou personnel laisse le fil vivant", () => {
     expect(
       peutFaireTaire({
         canal: "whatsapp",
@@ -122,6 +122,13 @@ describe("messagerie — ce qui fait taire, par canal", () => {
       peutFaireTaire({
         canal: "whatsapp",
         nature: "automatique",
+        confiance: "haute",
+      }),
+    ).toBe(true);
+    expect(
+      peutFaireTaire({
+        canal: "whatsapp",
+        nature: "indesirable",
         confiance: "haute",
       }),
     ).toBe(true);

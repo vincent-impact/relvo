@@ -11,11 +11,6 @@ export type TrouData = {
 
 const messages = (n: number) => (n > 1 ? `${n} messages` : "1 message");
 
-/** Sur une ligne de liste : court, à la suite de la raison. */
-export function compteCourt(trou: TrouData): string {
-  return trou.count > 1 ? `${trou.count} non importés` : "1 non importé";
-}
-
 /** En tête du fil d'une conversation ignorée. */
 export function compteLong(trou: TrouData): string {
   const quoi =

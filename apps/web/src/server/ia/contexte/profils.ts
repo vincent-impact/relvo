@@ -60,35 +60,35 @@ export type Profil =
  */
 export const BUDGETS: Record<Profil, Record<Couche, number>> = {
   tri: {
-    produit: 3_600,
+    produit: 3_700,
     compte: 1_100,
     domaine: 0,
     situation: 3_000,
     instant: 120,
   },
   structuration: {
-    produit: 3_600,
+    produit: 3_700,
     compte: 1_600,
     domaine: 3_500,
     situation: 4_500,
     instant: 120,
   },
   relecture: {
-    produit: 3_600,
+    produit: 3_700,
     compte: 1_600,
     domaine: 3_500,
     situation: 3_500,
     instant: 120,
   },
   brouillon: {
-    produit: 3_600,
+    produit: 3_700,
     compte: 1_600,
     domaine: 3_500,
     situation: 3_500,
     instant: 120,
   },
   "etiquette-piece-jointe": {
-    produit: 3_600,
+    produit: 3_700,
     compte: 0,
     domaine: 0,
     situation: 300,
@@ -97,7 +97,7 @@ export const BUDGETS: Record<Profil, Record<Couche, number>> = {
   // L'échange (M10) : la couche Produit porte en plus le socle de l'échange ;
   // la Situation est le brief et la fiche de la page, trois messages au plus.
   echange: {
-    produit: 4_300,
+    produit: 4_400,
     compte: 1_600,
     domaine: 3_500,
     situation: 3_000,

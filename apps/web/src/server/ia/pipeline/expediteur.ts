@@ -6,7 +6,7 @@ import type { ExpediteurContexte } from "../contexte";
 //
 //   1. UNE SOURCE DÉJÀ ÉCARTÉE. Une adresse dont les fils ont été ignorés
 //      plusieurs fois pour une même raison — publicité, automatique,
-//      personnel — passe en sourdine sans appel, avec cette raison, et la
+//      personnel, indésirable — passe en sourdine sans appel, avec cette raison, et la
 //      mention du nombre. Réversible d'un appui : réactiver un fil retire son
 //      ignorance du compte, et la règle se désarme d'elle-même.
 //   2. UN SEUL SUJET ATTEND SA RÉPONSE. Un contact CONNU, avec qui exactement
@@ -27,6 +27,7 @@ const RAISONS_ECARTABLES = new Set([
   "prospecting",
   "automatic",
   "personal",
+  "unwanted",
 ]);
 
 export type DecisionExpediteur =
@@ -61,10 +62,11 @@ export function deciderParExpediteur(
 /** Nature de l'avis quand une source est écartée par ses antécédents. */
 export const NATURE_DE_LA_RAISON: Record<
   string,
-  "publicite" | "automatique" | "personnel"
+  "publicite" | "automatique" | "personnel" | "indesirable"
 > = {
   advertising: "publicite",
   prospecting: "publicite",
   automatic: "automatique",
   personal: "personnel",
+  unwanted: "indesirable",
 };

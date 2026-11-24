@@ -276,9 +276,10 @@ function ConversationRow({
             ) : null}
           </div>
 
-          {/* L'avis de tri (M7.20), en badges : la nature et le conseil dans
-              « à trier » — « Sans avis » si Relvo n'a pas lu ce fil —, la
-              nature seule dans « ignorées ». Rien si un sujet suit le fil :
+          {/* L'avis de tri (M7.20), en badges : le conseil puis la nature
+              dans « à trier » — « Sans avis » si Relvo n'a pas lu ce fil —,
+              la nature dans « ignorées », précédée de « Ignorée par vous »
+              quand c'est le dirigeant. Rien si un sujet suit le fil :
               l'avis a servi, la mémoire vivante est dans le sujet. */}
           {data.listeningSubjects.length === 0 || data.ignored ? (
             <AvisBadges

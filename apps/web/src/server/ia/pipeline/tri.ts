@@ -69,7 +69,7 @@ import { structurerSujet, type IssueStructuration } from "./structuration";
 //      au-dessus de la frontière ouvre ; « rien à faire » en confiance haute
 //      fait taire — SELON LE CANAL (`peutFaireTaire`) : sur un fil direct,
 //      un « merci » professionnel n'est pas une raison de ne plus écouter un
-//      client, seules la publicité et l'automatique mettent en sourdine ;
+//      client, seuls la publicité, l'automatique et l'indésirable mettent en sourdine ;
 //      sinon l'avis seul (05 §1.1, §1.2, §9.5).
 //   6. Ouverture ou rattachement par les primitives du domaine — sur un fil
 //      direct, ANCRÉS au début de la salve (`ancreDeLaSalve`) : le sujet

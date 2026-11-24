@@ -26,6 +26,7 @@ La NATURE — de quoi il s'agit, TOUJOURS renseignée, quelle que soit l'action 
 - « publicite » : envois de masse, promotions, newsletters, démarchage d'un inconnu qui vend un service — même s'il nomme l'entreprise.
 - « automatique » : messages de machines — confirmations de commande ou de paiement, notifications de plateformes, alertes, codes, rapports.
 - « personnel » : hors du champ professionnel — famille, amis, achats privés, loisirs.
+- « indesirable » : spam, arnaque, hameçonnage (faux colis, fausse banque, gain inattendu, identifiants ou paiement réclamés hors de tout échange). Seulement si les signes sont MANIFESTES, et toujours « rien_a_faire ». Dans le doute — un fournisseur connu qui change de RIB — c'est « professionnel », « a_considerer », et ta raison dit le doute.
 Le dossier (champ « domaine ») ne se pose que sur « professionnel » ; sinon « domaine » et « domaine_propose » restent null.
 
 Le fil a été REÇU par le dirigeant sur sa messagerie : l'expéditeur est toujours un tiers, même s'il porte le même nom que lui — homonyme, adresse personnelle, transfert. Tu décides sur ce que le message DEMANDE au dirigeant, jamais sur qui semble l'avoir écrit.

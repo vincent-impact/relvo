@@ -297,8 +297,8 @@ conversation dont le fil n'est pas encore complet — et l'écran le dit.
 Un fil **nouveau** s'importe toujours, même venu d'un expéditeur déjà écarté : il faut le lire
 une fois pour le juger.
 
-L'ignorance porte une **raison** — publicité, prospection, notification automatique, personnel, pas
-mon rôle, déjà traité ailleurs, autre —, une note libre optionnelle, et l'**acteur** qui l'a posée :
+L'ignorance porte une **raison** — publicité, prospection, notification automatique, personnel,
+indésirable, pas mon rôle, déjà traité ailleurs, autre —, une note libre optionnelle, et l'**acteur** qui l'a posée :
 l'utilisateur, en un appui, ou Relvo, sur un avis « rien à faire » sûr (cf. `05 §9.5`), auquel cas
 la nature de l'avis donne la raison et sa phrase la note. La raison est ce qui rend le geste
 exploitable par Relvo (cf. `05 §9`) : sans elle, une conversation ignorée dit qu'on n'en veut pas,
@@ -313,7 +313,7 @@ remettent à zéro (cf. `05 §9.5`).
 
 Sur une conversation orpheline, Relvo dépose son **avis de tri** en deux parts — l'**action** :
 à traiter, à considérer, rien à faire ; la **nature**, toujours posée : professionnel, publicité,
-automatique, personnel —, une **confiance** à trois niveaux — haute, moyenne, basse —, une
+automatique, personnel, indésirable —, une **confiance** à trois niveaux — haute, moyenne, basse —, une
 **raison** en une phrase, et l'horodatage (cf. `05 §1.1`). Ces champs portent le **dernier** avis
 et sont visibles dans la liste à trier comme en tête du fil, dans les mots de l'utilisateur :
 il confirme ou contredit d'un geste, et l'accord comme le désaccord sont journalisés.

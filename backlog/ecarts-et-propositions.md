@@ -1922,33 +1922,42 @@ trier, 436 portent un avis — 239 « à considérer », 163 « rien à faire »
 message est celui du dirigeant, 178 messages reçus dont la cause n'a pas été vérifiée. 2 232
 conversations sont ignorées par Relvo, 58 par un utilisateur.
 
-**Décidé.**
+**Décidé, en deux temps le même jour** — une première livraison, puis sa reprise à l'essai.
 
 - **La nature et le conseil sont deux choses, dans deux badges distincts**, chacun précédé d'un
-  pictogramme. Plus de phrase dans la liste : la raison de Relvo se lit en tête du fil.
-- **Le conseil n'a de sens que dans « à trier »** : « À considérer » (pouce levé), « À
-  ignorer » (pouce baissé), « Sans avis » quand Relvo n'a pas lu.
-- **Pas de sapin de Noël** : la couleur n'est pas le signal, le pictogramme l'est. La seule
-  teinte qui parle est celle de l'acteur, d'après le triptyque déjà en place : violet pour
-  Relvo, bleu pour ce que le dirigeant a ignoré lui-même.
+  pictogramme, **le conseil d'abord**. Plus de phrase dans la liste : la raison de Relvo se lit
+  en tête du fil.
+- **Le conseil n'a de sens que dans « à trier », et c'est lui qui porte la couleur** : « À
+  traiter » en vert (pouce levé), « À ignorer » en rouge (pouce baissé), « Sans avis » en
+  violet neutre quand Relvo n'a pas lu. La première livraison disait « À considérer » et
+  laissait le conseil sans couleur ; le dirigeant a repris les deux : c'est le conseil qui doit
+  guider d'un coup d'œil, et le mot est « À traiter ».
+- **La nature reste en violet plein** ; c'est son pictogramme qui informe.
+- **Ignorée par le dirigeant** : le badge dit « Ignorée par vous » (bleu, sa couleur dans le
+  triptyque d'acteurs), et la nature que Relvo avait posée reste affichée à côté.
+- **Le compte « N non importés » quitte la liste des ignorées** : il n'y sert pas. Il reste en
+  tête du fil (interprétation de la réalisation : le dirigeant parlait de la liste).
 - **La rangée de puces par raison dans « Ignorées » est retirée** : « un tri inutile ». Elle
   avait été livrée le jour même avec M25.11 ; le filtre disparaît de l'écran, de l'adresse et
   du domaine, et « Voir la liste » du relevé hebdomadaire mène aux ignorées sans filtre.
 
-**Choix de réalisation, à juger à l'usage.** « À traiter » et « à considérer » donnent le même
-conseil « À considérer » : Relvo ouvre lui-même un sujet quand il est sûr, ce qui reste à trier
-avec un « à traiter » est donc une recommandation de regarder. La nature est un badge plein, le
-conseil un badge cerclé — la forme sépare les deux familles. Une conversation ignorée sans
-raison dite porte « Par vous » ou « Par Relvo ».
+**Les natures : cinq.** Le dirigeant doutait que la liste soit complète. Un inventaire de sept
+lui a été proposé — professionnel, personnel, démarchage, publicité, administratif, automatique,
+indésirable. **Tranché** : **professionnel, personnel, publicité, automatique, indésirable**.
+« Administratif » est écarté — « cela s'apparente plus à un dossier » ; le démarchage reste
+fondu dans la publicité ; « indésirable » plutôt que « spam ». L'indésirable entre dans
+`TriageNature` et `IgnoreReason` (`unwanted`), dans la consigne du tri — sur des signes
+manifestes seulement, un doute reste « professionnel, à considérer » —, et il met en sourdine
+sur WhatsApp comme la publicité et l'automatique. Le budget de la consigne est relevé de cent
+jetons pour lui. Deux cas rejoignent le jeu d'évaluation du tri : une fraude au colis (rendue
+indésirable, confiance haute) et un changement de RIB d'un fournisseur connu (rendu
+professionnel, à considérer) ; aucun des vingt-huit cas existants n'est devenu indésirable.
 
-**Reste à trancher : la liste des natures.** Le dirigeant doute qu'elle soit complète
-(« Personnel, Professionnel, Publicité, Spam, Automatique, Démarchage… »). Un inventaire lui a
-été proposé le même jour : sept natures — professionnel, personnel, démarchage, publicité,
-administratif, automatique, indésirable. Rien n'est changé dans `TriageNature` tant qu'il n'a
-pas répondu : l'élargir touche le schéma, la consigne du tri, le filtre sans modèle et le jeu
-d'évaluation.
-
-## Écarts constatés
+**Choix de réalisation, à juger à l'usage.** L'avis « à traiter » et l'avis « à considérer »
+donnent le même conseil « À traiter ». Une conversation ignorée par Relvo sans nature posée
+porte « Ignorée par Relvo ». Les raisons que seul l'utilisateur connaît (« pas mon rôle »,
+« traité ailleurs ») ne s'affichent plus sur une ligne — aucun écran ne les fait choisir
+aujourd'hui.
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté
 
