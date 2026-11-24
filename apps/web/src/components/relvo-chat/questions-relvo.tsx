@@ -48,6 +48,8 @@ function phraseOutcome(o: QuestionOutcome): string {
       return `C’est fait : le dossier « ${o.name} » existe, ${o.reclassees} sujet${o.reclassees > 1 ? "s y sont rangées" : " y est rangée"}.`;
     case "lecture-etendue":
       return "C’est parti : je lis deux semaines de plus. Les sujets apparaîtront à mesure.";
+    case "ignorees-a-revoir":
+      return "Voici la liste des conversations que j’ai mises de côté.";
     case "noted":
       return "C’est noté, merci.";
   }
@@ -95,6 +97,12 @@ export function useQuestionsRelvo(questions: OpenQuestion[]) {
       setBusyKey(null);
       if (!res.ok) {
         setError(res.message);
+        return;
+      }
+      // Le relevé de ce que Relvo a ignoré (M25.11) : « voir la liste » mène
+      // aux conversations ignorées par lui, où chacune se reprend d'un geste.
+      if (res.data.outcome.kind === "ignorees-a-revoir") {
+        router.push("/conversations?filtre=ignorees&raison=relvo");
         return;
       }
       setReponduEn(phraseOutcome(res.data.outcome));

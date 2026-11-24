@@ -3,6 +3,7 @@
 import {
   type ChannelType,
   type ConversationFilter,
+  type IgnoredFilter,
   createSubjectFromConversation,
   ignoreConversation,
   listConversationItems,
@@ -115,6 +116,7 @@ export async function loadConversationsAction(
   filter: ConversationFilter,
   channelType: ChannelType | undefined,
   cursor: string | null,
+  ignored?: IgnoredFilter,
 ): Promise<
   | {
       ok: true;
@@ -128,6 +130,8 @@ export async function loadConversationsAction(
       channelType,
       cursor: cursor ?? undefined,
       limit: CONVERSATIONS_PAGE_SIZE,
+      // Le filtre n'a de sens que dans « Ignorées » ; ailleurs il est ignoré.
+      ignored: filter === "ignored" ? ignored : undefined,
     }),
   );
   if (!res.ok) return res;

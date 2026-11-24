@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { MESSAGERIE } from "@/server/ia/config";
 import {
   ancreDeLaSalve,
+  assezDAvisPourIgnorer,
   estDernierDeLaSalve,
   peutFaireTaire,
 } from "@/server/ia/pipeline/messagerie-regles";
@@ -187,5 +188,23 @@ describe("messagerie — la décision du tri ne change pas sur l'e-mail", () => 
         confiance: rienAFaire.confiance,
       }),
     ).toBe(false);
+  });
+});
+
+describe("messagerie — il faut une série d'avis pour ignorer un interlocuteur (M25.11)", () => {
+  it("le seuil est de trois « rien à faire » sûrs d'affilée", () => {
+    expect(MESSAGERIE.verdictsAvantIgnorance).toBe(3);
+  });
+
+  it("sur WhatsApp, ni la première ni la deuxième salve n'ignorent ; la troisième, oui", () => {
+    expect(assezDAvisPourIgnorer({ canal: "whatsapp", serie: 1 })).toBe(false);
+    expect(assezDAvisPourIgnorer({ canal: "whatsapp", serie: 2 })).toBe(false);
+    expect(assezDAvisPourIgnorer({ canal: "whatsapp", serie: 3 })).toBe(true);
+    expect(assezDAvisPourIgnorer({ canal: "whatsapp", serie: 7 })).toBe(true);
+  });
+
+  it("sur l'e-mail, un seul avis sûr suffit : c'est un fil qu'on écarte, pas une personne", () => {
+    expect(assezDAvisPourIgnorer({ canal: "email", serie: 1 })).toBe(true);
+    expect(assezDAvisPourIgnorer({ canal: "email", serie: 0 })).toBe(true);
   });
 });

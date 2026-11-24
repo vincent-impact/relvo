@@ -317,6 +317,7 @@ export async function attachConversationToSubject(
           ignoreReason: null,
           ignoreNote: null,
           ignoredByActor: null,
+          noiseStreak: 0,
         },
       });
       await logEvent(tx as Tx, {

@@ -51,6 +51,22 @@ export function ancreDeLaSalve(
 }
 
 export type Canal = "email" | "whatsapp";
+
+/**
+ * Relvo a-t-il assez d'avis pour IGNORER la source (M25.11) ? Ignorer, c'est ne
+ * plus importer : sur la messagerie, où l'on ignore une PERSONNE et non un fil,
+ * il faut une série d'avis « rien à faire » sûrs — celui qui vient d'être posé
+ * compris. Sur l'e-mail, un avis sûr suffit : c'est le fil qu'on écarte.
+ */
+export function assezDAvisPourIgnorer(args: {
+  canal: Canal;
+  /** La série de « rien à faire » sûrs, avis courant compris. */
+  serie: number;
+  seuil?: number;
+}): boolean {
+  if (args.canal === "email") return true;
+  return args.serie >= (args.seuil ?? MESSAGERIE.verdictsAvantIgnorance);
+}
 export type NatureAvis =
   | "professionnel"
   | "publicite"

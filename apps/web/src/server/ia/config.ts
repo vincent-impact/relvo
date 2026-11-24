@@ -246,4 +246,12 @@ export const RATTRAPAGE = {
 export const MESSAGERIE = {
   attenteSalveMs: 60 * 1000,
   fenetreSalveMs: 2 * 60 * 60 * 1000,
+  /**
+   * Combien de « rien à faire » sûrs CONSÉCUTIFS avant que Relvo n'ignore un
+   * interlocuteur de messagerie (M25.11). Ignorer n'importe plus rien : une
+   * seule salve ne suffit pas à dire qu'une personne ne sera jamais
+   * professionnelle. L'e-mail n'a pas ce seuil — on y juge un fil, par son
+   * objet, pas une personne.
+   */
+  verdictsAvantIgnorance: 3,
 } as const;

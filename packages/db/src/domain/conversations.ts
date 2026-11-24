@@ -470,8 +470,27 @@ export type ConversationFilter = "unsorted" | "followed" | "ignored";
  * sans sujet par conception, et un `some` ferait rester ces conversations dans
  * le KPI pour toujours.
  */
-function conversationFilterWhere(filter: ConversationFilter) {
-  if (filter === "ignored") return { status: ConversationStatus.ignored };
+/**
+ * Dans « Ignorées », par qui et pourquoi (M25.11) : c'est ce qui permet de
+ * retrouver un faux verdict de Relvo parmi des centaines de publicités.
+ */
+export type IgnoredFilter = {
+  /** Seulement les conversations ignorées par cet acteur — Relvo, ou le dirigeant. */
+  by?: Actor;
+  reason?: IgnoreReason;
+};
+
+function conversationFilterWhere(
+  filter: ConversationFilter,
+  ignored?: IgnoredFilter,
+) {
+  if (filter === "ignored") {
+    return {
+      status: ConversationStatus.ignored,
+      ...(ignored?.by ? { ignoredByActor: ignored.by } : {}),
+      ...(ignored?.reason ? { ignoreReason: ignored.reason } : {}),
+    };
+  }
   // « Suivies » : conversations actives dont le dernier message EST couvert par
   // un sujet (le complément exact de « Sans sujet »).
   if (filter === "followed") {
@@ -762,6 +781,8 @@ export async function listConversationItems(
     channelType?: ChannelType;
     cursor?: string;
     limit?: number;
+    /** Seulement dans « Ignorées » : par qui, pourquoi (M25.11). */
+    ignored?: IgnoredFilter;
   } = {},
 ): Promise<Page<ConversationListItem>> {
   const { limit } = paginationSchema.parse(opts);
@@ -769,7 +790,7 @@ export async function listConversationItems(
   const rows = await db.conversation.findMany({
     ...args,
     where: {
-      ...conversationFilterWhere(opts.filter ?? "unsorted"),
+      ...conversationFilterWhere(opts.filter ?? "unsorted", opts.ignored),
       ...(opts.channelType
         ? { channel: { is: { type: opts.channelType } } }
         : {}),
@@ -913,6 +934,9 @@ export async function reactivateConversation(db: TenantDb, id: string) {
       ignoreReason: null,
       ignoreNote: null,
       ignoredByActor: null,
+      // Contredire Relvo remet sa série à zéro (M25.11) : il lui faudra de
+      // nouveau plusieurs avis concordants avant d'ignorer ce fil.
+      noiseStreak: 0,
       // Le compte de ce qui n'a pas été importé RESTE (M25.10) : c'est le trou
       // à relire chez le fournisseur. Il s'efface quand il a été relu
       // (`closeUnimportedGap`), jamais avant — un trou non relu doit se voir.

@@ -52,7 +52,33 @@ palier gratuit de son côté** (M25.2) : à vérifier avec lui avant de compter 
   (`RelvoVerdictLine`), le bilan dans le toast de la réactivation, et le trou non relu en tête
   d'un fil actif avec « Les relire » (`trou-a-relire.tsx`). Les phrases sont dans `lib/trou.ts`.
 
-**Ce que les tranches 1 et 2 ne font pas, et qu'il ne faut pas croire fait.**
+**Ce qui existe après la tranche 3 — le filet.**
+
+- **Le seuil.** `Conversation.noiseStreak` compte les avis « rien à faire » sûrs consécutifs ;
+  `recordTriageVerdict` la tient et la rend, la réactivation la remet à zéro.
+  `assezDAvisPourIgnorer` (`pipeline/messagerie-regles.ts`) et
+  `MESSAGERIE.verdictsAvantIgnorance` (trois) retiennent le tri d'ignorer une conversation de
+  messagerie avant la troisième salve concordante, sur ses trois chemins (publicité repérée
+  sans modèle, source déjà écartée, verdict du modèle). L'e-mail n'a pas de seuil.
+- **Le relevé hebdomadaire.** `domain/releve-ignorees.ts` : `releveDesIgnorees` (ce que Relvo a
+  ignoré depuis une date et qui l'est encore, par raison), `phraseDuReleve`,
+  `poserReleveIgnorees` (rien quand il n'y a rien, jamais deux dans la même semaine),
+  `listAssistantAccounts`. Le cron du matin le pose **le lundi** et le pousse. Sa question vit
+  dans un seul échange de Relvo, clé `ignorees` (`CLE_ECHANGE_IGNOREES`), « Ce que j'ai mis de
+  côté » ; « Voir la liste » rend l'issue `ignorees-a-revoir`, et l'écran mène à
+  `/conversations?filtre=ignorees&raison=relvo`.
+- **Le filtre.** `listConversationItems` prend `ignored: { by, reason }` ; la page Conversations
+  lit `?raison=` (`CONVERSATION_REASON_SLUGS`) et montre, dans « Ignorées » seulement, une
+  rangée de puces qui défile — Toutes, Par Relvo, puis les raisons. L'étiquette de raison
+  existait déjà sur chaque ligne (`RelvoVerdictLine`).
+
+**Ce que les tranches 1 à 3 ne font pas, et qu'il ne faut pas croire fait.**
+
+- **Le relevé n'a jamais tourné en production** : il se pose au prochain lundi où le cron du
+  matin passe. Sa phrase, son échange et sa réponse sont testés ; le rendu de l'échange
+  `ignorees` n'a pas été regardé à l'écran.
+- **Le seuil ne vaut que pour la suite** : les conversations de messagerie déjà ignorées par
+  Relvo le restent. Leur série part de zéro si elles sont réactivées.
 
 - **La relecture n'a pas été jouée contre un vrai fournisseur de bout en bout.** Les formes de
   l'API de messagerie sont vérifiées sur un fil réel (identifiants, ordre, `is_event`,
@@ -69,10 +95,6 @@ palier gratuit de son côté** (M25.2) : à vérifier avec lui avant de compter 
 - **La lecture à la connexion relit chez le fournisseur les courriers d'une conversation
   ignorée à chaque tranche** (ils ne sont jamais « connus ») : du réseau gaspillé, pas une
   erreur. À regarder si une lecture traîne.
-- **Le filet d'un faux verdict n'est pas posé** (tranche 3) alors que la règle est en
-  production : une conversation que Relvo ignore à tort ne reçoit plus ses messages, et seul
-  son compte, dans la liste « Ignorées », le montre ; la réactiver les fait revenir. C'est la
-  raison de faire la tranche 3 sans attendre.
 
 ## Le découpage
 
@@ -104,7 +126,8 @@ Chaque tranche est livrée, testée, documentée et poussée.
       2026-11-24.
 - [x] Tranche 2 — le compte montré, le trou relu au retour (M25.10) — livrée le 2026-11-24 ;
       la relecture reste à essayer par le dirigeant sur une vraie conversation.
-- [ ] Tranche 3 — le filet (M25.11)
+- [x] Tranche 3 — le filet (M25.11) — livrée le 2026-11-24 ; le relevé se verra au premier
+      lundi.
 - [ ] Tranche 4 — le stock déjà ignoré (M25.12)
 - [ ] Tranche 5 — mesurer (M25.1)
 - [ ] Tranche 6 — décider avant de télécharger (M25.3, M25.5)

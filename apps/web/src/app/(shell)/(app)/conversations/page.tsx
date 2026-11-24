@@ -16,10 +16,13 @@ import {
   CONVERSATIONS_PAGE_SIZE,
   CONVERSATION_CHANNEL_SLUGS,
   CONVERSATION_FILTER_SLUGS,
+  CONVERSATION_REASON_SLUGS,
   type ConversationChannelSlug,
   type ConversationFilterSlug,
+  type ConversationReasonSlug,
   parseChannelSlug,
   parseFilterSlug,
+  parseReasonSlug,
   toConversationRowData,
 } from "@/lib/conversation-row";
 import { getTenantDb, requireAccountId } from "@/server/auth-context";
@@ -51,15 +54,19 @@ const SEEN_FILTERS: Partial<
 async function List({
   filter,
   channel,
+  reason,
 }: {
   filter: ConversationFilterSlug;
   channel: ConversationChannelSlug;
+  reason: ConversationReasonSlug;
 }) {
   const db = await getTenantDb();
   const page = await listConversationItems(db, {
     filter: CONVERSATION_FILTER_SLUGS[filter],
     channelType: CONVERSATION_CHANNEL_SLUGS[channel],
     limit: CONVERSATIONS_PAGE_SIZE,
+    ignored:
+      filter === "ignorees" ? CONVERSATION_REASON_SLUGS[reason] : undefined,
   });
   // « Rien à trier » (le travail est fait) n'est pas « aucune conversation »
   // (rien n'est encore arrivé : un compte neuf, sans boîte reliée). Le second
@@ -71,9 +78,10 @@ async function List({
       <ConversationList
         // La clé force un remontage à chaque changement de filtre/canal : l'état
         // local (scroll infini, retraits optimistes) appartient à la vue affichée.
-        key={`${filter}:${channel}`}
+        key={`${filter}:${channel}:${reason}`}
         filter={filter}
         channel={channel}
+        reason={reason}
         initialItems={page.items.map(toConversationRowData)}
         initialCursor={page.nextCursor}
         noneAtAll={noneAtAll}
@@ -85,11 +93,13 @@ async function List({
 export default async function ConversationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filtre?: string; canal?: string }>;
+  searchParams: Promise<{ filtre?: string; canal?: string; raison?: string }>;
 }) {
-  const { filtre, canal } = await searchParams;
+  const { filtre, canal, raison } = await searchParams;
   const filter = parseFilterSlug(filtre);
   const channel = parseChannelSlug(canal);
+  // La raison ne filtre que les ignorées : ailleurs elle ne veut rien dire.
+  const reason = filter === "ignorees" ? parseReasonSlug(raison) : "toutes";
 
   const [accountId, db] = await Promise.all([
     requireAccountId(),
@@ -109,10 +119,15 @@ export default async function ConversationsPage({
           trier », et l'état vide de la liste dit « tout est couvert ». */}
       <RelvoHeader title="Conversations" className="pb-[46px]" />
 
-      <ConversationFilters filter={filter} channel={channel} badges={badges} />
+      <ConversationFilters
+        filter={filter}
+        channel={channel}
+        reason={reason}
+        badges={badges}
+      />
 
       <Suspense fallback={<RowsSkeleton count={5} />}>
-        <List filter={filter} channel={channel} />
+        <List filter={filter} channel={channel} reason={reason} />
       </Suspense>
     </Screen>
   );

@@ -4,9 +4,11 @@ import { useRouter } from "next/navigation";
 import { type Picto, Envelope, WhatsappLogo } from "@/components/shared/picto";
 import type { ConversationBadges } from "@relvo/db";
 import { IndicatorTabs } from "@/components/shared/indicator-tabs";
-import type {
-  ConversationChannelSlug,
-  ConversationFilterSlug,
+import {
+  CONVERSATION_REASON_LABELS,
+  type ConversationChannelSlug,
+  type ConversationFilterSlug,
+  type ConversationReasonSlug,
 } from "@/lib/conversation-row";
 import { cn } from "@/lib/utils";
 
@@ -15,6 +17,10 @@ import { cn } from "@/lib/utils";
 //      d'INDICATEURS qui chevauche le ciel, l'actif cerclé (IndicatorTabs).
 //   2. le CANAL — Tous / E-mail / WhatsApp : une rangée de puces, l'active
 //      noire pleine, comme les domaines de Sujets.
+//
+//   3. dans « Ignorées » seulement, la RAISON (M25.11) — Toutes / Par Relvo /
+//      Publicité / Personnel… : une seconde rangée de puces, qui défile. C'est
+//      ce qui permet de retrouver un faux verdict de Relvo parmi les publicités.
 //
 // L'URL est la source de vérité : la page reste linkable et c'est la base qui
 // filtre. Les deux contrôles se PRÉSERVENT l'un l'autre dans le lien construit.
@@ -38,13 +44,30 @@ const CHANNEL_OPTIONS: {
   { value: "whatsapp", label: "WhatsApp", icon: WhatsappLogo },
 ];
 
+const REASON_OPTIONS = Object.keys(
+  CONVERSATION_REASON_LABELS,
+) as ConversationReasonSlug[];
+
+// La puce du système : 36 px de haut, 44 px de frappe par le pseudo-élément.
+const PUCE =
+  "pressable relative inline-flex h-9 flex-none items-center gap-1.5 rounded-(--rayon-pilule) border px-3 text-[12px] whitespace-nowrap transition-colors before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']";
+const puce = (active: boolean) =>
+  cn(
+    PUCE,
+    active
+      ? "border-noir bg-noir font-medium text-white"
+      : "border-(--filet) bg-white font-normal text-noir",
+  );
+
 export function ConversationFilters({
   filter,
   channel,
+  reason = "toutes",
   badges,
 }: {
   filter: ConversationFilterSlug;
   channel: ConversationChannelSlug;
+  reason?: ConversationReasonSlug;
   badges: ConversationBadges;
 }) {
   const router = useRouter();
@@ -52,11 +75,15 @@ export function ConversationFilters({
   function go(next: {
     filter?: ConversationFilterSlug;
     channel?: ConversationChannelSlug;
+    reason?: ConversationReasonSlug;
   }) {
     const f = next.filter ?? filter;
     const c = next.channel ?? channel;
+    // La raison ne suit pas quand on quitte « Ignorées » : elle n'y a pas de sens.
+    const r = f === "ignorees" ? (next.reason ?? reason) : "toutes";
     const params = new URLSearchParams({ filtre: f });
     if (c !== "tous") params.set("canal", c);
+    if (r !== "toutes") params.set("raison", r);
     router.push(`/conversations?${params.toString()}`);
   }
 
@@ -100,13 +127,7 @@ export function ConversationFilters({
               type="button"
               onClick={() => go({ channel: opt.value })}
               aria-pressed={active}
-              // 36 px de haut (la puce du système), 44 px de frappe par le pseudo-élément.
-              className={cn(
-                "pressable relative inline-flex h-9 items-center gap-1.5 rounded-(--rayon-pilule) border px-3 text-[12px] whitespace-nowrap transition-colors before:absolute before:inset-x-0 before:-inset-y-1 before:content-['']",
-                active
-                  ? "border-noir bg-noir font-medium text-white"
-                  : "border-(--filet) bg-white font-normal text-noir",
-              )}
+              className={puce(active)}
             >
               {Icon ? <Icon className="size-3.5 flex-none" /> : null}
               {opt.label}
@@ -114,6 +135,29 @@ export function ConversationFilters({
           );
         })}
       </div>
+
+      {filter === "ignorees" ? (
+        <div
+          role="group"
+          aria-label="Raison"
+          className="flex [scrollbar-width:none] gap-2 overflow-x-auto px-4 pt-2 pb-0.5 [&::-webkit-scrollbar]:hidden"
+        >
+          {REASON_OPTIONS.map((value) => {
+            const active = value === reason;
+            return (
+              <button
+                key={value}
+                type="button"
+                onClick={() => go({ reason: value })}
+                aria-pressed={active}
+                className={puce(active)}
+              >
+                {CONVERSATION_REASON_LABELS[value]}
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
     </>
   );
 }

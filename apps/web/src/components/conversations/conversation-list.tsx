@@ -36,8 +36,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   CONVERSATION_CHANNEL_SLUGS,
+  CONVERSATION_REASON_SLUGS,
   CONVERSATION_FILTER_SLUGS,
   type ConversationChannelSlug,
+  type ConversationReasonSlug,
   type ConversationFilterSlug,
   type ConversationRowData,
 } from "@/lib/conversation-row";
@@ -347,12 +349,15 @@ function ConversationRow({
 export function ConversationList({
   filter,
   channel,
+  reason = "toutes",
   initialItems,
   initialCursor,
   noneAtAll = false,
 }: {
   filter: ConversationFilterSlug;
   channel: ConversationChannelSlug;
+  /** Dans « Ignorées » : par qui, pourquoi (M25.11). */
+  reason?: ConversationReasonSlug;
   initialItems: ConversationRowData[];
   initialCursor: string | null;
   /** Le compte n'a AUCUNE conversation : rien n'est encore arrivé (compte neuf). */
@@ -390,6 +395,7 @@ export function ConversationList({
       CONVERSATION_FILTER_SLUGS[filter],
       CONVERSATION_CHANNEL_SLUGS[channel],
       cursor,
+      CONVERSATION_REASON_SLUGS[reason],
     );
     if (res.ok) {
       paged.current = true;
@@ -400,7 +406,7 @@ export function ConversationList({
     }
     setLoading(false);
     loadingRef.current = false;
-  }, [cursor, filter, channel]);
+  }, [cursor, filter, channel, reason]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -415,7 +421,15 @@ export function ConversationList({
     return () => obs.disconnect();
   }, [cursor, loadMore]);
 
-  const empty = EMPTY[filter];
+  // Un filtre de raison qui ne rend rien ne dit pas qu'aucune conversation
+  // n'est ignorée (M25.11) : seulement qu'aucune ne l'est pour cette raison.
+  const empty =
+    filter === "ignorees" && reason !== "toutes"
+      ? {
+          title: "Rien pour ce filtre",
+          hint: "Aucune conversation ignorée ne correspond. Revenez à « Toutes » pour les voir.",
+        }
+      : EMPTY[filter];
 
   return (
     <div>

@@ -27,6 +27,7 @@ import {
   type Nature,
 } from "./decision";
 import {
+  assezDAvisPourIgnorer,
   ancreDeLaSalve,
   estDernierDeLaSalve,
   peutFaireTaire,
@@ -245,7 +246,7 @@ async function trierFil(p: {
   try {
     const bruit = detecterBruitDeterministe(entree);
     if (bruit) {
-      await recordTriageVerdict(db, {
+      const { noiseStreak } = await recordTriageVerdict(db, {
         conversationId,
         messageId,
         verdict: "noise",
@@ -255,8 +256,11 @@ async function trierFil(p: {
         source: "deterministic",
         rule: bruit.regle,
       });
-      await ignorer(bruit.nature, bruit.raison);
       expireTenantData();
+      if (!assezDAvisPourIgnorer({ canal, serie: noiseStreak })) {
+        return { issue: "avis-seul", detail: "serie-trop-courte", coutEur: 0 };
+      }
+      await ignorer(bruit.nature, bruit.raison);
       return { issue: "bruit-deterministe", detail: bruit.regle, coutEur: 0 };
     }
 
@@ -264,7 +268,7 @@ async function trierFil(p: {
     if (parExpediteur?.type === "ignorer") {
       const nature = NATURE_DE_LA_RAISON[parExpediteur.raison] ?? "publicite";
       const raison = `Cette adresse a déjà été écartée ${parExpediteur.nombre} fois pour la même raison.`;
-      await recordTriageVerdict(db, {
+      const { noiseStreak } = await recordTriageVerdict(db, {
         conversationId,
         messageId,
         verdict: "noise",
@@ -274,8 +278,11 @@ async function trierFil(p: {
         source: "deterministic",
         rule: "source-deja-ecartee",
       });
-      await ignorer(nature, raison);
       expireTenantData();
+      if (!assezDAvisPourIgnorer({ canal, serie: noiseStreak })) {
+        return { issue: "avis-seul", detail: "serie-trop-courte", coutEur: 0 };
+      }
+      await ignorer(nature, raison);
       return {
         issue: "source-ecartee",
         detail: parExpediteur.raison,
@@ -340,7 +347,7 @@ async function trierFil(p: {
     await logAiSolicitation(db, { ...mesure, messageId, conversationId });
     const coutTri = mesure.cout.eur;
 
-    await recordTriageVerdict(db, {
+    const { noiseStreak } = await recordTriageVerdict(db, {
       conversationId,
       messageId,
       ...avisEnBase(sortie),
@@ -365,6 +372,16 @@ async function trierFil(p: {
         // l'avis est écrit, la conversation reste vivante.
         expireTenantData();
         return { issue: "avis-seul", detail: "rien-a-faire", coutEur: coutTri };
+      }
+      if (!assezDAvisPourIgnorer({ canal, serie: noiseStreak })) {
+        // Un interlocuteur de messagerie ne s'ignore pas sur une salve
+        // (M25.11) : l'avis est écrit, la série court, le fil reste vivant.
+        expireTenantData();
+        return {
+          issue: "avis-seul",
+          detail: "serie-trop-courte",
+          coutEur: coutTri,
+        };
       }
       await ignorer(decision.nature, decision.raison);
       expireTenantData();

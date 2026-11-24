@@ -1,5 +1,6 @@
 import {
   canalDeLEtapeDeMigration,
+  ETAPE_RELEVE_IGNOREES,
   ETAPES,
   estUneEtapeBoite,
 } from "./questions";
@@ -20,6 +21,7 @@ import type { TenantDb } from "../tenant";
 // une réponse ; la notification et l'accueil mènent à l'échange concerné.
 
 export type NatureEchangeRelvo =
+  | "releve"
   | "migration"
   | "prise-en-main"
   | "lecture"
@@ -71,6 +73,8 @@ export type EchangeRelvo = {
 };
 
 const PREFIXE_SCRIPT = "prise-en-main/";
+/** L'échange qui porte tous les relevés de ce que Relvo a ignoré (M25.11). */
+export const CLE_ECHANGE_IGNOREES = "ignorees";
 
 /**
  * La clé de l'échange qui porte une question — pure, d'après la question
@@ -84,6 +88,8 @@ export function cleDeLaQuestion(q: {
 }): string {
   const step = q.originStep;
   if (step) {
+    if (step.startsWith(`${ETAPE_RELEVE_IGNOREES}/`))
+      return CLE_ECHANGE_IGNOREES;
     const canal = canalDeLEtapeDeMigration(step);
     if (canal) return `boite:${canal}`;
     if (step.startsWith(`${ETAPES.finDeLecture}/`)) {
@@ -99,6 +105,7 @@ export function cleDeLaQuestion(q: {
 
 /** La nature d'un échange, lue dans sa clé. */
 export function natureDeLaCle(cle: string): NatureEchangeRelvo {
+  if (cle === CLE_ECHANGE_IGNOREES) return "releve";
   if (cle === "prise-en-main") return "prise-en-main";
   if (cle === "dossiers") return "dossiers";
   if (cle.startsWith("boite:")) return "migration";
@@ -109,6 +116,7 @@ export function natureDeLaCle(cle: string): NatureEchangeRelvo {
 
 const RANG: Record<NatureEchangeRelvo, number> = {
   migration: 0,
+  releve: 3,
   "prise-en-main": 1,
   lecture: 2,
   dossiers: 3,
@@ -254,6 +262,13 @@ export function regrouperEchangesRelvo(input: {
         });
         break;
       }
+      case "releve":
+        groupes.set(cle, {
+          ...base,
+          titre: "Ce que j'ai mis de côté",
+          sousTitre: "Le relevé de la semaine",
+        });
+        break;
       case "dossiers":
         groupes.set(cle, {
           ...base,

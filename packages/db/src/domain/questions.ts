@@ -138,6 +138,8 @@ export type QuestionOutcome =
   | { kind: "folders"; names: string[] }
   /** Un domaine proposé par le courrier, créé, et ses sujets rangés. */
   | { kind: "folder-created"; name: string; reclassees: number }
+  /** Le relevé de ce que Relvo a ignoré : l'application mène à la liste. */
+  | { kind: "ignorees-a-revoir" }
   | { kind: "noted" };
 
 /**
@@ -241,6 +243,13 @@ async function appliquerDestination(
     // La migration d'une boîte (M24.9) se fait par le consentement Google, et
     // c'est la bascule qui ferme la question (`migrateChannelToGmail`).
     return { kind: "noted" };
+  }
+  if (q.originStep?.startsWith(`${ETAPE_RELEVE_IGNOREES}/`)) {
+    // Le relevé ne change rien par lui-même : reprendre une conversation se
+    // fait dans la liste, d'un geste, et c'est là que la réponse mène.
+    return data.key === CLE_VOIR_IGNOREES
+      ? { kind: "ignorees-a-revoir" }
+      : { kind: "noted" };
   }
   if (q.originStep?.startsWith(`${ETAPES.finDeLecture}/`)) {
     return appliquerFinDeLecture(db, q, data, origine);
@@ -614,6 +623,14 @@ export function canalDeLEtapeDeMigration(step: string | null): string | null {
   const prefixe = `${ETAPE_MIGRATION_GMAIL}/`;
   return step?.startsWith(prefixe) ? step.slice(prefixe.length) : null;
 }
+
+/**
+ * Préfixe : le RELEVÉ hebdomadaire de ce que Relvo a ignoré (M25.11) — l'étape
+ * porte le jour où il est posé. Toutes ses semaines vivent dans un seul échange.
+ */
+export const ETAPE_RELEVE_IGNOREES = "releve-ignorees";
+/** « Voir la liste » : la réponse qui mène aux conversations ignorées. */
+export const CLE_VOIR_IGNOREES = "voir";
 
 export const ETAPES = {
   secteurs: "prise-en-main/secteurs",

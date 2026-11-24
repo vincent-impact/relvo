@@ -307,6 +307,10 @@ efface la raison et l'acteur ; le verdict de tri, lui, reste.
 
 ### L'avis de tri
 
+La conversation tient aussi la **série** de ses avis « rien à faire » sûrs : combien, d'affilée,
+concluent qu'il n'y a rien à faire en confiance haute. Tout autre avis, et la réactivation, la
+remettent à zéro (cf. `05 §9.5`).
+
 Sur une conversation orpheline, Relvo dépose son **avis de tri** en deux parts — l'**action** :
 à traiter, à considérer, rien à faire ; la **nature**, toujours posée : professionnel, publicité,
 automatique, personnel —, une **confiance** à trois niveaux — haute, moyenne, basse —, une

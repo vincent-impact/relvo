@@ -4,6 +4,7 @@ import type {
   ConversationListItem,
   ConversationMessageItem,
   ConversationTriage,
+  IgnoredFilter,
   UnimportedGap,
 } from "@relvo/db";
 import type { TrouData } from "@/lib/trou";
@@ -242,4 +243,43 @@ export function parseChannelSlug(raw?: string | null): ConversationChannelSlug {
   return raw && raw in CONVERSATION_CHANNEL_SLUGS
     ? (raw as ConversationChannelSlug)
     : "tous";
+}
+
+// Filtre RAISON (`?raison=`, M25.11) — seulement dans « Ignorées » : par qui,
+// pourquoi. « relvo » isole ce que Relvo a écarté de lui-même, là où un faux
+// verdict se cache ; les autres valeurs sont les raisons d'ignorance. C'est la
+// BASE qui filtre, comme pour le canal.
+export const CONVERSATION_REASON_SLUGS = {
+  toutes: undefined,
+  relvo: { by: "ai" },
+  publicite: { reason: "advertising" },
+  prospection: { reason: "prospecting" },
+  automatique: { reason: "automatic" },
+  personnel: { reason: "personal" },
+  "pas-mon-role": { reason: "not_my_role" },
+  "traite-ailleurs": { reason: "handled_elsewhere" },
+  autre: { reason: "other" },
+} as const satisfies Record<string, IgnoredFilter | undefined>;
+
+export type ConversationReasonSlug = keyof typeof CONVERSATION_REASON_SLUGS;
+
+export const CONVERSATION_REASON_LABELS: Record<
+  ConversationReasonSlug,
+  string
+> = {
+  toutes: "Toutes",
+  relvo: "Par Relvo",
+  publicite: "Publicité",
+  prospection: "Prospection",
+  automatique: "Automatique",
+  personnel: "Personnel",
+  "pas-mon-role": "Pas mon rôle",
+  "traite-ailleurs": "Traité ailleurs",
+  autre: "Autre",
+};
+
+export function parseReasonSlug(raw?: string | null): ConversationReasonSlug {
+  return raw && raw in CONVERSATION_REASON_SLUGS
+    ? (raw as ConversationReasonSlug)
+    : "toutes";
 }

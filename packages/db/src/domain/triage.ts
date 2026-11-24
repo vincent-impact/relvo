@@ -616,7 +616,9 @@ const NATURE_LABELS: Record<TriageNature, string> = {
 /**
  * Dépose l'avis de tri sur la conversation (le DERNIER avis, 02) et journalise
  * la proposition. L'avis ne conditionne rien : la conversation est rangée et
- * lisible quel qu'il soit.
+ * lisible quel qu'il soit. Tient aussi la SÉRIE de « rien à faire » sûrs
+ * (M25.11) et la rend : un avis « rien à faire » en confiance haute l'allonge,
+ * tout autre la remet à zéro.
  */
 export async function recordTriageVerdict(
   db: TenantDb,
@@ -625,6 +627,9 @@ export async function recordTriageVerdict(
   const data = recordTriageVerdictSchema.parse(input);
   const nature = data.nature ?? null;
   const now = new Date();
+  const rienASur =
+    data.verdict === TriageVerdict.noise &&
+    data.confidence === TriageConfidence.high;
   return db.$transaction(async (tx) => {
     const { count } = await tx.conversation.updateMany({
       where: { id: data.conversationId },
@@ -634,6 +639,7 @@ export async function recordTriageVerdict(
         triageConfidence: data.confidence,
         triageReason: data.reason,
         triagedAt: now,
+        noiseStreak: rienASur ? { increment: 1 } : 0,
       },
     });
     if (count === 0)
@@ -663,7 +669,11 @@ export async function recordTriageVerdict(
         proposal: data.proposal ?? null,
       },
     });
-    return { triagedAt: now };
+    const apres = await tx.conversation.findFirst({
+      where: { id: data.conversationId },
+      select: { noiseStreak: true },
+    });
+    return { triagedAt: now, noiseStreak: apres?.noiseStreak ?? 0 };
   });
 }
 
