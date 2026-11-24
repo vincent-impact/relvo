@@ -8,8 +8,9 @@ resume_client: >
   l'arborescence de vos dossiers avec leurs sujets dedans. Une pastille sur un dossier vous dit
   combien de ses sujets ont bougé depuis votre dernier passage. Vos instructions générales se
   donnent maintenant directement à Relvo.
-statut: partiel
+statut: termine
 debut: 2026-11-15
+fin: 2026-11-24
 ---
 
 # M28 — Sujets : une page, deux vues

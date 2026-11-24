@@ -6,10 +6,11 @@
 dirigeant, `2026-10-m7-tranche11-whatsapp-direct.md`). L'application est **en recette** : des
 testeurs la prennent en main pour la première fois, et leurs remontées sont le « où on en est »
 du dépôt le temps de ce chantier. Ce fichier tient la **liste des remontées**, ce qui a été
-tranché pour chacune et ce qui est livré. **La quatrième vague est livrée** : R18 et R19, à éprouver par le
-dirigeant sur l'iPhone ; R20 reste à vérifier en production. **À faire ensuite : R12.** Il s'allonge à chaque vague de recette ; quand la
-recette se clôt, le chantier d'après est la lecture de l'historique de la messagerie à la
-connexion (reliquat de M7), puis M13 (ouverture de la bêta).
+tranché pour chacune et ce qui est livré. **La recette est close**, fermée par le dirigeant le
+2026-11-24 : les quatre vagues sont livrées, R20 est classée faute d'avoir pu être reproduite.
+Une seule remontée n'a pas été livrée ici, **R12**, qui retourne chez elle : c'est l'item
+**M13.6** de l'épique M13. Les chantiers d'après sont au backlog — la lecture de l'historique
+de la messagerie à la connexion (reliquat de M7), puis M13 (ouverture de la bêta).
 
 **Ce qui existe et ne se refait pas.** La première connexion = `/bienvenue` (M19.9 : six
 diapositives, trace `welcome_seen_at`) ; la prise en main = le script de l'échange
@@ -123,7 +124,7 @@ suivante).
 puis trace et supprime la ligne du compte dans une transaction à délai explicite ; l'action
 attrape l'erreur, la journalise avec le compte visé et répond en langage client ; un compte
 déjà absent chez l'agrégateur compte comme déconnecté, pas comme un échec. `PITFALLS.md` #71.
-**À refaire par le dirigeant** : relancer la suppression de ce compte depuis le backoffice.
+**Close par le dirigeant le 2026-11-24.**
 
 ### R8 — Les pièces jointes d'une conversation e-mail (Kiloutou, compte de Lila) n'ont pas été relevées
 
@@ -143,6 +144,8 @@ pièces étaient sur un e-mail **envoyé** par la dirigeante, que Relvo ne rapat
   e-mails reçus sans pièce jointe et stocke celles qu'ils portent — à lancer **par le dirigeant
   avec les variables de production**, d'abord en `--simuler`. La garde `server-only` du module
   Unipile remonte sur son index pour que le script importe `client` et `attachments`.
+
+**Close par le dirigeant le 2026-11-24.**
 
 ## Vérification
 
@@ -215,9 +218,9 @@ comme les autres.
 
 ### R12 — Relvo dit ce qui a changé
 
-Item **M13.6**, avancé dans ce sprint parce que les testeurs de l'alpha en ont besoin
-maintenant : à l'ouverture de l'échange, les entrées du journal client depuis le dernier
-passage, en un message, une fois.
+Item **M13.6** : à l'ouverture de l'échange, les entrées du journal client depuis le dernier
+passage, en un message, une fois. **Non livrée dans ce sprint** : à la clôture de la recette,
+elle reste à faire dans son épique, M13.
 
 ### Les quatre épiques nées de cette vague
 
@@ -477,10 +480,13 @@ du fournisseur, horodatage) ; dire le compte et le type d'événement dans la li
 webhook ; montrer au backoffice, par canal, la date du **dernier message reçu** et les derniers
 changements d'état ; prévenir le dirigeant du compte quand un canal tombe.
 
+**Classée par le dirigeant le 2026-11-24** : le défaut n'a pas pu être reproduit. La
+proposition ci-dessus n'est pas engagée ; elle se reprendra si le défaut revient.
+
 ## Où on en est
 
-- [x] R18 livrée (2026-11-11) : un fichier s'ouvre dans Relvo — à éprouver sur l'iPhone par le
-      dirigeant (aperçu, « Ouvrir avec… », « Télécharger », retour sans écran blanc).
+- [x] R18 livrée (2026-11-11) : un fichier s'ouvre dans Relvo — **validée par le dirigeant**
+      (2026-11-24).
 - [x] R21 livrée (2026-11-11) : toutes les pièces d'un message, et l'icône de leur type ; l'onglet
       Documents est tranché (toutes les pièces des conversations, par référence).
 - [x] Onglet Documents d'un sujet : les pièces des conversations y paraissent toutes
@@ -490,12 +496,12 @@ changements d'état ; prévenir le dirigeant du compte quand un canal tombe.
       (« retrouve le message de … sur … »).
 - [x] R19, retour du dirigeant (2026-11-11) : la carte d'un message trouvé ouvrait la conversation
       en bas du fil ; elle mène maintenant au message, surligné, chargé même hors des récents.
-- [ ] R20 à vérifier en production par le dirigeant.
+- [x] R20 **classée** (2026-11-24) : le défaut n'a pas pu être reproduit.
 - [x] R1 à R4 livrées, documentées (`01` §11, `05` §11.11, `ecarts`, `PITFALLS` #70, `CLAUDE.md`).
 - [x] R5 et R6 livrées (assistant actif par défaut, invitation aux notifications dans l'échange et sur l'accueil).
-- [x] R7 livrée (suppression d'un compte robuste, PITFALLS #71) — à relancer en production sur le compte concerné.
-- [x] R8 livrée (pièces jointes : relecture, webhook qui complète, script `pj:rattraper`) — à lancer en production sur le compte de Lila.
-- [ ] Vérification en production par le dirigeant (première vague).
+- [x] R7 livrée (suppression d'un compte robuste, PITFALLS #71) — **close par le dirigeant** (2026-11-24).
+- [x] R8 livrée (pièces jointes : relecture, webhook qui complète, script `pj:rattraper`) — **close par le dirigeant** (2026-11-24).
+- [x] Première vague : close avec la recette (2026-11-24).
 - [x] Deuxième vague enregistrée : R9 à R12 dans ce sprint, M23 à M26 au backlog, décisions
       dans `ecarts`.
 - [x] M24 tranchée (webhook Gmail en propre, déclaration à Google, nom de domaine) ; ordre : **M23 puis M24**, le reste moins urgent.
@@ -506,10 +512,10 @@ changements d'état ; prévenir le dirigeant du compte quand un canal tombe.
       (vibreur, écran d'écoute) — à éprouver sur le téléphone.
 - [x] R17 livrée (2026-11-01) : les échanges de Relvo, séparés de la discussion — tranchée sur
       canevas, à juger à l'usage ; R9 tombe avec.
-- [ ] R12 à livrer (R9 est couverte par R17).
+- [x] R12 **sortie de la recette** sans être livrée : elle reste à faire sous son identifiant, M13.6 (R9 est couverte par R17).
 - [x] Troisième vague enregistrée, livrée et **validée en production par le dirigeant** (R13 à
       R16) ; R15 tranchée C puis ramenée à 18 px, puis 16 px à l'essai ; R16 reprise sur son retour.
 - [x] `wa:reparer` : le dirigeant a choisi de ne pas réécrire l'historique des testeurs — les
       fantômes restent, le script reste disponible ; R14 reprise pour tenir avec eux (2026-11-01),
       à revérifier en production par le dirigeant.
-- [ ] Vagues de recette suivantes : à ajouter ici.
+- [x] **Recette close par le dirigeant le 2026-11-24.** Une remontée nouvelle ouvre son propre chantier.

@@ -206,9 +206,9 @@
     {
       "titre": "Vos sujets et vos dossiers sur une seule page",
       "resume": "La page Sujets montre désormais deux vues de la même matière : la liste, comme avant, et l'arborescence de vos dossiers avec leurs sujets dedans. Une pastille sur un dossier vous dit combien de ses sujets ont bougé depuis votre dernier passage. Vos instructions générales se donnent maintenant directement à Relvo.",
-      "statut": "partiel",
+      "statut": "termine",
       "gauche": 78.04,
-      "largeur": 0
+      "largeur": 4.2
     }
   ],
   "livraison": {

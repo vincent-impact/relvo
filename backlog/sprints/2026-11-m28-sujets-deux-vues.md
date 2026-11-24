@@ -5,10 +5,10 @@
 **Où on en est.** L'alpha a parlé : l'application est jugée complexe, l'arborescence des
 dossiers est saluée. Le dirigeant a tranché le 2026-11-15 (`ecarts`, « Sujets : une page, deux
 vues ») : une seule porte, la page Sujets, avec deux vues. L'épique est
-`M28-sujets-deux-vues.md`. **Les quatre items (M28.1 à M28.4) sont livrés et poussés ; les trois
-premiers sont validés par le dirigeant sur son iPhone, il essaie M28.4 (la fiche qui
-glisse).** À sa validation : passer le frontmatter de l'épique à `termine` avec sa date de
-fin, et la ligne du backlog à ✅.
+`M28-sujets-deux-vues.md`. **L'épique est terminée** : les quatre items (M28.1 à M28.4) sont
+livrés, poussés et validés par le dirigeant, qui l'a fermée le 2026-11-24 — avec la recette de
+l'alpha (`2026-10-recette-alpha.md`). Ce qui vient ensuite est au backlog : la fin de M24 (la
+vérification Google, puis la migration des boîtes), M13.6, M25.
 
 **La maquette** : planche B de l'artefact du dirigeant (« une carte par dossier »). Elle fait foi
 sur les flux, les libellés et la disposition ; pas sur le rendu, pas sur les volumes. Elle n'a
