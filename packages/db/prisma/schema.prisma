@@ -382,6 +382,7 @@ model Account {
   pushSubscriptions    PushSubscription[]
   contacts             Contact[]
   channels             Channel[]
+  messagingIdentities  MessagingIdentity[]
   channelConfigs       ChannelConfig[]
   channelCatchups      ChannelCatchup[]
   conversations        Conversation[]
@@ -503,6 +504,7 @@ model Channel {
   conversations Conversation[]
   subjects      Subject[]
   messages      Message[]
+  identities    MessagingIdentity[]
 
   @@index([accountId])
   @@map("channels")
@@ -868,6 +870,9 @@ model Message {
   // message a une conversation : plus de message condamné à rester non-lu faute
   // de sujet. Null = non-lu → pastille et remontée en tête de liste.
   readAt             DateTime?                @map("read_at")
+  /// Ce message de messagerie MENTIONNE le dirigeant (M29.2) — posé à la
+  /// réception, sans modèle, d'après l'annuaire des identifiants.
+  mentionsSelf       Boolean                  @default(false) @map("mentions_self")
   status             MessageStatus            @default(received)
   triageHint         TriageHint?              @map("triage_hint")
   /// Vecteur plein texte (français, avec et sans accents) sur l'objet, le nom de
@@ -940,6 +945,36 @@ model Attachment {
   @@index([accountId, subjectId])
   @@index([messageId])
   @@map("attachments")
+}
+
+/// L'ANNUAIRE DES IDENTIFIANTS DE MESSAGERIE (M29.1). Dans un groupe WhatsApp,
+/// une mention s'écrit « @ » suivi d'un identifiant interne du réseau — une
+/// suite de chiffres qui n'est ni un nom ni, le plus souvent, un numéro. Cette
+/// table dit, par canal, à qui chaque identifiant appartient : son numéro, son
+/// nom de profil, et si c'est le dirigeant lui-même. Elle se nourrit de
+/// l'expéditeur de chaque message reçu et de la liste des participants d'un
+/// groupe ; le texte des messages n'est jamais réécrit, la mention se résout à
+/// la lecture. Un identifiant cherché et introuvable y figure sans nom : on ne
+/// le recherche pas à chaque message.
+model MessagingIdentity {
+  id         String   @id @default(uuid()) @db.Uuid
+  accountId  String   @map("account_id") @db.Uuid
+  channelId  String   @map("channel_id") @db.Uuid
+  /// L'identifiant interne, en chiffres seuls — tel que le texte d'une mention le porte.
+  internalId String   @map("internal_id")
+  /// Le numéro de téléphone, en chiffres seuls (une mention peut aussi le porter).
+  phone      String?
+  name       String?
+  isSelf     Boolean  @default(false) @map("is_self")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@unique([channelId, internalId])
+  @@index([accountId, phone])
+  @@map("messaging_identities")
 }
 
 // ─────────────────────────────────────────────────────────────

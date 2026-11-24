@@ -98,6 +98,13 @@ là — qu'un sujet doit se **brancher** sur le flux pour en extraire ce qui la 
 > Il parlera successivement d'une livraison en retard, d'un planning de congés et d'un
 > congélateur en panne — exactement le mélange que l'objet d'e-mail évite.
 
+**Dans un groupe, une mention se lit par un nom.** Le réseau écrit « @ » suivi d'un identifiant
+en chiffres ; Relvo écrit « @Dahmani Eya », et « @vous » quand c'est le dirigeant qu'on
+interpelle (`02`, MessagingIdentity). La traduction se fait à la lecture, partout où le texte
+d'un message s'affiche — le fil, l'aperçu d'une ligne —, jamais dans ce qui est stocké. Un
+message sait dès sa réception s'il mentionne le dirigeant, sans modèle ; la liste des
+conversations marque d'une arobase le fil où il est interpellé tant qu'il ne l'a pas lu.
+
 ### ⚠️ L'énoncé est DIRECTIONNEL
 
 C'est la lecture la plus facile à rater du modèle, et la rater **bloque l'implémentation**.

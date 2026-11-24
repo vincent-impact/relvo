@@ -132,6 +132,8 @@ export type ConversationRowData = {
   interlocutorName: string | null;
   interlocutorRaw: string | null;
   unreadCount: number;
+  /** Le dirigeant y est mentionné dans un message non lu (M29.2). */
+  mentioned: boolean;
   ignored: boolean;
   /** Sujets écoutant encore ce fil — nomment la confirmation du swipe gauche. */
   listeningSubjects: { id: string; title: string }[];
@@ -155,6 +157,7 @@ export function toConversationRowData(
     interlocutorName: item.interlocutorName,
     interlocutorRaw: item.interlocutorRaw,
     unreadCount: item.unreadCount,
+    mentioned: item.mentioned,
     ignored: item.status === "ignored",
     listeningSubjects: item.listeningSubjects,
     relvo: toRelvoVerdictData(item.triage),

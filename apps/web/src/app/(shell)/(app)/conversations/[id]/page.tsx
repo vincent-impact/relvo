@@ -4,6 +4,7 @@ import {
   listDecisionTasksForConversation,
   listFolderOptions,
 } from "@relvo/db";
+import { completerAnnuaire } from "@/server/annuaire-messagerie";
 import { ConversationDetail } from "@/components/conversations/conversation-detail";
 import { MarkConversationRead } from "@/components/conversations/mark-conversation-read";
 import {
@@ -38,10 +39,29 @@ export default async function ConversationDetailPage({
 
   const db = await getTenantDb();
   // Un message visé (`?message=`) est chargé même s'il sort des récents.
-  const thread = await getConversationThread(db, id, {
+  let thread = await getConversationThread(db, id, {
     autourDe: message,
   }).catch(() => null);
   if (!thread) notFound();
+
+  // Une mention que l'annuaire ne connaît pas (M29.1) : on demande une fois
+  // au fournisseur qui sont les participants du fil, puis on relit. Les
+  // messages reçus avant l'annuaire s'affichent ainsi par leur nom.
+  if (
+    thread.unknownMentions.length > 0 &&
+    thread.channelType === "whatsapp" &&
+    thread.externalThreadId
+  ) {
+    await completerAnnuaire(db, {
+      channelId: thread.channelId,
+      chatId: thread.externalThreadId,
+      inconnus: thread.unknownMentions,
+    });
+    thread =
+      (await getConversationThread(db, id, { autourDe: message }).catch(
+        () => null,
+      )) ?? thread;
+  }
 
   // Domaines (dialog de création) + sujets ouverts (« Lier à un sujet existant »).
   const [folders, subjectRows, decisionTasks] = await Promise.all([

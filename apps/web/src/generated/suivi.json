@@ -185,7 +185,7 @@
     {
       "titre": "Les photos et vidéos reçues, sans encombrer",
       "resume": "Relvo garde ce qui sert à un sujet et va rechercher le reste à la source quand vous le demandez. Les conversations en sourdine ne pèsent rien, et l'espace de chaque compte est surveillé.",
-      "statut": "en-cours",
+      "statut": "partiel",
       "gauche": 82.24,
       "largeur": 0
     },
@@ -213,8 +213,8 @@
     {
       "titre": "Les groupes WhatsApp, et quand on vous y interpelle",
       "resume": "Dans un groupe WhatsApp, une mention affiche enfin le nom de la personne, et Relvo réagit quand c'est vous qu'on interpelle : il lit ce qui précède, ouvre un sujet s'il le faut et vous pose la tâche. Les groupes que vous gardez sont lus deux fois par jour ; ceux qui ne sont pas professionnels sont écartés d'eux-mêmes.",
-      "statut": "a-faire",
-      "gauche": null,
+      "statut": "en-cours",
+      "gauche": 82.24,
       "largeur": 0
     }
   ],
@@ -222,7 +222,7 @@
     "date": "2026-12-23",
     "gauche": 95.79
   },
-  "en_cours": "Les photos et vidéos reçues, sans encombrer",
+  "en_cours": "Les groupes WhatsApp, et quand on vous y interpelle",
   "journal": [
     {
       "date": "2026-11-24",

@@ -45,8 +45,8 @@ frontmatter l'est.
 | **[M27 — Dossiers et sujets](epics/M27-dossiers-et-sujets.md)**            | ✅ — le mot, l'arbre, la fiche en quatre onglets, « Ranger dans… », le dépôt d'une connaissance | M24                             |
 | **[M28 — Sujets : une page, deux vues](epics/M28-sujets-deux-vues.md)**   | ✅ — l'arbre dans la page Sujets, l'ajout en fin de branche, le glisser-déposer, la fiche qui glisse | l'alpha                         |
 | **[M24 — Dix boîtes par compte](epics/M24-dix-boites.md)**                 | 🟡 **livrée, en attente du dirigeant** — les huit tranches sont en production ; restent la vérification Google puis la migration des boîtes (`sprints/2026-10-m24-dix-boites.md`) | la marge                        |
-| **[M25 — La maîtrise des médias](epics/M25-maitrise-des-medias.md)**       | 🔶 **en cours** — ouvert le 2026-11-24, `sprints/2026-11-m25-maitrise-des-medias.md` ; tranches 1 à 4 livrées (« ignorer, c'est ne plus importer » ; le compte montré, le trou relu au retour ; le filet d'un faux verdict ; la purge du stock déjà ignoré, simulée, à lancer par le dirigeant) | M29, M8.6, M20.3                |
-| **[M29 — Les groupes et les mentions](epics/M29-groupes-et-mentions.md)** | ⬜ après M25 — l'annuaire des identifiants, la mention lue, la lecture sur mention et deux fois par jour | —                               |
+| **[M25 — La maîtrise des médias](epics/M25-maitrise-des-medias.md)**       | 🟡 **en pause derrière M29** — ouvert le 2026-11-24, `sprints/2026-11-m25-maitrise-des-medias.md` ; tranches 1 à 4 livrées (« ignorer, c'est ne plus importer » ; le compte montré, le trou relu au retour ; le filet d'un faux verdict ; la purge du stock déjà ignoré, simulée, à lancer par le dirigeant) | M29, M8.6, M20.3                |
+| **[M29 — Les groupes et les mentions](epics/M29-groupes-et-mentions.md)** | 🔶 **en cours** — ouvert le 2026-11-24, `sprints/2026-11-m29-groupes-et-mentions.md` ; tranche 1 livrée (l'annuaire des identifiants, la mention qui se lit) | —                               |
 | **[M26 — Des chiffres vrais](epics/M26-chiffres-vrais.md)**                | ⬜ recette de l'alpha                            | —                               |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
 | **[M10 — Échange avec Relvo](epics/M10-echange-relvo.md)**                 | ✅ — le déclencheur du script à la connexion d'un canal est M7.19 | M13                             |
@@ -94,6 +94,11 @@ close, M28 est terminée, M24 n'attend plus que la vérification Google. Le stoc
 son palier et les groupes WhatsApp sont un angle mort : **M25** d'abord, augmentée de la règle
 d'ignorance, puis **M29**. Ce que l'étude a proposé pour la justesse du tri sans tenir à cette
 règle est dans M17 (M17.15, M17.16).
+
+**M29 passe devant la fin de M25** (décision du 2026-11-24, `ecarts`, « Les mentions d'abord ») :
+les tranches 1 à 4 de M25 sont livrées, le stockage est soulagé dès que la purge est lancée,
+et la mention qui ne pèse sur rien est ce que les testeurs remontent sans cesse. M25 reprend
+après M29, à sa tranche 5.
 
 **La quatrième vague de la recette passe en premier** (décision du 2026-11-11, `ecarts`, « Un
 fichier s'ouvre dans Relvo, jamais sur une page blanche » et « La recherche de l'échange… ») :

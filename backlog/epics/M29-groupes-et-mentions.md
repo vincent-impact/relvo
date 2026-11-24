@@ -8,7 +8,8 @@ resume_client: >
   quand c'est vous qu'on interpelle : il lit ce qui précède, ouvre un sujet s'il le faut et vous
   pose la tâche. Les groupes que vous gardez sont lus deux fois par jour ; ceux qui ne sont pas
   professionnels sont écartés d'eux-mêmes.
-statut: a-faire
+statut: en-cours
+debut: 2026-11-24
 ---
 
 # M29 — Les groupes et les mentions
@@ -37,8 +38,8 @@ cité (`quoted.sender_id`). La forme d'une mention « à tout le groupe » n'a p
 
 | #     | Item | État |
 | ----- | ---- | ---- |
-| M29.1 | **L'annuaire des identifiants** : par canal de messagerie, « identifiant interne → numéro, nom, c'est moi », nourri par l'expéditeur de chaque message reçu (le webhook porte déjà les deux) et complété par la liste des participants du groupe à la première mention inconnue ; le texte stocké ne change pas, la mention se résout à la lecture — les messages déjà en base s'affichent juste sans reprise | ⬜ |
-| M29.2 | **La mention se lit** : « @Dahmani Eya » au lieu des chiffres dans le fil, « @vous » en violet ; un message de groupe sait à la réception s'il mentionne le dirigeant (déterministe, sans modèle) ; la liste des conversations marque un groupe où il est mentionné sans l'avoir lu | ⬜ |
+| M29.1 | **L'annuaire des identifiants** : par canal de messagerie, « identifiant interne → numéro, nom, c'est moi », nourri par l'expéditeur de chaque message reçu (le webhook porte déjà les deux) et complété par la liste des participants du groupe à la première mention inconnue ; le texte stocké ne change pas, la mention se résout à la lecture — les messages déjà en base s'affichent juste sans reprise | ✅ en production, à essayer par le dirigeant sur un vrai groupe |
+| M29.2 | **La mention se lit** : « @Dahmani Eya » au lieu des chiffres dans le fil, « @vous » en violet ; un message de groupe sait à la réception s'il mentionne le dirigeant (déterministe, sans modèle) ; la liste des conversations marque un groupe où il est mentionné sans l'avoir lu | ✅ en production, à essayer par le dirigeant sur un vrai groupe |
 | M29.3 | **Le groupe se juge à sa découverte** : un appel, sur le titre, le nombre de membres et les premiers messages — personnel, publicité, automatique : ignoré avec sa raison ; sinon à traiter. Les groupes déjà connus sont jugés une fois, par lot, au tarif différé | ⬜ |
 | M29.4 | **La mention force la lecture** : une mention du dirigeant dans un groupe à traiter déclenche aussitôt la lecture du contexte proche (les messages qui précèdent, le message cité), sans attendre la lecture du jour. Si le groupe n'est attaché à aucun sujet, le modèle dit si un sujet s'ouvre ou se rattache ; s'il s'ouvre, il porte **une tâche pour le dirigeant**. Si un sujet écoute déjà le groupe, on ajoute seulement la tâche. Le modèle rédige la tâche, et **ne la crée pas quand la mention n'exige rien** (un remerciement) | ⬜ |
 | M29.5 | **La lecture deux fois par jour** : les groupes à traiter **sans sujet ouvert** qui ont reçu des messages depuis la dernière lecture sont triés par lot, au tarif différé — ouvrir, rattacher, ne rien faire, ou ignorer le groupe. Le tri d'un groupe ne se joue jamais à la salve. ⚠️ Deux crons au plus (`vercel.json` en porte déjà deux, à 2 h et 6 h UTC) : la lecture se greffe sur eux, et l'horaire de l'un se déplace vers la mi-journée — jamais un troisième | ⬜ |

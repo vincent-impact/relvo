@@ -93,6 +93,7 @@ export const createMessageSchema = z.object({
   content: z.string().optional().nullable(),
   /** Corps HTML d'un e-mail (rendu isolé). Null hors email. */
   contentHtml: z.string().optional().nullable(),
+  mentionsSelf: z.boolean().optional(),
   receivedAt: z.date().optional().nullable(),
   sentAt: z.date().optional().nullable(),
   status: z.enum(MessageStatus).optional(),
@@ -265,6 +266,7 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
         subjectLine: data.subjectLine ?? null,
         content: data.content ?? null,
         contentHtml: data.contentHtml ?? null,
+        mentionsSelf: data.mentionsSelf ?? false,
         receivedAt: data.receivedAt ?? (incoming ? new Date() : null),
         sentAt: data.sentAt ?? (incoming ? null : new Date()),
         status:
@@ -473,6 +475,8 @@ export const ingestInboundWhatsAppSchema = z.object({
   isGroup: z.boolean().optional().nullable(),
   content: z.string().optional().nullable(),
   receivedAt: z.date().optional().nullable(),
+  /** Ce message mentionne le dirigeant (M29.2) — jugé par l'appelant, d'après l'annuaire. */
+  mentionsSelf: z.boolean().optional(),
 });
 
 export type IngestInboundWhatsAppInput = z.infer<
@@ -551,6 +555,7 @@ export async function ingestInboundWhatsApp(
       groupTitle: chat.groupTitle,
       // WhatsApp n'a pas d'objet → subjectLine reste null.
       content: data.content ?? null,
+      mentionsSelf: data.mentionsSelf ?? false,
       receivedAt: data.receivedAt ?? new Date(),
     });
     if (message.subjectId) {

@@ -1959,6 +1959,16 @@ porte « Ignorée par Relvo ». Les raisons que seul l'utilisateur connaît (« 
 « traité ailleurs ») ne s'affichent plus sur une ligne — aucun écran ne les fait choisir
 aujourd'hui.
 
+### Les mentions d'abord
+
+**`tranché`** · Par le dirigeant, le 2026-11-24, après la tranche 4 de M25. En relisant le
+résumé de M25 destiné au client, il constate que la mention WhatsApp qui relance une analyse
+n'y est pas — elle est dans M29, pas encore commencée. **Décidé : « il faut absolument passer
+au développement de M29 »**, tout de suite, avant les tranches 5 à 7 de M25 (mesurer au
+backoffice, décider avant de télécharger, images et expiration). M25 passe à `partiel` — la
+page de suivi n'admet qu'une épique en cours — et reprend après M29. Ce que M25 laisse en
+attente du dirigeant ne change pas : lancer la purge du stock ignoré, sortir du palier gratuit.
+
 ### Le plan de réalignement documentaire n'a jamais été exécuté
 
 **`tranché` — traité** · Un document de spécification listait explicitement les passages rendus

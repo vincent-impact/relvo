@@ -15,6 +15,7 @@ import {
 import { Prisma } from "../generated/prisma/client";
 import type { TenantDb, Tx } from "../tenant";
 import { contactDisplayName } from "./contacts";
+import { resoudreMentions } from "./annuaire-messagerie";
 import { assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import type { TenantCreate } from "./helpers";
@@ -538,6 +539,8 @@ export type ConversationListItem = {
   preview: string;
   /** Messages ENTRANTS non lus — pastille + remontée en tête de liste. */
   unreadCount: number;
+  /** Le dirigeant y est mentionné dans un message qu'il n'a pas lu (M29.2). */
+  mentioned: boolean;
   /** Le dernier message est-il couvert par un sujet ? (définition du KPI) */
   lastMessageSorted: boolean;
   /**
@@ -581,6 +584,16 @@ const CONVERSATION_ITEM_INCLUDE = {
   subjects: {
     where: { closingMessageId: null },
     select: { subject: { select: { id: true, title: true } } },
+  },
+  // Un message reçu, non lu, qui mentionne le dirigeant (M29.2) : un seul suffit.
+  messages: {
+    where: {
+      direction: MessageDirection.incoming,
+      readAt: null,
+      mentionsSelf: true,
+    },
+    select: { id: true },
+    take: 1,
   },
   _count: {
     select: {
@@ -656,6 +669,21 @@ async function buildContactResolver(db: TenantDb): Promise<ContactResolver> {
  * `contactId` + nom d'affichage repris du contact. In-place, une seule requête
  * (tous les contacts) et uniquement s'il y a des lignes à résoudre.
  */
+/**
+ * L'aperçu d'une ligne se LIT : une mention y porte un nom, pas un identifiant
+ * (M29.2). Une requête pour toute la page, et aucune s'il n'y a pas de mention.
+ */
+async function avecMentionsLisibles(
+  db: TenantDb,
+  items: ConversationListItem[],
+): Promise<ConversationListItem[]> {
+  const { textes } = await resoudreMentions(
+    db,
+    items.map((it) => it.preview),
+  );
+  return items.map((it, i) => ({ ...it, preview: textes[i] ?? it.preview }));
+}
+
 async function attachRegisteredContacts(
   db: TenantDb,
   items: ConversationListItem[],
@@ -702,6 +730,7 @@ function toConversationListItem(c: ConversationItemRow): ConversationListItem {
     lastMessageAt: c.lastMessageAt,
     preview,
     unreadCount: c._count.messages,
+    mentioned: c.messages.length > 0,
     lastMessageSorted: c.lastMessage?.subjectId != null,
     listeningSubjects: c.subjects.map((s) => ({
       id: s.subject.id,
@@ -782,7 +811,7 @@ export async function listConversationItems(
   const page = toPage(rows, limit);
   const items = await attachRegisteredContacts(
     db,
-    page.items.map(toConversationListItem),
+    await avecMentionsLisibles(db, page.items.map(toConversationListItem)),
   );
   return { items, nextCursor: page.nextCursor };
 }
@@ -803,7 +832,10 @@ export async function listSubjectConversationRows(
     orderBy: [{ lastMessageAt: "desc" }, { createdAt: "desc" }],
     include: CONVERSATION_ITEM_INCLUDE,
   });
-  return attachRegisteredContacts(db, rows.map(toConversationListItem));
+  return attachRegisteredContacts(
+    db,
+    await avecMentionsLisibles(db, rows.map(toConversationListItem)),
+  );
 }
 
 /** Le KPI « Sans sujet » de la page Sujets. */
@@ -1047,6 +1079,8 @@ export type ConversationThread = {
   interlocutorName: string | null;
   /** Tous les interlocuteurs vus dans le fil (≥1 pour un groupe actif). */
   participants: ConversationParticipant[];
+  /** Identifiants mentionnés que l'annuaire ne connaît pas (M29.1) — à aller chercher chez le fournisseur. */
+  unknownMentions: string[];
   messages: ConversationMessageItem[];
   /**
    * Écoutes du fil (M6ter) — le signal d'appartenance côté conversation. L'UI en
@@ -1285,6 +1319,12 @@ export async function getConversationThread(
       : [];
   }
 
+  // Une mention se lit par son nom (M29.2) — le texte stocké ne change pas.
+  const mentions = await resoudreMentions(
+    db,
+    rows.map((m) => m.content),
+  );
+
   return {
     id: conversation.id,
     title: conversation.title,
@@ -1303,10 +1343,11 @@ export async function getConversationThread(
     triage: triageOf(conversation),
     ignore: ignoreOf(conversation),
     unimported: unimportedOf(conversation),
-    messages: rows.map((m) => ({
+    unknownMentions: mentions.inconnus,
+    messages: rows.map((m, i) => ({
       id: m.id,
       direction: m.direction,
-      content: m.content,
+      content: mentions.textes[i] ?? m.content,
       contentHtml: m.contentHtml,
       subjectLine: m.subjectLine,
       senderName: m.senderContact

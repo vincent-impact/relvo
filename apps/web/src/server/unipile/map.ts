@@ -1,4 +1,5 @@
 import type {
+  IdentiteNotee,
   IngestInboundEmailInput,
   IngestInboundWhatsAppInput,
   IngestOutboundEmailInput,
@@ -10,6 +11,7 @@ import type {
   UnipileChatMessageApi,
   UnipileMailApi,
   UnipileMailWebhook,
+  UnipileMessagingAttendee,
   UnipileMessagingWebhook,
 } from "./types";
 
@@ -382,5 +384,37 @@ export function messageRelu(
       content,
       receivedAt: quand,
     },
+  };
+}
+
+// ── L'annuaire des identifiants (M29.1) ─────────────────────────────────────
+// Ce que l'agrégateur dit de quelqu'un, tel que l'annuaire le note.
+
+/** L'auteur d'un webhook de messagerie, tel que l'annuaire le note. */
+export function identiteDuWebhook(
+  s: UnipileMessagingAttendee | null | undefined,
+  opts: { isSelf?: boolean } = {},
+): IdentiteNotee[] {
+  if (!s) return [];
+  return [
+    {
+      internalId:
+        s.attendee_provider_id ?? s.provider_id ?? s.attendee_specifics?.lid,
+      phone: s.attendee_specifics?.phone_number ?? s.attendee_public_identifier,
+      name: s.attendee_name,
+      isSelf: opts.isSelf,
+    },
+  ];
+}
+
+/** Un participant d'un fil, tel que l'annuaire le note. */
+export function identiteDuParticipant(
+  p: UnipileChatAttendeeApi,
+): IdentiteNotee {
+  return {
+    internalId: p.provider_id ?? p.specifics?.lid,
+    phone: p.specifics?.phone_number ?? p.public_identifier,
+    name: p.name,
+    isSelf: Boolean(p.is_self),
   };
 }

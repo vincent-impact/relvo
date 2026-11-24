@@ -7,7 +7,7 @@ resume_client: >
   Relvo garde ce qui sert à un sujet et va rechercher le reste à la source quand vous le
   demandez. Les conversations en sourdine ne pèsent rien, et l'espace de chaque compte est
   surveillé.
-statut: en-cours
+statut: partiel
 debut: 2026-11-24
 ---
 

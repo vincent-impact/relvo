@@ -415,6 +415,32 @@ un message. Le rangement étant devenu déterministe et infaillible, il n'y a pl
 justifier. Le champ et ses valeurs sont **conservés pour l'historique** — supprimer une colonne
 qui porte des données passées ne se récupère pas.
 
+**`mentions_self`** dit qu'un message de messagerie **mentionne le dirigeant**. Il se pose à la
+réception, sans modèle, d'après l'annuaire des identifiants (ci-dessous) ; la liste des
+conversations s'en sert pour marquer un fil où l'on interpelle le dirigeant sans qu'il l'ait lu.
+
+## MessagingIdentity
+
+**L'annuaire des identifiants de messagerie.** Dans un groupe, une mention s'écrit « @ » suivi
+d'un identifiant interne du réseau — une suite de chiffres qui n'est ni un nom ni, le plus
+souvent, un numéro. L'annuaire dit, **par canal**, à qui chaque identifiant appartient : son
+numéro, son nom de profil, et si c'est **le dirigeant lui-même**. Identifiant et numéro y sont
+tenus en chiffres seuls, tels que le texte d'une mention les porte ; un identifiant est unique
+par canal.
+
+Il se nourrit de l'expéditeur de chaque message reçu, de l'auteur des messages que le dirigeant
+envoie — c'est ainsi qu'il apprend qui est « moi » —, et de la liste des participants d'un fil
+quand une mention désigne quelqu'un d'inconnu. Trois règles :
+
+- **Le texte d'un message n'est jamais réécrit.** La mention se résout à la lecture : un message
+  reçu avant que l'annuaire connaisse son auteur s'affiche juste dès qu'il le connaît.
+- **L'annuaire ne désapprend rien.** Une source qui ne porte pas un nom n'efface pas celui qu'on
+  connaît, et « c'est le dirigeant » reste vrai.
+- **Un identifiant cherché et introuvable y figure sans nom** : on ne le redemande pas au
+  fournisseur à chaque message.
+
+« C'est moi » se juge sur le canal où le message arrive ; un nom, lui, vaut pour tout le compte.
+
 ## Attachment
 
 Pièce jointe rattachée à un message, et à le sujet quand il y en a une. Porte un nom, un type MIME,

@@ -22,7 +22,9 @@ import { relireApresSalve } from "@/server/ia/pipeline/relecture";
 import { trierConversation } from "@/server/ia/pipeline/tri";
 import { courrierDepuisUnipile } from "@/server/unipile/courrier";
 import { fournisseurUnipile } from "@/server/unipile/fournisseur";
-import { toInboundWhatsApp } from "@/server/unipile/map";
+import { identiteDuWebhook, toInboundWhatsApp } from "@/server/unipile/map";
+import { mentionDuDirigeant } from "@/server/annuaire-messagerie";
+import { noterIdentites } from "@relvo/db";
 import {
   UNIPILE_AUTH_HEADER,
   verifyWebhookAuth,
@@ -323,6 +325,13 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   // cochée par correspondance, puis la relecture — comme un envoi depuis
   // Relvo (05 §4.1). Sans elle, Relvo perdait la moitié de l'échange.
   if (evt.is_sender) {
+    // L'auteur d'un message envoyé par le compte, c'est le dirigeant : c'est
+    // ainsi que l'annuaire apprend son identifiant (M29.1).
+    await noterIdentites(
+      db,
+      config.channelId,
+      identiteDuWebhook(evt.sender, { isSelf: true }),
+    );
     if (!evt.chat_id) return ok({ ok: true, ignored: "own_message" });
     const envoi = await recevoirWhatsAppSortant(db, {
       channelId: config.channelId,
@@ -358,9 +367,18 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   // `is_group` du webhook. Le domaine ne l'interroge qu'à la découverte d'un fil,
   // ou tant qu'un groupe s'appelle encore « Groupe WhatsApp » — jamais à chaque
   // message.
+  // L'annuaire des identifiants (M29.1) se nourrit de chaque expéditeur ; et
+  // le message sait, sans modèle, s'il mentionne le dirigeant (M29.2).
+  const entrant = toInboundWhatsApp(evt, config.channelId);
+  await noterIdentites(db, config.channelId, identiteDuWebhook(evt.sender));
+  const mentionsSelf = await mentionDuDirigeant(db, {
+    channelId: config.channelId,
+    chatId: entrant.externalThreadId ?? null,
+    content: entrant.content ?? null,
+  });
   const recu = await recevoirWhatsAppEntrant(
     db,
-    toInboundWhatsApp(evt, config.channelId),
+    { ...entrant, mentionsSelf },
     unipileChatDirectory,
   );
   // Conversation ignorée (M25.9) : rien n'est importé — ni le texte, ni les

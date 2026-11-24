@@ -7,6 +7,25 @@ import { cn } from "@/lib/utils";
 // (pas de scroll horizontal) — elle se coupe (`overflow-wrap: anywhere`). C'est
 // le comportement attendu partout où l'on affiche du contenu de message.
 
+// « @vous » : ce que le serveur écrit à la place de l'identifiant du dirigeant
+// quand on le mentionne dans un groupe (M29.2, `domain/annuaire-messagerie`).
+// C'est Relvo qui le dit — il le signe de son violet.
+const VOUS_RE = /(@vous)(?![\p{L}\p{N}_])/gu;
+
+/** Un morceau de texte brut, « @vous » mis en valeur. */
+function avecVous(texte: string, cle: string): React.ReactNode {
+  if (!texte.includes("@vous")) return texte;
+  return texte.split(VOUS_RE).map((part, i) =>
+    part === "@vous" ? (
+      <span key={`${cle}-${i}`} className="font-semibold text-relvo">
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
+}
+
 // URLs http(s), et « www. » sans schéma. Volontairement simple (pas de parseur
 // complet) : capte le cas courant des liens communiqués dans un email.
 const URL_RE = /(https?:\/\/[^\s<]+|www\.[^\s<]+)/gi;
@@ -36,7 +55,7 @@ export function LinkifiedText({
   let key = 0;
   for (const m of text.matchAll(URL_RE)) {
     const start = m.index ?? 0;
-    if (start > last) nodes.push(text.slice(last, start));
+    if (start > last) nodes.push(avecVous(text.slice(last, start), `t${key}`));
     const [link, trail] = splitTrailing(m[0]);
     const href = link.startsWith("http") ? link : `https://${link}`;
     nodes.push(
@@ -54,7 +73,7 @@ export function LinkifiedText({
     );
     last = start + m[0].length;
   }
-  if (last < text.length) nodes.push(text.slice(last));
+  if (last < text.length) nodes.push(avecVous(text.slice(last), "fin"));
 
   return (
     <span

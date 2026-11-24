@@ -2,6 +2,10 @@
 
 ## Démarrage à froid — à lire en premier
 
+> ⏸ **En pause depuis le 2026-11-24** : le dirigeant a fait passer M29 devant les tranches 5 à
+> 7 (`ecarts`, « Les mentions d'abord »). Le chantier en cours est
+> `2026-11-m29-groupes-et-mentions.md`. Ici, il reste au dirigeant à lancer la purge.
+
 **Où on en est.** La recette de l'alpha est close et M28 terminée. M24 n'attend plus que la
 vérification Google, entre les mains du dirigeant : son épique est passée à `partiel` pour
 laisser la place d'épique en cours à celle-ci (la page de suivi n'en admet qu'une). Le dirigeant

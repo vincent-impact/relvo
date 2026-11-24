@@ -269,6 +269,17 @@ function ConversationRow({
                 sur une SOURCE, savoir « 14 » plutôt que « des messages » change
                 la décision de l'ouvrir ou de l'ignorer. Même pastille que sur
                 une ligne de sujet (22 px). */}
+            {/* On vous y mentionne, dans un message que vous n'avez pas lu
+                (M29.2) : l'arobase, cerclée, à gauche du compte. */}
+            {data.mentioned ? (
+              <span
+                role="img"
+                aria-label="Vous êtes mentionné"
+                className="inline-flex size-[22px] flex-none items-center justify-center rounded-full border border-relvo bg-white text-[13px] leading-none font-semibold text-relvo"
+              >
+                @
+              </span>
+            ) : null}
             {unread ? (
               <span className="chiffre inline-flex h-[22px] min-w-[22px] flex-none items-center justify-center rounded-full bg-relvo px-1.5 text-[12px] text-white">
                 {data.unreadCount}
