@@ -229,6 +229,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Relvo ne met plus de côté une conversation WhatsApp sur un seul message, vous dit chaque lundi ce qu'il a ignoré dans la semaine, et la liste des conversations ignorées se filtre par raison."
+        },
+        {
+          "type": "new",
           "texte": "Une conversation ignorée indique désormais combien de messages elle n'a pas importés ; quand vous la réactivez ou la rattachez à un sujet, Relvo va rechercher ces messages et vous dit combien il en a retrouvé."
         },
         {
