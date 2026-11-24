@@ -5,7 +5,6 @@ import {
   answerQuestion,
   cleDeLaQuestion,
   ignoreConversation,
-  listConversationItems,
   natureDeLaCle,
   phraseDuReleve,
   poserReleveIgnorees,
@@ -20,8 +19,7 @@ import {
 
 // LE FILET D'UN FAUX VERDICT (M25.11). Ignorer n'importe plus rien : ce
 // fichier tient ce qui empêche une erreur de Relvo de passer inaperçue — la
-// série d'avis qu'il lui faut, le relevé de ce qu'il a ignoré, et le filtre
-// qui le retrouve dans la liste.
+// série d'avis qu'il lui faut, et le relevé de ce qu'il a ignoré.
 
 let n = 0;
 async function compte() {
@@ -213,38 +211,5 @@ describe("le relevé de ce que Relvo a ignoré", () => {
       titre: "Ce que j'ai mis de côté",
       ouvertes: ["q1"],
     });
-  });
-});
-
-describe("retrouver une conversation ignorée", () => {
-  it("la liste se filtre par qui a ignoré et par raison", async () => {
-    const { db, channelId, email } = await compte();
-    const pub = await fil(db, channelId, email, "Promo");
-    const perso = await fil(db, channelId, email, "Dimanche");
-    const parMoi = await fil(db, channelId, email, "Lettre");
-    await ignoreConversation(db, pub.conversationId, {
-      reason: "advertising",
-      actor: "ai",
-    });
-    await ignoreConversation(db, perso.conversationId, {
-      reason: "personal",
-      actor: "ai",
-    });
-    await ignoreConversation(db, parMoi.conversationId, { reason: "personal" });
-
-    const ids = async (ignored?: Parameters<typeof listConversationItems>[1]) =>
-      (await listConversationItems(db, { filter: "ignored", ...ignored })).items
-        .map((c) => c.id)
-        .sort();
-    expect(await ids()).toHaveLength(3);
-    expect(await ids({ ignored: { by: "ai" } })).toEqual(
-      [pub.conversationId, perso.conversationId].sort(),
-    );
-    expect(await ids({ ignored: { reason: "personal" } })).toEqual(
-      [perso.conversationId, parMoi.conversationId].sort(),
-    );
-    expect(await ids({ ignored: { by: "ai", reason: "personal" } })).toEqual([
-      perso.conversationId,
-    ]);
   });
 });

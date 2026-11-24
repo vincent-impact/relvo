@@ -131,6 +131,13 @@ l'icône**, dans son coin haut droit, comme sur un téléphone ; à côté d'ell
 et sort de la carte à deux chiffres. Le point du non-lu tient l'autre coin. Un **indicateur**, lui, est une cellule fixe : à zéro, il écrit
 « 0 », en gris clair — un tiret ou un vide y laisserait croire à une donnée manquante.
 
+**L'avis de tri se lit en badges, jamais en phrase dans une liste.** Sur une ligne de
+conversation, deux informations, deux badges, chacun son pictogramme : la **nature** dans un
+badge plein et pâle, le **conseil** de Relvo dans un badge cerclé — le pouce levé pour « à
+considérer », baissé pour « à ignorer ». La forme sépare les deux familles ; la teinte dit
+l'acteur — violet pour Relvo, bleu pour ce que l'utilisateur a ignoré lui-même, gris pour
+« sans avis ». La phrase de Relvo se lit en tête du fil, sous les mêmes badges.
+
 **Une présentation unique par entité, partout.** Une tâche se rend de la même façon dans la
 liste d'un sujet et dans une liste à plat ; seul le contexte affiché varie (le titre du sujet
 apparaît dans la liste à plat, la date disparaît quand le semainier la porte déjà). Deux rendus

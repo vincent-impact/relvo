@@ -1907,6 +1907,47 @@ sur un groupe, Relvo le suit en direct — relecture à la salve, comme aujourd'
 passe deux fois par jour, et sur mention.** La relecture à la salve des groupes écoutés n'est
 donc pas débranchée.
 
+### Deux badges plutôt qu'une phrase
+
+**`tranché`** · Par le dirigeant, le 2026-11-24, à l'essai de la tranche 3 de M25 sur son
+téléphone. Son constat : la lecture d'une ligne de conversation est trop complexe — la marque
+« Relvo » prend de la place sans rien apporter, l'action (« à considérer », « rien à faire ») et
+la nature (« personnel », « professionnel ») se mêlent dans une même phrase, certaines lignes ne
+portent rien « comme si Relvo ne les analysait pas », et « ignorée par Relvo · automatique »
+empile encore deux informations.
+
+**Ce qui a été mesuré** (production, lecture seule, tous comptes) : sur 1 401 conversations à
+trier, 436 portent un avis — 239 « à considérer », 163 « rien à faire », 34 « à traiter » — et
+965 n'en portent aucun : 591 groupes, que Relvo ne lit pas (M29), 195 fils dont le dernier
+message est celui du dirigeant, 178 messages reçus dont la cause n'a pas été vérifiée. 2 232
+conversations sont ignorées par Relvo, 58 par un utilisateur.
+
+**Décidé.**
+
+- **La nature et le conseil sont deux choses, dans deux badges distincts**, chacun précédé d'un
+  pictogramme. Plus de phrase dans la liste : la raison de Relvo se lit en tête du fil.
+- **Le conseil n'a de sens que dans « à trier »** : « À considérer » (pouce levé), « À
+  ignorer » (pouce baissé), « Sans avis » quand Relvo n'a pas lu.
+- **Pas de sapin de Noël** : la couleur n'est pas le signal, le pictogramme l'est. La seule
+  teinte qui parle est celle de l'acteur, d'après le triptyque déjà en place : violet pour
+  Relvo, bleu pour ce que le dirigeant a ignoré lui-même.
+- **La rangée de puces par raison dans « Ignorées » est retirée** : « un tri inutile ». Elle
+  avait été livrée le jour même avec M25.11 ; le filtre disparaît de l'écran, de l'adresse et
+  du domaine, et « Voir la liste » du relevé hebdomadaire mène aux ignorées sans filtre.
+
+**Choix de réalisation, à juger à l'usage.** « À traiter » et « à considérer » donnent le même
+conseil « À considérer » : Relvo ouvre lui-même un sujet quand il est sûr, ce qui reste à trier
+avec un « à traiter » est donc une recommandation de regarder. La nature est un badge plein, le
+conseil un badge cerclé — la forme sépare les deux familles. Une conversation ignorée sans
+raison dite porte « Par vous » ou « Par Relvo ».
+
+**Reste à trancher : la liste des natures.** Le dirigeant doute qu'elle soit complète
+(« Personnel, Professionnel, Publicité, Spam, Automatique, Démarchage… »). Un inventaire lui a
+été proposé le même jour : sept natures — professionnel, personnel, démarchage, publicité,
+administratif, automatique, indésirable. Rien n'est changé dans `TriageNature` tant qu'il n'a
+pas répondu : l'élargir touche le schéma, la consigne du tri, le filtre sans modèle et le jeu
+d'évaluation.
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté

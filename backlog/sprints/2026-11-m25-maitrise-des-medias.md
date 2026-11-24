@@ -66,11 +66,18 @@ palier gratuit de son côté** (M25.2) : à vérifier avec lui avant de compter 
   `listAssistantAccounts`. Le cron du matin le pose **le lundi** et le pousse. Sa question vit
   dans un seul échange de Relvo, clé `ignorees` (`CLE_ECHANGE_IGNOREES`), « Ce que j'ai mis de
   côté » ; « Voir la liste » rend l'issue `ignorees-a-revoir`, et l'écran mène à
-  `/conversations?filtre=ignorees&raison=relvo`.
-- **Le filtre.** `listConversationItems` prend `ignored: { by, reason }` ; la page Conversations
-  lit `?raison=` (`CONVERSATION_REASON_SLUGS`) et montre, dans « Ignorées » seulement, une
-  rangée de puces qui défile — Toutes, Par Relvo, puis les raisons. L'étiquette de raison
-  existait déjà sur chaque ligne (`RelvoVerdictLine`).
+  `/conversations?filtre=ignorees`.
+- **L'avis en deux badges** (essai de la tranche 3 par le dirigeant, `ecarts`, « Deux badges
+  plutôt qu'une phrase »). `components/conversations/avis-badges.tsx` : `AvisBadges` sur une
+  ligne de la liste — la **nature** (badge plein) et le **conseil** (badge cerclé, pouce levé
+  ou baissé), « Sans avis » en gris si Relvo n'a pas lu ; dans « Ignorées », la nature seule,
+  violette si Relvo a ignoré, bleue si c'est le dirigeant. `AvisDuFil` en tête du fil : les
+  mêmes badges puis la phrase de Relvo, qui ne se lit plus que là. Les mots sont dans
+  `lib/conversation-row.ts` (`NATURE_LABELS`, `CONSEIL_LABELS`). **Le filtre par raison de la
+  tranche 3 est retiré** — la rangée de puces, `?raison=`, et l'option `ignored` de
+  `listConversationItems`. ⚠️ **La liste des natures reste à trancher** : l'inventaire a été
+  proposé au dirigeant ; l'élargir, c'est une migration de `TriageNature`, la consigne du tri
+  et son jeu d'évaluation.
 
 **Ce que les tranches 1 à 3 ne font pas, et qu'il ne faut pas croire fait.**
 

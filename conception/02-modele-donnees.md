@@ -302,7 +302,7 @@ mon rôle, déjà traité ailleurs, autre —, une note libre optionnelle, et l'
 l'utilisateur, en un appui, ou Relvo, sur un avis « rien à faire » sûr (cf. `05 §9.5`), auquel cas
 la nature de l'avis donne la raison et sa phrase la note. La raison est ce qui rend le geste
 exploitable par Relvo (cf. `05 §9`) : sans elle, une conversation ignorée dit qu'on n'en veut pas,
-jamais pourquoi. L'acteur est ce qui permet à la liste de dire « ignorée par Relvo ». Réactiver
+jamais pourquoi. L'acteur est ce qui permet à la liste de dire qui a ignoré. Réactiver
 efface la raison et l'acteur ; le verdict de tri, lui, reste.
 
 ### L'avis de tri

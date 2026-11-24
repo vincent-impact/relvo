@@ -68,7 +68,7 @@ import type {
   RelvoVerdictData,
   ThreadMessageData,
 } from "@/lib/conversation-row";
-import { RelvoVerdictLine } from "@/components/conversations/relvo-verdict-line";
+import { AvisDuFil } from "@/components/conversations/avis-badges";
 import { TrouARelire } from "@/components/conversations/trou-a-relire";
 import type { TrouData } from "@/lib/trou";
 import { cn } from "@/lib/utils";
@@ -564,16 +564,16 @@ export function ConversationDetail({
               titre ; le canal est une icône, les interlocuteurs des puces sur
               la même ligne ; un sujet suivi tient sur UNE ligne. */}
           <div className="space-y-1.5 pt-0.5">
-            {/* L'avis de tri de Relvo (M7.20) — action, nature, raison, heure ;
-                ou « Relvo n'a pas encore lu ce fil ». Sur le violet, en blanc.
+            {/* L'avis de tri de Relvo (M7.20) — la nature et le conseil en
+                badges, puis sa phrase en entier ; ou « Ignorée par… ».
                 SEULEMENT tant que le fil n'est pas suivi : c'est là qu'il sert
                 (confirmer ou contredire, réactiver). Un fil suivi par un sujet
                 a sa mémoire dans le sujet ; l'avis reste dans le journal. */}
             {/* Le bloc n'existe que quand Relvo a quelque chose à dire : une
                 phrase qui dit « rien » prendrait la place d'un message. */}
             {!activeListening && (relvo || ignore) ? (
-              <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 [&_.text-\(--text-secondary\)]:text-white [&_.text-\(--text-tertiary\)]:text-white/80 [&_.text-relvo]:text-white">
-                <RelvoVerdictLine relvo={relvo} ignore={ignore} clamp={false} />
+              <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2">
+                <AvisDuFil relvo={relvo} ignore={ignore} />
               </div>
             ) : null}
 

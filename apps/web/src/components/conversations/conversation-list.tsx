@@ -36,10 +36,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   CONVERSATION_CHANNEL_SLUGS,
-  CONVERSATION_REASON_SLUGS,
   CONVERSATION_FILTER_SLUGS,
   type ConversationChannelSlug,
-  type ConversationReasonSlug,
   type ConversationFilterSlug,
   type ConversationRowData,
 } from "@/lib/conversation-row";
@@ -49,7 +47,7 @@ import { ContactAvatarIcon } from "@/components/contacts/contact-avatar-icon";
 import { cn } from "@/lib/utils";
 import { ListPanel } from "@/components/shared/list-panel";
 import Link from "next/link";
-import { RelvoVerdictLine } from "@/components/conversations/relvo-verdict-line";
+import { AvisBadges } from "@/components/conversations/avis-badges";
 
 // Liste /conversations (M6bis.8) — la surface de TRI, hors navigation, atteinte
 // par le KPI « Sans sujet » de la page Sujets.
@@ -278,14 +276,15 @@ function ConversationRow({
             ) : null}
           </div>
 
-          {/* L'avis de tri (M7.20) : action, nature et raison, ou « ignorée par
-              Relvo ». Rien si Relvo n'a pas encore lu ce fil — ni si un sujet
-              le suit : l'avis a servi, la mémoire vivante est dans le sujet. */}
+          {/* L'avis de tri (M7.20), en badges : la nature et le conseil dans
+              « à trier » — « Sans avis » si Relvo n'a pas lu ce fil —, la
+              nature seule dans « ignorées ». Rien si un sujet suit le fil :
+              l'avis a servi, la mémoire vivante est dans le sujet. */}
           {data.listeningSubjects.length === 0 || data.ignored ? (
-            <RelvoVerdictLine
+            <AvisBadges
               relvo={data.relvo}
               ignore={data.ignore}
-              className="mt-1"
+              className="mt-1.5"
             />
           ) : null}
         </div>
@@ -349,7 +348,6 @@ function ConversationRow({
 export function ConversationList({
   filter,
   channel,
-  reason = "toutes",
   initialItems,
   initialCursor,
   noneAtAll = false,
@@ -357,7 +355,6 @@ export function ConversationList({
   filter: ConversationFilterSlug;
   channel: ConversationChannelSlug;
   /** Dans « Ignorées » : par qui, pourquoi (M25.11). */
-  reason?: ConversationReasonSlug;
   initialItems: ConversationRowData[];
   initialCursor: string | null;
   /** Le compte n'a AUCUNE conversation : rien n'est encore arrivé (compte neuf). */
@@ -395,7 +392,6 @@ export function ConversationList({
       CONVERSATION_FILTER_SLUGS[filter],
       CONVERSATION_CHANNEL_SLUGS[channel],
       cursor,
-      CONVERSATION_REASON_SLUGS[reason],
     );
     if (res.ok) {
       paged.current = true;
@@ -406,7 +402,7 @@ export function ConversationList({
     }
     setLoading(false);
     loadingRef.current = false;
-  }, [cursor, filter, channel, reason]);
+  }, [cursor, filter, channel]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -421,15 +417,7 @@ export function ConversationList({
     return () => obs.disconnect();
   }, [cursor, loadMore]);
 
-  // Un filtre de raison qui ne rend rien ne dit pas qu'aucune conversation
-  // n'est ignorée (M25.11) : seulement qu'aucune ne l'est pour cette raison.
-  const empty =
-    filter === "ignorees" && reason !== "toutes"
-      ? {
-          title: "Rien pour ce filtre",
-          hint: "Aucune conversation ignorée ne correspond. Revenez à « Toutes » pour les voir.",
-        }
-      : EMPTY[filter];
+  const empty = EMPTY[filter];
 
   return (
     <div>

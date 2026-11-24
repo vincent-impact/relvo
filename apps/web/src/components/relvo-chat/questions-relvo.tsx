@@ -100,9 +100,10 @@ export function useQuestionsRelvo(questions: OpenQuestion[]) {
         return;
       }
       // Le relevé de ce que Relvo a ignoré (M25.11) : « voir la liste » mène
-      // aux conversations ignorées par lui, où chacune se reprend d'un geste.
+      // aux conversations ignorées — celles de Relvo y portent un badge violet —,
+      // où chacune se reprend d'un geste.
       if (res.data.outcome.kind === "ignorees-a-revoir") {
-        router.push("/conversations?filtre=ignorees&raison=relvo");
+        router.push("/conversations?filtre=ignorees");
         return;
       }
       setReponduEn(phraseOutcome(res.data.outcome));

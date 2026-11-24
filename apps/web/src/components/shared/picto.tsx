@@ -139,3 +139,16 @@ export const Folder = plein(P.Folder, "Folder");
 export const Tray = plein(P.Tray, "Tray");
 export const Note = plein(P.Note, "Note");
 export const BookOpen = plein(P.BookOpen, "BookOpen");
+
+// L'avis de tri sur une conversation : la NATURE (de quoi il s'agit) et le
+// CONSEIL (ce que Relvo en ferait) — deux badges, chacun son pictogramme
+// (`conversations/avis-badges.tsx`).
+export const Briefcase = plein(P.Briefcase, "Briefcase");
+export const Robot = plein(P.Robot, "Robot");
+export const Handshake = plein(P.Handshake, "Handshake");
+export const UserSwitch = plein(P.UserSwitch, "UserSwitch");
+export const CheckCircle = plein(P.CheckCircle, "CheckCircle");
+export const DotsThreeCircle = plein(P.DotsThreeCircle, "DotsThreeCircle");
+export const ThumbsUp = plein(P.ThumbsUp, "ThumbsUp");
+export const ThumbsDown = plein(P.ThumbsDown, "ThumbsDown");
+export const Question = plein(P.Question, "Question");

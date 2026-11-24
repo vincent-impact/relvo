@@ -4,49 +4,71 @@ import type {
   ConversationListItem,
   ConversationMessageItem,
   ConversationTriage,
-  IgnoredFilter,
   UnimportedGap,
 } from "@relvo/db";
 import type { TrouData } from "@/lib/trou";
 import { formatRelative } from "@/lib/display";
 
 // ── Ce que Relvo a conclu sur un fil (M7) ───────────────────────────────────
-// Libellés FRANÇAIS de l'avis — l'ACTION et la NATURE — et des raisons
-// d'ignorance, en un seul endroit : la liste et le fil parlent la même langue,
-// celle de l'utilisateur, jamais celle du modèle ni de la base.
+// Deux informations, jamais mêlées — deux badges à l'écran (`avis-badges`) :
+//   · la NATURE : de quoi il s'agit (professionnel, publicité…). Elle se lit
+//     partout où l'avis s'affiche, « à trier » comme « ignorées ».
+//   · le CONSEIL : ce que Relvo en ferait. Il n'a de sens que tant que la
+//     conversation est à trier — une conversation ignorée n'attend plus d'avis.
+// Les mots sont ceux de l'utilisateur, en un seul endroit, jamais ceux du
+// modèle ni de la base : « bruit » ou « autre » ne s'affichent nulle part
+// comme un verdict.
 
-export const ACTION_LABELS: Record<ConversationTriage["verdict"], string> = {
-  matter: "À traiter",
-  uncertain: "À considérer",
-  noise: "Rien à faire",
+/** Ce que Relvo en ferait. Sans avis, il n'a pas lu la conversation. */
+export type Conseil = "considerer" | "ignorer";
+
+export const CONSEIL_LABELS: Record<Conseil, string> = {
+  considerer: "À considérer",
+  ignorer: "À ignorer",
 };
 
-export const NATURE_LABELS: Record<
-  NonNullable<ConversationTriage["nature"]>,
-  string
-> = {
-  professional: "professionnel",
-  advertising: "publicité",
-  automatic: "automatique",
-  personal: "personnel",
+export const SANS_AVIS = "Sans avis";
+
+// Relvo ouvre lui-même un sujet quand il est sûr : une conversation encore à
+// trier avec un « à traiter » est donc, comme un « à considérer », une
+// conversation qu'il vous recommande de regarder.
+const CONSEIL_DE: Record<ConversationTriage["verdict"], Conseil> = {
+  matter: "considerer",
+  uncertain: "considerer",
+  noise: "ignorer",
 };
 
-/** Les raisons que l'utilisateur choisit d'un appui. */
-export const IGNORE_REASON_LABELS: Record<string, string> = {
-  advertising: "publicité",
-  prospecting: "prospection",
-  automatic: "automatique",
-  personal: "personnel",
-  not_my_role: "pas mon rôle",
-  handled_elsewhere: "traité ailleurs",
-  other: "autre",
+/**
+ * La nature d'une conversation : celle que Relvo a posée, ou la raison que
+ * l'utilisateur a choisie en l'ignorant. Une seule liste, un seul libellé.
+ */
+export type NatureCle =
+  | NonNullable<ConversationTriage["nature"]>
+  | "prospecting"
+  | "not_my_role"
+  | "handled_elsewhere"
+  | "other";
+
+export const NATURE_LABELS: Record<NatureCle, string> = {
+  professional: "Professionnel",
+  personal: "Personnel",
+  advertising: "Publicité",
+  prospecting: "Prospection",
+  automatic: "Automatique",
+  not_my_role: "Pas mon rôle",
+  handled_elsewhere: "Traité ailleurs",
+  other: "Autre",
 };
 
-/** Le verdict de Relvo, prêt à afficher — sérialisable (le temps est préformaté). */
+function natureCle(raw: string | null | undefined): NatureCle | null {
+  return raw && raw in NATURE_LABELS ? (raw as NatureCle) : null;
+}
+
+/** L'avis de Relvo, prêt à afficher — sérialisable (le temps est préformaté). */
 export type RelvoVerdictData = {
-  verdict: ConversationTriage["verdict"];
-  /** « À traiter · professionnel », « Rien à faire · publicité ». */
-  label: string;
+  conseil: Conseil;
+  nature: NatureCle | null;
+  /** La phrase de Relvo — elle se lit en tête du fil, jamais dans la liste. */
   reason: string;
   /** « 35 min », « hier »… */
   time: string;
@@ -56,24 +78,22 @@ export function toRelvoVerdictData(
   t: ConversationTriage | null,
 ): RelvoVerdictData | null {
   if (!t) return null;
-  const base = ACTION_LABELS[t.verdict];
-  const label = t.nature ? `${base} · ${NATURE_LABELS[t.nature]}` : base;
   return {
-    verdict: t.verdict,
-    label,
+    conseil: CONSEIL_DE[t.verdict],
+    nature: natureCle(t.nature),
     reason: t.reason,
     time: formatRelative(t.at) ?? "",
   };
 }
 
 /**
- * L'ignorance, prête à afficher : « Ignorée par Relvo · publicité » — la
- * NATURE de l'avis quand c'est Relvo qui a fait taire, la raison choisie
- * quand c'est l'utilisateur.
+ * L'ignorance, prête à afficher : QUI a ignoré (la couleur du badge — violet
+ * pour Relvo, bleu pour l'utilisateur) et la nature — celle de l'avis quand
+ * c'est Relvo qui a fait taire, la raison choisie quand c'est l'utilisateur.
  */
 export type IgnoreData = {
   byRelvo: boolean;
-  reasonLabel: string | null;
+  nature: NatureCle | null;
   note: string | null;
   /** Ce que la conversation n'importe plus depuis qu'elle est ignorée (M25.10). */
   unimported: TrouData | null;
@@ -100,16 +120,9 @@ export function toIgnoreData(
 ): IgnoreData | null {
   if (!i) return null;
   const byRelvo = i.by === "ai";
-  const reasonLabel = byRelvo
-    ? triage?.nature
-      ? NATURE_LABELS[triage.nature]
-      : null
-    : i.reason
-      ? (IGNORE_REASON_LABELS[i.reason] ?? i.reason)
-      : null;
   return {
     byRelvo,
-    reasonLabel,
+    nature: natureCle(byRelvo ? triage?.nature : i.reason),
     note: i.note,
     unimported: toTrouData(unimported),
   };
@@ -243,43 +256,4 @@ export function parseChannelSlug(raw?: string | null): ConversationChannelSlug {
   return raw && raw in CONVERSATION_CHANNEL_SLUGS
     ? (raw as ConversationChannelSlug)
     : "tous";
-}
-
-// Filtre RAISON (`?raison=`, M25.11) — seulement dans « Ignorées » : par qui,
-// pourquoi. « relvo » isole ce que Relvo a écarté de lui-même, là où un faux
-// verdict se cache ; les autres valeurs sont les raisons d'ignorance. C'est la
-// BASE qui filtre, comme pour le canal.
-export const CONVERSATION_REASON_SLUGS = {
-  toutes: undefined,
-  relvo: { by: "ai" },
-  publicite: { reason: "advertising" },
-  prospection: { reason: "prospecting" },
-  automatique: { reason: "automatic" },
-  personnel: { reason: "personal" },
-  "pas-mon-role": { reason: "not_my_role" },
-  "traite-ailleurs": { reason: "handled_elsewhere" },
-  autre: { reason: "other" },
-} as const satisfies Record<string, IgnoredFilter | undefined>;
-
-export type ConversationReasonSlug = keyof typeof CONVERSATION_REASON_SLUGS;
-
-export const CONVERSATION_REASON_LABELS: Record<
-  ConversationReasonSlug,
-  string
-> = {
-  toutes: "Toutes",
-  relvo: "Par Relvo",
-  publicite: "Publicité",
-  prospection: "Prospection",
-  automatique: "Automatique",
-  personnel: "Personnel",
-  "pas-mon-role": "Pas mon rôle",
-  "traite-ailleurs": "Traité ailleurs",
-  autre: "Autre",
-};
-
-export function parseReasonSlug(raw?: string | null): ConversationReasonSlug {
-  return raw && raw in CONVERSATION_REASON_SLUGS
-    ? (raw as ConversationReasonSlug)
-    : "toutes";
 }

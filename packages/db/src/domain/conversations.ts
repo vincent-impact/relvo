@@ -470,26 +470,9 @@ export type ConversationFilter = "unsorted" | "followed" | "ignored";
  * sans sujet par conception, et un `some` ferait rester ces conversations dans
  * le KPI pour toujours.
  */
-/**
- * Dans « Ignorées », par qui et pourquoi (M25.11) : c'est ce qui permet de
- * retrouver un faux verdict de Relvo parmi des centaines de publicités.
- */
-export type IgnoredFilter = {
-  /** Seulement les conversations ignorées par cet acteur — Relvo, ou le dirigeant. */
-  by?: Actor;
-  reason?: IgnoreReason;
-};
-
-function conversationFilterWhere(
-  filter: ConversationFilter,
-  ignored?: IgnoredFilter,
-) {
+function conversationFilterWhere(filter: ConversationFilter) {
   if (filter === "ignored") {
-    return {
-      status: ConversationStatus.ignored,
-      ...(ignored?.by ? { ignoredByActor: ignored.by } : {}),
-      ...(ignored?.reason ? { ignoreReason: ignored.reason } : {}),
-    };
+    return { status: ConversationStatus.ignored };
   }
   // « Suivies » : conversations actives dont le dernier message EST couvert par
   // un sujet (le complément exact de « Sans sujet »).
@@ -781,8 +764,6 @@ export async function listConversationItems(
     channelType?: ChannelType;
     cursor?: string;
     limit?: number;
-    /** Seulement dans « Ignorées » : par qui, pourquoi (M25.11). */
-    ignored?: IgnoredFilter;
   } = {},
 ): Promise<Page<ConversationListItem>> {
   const { limit } = paginationSchema.parse(opts);
@@ -790,7 +771,7 @@ export async function listConversationItems(
   const rows = await db.conversation.findMany({
     ...args,
     where: {
-      ...conversationFilterWhere(opts.filter ?? "unsorted", opts.ignored),
+      ...conversationFilterWhere(opts.filter ?? "unsorted"),
       ...(opts.channelType
         ? { channel: { is: { type: opts.channelType } } }
         : {}),
