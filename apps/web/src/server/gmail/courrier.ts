@@ -24,8 +24,14 @@ import type { MessageGmail, PartieGmail } from "./api";
  * envoyés, les brouillons, la corbeille et l'indésirable ne sont pas du
  * courrier à trier. `after:` en secondes depuis l'époque, ce que Gmail lit.
  */
-export function requeteDeLecture(after: Date): string {
-  return `in:inbox -in:spam -in:trash after:${Math.floor(after.getTime() / 1000)}`;
+export function requeteDeLecture(after: Date, avec?: string | null): string {
+  const base = `in:inbox -in:spam -in:trash after:${Math.floor(after.getTime() / 1000)}`;
+  // Une adresse entre guillemets : Gmail la lit telle quelle, et rien de ce
+  // qu'elle contient ne devient un opérateur de recherche.
+  const adresse = avec?.trim().replace(/["\\\s]/g, "");
+  return adresse
+    ? `${base} {from:"${adresse}" to:"${adresse}" cc:"${adresse}"}`
+    : base;
 }
 
 export function natureDepuisEtiquettes(

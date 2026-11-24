@@ -239,8 +239,12 @@ est le seul endroit où vivent les tâches et les décisions.
 ## Cas R — Réactiver une conversation écartée
 
 L'utilisateur va chercher le filtre « Ignorées », rouvre le fil, le réactive. Relvo recommence à
-le recevoir et à le traiter, à partir de maintenant : ce qui s'y est dit pendant qu'il était
-ignoré n'est pas entré dans Relvo. Rattacher le fil à un sujet fait la même chose.
+le recevoir et à le traiter, et va rechercher à la source ce qui s'y est dit pendant qu'il
+était ignoré : le geste répond par le nombre de messages retrouvés, ou dit ce qui manque.
+Rattacher le fil à un sujet fait la même chose.
+
+**Ce qui le surprendrait.** Qu'une conversation ignorée ait l'air à jour. Sa ligne dit combien
+de messages elle n'a pas importés, et depuis quand.
 
 **Ce qui le surprendrait.** Que « Réactiver » ne fasse rien de visible. C'est pourquoi écarter ne
 pose jamais de borne de fin : sinon le bouton serait décoratif.

@@ -1,5 +1,6 @@
 import { RelvoLogo } from "@/components/layout/relvo-logo";
 import type { IgnoreData, RelvoVerdictData } from "@/lib/conversation-row";
+import { compteCourt, compteLong } from "@/lib/trou";
 import { cn } from "@/lib/utils";
 
 // La ligne « ce que Relvo en pense » (M7.20, première forme) — sous la ligne
@@ -9,6 +10,8 @@ import { cn } from "@/lib/utils";
 //
 //   • fil ignoré PAR RELVO → « Ignorée par Relvo · publicité — raison »
 //   • fil ignoré par l'utilisateur → « Ignorée · pas mon rôle » (sa raison, s'il en a une)
+//   • fil ignoré qui a laissé passer des messages (M25.10) → le compte : court
+//     en liste (« · 12 non importés »), en toutes lettres en tête du fil
 //   • avis seul → « Relvo · À traiter · professionnel — raison »,
 //     « Relvo · Rien à faire · automatique — raison », « Relvo · À considérer · … »
 //   • rien → null : Relvo n'a pas lu ce fil (rien n'est affiché en liste).
@@ -39,6 +42,10 @@ export function RelvoVerdictLine({
       ? `Ignorée par Relvo${ignore.reasonLabel ? ` · ${ignore.reasonLabel}` : ""}`
       : `Ignorée${ignore.reasonLabel ? ` · ${ignore.reasonLabel}` : ""}`;
     reason = ignore.note ?? (ignore.byRelvo ? (relvo?.reason ?? null) : null);
+    // En liste, le compte suit la raison sur la même ligne.
+    if (ignore.unimported && clamp) {
+      head += ` · ${compteCourt(ignore.unimported)}`;
+    }
   } else {
     head = `Relvo · ${relvo!.label}`;
     reason = relvo!.reason || null;
@@ -73,6 +80,12 @@ export function RelvoVerdictLine({
             porte déjà la sienne vingt pixels plus haut. */}
         {relvo?.time && !ignore && !clamp ? (
           <span className="text-(--text-tertiary)"> · {relvo.time}</span>
+        ) : null}
+        {/* En tête du fil : ce que la conversation n'importe plus, en clair. */}
+        {ignore?.unimported && !clamp ? (
+          <span className="mt-0.5 block text-(--text-secondary)">
+            {compteLong(ignore.unimported)}
+          </span>
         ) : null}
       </span>
     </p>

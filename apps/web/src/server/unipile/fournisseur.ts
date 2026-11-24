@@ -18,12 +18,13 @@ import { apiMailToWebhook, doitRelireEmail } from "./map";
 export const fournisseurUnipile: FournisseurCourrier = {
   nom: "unipile",
 
-  async lireRecents(boite: Boite, { after, cursor, limit }) {
+  async lireRecents(boite: Boite, { after, cursor, limit, avec }) {
     const page = await listInboxEmails({
       accountId: boite.externalAccountId,
       after,
       cursor,
       limit,
+      avec,
     });
     return {
       cursor: page.cursor,

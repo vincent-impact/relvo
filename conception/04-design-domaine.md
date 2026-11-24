@@ -265,7 +265,11 @@ cas de rattachement manuel — sans lui, une erreur serait irréversible.
 **Ignorer, c'est ne plus importer.** Tant qu'une conversation est ignorée, rien de ce qui y
 arrive n'entre dans Relvo ; elle en tient seulement le compte. Deux gestes la rendent au travail,
 et eux seuls : la **réactiver**, ou la **rattacher à un sujet** — un sujet ne peut pas écouter un
-fil dont plus rien n'est importé.
+fil dont plus rien n'est importé. Le même geste **relit le trou** chez le fournisseur du canal :
+le texte de ce qui s'est dit pendant l'ignorance revient dans le fil, et le geste répond par ce
+qu'il a retrouvé. Ce qui ne revient pas — une photo, un vocal, un message supprimé à la
+source — est dit, jamais passé sous silence. Tant que la relecture n'a pas abouti, le trou
+reste écrit sur la conversation, et son fil propose de recommencer.
 
 **Ignorer est une PAUSE, pas une FIN.** L'ignorance est réversible : la réactiver doit faire
 **reprendre** l'alimentation. Si elle posait une borne de fin, « Réactiver » serait un bouton

@@ -11,6 +11,7 @@ import {
   WhatsappLogo,
 } from "@/components/shared/picto";
 import { toast } from "sonner";
+import { phraseDuRetour } from "@/lib/trou";
 import {
   ignoreConversationAction,
   loadConversationsAction,
@@ -137,9 +138,21 @@ function ConversationRow({
         ? await reactivateConversationAction(data.id)
         : await ignoreConversationAction(data.id);
       if (res.ok) {
-        toast.success(
-          reviving ? "Conversation réactivée" : "Conversation ignorée",
-        );
+        // Réactivée : Relvo vient de relire ce qu'elle n'avait pas importé, et
+        // dit ce qu'il a retrouvé (M25.10).
+        const retour =
+          reviving && res.data && "retour" in res.data ? res.data.retour : null;
+        if (retour && !retour.complet) {
+          toast.error(`Conversation réactivée. ${phraseDuRetour(retour)}`);
+        } else {
+          toast.success(
+            reviving
+              ? retour
+                ? `Conversation réactivée — ${phraseDuRetour(retour)}`
+                : "Conversation réactivée"
+              : "Conversation ignorée",
+          );
+        }
         // Retrait optimiste : la ligne quitte le filtre courant dans les deux
         // sens (elle n'est plus ignorée / elle l'est devenue).
         onRemove(data.id);

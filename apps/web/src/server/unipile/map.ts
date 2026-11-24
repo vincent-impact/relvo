@@ -2,9 +2,12 @@ import type {
   IngestInboundEmailInput,
   IngestInboundWhatsAppInput,
   IngestOutboundEmailInput,
+  IngestOutboundWhatsAppInput,
 } from "@relvo/db";
 import { htmlFidele, texteLisible } from "@/server/courrier/corps";
 import type {
+  UnipileChatAttendeeApi,
+  UnipileChatMessageApi,
   UnipileMailApi,
   UnipileMailWebhook,
   UnipileMessagingWebhook,
@@ -291,4 +294,93 @@ export function toEmailHeaders(
     }
   }
   return Object.keys(out).length ? out : undefined;
+}
+
+/** Le numéro d'un participant, comme le webhook le donne pour un expéditeur. */
+function numeroDuParticipant(a: UnipileChatAttendeeApi): string | null {
+  const phone = a.specifics?.phone_number?.trim();
+  if (phone) return phone;
+  const publicId = a.public_identifier?.trim();
+  if (publicId) return publicId.replace(/@s\.whatsapp\.net$/i, "");
+  return null;
+}
+
+/** L'annuaire d'un fil : identifiant interne → numéro et nom. */
+export function annuaireDuFil(
+  participants: readonly UnipileChatAttendeeApi[],
+): Map<string, { numero: string | null; nom: string | null }> {
+  const annuaire = new Map<
+    string,
+    { numero: string | null; nom: string | null }
+  >();
+  for (const p of participants) {
+    const id = (p.provider_id ?? p.specifics?.lid)?.trim();
+    if (!id) continue;
+    annuaire.set(id, {
+      numero: numeroDuParticipant(p),
+      nom: p.name?.trim() || null,
+    });
+  }
+  return annuaire;
+}
+
+export type MessageRelu =
+  | { sens: "recu"; entrant: IngestInboundWhatsAppInput }
+  | { sens: "envoye"; sortant: IngestOutboundWhatsAppInput }
+  | { sens: "laisse"; motif: "evenement" | "sans-texte" | "sans-expediteur" };
+
+/**
+ * Un message RELU dans la liste d'un fil (M25.10) → l'entrée du domaine. Le
+ * texte seul revient : un message qui n'en porte pas (une photo, un vocal) est
+ * laissé, et compté comme non retrouvé. Dans un fil direct, l'expéditeur est
+ * l'interlocuteur de la conversation ; dans un groupe, l'annuaire du fil
+ * traduit l'identifiant interne en numéro — sans lui, le message est laissé
+ * plutôt que rangé sous un identifiant que personne ne sait lire.
+ */
+export function messageRelu(
+  item: UnipileChatMessageApi,
+  fil: {
+    channelId: string;
+    chatId: string;
+    groupe: boolean;
+    /** Fil direct : le numéro de l'interlocuteur, tel que la conversation le porte. */
+    interlocuteur: string | null;
+    annuaire: ReadonlyMap<
+      string,
+      { numero: string | null; nom: string | null }
+    >;
+  },
+): MessageRelu {
+  if (item.is_event) return { sens: "laisse", motif: "evenement" };
+  const content = item.text?.trim() ? item.text.trim() : null;
+  if (!content) return { sens: "laisse", motif: "sans-texte" };
+  const quand = messagingReceivedAt(item.timestamp);
+  if (item.is_sender) {
+    return {
+      sens: "envoye",
+      sortant: {
+        channelId: fil.channelId,
+        externalId: item.id,
+        externalThreadId: fil.chatId,
+        content,
+        sentAt: quand,
+      },
+    };
+  }
+  const connu = item.sender_id ? fil.annuaire.get(item.sender_id) : undefined;
+  const senderRaw = fil.groupe ? (connu?.numero ?? null) : fil.interlocuteur;
+  if (!senderRaw) return { sens: "laisse", motif: "sans-expediteur" };
+  return {
+    sens: "recu",
+    entrant: {
+      channelId: fil.channelId,
+      externalId: item.id,
+      externalThreadId: fil.chatId,
+      senderRaw,
+      senderName: connu?.nom ?? null,
+      isGroup: fil.groupe,
+      content,
+      receivedAt: quand,
+    },
+  };
 }

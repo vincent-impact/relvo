@@ -4,7 +4,9 @@ import type {
   ConversationListItem,
   ConversationMessageItem,
   ConversationTriage,
+  UnimportedGap,
 } from "@relvo/db";
+import type { TrouData } from "@/lib/trou";
 import { formatRelative } from "@/lib/display";
 
 // ── Ce que Relvo a conclu sur un fil (M7) ───────────────────────────────────
@@ -72,11 +74,28 @@ export type IgnoreData = {
   byRelvo: boolean;
   reasonLabel: string | null;
   note: string | null;
+  /** Ce que la conversation n'importe plus depuis qu'elle est ignorée (M25.10). */
+  unimported: TrouData | null;
 };
+
+/** Le compte de ce qui n'a pas été importé, la date prête à lire. */
+export function toTrouData(u: UnimportedGap | null): TrouData | null {
+  if (!u) return null;
+  return {
+    count: u.count,
+    since:
+      u.since?.toLocaleDateString("fr-FR", {
+        day: "numeric",
+        month: "short",
+        timeZone: "Europe/Paris",
+      }) ?? null,
+  };
+}
 
 export function toIgnoreData(
   i: ConversationListItem["ignore"],
   triage: ConversationTriage | null,
+  unimported: UnimportedGap | null = null,
 ): IgnoreData | null {
   if (!i) return null;
   const byRelvo = i.by === "ai";
@@ -87,7 +106,12 @@ export function toIgnoreData(
     : i.reason
       ? (IGNORE_REASON_LABELS[i.reason] ?? i.reason)
       : null;
-  return { byRelvo, reasonLabel, note: i.note };
+  return {
+    byRelvo,
+    reasonLabel,
+    note: i.note,
+    unimported: toTrouData(unimported),
+  };
 }
 
 /** Taille de page de la liste Conversations (scroll infini). */
@@ -137,7 +161,7 @@ export function toConversationRowData(
     ignored: item.status === "ignored",
     listeningSubjects: item.listeningSubjects,
     relvo: toRelvoVerdictData(item.triage),
-    ignore: toIgnoreData(item.ignore, item.triage),
+    ignore: toIgnoreData(item.ignore, item.triage, item.unimported),
   };
 }
 

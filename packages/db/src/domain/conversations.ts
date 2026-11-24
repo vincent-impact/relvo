@@ -553,7 +553,22 @@ export type ConversationListItem = {
     note: string | null;
     by: Actor;
   } | null;
+  /** Ce que la conversation n'a pas importé pendant qu'elle était ignorée
+   *  (M25.10) — encore ignorée, c'est son compte ; redevenue active, c'est un
+   *  trou qui n'a pas été relu. Null quand il n'y a rien. */
+  unimported: UnimportedGap | null;
 };
+
+export type UnimportedGap = { count: number; since: Date | null };
+
+export function unimportedOf(c: {
+  unimportedCount: number;
+  unimportedSince: Date | null;
+}): UnimportedGap | null {
+  return c.unimportedCount > 0
+    ? { count: c.unimportedCount, since: c.unimportedSince }
+    : null;
+}
 
 const CONVERSATION_ITEM_INCLUDE = {
   channel: { select: { type: true } },
@@ -692,6 +707,7 @@ function toConversationListItem(c: ConversationItemRow): ConversationListItem {
     })),
     triage: triageOf(c),
     ignore: ignoreOf(c),
+    unimported: unimportedOf(c),
   };
 }
 
@@ -897,12 +913,9 @@ export async function reactivateConversation(db: TenantDb, id: string) {
       ignoreReason: null,
       ignoreNote: null,
       ignoredByActor: null,
-      // Le compte de ce qui n'a pas été importé s'efface avec l'ignorance ; le
-      // journal en garde la trace, pour qui relira le trou à la source.
-      unimportedCount: 0,
-      unimportedSince: null,
-      unimportedLastAt: null,
-      unimportedLastExternalId: null,
+      // Le compte de ce qui n'a pas été importé RESTE (M25.10) : c'est le trou
+      // à relire chez le fournisseur. Il s'efface quand il a été relu
+      // (`closeUnimportedGap`), jamais avant — un trou non relu doit se voir.
     },
   });
   await logEvent(db as Tx, {
@@ -1040,6 +1053,7 @@ export type ConversationThread = {
   triage: ConversationTriage | null;
   /** Raison et acteur de l'ignorance (statut `ignored`), sinon null. */
   ignore: ConversationListItem["ignore"];
+  unimported: UnimportedGap | null;
 };
 
 const CONVERSATION_MESSAGE_INCLUDE = {
@@ -1283,6 +1297,7 @@ export async function getConversationThread(
     listenings,
     triage: triageOf(conversation),
     ignore: ignoreOf(conversation),
+    unimported: unimportedOf(conversation),
     messages: rows.map((m) => ({
       id: m.id,
       direction: m.direction,

@@ -41,6 +41,7 @@ export const EVENT_TYPES = {
   // Conversations (M6bis)
   conversationIgnored: "conversation_ignored",
   conversationReactivated: "conversation_reactivated",
+  conversationGapReread: "conversation_gap_reread",
   conversationAttached: "conversation_attached",
   conversationDetached: "conversation_detached",
   /** Une conversation fantôme (un sortant rangé sous une clé de fil) fondue dans la vraie (PITFALLS #75). */

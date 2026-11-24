@@ -69,6 +69,8 @@ import type {
   ThreadMessageData,
 } from "@/lib/conversation-row";
 import { RelvoVerdictLine } from "@/components/conversations/relvo-verdict-line";
+import { TrouARelire } from "@/components/conversations/trou-a-relire";
+import type { TrouData } from "@/lib/trou";
 import { cn } from "@/lib/utils";
 
 // Détail d'une conversation (header enrichi 2026-07-23, v3). TOUT le contexte vit
@@ -122,6 +124,7 @@ export function ConversationDetail({
   subjects,
   relvo,
   ignore,
+  gap = null,
   draftTaskId = null,
   decisionTasks = [],
 }: {
@@ -148,6 +151,8 @@ export function ConversationDetail({
   relvo: RelvoVerdictData | null;
   /** Raison et auteur de l'ignorance, si le fil est en sourdine. */
   ignore: IgnoreData | null;
+  /** Conversation active dont le trou n'a pas été relu (M25.10), sinon null. */
+  gap?: TrouData | null;
   /** « Répondre » depuis une tâche (M7.7) : Relvo rédige le brouillon pour cette tâche à l'ouverture. */
   draftTaskId?: string | null;
   /** Les tâches du fil qui portent des décisions (05 §3.1) : le formulaire sous le message qui les pose, ce qui a été décidé ensuite. */
@@ -570,6 +575,13 @@ export function ConversationDetail({
               <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2 [&_.text-\(--text-secondary\)]:text-white [&_.text-\(--text-tertiary\)]:text-white/80 [&_.text-relvo]:text-white">
                 <RelvoVerdictLine relvo={relvo} ignore={ignore} clamp={false} />
               </div>
+            ) : null}
+
+            {/* Le trou (M25.10) : la conversation a été rendue au travail, mais
+                ce qu'elle a reçu pendant qu'elle était ignorée n'a pas pu être
+                relu. On le dit, et on propose de recommencer. */}
+            {gap ? (
+              <TrouARelire conversationId={conversationId} trou={gap} />
             ) : null}
 
             {/* Le canal, puis les interlocuteurs — en puces, sur une ligne

@@ -287,7 +287,12 @@ qu'ils soient reçus ou écrits par l'utilisateur depuis son téléphone ou son 
 messagerie. La règle vaut pour l'e-mail comme pour la messagerie, et ne dépend pas de qui a
 ignoré. La conversation ne garde que le **compte** de ce qu'elle a laissé passer ; son fil, dans
 Relvo, n'est plus à jour avec la source. Elle redevient active par le seul utilisateur — en la
-réactivant, ou en la rattachant à un sujet — et le compte repart de zéro.
+réactivant, ou en la rattachant à un sujet.
+
+Redevenue active, elle porte encore ce compte : c'est son **trou**, ce qui reste à relire chez
+le fournisseur. Il ne s'efface que lorsqu'il a été relu, et le journal garde alors ce qui était
+attendu et ce qui a été retrouvé. Une conversation active qui porte un compte est donc une
+conversation dont le fil n'est pas encore complet — et l'écran le dit.
 
 Un fil **nouveau** s'importe toujours, même venu d'un expéditeur déjà écarté : il faut le lire
 une fois pour le juger.

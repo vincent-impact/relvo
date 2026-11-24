@@ -2,8 +2,13 @@ import { describe, expect, it } from "vitest";
 import {
   ConversationStatus,
   attachConversationToSubject,
+  closeUnimportedGap,
   createSubject,
+  emailConversationKey,
+  getUnimportedGap,
+  getConversationThread,
   ignoreConversation,
+  listConversationItems,
   prisma,
   reactivateConversation,
   recevoirEmailEntrant,
@@ -176,7 +181,7 @@ describe("recevoir un e-mail", () => {
     expect(await db.message.count({ where: { conversationId } })).toBe(1);
   });
 
-  it("réactiver remet le compte à zéro, et le fil se remet à recevoir", async () => {
+  it("réactiver rend le fil au travail et garde le trou, jusqu'à ce qu'il soit relu", async () => {
     const { db, channelId, email } = await compte("email");
     const premier = await recevoirEmailEntrant(db, {
       channelId,
@@ -195,11 +200,33 @@ describe("recevoir un e-mail", () => {
       recipients: [email],
       subjectLine: "Commande",
     });
+    // Encore ignorée : rien à relire.
+    expect(await getUnimportedGap(db, conversationId)).toBeNull();
     await reactivateConversation(db, conversationId);
     const c = await conversationDe(db, conversationId);
     expect(c.status).toBe(ConversationStatus.active);
-    expect(c.unimportedCount).toBe(0);
-    expect(c.unimportedSince).toBeNull();
+    // Le trou reste écrit : un message n'est pas dans Relvo, et cela doit se voir.
+    const trou = await getUnimportedGap(db, conversationId);
+    expect(trou).toMatchObject({ conversationId, count: 1, key: c.key });
+
+    // Relu : le compte s'efface, le journal dit ce qui était attendu et retrouvé.
+    expect(
+      await closeUnimportedGap(db, conversationId, { recovered: 1 }),
+    ).toEqual({ expected: 1, recovered: 1 });
+    expect(await getUnimportedGap(db, conversationId)).toBeNull();
+    expect((await conversationDe(db, conversationId)).unimportedCount).toBe(0);
+    const trace = await db.eventLog.findFirst({
+      where: {
+        entityId: conversationId,
+        eventType: "conversation_gap_reread",
+      },
+    });
+    expect(trace?.metadata).toMatchObject({ expected: 1, recovered: 1 });
+    // Solder deux fois ne fait rien.
+    expect(
+      await closeUnimportedGap(db, conversationId, { recovered: 0 }),
+    ).toBeNull();
+
     const suite = await recevoirEmailEntrant(db, {
       channelId,
       externalId: "m3",
@@ -308,7 +335,8 @@ describe("rattacher une conversation ignorée à un sujet", () => {
     });
     const c = await conversationDe(db, conversationId);
     expect(c.status).toBe(ConversationStatus.active);
-    expect(c.unimportedCount).toBe(0);
+    // Le message laissé passer est le trou à relire.
+    expect((await getUnimportedGap(db, conversationId))?.count).toBe(1);
 
     const suite = await recevoirWhatsAppEntrant(db, {
       channelId,
@@ -320,5 +348,68 @@ describe("rattacher une conversation ignorée à un sujet", () => {
     expect(suite.ecartee).toBe(false);
     if (suite.ecartee) return;
     expect(suite.message.subjectId).toBe(sujet.id);
+  });
+});
+
+describe("ce qu'une conversation ignorée laisse passer se lit", () => {
+  it("la clé d'un courrier se calcule sans rien écrire, comme au rangement", async () => {
+    const { db, channelId, email } = await compte("email");
+    const premier = await recevoirEmailEntrant(db, {
+      channelId,
+      externalId: "m1",
+      senderRaw: "Karim@Fournisseur.fr",
+      recipients: [email, "compta@fournisseur.fr"],
+      subjectLine: "Devis sauce",
+    });
+    if (premier.ecartee) throw new Error("devait entrer");
+    const c = await conversationDe(db, premier.message.conversationId);
+    const avant = await db.conversation.count();
+    expect(
+      await emailConversationKey(db, {
+        channelId,
+        interlocutorRaw: "compta@fournisseur.fr",
+        recipients: ["karim@fournisseur.fr", email],
+        subjectLine: "RE: Devis sauce",
+      }),
+    ).toBe(c.key);
+    expect(
+      await emailConversationKey(db, {
+        channelId,
+        interlocutorRaw: "karim@fournisseur.fr",
+        recipients: [email],
+        subjectLine: "Devis sauce",
+      }),
+    ).not.toBe(c.key);
+    expect(await db.conversation.count()).toBe(avant);
+  });
+
+  it("la liste et le fil portent le compte, et rien quand il n'y en a pas", async () => {
+    const { db, channelId } = await compte("whatsapp");
+    const premier = await recevoirWhatsAppEntrant(db, {
+      channelId,
+      externalId: "w1",
+      externalThreadId: "chat-compte",
+      senderRaw: "+33677777777",
+      content: "Bonjour.",
+    });
+    if (premier.ecartee) throw new Error("devait entrer");
+    const conversationId = premier.message.conversationId;
+    expect(
+      (await getConversationThread(db, conversationId)).unimported,
+    ).toBeNull();
+    await ignoreConversation(db, conversationId);
+    const quand = new Date("2026-11-03T08:00:00Z");
+    await recevoirWhatsAppEntrant(db, {
+      channelId,
+      externalId: "w2",
+      externalThreadId: "chat-compte",
+      senderRaw: "+33677777777",
+      content: "Vous êtes là ?",
+      receivedAt: quand,
+    });
+    const fil = await getConversationThread(db, conversationId);
+    expect(fil.unimported).toEqual({ count: 1, since: quand });
+    const liste = await listConversationItems(db, { filter: "ignored" });
+    expect(liste.items[0]?.unimported).toEqual({ count: 1, since: quand });
   });
 });

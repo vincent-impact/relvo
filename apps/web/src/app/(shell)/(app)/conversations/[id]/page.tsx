@@ -8,6 +8,7 @@ import { ConversationDetail } from "@/components/conversations/conversation-deta
 import { MarkConversationRead } from "@/components/conversations/mark-conversation-read";
 import {
   toIgnoreData,
+  toTrouData,
   toRelvoVerdictData,
   toThreadMessageData,
 } from "@/lib/conversation-row";
@@ -80,7 +81,9 @@ export default async function ConversationDetailPage({
         listenings={thread.listenings}
         messages={messages}
         relvo={toRelvoVerdictData(thread.triage)}
-        ignore={toIgnoreData(thread.ignore, thread.triage)}
+        ignore={toIgnoreData(thread.ignore, thread.triage, thread.unimported)}
+        // Active, et pourtant un compte : un trou qui n'a pas été relu (M25.10).
+        gap={thread.ignore ? null : toTrouData(thread.unimported)}
         backTo={backTo}
         // « Répondre » depuis une tâche (M7.7) : le composer s'ouvre avec le
         // brouillon de Relvo en rédaction pour cette tâche.

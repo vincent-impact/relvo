@@ -220,3 +220,28 @@ export type UnipileMailApi = {
   /** « 0_ref » / « 1_meta » / « 2_full » : seul le dernier porte le corps. */
   kind?: string | null;
 };
+
+/**
+ * Un message d'un fil, tel que l'API de messagerie le liste (M25.10). Formes
+ * confirmées contre l'API réelle : `id` = le `message_id` du webhook ;
+ * `sender_id` = l'identifiant interne de WhatsApp (`…@lid`) ; `is_sender` et
+ * `is_event` valent 0 ou 1.
+ */
+export type UnipileChatMessageApi = {
+  id: string;
+  text?: string | null;
+  timestamp?: string | null;
+  is_sender?: number | boolean | null;
+  is_event?: number | boolean | null;
+  sender_id?: string | null;
+  attachments?: unknown[] | null;
+};
+
+/** Un participant d'un fil : identifiant interne, numéro, nom, « c'est moi ». */
+export type UnipileChatAttendeeApi = {
+  provider_id?: string | null;
+  public_identifier?: string | null;
+  name?: string | null;
+  is_self?: number | boolean | null;
+  specifics?: { phone_number?: string | null; lid?: string | null } | null;
+};

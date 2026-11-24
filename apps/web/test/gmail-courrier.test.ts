@@ -216,3 +216,31 @@ describe("requeteDeLecture", () => {
     );
   });
 });
+
+describe("requeteDeLecture bornée à un interlocuteur (M25.10)", () => {
+  it("ajoute l'adresse en expéditeur ou en destinataire, entre guillemets", async () => {
+    const { requeteDeLecture } = await import("@/server/gmail/courrier");
+    const q = requeteDeLecture(
+      new Date("2026-11-03T08:00:00Z"),
+      " karim@fournisseur.fr ",
+    );
+    expect(q).toContain("in:inbox");
+    expect(q).toContain(
+      '{from:"karim@fournisseur.fr" to:"karim@fournisseur.fr" cc:"karim@fournisseur.fr"}',
+    );
+  });
+
+  it("une adresse ne peut pas glisser un opérateur de recherche", async () => {
+    const { requeteDeLecture } = await import("@/server/gmail/courrier");
+    const q = requeteDeLecture(new Date(0), 'a@b.fr" in:spam "');
+    expect(q).toContain('from:"a@b.frin:spam"');
+    expect(q).not.toContain(" in:spam");
+  });
+
+  it("sans adresse, la requête de la lecture à la connexion ne change pas", async () => {
+    const { requeteDeLecture } = await import("@/server/gmail/courrier");
+    expect(requeteDeLecture(new Date(0), null)).toBe(
+      requeteDeLecture(new Date(0)),
+    );
+  });
+});

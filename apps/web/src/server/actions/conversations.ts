@@ -11,7 +11,9 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { requireAccountId } from "@/server/auth-context";
 import { revalidateTenantData } from "@/server/cached";
+import { type BilanRetour, relireLeTrou } from "@/server/retour-conversation";
 import {
   CONVERSATIONS_PAGE_SIZE,
   type ConversationRowData,
@@ -37,10 +39,29 @@ export async function ignoreConversationAction(id: string) {
   return result;
 }
 
+/**
+ * Réactiver une conversation, puis relire chez le fournisseur ce qu'elle n'a
+ * pas importé pendant qu'elle était ignorée (M25.10). Le bilan revient au
+ * geste : l'écran dit combien de messages sont retrouvés, et s'il en manque.
+ */
 export async function reactivateConversationAction(id: string) {
   const result = await domainAction((db) => reactivateConversation(db, id));
-  if (result.ok) revalidateConversations();
-  return result;
+  if (!result.ok) return result;
+  const retour = await relireLeTrou(await requireAccountId(), id);
+  revalidateConversations();
+  return { ok: true as const, data: { retour } };
+}
+
+/**
+ * Relire le trou d'une conversation active qui en porte encore un — la
+ * lecture précédente n'a pas abouti, ou n'a pas eu le temps de finir.
+ */
+export async function relireLeTrouAction(
+  id: string,
+): Promise<{ ok: true; data: { retour: BilanRetour | null } }> {
+  const retour = await relireLeTrou(await requireAccountId(), id);
+  revalidateConversations();
+  return { ok: true, data: { retour } };
 }
 
 /**
@@ -59,6 +80,9 @@ export async function createSubjectFromConversationAction(
   const result = await domainAction((db) =>
     createSubjectFromConversation(db, id, overrides),
   );
+  // Ouvrir un sujet sur une conversation ignorée la rend au travail : ce
+  // qu'elle n'avait pas importé se relit (M25.10).
+  if (result.ok) await relireLeTrou(await requireAccountId(), id);
   if (result.ok) {
     revalidateConversations();
     revalidatePath("/sujets/[id]", "page");

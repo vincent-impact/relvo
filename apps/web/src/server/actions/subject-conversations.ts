@@ -11,7 +11,9 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { requireAccountId } from "@/server/auth-context";
 import { revalidateTenantData } from "@/server/cached";
+import { relireLeTrou } from "@/server/retour-conversation";
 
 // Server Actions SubjectConversation (M6bis.12) — étendre un sujet à une seconde
 // conversation (cas S).
@@ -73,6 +75,10 @@ export async function attachConversationToSubjectAction(input: {
     );
     return { subjectId: input.subjectId };
   });
+  // Rattacher une conversation ignorée la réactive : son trou se relit (M25.10).
+  if (result.ok) {
+    await relireLeTrou(await requireAccountId(), input.conversationId);
+  }
   if (result.ok) {
     revalidatePath(`/sujets/${input.subjectId}`);
     revalidatePath("/conversations");
@@ -97,8 +103,18 @@ export async function attachConversationToSubjectFromMessageAction(input: {
       input.subjectId,
       input.messageId,
     );
-    return { subjectId: input.subjectId };
+    const message = await db.message.findFirst({
+      where: { id: input.messageId },
+      select: { conversationId: true },
+    });
+    return {
+      subjectId: input.subjectId,
+      conversationId: message?.conversationId ?? null,
+    };
   });
+  if (result.ok && result.data.conversationId) {
+    await relireLeTrou(await requireAccountId(), result.data.conversationId);
+  }
   if (result.ok) {
     revalidatePath(`/sujets/${input.subjectId}`);
     revalidatePath("/conversations");

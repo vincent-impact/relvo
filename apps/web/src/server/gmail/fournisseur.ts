@@ -19,7 +19,7 @@ export const fournisseurGmail: FournisseurCourrier = {
   nom: "gmail",
 
   /** La lecture à la connexion (M24.4) : la boîte de réception depuis la date, chaque message entier à la demande. */
-  async lireRecents(boite, { after, cursor, limit }) {
+  async lireRecents(boite, { after, cursor, limit, avec }) {
     const [
       { jetonDAcces },
       { listerMessages, lireMessage },
@@ -31,7 +31,7 @@ export const fournisseurGmail: FournisseurCourrier = {
     ]);
     const acces = await jetonDAcces(boite.externalAccountId);
     const page = await listerMessages(acces, {
-      q: requeteDeLecture(after),
+      q: requeteDeLecture(after, avec),
       pageToken: cursor,
       maxResults: limit,
     });

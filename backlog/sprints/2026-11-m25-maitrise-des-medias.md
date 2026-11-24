@@ -32,18 +32,47 @@ palier gratuit de son côté** (M25.2) : à vérifier avec lui avant de compter 
 - `reactivateConversation` et `attachConversationToSubject` rendent la conversation au
   travail et remettent le compte à zéro ; le journal garde le compte d'avant.
 
-**Ce que la tranche 1 ne fait pas, et qu'il ne faut pas croire fait.**
+**Ce qui existe après la tranche 2.**
 
-- **Rien ne montre encore le compte** : la ligne d'une conversation ignorée ne dit pas « douze
-  messages depuis le 3 novembre ». C'est la tranche 2.
-- **Rien ne relit le trou au retour** : réactiver ou rattacher remet à recevoir à partir de
-  maintenant ; ce qui s'est dit entre-temps reste chez le fournisseur. C'est la tranche 2.
+- **Le trou reste écrit jusqu'à sa relecture.** Réactiver ou rattacher ne remet plus le compte
+  à zéro : `getUnimportedGap` le rend pour une conversation active, `closeUnimportedGap` le
+  solde et journalise attendu et retrouvé (`conversation_gap_reread`).
+  `emailConversationKey` dit la clé d'un courrier sans rien écrire.
+- `apps/web/src/server/retour-conversation.ts`, `relireLeTrou` : la relecture chez le
+  fournisseur, bornée à vingt secondes et cinq pages, puis le tri ou la relecture du sujet
+  après la réponse. Messagerie : `listChatMessages` et `listChatAttendees`
+  (`server/unipile/client.ts`), traduits par `messageRelu` et `annuaireDuFil`
+  (`server/unipile/map.ts`) — **l'annuaire d'un fil, identifiant interne → numéro et nom, est
+  la première pierre de M29.1**. E-mail : `lireRecents` prend `avec`, une adresse qui borne la
+  liste (`any_email` chez l'agrégateur, `{from: to: cc:}` chez Gmail), et seul le courrier dont
+  la clé est celle de la conversation entre.
+- Les quatre gestes qui rendent une conversation au travail appellent `relireLeTrou` :
+  réactiver, rattacher un fil, rattacher depuis un message, ouvrir un sujet sur la conversation.
+- L'écran : le compte sur la ligne et en tête du fil d'une conversation ignorée
+  (`RelvoVerdictLine`), le bilan dans le toast de la réactivation, et le trou non relu en tête
+  d'un fil actif avec « Les relire » (`trou-a-relire.tsx`). Les phrases sont dans `lib/trou.ts`.
+
+**Ce que les tranches 1 et 2 ne font pas, et qu'il ne faut pas croire fait.**
+
+- **La relecture n'a pas été jouée contre un vrai fournisseur de bout en bout.** Les formes de
+  l'API de messagerie sont vérifiées sur un fil réel (identifiants, ordre, `is_event`,
+  participants) et la traduction est testée ; `any_email` est dans les types du SDK mais n'a
+  pas été éprouvé, pas plus que la requête Gmail bornée. **À essayer par le dirigeant** :
+  ignorer une conversation, laisser passer deux messages, la réactiver.
+- **Un message de messagerie sans texte ne revient pas** (photo, vocal) : compté comme non
+  retrouvé, et dit. Les envois du dirigeant depuis son client de messagerie non plus — la
+  liste est celle de la boîte de réception.
+- **Dans un groupe, un expéditeur absent de la liste des participants est laissé** (il a
+  quitté le groupe) : son message n'entre pas sous un identifiant illisible.
+- **Rattacher depuis l'échange avec Relvo** ne relit pas le trou : il reste écrit, et le fil
+  propose « Les relire ».
 - **La lecture à la connexion relit chez le fournisseur les courriers d'une conversation
   ignorée à chaque tranche** (ils ne sont jamais « connus ») : du réseau gaspillé, pas une
   erreur. À regarder si une lecture traîne.
 - **Le filet d'un faux verdict n'est pas posé** (tranche 3) alors que la règle est en
-  production : jusque-là, une conversation que Relvo ignore à tort perd ses messages suivants
-  sans que rien ne le signale. C'est la raison de faire les tranches 2 et 3 sans attendre.
+  production : une conversation que Relvo ignore à tort ne reçoit plus ses messages, et seul
+  son compte, dans la liste « Ignorées », le montre ; la réactiver les fait revenir. C'est la
+  raison de faire la tranche 3 sans attendre.
 
 ## Le découpage
 
@@ -73,7 +102,8 @@ Chaque tranche est livrée, testée, documentée et poussée.
 
 - [x] Tranche 1 — « Ignorer, c'est ne plus importer » (M25.9, compteur de M25.10) — livrée le
       2026-11-24.
-- [ ] Tranche 2 — le compte montré, le trou relu au retour (M25.10)
+- [x] Tranche 2 — le compte montré, le trou relu au retour (M25.10) — livrée le 2026-11-24 ;
+      la relecture reste à essayer par le dirigeant sur une vraie conversation.
 - [ ] Tranche 3 — le filet (M25.11)
 - [ ] Tranche 4 — le stock déjà ignoré (M25.12)
 - [ ] Tranche 5 — mesurer (M25.1)

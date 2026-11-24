@@ -2,7 +2,11 @@ import { UnipileClient } from "unipile-node-sdk";
 import { type ChannelConfigStatus, DomainError } from "@relvo/db";
 import { htmlDepuisTexte } from "@/server/courrier/corps";
 import { statutDepuisSources } from "./status";
-import type { UnipileMailApi } from "./types";
+import type {
+  UnipileChatAttendeeApi,
+  UnipileChatMessageApi,
+  UnipileMailApi,
+} from "./types";
 
 /**
  * Traduit une erreur du SDK Unipile en `DomainError` (provider-agnostique) pour
@@ -176,6 +180,8 @@ export async function listInboxEmails(input: {
   after: Date;
   cursor?: string | null;
   limit?: number;
+  /** Seulement les e-mails où figure cette adresse (expéditeur ou destinataire). */
+  avec?: string | null;
 }): Promise<{ items: UnipileMailApi[]; cursor: string | null }> {
   const ctx = getClient();
   if (!ctx) return { items: [], cursor: null };
@@ -185,6 +191,7 @@ export async function listInboxEmails(input: {
     after: input.after.toISOString(),
     limit: input.limit ?? 50,
     ...(input.cursor ? { cursor: input.cursor } : {}),
+    ...(input.avec?.trim() ? { any_email: input.avec.trim() } : {}),
   });
   const items = ((res as { items?: unknown[] }).items ??
     []) as UnipileMailApi[];
@@ -385,6 +392,50 @@ export async function getChatIdentity(chatId: string): Promise<{
     console.warn(`[unipile] getChat(${chatId}) a échoué :`, err);
     return null;
   }
+}
+
+/**
+ * Les messages d'un fil de messagerie depuis une date, DU PLUS RÉCENT AU PLUS
+ * ANCIEN (l'ordre de l'agrégateur), page par page — pour relire ce qu'une
+ * conversation n'a pas importé pendant qu'elle était ignorée (M25.10). Formes
+ * confirmées contre l'API réelle : `id` est l'identifiant que le webhook donne
+ * en `message_id` ; `sender_id` est l'identifiant interne de WhatsApp
+ * (`…@lid`), pas un numéro ; `is_event` marque une réaction ou un événement de
+ * groupe, qui n'est pas un message.
+ */
+export async function listChatMessages(input: {
+  chatId: string;
+  after: Date;
+  cursor?: string | null;
+  limit?: number;
+}): Promise<{ items: UnipileChatMessageApi[]; cursor: string | null }> {
+  const ctx = getClient();
+  if (!ctx) throw new Error("[unipile] non configuré — lecture impossible.");
+  const res = await ctx.client.messaging.getAllMessagesFromChat({
+    chat_id: input.chatId,
+    after: input.after.toISOString(),
+    limit: input.limit ?? 100,
+    ...(input.cursor ? { cursor: input.cursor } : {}),
+  });
+  const items = ((res as { items?: unknown[] }).items ??
+    []) as UnipileChatMessageApi[];
+  const cursor = (res as { cursor?: string | null }).cursor ?? null;
+  return { items, cursor };
+}
+
+/**
+ * Les participants d'un fil : pour chacun l'identifiant interne de WhatsApp,
+ * son numéro et son nom. C'est ce qui traduit le `sender_id` d'un message relu
+ * en un expéditeur lisible — le webhook, lui, porte déjà les deux.
+ */
+export async function listChatAttendees(
+  chatId: string,
+): Promise<UnipileChatAttendeeApi[]> {
+  const ctx = getClient();
+  if (!ctx) throw new Error("[unipile] non configuré — lecture impossible.");
+  const res = await ctx.client.messaging.getAllAttendeesFromChat(chatId);
+  return ((res as { items?: unknown[] }).items ??
+    []) as UnipileChatAttendeeApi[];
 }
 
 /**

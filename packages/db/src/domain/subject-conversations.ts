@@ -307,7 +307,8 @@ export async function attachConversationToSubject(
     });
     // Rattacher une conversation IGNORÉE la réactive (M25.9) : un sujet ne
     // peut pas écouter un fil dont plus rien n'est importé. C'est le second
-    // geste, avec « Réactiver », qui remet le fil à jour.
+    // geste, avec « Réactiver », qui remet le fil à jour. Le compte de ce qui
+    // n'a pas été importé reste : c'est le trou à relire (M25.10).
     if (conversation.status === ConversationStatus.ignored) {
       await tx.conversation.updateMany({
         where: { id: conversation.id },
@@ -316,10 +317,6 @@ export async function attachConversationToSubject(
           ignoreReason: null,
           ignoreNote: null,
           ignoredByActor: null,
-          unimportedCount: 0,
-          unimportedSince: null,
-          unimportedLastAt: null,
-          unimportedLastExternalId: null,
         },
       });
       await logEvent(tx as Tx, {

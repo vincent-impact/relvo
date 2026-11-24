@@ -3,12 +3,13 @@ import {
   ConversationStatus,
   ConversationType,
 } from "../generated/prisma/enums";
-import type { TenantDb } from "../tenant";
+import type { TenantDb, Tx } from "../tenant";
 import {
   conversationDuFil,
   conversationIdentity,
   emailParticipants,
 } from "./conversations";
+import { EVENT_TYPES, logEvent } from "./events";
 import {
   type IngestInboundEmailInput,
   type IngestInboundWhatsAppInput,
@@ -89,15 +90,22 @@ async function noterNonImporte(
   });
 }
 
-/** La conversation IGNORÉE qu'un e-mail désigne par sa clé, s'il y en a une. */
-async function emailIgnore(
+type CourrierDesigne = {
+  channelId: string;
+  /** L'AUTRE : l'expéditeur d'un reçu, le premier destinataire d'un envoi. */
+  interlocutorRaw: string | null | undefined;
+  recipients: readonly string[] | null | undefined;
+  subjectLine: string | null | undefined;
+};
+
+/**
+ * La CLÉ de la conversation qu'un e-mail désigne — le calcul de `createMessage`,
+ * sans rien écrire. Sert à la garde, et à qui relit un trou chez le fournisseur :
+ * parmi le courrier d'un interlocuteur, seul celui de CETTE conversation entre.
+ */
+export async function emailConversationKey(
   db: TenantDb,
-  args: {
-    channelId: string;
-    interlocutorRaw: string | null | undefined;
-    recipients: readonly string[] | null | undefined;
-    subjectLine: string | null | undefined;
-  },
+  args: CourrierDesigne,
 ): Promise<string | null> {
   const channel = await db.channel.findFirst({
     where: { id: args.channelId },
@@ -109,7 +117,7 @@ async function emailIgnore(
   });
   if (!channel || channel.type !== ChannelType.email) return null;
   const interlocutorRaw = args.interlocutorRaw?.trim() || null;
-  const { key } = conversationIdentity({
+  return conversationIdentity({
     channelId: args.channelId,
     channelType: channel.type,
     interlocutorRaw,
@@ -119,7 +127,16 @@ async function emailIgnore(
       recipients: args.recipients,
     }),
     subjectLine: args.subjectLine ?? null,
-  });
+  }).key;
+}
+
+/** La conversation IGNORÉE qu'un e-mail désigne par sa clé, s'il y en a une. */
+async function emailIgnore(
+  db: TenantDb,
+  args: CourrierDesigne,
+): Promise<string | null> {
+  const key = await emailConversationKey(db, args);
+  if (!key) return null;
   const conversation = await db.conversation.findFirst({
     where: { key, status: ConversationStatus.ignored },
     select: { id: true },
@@ -243,4 +260,94 @@ export async function recevoirWhatsAppSortant(
     }
   }
   return { ecartee: false, ...(await ingestOutboundWhatsApp(db, input)) };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Le trou (M25.10) — ce qu'une conversation redevenue active n'a pas importé.
+// Il reste écrit sur elle tant que personne ne l'a relu chez le fournisseur.
+// ─────────────────────────────────────────────────────────────
+
+export type TrouARelire = {
+  conversationId: string;
+  type: ConversationType;
+  key: string;
+  channelId: string;
+  externalThreadId: string | null;
+  interlocutorRaw: string | null;
+  participantsRaw: string[];
+  /** Combien de messages n'ont pas été importés. */
+  count: number;
+  /** Depuis quand — la date du premier message laissé passer. */
+  since: Date;
+};
+
+/** Le trou d'une conversation ACTIVE, s'il y en a un. Une conversation encore ignorée n'a rien à relire. */
+export async function getUnimportedGap(
+  db: TenantDb,
+  conversationId: string,
+): Promise<TrouARelire | null> {
+  const c = await db.conversation.findFirst({
+    where: { id: conversationId },
+    select: {
+      id: true,
+      type: true,
+      key: true,
+      status: true,
+      channelId: true,
+      externalThreadId: true,
+      interlocutorRaw: true,
+      participantsRaw: true,
+      unimportedCount: true,
+      unimportedSince: true,
+    },
+  });
+  if (!c || c.status !== ConversationStatus.active) return null;
+  if (c.unimportedCount <= 0 || !c.unimportedSince) return null;
+  return {
+    conversationId: c.id,
+    type: c.type,
+    key: c.key,
+    channelId: c.channelId,
+    externalThreadId: c.externalThreadId,
+    interlocutorRaw: c.interlocutorRaw,
+    participantsRaw: c.participantsRaw,
+    count: c.unimportedCount,
+    since: c.unimportedSince,
+  };
+}
+
+/**
+ * Le trou a été relu : le compte s'efface, et le journal dit ce qui était
+ * attendu et ce qui a été retrouvé — un média trop ancien, un message supprimé
+ * à la source ne reviennent pas, et cela doit pouvoir se lire.
+ */
+export async function closeUnimportedGap(
+  db: TenantDb,
+  conversationId: string,
+  bilan: { recovered: number },
+): Promise<{ expected: number; recovered: number } | null> {
+  const gap = await getUnimportedGap(db, conversationId);
+  if (!gap) return null;
+  await db.conversation.updateMany({
+    where: { id: conversationId },
+    data: {
+      unimportedCount: 0,
+      unimportedSince: null,
+      unimportedLastAt: null,
+      unimportedLastExternalId: null,
+    },
+  });
+  await logEvent(db as Tx, {
+    entityType: "system",
+    entityId: conversationId,
+    eventType: EVENT_TYPES.conversationGapReread,
+    title: "Messages relus après une ignorance",
+    actor: "system",
+    metadata: {
+      expected: gap.count,
+      recovered: bilan.recovered,
+      since: gap.since.toISOString(),
+    },
+  });
+  return { expected: gap.count, recovered: bilan.recovered };
 }

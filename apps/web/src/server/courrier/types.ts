@@ -90,7 +90,15 @@ export interface FournisseurCourrier {
   /** Les e-mails REÇUS depuis une date, page par page (la lecture à la connexion, M7.19). */
   lireRecents(
     boite: Boite,
-    args: { after: Date; cursor: string | null; limit: number },
+    args: {
+      after: Date;
+      cursor: string | null;
+      limit: number;
+      /** Seulement le courrier où figure cette adresse — expéditeur ou
+       *  destinataire. C'est ce qui borne la relecture d'UNE conversation
+       *  (M25.10) sans relire toute la boîte. */
+      avec?: string | null;
+    },
   ): Promise<{ items: ResumeCourrier[]; cursor: string | null }>;
   /** Les octets d'une pièce jointe, pour la ranger dans le stockage. */
   lirePieceJointe(
