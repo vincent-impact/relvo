@@ -4,6 +4,7 @@ import {
   deciderTri,
   FRONTIERE_CONFIANCE,
   FRONTIERE_IGNORANCE,
+  deciderGroupe,
 } from "@/server/ia/pipeline/decision";
 import type { SortieTri } from "@/server/ia/schemas";
 
@@ -208,5 +209,53 @@ describe("décision du tri", () => {
       confidence: "low",
       reason: "Sans raison donnée.",
     });
+  });
+});
+
+describe("juger un groupe (M29.3)", () => {
+  const groupe = (
+    nature: SortieTri["nature"],
+    confiance: SortieTri["confiance"],
+    action: SortieTri["action"] = "a_traiter",
+  ): SortieTri => ({
+    ...aTraiter,
+    action,
+    nature,
+    confiance,
+    raison: "Le titre le dit.",
+    titre: null,
+    domaine: null,
+    domaine_propose: null,
+    sujet_existant: null,
+  });
+
+  it("hors du champ professionnel et sans aucun doute : ignoré", () => {
+    for (const nature of [
+      "personnel",
+      "publicite",
+      "automatique",
+      "indesirable",
+    ] as const) {
+      const d = deciderGroupe(groupe(nature, "haute"));
+      expect(d.type).toBe("ignorer");
+      // L'action est reposée d'après la nature, quoi qu'ait dit le modèle.
+      expect(d.avis.action).toBe("rien_a_faire");
+    }
+  });
+
+  it("le moindre doute garde le groupe ; l'avis reste écrit", () => {
+    expect(deciderGroupe(groupe("personnel", "moyenne"))).toMatchObject({
+      type: "garder",
+      avis: { action: "rien_a_faire", nature: "personnel" },
+    });
+    expect(deciderGroupe(groupe("personnel", "basse")).type).toBe("garder");
+  });
+
+  it("un groupe professionnel reste toujours, « à considérer »", () => {
+    for (const confiance of ["haute", "moyenne", "basse"] as const) {
+      expect(
+        deciderGroupe(groupe("professionnel", confiance, "rien_a_faire")),
+      ).toMatchObject({ type: "garder", avis: { action: "a_considerer" } });
+    }
   });
 });

@@ -26,6 +26,7 @@
     "pj:rattraper": "node --env-file=.env.local --import tsx scripts/unipile/pieces-jointes.ts",
     "wa:reparer": "node --env-file=.env.local --import tsx scripts/unipile/conversations-fantomes.ts",
     "medias:purger": "node --env-file=.env.local --import tsx scripts/medias/purger-ignorees.ts",
+    "groupes:juger": "node --env-file=.env.local --import tsx scripts/ia/juger-groupes.ts",
     "boites:migrer": "node --env-file=.env.local --import tsx scripts/gmail/migrer.ts",
     "icons": "node scripts/generate-icons.mjs"
   },

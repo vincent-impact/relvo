@@ -116,6 +116,11 @@ export type ConversationContexte = {
    * premier et les derniers d'un fil.
    */
   groupe?: boolean;
+  /**
+   * Un groupe que Relvo JUGE, une fois (M29.3) : ce n'est pas un message qu'on
+   * trie, c'est le groupe — son titre d'abord, sa taille, ses derniers messages.
+   */
+  decouverte?: { titre: string; membres: number | null };
 };
 
 export type TacheContexte = {

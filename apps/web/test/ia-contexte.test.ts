@@ -688,3 +688,32 @@ describe("une mention du dirigeant dans un groupe (M29.4)", () => {
     expect(message("@vous", "sortant")).not.toContain("Mention :");
   });
 });
+
+describe("un groupe à juger (M29.3)", () => {
+  it("le modèle juge le GROUPE sur son titre, pas un message — et ne voit pas le cadrage du tri", () => {
+    const c = contexteTri({
+      compte,
+      conversation: {
+        canal: "whatsapp",
+        groupe: true,
+        decouverte: { titre: "Football 5vs5", membres: 14 },
+        messages: [
+          {
+            expediteur: "Sofiane <+33612000001>",
+            recuLe: "2026-11-24T09:00:00.000Z",
+            objet: null,
+            contenu: "Qui vient jeudi ?",
+            sens: "entrant",
+          },
+        ],
+      },
+      instant: { maintenant: "2026-11-24T09:01:00.000Z" },
+    });
+    expect(c.prompt).toContain("# Un groupe WhatsApp à juger");
+    expect(c.prompt).toContain(
+      "Titre du groupe : « Football 5vs5 » · 14 membres",
+    );
+    expect(c.prompt).toContain("Qui vient jeudi ?");
+    expect(c.prompt).not.toContain("# Le fil à trier");
+  });
+});

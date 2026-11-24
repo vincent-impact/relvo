@@ -121,6 +121,34 @@ export function deciderTri(
   return { type: "avis-seul", motif: "a-considerer" };
 }
 
+/**
+ * Le jugement d'un GROUPE (M29.3) : on ne juge pas une demande, on dit de quoi
+ * le groupe relève. Hors du champ professionnel ET sans aucun doute, il est
+ * ignoré ; sinon il reste. L'action de l'avis est REPOSÉE d'après la nature —
+ * le modèle n'a pas à la choisir, et un « à traiter » n'a pas de sens ici.
+ */
+export type DecisionGroupe = {
+  type: "ignorer" | "garder";
+  /** L'avis tel qu'il s'écrit sur la conversation. */
+  avis: SortieTri;
+};
+
+export function deciderGroupe(sortie: SortieTri): DecisionGroupe {
+  const professionnel = sortie.nature === "professionnel";
+  const avis: SortieTri = {
+    ...sortie,
+    action: professionnel ? "a_considerer" : "rien_a_faire",
+    raison: raisonEnBase(sortie.raison),
+  };
+  return {
+    type:
+      !professionnel && RANG[sortie.confiance] >= RANG[FRONTIERE_IGNORANCE]
+        ? "ignorer"
+        : "garder",
+    avis,
+  };
+}
+
 function nonVide(s: string | null): string | null {
   const t = s?.trim();
   return t ? t : null;

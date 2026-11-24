@@ -91,6 +91,39 @@ d'un webhook porte son LID (`attendee_provider_id`), son numéro et son nom.
 - Un groupe où le dirigeant est mentionné mais qui est **ignoré** n'est ni importé ni lu —
   c'est la règle tranchée.
 
+**Ce qui existe après la tranche 3.**
+
+- **Un groupe se juge, une fois** (M29.3). `pipeline/groupe-jugement.ts` (`jugerLeGroupe`,
+  sans Next ni `server-only`, chargé aussi par le script) et `pipeline/groupe.ts` (l'entrée de
+  l'application). Même appel que le tri, avec le cadrage « un groupe à juger »
+  (`ConversationContexte.decouverte`, dans `contexte/couches.ts`). La décision est pure :
+  `deciderGroupe` (`pipeline/decision.ts`) — hors du champ professionnel et confiance haute,
+  ignoré ; sinon gardé ; l'action de l'avis est reposée d'après la nature.
+- **Quand** : `trierConversation`, sur un groupe sans mention, juge le groupe s'il n'a jamais
+  reçu d'avis (`TriageProjection.dejaJuge`), n'est ni ignoré ni suivi, et que le message n'est
+  pas de l'historique — après l'attente de la salve. Les groupes déjà connus se jugent donc
+  d'eux-mêmes **à leur prochain message**.
+- La liste des participants est demandée à ce moment : elle donne la taille du groupe et
+  nourrit l'annuaire (« c'est moi » compris).
+- **Le lot du stock** : `pnpm --filter web groupes:juger [<e-mail>] [--executer] [--titres]
+  [--limite N] [--differe]` — simulation sans `--executer`. Il juge au tarif immédiat par
+  défaut (le tarif différé est une option : le coût est de l'ordre de 0,0004 € par groupe).
+- **Simulé en production le 2026-11-24**, lecture seule. Sur le compte du dirigeant, avec les
+  titres : 14 groupes, 10 ignorés (anniversaire, vacances, danse, famille…), 4 gardés (RELVO,
+  Protect Permis, Impulse - MTP Team, Click'n'Justice) — aucun verdict contestable à la
+  lecture. Les totaux tous comptes sont dans le compte rendu du jour.
+
+**Ce que la tranche 3 ne fait pas, et qu'il ne faut pas croire fait.**
+
+- **Le lot n'est pas lancé** : il attend le dirigeant, qui le lance lui-même (l'accès de
+  l'assistant à la production est en lecture seule). Tant qu'il ne l'est pas, un groupe qui
+  ne parle pas reste « Sans avis ».
+- **Le jugement à réception n'a pas encore été vu en production** : seule la simulation l'a
+  été. La simulation ne connaît pas la taille du groupe (elle ne demande rien à l'agrégateur).
+- **Un groupe jugé professionnel porte « À traiter · Professionnel »** dans la liste : c'est
+  l'avis sur le groupe, pas une demande précise. À juger à l'usage.
+- Un groupe ignoré à tort ne se rattrape que par le relevé du lundi et le filtre « Ignorées ».
+
 ## Le plan
 
 1. **« La mention se lit »** — M29.1, M29.2. Livrée.
@@ -111,6 +144,7 @@ d'un webhook porte son LID (`attendee_provider_id`), son numéro et son nom.
       vrai groupe.
 - [x] Tranche 2 — la mention force la lecture (M29.4, signal de M29.6) — livrée le 2026-11-24, à
       essayer sur un vrai groupe.
-- [ ] Tranche 3 — le groupe se juge à sa découverte (M29.3)
+- [x] Tranche 3 — le groupe se juge, une fois (M29.3) — livrée le 2026-11-24 ; **le lot du
+      stock reste à lancer par le dirigeant**.
 - [ ] Tranche 4 — deux lectures par jour (M29.5)
 - [ ] M29.7 — la réponse qui cite un message du dirigeant

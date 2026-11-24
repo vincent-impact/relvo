@@ -144,6 +144,10 @@ export type TriageProjection = {
    * jamais été connecté — alors rien ne se trie sur la messagerie.
    */
   connecteLe: Date | null;
+  /** Le titre de la conversation — pour un groupe, son nom : c'est sur lui qu'il se juge (M29.3). */
+  titre: string;
+  /** Relvo a déjà rendu un avis sur ce fil. Un groupe ne se juge qu'une fois. */
+  dejaJuge: boolean;
   compte: TriageAccountProjection;
   expediteur: TriageSenderProfile;
   conversation: {
@@ -340,6 +344,7 @@ export async function getTriageProjection(
         type: true,
         status: true,
         title: true,
+        triagedAt: true,
         participantsRaw: true,
         interlocutorRaw: true,
         contact: {
@@ -520,6 +525,8 @@ export async function getTriageProjection(
     statut: conversation.status,
     type: conversation.type,
     connecteLe: conversation.channel.config?.lastSyncAt ?? null,
+    titre: conversation.title,
+    dejaJuge: conversation.triagedAt !== null,
     compte: {
       dirigeant: `${account.firstName} ${account.lastName}`.trim(),
       // Le compte ne porte pas encore de raison sociale.

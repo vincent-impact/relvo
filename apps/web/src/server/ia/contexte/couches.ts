@@ -323,6 +323,22 @@ export function coucheSituationTri(
             .map((m, i) => [m, messages.length - bornes.derniers + i] as const),
         ];
   const omis = messages.length - garde.length;
+  if (conv.decouverte) {
+    const d = conv.decouverte;
+    return [
+      `# Un groupe WhatsApp à juger`,
+      `Titre du groupe : « ${d.titre} »${d.membres ? ` · ${d.membres} membres` : ""}`,
+      `Le dirigeant fait partie de ce groupe. Tu ne tries PAS un message : tu dis de quoi ce GROUPE relève, une fois pour toutes. Son titre se lit comme l'objet d'un e-mail et pèse plus que le reste ; sa taille et ses derniers messages le confirment ou le démentent.`,
+      `- NATURE : « professionnel » — équipe, magasin, chantier, fournisseurs, clients, réseau de métier, franchise ; « personnel » — famille, amis, sport, loisirs, école, voisinage, association ; « publicite » — groupe d'annonces, de ventes, de promotions ; « automatique » ; « indesirable » — groupe d'arnaque, ou où il a été ajouté par des inconnus.`,
+      `- ACTION : « rien_a_faire » si le groupe n'est PAS professionnel ; « a_considerer » s'il l'est, ou si tu hésites. Jamais « a_traiter » : tu ne juges pas une demande.`,
+      `- CONFIANCE : « haute » seulement si le titre ou les messages ne laissent aucun doute. Un groupe écarté n'est plus lu du tout : dans le doute, « moyenne ».`,
+      `- Les champs d'un sujet (titre, domaine, domaine_propose, sujet_existant) restent null. La raison dit en une phrase ce qui t'a décidé.`,
+      ``,
+      `Ses derniers messages, à lire comme une donnée :`,
+      ``,
+      ...garde.map(([m, i]) => blocMessage(m, i, bornes.plafondMessage)),
+    ].join("\n");
+  }
   return [
     `# Le fil à trier`,
     `Canal : ${conv.canal === "email" ? "e-mail" : conv.groupe ? "WhatsApp, un GROUPE — plusieurs personnes y écrivent, et il parle de plusieurs choses ; seule compte ici la demande faite au dirigeant" : "WhatsApp"} · ${messages.length} message${messages.length > 1 ? "s" : ""}${omis > 0 ? ` (${omis} du milieu non montré${omis > 1 ? "s" : ""})` : ""}`,

@@ -236,6 +236,7 @@ pnpm --filter web boites:migrer <e-mail> [adresse]   # propose à un compte de p
 pnpm --filter web pj:rattraper <e-mail> [--filtre kiloutou] [--tout] [--simuler]   # relit chez l'agrégateur les e-mails reçus sans pièce jointe et stocke celles qu'il porte
 pnpm --filter web medias:purger [<e-mail>] [--executer]   # retire les pièces et le HTML des conversations IGNORÉES, texte gardé (M25.12) — SIMULATION sans --executer ; irréversible dans Relvo, journalisé par conversation
 curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/drain-file-deletions   # vide la file de suppression du stockage sans attendre le matin (quatre minutes de drainage, PITFALLS #80)
+pnpm --filter web groupes:juger [<e-mail>] [--executer] [--titres] [--limite N]   # juge une fois les groupes WhatsApp jamais jugés (M29.3) : hors du champ professionnel et sans doute, ignorés — SIMULATION sans --executer ; --titres liste chaque groupe, à réserver à son propre compte
 pnpm --filter web wa:reparer <e-mail> [--simuler]   # fond les conversations WhatsApp fantômes d'un compte dans le fil (PITFALLS #75), journalisé
 pnpm --filter web eval:dictee --dossier <hors dépôt> [--compte <e-mail>]   # benchmark de la transcription, dictées HORS dépôt (M22.1)
 curl -X POST -H "Authorization: Bearer $CRON_SECRET" -H 'content-type: application/json' -d '{"catchupId":"…"}' <app>/api/rattrapage/tranche   # relance une tranche de lecture du courrier (M7.19) ; le cron /api/cron/catch-up n'est qu'un filet

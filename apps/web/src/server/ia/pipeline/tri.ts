@@ -33,6 +33,7 @@ import {
   peutFaireTaire,
   autourDeLaMention,
 } from "./messagerie-regles";
+import { jugerGroupe } from "./groupe";
 import { estHistorique } from "./rattrapage-regles";
 import { notifierNouveauSujet } from "@/server/push/sujets";
 import { relireSujet, type IssueRelecture } from "./relecture";
@@ -154,7 +155,23 @@ export async function trierConversation(args: {
   // est interpellé (M29.4).
   const groupe = projection.type === "whatsapp_group";
   if (groupe && !args.mention) {
-    return { issue: "canal-non-couvert", coutEur: 0 };
+    // Hors mention, un groupe ne se lit pas — mais il se JUGE, une fois, au
+    // premier message vivant qu'on en voit (M29.3) : de quoi relève-t-il ?
+    const declencheur = projection.conversation.messages.find(
+      (m) => m.id === messageId,
+    );
+    if (
+      projection.dejaJuge ||
+      !projection.orpheline ||
+      !projection.connecteLe ||
+      !declencheur ||
+      estHistorique(declencheur.recuLe, projection.connecteLe)
+    ) {
+      return { issue: "canal-non-couvert", coutEur: 0 };
+    }
+    // Les premiers messages se laissent arriver, comme une salve.
+    await (args.attendre ?? dormir)(MESSAGERIE.attenteSalveMs);
+    return jugerGroupe({ accountId, conversationId, lot });
   }
   if (!projection.orpheline) return { issue: "non-orpheline", coutEur: 0 };
   if (!projection.dernierEntrant)
