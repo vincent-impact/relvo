@@ -165,7 +165,7 @@ d'un webhook porte son LID (`attendee_provider_id`), son numéro et son nom.
   seconde passe ne relit rien.
 - **Simulé en production le 2026-11-24**, lecture seule, sur douze heures : 89 groupes lus
   (484 messages), 13 sujets ouverts dont 11 pour le compte le plus chargé (6 après le
-  garde-fou), 1 rattaché, 28 doutes écrits sur le groupe, le reste sans suite ; 0,046 € au
+  garde-fou), 1 rattaché, 29 doutes écrits sur le groupe, le reste sans suite ; 0,046 € au
   tarif immédiat, la moitié en différé. Les décisions prises sur ces chiffres : `ecarts`,
   « La lecture des groupes : prudente par défaut ».
 
