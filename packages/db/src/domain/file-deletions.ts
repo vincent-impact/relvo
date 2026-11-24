@@ -17,13 +17,13 @@ import type { FileDeleter } from "./storage-port";
 
 export type DrainResult = {
   deleted: number;
-  /** Clés ignorées car une autre ligne les référence encore (cf. `stillReferenced`). */
+  /** Clés ignorées car une autre ligne les référence encore (cf. `encoreReferencees`). */
   skipped: number;
   failed: number;
 };
 
 /**
- * Une autre ligne référence-t-elle encore cette clé ?
+ * Parmi ces clés, lesquelles une autre ligne référence-t-elle encore ?
  *
  * Garde-fou contre le scénario qui a fait retirer la suppression automatique de
  * Django en 1.3 : « fields on different models referencing the same file » —
@@ -32,70 +32,109 @@ export type DrainResult = {
  * Cas concret chez nous : le reset démo supprime le compte (le trigger met les
  * clés des fixtures en file), puis re-uploade les fixtures sur les MÊMES clés
  * déterministes. Sans cette vérification, le worker effacerait les fichiers
- * fraîchement reposés.
+ * fraîchement reposés. Une requête par table pour tout le lot, pas par clé.
  */
-async function stillReferenced(storageKey: string): Promise<boolean> {
-  const [attachment, document] = await Promise.all([
-    prisma.attachment.findFirst({
-      where: { storageKey },
-      select: { id: true },
+async function encoreReferencees(storageKeys: string[]): Promise<Set<string>> {
+  const [attachments, documents] = await Promise.all([
+    prisma.attachment.findMany({
+      where: { storageKey: { in: storageKeys } },
+      select: { storageKey: true },
     }),
-    prisma.knowledgeDocument.findFirst({
-      where: { storageKey },
-      select: { id: true },
+    prisma.knowledgeDocument.findMany({
+      where: { storageKey: { in: storageKeys } },
+      select: { storageKey: true },
     }),
   ]);
-  return attachment !== null || document !== null;
+  const prises = new Set<string>();
+  for (const a of attachments) prises.add(a.storageKey);
+  for (const d of documents) if (d.storageKey) prises.add(d.storageKey);
+  return prises;
 }
 
 /**
  * Consomme la file et supprime les objets correspondants.
  *
+ * Sans `budgetMs`, UN lot. Avec, des lots tant qu'il reste du temps et des
+ * entrées : une purge met des milliers de clés en file d'un coup, et un lot de
+ * cent par jour les laisserait des semaines dans le stockage (PITFALLS #80).
+ *
+ * Les entrées qui ont déjà échoué passent APRÈS les autres (`ORDER BY
+ * attempts`) : cent clés que le stockage refuse ne bloquent plus la tête de la
+ * file. Une entrée qui échoue n'est pas reprise dans le même drainage.
+ *
  * `FOR UPDATE SKIP LOCKED` : deux drainages concurrents (le cron et un appel
- * manuel) ne se marchent pas dessus et ne suppriment pas deux fois.
+ * manuel) ne se marchent pas dessus ; et une suppression au stockage est
+ * idempotente — la rejouer ne casse rien.
  */
 export async function drainFileDeletions(
   storage: FileDeleter,
-  opts: { batchSize?: number } = {},
+  opts: { batchSize?: number; budgetMs?: number; concurrency?: number } = {},
 ): Promise<DrainResult> {
   const batchSize = opts.batchSize ?? 100;
+  const concurrency = Math.max(1, opts.concurrency ?? 8);
+  const debut = Date.now();
   const result: DrainResult = { deleted: 0, skipped: 0, failed: 0 };
+  /** Les entrées qui ont échoué pendant CE drainage : on ne les retente pas. */
+  const echouees = new Set<bigint>();
 
-  const batch = await prisma.$queryRaw<
-    Array<{ id: bigint; storage_key: string }>
-  >`
-    SELECT id, storage_key
-    FROM pending_file_deletions
-    ORDER BY enqueued_at
-    LIMIT ${batchSize}
-    FOR UPDATE SKIP LOCKED
-  `;
+  for (;;) {
+    const lot = (
+      await prisma.$queryRaw<Array<{ id: bigint; storage_key: string }>>`
+        SELECT id, storage_key
+        FROM pending_file_deletions
+        ORDER BY attempts, enqueued_at, id
+        LIMIT ${batchSize + echouees.size}
+        FOR UPDATE SKIP LOCKED
+      `
+    )
+      .filter((row) => !echouees.has(row.id))
+      .slice(0, batchSize);
+    if (lot.length === 0) break;
 
-  for (const row of batch) {
-    try {
-      if (await stillReferenced(row.storage_key)) {
-        // La clé a été réattribuée : on retire l'entrée sans toucher au fichier.
-        await prisma.pendingFileDeletion.delete({ where: { id: row.id } });
-        result.skipped++;
-        continue;
-      }
+    const prises = await encoreReferencees(lot.map((r) => r.storage_key));
+    /** Entrées à retirer de la file : fichier supprimé, ou clé réattribuée. */
+    const soldees: bigint[] = [];
 
-      await storage.delete(row.storage_key);
-      await prisma.pendingFileDeletion.delete({ where: { id: row.id } });
-      result.deleted++;
-    } catch (error) {
-      // On garde l'entrée : elle sera retentée au prochain drainage. C'est ce
-      // qui rend une fuite VISIBLE (une ligne qui traîne avec `attempts` qui
-      // monte) plutôt que silencieuse.
-      await prisma.pendingFileDeletion.update({
-        where: { id: row.id },
-        data: {
-          attempts: { increment: 1 },
-          lastError: error instanceof Error ? error.message : String(error),
-        },
-      });
-      result.failed++;
+    for (let i = 0; i < lot.length; i += concurrency) {
+      await Promise.all(
+        lot.slice(i, i + concurrency).map(async (row) => {
+          if (prises.has(row.storage_key)) {
+            // La clé a été réattribuée : on retire l'entrée sans toucher au fichier.
+            soldees.push(row.id);
+            result.skipped++;
+            return;
+          }
+          try {
+            await storage.delete(row.storage_key);
+            soldees.push(row.id);
+            result.deleted++;
+          } catch (error) {
+            // On garde l'entrée : elle sera retentée au prochain drainage. C'est
+            // ce qui rend une fuite VISIBLE (une ligne qui traîne avec
+            // `attempts` qui monte) plutôt que silencieuse.
+            echouees.add(row.id);
+            result.failed++;
+            await prisma.pendingFileDeletion.update({
+              where: { id: row.id },
+              data: {
+                attempts: { increment: 1 },
+                lastError:
+                  error instanceof Error ? error.message : String(error),
+              },
+            });
+          }
+        }),
+      );
     }
+    if (soldees.length > 0) {
+      await prisma.pendingFileDeletion.deleteMany({
+        where: { id: { in: soldees } },
+      });
+    }
+
+    const resteDuTemps =
+      opts.budgetMs !== undefined && Date.now() - debut < opts.budgetMs;
+    if (!resteDuTemps || lot.length < batchSize) break;
   }
 
   return result;

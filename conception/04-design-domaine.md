@@ -271,6 +271,14 @@ qu'il a retrouvé. Ce qui ne revient pas — une photo, un vocal, un message sup
 source — est dit, jamais passé sous silence. Tant que la relecture n'a pas abouti, le trou
 reste écrit sur la conversation, et son fil propose de recommencer.
 
+**Ce qu'une conversation ignorée avait déjà reçu peut être allégé.** Ses pièces et la mise en
+forme de ses e-mails se retirent, par un geste d'exploitation, simulé avant d'être fait et
+journalisé conversation par conversation. Trois choses restent toujours : le **texte** de chaque
+message, ce qu'un **sujet** porte — un message qu'il couvre, une pièce qui y est rangée —, et la
+mise en forme d'un message qui n'a pas de texte. Ce retrait ne se défait pas dans Relvo : les
+originaux sont dans la boîte ou sur le téléphone, et réactiver la conversation ne les ramène
+pas.
+
 **Ignorer est une PAUSE, pas une FIN.** L'ignorance est réversible : la réactiver doit faire
 **reprendre** l'alimentation. Si elle posait une borne de fin, « Réactiver » serait un bouton
 sans effet observable.

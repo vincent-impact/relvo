@@ -65,7 +65,11 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
-  const drainage = await drainFileDeletions(getStorage());
+  // Vingt secondes de drainage, pas un lot : une purge met des milliers de
+  // clés en file d'un coup (PITFALLS #80). Le reste de la minute est au brief.
+  const drainage = await drainFileDeletions(getStorage(), {
+    budgetMs: 20_000,
+  });
   const remaining = await countPendingFileDeletions();
   console.info("[cron] matin — drainage", { ...drainage, remaining });
 

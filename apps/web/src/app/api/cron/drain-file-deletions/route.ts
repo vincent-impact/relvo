@@ -6,8 +6,9 @@ import { getStorage } from "@relvo/storage";
 //
 // Consomme les clés mises en file par le trigger PostgreSQL et supprime les
 // objets correspondants dans R2. Le cron du matin (`/api/cron/matin`) fait ce
-// drainage chaque jour ; cette route reste appelable à la main, avec le même
-// secret, sans attendre le matin.
+// drainage chaque jour, vingt secondes durant ; cette route reste appelable à
+// la main, avec le même secret, sans attendre le matin — et draine quatre
+// minutes, pour vider la file après une purge (PITFALLS #80).
 //
 // Le report est sans conséquence : un fichier devient INACCESSIBLE dès que sa
 // ligne disparaît, puisqu'une URL de lecture n'est signée qu'à partir d'une clé
@@ -15,7 +16,7 @@ import { getStorage } from "@relvo/storage";
 // latence n'y changent rien — ni pour la sécurité, ni pour le RGPD.
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 export async function GET(request: Request) {
   // Vercel Cron signe ses appels avec CRON_SECRET. Sans cette vérification,
@@ -31,7 +32,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
-  const result = await drainFileDeletions(getStorage());
+  const result = await drainFileDeletions(getStorage(), {
+    budgetMs: 240_000,
+  });
   const remaining = await countPendingFileDeletions();
 
   // `remaining` est la sonde à surveiller : une file qui monte d'un drainage à

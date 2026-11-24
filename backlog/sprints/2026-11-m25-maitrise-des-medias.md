@@ -83,6 +83,25 @@ palier gratuit de son côté** (M25.2) : à vérifier avec lui avant de compter 
   `messagerie-regles.ts` (il met en sourdine sur WhatsApp). Les avis déjà rendus gardent leur
   nature.
 
+**Ce qui existe après la tranche 4.**
+
+- **La purge du stock déjà ignoré** (M25.12). `domain/stock-ignore.ts` : `stockIgnoreDuCompte`
+  (la simulation, par conversation), `totalDuStock`, `purgerConversationIgnoree` (une
+  transaction et une entrée de journal `conversation_stock_purged` par conversation ; l'état
+  « ignorée » se relit dans la transaction). Elle retire les pièces et le HTML, garde le
+  texte, ce qu'un sujet porte, et le HTML d'un message sans texte. Test :
+  `packages/db/test/stock-ignore.test.ts`.
+- **Le script** : `pnpm --filter web medias:purger [<e-mail>] [--executer]` — simulation sans
+  `--executer`. **Simulé en production le 2026-11-24** (lecture seule) : 2 067 conversations,
+  3 982 pièces, 2,28 Go — 28 % du stockage —, et le HTML de 2 549 messages, 95 Mo de base,
+  sur dix comptes. ⚠️ **La purge réelle n'est pas lancée** : elle attend l'accord du dirigeant,
+  et c'est lui qui la lance (l'accès de l'assistant à la production est en lecture seule).
+- **La file de suppression se vide enfin** (`PITFALLS` #80). Mesuré le même jour : 1 124 clés
+  en file depuis le 2026-10-21, sans erreur — le drainage ne prenait que cent clés par jour.
+  `drainFileDeletions` travaille maintenant dans un budget de temps (vingt secondes au cron du
+  matin, quatre minutes sur `/api/cron/drain-file-deletions`), par lots, huit suppressions de
+  front, les entrées déjà échouées en dernier.
+
 **Ce que les tranches 1 à 3 ne font pas, et qu'il ne faut pas croire fait.**
 
 - **Le relevé n'a jamais tourné en production** : il se pose au prochain lundi où le cron du
@@ -139,7 +158,8 @@ Chaque tranche est livrée, testée, documentée et poussée.
       la relecture reste à essayer par le dirigeant sur une vraie conversation.
 - [x] Tranche 3 — le filet (M25.11) — livrée le 2026-11-24 ; le relevé se verra au premier
       lundi.
-- [ ] Tranche 4 — le stock déjà ignoré (M25.12)
+- [x] Tranche 4 — le stock déjà ignoré (M25.12) — l'outil livré et simulé le 2026-11-24 ;
+      **la purge réelle reste à lancer par le dirigeant**, puis la file à drainer.
 - [ ] Tranche 5 — mesurer (M25.1)
 - [ ] Tranche 6 — décider avant de télécharger (M25.3, M25.5)
 - [ ] Tranche 7 — les images, l'expiration, le quota (M25.4, M25.6, M25.7)

@@ -247,4 +247,59 @@ describe("drainFileDeletions", () => {
     expect(row?.attempts).toBe(1);
     expect(row?.lastError).toMatch(/R2 injoignable/);
   });
+
+  it("avec un budget de temps, enchaîne les lots jusqu'à vider la file ; sans budget, un seul lot", async () => {
+    await prisma.pendingFileDeletion.createMany({
+      data: Array.from({ length: 7 }, (_, i) => ({ storageKey: `lot/${i}` })),
+    });
+
+    const deleted: string[] = [];
+    const storage = { delete: async (k: string) => void deleted.push(k) };
+    const unLot = await drainFileDeletions(storage, { batchSize: 3 });
+    expect(unLot).toMatchObject({ deleted: 3 });
+    expect(await queuedKeys()).toHaveLength(4);
+
+    const leReste = await drainFileDeletions(storage, {
+      batchSize: 3,
+      budgetMs: 10_000,
+    });
+    expect(leReste).toMatchObject({ deleted: 4, failed: 0 });
+    expect(await queuedKeys()).toEqual([]);
+    expect(deleted).toHaveLength(7);
+  });
+
+  it("une clé que le stockage refuse ne bloque pas les suivantes, et n'est tentée qu'une fois par drainage", async () => {
+    await prisma.pendingFileDeletion.createMany({
+      data: ["refusee/a", "refusee/b", "bonne/c", "bonne/d"].map(
+        (storageKey) => ({ storageKey }),
+      ),
+    });
+
+    const tentatives: string[] = [];
+    const storage = {
+      delete: async (k: string) => {
+        tentatives.push(k);
+        if (k.startsWith("refusee/")) throw new Error("refusé");
+      },
+    };
+    const result = await drainFileDeletions(storage, {
+      batchSize: 2,
+      budgetMs: 10_000,
+    });
+
+    expect(result).toMatchObject({ deleted: 2, failed: 2 });
+    expect(tentatives.filter((k) => k.startsWith("refusee/"))).toHaveLength(2);
+    expect((await queuedKeys()).sort()).toEqual(["refusee/a", "refusee/b"]);
+
+    // Au drainage suivant, ce qui a déjà échoué passe après ce qui est neuf.
+    await prisma.pendingFileDeletion.create({
+      data: { storageKey: "bonne/e" },
+    });
+    const ordre: string[] = [];
+    await drainFileDeletions(
+      { delete: async (k) => void ordre.push(k) },
+      { batchSize: 1 },
+    );
+    expect(ordre).toEqual(["bonne/e"]);
+  });
 });

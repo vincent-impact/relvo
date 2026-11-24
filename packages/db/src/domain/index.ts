@@ -41,6 +41,7 @@ export * from "./echange";
 export * from "./questions";
 export * from "./echanges-relvo";
 export * from "./releve-ignorees";
+export * from "./stock-ignore";
 export * from "./migration-gmail";
 export * from "./notifications";
 export * from "./admin";

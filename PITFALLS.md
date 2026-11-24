@@ -856,3 +856,24 @@ il ne peut pas voir celui-là.
 - Un push n'est pas fini tant que la CI n'a pas répondu (`gh run list --limit 1`) — la
   Definition of Done le dit, et rien ne le rappelait.
 
+### #80 — Une file drainée d'un lot fixe par jour ne se vide jamais après une suppression en masse
+
+**Symptôme** : le stockage approche de son palier alors que des comptes et des canaux ont été
+supprimés. La file de suppression porte plus de mille clés mises en file le **même jour**, un
+mois plus tôt, toutes à zéro tentative et sans erreur : rien n'échoue, rien n'alerte.
+
+**Cause** : le drainage prenait **un** lot de cent clés par appel, et le seul appel régulier est
+le cron du matin. Cent fichiers par jour : une suppression de compte ou de canal qui en met
+plusieurs milliers en file d'un coup met des semaines à sortir du stockage. La sonde
+« entrées en attente » baissait chaque jour — elle avait l'air saine.
+
+**Règle** :
+- Un consommateur de file se dimensionne sur le **pire arrivage**, pas sur le flux moyen : il
+  travaille dans un **budget de temps** (`drainFileDeletions`, `budgetMs`) et enchaîne les lots
+  tant qu'il reste des entrées.
+- Les entrées qui ont déjà échoué passent **après** les autres : sinon cent clés refusées
+  bloquent la tête de la file pour toujours.
+- Avant une suppression en masse (une purge, un compte), regarder la file **avant et après**,
+  et la drainer à la main (`/api/cron/drain-file-deletions`) plutôt que d'attendre le matin.
+- Une sonde qui baisse n'est pas une sonde saine : regarder l'**âge** de la plus vieille entrée.
+

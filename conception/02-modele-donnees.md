@@ -630,7 +630,9 @@ stockage.
 
 ⚠️ **Elle est alimentée par un TRIGGER, jamais par du code applicatif.** Le domaine ignore le
 stockage : le trigger pousse la clé **dans la transaction** qui supprime la ligne, et un
-processus périodique draine la file **hors transaction**.
+processus périodique draine la file **hors transaction**. Le drainage travaille dans un
+**budget de temps** et enchaîne les lots : la file se vide à la mesure de ce qui y arrive, et
+une entrée qui a déjà échoué passe après les autres.
 
 **C'est le seul mécanisme qui capte les cascades**, dont l'ORM est aveugle par conception : une
 suppression en cascade exécutée par la base ne passe par aucun code applicatif.
