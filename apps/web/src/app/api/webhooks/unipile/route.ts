@@ -1,7 +1,7 @@
 import {
   ensureOnboardingQuestions,
-  ingestInboundWhatsApp,
-  ingestOutboundWhatsApp,
+  recevoirWhatsAppEntrant,
+  recevoirWhatsAppSortant,
   requestChannelCatchup,
   resolveMailboxStep,
 } from "@relvo/db";
@@ -324,13 +324,15 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   // Relvo (05 §4.1). Sans elle, Relvo perdait la moitié de l'échange.
   if (evt.is_sender) {
     if (!evt.chat_id) return ok({ ok: true, ignored: "own_message" });
-    const { message, created } = await ingestOutboundWhatsApp(db, {
+    const envoi = await recevoirWhatsAppSortant(db, {
       channelId: config.channelId,
       externalId: evt.message_id,
       externalThreadId: evt.chat_id,
       content: evt.message?.trim() ? evt.message.trim() : null,
       sentAt: evt.timestamp != null ? new Date(evt.timestamp) : null,
     });
+    if (envoi.ecartee) return ok({ ok: true, ignored: "conversation_ignored" });
+    const { message, created } = envoi;
     if (!created || !message) {
       return ok({ ok: true, ignored: "own_message", created: false });
     }
@@ -356,11 +358,15 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   // `is_group` du webhook. Le domaine ne l'interroge qu'à la découverte d'un fil,
   // ou tant qu'un groupe s'appelle encore « Groupe WhatsApp » — jamais à chaque
   // message.
-  const { message, created } = await ingestInboundWhatsApp(
+  const recu = await recevoirWhatsAppEntrant(
     db,
     toInboundWhatsApp(evt, config.channelId),
     unipileChatDirectory,
   );
+  // Conversation ignorée (M25.9) : rien n'est importé — ni le texte, ni les
+  // médias, que le webhook n'ira donc pas chercher. Le domaine a compté.
+  if (recu.ecartee) return ok({ ok: true, ignored: "conversation_ignored" });
+  const { message, created } = recu;
 
   // Médias (M6.6) : même chemin que les PJ email — seulement au premier passage.
   // Le webhook messaging n'expose ni nom ni MIME : l'id de PJ est `attachment_id`

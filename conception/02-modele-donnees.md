@@ -250,6 +250,9 @@ dans `04`.
 - L'**identifiant de fil externe**, qui sert aussi de cible d'envoi en messagerie.
 - L'**objet normalisé**, e-mail uniquement.
 - Un **statut** : active, ou ignorée.
+- Le **compte de ce qu'elle n'a pas importé** pendant qu'elle était ignorée : combien de
+  messages, depuis quand, la date du dernier, et l'identifiant externe du dernier — jamais un
+  contenu.
 - La **date et la référence du dernier message**, qui pilotent le tri de la liste.
 
 ### Les clés
@@ -278,9 +281,16 @@ la clé.
 
 ### Le statut `ignoré`
 
-`ignoré` signifie que Relvo **cesse d'analyser, de résumer et de trier** les messages de cette
-conversation. Les messages continuent d'être **reçus et stockés** — on ne perd rien —, ils
-sortent seulement du champ de travail de l'assistant. Réversible par le seul utilisateur.
+`ignoré` signifie qu'on sait cette conversation **hors du travail** : Relvo cesse de la lire, et
+**ses messages ne sont plus importés** — ni leur texte, ni leur mise en forme, ni leurs pièces,
+qu'ils soient reçus ou écrits par l'utilisateur depuis son téléphone ou son client de
+messagerie. La règle vaut pour l'e-mail comme pour la messagerie, et ne dépend pas de qui a
+ignoré. La conversation ne garde que le **compte** de ce qu'elle a laissé passer ; son fil, dans
+Relvo, n'est plus à jour avec la source. Elle redevient active par le seul utilisateur — en la
+réactivant, ou en la rattachant à un sujet — et le compte repart de zéro.
+
+Un fil **nouveau** s'importe toujours, même venu d'un expéditeur déjà écarté : il faut le lire
+une fois pour le juger.
 
 L'ignorance porte une **raison** — publicité, prospection, notification automatique, personnel, pas
 mon rôle, déjà traité ailleurs, autre —, une note libre optionnelle, et l'**acteur** qui l'a posée :

@@ -1,7 +1,7 @@
 import {
   getOpenCatchup,
-  ingestInboundEmail,
-  ingestOutboundEmail,
+  recevoirEmailEntrant,
+  recevoirEmailSortant,
   type TenantDb,
 } from "@relvo/db";
 import { after } from "next/server";
@@ -25,7 +25,9 @@ import type { Boite, CourrierEntrant, FournisseurCourrier } from "./types";
 //     à la tranche en cours (M7.19), et après la réponse HTTP le tri d'une
 //     conversation orpheline ou la relecture du sujet qui a capté le message.
 //
-// Un courrier `brouillon` ou `ecarte` n'est jamais rangé (#69).
+// Un courrier `brouillon` ou `ecarte` n'est jamais rangé (#69). Un courrier
+// dont la conversation est IGNORÉE n'est pas importé (M25.9) : ni son texte,
+// ni ses pièces — le domaine le compte, et c'est tout.
 
 export type BilanRangement = {
   messageId: string | null;
@@ -33,7 +35,18 @@ export type BilanRangement = {
   subjectId: string | null;
   created: boolean;
   piecesStockees: number;
+  /** La conversation est ignorée : rien n'a été importé. */
+  nonImporte: boolean;
 };
+
+const NON_IMPORTE = (conversationId: string): BilanRangement => ({
+  messageId: null,
+  conversationId,
+  subjectId: null,
+  created: false,
+  piecesStockees: 0,
+  nonImporte: true,
+});
 
 export async function rangerCourrier(
   db: TenantDb,
@@ -48,24 +61,27 @@ export async function rangerCourrier(
       subjectId: null,
       created: false,
       piecesStockees: 0,
+      nonImporte: false,
     };
   }
   if (courrier.nature === "envoye") {
     // Les pièces jointes d'un envoi ne sont pas rapatriées : le sujet se lit,
     // il ne stocke pas ce que le dirigeant a déjà.
-    const { message, created } = await ingestOutboundEmail(
-      db,
-      courrier.sortant,
-    );
+    const envoi = await recevoirEmailSortant(db, courrier.sortant);
+    if (envoi.ecartee) return NON_IMPORTE(envoi.conversationId);
+    const { message, created } = envoi;
     return {
       messageId: message?.id ?? null,
       conversationId: message?.conversationId ?? null,
       subjectId: message?.subjectId ?? null,
       created,
       piecesStockees: 0,
+      nonImporte: false,
     };
   }
-  const { message, created } = await ingestInboundEmail(db, courrier.entrant);
+  const recu = await recevoirEmailEntrant(db, courrier.entrant);
+  if (recu.ecartee) return NON_IMPORTE(recu.conversationId);
+  const { message, created } = recu;
   // Pièces jointes (M5.4) : au premier passage — ou à un passage suivant si le
   // message est entré SANS elles (importé depuis une ligne de liste qui ne les
   // détaillait pas) : le courrier qui les porte les range, une fois.
@@ -91,6 +107,7 @@ export async function rangerCourrier(
     subjectId: message.subjectId,
     created,
     piecesStockees,
+    nonImporte: false,
   };
 }
 
@@ -110,6 +127,7 @@ export async function recevoirCourrier(
   if (courrier.nature === "brouillon" || courrier.nature === "ecarte") {
     return { ...bilan, ignore: courrier.nature };
   }
+  if (range.nonImporte) return { ...bilan, ignore: "conversation-ignoree" };
   if (!range.created || !range.messageId || !range.conversationId) {
     // Déjà en base — l'écho d'un envoi fait depuis Relvo, une seconde
     // livraison du même courrier. Des pièces jointes arrivées après coup

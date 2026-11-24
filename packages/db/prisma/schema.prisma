@@ -121,10 +121,11 @@ enum ConversationType {
   whatsapp_direct
 }
 
-/// `ignored` = Relvo cesse d'analyser, de résumer et de trier cette source (le
-/// remède au « groupe WhatsApp bavard »). Les messages continuent d'ARRIVER et
-/// d'être stockés — on ne perd rien, ils sortent seulement du champ de travail
-/// de l'assistant. Réversible par le seul utilisateur.
+/// `ignored` = on sait que cette source ne sera jamais professionnelle. Relvo
+/// cesse de la lire, ET SES MESSAGES NE SONT PLUS IMPORTÉS (M25.9) : ni texte,
+/// ni pièce — la conversation ne garde que le compte de ce qu'elle a laissé
+/// passer. Posé par l'utilisateur ou par Relvo, le même état. Réversible par le
+/// seul utilisateur ; le fil se remet alors à jour depuis la source.
 enum ConversationStatus {
   active
   ignored
@@ -639,6 +640,15 @@ model Conversation {
   /// Qui a fait taire la source : l'utilisateur (geste), ou Relvo (verdict
   /// « bruit » en confiance haute, 05 §9.5). Null tant que la conversation est active.
   ignoredByActor    Actor?             @map("ignored_by_actor")
+  /// Ce qu'une conversation IGNORÉE n'a pas importé (M25.9) — un compte, jamais
+  /// un contenu : combien de messages, depuis quand, le dernier. Remis à zéro
+  /// quand la conversation est réactivée.
+  unimportedCount   Int                @default(0) @map("unimported_count")
+  unimportedSince   DateTime?          @map("unimported_since")
+  unimportedLastAt  DateTime?          @map("unimported_last_at")
+  /// Identifiant externe du dernier message non importé : une seconde
+  /// livraison du même webhook ne compte pas deux fois.
+  unimportedLastExternalId String?     @map("unimported_last_external_id")
   /// Le DERNIER avis de tri de Relvo sur cette conversation orpheline (05 §1.1) :
   /// action, nature, confiance, raison en une phrase, horodatage. Visible dans
   /// la liste à trier et en tête du fil ; l'utilisateur confirme ou contredit

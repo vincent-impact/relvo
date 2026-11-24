@@ -305,6 +305,39 @@ export async function attachConversationToSubject(
         anchorMessageId: data.anchorMessageId ?? null,
       } satisfies TenantCreate<Prisma.SubjectConversationUncheckedCreateInput> as Prisma.SubjectConversationUncheckedCreateInput,
     });
+    // Rattacher une conversation IGNORÉE la réactive (M25.9) : un sujet ne
+    // peut pas écouter un fil dont plus rien n'est importé. C'est le second
+    // geste, avec « Réactiver », qui remet le fil à jour.
+    if (conversation.status === ConversationStatus.ignored) {
+      await tx.conversation.updateMany({
+        where: { id: conversation.id },
+        data: {
+          status: ConversationStatus.active,
+          ignoreReason: null,
+          ignoreNote: null,
+          ignoredByActor: null,
+          unimportedCount: 0,
+          unimportedSince: null,
+          unimportedLastAt: null,
+          unimportedLastExternalId: null,
+        },
+      });
+      await logEvent(tx as Tx, {
+        entityType: "system",
+        entityId: conversation.id,
+        eventType: EVENT_TYPES.conversationReactivated,
+        title: `Conversation réactivée — ${conversation.title}`,
+        description: "Rattachée à un sujet.",
+        actor: data.actor ?? Actor.user,
+        metadata: {
+          wasIgnoredBy: conversation.ignoredByActor,
+          reason: conversation.ignoreReason,
+          unimportedCount: conversation.unimportedCount,
+          unimportedSince: conversation.unimportedSince?.toISOString() ?? null,
+          bySubjectId: subject.id,
+        },
+      });
+    }
     await logEvent(tx as Tx, {
       entityType: "subject",
       entityId: subject.id,

@@ -239,7 +239,8 @@ est le seul endroit où vivent les tâches et les décisions.
 ## Cas R — Réactiver une conversation écartée
 
 L'utilisateur va chercher le filtre « Ignorées », rouvre le fil, le réactive. Relvo recommence à
-le traiter, à partir de maintenant.
+le recevoir et à le traiter, à partir de maintenant : ce qui s'y est dit pendant qu'il était
+ignoré n'est pas entré dans Relvo. Rattacher le fil à un sujet fait la même chose.
 
 **Ce qui le surprendrait.** Que « Réactiver » ne fasse rien de visible. C'est pourquoi écarter ne
 pose jamais de borne de fin : sinon le bouton serait décoratif.

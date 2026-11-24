@@ -44,8 +44,8 @@ frontmatter l'est.
 | **[M23 — Les dossiers](epics/M23-dossiers.md)**                            | ✅ — l'arbre, la Mémoire en arborescence, Relvo range en chemins | M11, M17.4                      |
 | **[M27 — Dossiers et sujets](epics/M27-dossiers-et-sujets.md)**            | ✅ — le mot, l'arbre, la fiche en quatre onglets, « Ranger dans… », le dépôt d'une connaissance | M24                             |
 | **[M28 — Sujets : une page, deux vues](epics/M28-sujets-deux-vues.md)**   | ✅ — l'arbre dans la page Sujets, l'ajout en fin de branche, le glisser-déposer, la fiche qui glisse | l'alpha                         |
-| **[M24 — Dix boîtes par compte](epics/M24-dix-boites.md)**                 | 🔶 **en cours** — ouvert le 2026-10-28, `sprints/2026-10-m24-dix-boites.md` ; M24.10 en premier | la marge                        |
-| **[M25 — La maîtrise des médias](epics/M25-maitrise-des-medias.md)**       | ⬜ **prochain chantier** — tranché solution par solution ; porte aussi « ignorer, c'est ne plus importer » (M25.9 à M25.12) | M29, M8.6, M20.3                |
+| **[M24 — Dix boîtes par compte](epics/M24-dix-boites.md)**                 | 🟡 **livrée, en attente du dirigeant** — les huit tranches sont en production ; restent la vérification Google puis la migration des boîtes (`sprints/2026-10-m24-dix-boites.md`) | la marge                        |
+| **[M25 — La maîtrise des médias](epics/M25-maitrise-des-medias.md)**       | 🔶 **en cours** — ouvert le 2026-11-24, `sprints/2026-11-m25-maitrise-des-medias.md` ; tranche 1 livrée (« ignorer, c'est ne plus importer ») | M29, M8.6, M20.3                |
 | **[M29 — Les groupes et les mentions](epics/M29-groupes-et-mentions.md)** | ⬜ après M25 — l'annuaire des identifiants, la mention lue, la lecture sur mention et deux fois par jour | —                               |
 | **[M26 — Des chiffres vrais](epics/M26-chiffres-vrais.md)**                | ⬜ recette de l'alpha                            | —                               |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |

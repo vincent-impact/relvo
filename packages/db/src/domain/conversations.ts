@@ -67,6 +67,31 @@ export function normalizeSubjectLine(raw: string): string {
     .toLowerCase();
 }
 
+/**
+ * Le SET de destinataires externes d'un e-mail (M6quater) : l'interlocuteur et
+ * les To/Cc, NOS propres adresses retirées, en minuscules, dédupliqué, trié.
+ * Fonction pure, partagée par le rangement (`createMessage`) et par la garde
+ * des conversations ignorées (`./reception`) : les deux doivent retomber sur la
+ * MÊME clé, sinon un fil ignoré se rouvrirait sous une clé voisine.
+ */
+export function emailParticipants(args: {
+  /** « Nous » : l'identifiant du canal et l'e-mail de connexion du compte. */
+  selfAddresses: readonly (string | null | undefined)[];
+  interlocutorRaw: string | null | undefined;
+  recipients: readonly string[] | null | undefined;
+}): string[] {
+  const selfSet = new Set(
+    args.selfAddresses
+      .filter((a): a is string => Boolean(a))
+      .map((a) => a.trim().toLowerCase()),
+  );
+  const raw = [args.interlocutorRaw, ...(args.recipients ?? [])]
+    .filter((a): a is string => Boolean(a))
+    .map((a) => a.trim().toLowerCase())
+    .filter((a) => a && !selfSet.has(a));
+  return Array.from(new Set(raw)).sort();
+}
+
 export const resolveConversationSchema = z.object({
   channelId: z.uuid(),
   channelType: z.enum(ChannelType),
@@ -356,8 +381,9 @@ export async function resolveWhatsAppChatIdentity(
  * ouvert — cas qui, structurellement, ne survient que pour l'email (un lien
  * WhatsApp d'un sujet fermé porterait une borne, donc ne serait pas trouvé ici).
  *
- * ⚠️ Une conversation IGNORÉE (mute) est une PAUSE : aucun message ne l'alimente,
- * sans borne de fin — « Réactiver » reprend là où on s'était arrêté.
+ * ⚠️ Une conversation IGNORÉE ne capte rien : ses messages ne sont plus
+ * importés du tout (`./reception`). La garde ci-dessous reste, pour ce qui
+ * entrerait autrement que par une réception (une graine, un test).
  */
 export async function findListeningSubjectForConversation(
   db: Tx,
@@ -815,10 +841,10 @@ export const ignoreConversationSchema = z.object({
 export type IgnoreConversationInput = z.input<typeof ignoreConversationSchema>;
 
 /**
- * Ignorer une source. Relvo cesse d'analyser, de résumer et de trier ses
- * messages — mais ils continuent d'ARRIVER et d'être stockés : on ne perd rien,
- * ils sortent seulement du champ de travail de l'assistant. C'est le remède au
- * « groupe WhatsApp bavard ». L'ignorance porte une RAISON et l'acteur qui l'a
+ * Ignorer une source : on sait qu'elle ne sera jamais professionnelle. Relvo
+ * cesse de la lire, et ses messages NE SONT PLUS IMPORTÉS (M25.9, `./reception`)
+ * — la conversation ne garde que le compte de ce qu'elle laisse passer. C'est
+ * le remède au « groupe WhatsApp bavard ». L'ignorance porte une RAISON et l'acteur qui l'a
  * posée — le geste de l'utilisateur, ou le verdict de Relvo — pour que la liste
  * dise « ignorée par Relvo » et que le journal soit relisible (05 §9.1).
  */
@@ -871,6 +897,12 @@ export async function reactivateConversation(db: TenantDb, id: string) {
       ignoreReason: null,
       ignoreNote: null,
       ignoredByActor: null,
+      // Le compte de ce qui n'a pas été importé s'efface avec l'ignorance ; le
+      // journal en garde la trace, pour qui relira le trou à la source.
+      unimportedCount: 0,
+      unimportedSince: null,
+      unimportedLastAt: null,
+      unimportedLastExternalId: null,
     },
   });
   await logEvent(db as Tx, {
@@ -882,6 +914,8 @@ export async function reactivateConversation(db: TenantDb, id: string) {
     metadata: {
       wasIgnoredBy: conversation.ignoredByActor,
       reason: conversation.ignoreReason,
+      unimportedCount: conversation.unimportedCount,
+      unimportedSince: conversation.unimportedSince?.toISOString() ?? null,
     },
   });
   return {
@@ -1296,6 +1330,7 @@ export type ConversationDuFil = {
   title: string;
   contactId: string | null;
   interlocutorRaw: string | null;
+  status: ConversationStatus;
 };
 
 /**
@@ -1332,6 +1367,7 @@ export async function conversationDuFil(
     title: true,
     contactId: true,
     interlocutorRaw: true,
+    status: true,
   } as const;
   if (args.conversationId) {
     const designee = await db.conversation.findFirst({

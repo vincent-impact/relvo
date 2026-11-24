@@ -79,6 +79,10 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   l'implémentent. Tout ce qui suit la réception — `recevoirCourrier`, `rangerCourrier` — est
   le même code pour les deux ; un webhook de fournisseur ne fait que traduire sa matière en
   `CourrierEntrant`.
+- **Ignorer, c'est ne plus importer** (M25.9) : une conversation ignorée ne reçoit plus rien —
+  ni texte, ni pièce, e-mail ou messagerie, ignorée par le dirigeant ou par Relvo. La règle vit
+  dans le domaine (`domain/reception.ts`, `recevoir…`) : **tout ce qui reçoit un message d'un
+  fournisseur appelle `recevoir…`, jamais `ingest…`** — tenu par `reception-garde.test.ts`.
 - **Aucun accès direct au stockage** : tout passe par le paquet dédié, jamais par un client
   instancié à la main — c'est ce qui garde le fournisseur remplaçable et ce qui évite de recréer
   un client sans les deux réglages obligatoires (`PITFALLS.md` #8). **Une pièce s'ouvre dans

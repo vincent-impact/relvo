@@ -255,12 +255,17 @@ sur un pari.
 | **Valider le sujet** | la conversation n'alimente plus le sujet | posée | messagerie |
 | **Arrêter l'écoute** (depuis le sujet) | cette conversation-là seulement | posée | messagerie |
 | **Détacher un fil e-mail** | la liaison est supprimée, `subject_id` retiré des messages du fil | **aucune** | e-mail |
-| **Ignorer la conversation** | elle n'alimente plus **aucun** sujet ouvert qui l'écoute | **aucune** | les deux |
+| **Ignorer la conversation** | ses messages ne sont plus importés : elle n'alimente plus **aucun** sujet | **aucune** | les deux |
 
 **Détacher un fil e-mail est un rattrapage d'erreur, pas un arrêt.** Sur un fil e-mail il n'y a
 pas d'écoute à arrêter : le détachement corrige un **rangement erroné**, il ne défait pas un
 envoi. C'est la seule façon de défaire un rattachement e-mail, et la marche arrière des trois
 cas de rattachement manuel — sans lui, une erreur serait irréversible.
+
+**Ignorer, c'est ne plus importer.** Tant qu'une conversation est ignorée, rien de ce qui y
+arrive n'entre dans Relvo ; elle en tient seulement le compte. Deux gestes la rendent au travail,
+et eux seuls : la **réactiver**, ou la **rattacher à un sujet** — un sujet ne peut pas écouter un
+fil dont plus rien n'est importé.
 
 **Ignorer est une PAUSE, pas une FIN.** L'ignorance est réversible : la réactiver doit faire
 **reprendre** l'alimentation. Si elle posait une borne de fin, « Réactiver » serait un bouton

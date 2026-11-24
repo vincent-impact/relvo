@@ -21,6 +21,7 @@ import {
 } from "./contacts";
 import {
   conversationDuFil,
+  emailParticipants,
   findInSetEmailSubject,
   findListeningSubjectForConversation,
   replySubjectLine,
@@ -187,16 +188,11 @@ export async function createMessage(db: TenantDb, input: CreateMessageInput) {
   if (channel.type === ChannelType.email) {
     // « Nous » = l'identifiant du canal ET l'e-mail de connexion du compte.
     // Symétrise entrant/sortant : mes adresses n'apparaissent JAMAIS dans le set.
-    const selfSet = new Set(
-      [channel.identifier, channel.account?.email]
-        .filter((a): a is string => Boolean(a))
-        .map((a) => a.trim().toLowerCase()),
-    );
-    const raw = [interlocutorRaw, ...(data.recipients ?? [])]
-      .filter((a): a is string => Boolean(a))
-      .map((a) => a.trim().toLowerCase())
-      .filter((a) => a && !selfSet.has(a));
-    participantsRaw = Array.from(new Set(raw)).sort();
+    participantsRaw = emailParticipants({
+      selfAddresses: [channel.identifier, channel.account?.email],
+      interlocutorRaw,
+      recipients: data.recipients,
+    });
   }
 
   const conversation = await resolveConversation(db, {

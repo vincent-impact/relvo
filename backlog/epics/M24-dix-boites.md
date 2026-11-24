@@ -6,7 +6,7 @@ titre_client: Dix boîtes e-mail par compte
 resume_client: >
   Vous confiez à Relvo toutes vos boîtes — jusqu'à dix par compte — sans que chacune coûte
   un abonnement. Relvo lit vos boîtes Gmail en direct, et WhatsApp continue comme aujourd'hui.
-statut: en-cours
+statut: partiel
 debut: 2026-10-28
 ---
 
