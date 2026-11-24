@@ -1889,6 +1889,17 @@ construite — aucun cron ne bouge) et la mention comme déclencheur à part. **
 mention est un **signal** donné au modèle dans la salve — une tâche pour le dirigeant, sauf si
 elle n'exige rien.
 
+**Retiré pour les groupes, le même jour, par le dirigeant** : « au vu des volumes échangés dans
+les groupes, on reste sur deux lectures par jour ; les mentions sont déjà là pour forcer
+l'analyse ». Le coût n'était pas l'obstacle ; c'est le volume qui l'est — plus de onze mille
+lectures par mois pour des fils où presque rien ne s'adresse au dirigeant. **Ce qui vaut** :
+**le direct se lit à la salve, d'une minute** (tri et relecture) ; **un groupe ne se lit jamais
+à la salve** — une mention du dirigeant force la lecture aussitôt, tout le reste attend l'une
+des deux lectures du jour, que le groupe porte un sujet ou non. Un rythme par type de
+conversation. Un sujet ouvert sur un groupe continue de **recevoir** chaque message à son
+arrivée : écouter dit où va un message, pas quand Relvo le lit. Conséquence à construire : la
+relecture à la salve, qui relit aujourd'hui tout fil écouté, s'arrête pour les groupes (M29.5).
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté

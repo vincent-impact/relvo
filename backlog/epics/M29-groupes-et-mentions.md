@@ -6,8 +6,8 @@ titre_client: Les groupes WhatsApp, et quand on vous y interpelle
 resume_client: >
   Dans un groupe WhatsApp, une mention affiche enfin le nom de la personne, et Relvo réagit
   quand c'est vous qu'on interpelle : il lit ce qui précède, ouvre un sujet s'il le faut et vous
-  pose la tâche. Les groupes que vous gardez sont lus comme vos conversations directes ; ceux qui
-  ne sont pas professionnels sont écartés d'eux-mêmes.
+  pose la tâche. Les groupes que vous gardez sont lus deux fois par jour ; ceux qui ne sont pas
+  professionnels sont écartés d'eux-mêmes.
 statut: a-faire
 ---
 
@@ -21,8 +21,8 @@ M25.9 (ignorer n'importe plus rien — c'est ce qui rend supportable de lire les
 quinze chiffres et ne pèse sur rien. Mesuré sur trente jours : 21 392 messages dans 588 groupes
 actifs, dont 3 portent un sujet ; 1 848 messages mentionnent quelqu'un. Or on mentionne
 quelqu'un pour lui demander quelque chose. Décision et mesures : `ecarts`, « Ignorer veut dire
-ne plus importer ; un groupe se lit sur mention et deux fois par jour » et, pour le rythme
-finalement retenu, « La salve partout ».
+ne plus importer ; un groupe se lit sur mention et deux fois par jour » ; le détour du même jour par la salve est dans
+« La salve partout, et une minute ».
 
 **Ce qui ne change pas.** Un groupe ne crée jamais de contact et n'a pas d'interlocuteur
 (`05`). Son nom ne fait pas un sujet (`04`). Une conversation ignorée n'est ni lue ni importée,
@@ -40,14 +40,14 @@ cité (`quoted.sender_id`). La forme d'une mention « à tout le groupe » n'a p
 | M29.1 | **L'annuaire des identifiants** : par canal de messagerie, « identifiant interne → numéro, nom, c'est moi », nourri par l'expéditeur de chaque message reçu (le webhook porte déjà les deux) et complété par la liste des participants du groupe à la première mention inconnue ; le texte stocké ne change pas, la mention se résout à la lecture — les messages déjà en base s'affichent juste sans reprise | ⬜ |
 | M29.2 | **La mention se lit** : « @Dahmani Eya » au lieu des chiffres dans le fil, « @vous » en violet ; un message de groupe sait à la réception s'il mentionne le dirigeant (déterministe, sans modèle) ; la liste des conversations marque un groupe où il est mentionné sans l'avoir lu | ⬜ |
 | M29.3 | **Le groupe se juge à sa découverte** : un appel, sur le titre, le nombre de membres et les premiers messages — personnel, publicité, automatique : ignoré avec sa raison ; sinon à traiter. Les groupes déjà connus sont jugés une fois, par lot, au tarif différé | ⬜ |
-| M29.4 | **La mention pèse dans la lecture** : le groupe se lit à la salve (M29.5) ; quand la salve porte une mention du dirigeant, le modèle le sait et lit le contexte proche (les messages qui précèdent, le message cité). Si le groupe n'est attaché à aucun sujet, le modèle dit si un sujet s'ouvre ou se rattache ; s'il s'ouvre, il porte **une tâche pour le dirigeant**. Si un sujet écoute déjà le groupe, on ajoute seulement la tâche. Le modèle rédige la tâche, et **ne la crée pas quand la mention n'exige rien** (un remerciement) | ⬜ |
-| M29.5 | **Le groupe se lit à la salve, comme le direct** : un groupe à traiter passe par le même tri que le fil direct — le dernier message d'une salve porte la lecture, après une minute de silence — : ouvrir, rattacher, ne rien faire, ou ignorer le groupe. La garde « un groupe n'est jamais trié » tombe. ~~La lecture deux fois par jour~~ est abandonnée avant d'être construite (`ecarts`, « La salve partout ») : aucun cron ne bouge | ⬜ |
-| M29.6 | **L'écoute d'un groupe est celle du direct** : un sujet ouvert sur un groupe reçoit chaque message à son arrivée, se relit à la salve (`relireApresSalve`, déjà vrai aujourd'hui), et libère le groupe à sa validation ou sa fermeture ; la relecture reçoit le signal « le dirigeant est mentionné » et ajoute la tâche | ⬜ |
+| M29.4 | **La mention force la lecture** : une mention du dirigeant dans un groupe à traiter déclenche aussitôt la lecture du contexte proche (les messages qui précèdent, le message cité), sans attendre la lecture du jour. Si le groupe n'est attaché à aucun sujet, le modèle dit si un sujet s'ouvre ou se rattache ; s'il s'ouvre, il porte **une tâche pour le dirigeant**. Si un sujet écoute déjà le groupe, on ajoute seulement la tâche. Le modèle rédige la tâche, et **ne la crée pas quand la mention n'exige rien** (un remerciement) | ⬜ |
+| M29.5 | **La lecture deux fois par jour** : les groupes à traiter qui ont reçu des messages depuis la dernière lecture sont lus par lot, au tarif différé — sans sujet : ouvrir, rattacher, ne rien faire, ou ignorer le groupe ; avec un sujet ouvert : le relire. **Un groupe ne se lit jamais à la salve** : la garde du tri reste, et la relecture à la salve (`relireApresSalve`, qui relit aujourd'hui tout fil écouté, groupe compris) s'arrête pour les groupes. ⚠️ Deux crons au plus (`vercel.json` en porte déjà deux, à 2 h et 6 h UTC) : la lecture se greffe sur eux, et l'horaire de l'un se déplace vers la mi-journée — jamais un troisième | ⬜ |
+| M29.6 | **Un groupe écouté : le rangement est immédiat, la lecture garde le rythme du groupe.** « Écouter » dit **où va** un message, pas **quand** Relvo le lit : tant qu'un sujet est ouvert sur le groupe, chaque message y est rangé à son arrivée, sans modèle, jusqu'à la validation ou la fermeture qui libère le groupe — comme en direct. Le sujet se relit aux deux moments du groupe : sur une mention du dirigeant, et aux deux lectures du jour | ⬜ |
 | M29.7 | **La réponse qui cite un message du dirigeant** vaut mention — seconde tranche, après l'usage des premières | ⬜ |
 
-**Écarté** : la lecture par lot deux fois par jour (deux mécaniques au lieu d'une) ;
-« mention = urgent » (l'urgence se juge au contenu) ; réveiller un groupe ignoré sur une mention.
+**Écarté** : la salve pour les groupes — retenue puis retirée le même jour, au vu des volumes
+qui s'y échangent ; « mention = urgent » (l'urgence se juge au contenu) ; réveiller un groupe ignoré sur une mention.
 
 **À mesurer en livrant** : la part des mentions qui visent le dirigeant (inconnue tant que son
-identifiant n'est pas dans l'annuaire) et le coût mensuel de la lecture des groupes par compte, contre
-le plafond d'inférence — estimé à l'ouverture à moins de deux euros.
+identifiant n'est pas dans l'annuaire) et le coût mensuel des deux lectures par compte, contre
+le plafond d'inférence.
