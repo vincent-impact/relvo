@@ -1897,8 +1897,15 @@ lectures par mois pour des fils où presque rien ne s'adresse au dirigeant. **Ce
 à la salve** — une mention du dirigeant force la lecture aussitôt, tout le reste attend l'une
 des deux lectures du jour, que le groupe porte un sujet ou non. Un rythme par type de
 conversation. Un sujet ouvert sur un groupe continue de **recevoir** chaque message à son
-arrivée : écouter dit où va un message, pas quand Relvo le lit. Conséquence à construire : la
-relecture à la salve, qui relit aujourd'hui tout fil écouté, s'arrête pour les groupes (M29.5).
+arrivée : écouter dit où va un message, pas quand Relvo le lit.
+
+**Précisé ensuite, toujours le même jour** — l'arbitrage entre réactivité et économie, posé par
+le dirigeant : relire à la salve consomme, relire deux fois par jour laisse un sujet afficher
+« c'est signé » pendant des heures avec sa tâche encore ouverte. Une relecture coûte 0,0008 € ;
+le volume qui pèse est celui des groupes **sans** sujet. **Tranché : tant qu'un sujet est ouvert
+sur un groupe, Relvo le suit en direct — relecture à la salve, comme aujourd'hui ; sinon il
+passe deux fois par jour, et sur mention.** La relecture à la salve des groupes écoutés n'est
+donc pas débranchée.
 
 ## Écarts constatés
 
