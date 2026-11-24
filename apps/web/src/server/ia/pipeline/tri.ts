@@ -31,6 +31,7 @@ import {
   ancreDeLaSalve,
   estDernierDeLaSalve,
   peutFaireTaire,
+  autourDeLaMention,
 } from "./messagerie-regles";
 import { estHistorique } from "./rattrapage-regles";
 import { notifierNouveauSujet } from "@/server/push/sujets";
@@ -130,6 +131,11 @@ export async function trierConversation(args: {
   lot?: boolean;
   /** L'attente de la salve, remplaçable par un test ; par défaut, celle de la configuration. */
   attendre?: (ms: number) => Promise<void>;
+  /**
+   * Ce message d'un GROUPE mentionne le dirigeant (M29.4) : c'est ce qui fait
+   * lire le groupe tout de suite. Sans mention, un groupe n'est pas trié ici.
+   */
+  mention?: boolean;
 }): Promise<ResultatTri> {
   const { accountId, conversationId, messageId } = args;
   const lot = args.lot ?? false;
@@ -144,10 +150,10 @@ export async function trierConversation(args: {
   }
 
   let projection = await getTriageProjection(db, conversationId);
-  if (
-    projection.type !== "email_subject" &&
-    projection.type !== "whatsapp_direct"
-  ) {
+  // Un groupe ne se trie pas au fil de l'eau : seulement quand le dirigeant y
+  // est interpellé (M29.4).
+  const groupe = projection.type === "whatsapp_group";
+  if (groupe && !args.mention) {
     return { issue: "canal-non-couvert", coutEur: 0 };
   }
   if (!projection.orpheline) return { issue: "non-orpheline", coutEur: 0 };
@@ -155,7 +161,7 @@ export async function trierConversation(args: {
     return { issue: "sans-message-entrant", coutEur: 0 };
 
   let ancre: string | null = null;
-  if (projection.type === "whatsapp_direct") {
+  if (projection.type !== "email_subject") {
     // L'historique rejoué à la connexion d'un numéro n'est pas du courrier
     // vivant ; sans date de connexion connue, rien ne se trie — le dirigeant
     // qui connecte un numéro avec des années de fils ne paie jamais
@@ -172,7 +178,10 @@ export async function trierConversation(args: {
     }
     // La salve se laisse arriver : le tri ne se joue que sur son dernier
     // message. Un message déjà dépassé s'efface sans attendre.
+    // Dans un groupe, d'autres écrivent pendant qu'on attend : la mention se
+    // lit quand même — c'est elle, pas le dernier message, qui porte le tri.
     const dernier = (p: TriageProjection) =>
+      groupe ||
       estDernierDeLaSalve({
         declencheurId: messageId,
         dernierEntrantId: p.dernierEntrant?.id ?? null,
@@ -184,10 +193,14 @@ export async function trierConversation(args: {
     if (!projection.dernierEntrant)
       return { issue: "sans-message-entrant", coutEur: 0 };
     if (!dernier(projection)) return { issue: "salve-en-cours", coutEur: 0 };
-    ancre = ancreDeLaSalve(projection.conversation.messages, {
-      id: messageId,
-      recuLe: declencheur.recuLe,
-    });
+    // Dans un groupe, l'écoute commence avec ce que le tri lit autour de la
+    // mention — pas deux heures de conversation d'équipe.
+    ancre = ancreDeLaSalve(
+      groupe
+        ? autourDeLaMention(projection.conversation.messages, messageId)
+        : projection.conversation.messages,
+      { id: messageId, recuLe: declencheur.recuLe },
+    );
   }
 
   return trierFil({
@@ -199,6 +212,7 @@ export async function trierConversation(args: {
     entetes: args.entetes,
     lot,
     ancre,
+    groupe,
   });
 }
 
@@ -217,6 +231,8 @@ async function trierFil(p: {
   entetes?: Record<string, string>;
   lot: boolean;
   ancre: string | null;
+  /** Un groupe n'a pas d'interlocuteur : ni filtre d'expéditeur, ni mise en sourdine ici. */
+  groupe: boolean;
 }): Promise<ResultatTri> {
   const { db, accountId, conversationId, messageId, projection, lot, ancre } =
     p;
@@ -244,7 +260,7 @@ async function trierFil(p: {
   };
 
   try {
-    const bruit = detecterBruitDeterministe(entree);
+    const bruit = p.groupe ? null : detecterBruitDeterministe(entree);
     if (bruit) {
       const { noiseStreak } = await recordTriageVerdict(db, {
         conversationId,
@@ -264,7 +280,11 @@ async function trierFil(p: {
       return { issue: "bruit-deterministe", detail: bruit.regle, coutEur: 0 };
     }
 
-    const parExpediteur = deciderParExpediteur(projection.expediteur);
+    // Le profil de l'expéditeur juge un interlocuteur ; celui qui écrit dans
+    // un groupe n'est pas le groupe.
+    const parExpediteur = p.groupe
+      ? null
+      : deciderParExpediteur(projection.expediteur);
     if (parExpediteur?.type === "ignorer") {
       const nature = NATURE_DE_LA_RAISON[parExpediteur.raison] ?? "publicite";
       const raison = `Cette adresse a déjà été écartée ${parExpediteur.nombre} fois pour la même raison.`;
@@ -325,12 +345,23 @@ async function trierFil(p: {
 
     const contexte = contexteTri({
       compte: projection.compte,
-      conversation: {
-        canal,
-        messages: projection.conversation.messages,
-        expediteur: projection.expediteur,
-        signaux: signauxAutomatiques(entree),
-      },
+      conversation: p.groupe
+        ? {
+            // Un groupe lu sur une mention : la fenêtre autour d'elle, et pas
+            // de profil d'expéditeur — celui qui écrit n'est pas le groupe.
+            canal,
+            groupe: true,
+            messages: autourDeLaMention(
+              projection.conversation.messages,
+              messageId,
+            ),
+          }
+        : {
+            canal,
+            messages: projection.conversation.messages,
+            expediteur: projection.expediteur,
+            signaux: signauxAutomatiques(entree),
+          },
       instant: { maintenant: new Date().toISOString() },
     });
     const { sortie, mesure } = await extract({
@@ -361,7 +392,10 @@ async function trierFil(p: {
       return { issue: "avis-seul", detail: decision.motif, coutEur: coutTri };
     }
     if (decision.type === "ignorer") {
+      // Une mention qui ne demande rien n'éteint pas un groupe : ignorer un
+      // groupe se décide à sa découverte et aux lectures du jour (M29.3, M29.5).
       if (
+        p.groupe ||
         !peutFaireTaire({
           canal,
           nature: decision.nature,

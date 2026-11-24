@@ -94,6 +94,12 @@ export function blocMessage(
     // pour résoudre « dans 1h », « ce soir », « demain matin » (PITFALLS #55).
     `Le : ${horodatageParis(m.recuLe)}`,
     m.objet ? `Objet : ${m.objet}` : null,
+    // « @vous » : le domaine l'écrit à la place de l'identifiant du dirigeant
+    // quand on le mentionne dans un groupe (M29.4). Le modèle doit le savoir
+    // interpellé — c'est ce qui fait la tâche.
+    m.sens !== "sortant" && /@vous(?![\p{L}\p{N}_])/u.test(m.contenu)
+      ? `Mention : le dirigeant est interpellé nommément (« @vous ») — ce qu'on lui demande ainsi est une tâche pour lui ; un simple remerciement n'en est pas une`
+      : null,
     m.piecesJointes?.length
       ? `Pièces jointes : ${m.piecesJointes.map((p) => (p.etiquette ? `${p.nom} (${p.etiquette})` : p.nom)).join(", ")}`
       : null,
@@ -284,6 +290,16 @@ export const FIL_TRI = {
 } as const;
 
 /**
+ * Un groupe lu sur une mention : toute la fenêtre autour de la mention
+ * (`pipeline/messagerie-regles`, `autourDeLaMention`), messages courts.
+ */
+export const FIL_MENTION = {
+  premiers: 0,
+  derniers: 9,
+  plafondMessage: 1_000,
+} as const;
+
+/**
  * Le fil à trier, message par message — BORNÉ : un fil e-mail est un sujet
  * entier, mais le tri n'a besoin que de savoir de quoi il parle (le premier
  * message) et où il en est (les derniers). Les messages omis sont comptés.
@@ -294,7 +310,7 @@ export function coucheSituationTri(
     premiers: number;
     derniers: number;
     plafondMessage: number;
-  } = FIL_TRI,
+  } = conv.groupe ? FIL_MENTION : FIL_TRI,
 ): string {
   const messages = trierParDate(conv.messages);
   const garde =
@@ -309,7 +325,7 @@ export function coucheSituationTri(
   const omis = messages.length - garde.length;
   return [
     `# Le fil à trier`,
-    `Canal : ${conv.canal === "email" ? "e-mail" : "WhatsApp"} · ${messages.length} message${messages.length > 1 ? "s" : ""}${omis > 0 ? ` (${omis} du milieu non montré${omis > 1 ? "s" : ""})` : ""}`,
+    `Canal : ${conv.canal === "email" ? "e-mail" : conv.groupe ? "WhatsApp, un GROUPE — plusieurs personnes y écrivent, et il parle de plusieurs choses ; seule compte ici la demande faite au dirigeant" : "WhatsApp"} · ${messages.length} message${messages.length > 1 ? "s" : ""}${omis > 0 ? ` (${omis} du milieu non montré${omis > 1 ? "s" : ""})` : ""}`,
     `Ces messages ont été REÇUS par le dirigeant sur sa messagerie. L'expéditeur d'un message « De : » est un tiers, même s'il porte le même nom que le dirigeant ; ce qui compte est ce que le message lui demande.`,
     ...(conv.signaux?.length
       ? [`Signaux techniques relevés : ${conv.signaux.join(" ; ")}.`]

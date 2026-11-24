@@ -662,3 +662,29 @@ describe("l'heure donnée au modèle", () => {
     expect(c).toContain("Il est 00:30");
   });
 });
+
+describe("une mention du dirigeant dans un groupe (M29.4)", () => {
+  const message = (contenu: string, sens: "entrant" | "sortant" = "entrant") =>
+    blocMessage(
+      {
+        expediteur: "Dahmani Eya <+33612345678>",
+        recuLe: "2026-11-24T09:00:00.000Z",
+        objet: null,
+        contenu,
+        sens,
+      },
+      0,
+    );
+
+  it("le modèle est prévenu que le dirigeant est interpellé, sur ce message seulement", () => {
+    expect(message("@vous tu valides le planning ?")).toContain(
+      "Mention : le dirigeant est interpellé nommément",
+    );
+    expect(message("@Dahmani Eya a posé ses congés")).not.toContain(
+      "Mention :",
+    );
+    // Un mot qui commence pareil, ou un message du dirigeant lui-même : non.
+    expect(message("écrire à @vousdeux")).not.toContain("Mention :");
+    expect(message("@vous", "sortant")).not.toContain("Mention :");
+  });
+});

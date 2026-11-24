@@ -5,6 +5,7 @@ import {
   cleIdentite,
   ecrireMentions,
   getConversationThread,
+  getTriageProjection,
   idsDesMentions,
   listConversationItems,
   mentionneLeDirigeant,
@@ -202,6 +203,14 @@ describe("un groupe où l'on mentionne le dirigeant", () => {
         })
       ).content,
     ).toContain(`@${LID_MOI}`);
+
+    // Relvo, lui aussi, lit des noms : c'est « @vous » qui lui dit que le
+    // dirigeant est interpellé (M29.4).
+    const projection = await getTriageProjection(db, id);
+    expect(projection.conversation.messages[0]?.contenu).toContain(
+      MENTION_VOUS,
+    );
+    expect(projection.dernierEntrant?.contenu).toContain(MENTION_VOUS);
 
     await prisma.message.update({
       where: { id: recu.message.id },

@@ -19,6 +19,7 @@ import {
   countUnsortedConversations,
   findListeningSubjectForConversation,
 } from "./conversations";
+import { mentionsLisibles } from "./annuaire-messagerie";
 import { DomainError, assertFound } from "./errors";
 import {
   arbreOrdonne,
@@ -447,7 +448,7 @@ export async function getTriageProjection(
       ? conversation.participantsRaw.join(", ")
       : (conversation.interlocutorRaw ?? conversation.title);
 
-  const projected: TriageThreadMessage[] = messages.map((m) => {
+  const bruts: TriageThreadMessage[] = messages.map((m) => {
     const sortant = m.direction === MessageDirection.outgoing;
     const nom =
       m.senderName ??
@@ -466,6 +467,10 @@ export async function getTriageProjection(
       orphelin: m.subjectId === null && m.status !== MessageStatus.ignored,
     };
   });
+
+  // Relvo lit des noms, pas des identifiants : « @vous » lui dit que le
+  // dirigeant est interpellé (M29.4).
+  const projected = await mentionsLisibles(db, bruts);
 
   const lastIncoming = messages
     .filter((m) => m.direction === MessageDirection.incoming)
@@ -551,7 +556,10 @@ export async function getTriageProjection(
               ? displayContact(lastIncoming.senderContact)
               : null),
           objet: lastIncoming.subjectLine,
-          contenu: lastIncoming.content ?? "",
+          contenu:
+            projected.find((m) => m.id === lastIncoming.id)?.contenu ??
+            lastIncoming.content ??
+            "",
         }
       : null,
   };
@@ -697,7 +705,7 @@ export const applyTriageMatterSchema = z.object({
   priority: z.enum(Priority).optional(),
   /**
    * Le DÉBUT de l'écoute sur un fil de messagerie directe — le premier message
-   * de la salve que le tri a lue. Obligatoire sur `whatsapp_direct`, sans objet
+   * de la salve que le tri a lue. Obligatoire sur la messagerie, sans objet
    * sur un fil e-mail (le sujet EST le fil, 04 §4).
    */
   anchorMessageId: z.uuid().optional().nullable(),
@@ -724,7 +732,9 @@ export type ApplyTriageMatterResult = {
  *     ouvre une écoute sur le sujet existant par la fonction de la fiche
  *     (« Lier à un sujet »), avec la même ancre — jamais le rattachement
  *     permanent de l'e-mail ;
- *   • un GROUPE n'est jamais trié : l'écoute s'y pose à la main (05 §9.5).
+ *   • un GROUPE se trie comme un direct, ancre obligatoire : c'est le
+ *     pipeline qui décide QUAND le lire — sur une mention du dirigeant
+ *     (M29.4) —, pas cette fonction.
  *
  *   • Le domaine est résolu par son NOM, parmi les domaines actifs du compte —
  *     jamais « Général », purement documentaire (invariant n°17) : un nom
@@ -746,20 +756,15 @@ export async function applyTriageMatter(
     }),
     "Conversation",
   );
-  if (conversation.type === ConversationType.whatsapp_group) {
+  // Direct ou groupe : un fil de messagerie s'écoute depuis une ancre.
+  const messagerie = conversation.type !== ConversationType.email_subject;
+  if (messagerie && !data.anchorMessageId) {
     throw new DomainError(
       "VALIDATION",
-      "Le tri automatique n'ouvre pas de sujet sur un groupe.",
+      "Le tri d'un fil de messagerie exige le message où l'écoute commence.",
     );
   }
-  const direct = conversation.type === ConversationType.whatsapp_direct;
-  if (direct && !data.anchorMessageId) {
-    throw new DomainError(
-      "VALIDATION",
-      "Le tri d'un fil de messagerie directe exige le message où l'écoute commence.",
-    );
-  }
-  const anchorMessageId = direct ? data.anchorMessageId! : null;
+  const anchorMessageId = messagerie ? data.anchorMessageId! : null;
   const anchor = anchorMessageId
     ? assertFound(
         await db.message.findFirst({

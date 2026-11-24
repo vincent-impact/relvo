@@ -480,7 +480,7 @@ describe("ouvrir ou rattacher depuis le tri", () => {
 // M7 tranche 11 (A8) — le fil WhatsApp DIRECT se trie à réception. Le domaine
 // teste l'ANCRE, jamais le canal : ouvrir emporte la salve depuis l'ancre et
 // pas le bavardage d'avant ; rattacher ouvre une ÉCOUTE sur le sujet
-// existante, par la fonction de la fiche ; un groupe reste refusé ; la
+// existante, par la fonction de la fiche ; un groupe s'ouvre de même, ancré ; la
 // projection dit le canal, le numéro du compte et la date de connexion.
 describe("le fil WhatsApp direct, ancré", () => {
   async function makeWhatsApp(email: string) {
@@ -709,7 +709,7 @@ describe("le fil WhatsApp direct, ancré", () => {
     expect(ev.actor).toBe(Actor.ai);
   });
 
-  it("refuse un groupe, et un fil direct sans ancre", async () => {
+  it("ouvre un sujet sur un groupe ancré (M29.4) ; refuse un fil de messagerie sans ancre", async () => {
     const { db, wa: canal } = await makeWhatsApp("t@test.fr");
     const { message: groupe } = await ingestInboundWhatsApp(db, {
       channelId: canal.id,
@@ -723,12 +723,23 @@ describe("le fil WhatsApp direct, ancré", () => {
       applyTriageMatter(db, {
         conversationId: groupe.conversationId,
         messageId: groupe.id,
-        anchorMessageId: groupe.id,
       }),
     ).rejects.toMatchObject({ code: "VALIDATION" });
     expect((await getTriageProjection(db, groupe.conversationId)).type).toBe(
       "whatsapp_group",
     );
+    // Avec son ancre, un groupe s'ouvre comme un fil direct : le sujet écoute
+    // depuis le message donné, et le groupe n'est plus orphelin.
+    const ouvert = await applyTriageMatter(db, {
+      conversationId: groupe.conversationId,
+      messageId: groupe.id,
+      title: "Planning de la semaine",
+      anchorMessageId: groupe.id,
+    });
+    expect(ouvert.action).toBe("opened");
+    expect(
+      (await getTriageProjection(db, groupe.conversationId)).orpheline,
+    ).toBe(false);
 
     const { message: direct } = await wa(
       db,
@@ -743,7 +754,8 @@ describe("le fil WhatsApp direct, ancré", () => {
         messageId: direct.id,
       }),
     ).rejects.toMatchObject({ code: "VALIDATION" });
-    expect(await db.subject.count()).toBe(0);
+    // Seul le sujet du groupe existe : les deux refus n'ont rien ouvert.
+    expect(await db.subject.count()).toBe(1);
   });
 
   it("sans canal jamais connecté, la projection ne porte aucune date de connexion", async () => {

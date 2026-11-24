@@ -446,7 +446,8 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   // Tri automatique d'un fil DIRECT (M7, tranche 11 — A8) : APRÈS la réponse
   // HTTP, une fois par message (`created`), et seulement si aucun sujet n'a
   // capté le message au rangement (une écoute l'aurait pris). Le pipeline
-  // décide seul du reste — un groupe n'est pas trié, un message daté d'avant
+  // décide seul du reste — un groupe n'est trié que sur une mention du
+  // dirigeant (M29.4), un message daté d'avant
   // la connexion du numéro est de l'historique, la salve se laisse arriver et
   // seul son dernier message porte le tri — et n'échoue jamais vers
   // l'appelant : un échec laisse la conversation orpheline, journalisé. La
@@ -457,6 +458,8 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
         accountId: config.accountId,
         conversationId: message.conversationId,
         messageId: message.id,
+        // Un groupe ne se trie que si le dirigeant y est interpellé (M29.4).
+        mention: mentionsSelf,
       });
       console.info("[ia] tri", {
         accountId: config.accountId,

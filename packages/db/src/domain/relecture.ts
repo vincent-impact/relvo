@@ -8,6 +8,7 @@ import {
   TaskStatus,
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
+import { mentionsLisibles } from "./annuaire-messagerie";
 import { DomainError, assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import {
@@ -119,7 +120,9 @@ export async function getRelectureProjection(
   return {
     ...sheet,
     precedents,
-    nouveauxMessages: [projectSheetMessage(message, interlocuteur)],
+    nouveauxMessages: await mentionsLisibles(db, [
+      projectSheetMessage(message, interlocuteur),
+    ]),
     rouvert: reouverture !== null,
   };
 }

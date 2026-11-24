@@ -14,6 +14,7 @@ import {
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
 import { contactDisplayName } from "./contacts";
+import { mentionsLisibles } from "./annuaire-messagerie";
 import { DomainError, assertFound } from "./errors";
 import { arbreOrdonne, chaineDe } from "./folders";
 import { EVENT_TYPES, logEvent } from "./events";
@@ -703,9 +704,10 @@ export async function loadSubjectSheet(
     : null;
 
   const interlocuteur = premier ? contactDisplayName(premier) : "le contact";
-  const projectedMessages = [...messages]
-    .reverse()
-    .map((m) => projectSheetMessage(m, interlocuteur));
+  const projectedMessages = await mentionsLisibles(
+    db,
+    [...messages].reverse().map((m) => projectSheetMessage(m, interlocuteur)),
+  );
 
   return {
     accountId: subject.accountId,

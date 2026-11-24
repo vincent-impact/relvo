@@ -50,6 +50,29 @@ export function ancreDeLaSalve(
   return candidats[0]?.id ?? declencheur.id;
 }
 
+/** Ce que le tri lit d'un groupe autour d'une mention : avant, et après. */
+export const MENTION_AVANT = 6;
+export const MENTION_APRES = 2;
+
+/**
+ * La fenêtre d'un GROUPE lue sur une mention du dirigeant (M29.4) : les
+ * messages qui précèdent la mention — ce dont on lui parle —, la mention, et
+ * les deux suivants — ce que son auteur ajoute. Un groupe est un flux : le
+ * début du fil et ses derniers messages n'ont rien à voir avec la demande.
+ */
+export function autourDeLaMention<T extends { id: string; recuLe: string }>(
+  messages: readonly T[],
+  mentionId: string,
+): T[] {
+  const tries = [...messages].sort(
+    (a, b) =>
+      Date.parse(a.recuLe) - Date.parse(b.recuLe) || a.id.localeCompare(b.id),
+  );
+  const i = tries.findIndex((m) => m.id === mentionId);
+  if (i < 0) return tries;
+  return tries.slice(Math.max(0, i - MENTION_AVANT), i + MENTION_APRES + 1);
+}
+
 export type Canal = "email" | "whatsapp";
 
 /**

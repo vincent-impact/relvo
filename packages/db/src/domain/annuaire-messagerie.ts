@@ -192,3 +192,19 @@ export async function resoudreMentions(
     inconnus: ids.filter((id) => !annuaire.has(id)),
   };
 }
+
+/**
+ * Les mêmes messages, tels que RELVO les lit (M29.4) : le modèle voit des noms
+ * et « @vous », jamais des identifiants — c'est ce qui lui permet de savoir
+ * que le dirigeant est interpellé.
+ */
+export async function mentionsLisibles<T extends { contenu: string }>(
+  db: TenantDb,
+  messages: readonly T[],
+): Promise<T[]> {
+  const { textes } = await resoudreMentions(
+    db,
+    messages.map((m) => m.contenu),
+  );
+  return messages.map((m, i) => ({ ...m, contenu: textes[i] ?? m.contenu }));
+}

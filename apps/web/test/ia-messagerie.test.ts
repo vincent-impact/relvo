@@ -3,6 +3,7 @@ import { MESSAGERIE } from "@/server/ia/config";
 import {
   ancreDeLaSalve,
   assezDAvisPourIgnorer,
+  autourDeLaMention,
   estDernierDeLaSalve,
   peutFaireTaire,
 } from "@/server/ia/pipeline/messagerie-regles";
@@ -213,5 +214,44 @@ describe("messagerie — il faut une série d'avis pour ignorer un interlocuteur
   it("sur l'e-mail, un seul avis sûr suffit : c'est un fil qu'on écarte, pas une personne", () => {
     expect(assezDAvisPourIgnorer({ canal: "email", serie: 1 })).toBe(true);
     expect(assezDAvisPourIgnorer({ canal: "email", serie: 0 })).toBe(true);
+  });
+});
+
+describe("un groupe lu sur une mention (M29.4)", () => {
+  const fil = Array.from({ length: 12 }, (_, i) => ({
+    id: `g${String(i).padStart(2, "0")}`,
+    recuLe: new Date(Date.UTC(2026, 10, 24, 9, i)).toISOString(),
+    orphelin: true,
+  }));
+
+  it("la fenêtre : ce qui précède la mention, la mention, et ce que son auteur ajoute", () => {
+    const fenetre = autourDeLaMention([...fil].reverse(), "g08");
+    expect(fenetre.map((m) => m.id)).toEqual([
+      "g02",
+      "g03",
+      "g04",
+      "g05",
+      "g06",
+      "g07",
+      "g08",
+      "g09",
+      "g10",
+    ]);
+    // En début de fil, on prend ce qu'il y a ; une mention introuvable rend tout.
+    expect(autourDeLaMention(fil, "g01").map((m) => m.id)).toEqual([
+      "g00",
+      "g01",
+      "g02",
+      "g03",
+    ]);
+    expect(autourDeLaMention(fil, "absent")).toHaveLength(12);
+  });
+
+  it("l'écoute s'ancre sur cette fenêtre, pas sur deux heures de conversation", () => {
+    const mention = fil[8]!;
+    expect(ancreDeLaSalve(fil, mention)).toBe("g00");
+    expect(ancreDeLaSalve(autourDeLaMention(fil, mention.id), mention)).toBe(
+      "g02",
+    );
   });
 });

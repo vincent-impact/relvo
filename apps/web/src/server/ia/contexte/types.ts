@@ -110,6 +110,12 @@ export type ConversationContexte = {
   expediteur?: ExpediteurContexte;
   /** Indices techniques d'automate relevés sans appel (`pipeline/bruit`), en clair — jamais une conclusion. */
   signaux?: readonly string[];
+  /**
+   * Un GROUPE lu sur une mention du dirigeant (M29.4) : les messages donnés
+   * sont déjà la fenêtre autour de la mention, à montrer en entier — pas le
+   * premier et les derniers d'un fil.
+   */
+  groupe?: boolean;
 };
 
 export type TacheContexte = {
