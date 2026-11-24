@@ -1859,6 +1859,10 @@ relecture du trou chez l'agrégateur au retour, la raison d'ignorance montrée e
 relevé hebdomadaire de ce que Relvo a ignoré, et un seuil plus haut avant que Relvo n'ignore un
 interlocuteur de messagerie.
 
+**Confirmé le même jour par le dirigeant** : le filet se livre avec la règle (M25.11) ; les
+pièces et le HTML des conversations déjà ignorées sont purgés une fois, le texte reste
+(M25.12) ; une mention qui n'exige rien ne crée pas de tâche — le modèle en juge.
+
 **Ordre** : M25 d'abord, augmentée de la règle (M25.9 à M25.12) ; puis **M29**, les groupes et
 les mentions. Les améliorations du tri qui ne tiennent pas à cette règle vont dans M17.
 
