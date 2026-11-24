@@ -1866,6 +1866,29 @@ pièces et le HTML des conversations déjà ignorées sont purgés une fois, le 
 **Ordre** : M25 d'abord, augmentée de la règle (M25.9 à M25.12) ; puis **M29**, les groupes et
 les mentions. Les améliorations du tri qui ne tiennent pas à cette règle vont dans M17.
 
+### La salve partout, et une minute
+
+**`tranché`** · Par le dirigeant, le 2026-11-24, en revenant le jour même sur le rythme de
+lecture des groupes décidé dans l'entrée précédente (la mention aussitôt, plus deux lectures par
+jour). La question qui l'a fait tomber : un groupe attaché à un sujet se relit-il en flux tendu
+ou deux fois par jour ? Deux rythmes selon le type de conversation, et un troisième selon qu'un
+sujet écoute ou non, c'était une mécanique de trop. **Décidé : la salve, en direct comme en
+groupe, pour le tri comme pour la relecture** ; et l'attente passe de quarante-cinq secondes à
+**une minute**, pour les deux.
+
+**Ce qui l'autorise, mesuré** (production, trente jours, six comptes). À une minute, les groupes
+à traiter font 11 392 salves, le direct 4 854. Un tri coûte en moyenne 0,0005 €, une relecture
+0,0008 € : lire tous les groupes à la salve ajoute de l'ordre de neuf euros par mois pour
+l'ensemble des comptes, moins de deux euros par compte, contre un plafond de vingt. L'objection
+de coût faite au matin (« l'inférence ferait plus que doubler ») était vraie en proportion et
+sans poids en valeur. Et ce volume baisse encore : un groupe personnel est ignoré à sa
+découverte (M29.3), et une conversation ignorée n'est plus importée (M25.9).
+
+**Ce qui tombe** : la lecture par lot deux fois par jour (M29.5, abandonnée avant d'être
+construite — aucun cron ne bouge) et la mention comme déclencheur à part. **Ce qui reste** : la
+mention est un **signal** donné au modèle dans la salve — une tâche pour le dirigeant, sauf si
+elle n'exige rien.
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté

@@ -244,6 +244,6 @@ export const RATTRAPAGE = {
  * avec le dirigeant (`ecarts`, « Le fil WhatsApp direct se trie à réception »).
  */
 export const MESSAGERIE = {
-  attenteSalveMs: 45 * 1000,
+  attenteSalveMs: 60 * 1000,
   fenetreSalveMs: 2 * 60 * 60 * 1000,
 } as const;

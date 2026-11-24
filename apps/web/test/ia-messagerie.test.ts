@@ -29,7 +29,7 @@ describe("messagerie — la salve", () => {
       estDernierDeLaSalve({ declencheurId: "m1", dernierEntrantId: null }),
     ).toBe(false);
     // Quarante-cinq secondes : le temps qu'une salve WhatsApp arrive.
-    expect(MESSAGERIE.attenteSalveMs).toBe(45_000);
+    expect(MESSAGERIE.attenteSalveMs).toBe(60_000);
   });
 });
 

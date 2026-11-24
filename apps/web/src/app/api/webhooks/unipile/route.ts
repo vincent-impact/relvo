@@ -51,8 +51,10 @@ import { setChannelConfigStatus } from "@relvo/db";
 
 export const dynamic = "force-dynamic";
 // Le tri d'un fil WhatsApp direct attend la fin de la salve après la réponse
-// (M7 tranche 11), puis trie et structure : le budget de la fonction le couvre.
-export const maxDuration = 120;
+// (M7 tranche 11), puis trie et structure : le budget de la fonction le couvre
+// — l'attente de la salve (`MESSAGERIE.attenteSalveMs`) plus la même marge
+// qu'avant son allongement.
+export const maxDuration = 150;
 
 // Défense en profondeur : une route qui touche de la donnée tenant ne doit
 // jamais être mise en cache CDN (clé = méthode+URL, identique pour tous).
