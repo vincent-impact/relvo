@@ -6,6 +6,7 @@
 
 ## 2026-11-24
 
+- **Nouveau** — Dans Conversations, le conseil de Relvo se lit d'abord et en couleur — « À traiter » en vert, « À ignorer » en rouge — avant la nature. Relvo reconnaît maintenant les messages indésirables (spam, tentatives de fraude), et une conversation que vous avez ignorée le dit.
 - **Nouveau** — Dans Conversations, chaque ligne porte maintenant deux badges : de quoi il s'agit, et ce que Relvo vous conseille (à considérer, à ignorer). La rangée de filtres par raison des conversations ignorées est retirée.
 - **Nouveau** — Relvo ne met plus de côté une conversation WhatsApp sur un seul message, vous dit chaque lundi ce qu'il a ignoré dans la semaine, et la liste des conversations ignorées se filtre par raison.
 - **Nouveau** — Une conversation ignorée indique désormais combien de messages elle n'a pas importés ; quand vous la réactivez ou la rattachez à un sujet, Relvo va rechercher ces messages et vous dit combien il en a retrouvé.

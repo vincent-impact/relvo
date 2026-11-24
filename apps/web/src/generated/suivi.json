@@ -229,6 +229,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Dans Conversations, le conseil de Relvo se lit d'abord et en couleur — « À traiter » en vert, « À ignorer » en rouge — avant la nature. Relvo reconnaît maintenant les messages indésirables (spam, tentatives de fraude), et une conversation que vous avez ignorée le dit."
+        },
+        {
+          "type": "new",
           "texte": "Dans Conversations, chaque ligne porte maintenant deux badges : de quoi il s'agit, et ce que Relvo vous conseille (à considérer, à ignorer). La rangée de filtres par raison des conversations ignorées est retirée."
         },
         {
