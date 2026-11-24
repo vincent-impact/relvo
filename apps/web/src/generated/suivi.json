@@ -209,6 +209,13 @@
       "statut": "termine",
       "gauche": 78.04,
       "largeur": 4.2
+    },
+    {
+      "titre": "Les groupes WhatsApp, et quand on vous y interpelle",
+      "resume": "Dans un groupe WhatsApp, une mention affiche enfin le nom de la personne, et Relvo réagit quand c'est vous qu'on interpelle : il lit ce qui précède, ouvre un sujet s'il le faut et vous pose la tâche. Les groupes que vous gardez sont lus deux fois par jour ; ceux qui ne sont pas professionnels sont écartés d'eux-mêmes.",
+      "statut": "a-faire",
+      "gauche": null,
+      "largeur": 0
     }
   ],
   "livraison": {

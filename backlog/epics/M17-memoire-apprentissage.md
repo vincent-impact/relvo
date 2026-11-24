@@ -41,6 +41,8 @@ distillé dans le contexte du prochain appel. **M7 produit ; M17 apprend.**
 | M17.12 | Mesure : jeu d'évaluation alimenté par les verdicts et accords journalisés ; **part d'aide de Relvo** — propositions conservées sur propositions faites — affichée sur l'Accueil         |
 | M17.13 | Relance dérivée de la situation structurée quand une attente est dépassée, sans appel au modèle                                                                                          |
 | M17.14 | Titres des sujets ouverts récents du compte dans le contexte du tri, pour rattacher une même affaire arrivée par un second contact                                                       |
+| M17.15 | **Une instruction peut faire ignorer** : « ignore les relances de tel fournisseur », écrite dans les instructions (M11.4) ou dite dans l'échange, appliquée par le tri comme un antécédent — et, depuis que l'ignorance n'importe plus rien (M25.9), dite avec ce qu'elle coûte |
+| M17.16 | **Les corrections de l'ignorance pèsent** : une conversation réactivée après un verdict de Relvo, un sujet fermé à peine ouvert, un reclassement deviennent des cas du jeu d'évaluation (M17.12) ; le taux de réactivation des conversations que Relvo a ignorées se lit au backoffice |
 
 ## Découpage proposé, en tranches verticales
 

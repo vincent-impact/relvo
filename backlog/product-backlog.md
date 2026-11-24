@@ -45,7 +45,8 @@ frontmatter l'est.
 | **[M27 — Dossiers et sujets](epics/M27-dossiers-et-sujets.md)**            | ✅ — le mot, l'arbre, la fiche en quatre onglets, « Ranger dans… », le dépôt d'une connaissance | M24                             |
 | **[M28 — Sujets : une page, deux vues](epics/M28-sujets-deux-vues.md)**   | ✅ — l'arbre dans la page Sujets, l'ajout en fin de branche, le glisser-déposer, la fiche qui glisse | l'alpha                         |
 | **[M24 — Dix boîtes par compte](epics/M24-dix-boites.md)**                 | 🔶 **en cours** — ouvert le 2026-10-28, `sprints/2026-10-m24-dix-boites.md` ; M24.10 en premier | la marge                        |
-| **[M25 — La maîtrise des médias](epics/M25-maitrise-des-medias.md)**       | ⬜ tranché solution par solution — après M24      | M8.6, M20.3                     |
+| **[M25 — La maîtrise des médias](epics/M25-maitrise-des-medias.md)**       | ⬜ **prochain chantier** — tranché solution par solution ; porte aussi « ignorer, c'est ne plus importer » (M25.9 à M25.12) | M29, M8.6, M20.3                |
+| **[M29 — Les groupes et les mentions](epics/M29-groupes-et-mentions.md)** | ⬜ après M25 — l'annuaire des identifiants, la mention lue, le tri sur mention, la lecture deux fois par jour | —                               |
 | **[M26 — Des chiffres vrais](epics/M26-chiffres-vrais.md)**                | ⬜ recette de l'alpha                            | —                               |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
 | **[M10 — Échange avec Relvo](epics/M10-echange-relvo.md)**                 | ✅ — le déclencheur du script à la connexion d'un canal est M7.19 | M13                             |
@@ -86,6 +87,13 @@ relais Gmail ensuite, parce que dix boîtes par compte est leur exigence premiè
 l'agrégateur en fait un poste à perte. **Tout le reste est moins urgent** : M25 attend ses
 décisions solution par solution, M26 vient quand il vient. Les correctifs de la vague (R9,
 M22.8, M12.10, M13.6) se glissent dans le sprint de recette.
+
+**Après la recette : M25, puis M29** (décision du 2026-11-24, `ecarts`, « Ignorer veut dire ne
+plus importer ; un groupe se lit sur mention et deux fois par jour ») : la recette de l'alpha est
+close, M28 est terminée, M24 n'attend plus que la vérification Google. Le stockage approche de
+son palier et les groupes WhatsApp sont un angle mort : **M25** d'abord, augmentée de la règle
+d'ignorance, puis **M29**. Ce que l'étude a proposé pour la justesse du tri sans tenir à cette
+règle est dans M17 (M17.15, M17.16).
 
 **La quatrième vague de la recette passe en premier** (décision du 2026-11-11, `ecarts`, « Un
 fichier s'ouvre dans Relvo, jamais sur une page blanche » et « La recherche de l'échange… ») :

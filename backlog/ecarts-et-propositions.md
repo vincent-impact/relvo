@@ -1800,6 +1800,68 @@ ils répondaient.
 
 Remontée **R9** du sprint de recette.
 
+### Ignorer veut dire ne plus importer ; un groupe se lit sur mention et deux fois par jour
+
+**`tranché`** · Par le dirigeant, le 2026-11-24, à partir d'une remontée répétée des
+testeurs : dans un groupe WhatsApp, une mention (« @ ») s'affiche sous la forme d'un identifiant
+à quinze chiffres et ne pèse sur rien. L'étude a élargi la question au traitement des
+conversations WhatsApp, puis à l'ignorance sur tous les canaux.
+
+**Ce qui a été mesuré** (production, lecture seule, trente jours, agrégats). 21 392 messages
+reçus dans 588 groupes actifs, dont 3 portent un sujet : un groupe n'était jamais trié
+(`05` §9.5), l'écoute s'y posait à la main. 1 848 messages de groupe portent une mention, dans
+252 groupes, sur 6 comptes. L'identifiant affiché est l'identifiant interne de WhatsApp (le
+« LID »), pas un numéro ; le webhook ne porte aucun champ de mention, mais la liste des
+participants d'un groupe chez l'agrégateur donne pour chacun le LID, le numéro, le nom et « c'est
+moi » — vérifié sur un groupe du dirigeant. Les conversations ignorées reçoivent 27 % des
+messages et 21 % du poids des pièces ; elles le sont presque toutes par Relvo (2 221 contre
+58 par un utilisateur), et le journal compte 9 réactivations. Les médias de messages rattachés à
+aucun sujet font 79 % du stockage, qui atteint 8 Go pour un palier gratuit de 10. La base entière
+pèse 209 Mo.
+
+**Décidé.**
+
+- **Deux états, et seulement deux** : une conversation est **à traiter** (Relvo continue de la
+  lire) ou **ignorée** (on sait qu'elle ne sera jamais professionnelle). Ignorée par Relvo ou
+  par l'utilisateur : **le même état, le même comportement** — deux régimes seraient trop
+  complexes à tenir.
+- **Une conversation ignorée n'est plus importée** : ni texte, ni média, ni les réponses du
+  dirigeant écrites depuis son téléphone. « Ignorer » porte son nom ; le fil de Relvo n'est
+  plus à jour avec la source, et il le redevient quand la conversation est réactivée ou
+  rattachée à un sujet. **La règle vaut pour l'e-mail comme pour WhatsApp.** Elle remplace
+  « les messages continuent d'arriver, on ne perd rien ».
+- **Un sujet validé ou fermé libère sa conversation WhatsApp** : c'était déjà le cas (borne de
+  fin de l'écoute), vérifié dans le code et en production — aucune écoute ouverte sur un sujet
+  qui ne l'est plus.
+- **Un groupe suit les mêmes règles qu'un fil direct**, avec deux déclencheurs de lecture au
+  lieu de la salve : **la mention du dirigeant**, lue aussitôt avec le contexte proche — si un
+  sujet naît il porte une tâche pour lui, et si le groupe est déjà attaché à un sujet on ajoute
+  seulement la tâche, parce qu'être mentionné veut dire qu'on attend quelque chose de lui ;
+  et **une lecture deux fois par jour** des groupes à traiter qui ont bougé. Les deux se
+  livrent ensemble.
+- **Une mention ne réveille pas un groupe ignoré** : plus rien n'y est lu.
+- **Le titre d'un groupe se lit comme l'objet d'un e-mail** pour juger sa nature —
+  « Football 5vs5 », « 40 ans de Stéphanie » sont du personnel, et Relvo doit tendre à les
+  ignorer. Il ne fait pas pour autant du groupe un sujet (`04`) : il dit de quoi le collectif
+  parle, pas quelle affaire s'y traite.
+- **On garde « sujet »**, pas « ticket » : le mot de l'industrie du logiciel n'est pas celui
+  d'un restaurateur (ticket de caisse, ticket-restaurant), il réduit un sujet à une demande
+  reçue, et ce serait le troisième nom en six semaines.
+
+**Écarté.** Garder le texte des conversations que Relvo ignore de lui-même et n'arrêter que
+leurs médias (proposé pour couvrir un faux verdict ; refusé : deux comportements pour un même
+état). La salve pour les groupes (les membres se relaient, elle ne se termine pas). « Mention =
+urgent » (deux priorités seulement ; à ce rythme, l'urgent ne voudrait plus rien dire).
+
+**Ce qui compense un faux verdict**, puisqu'il ne se rattrape plus tout seul — proposé avec la
+règle, placé au backlog avec elle : un compteur sans contenu sur la conversation ignorée, la
+relecture du trou chez l'agrégateur au retour, la raison d'ignorance montrée en étiquette, un
+relevé hebdomadaire de ce que Relvo a ignoré, et un seuil plus haut avant que Relvo n'ignore un
+interlocuteur de messagerie.
+
+**Ordre** : M25 d'abord, augmentée de la règle (M25.9 à M25.12) ; puis **M29**, les groupes et
+les mentions. Les améliorations du tri qui ne tiennent pas à cette règle vont dans M17.
+
 ## Écarts constatés
 
 ### Le plan de réalignement documentaire n'a jamais été exécuté
