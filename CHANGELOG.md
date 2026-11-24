@@ -4,6 +4,10 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-11-24
+
+- **Corrigé** — Relvo attend désormais une minute de silence avant de lire une série de messages WhatsApp, pour la lire en entier.
+
 ## 2026-11-15
 
 - **Corrigé** — La fiche d'un sujet ou d'un dossier glisse plus posément : vous la voyez entrer, et repartir au retour.

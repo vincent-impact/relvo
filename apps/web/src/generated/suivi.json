@@ -225,6 +225,15 @@
   "en_cours": "Dix boîtes e-mail par compte",
   "journal": [
     {
+      "date": "2026-11-24",
+      "entrees": [
+        {
+          "type": "fix",
+          "texte": "Relvo attend désormais une minute de silence avant de lire une série de messages WhatsApp, pour la lire en entier."
+        }
+      ]
+    },
+    {
       "date": "2026-11-15",
       "entrees": [
         {
