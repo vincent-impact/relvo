@@ -111,7 +111,19 @@ d'un webhook porte son LID (`attendee_provider_id`), son numéro et son nom.
 - **Simulé en production le 2026-11-24**, lecture seule. Sur le compte du dirigeant, avec les
   titres : 14 groupes, 10 ignorés (anniversaire, vacances, danse, famille…), 4 gardés (RELVO,
   Protect Permis, Impulse - MTP Team, Click'n'Justice) — aucun verdict contestable à la
-  lecture. Les totaux tous comptes sont dans le compte rendu du jour.
+  lecture.
+- **Le stock entier, simulé le même jour** (totaux seuls, aucun titre lu hors du compte du
+  dirigeant) : 592 groupes sur six comptes — 62 ignorés (personnel, confiance haute), 527
+  gardés (487 professionnels en confiance haute, 26 moyenne, 7 basse ; 7 personnels gardés
+  faute de certitude), 3 non jugés car déjà suivis par un sujet ; 0,27 € d'appels. **Le
+  jugement n'écarte donc qu'un groupe sur dix** : trois comptes portent 365, 98 et 78 groupes,
+  presque tous actifs dans le mois et jugés professionnels. Ces verdicts-là n'ont pas été
+  relus titre par titre — seul chaque dirigeant peut dire s'ils sont justes.
+- **Ce que cela pèse sur la tranche 4**, mesuré sur quatorze jours : une lecture par groupe et
+  par demi-journée où il a parlé ferait une centaine de lectures par jour pour le compte le
+  plus chargé (470 messages par jour), une vingtaine pour le suivant, une dizaine ou moins
+  pour les autres. Au coût d'un appel de tri, c'est de l'ordre d'un à deux euros par mois
+  pour le premier — une estimation, à confirmer en livrant, contre le plafond d'inférence.
 
 **Ce que la tranche 3 ne fait pas, et qu'il ne faut pas croire fait.**
 
