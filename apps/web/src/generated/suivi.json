@@ -229,6 +229,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Relvo lit maintenant vos groupes WhatsApp deux fois par jour, le matin et à la mi-journée : quand une décision ou une demande vous y attend, il ouvre un sujet et vous prévient."
+        },
+        {
+          "type": "new",
           "texte": "Relvo regarde maintenant chaque groupe WhatsApp une fois : ceux qui n'ont rien de professionnel (famille, amis, loisirs) sont mis de côté d'eux-mêmes, les autres restent dans vos conversations."
         },
         {

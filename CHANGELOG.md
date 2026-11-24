@@ -6,6 +6,7 @@
 
 ## 2026-11-24
 
+- **Nouveau** — Relvo lit maintenant vos groupes WhatsApp deux fois par jour, le matin et à la mi-journée : quand une décision ou une demande vous y attend, il ouvre un sujet et vous prévient.
 - **Nouveau** — Relvo regarde maintenant chaque groupe WhatsApp une fois : ceux qui n'ont rien de professionnel (famille, amis, loisirs) sont mis de côté d'eux-mêmes, les autres restent dans vos conversations.
 - **Nouveau** — Quand on vous mentionne dans un groupe WhatsApp, Relvo lit aussitôt ce qui précède : si l'on vous demande quelque chose de professionnel, il ouvre un sujet et vous pose la tâche.
 - **Nouveau** — Dans un groupe WhatsApp, une mention affiche maintenant le nom de la personne au lieu d'un numéro, et « @vous » quand c'est vous. Une arobase signale dans la liste les conversations où l'on vous interpelle.
