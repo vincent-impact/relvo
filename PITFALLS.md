@@ -660,7 +660,7 @@ requêtes constantes » (Neon, latence par requête).
 | **Next** | #5, #5b, #5c, #14, #45, #48, #60 |
 | **Prisma** | #1, #2, #4, #19, #33, #35, #36, #37, #47, #61 |
 | **Auth.js** | #5c, #6, #7, #21 |
-| **Tailwind** | #15 |
+| **Tailwind** | #15, #79 |
 | **AWS SDK** | #8, #9, #10, #11 |
 | **pnpm** | #29, #46 |
 | **Registre de composants** | #16, #40, #51, #52 |
@@ -834,4 +834,25 @@ test existant ne regardait que les messages.
   dérive tôt ou tard : la lecture suit la relation, pas la copie.
 - Un test de rattachement vérifie **tout ce qui doit suivre** — ici les pièces —, pas seulement
   l'objet principal.
+
+### #79 — Ajouter un token au thème re-trie les classes de fichiers que le commit ne touche pas
+
+**Symptôme** : la CI échoue à `format:check` sur un fichier que personne n'a modifié depuis des
+semaines, et continue d'échouer à **chaque** push. En local tout passe : le crochet de commit
+formate, les tests sont verts. Neuf jours de CI rouge, vus seulement par le courriel de GitHub.
+
+**Cause** : le tri des classes Tailwind par Prettier dépend du **thème**. Une classe que
+Tailwind ne connaît pas est rangée en tête ; une classe connue est triée parmi les utilitaires.
+Déclarer `--shadow-feuille` dans le thème a fait de `shadow-feuille` un utilitaire connu : sa
+place attendue a changé dans **tous** les fichiers qui l'emploient, dont un que le commit ne
+touchait pas. Or le crochet de commit ne formate que les fichiers **indexés** (`lint-staged`) :
+il ne peut pas voir celui-là.
+
+**Règle** :
+- Après avoir ajouté, renommé ou retiré un token dans `globals.css`, lancer `pnpm format` sur
+  **tout** le dépôt, pas seulement sur ce qu'on a modifié.
+- Le crochet `pre-push` lance `pnpm format:check` sur le dépôt entier : c'est lui qui rattrape
+  ce que `lint-staged` ne peut pas voir.
+- Un push n'est pas fini tant que la CI n'a pas répondu (`gh run list --limit 1`) — la
+  Definition of Done le dit, et rien ne le rappelait.
 

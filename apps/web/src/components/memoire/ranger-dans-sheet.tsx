@@ -144,7 +144,7 @@ export function RangerDansSheet({
       <SheetContent
         side="bottom"
         showCloseButton={false}
-        className="shadow-feuille max-h-[85dvh] rounded-t-(--rayon-feuille) border-t-0 bg-white p-0"
+        className="max-h-[85dvh] rounded-t-(--rayon-feuille) border-t-0 bg-white p-0 shadow-feuille"
       >
         {/* La poignée : la feuille se glisse vers le bas. */}
         <span
