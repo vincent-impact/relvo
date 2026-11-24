@@ -6,6 +6,7 @@
 
 ## 2026-11-24
 
+- **Nouveau** — Une conversation ignorée indique désormais combien de messages elle n'a pas importés ; quand vous la réactivez ou la rattachez à un sujet, Relvo va rechercher ces messages et vous dit combien il en a retrouvé.
 - **Nouveau** — Une conversation que vous ignorez, ou que Relvo écarte, ne reçoit plus ses nouveaux messages ni leurs photos : la réactiver ou la rattacher à un sujet la remet à jour à partir de ce moment.
 - **Corrigé** — Relvo attend désormais une minute de silence avant de lire une série de messages WhatsApp, pour la lire en entier.
 
