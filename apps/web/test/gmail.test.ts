@@ -40,7 +40,15 @@ describe("chiffrement", () => {
     expect(a).not.toContain("rafraichissement");
     expect(dechiffrer(a)).toBe("1//0g-rafraichissement");
     const [v, iv, tag, texte] = a.split(".");
-    const altere = [v, iv, tag, texte!.slice(0, -2) + "AA"].join(".");
+    // Le PREMIER caractère : ses six bits comptent tous. Les derniers d'un
+    // base64 sans bourrage n'en portent que quelques-uns — les remplacer
+    // pouvait ne rien altérer, et le test échouait de temps en temps.
+    const altere = [
+      v,
+      iv,
+      tag,
+      (texte![0] === "A" ? "B" : "A") + texte!.slice(1),
+    ].join(".");
     expect(() => dechiffrer(altere)).toThrow();
     expect(() => dechiffrer("n'importe quoi")).toThrow(/forme inconnue/);
   });
