@@ -42,8 +42,8 @@ export const EVENT_TYPES = {
   conversationIgnored: "conversation_ignored",
   conversationReactivated: "conversation_reactivated",
   conversationGapReread: "conversation_gap_reread",
-  /** Les pièces et le HTML d'une conversation ignorée retirés du stock (M25.12). */
-  conversationStockPurged: "conversation_stock_purged",
+  /** Un passage du nettoyage sur un compte : sujets fermés effacés, messages sans sujet expirés, conversations e-mail vides disparues — les comptes en métadonnée. */
+  nettoyage: "nettoyage",
   conversationAttached: "conversation_attached",
   conversationDetached: "conversation_detached",
   /** Une conversation fantôme (un sortant rangé sous une clé de fil) fondue dans la vraie (PITFALLS #75). */

@@ -65,6 +65,12 @@ const NO_STORE = {
   "Vercel-CDN-Cache-Control": "no-store",
 } as const;
 
+/** Ce que le webhook répond d'un message que le domaine n'a pas importé. */
+const IGNORE = {
+  ignoree: "conversation_ignored",
+  "trop-ancien": "too_old",
+} as const;
+
 function ok(body: Record<string, unknown> = { ok: true }) {
   return NextResponse.json(body, { headers: NO_STORE });
 }
@@ -340,7 +346,7 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
       content: evt.message?.trim() ? evt.message.trim() : null,
       sentAt: evt.timestamp != null ? new Date(evt.timestamp) : null,
     });
-    if (envoi.ecartee) return ok({ ok: true, ignored: "conversation_ignored" });
+    if (envoi.ecartee) return ok({ ok: true, ignored: IGNORE[envoi.motif] });
     const { message, created } = envoi;
     if (!created || !message) {
       return ok({ ok: true, ignored: "own_message", created: false });
@@ -383,7 +389,7 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   );
   // Conversation ignorée (M25.9) : rien n'est importé — ni le texte, ni les
   // médias, que le webhook n'ira donc pas chercher. Le domaine a compté.
-  if (recu.ecartee) return ok({ ok: true, ignored: "conversation_ignored" });
+  if (recu.ecartee) return ok({ ok: true, ignored: IGNORE[recu.motif] });
   const { message, created } = recu;
 
   // Médias (M6.6) : même chemin que les PJ email — seulement au premier passage.

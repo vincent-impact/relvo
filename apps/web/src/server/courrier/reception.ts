@@ -27,7 +27,9 @@ import type { Boite, CourrierEntrant, FournisseurCourrier } from "./types";
 //
 // Un courrier `brouillon` ou `ecarte` n'est jamais rangé (#69). Un courrier
 // dont la conversation est IGNORÉE n'est pas importé (M25.9) : ni son texte,
-// ni ses pièces — le domaine le compte, et c'est tout.
+// ni ses pièces — le domaine le compte, et c'est tout. Un courrier daté de
+// plus de trente jours non plus : sans sujet il aurait expiré aussitôt (le
+// nettoyage, `@relvo/db`).
 
 export type BilanRangement = {
   messageId: string | null;
@@ -35,17 +37,23 @@ export type BilanRangement = {
   subjectId: string | null;
   created: boolean;
   piecesStockees: number;
-  /** La conversation est ignorée : rien n'a été importé. */
-  nonImporte: boolean;
+  /**
+   * Rien n'a été importé, et pourquoi : la conversation est ignorée, ou le
+   * courrier date d'avant l'horizon du nettoyage. `false` : il est entré.
+   */
+  nonImporte: false | "ignoree" | "trop-ancien";
 };
 
-const NON_IMPORTE = (conversationId: string): BilanRangement => ({
+const NON_IMPORTE = (ecartee: {
+  conversationId: string | null;
+  motif: "ignoree" | "trop-ancien";
+}): BilanRangement => ({
   messageId: null,
-  conversationId,
+  conversationId: ecartee.conversationId,
   subjectId: null,
   created: false,
   piecesStockees: 0,
-  nonImporte: true,
+  nonImporte: ecartee.motif,
 });
 
 export async function rangerCourrier(
@@ -68,7 +76,7 @@ export async function rangerCourrier(
     // Les pièces jointes d'un envoi ne sont pas rapatriées : le sujet se lit,
     // il ne stocke pas ce que le dirigeant a déjà.
     const envoi = await recevoirEmailSortant(db, courrier.sortant);
-    if (envoi.ecartee) return NON_IMPORTE(envoi.conversationId);
+    if (envoi.ecartee) return NON_IMPORTE(envoi);
     const { message, created } = envoi;
     return {
       messageId: message?.id ?? null,
@@ -80,7 +88,7 @@ export async function rangerCourrier(
     };
   }
   const recu = await recevoirEmailEntrant(db, courrier.entrant);
-  if (recu.ecartee) return NON_IMPORTE(recu.conversationId);
+  if (recu.ecartee) return NON_IMPORTE(recu);
   const { message, created } = recu;
   // Pièces jointes (M5.4) : au premier passage — ou à un passage suivant si le
   // message est entré SANS elles (importé depuis une ligne de liste qui ne les
@@ -127,7 +135,15 @@ export async function recevoirCourrier(
   if (courrier.nature === "brouillon" || courrier.nature === "ecarte") {
     return { ...bilan, ignore: courrier.nature };
   }
-  if (range.nonImporte) return { ...bilan, ignore: "conversation-ignoree" };
+  if (range.nonImporte) {
+    return {
+      ...bilan,
+      ignore:
+        range.nonImporte === "trop-ancien"
+          ? "trop-ancien"
+          : "conversation-ignoree",
+    };
+  }
   if (!range.created || !range.messageId || !range.conversationId) {
     // Déjà en base — l'écho d'un envoi fait depuis Relvo, une seconde
     // livraison du même courrier. Des pièces jointes arrivées après coup

@@ -13,6 +13,13 @@ import { ignoreConversationAction } from "@/server/actions/conversations";
 import { ConfirmDialog } from "@/components/shared/confirm-dialog";
 import { ECRAN_POUSSE } from "@/components/layout/ecran-transition";
 import { cn } from "@/lib/utils";
+import { NETTOYAGE_ACTIF } from "@/lib/nettoyage";
+
+// Fermer se défait trente jours durant, puis le sujet s'efface (le nettoyage) :
+// le geste le dit au moment où il est fait, pas trente jours après.
+const SUJET_FERME = NETTOYAGE_ACTIF
+  ? "Sujet fermé — il sera effacé dans trente jours"
+  : "Sujet fermé";
 
 // Carte-sujet swipable (approche retenue, cf. mockup/mobile/fil.html) :
 //  - glisser → DROITE = Valider (fond vert, libellé à gauche)
@@ -121,11 +128,11 @@ export function SwipeableSubject({
       if (ignorable.length === 0) {
         // Aucune conversation encore active : rien à proposer (sujet créé à la
         // main, ou fil déjà ignoré) — on ne pose pas une question sans objet.
-        toast.success("Sujet fermé");
+        toast.success(SUJET_FERME);
         return;
       }
       const plural = ignorable.length > 1;
-      toast.success("Sujet fermé", {
+      toast.success(SUJET_FERME, {
         description: `Souhaitez-vous aussi ignorer ${plural ? "ces conversations" : "la conversation"} ?`,
         duration: 10000,
         action: {

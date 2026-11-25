@@ -3,6 +3,7 @@
 import { Check } from "lucide-react";
 import { EmailMessage } from "@/components/conversations/email-message";
 import { MessageBubble } from "@/components/shared/message-bubble";
+import { NETTOYAGE_ACTIF } from "@/lib/nettoyage";
 import { cn } from "@/lib/utils";
 import type { ThreadMessageData } from "@/lib/conversation-row";
 
@@ -79,10 +80,27 @@ export function ConversationThread({
 }) {
   const isEmail = channelType === "email";
 
+  // LA CONSERVATION, dite là où elle se voit : en tête du fil, avant le plus
+  // ancien message. Ce qu'aucun sujet ne porte n'est gardé que trente jours (le
+  // nettoyage, `@relvo/db`) — un fil qui commence au milieu d'une histoire
+  // n'est pas une panne, et l'original reste dans la boîte ou sur le téléphone.
+  // Dite seulement quand elle est vraie (`lib/nettoyage`).
   const empty =
     messages.length === 0 ? (
-      <p className="py-10 text-center text-[14px] font-light text-gris">
-        Aucun message dans cette conversation.
+      <p className="px-6 py-10 text-center text-[14px] font-light text-gris">
+        {NETTOYAGE_ACTIF ? (
+          <>
+            Aucun message récent dans cette conversation. Relvo ne garde que
+            trente jours ce qu’aucun sujet ne porte ; les messages plus anciens
+            restent {isEmail ? "dans votre boîte" : "sur votre téléphone"}.
+          </>
+        ) : (
+          "Aucun message dans cette conversation."
+        )}
+      </p>
+    ) : NETTOYAGE_ACTIF ? (
+      <p className="px-6 pt-1 pb-2 text-center text-[12px] leading-4 font-normal text-gris">
+        Relvo garde trente jours les messages qu’aucun sujet ne porte.
       </p>
     ) : null;
 

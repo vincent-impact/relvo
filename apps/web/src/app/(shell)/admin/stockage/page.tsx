@@ -13,7 +13,9 @@ import { Screen } from "@/components/layout/screen";
 import { ListPanel } from "@/components/shared/list-panel";
 import { ZoneHeading } from "@/components/shared/zone-heading";
 import { compte, nombre, octets, partDe } from "@/lib/stockage";
+import { NETTOYAGE_ACTIF } from "@/lib/nettoyage";
 import { requireAdmin } from "@/server/admin";
+import { passerLeNettoyage } from "@/server/nettoyage";
 import { mesureDuStockage } from "@/server/stockage-mesure";
 
 export const metadata: Metadata = { title: "Stockage — Backoffice Relvo" };
@@ -27,10 +29,12 @@ export const dynamic = "force-dynamic";
 export default async function StockagePage() {
   await requireAdmin();
   const now = new Date();
-  const [mesure, comptes, enFile] = await Promise.all([
+  const [mesure, comptes, enFile, nettoyage] = await Promise.all([
     mesureDuStockage(),
     listAccountsForAdmin({ now }),
     countPendingFileDeletions(),
+    // Toujours une SIMULATION ici : la page ne nettoie rien, elle annonce.
+    passerLeNettoyage({ budgetMs: 20_000, reel: false, now }),
   ]);
   const { bucket, pieces } = mesure;
   const total = pieces.total.octets;
@@ -138,6 +142,45 @@ export default async function StockagePage() {
             </p>
             <RelireBucket />
           </div>
+        </section>
+
+        {/* Le nettoyage : ce que le prochain passage du matin retirerait —
+            ou retirera, selon que l'interrupteur est armé. */}
+        <section>
+          <ZoneHeading
+            label="Le nettoyage"
+            hint={NETTOYAGE_ACTIF ? "chaque matin" : "à l'arrêt — simulation"}
+          />
+          <ListPanel>
+            <Ligne label="Messages sans sujet, passé trente jours">
+              {nombre(nettoyage.bilan.messages)}
+            </Ligne>
+            <Ligne label="Leurs pièces jointes">
+              {octets(nettoyage.bilan.octets)}
+              <span className="font-light text-gris">
+                {" "}
+                · {compte(nettoyage.bilan.pieces, "pièce", "pièces")}
+              </span>
+            </Ligne>
+            <Ligne label="Conversations e-mail qui ne garderaient rien">
+              {nombre(nettoyage.bilan.conversationsEmail)}
+            </Ligne>
+            <Ligne label="Sujets fermés depuis trente jours">
+              {nombre(nettoyage.bilan.sujetsFermes)}
+            </Ligne>
+            <Ligne label="Comptes concernés">
+              {nettoyage.comptesTouches}
+              <span className="font-light text-gris">
+                {" "}
+                / {nettoyage.comptes}
+              </span>
+            </Ligne>
+          </ListPanel>
+          <p className="mt-3 px-4 text-[12.5px] leading-[17px] font-light text-gris">
+            {NETTOYAGE_ACTIF
+              ? "Ce que le passage de demain matin retirera. Ce qu'un sujet porte reste ; un sujet validé ne s'efface jamais."
+              : "Ce que le nettoyage retirerait s'il était armé. Rien n'est effacé tant qu'il est à l'arrêt."}
+          </p>
         </section>
 
         <RepartitionDesPieces mesure={mesure} />

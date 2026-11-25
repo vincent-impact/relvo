@@ -19,6 +19,7 @@ import { sendAccountActivatedEmail } from "@/lib/email";
 import { requireAdmin } from "@/server/admin";
 import { MESSAGES_REFUS, refusSuppression } from "@/server/admin-regles";
 import { fournisseurDe } from "@/server/courrier";
+import { effacerLesFichiersSupprimes } from "@/server/nettoyage";
 import { TAG_BUCKET } from "@/server/stockage-mesure";
 
 // Les gestes du backoffice (M21.4, M21.6). Chaque action commence par
@@ -150,6 +151,9 @@ export async function adminDeleteAccountAction(
     );
   }
   if (!result.ok) return result;
+  // Les fichiers du compte quittent le stockage tout de suite, après la
+  // réponse — pas au cron du lendemain (le nettoyage, règle de suppression).
+  effacerLesFichiersSupprimes();
   revalidateAdmin();
   return ok({ email: result.data.email, unipile: { echecs } });
 }

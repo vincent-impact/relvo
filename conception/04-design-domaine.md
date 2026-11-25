@@ -367,9 +367,12 @@ après trois semaines **avalerait d'un bloc** tout ce que le fil a charrié entr
 dit « je reprends ce sujet », pas « rattrape tout ce que j'ai manqué ». Côté e-mail il n'y
 a rien à redémarrer : le fil n'a jamais été détaché.
 
-⚠️ **Un sujet fermé n'est JAMAIS purgée.** Aucune rétention, aucune expiration — pour la raison
-exacte qui impose le vocabulaire « Remettre ». Une purge automatique ferait d'une opération
-annoncée comme réversible une **destruction différée** : le pire des deux mondes.
+⚠️ **Un sujet fermé s'efface au bout de trente jours — et il le dit.** Fermer, c'est sortir un
+sujet de la zone d'intérêt sans le valider ; le garder pour toujours ferait de Relvo l'archive de
+ce qu'on a écarté. Mais une destruction différée derrière un geste annoncé comme réversible
+serait le pire des deux mondes : le geste dit donc l'échéance au moment où il est fait, et la
+fiche du sujet fermé porte sa date d'effacement. Le **remettre** d'ici là annule le compte à
+rebours. Un sujet **validé** ne s'efface jamais : c'est un précédent (§11).
 
 À la fermeture, Relvo propose d'**ignorer aussi la conversation** — c'est le geste qui empêche un
 fil bavard de reproposer indéfiniment de nouveaux sujets, et le seul qui fasse taire un fil
@@ -590,15 +593,46 @@ ré-uploade depuis la source ; l'inverse est impossible.
 
 ## 11. Les règles de conservation
 
-**Aucun geste courant du produit ne détruit de données.** C'est un principe de domaine, et le
-vocabulaire de l'interface doit le refléter.
+**Relvo garde ce qui sert à un sujet, et pas le reste.** Rattacher un message à un sujet, c'est
+dire qu'il compte : c'est ce signal, que personne n'a à donner exprès, qui décide de ce qui
+reste. Sans lui, un dirigeant qui n'ose rien ignorer de peur de manquer quelque chose ferait de
+Relvo la copie de sa boîte.
+
+**Aucun geste courant ne détruit de données sur le coup** — le vocabulaire de l'interface le
+reflète —, et c'est le **nettoyage**, lui, qui efface, selon quatre règles :
+
+| Règle | Ce qu'elle fait |
+|---|---|
+| **La suppression** | Supprimer un canal ou un compte efface aussitôt tout ce qui en dépend, fichiers compris. Supprimer un sujet ne supprime pas ses conversations : seule l'attache message-sujet et conversation-sujet disparaît. Supprimer un **dossier** ne détruit rien : son contenu remonte chez son père (§10) |
+| **L'expiration** | Un message qu'aucun sujet ne porte est effacé trente jours après sa date, texte et pièces, que sa conversation soit active ou ignorée. Ce qu'un sujet porte reste tant que le sujet existe |
+| **L'effacement des sujets fermés** | Un sujet fermé est effacé trente jours après sa fermeture, tâches et journal compris ; ses messages redeviennent ordinaires et expirent par la règle précédente. Un sujet validé ne s'efface jamais |
+| **L'ignorance** | N'efface rien : une conversation ignorée cesse d'accumuler (`05 §5.6`) |
+
+Ce que les gestes font vraiment, en conséquence :
 
 | Geste | Ce qu'il fait vraiment |
 |---|---|
-| « Fermer » un sujet | pose un statut, réversible |
-| « Ignorer » une conversation | met la **source** en pause, réversible, sur les deux canaux — jamais « Supprimer », rien n'est détruit |
+| « Fermer » un sujet | pose un statut, réversible **trente jours** ; passé ce délai le sujet s'efface |
+| « Ignorer » une conversation | met la **source** en pause, réversible, sur les deux canaux — jamais « Supprimer » ; ce qu'elle portait sans sujet expire comme le reste |
 | « Détacher » un fil e-mail | supprime une **liaison**, pas des messages |
 | Cocher une tâche | pose un état, réversible |
+
+**Une conversation e-mail vidée disparaît ; un fil de messagerie reste.** Un fil e-mail *est*
+son objet (§4) : sans message, il ne veut plus rien dire, et il part avec eux. Une conversation
+de messagerie est un fil continu, sans début ni fin : vidée, elle reste — c'est elle qui retient
+qu'un fil est ignoré, ou comment un groupe a été jugé — et sort seulement des listes, jusqu'à
+son prochain message. Une conversation e-mail **ignorée** qui refuse encore du courrier reste le
+temps qu'elle en refuse : c'est sa sourdine qui travaille.
+
+**Ce qui est expiré ne revient pas.** Un message daté de plus de trente jours ne s'importe plus :
+sans sujet il expirerait aussitôt, et un fournisseur qui rejoue son historique ramènerait ce que
+le nettoyage a effacé pour le faire trier une seconde fois. Relvo n'est pas l'archive : l'original
+reste dans la boîte ou sur le téléphone, que le nettoyage ne touche jamais.
+
+Le nettoyage passe **une fois par jour**, compte par compte, et sait dire d'avance ce qu'il
+retirerait — par les mêmes filtres. Son passage est **armé par un interrupteur** de
+l'application ; tant qu'il ne l'est pas, il simule, et rien à l'écran ne promet ce qui n'a pas
+lieu.
 
 ⚠️ **La suppression d'un fichier ne passe JAMAIS par la fonction qui supprime la ligne.** Le
 domaine ignore le stockage : un **trigger** pousse la clé d'objet dans une outbox **dans la

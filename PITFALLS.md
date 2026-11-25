@@ -877,3 +877,20 @@ plusieurs milliers en file d'un coup met des semaines à sortir du stockage. La 
   et la drainer à la main (`/api/cron/drain-file-deletions`) plutôt que d'attendre le matin.
 - Une sonde qui baisse n'est pas une sonde saine : regarder l'**âge** de la plus vieille entrée.
 
+### #81 — Une date écrite en dur dans un test de réception finit sous l'horizon du nettoyage
+
+**Symptôme** : un test de réception vert depuis des semaines échoue un matin, sans qu'aucune
+ligne ait changé : `recevoir…` rend `{ ecartee: true, motif: "trop-ancien" }` là où il importait.
+
+**Cause** : la réception refuse tout message daté de plus de trente jours (le nettoyage,
+`domain/nettoyage.ts`, `estTropAncienPourEntrer`). Un `receivedAt: new Date("2026-11-20…")`
+passe la garde le jour où il est écrit, et tombe dessous trente jours plus tard.
+
+**Règle** :
+- Un test qui passe par `recevoir…` date ses messages **relativement à maintenant**
+  (`new Date(Date.now() - n * jour)`), jamais par une date fixe.
+- Un test qui a besoin d'un **vieux** message en base — pour éprouver l'expiration — le pose
+  par la primitive `ingest…`, que la garde ne voit pas, et passe son `now` au nettoyage.
+- Un script qui rejoue du courrier ancien (`pj:rattraper`, une relecture de trou) ne ramène
+  que ce qui est déjà en base ou a moins de trente jours : ce n'est pas une panne.
+

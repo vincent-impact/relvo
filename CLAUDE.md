@@ -83,6 +83,14 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   ni texte, ni pièce, e-mail ou messagerie, ignorée par le dirigeant ou par Relvo. La règle vit
   dans le domaine (`domain/reception.ts`, `recevoir…`) : **tout ce qui reçoit un message d'un
   fournisseur appelle `recevoir…`, jamais `ingest…`** — tenu par `reception-garde.test.ts`.
+- **Le nettoyage efface, jamais un geste** (`04 §11`) : ce qu'aucun sujet ne porte expire à
+  trente jours, un sujet fermé s'efface trente jours après, une conversation e-mail vidée
+  disparaît, un fil de messagerie reste. Les règles vivent dans `domain/nettoyage.ts` — le
+  passage réel et sa simulation lisent **les mêmes filtres** —, le cron du matin les passe
+  (`server/nettoyage.ts`), et **un message de plus de trente jours ne s'importe plus**
+  (`recevoir…`). ⚠️ Armé par `NETTOYAGE_ACTIF` (`lib/nettoyage.ts`) : tant qu'il est faux, le
+  cron simule et l'écran ne promet rien. ⚠️ Un test qui passe par `recevoir…` date ses
+  messages **relativement à maintenant** (`PITFALLS.md` #81).
 - **Aucun accès direct au stockage** : tout passe par le paquet dédié, jamais par un client
   instancié à la main — c'est ce qui garde le fournisseur remplaçable et ce qui évite de recréer
   un client sans les deux réglages obligatoires (`PITFALLS.md` #8). **Une pièce s'ouvre dans
@@ -229,12 +237,12 @@ pnpm db:migrate      # nouvelle migration
 pnpm db:generate     # ⚠️ après TOUTE migration (#33)
 pnpm db:seed         # jeu de démonstration
 pnpm --filter web ia:journal   # le compteur de l'inférence relu : coût, cache, silencieux
-curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/matin   # le cron du matin à la main : drainage, brief, abonnements Gmail, le lundi le relevé de ce que Relvo a ignoré (M25.11), et la première lecture des groupes du jour (M29.5) — la seconde part du cron de la mi-journée, `/api/cron/catch-up`
+curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/matin   # le cron du matin à la main : le nettoyage (simulé tant qu'il n'est pas armé), drainage, brief, abonnements Gmail, le lundi le relevé de ce que Relvo a ignoré (M25.11), et la première lecture des groupes du jour (M29.5) — la seconde part du cron de la mi-journée, `/api/cron/catch-up`
 pnpm --filter web push:essai <e-mail>   # pose une question de test et la pousse (M12.9)
 pnpm --filter web admin:role <e-mail> admin|ceo   # donne ou retire le rôle admin, journalisé (M21.1) — effectif à la prochaine connexion
 pnpm --filter web boites:migrer <e-mail> [adresse]   # propose à un compte de passer une boîte de l'agrégateur au relais Gmail (M24.9) — question poussée, rien ne bascule avant son retour de Google
 pnpm --filter web pj:rattraper <e-mail> [--filtre kiloutou] [--tout] [--simuler]   # relit chez l'agrégateur les e-mails reçus sans pièce jointe et stocke celles qu'il porte
-pnpm --filter web medias:purger [<e-mail>] [--executer]   # retire les pièces et le HTML des conversations IGNORÉES, texte gardé (M25.12) — SIMULATION sans --executer ; irréversible dans Relvo, journalisé par conversation
+pnpm --filter web nettoyage:simuler [<e-mail>]   # SIMULE le nettoyage (04 §11) : ce que le passage du matin retirerait — messages sans sujet de plus de trente jours, leurs pièces, conversations e-mail vidées, sujets fermés ; n'écrit jamais rien. Le passage réel est le cron du matin, armé par `NETTOYAGE_ACTIF` (`apps/web/src/lib/nettoyage.ts`)
 curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/drain-file-deletions   # vide la file de suppression du stockage sans attendre le matin (quatre minutes de drainage, PITFALLS #80)
 pnpm --filter web groupes:juger [<e-mail>] [--executer] [--titres] [--limite N]   # juge une fois les groupes WhatsApp jamais jugés (M29.3) : hors du champ professionnel et sans doute, ignorés — SIMULATION sans --executer ; --titres liste chaque groupe, à réserver à son propre compte
 curl -X POST -H "Authorization: Bearer $CRON_SECRET" <app>/api/groupes/lecture   # lit tout de suite les groupes WhatsApp qui ont parlé depuis leur dernière lecture (M29.5), sans attendre l'un des deux crons — par passes enchaînées, au tarif différé

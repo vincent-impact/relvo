@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Hourglass } from "@/components/shared/picto";
 import {
+  RETENTION_SANS_SUJET_JOURS,
   getSubjectDetail,
   canauxPrioritairesDesContacts,
   listChannels,
@@ -11,6 +12,7 @@ import {
   listFolderOptions,
 } from "@relvo/db";
 import { RelvoHeader } from "@/components/layout/relvo-header";
+import { NETTOYAGE_ACTIF } from "@/lib/nettoyage";
 import { ListPanel } from "@/components/shared/list-panel";
 import { SubjectFolderEyebrow } from "@/components/subject/subject-folder-eyebrow";
 import { jourParis } from "@relvo/db/temps";
@@ -255,7 +257,22 @@ export default async function SujetPage({
                   {subject.status === "validated" ? (
                     <HeroChip>Validé</HeroChip>
                   ) : subject.status === "closed" ? (
-                    <HeroChip>Fermé</HeroChip>
+                    // Un sujet fermé s'efface trente jours après (le
+                    // nettoyage) : la fiche dit quand, tant qu'il est encore
+                    // temps de le rouvrir.
+                    <HeroChip>
+                      Fermé
+                      {NETTOYAGE_ACTIF && subject.closedAt
+                        ? ` · effacé le ${new Date(
+                            subject.closedAt.getTime() +
+                              RETENTION_SANS_SUJET_JOURS * 86_400_000,
+                          ).toLocaleDateString("fr-FR", {
+                            day: "numeric",
+                            month: "long",
+                            timeZone: "Europe/Paris",
+                          })}`
+                        : ""}
+                    </HeroChip>
                   ) : null}
                   {subject.waitingForReply ? (
                     <HeroChip>

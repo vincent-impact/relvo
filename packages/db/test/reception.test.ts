@@ -23,6 +23,10 @@ import {
 // ou écrit par le dirigeant, e-mail ou messagerie ; elle en garde le compte,
 // sans contenu ; et tout le reste entre comme avant.
 
+// Des dates relatives à maintenant : la réception refuse un message de plus de
+// trente jours (le nettoyage), une date écrite en dur finirait par y tomber.
+const ilYA = (jours: number) => new Date(Date.now() - jours * 86_400_000);
+
 let n = 0;
 async function compte(type: "email" | "whatsapp") {
   n += 1;
@@ -75,7 +79,7 @@ describe("recevoir un e-mail", () => {
     const conversationId = premier.message.conversationId;
     await ignoreConversation(db, conversationId, { reason: "advertising" });
 
-    const quand = new Date("2026-11-20T09:00:00Z");
+    const quand = ilYA(5);
     const suite = await recevoirEmailEntrant(db, {
       channelId,
       externalId: "m2",
@@ -86,7 +90,11 @@ describe("recevoir un e-mail", () => {
       contentHtml: "<p>Dernier jour.</p>",
       receivedAt: quand,
     });
-    expect(suite).toEqual({ ecartee: true, conversationId });
+    expect(suite).toEqual({
+      ecartee: true,
+      motif: "ignoree",
+      conversationId,
+    });
     expect(await db.message.count({ where: { conversationId } })).toBe(1);
 
     // Une seconde livraison du même webhook ne compte pas deux fois.
@@ -98,7 +106,7 @@ describe("recevoir un e-mail", () => {
       subjectLine: "RE: Offre de la semaine",
       receivedAt: quand,
     });
-    const plusTard = new Date("2026-11-21T09:00:00Z");
+    const plusTard = ilYA(4);
     await recevoirEmailEntrant(db, {
       channelId,
       externalId: "m3",
@@ -177,7 +185,11 @@ describe("recevoir un e-mail", () => {
       subjectLine: "Re: Dimanche",
       content: "On vient.",
     });
-    expect(envoi).toEqual({ ecartee: true, conversationId });
+    expect(envoi).toEqual({
+      ecartee: true,
+      motif: "ignoree",
+      conversationId,
+    });
     expect(await db.message.count({ where: { conversationId } })).toBe(1);
   });
 
@@ -260,14 +272,22 @@ describe("recevoir un message de messagerie", () => {
       senderRaw: "+33611111111",
       content: "Alors ?",
     });
-    expect(recu).toEqual({ ecartee: true, conversationId });
+    expect(recu).toEqual({
+      ecartee: true,
+      motif: "ignoree",
+      conversationId,
+    });
     const ecrit = await recevoirWhatsAppSortant(db, {
       channelId,
       externalId: "w3",
       externalThreadId: "chat-1",
       content: "Oui.",
     });
-    expect(ecrit).toEqual({ ecartee: true, conversationId });
+    expect(ecrit).toEqual({
+      ecartee: true,
+      motif: "ignoree",
+      conversationId,
+    });
 
     expect(await db.message.count({ where: { conversationId } })).toBe(1);
     expect((await conversationDe(db, conversationId)).unimportedCount).toBe(2);
@@ -398,7 +418,7 @@ describe("ce qu'une conversation ignorée laisse passer se lit", () => {
       (await getConversationThread(db, conversationId)).unimported,
     ).toBeNull();
     await ignoreConversation(db, conversationId);
-    const quand = new Date("2026-11-03T08:00:00Z");
+    const quand = ilYA(20);
     await recevoirWhatsAppEntrant(db, {
       channelId,
       externalId: "w2",

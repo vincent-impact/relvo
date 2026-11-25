@@ -7,6 +7,7 @@ import {
   Pied,
 } from "@/components/site/page-publique";
 import { SITE_URL } from "@/lib/hotes";
+import { NETTOYAGE_ACTIF } from "@/lib/nettoyage";
 import s from "../site/site.module.css";
 
 // La POLITIQUE DE CONFIDENTIALITÉ (M24.10) — `relvo.net/confidentialite`. C'est
@@ -255,9 +256,22 @@ export default function ConfidentialitePage() {
 
           <section>
             <h2>6. Combien de temps</h2>
+            {NETTOYAGE_ACTIF ? (
+              <p>
+                Relvo garde ce qui sert à un sujet, et pas le reste. Un message
+                rangé dans un sujet, et ses pièces jointes, sont conservés tant
+                que ce sujet existe. Un message qu’aucun sujet ne porte est
+                effacé de Relvo trente jours après sa réception, avec ses pièces
+                jointes — il reste dans votre boîte ou sur votre téléphone, que
+                Relvo ne modifie pas. Un sujet que vous fermez sans le valider
+                est effacé trente jours après sa fermeture ; un sujet validé est
+                conservé.
+              </p>
+            ) : null}
             <p>
-              Tant que votre compte existe. Relvo ne supprime rien de lui-même :
-              un sujet fermé reste consultable, un message rangé reste rangé.
+              {NETTOYAGE_ACTIF
+                ? "Pour le reste, tant que votre compte existe."
+                : "Tant que votre compte existe. Relvo ne supprime rien de lui-même : un sujet fermé reste consultable, un message rangé reste rangé."}{" "}
               Quand vous supprimez une boîte, les messages qui en venaient et
               leurs pièces jointes sont effacés. Quand vous demandez la
               suppression de votre compte, ou que nous le fermons à la fin de

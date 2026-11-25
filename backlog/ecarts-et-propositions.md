@@ -1969,6 +1969,51 @@ backoffice, décider avant de télécharger, images et expiration). M25 passe à
 page de suivi n'admet qu'une épique en cours — et reprend après M29. Ce que M25 laisse en
 attente du dirigeant ne change pas : lancer la purge du stock ignoré, sortir du palier gratuit.
 
+### Le nettoyage : ce qui n'a pas de sujet ne reste pas
+
+**`tranché`** · Par le dirigeant, le 2026-11-25, en lisant la mesure du stockage (M25.1) : 82 %
+du poids n'est porté par aucun sujet, dont plus de la moitié dans des conversations que personne
+n'a ignorées. Son constat : les utilisateurs n'ignoreront rien, de peur de manquer quelque
+chose ; mais Relvo sait déjà ce qui compte, puisqu'il rattache un message à un sujet. **Décidé :
+un « nettoyage » en quatre règles**, qui remplace l'expiration des seuls médias (S9, M25.6) et
+la purge manuelle des conversations ignorées (M25.12, livrée la veille, jamais lancée, retirée).
+
+1. **La suppression** — un canal, un compte : tout ce qui en dépend s'efface aussitôt, fichiers
+   compris (le drainage part après le geste, plus au matin). Un sujet supprimé laisse ses
+   conversations. **Le dossier garde son comportement** : son contenu remonte chez son père
+   (confirmé par le dirigeant, contre sa première formulation).
+2. **L'expiration** — un message qu'aucun sujet ne porte est effacé à trente jours, **texte
+   compris**, conversation active ou ignorée. « Rattaché un jour » ne suffit pas : c'est être
+   rattaché **maintenant** qui compte (confirmé). L'assistant avait d'abord recommandé de garder
+   le texte — 2,8 Mo contre 4,16 Go de pièces — ; le dirigeant a maintenu, et l'argument de ne
+   garder que ce qui sert l'emporte sur le gain d'espace.
+3. **L'effacement des sujets fermés** — fermé sans être validé, un sujet s'efface trente jours
+   après. Un sujet validé reste. ⚠️ **Renverse** deux choses écrites : « un sujet fermé n'est
+   jamais purgé » (`04`) et le rejet de S10 (la purge à la clôture). La destruction différée que
+   `04` redoutait est levée en la **disant** : le geste annonce l'échéance, la fiche porte la date.
+4. **L'ignorance** n'efface rien, elle empêche d'accumuler.
+
+**L'e-mail et la messagerie ne se vident pas pareil** (le dirigeant) : une conversation e-mail
+sans message disparaît — un objet vide ne veut rien dire — ; un fil de messagerie reste, c'est
+un fil continu.
+
+**Ce que la mise en œuvre a ajouté**, et qui n'était pas dans ses règles :
+
+- Une conversation e-mail **ignorée** reste tant qu'elle a refusé un courrier dans les trente
+  jours : la supprimer ferait oublier la sourdine, et le courrier suivant serait réimporté et
+  retrié.
+- **Un message daté de plus de trente jours ne s'importe plus** : sans cette garde, un
+  fournisseur qui rejoue son historique ramènerait ce qui a été effacé. ⚠️ Elle est active dès
+  la livraison, armement ou pas — elle n'efface rien.
+- Les coûts d'inférence et les avis de Relvo restent au journal après l'expiration d'un message.
+
+**Livré à l'arrêt.** Le premier passage réel efface d'un coup, sur tous les comptes et sans
+retour : simulé en production le 2026-11-25, 8 487 messages, 2 262 pièces (1,51 Go, un
+cinquième du stockage), 670 conversations e-mail et 5 sujets fermés, sur neuf comptes. Il est
+armé par un interrupteur (`NETTOYAGE_ACTIF`), que l'assistant bascule sur le mot du dirigeant ;
+d'ici là le cron simule, et ni le fil, ni la fiche d'un sujet fermé, ni la politique de
+confidentialité ne promettent ce qui n'a pas lieu.
+
 ### La lecture des groupes : prudente par défaut
 
 **`tranché` par défaut, à régler sur l'usage** · Posé le 2026-11-24 en livrant M29.5, sur la

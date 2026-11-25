@@ -14,6 +14,7 @@ import {
 import { getStorage } from "@relvo/storage";
 import { renouvelerLesAbonnements } from "@/server/gmail/abonnement";
 import { lancerLectureDesGroupes } from "@/server/ia/pipeline/groupes-du-jour";
+import { passerLeNettoyage } from "@/server/nettoyage";
 import { notificationDuMatin } from "@/server/push/brief";
 import { envoyerNotification } from "@/server/push/envoyer";
 import { notifierQuestion } from "@/server/push/questions";
@@ -23,6 +24,9 @@ import { expireTenantData } from "@/server/cached";
 // Paris), déclenché par Vercel Cron (cf. vercel.json). Deux crons au plus sur le
 // plan : celui-ci regroupe ce qui se fait le matin.
 //
+//   0. Le nettoyage (`server/nettoyage`) : les sujets fermés depuis trente
+//      jours s'effacent, ce qu'aucun sujet ne porte depuis trente jours expire.
+//      EN PREMIER : les fichiers qu'il lâche partent au drainage qui suit.
 //   1. Le drainage de l'outbox de suppression de fichiers (M4.6) — la route
 //      `/api/cron/drain-file-deletions` reste appelable à la main.
 //   2. Le brief du matin (M12.7) : pour chaque compte qui a un appareil abonné,
@@ -45,7 +49,7 @@ import { expireTenantData } from "@/server/cached";
 //   curl -H "Authorization: Bearer $CRON_SECRET" https://<app>/api/cron/matin
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 /** Le relevé se pose le lundi, au jour civil français. */
 function estLundiAParis(at: Date): boolean {
@@ -69,10 +73,18 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
   }
 
-  // Vingt secondes de drainage, pas un lot : une purge met des milliers de
-  // clés en file d'un coup (PITFALLS #80). Le reste de la minute est au brief.
+  // Le nettoyage d'abord, sous son budget : un compte non atteint attend
+  // demain. Une erreur ici ne prive personne de son brief.
+  const nettoyage = await passerLeNettoyage({ budgetMs: 90_000 }).catch((e) => {
+    console.error("[cron] matin — nettoyage interrompu", e);
+    return null;
+  });
+  console.info("[cron] matin — nettoyage", nettoyage);
+
+  // Une minute de drainage, pas un lot : le nettoyage met des milliers de clés
+  // en file d'un coup (PITFALLS #80). Le reste est au brief.
   const drainage = await drainFileDeletions(getStorage(), {
-    budgetMs: 20_000,
+    budgetMs: 60_000,
   });
   const remaining = await countPendingFileDeletions();
   console.info("[cron] matin — drainage", { ...drainage, remaining });
@@ -127,6 +139,7 @@ export async function GET(request: Request) {
   console.info("[cron] matin — lecture des groupes lancée", groupes);
 
   return NextResponse.json({
+    nettoyage,
     drainage: { ...drainage, remaining },
     briefs,
     abonnements,

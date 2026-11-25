@@ -7,7 +7,6 @@ import {
   listClesDuStockage,
   mesurerLesPieces,
   prisma,
-  purgerConversationIgnoree,
   recevoirEmailEntrant,
   tenantDb,
 } from "../src/index";
@@ -157,9 +156,9 @@ describe("les clés du stockage", () => {
     expect(cles.connues).toEqual(expect.arrayContaining([aPurger, aGarder]));
     expect(cles.enAttente).not.toContain(aPurger);
 
-    // La purge retire la ligne : la clé passe de « connue » à « en attente ».
-    await ignoreConversation(c.db, promo.conversationId);
-    await purgerConversationIgnoree(c.db, promo.conversationId);
+    // Supprimer la pièce retire sa ligne : la clé passe de « connue » à
+    // « en attente », jusqu'à ce que le drainage efface le fichier.
+    await prisma.attachment.deleteMany({ where: { storageKey: aPurger } });
     cles = await listClesDuStockage();
     expect(cles.connues).toContain(aGarder);
     expect(cles.connues).not.toContain(aPurger);

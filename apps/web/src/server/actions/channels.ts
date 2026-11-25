@@ -28,6 +28,7 @@ import {
   createWhatsAppHostedAuthLink,
 } from "@/server/unipile";
 import { urlsDeConnexion } from "@/server/unipile/retour";
+import { effacerLesFichiersSupprimes } from "@/server/nettoyage";
 
 // Server Actions Channels (M3.6) — onglet Paramètres → Canaux (M5/M6).
 
@@ -55,6 +56,9 @@ export async function updateChannelAction(
 export async function deleteChannelAction(id: string) {
   const result = await domainAction((db) => deleteChannel(db, id));
   if (result.ok) {
+    // Les fichiers du canal quittent le stockage tout de suite, après la
+    // réponse — pas au cron du lendemain (le nettoyage, règle de suppression).
+    effacerLesFichiersSupprimes();
     // Le canal (et ses messages) ont été supprimés en base ; on déconnecte aussi
     // le compte chez son fournisseur s'il y en avait un (best-effort, hors
     // transaction) — l'agrégateur ou le relais Gmail, par le même contrat.

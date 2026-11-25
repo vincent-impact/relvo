@@ -373,4 +373,6 @@ autre canal.
   d'autre. Un geste qui fait deux choses selon l'endroit exact où le doigt tombe est un geste
   qu'on n'ose plus faire.
 - **Il ne valide pas les suggestions de Relvo.** Ouvrir le sujet suffit.
-- **Il ne supprime rien.** Aucun geste courant du produit ne détruit de données.
+- **Il ne supprime rien sur le coup.** Aucun geste courant ne détruit de données ; c'est le
+  nettoyage qui efface, trente jours après, ce qu'aucun sujet ne porte et les sujets fermés
+  (`04 §11`) — et l'écran le dit au moment du geste.

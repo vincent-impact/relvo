@@ -24,6 +24,7 @@ import {
   ingestOutboundWhatsApp,
   ingestOutboundWhatsAppSchema,
 } from "./messages";
+import { estTropAncienPourEntrer } from "./nettoyage";
 import type { WhatsAppChatDirectoryPort } from "./whatsapp-port";
 
 // LA RÉCEPTION (M25.9) — « ignorer, c'est ne plus importer ».
@@ -43,9 +44,28 @@ import type { WhatsAppChatDirectoryPort } from "./whatsapp-port";
 // La garde passe AVANT toute écriture et ne crée jamais de conversation : un
 // fil nouveau, même d'un expéditeur déjà écarté, s'importe — il faut bien le
 // lire une fois pour le juger.
+//
+// SECONDE GARDE, celle du nettoyage (`./nettoyage`) : un message daté de plus
+// de trente jours ne s'importe pas non plus — sans sujet il aurait expiré
+// aussitôt, et c'est ce qui empêche un fournisseur qui rejoue son historique
+// de ramener ce que le nettoyage a effacé. Elle passe en premier et ne compte
+// rien : ce n'est pas un message qu'une conversation refuse, c'est un message
+// trop vieux pour entrer.
 
-/** Le message n'a pas été importé : sa conversation est ignorée. */
-export type ReceptionEcartee = { ecartee: true; conversationId: string };
+/**
+ * Le message n'a pas été importé. `ignoree` : sa conversation est ignorée, et
+ * il y est compté. `trop-ancien` : il date d'avant l'horizon du nettoyage —
+ * aucune conversation n'est désignée.
+ */
+export type ReceptionEcartee =
+  | { ecartee: true; motif: "ignoree"; conversationId: string }
+  | { ecartee: true; motif: "trop-ancien"; conversationId: null };
+
+const TROP_ANCIEN: ReceptionEcartee = {
+  ecartee: true,
+  motif: "trop-ancien",
+  conversationId: null,
+};
 export type Reception<T> = ReceptionEcartee | ({ ecartee: false } & T);
 
 /** Déjà en base : la question ne se pose plus, l'idempotence répondra. */
@@ -168,6 +188,7 @@ export async function recevoirEmailEntrant(
 ): Promise<Reception<Awaited<ReturnType<typeof ingestInboundEmail>>>> {
   const data = ingestInboundEmailSchema.parse(input);
   if (!(await dejaImporte(db, data.channelId, [data.externalId]))) {
+    if (estTropAncienPourEntrer(data.receivedAt)) return TROP_ANCIEN;
     const conversationId = await emailIgnore(db, {
       channelId: data.channelId,
       interlocutorRaw: data.senderRaw,
@@ -181,7 +202,7 @@ export async function recevoirEmailEntrant(
         data.externalId,
         data.receivedAt ?? new Date(),
       );
-      return { ecartee: true, conversationId };
+      return { ecartee: true, motif: "ignoree", conversationId };
     }
   }
   return { ecartee: false, ...(await ingestInboundEmail(db, input)) };
@@ -200,6 +221,7 @@ export async function recevoirEmailSortant(
     !parRelvo &&
     !(await dejaImporte(db, data.channelId, [data.externalId, data.trackingId]))
   ) {
+    if (estTropAncienPourEntrer(data.sentAt)) return TROP_ANCIEN;
     const conversationId = await emailIgnore(db, {
       channelId: data.channelId,
       interlocutorRaw: data.recipients[0],
@@ -213,7 +235,7 @@ export async function recevoirEmailSortant(
         data.externalId,
         data.sentAt ?? new Date(),
       );
-      return { ecartee: true, conversationId };
+      return { ecartee: true, motif: "ignoree", conversationId };
     }
   }
   return { ecartee: false, ...(await ingestOutboundEmail(db, input)) };
@@ -227,6 +249,7 @@ export async function recevoirWhatsAppEntrant(
 ): Promise<Reception<Awaited<ReturnType<typeof ingestInboundWhatsApp>>>> {
   const data = ingestInboundWhatsAppSchema.parse(input);
   if (!(await dejaImporte(db, data.channelId, [data.externalId]))) {
+    if (estTropAncienPourEntrer(data.receivedAt)) return TROP_ANCIEN;
     const conversationId = await filIgnore(db, data);
     if (conversationId) {
       await noterNonImporte(
@@ -235,7 +258,7 @@ export async function recevoirWhatsAppEntrant(
         data.externalId,
         data.receivedAt ?? new Date(),
       );
-      return { ecartee: true, conversationId };
+      return { ecartee: true, motif: "ignoree", conversationId };
     }
   }
   return { ecartee: false, ...(await ingestInboundWhatsApp(db, input, chats)) };
@@ -248,6 +271,7 @@ export async function recevoirWhatsAppSortant(
 ): Promise<Reception<Awaited<ReturnType<typeof ingestOutboundWhatsApp>>>> {
   const data = ingestOutboundWhatsAppSchema.parse(input);
   if (!(await dejaImporte(db, data.channelId, [data.externalId]))) {
+    if (estTropAncienPourEntrer(data.sentAt)) return TROP_ANCIEN;
     const conversationId = await filIgnore(db, data);
     if (conversationId) {
       await noterNonImporte(
@@ -256,7 +280,7 @@ export async function recevoirWhatsAppSortant(
         data.externalId,
         data.sentAt ?? new Date(),
       );
-      return { ecartee: true, conversationId };
+      return { ecartee: true, motif: "ignoree", conversationId };
     }
   }
   return { ecartee: false, ...(await ingestOutboundWhatsApp(db, input)) };

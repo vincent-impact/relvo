@@ -10,6 +10,7 @@ import {
 } from "@relvo/db";
 import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
+import { effacerLesFichiersSupprimes } from "@/server/nettoyage";
 
 // Server Actions Attachments (M3.10). La création vient surtout de l'ingestion
 // (worker) ; les setters IA sont idempotents (cache par niveau).
@@ -36,7 +37,10 @@ export async function setAttachmentAnalysisAction(
 }
 
 export async function deleteAttachmentAction(id: string) {
-  // Le fichier R2 part via l'outbox alimentée par trigger (M4.6) — rien à faire
-  // ici, et surtout pas d'appel réseau dans le chemin de la requête.
-  return domainAction((db) => deleteAttachment(db, id));
+  // Le fichier R2 part via l'outbox alimentée par trigger (M4.6) — jamais par
+  // un appel réseau dans le chemin de la requête : le drainage est lancé après
+  // la réponse, pour que le fichier ne survive pas au geste jusqu'au matin.
+  const result = await domainAction((db) => deleteAttachment(db, id));
+  if (result.ok) effacerLesFichiersSupprimes();
+  return result;
 }

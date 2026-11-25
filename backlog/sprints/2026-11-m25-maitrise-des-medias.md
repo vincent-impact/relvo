@@ -4,8 +4,11 @@
 
 > ▶ **Repris le 2026-11-25**, après les quatre tranches de M29 (`ecarts`, « Les mentions
 > d'abord » ; `2026-11-m29-groupes-et-mentions.md`, dont il ne reste que M29.7, après l'usage).
-> **C'est de nouveau le chantier en cours** : la tranche 5 est livrée, la suite est la tranche 6.
-> Il reste au dirigeant à lancer la purge et à sortir du palier gratuit.
+> **C'est de nouveau le chantier en cours** : la tranche 5 et **le nettoyage** (M25.13) sont
+> livrés, la suite est la tranche 6. ⚠️ **Le nettoyage est livré À L'ARRÊT** : il simule tant
+> que `NETTOYAGE_ACTIF` (`apps/web/src/lib/nettoyage.ts`) est faux ; il se bascule sur le mot du
+> dirigeant, avec la date de la politique de confidentialité. La purge manuelle n'existe plus.
+> Il reste au dirigeant à sortir du palier gratuit.
 
 **Où on en est.** La recette de l'alpha est close et M28 terminée. M24 n'attend plus que la
 vérification Google, entre les mains du dirigeant : son épique est passée à `partiel` pour
@@ -90,17 +93,11 @@ palier gratuit de son côté** (M25.2) : à vérifier avec lui avant de compter 
 
 **Ce qui existe après la tranche 4.**
 
-- **La purge du stock déjà ignoré** (M25.12). `domain/stock-ignore.ts` : `stockIgnoreDuCompte`
-  (la simulation, par conversation), `totalDuStock`, `purgerConversationIgnoree` (une
-  transaction et une entrée de journal `conversation_stock_purged` par conversation ; l'état
-  « ignorée » se relit dans la transaction). Elle retire les pièces et le HTML, garde le
-  texte, ce qu'un sujet porte, et le HTML d'un message sans texte. Test :
-  `packages/db/test/stock-ignore.test.ts`.
-- **Le script** : `pnpm --filter web medias:purger [<e-mail>] [--executer]` — simulation sans
-  `--executer`. **Simulé en production le 2026-11-24** (lecture seule) : 2 067 conversations,
-  3 982 pièces, 2,28 Go — 28 % du stockage —, et le HTML de 2 549 messages, 95 Mo de base,
-  sur dix comptes. ⚠️ **La purge réelle n'est pas lancée** : elle attend l'accord du dirigeant,
-  et c'est lui qui la lance (l'accès de l'assistant à la production est en lecture seule).
+- **La purge du stock déjà ignoré** (M25.12) — livrée ce jour-là en script simulé
+  (`medias:purger`, `domain/stock-ignore.ts`), **retirée le lendemain sans avoir été lancée** :
+  le nettoyage (M25.13) efface à trente jours ce que les conversations ignorées portent, texte
+  compris. Sa simulation du 2026-11-24 reste le repère : 2 067 conversations, 3 982 pièces,
+  2,28 Go.
 - **La file de suppression se vide enfin** (`PITFALLS` #80). Mesuré le même jour : 1 124 clés
   en file depuis le 2026-10-21, sans erreur — le drainage ne prenait que cent clés par jour.
   `drainFileDeletions` travaille maintenant dans un budget de temps (vingt secondes au cron du
@@ -142,6 +139,47 @@ palier gratuit de son côté** (M25.2) : à vérifier avec lui avant de compter 
   Mesuré le 2026-11-25 : 4 099 fichiers en double, 773 Mo, 9,9 % du stockage. **La condition
   de M25.8 est remplie** — la déduplication a de quoi rendre, à peser contre la vidéo, qui
   pèse cinq fois plus.
+
+**Ce qui existe après le nettoyage** (M25.13 ; `ecarts`, « Le nettoyage : ce qui n'a pas de
+sujet ne reste pas » ; `conception/04` §11).
+
+- **Les règles** : `packages/db/src/domain/nettoyage.ts`. Trois filtres écrits une fois —
+  `sujetAEffacer`, `messageExpire`, `conversationEmailVide` — et lus par les deux fonctions :
+  `simulerLeNettoyage` (rien n'est écrit) et `nettoyerLeCompte` (sujets fermés, puis messages,
+  puis conversations e-mail vidées, puis le dernier message de chaque conversation qui a perdu
+  le sien ; un événement `nettoyage` par passage qui retire quelque chose). Test :
+  `packages/db/test/nettoyage.test.ts`.
+- **La garde de la réception** : `estTropAncienPourEntrer` — `recevoir…` rend
+  `{ ecartee: true, motif: "trop-ancien" }` pour un message daté de plus de trente jours qui
+  n'est pas déjà en base. ⚠️ **Active dès la livraison**, armement ou pas.
+- **Le passage** : `apps/web/src/server/nettoyage.ts`, `passerLeNettoyage` — tous les comptes,
+  sous un budget de temps ; le cron du matin le lance EN PREMIER (quatre-vingt-dix secondes),
+  puis draine la file (une minute). `effacerLesFichiersSupprimes` lance le drainage aussitôt
+  après la suppression d'un canal, d'un compte ou d'une pièce.
+- **L'interrupteur** : `NETTOYAGE_ACTIF` (`lib/nettoyage.ts`), faux. Il commande le passage
+  réel **et** ce que l'écran en dit : la mention en tête d'un fil, « Fermé · effacé le … » sur
+  la fiche, le toast de fermeture, le paragraphe « Combien de temps » de la politique de
+  confidentialité.
+- **Voir avant** : `pnpm --filter web nettoyage:simuler [<e-mail>]`, et la section « Le
+  nettoyage » de `/admin/stockage`.
+- **Retiré** : `domain/stock-ignore.ts`, `medias:purger`, l'événement `conversation_stock_purged`.
+- **Simulé en production le 2026-11-25**, lecture seule : 8 487 messages, 2 262 pièces
+  (1,51 Go), 670 conversations e-mail, 5 sujets fermés, neuf comptes touchés.
+
+**Ce que le nettoyage ne fait pas, et qu'il ne faut pas croire fait.**
+
+- **Il n'a jamais tourné pour de bon** : ni en production (à l'arrêt), ni sur une base réelle —
+  seuls les tests d'intégration l'exécutent. Le premier passage est le plus gros qu'il fera.
+- **Le temps du premier passage n'est pas mesuré** : plusieurs milliers de lignes effacées par
+  compte, dans le budget du cron ; un compte non atteint attend le lendemain.
+- **Les fils affichés auront des trous** : dans une conversation de messagerie, ce qui précède
+  l'ouverture d'un sujet n'est porté par rien et expire. La mention en tête du fil le dit.
+- **176 conversations e-mail déjà vides ou datées de travers** ne partent pas au premier
+  passage : leur dernier message est noté récent. Elles partiront quand cette date aura trente
+  jours ; d'ici là elles sont hors des listes.
+- **Le journal garde** les coûts d'inférence et les phrases d'avis de Relvo sur des messages
+  expirés (`event_logs`, 56 Mo) : rien ne les fait expirer.
+- **Les testeurs ne sont pas prévenus** : c'est au dirigeant de le leur dire avant d'armer.
 
 **Ce que la tranche 5 ne fait pas, et qu'il ne faut pas croire fait.**
 
@@ -207,10 +245,14 @@ Chaque tranche est livrée, testée, documentée et poussée.
       la relecture reste à essayer par le dirigeant sur une vraie conversation.
 - [x] Tranche 3 — le filet (M25.11) — livrée le 2026-11-24 ; le relevé se verra au premier
       lundi.
-- [x] Tranche 4 — le stock déjà ignoré (M25.12) — l'outil livré et simulé le 2026-11-24 ;
-      **la purge réelle reste à lancer par le dirigeant**, puis la file à drainer.
+- [x] Tranche 4 — le stock déjà ignoré (M25.12) — l'outil livré et simulé le 2026-11-24,
+      **retiré le 2026-11-25 sans avoir été lancé** : le nettoyage le remplace. Il en reste le
+      drainage de la file par budget de temps.
 - [x] Tranche 5 — mesurer (M25.1) — livrée le 2026-11-25 ; la file de suppression est prouvée
       vide et le bucket sans fichier perdu.
+- [x] Le nettoyage (M25.13, qui remplace M25.6 et M25.12) — livré le 2026-11-25, **à
+      l'arrêt** : à armer sur le mot du dirigeant.
 - [ ] Tranche 6 — décider avant de télécharger (M25.3, M25.5)
-- [ ] Tranche 7 — les images, l'expiration, le quota (M25.4, M25.6, M25.7)
+- [ ] Tranche 7 — les images, le quota (M25.4, M25.7) ; la déduplication (M25.8), dont la
+      mesure a rempli la condition
 - [ ] M25.2 — sortir du palier gratuit, par le dirigeant
