@@ -688,6 +688,23 @@ describe("une mention du dirigeant dans un groupe (M29.4)", () => {
     expect(message("écrire à @vousdeux")).not.toContain("Mention :");
     expect(message("@vous", "sortant")).not.toContain("Mention :");
   });
+
+  it("une réponse à un message du dirigeant est dite comme une réponse, pas comme une interpellation", () => {
+    // La tête qu'écrit le domaine (`avecLaCitation`), à la lettre.
+    const reponse = message(
+      "↪ En réponse à @vous (« Tu peux m'envoyer le devis ? »)\nOui, ce soir",
+    );
+    expect(reponse).toContain(
+      "Réponse : ce message répond à un message du dirigeant",
+    );
+    expect(reponse).not.toContain("Mention :");
+    expect(reponse).toContain("Tu peux m'envoyer le devis ?");
+    // La même tête plus bas dans le texte n'en est pas une ; ni chez le dirigeant.
+    expect(message("Bonjour\n↪ En réponse à @vous")).not.toContain("Réponse :");
+    expect(message("↪ En réponse à @vous\nReçu", "sortant")).not.toContain(
+      "Réponse :",
+    );
+  });
 });
 
 describe("un groupe à juger (M29.3)", () => {

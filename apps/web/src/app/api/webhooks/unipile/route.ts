@@ -18,8 +18,11 @@ import { trierConversation } from "@/server/ia/pipeline/tri";
 import { courrierDepuisUnipile } from "@/server/unipile/courrier";
 import { fournisseurUnipile } from "@/server/unipile/fournisseur";
 import { identiteDuWebhook, toInboundWhatsApp } from "@/server/unipile/map";
-import { mentionDuDirigeant } from "@/server/annuaire-messagerie";
-import { noterIdentites } from "@relvo/db";
+import {
+  mentionDuDirigeant,
+  reponseAuDirigeant,
+} from "@/server/annuaire-messagerie";
+import { noterIdentites, noterReponseAuDirigeant } from "@relvo/db";
 import {
   UNIPILE_AUTH_HEADER,
   verifyWebhookAuth,
@@ -354,7 +357,7 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   // le message sait, sans modèle, s'il mentionne le dirigeant (M29.2).
   const entrant = toInboundWhatsApp(evt, config.channelId);
   await noterIdentites(db, config.channelId, identiteDuWebhook(evt.sender));
-  const mentionsSelf = await mentionDuDirigeant(db, {
+  let mentionsSelf = await mentionDuDirigeant(db, {
     channelId: config.channelId,
     chatId: entrant.externalThreadId ?? null,
     content: entrant.content ?? null,
@@ -368,6 +371,22 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   // médias, que le webhook n'ira donc pas chercher. Le domaine a compté.
   if (recu.ecartee) return ok({ ok: true, ignored: IGNORE[recu.motif] });
   const { message, created } = recu;
+
+  // Une RÉPONSE à un message du dirigeant vaut mention (M29.7) : dans un
+  // groupe, citer son message c'est s'adresser à lui. Jugé après la réception
+  // — un groupe ignoré n'est pas relu chez l'agrégateur —, et avant le tri et
+  // la relecture, qui le lisent.
+  if (created && message.isGroup && !mentionsSelf) {
+    const cite = await reponseAuDirigeant(db, {
+      channelId: config.channelId,
+      chatId: entrant.externalThreadId ?? null,
+      messageExternalId: evt.message_id,
+      quoted: evt.quoted,
+    });
+    if (cite !== null) {
+      mentionsSelf = await noterReponseAuDirigeant(db, message.id, cite);
+    }
+  }
 
   // Médias (M25.3) : DÉCIDER AVANT DE TÉLÉCHARGER — seulement au premier
   // passage. Ce qu'un sujet porte se stocke ; le reste entre comme référence

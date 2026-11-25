@@ -2,9 +2,12 @@
 
 ## Démarrage à froid — à lire en premier
 
-> ⏸ **En attente de l'usage depuis le 2026-11-25** : les quatre tranches sont livrées, il ne
-> reste que M29.7. **Le chantier en cours est de nouveau M25**
-> (`2026-11-m25-maitrise-des-medias.md`, repris à sa tranche 5).
+> ✅ **Tout est construit depuis le 2026-11-25** : les quatre tranches, puis **M29.7** (une
+> réponse à un message du dirigeant vaut mention), livrée le même jour sur le mot du dirigeant
+> (« tu peux lancer la fin de M29 »). **L'épique attend son jugement à l'usage** — elle reste
+> `partiel` tant que le dirigeant ne l'a pas vue sur un vrai groupe. **La suite est notée** :
+> M12.11 (un envoi qui ouvre une conversation se trie) puis M12.12 (les filtres des
+> conversations), `ecarts`.
 >
 > **Constaté en production le 2026-11-25 au matin**, lecture seule : la première lecture des
 > groupes a tourné à 6 h UTC (deux groupes lus, tous deux sans suite, leur repère posé) ; 23
@@ -197,6 +200,48 @@ d'un webhook porte son LID (`attendee_provider_id`), son numéro et son nom.
   groupe reste dû. Le débit réel des passes n'est pas mesuré.
 - Le filet du rattrapage du courrier tourne désormais à la mi-journée, plus la nuit.
 
+**Ce qui existe après M29.7 — la réponse au dirigeant vaut mention** (`ecarts`, « Répondre au
+dirigeant, c'est le mentionner »).
+
+- **La donnée** : `messages.quoted_self_text` (migration
+  `20261125200000_m29_reponse_au_dirigeant`) — l'extrait du message du dirigeant que le
+  message cite ; non nul, il vaut mention (`mentions_self` vrai).
+- **Le domaine** (`domain/annuaire-messagerie.ts`) : `extraitCite` (une ligne, bornée),
+  `avecLaCitation` (la tête « ↪ En réponse à @vous (« … ») », écrite à la LECTURE),
+  `estUnEnvoiDuDirigeant`, `noterReponseAuDirigeant`. Les trois projections que Relvo lit
+  (tri, structuration, relecture) et le fil de l'écran passent par `avecLaCitation`.
+- **La réception** (`server/annuaire-messagerie.ts`, `reponseAuDirigeant` ; webhook de
+  l'agrégateur) : pour un message de groupe **créé**, **sans mention**, après la réception —
+  un groupe ignoré n'est donc jamais relu. Ce qui est cité vient du webhook s'il le porte
+  (`quoted`), sinon d'une relecture du message par l'API. C'est le dirigeant si le message
+  cité est un envoi que Relvo a vu partir, ou si son auteur est « c'est moi » dans l'annuaire
+  (complété par les participants s'il y est inconnu).
+- **Le modèle** (`ia/contexte/couches.ts`) : la ligne « Réponse : ce message répond à un
+  message du dirigeant… » à la place de « Mention : … » — on lui répond plus souvent qu'on ne
+  lui demande.
+- **Éprouvé le 2026-11-25**, lecture seule, sur 120 messages de groupe du dirigeant relus chez
+  l'agrégateur : 14 en citent un autre ; l'auteur cité s'écrit `<chiffres>@lid`, que
+  l'annuaire reconnaît ; 12 des 14 messages cités sont retrouvés en base par leur
+  identifiant ; la relecture d'un message prend environ 0,2 seconde.
+- **Rendu en local** : la bulle porte la tête, « @vous » en violet, avec et sans extrait.
+
+**Ce que M29.7 ne fait pas, et qu'il ne faut pas croire fait.**
+
+- **Personne n'a vu une vraie réponse au dirigeant traverser le chemin** : aucun des 14
+  messages de l'épreuve ne le citait. Chaque maillon est testé seul.
+- **On ne sait pas si le webhook porte `quoted`.** La documentation de l'agrégateur le liste
+  parmi les champs du webhook sans le montrer. S'il ne le porte pas, **chaque message de
+  groupe sans mention coûte une relecture** chez l'agrégateur (0,2 seconde, avant la réponse
+  au webhook) ; s'il le porte, la trace `[citation] dite par le webhook` le dira, et la
+  relecture pourra être retirée.
+- **Seuls les groupes** : dans un fil direct, tout message s'adresse déjà au dirigeant.
+- **Les messages déjà reçus ne sont pas repris** : seuls ceux qui arrivent sont jugés.
+- **Une réponse à un message que le dirigeant a écrit avant de relier son numéro** ne se
+  reconnaît que par l'annuaire — donc seulement si « c'est moi » y est appris.
+- **Le fil ne montre la citation que pour une réponse au dirigeant** : une réponse à
+  quelqu'un d'autre s'affiche sans ce qu'elle cite, comme avant.
+- **La tête est du texte dans la bulle**, pas un encart : même graisse que la réponse.
+
 ## Le plan
 
 1. **« La mention se lit »** — M29.1, M29.2. Livrée.
@@ -209,7 +254,7 @@ d'un webhook porte son LID (`attendee_provider_id`), son numéro et son nom.
    premiers messages ; les groupes déjà connus jugés une fois, par lot.
 4. **« Deux lectures par jour »** — M29.5 : greffées sur les deux crons existants, l'un
    déplacé vers la mi-journée ; jamais un troisième. Livrée.
-5. M29.7 (la réponse qui cite un message du dirigeant vaut mention) — après l'usage.
+5. **« Répondre au dirigeant, c'est le mentionner »** — M29.7. Livrée.
 
 ## Où on en est
 
@@ -221,4 +266,5 @@ d'un webhook porte son LID (`attendee_provider_id`), son numéro et son nom.
       stock reste à lancer par le dirigeant**.
 - [x] Tranche 4 — deux lectures par jour (M29.5) — livrée le 2026-11-24 ; **la première
       lecture réelle est à constater** dans les journaux, et ses sujets à juger par le dirigeant
-- [ ] M29.7 — la réponse qui cite un message du dirigeant
+- [x] M29.7 — la réponse qui cite un message du dirigeant — livrée le 2026-11-25, à constater
+      sur une vraie réponse, et sur ce que le webhook dit du message cité.

@@ -1,17 +1,23 @@
 import { describe, expect, it } from "vitest";
 import {
+  EXTRAIT_CITE_MAX,
   MENTION_VOUS,
   annuaireDesMentions,
+  avecLaCitation,
   cleIdentite,
   ecrireMentions,
+  estUnEnvoiDuDirigeant,
+  extraitCite,
   getConversationThread,
   getTriageProjection,
   idsDesMentions,
   listConversationItems,
   mentionneLeDirigeant,
   noterIdentites,
+  noterReponseAuDirigeant,
   prisma,
   recevoirWhatsAppEntrant,
+  recevoirWhatsAppSortant,
   resoudreMentions,
   tenantDb,
 } from "../src/index";
@@ -220,5 +226,116 @@ describe("un groupe où l'on mentionne le dirigeant", () => {
       (await listConversationItems(db)).items.find((c) => c.id === id)
         ?.mentioned,
     ).toBe(false);
+  });
+});
+
+// LA RÉPONSE AU DIRIGEANT (M29.7) : dans un groupe, citer un message du
+// dirigeant pour y répondre vaut mention. Ce que ces tests tiennent : l'extrait
+// est borné ; la tête s'écrit à la lecture, à la lettre (le contexte du modèle
+// la reconnaît ainsi) ; le message noté est marqué comme une mention, pour la
+// liste, le fil et Relvo ; et « un envoi du dirigeant » se reconnaît à ce que
+// Relvo a vu partir.
+describe("un groupe où l'on répond au dirigeant", () => {
+  it("l'extrait cité tient en une ligne, bornée", () => {
+    expect(extraitCite("  Tu peux\n m'envoyer   le devis ? ")).toBe(
+      "Tu peux m'envoyer le devis ?",
+    );
+    expect(extraitCite(null)).toBe("");
+    const long = extraitCite("a".repeat(EXTRAIT_CITE_MAX + 50));
+    expect(long).toHaveLength(EXTRAIT_CITE_MAX);
+    expect(long.endsWith("…")).toBe(true);
+  });
+
+  it("la tête s'écrit à la lecture — et seulement quand on répond au dirigeant", () => {
+    expect(avecLaCitation("Oui, demain", "Tu peux m'envoyer le devis ?")).toBe(
+      "↪ En réponse à @vous (« Tu peux m'envoyer le devis ? »)\nOui, demain",
+    );
+    // Le message cité n'avait pas de texte (une photo) ; la réponse non plus.
+    expect(avecLaCitation("Reçu", "")).toBe("↪ En réponse à @vous\nReçu");
+    expect(avecLaCitation(null, "")).toBe("↪ En réponse à @vous");
+    expect(avecLaCitation("Bonjour", null)).toBe("Bonjour");
+    expect(avecLaCitation(null, undefined)).toBe("");
+  });
+
+  it("le message noté vaut mention : la liste le marque, le fil et Relvo lisent ce qu'il cite", async () => {
+    const { db, channelId } = await compte();
+    const recu = await recevoirWhatsAppEntrant(db, {
+      channelId,
+      externalId: "r1",
+      externalThreadId: "chat-chantier",
+      senderRaw: "+33612345678",
+      senderName: "Dahmani Eya",
+      isGroup: true,
+      content: "Oui, je te l'envoie ce soir",
+    });
+    if (recu.ecartee) throw new Error("groupe écarté");
+    const id = recu.message.conversationId;
+    expect(
+      (await listConversationItems(db)).items.find((c) => c.id === id)
+        ?.mentioned,
+    ).toBe(false);
+
+    expect(
+      await noterReponseAuDirigeant(
+        db,
+        recu.message.id,
+        "Tu peux m'envoyer\nle devis ?",
+      ),
+    ).toBe(true);
+    // Une seconde fois : déjà noté, rien ne bouge.
+    expect(await noterReponseAuDirigeant(db, recu.message.id, "Autre")).toBe(
+      false,
+    );
+
+    const stocke = await prisma.message.findUniqueOrThrow({
+      where: { id: recu.message.id },
+    });
+    expect(stocke).toMatchObject({
+      mentionsSelf: true,
+      quotedSelfText: "Tu peux m'envoyer le devis ?",
+      // Le texte stocké, lui, n'a pas bougé.
+      content: "Oui, je te l'envoie ce soir",
+    });
+    expect(
+      (await listConversationItems(db)).items.find((c) => c.id === id)
+        ?.mentioned,
+    ).toBe(true);
+
+    const lu =
+      "↪ En réponse à @vous (« Tu peux m'envoyer le devis ? »)\nOui, je te l'envoie ce soir";
+    expect((await getConversationThread(db, id)).messages[0]?.content).toBe(lu);
+    const projection = await getTriageProjection(db, id);
+    expect(projection.conversation.messages[0]?.contenu).toBe(lu);
+    expect(projection.dernierEntrant?.contenu).toBe(lu);
+  });
+
+  it("un envoi du dirigeant se reconnaît à ce que Relvo a vu partir ; son propre message ne se note pas", async () => {
+    const { db, channelId } = await compte();
+    const recu = await recevoirWhatsAppEntrant(db, {
+      channelId,
+      externalId: "e-entrant",
+      externalThreadId: "chat-equipe-2",
+      senderRaw: "+33612345678",
+      isGroup: true,
+      content: "On démarre à quelle heure ?",
+    });
+    if (recu.ecartee) throw new Error("groupe écarté");
+    const envoi = await recevoirWhatsAppSortant(db, {
+      channelId,
+      externalId: "e-sortant",
+      externalThreadId: "chat-equipe-2",
+      content: "7 h sur place",
+    });
+    if (envoi.ecartee || !envoi.message) throw new Error("envoi non entré");
+
+    expect(await estUnEnvoiDuDirigeant(db, "e-sortant")).toBe(true);
+    expect(await estUnEnvoiDuDirigeant(db, "e-entrant")).toBe(false);
+    expect(await estUnEnvoiDuDirigeant(db, "inconnu")).toBe(false);
+    expect(await estUnEnvoiDuDirigeant(db, null)).toBe(false);
+
+    // Le dirigeant qui se cite lui-même ne se mentionne pas.
+    expect(await noterReponseAuDirigeant(db, envoi.message.id, "x")).toBe(
+      false,
+    );
   });
 });

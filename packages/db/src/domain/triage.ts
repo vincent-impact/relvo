@@ -19,7 +19,7 @@ import {
   countUnsortedConversations,
   findListeningSubjectForConversation,
 } from "./conversations";
-import { mentionsLisibles } from "./annuaire-messagerie";
+import { avecLaCitation, mentionsLisibles } from "./annuaire-messagerie";
 import { DomainError, assertFound } from "./errors";
 import {
   arbreOrdonne,
@@ -492,7 +492,8 @@ export async function getTriageProjection(
       expediteur,
       recuLe: (m.receivedAt ?? m.sentAt ?? m.createdAt).toISOString(),
       objet: m.subjectLine,
-      contenu: m.content ?? "",
+      // Une réponse au dirigeant le dit en tête (M29.7).
+      contenu: avecLaCitation(m.content, m.quotedSelfText),
       sens: sortant ? "sortant" : "entrant",
       orphelin: m.subjectId === null && m.status !== MessageStatus.ignored,
     };

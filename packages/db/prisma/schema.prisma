@@ -878,6 +878,10 @@ model Message {
   /// Ce message de messagerie MENTIONNE le dirigeant (M29.2) — posé à la
   /// réception, sans modèle, d'après l'annuaire des identifiants.
   mentionsSelf       Boolean                  @default(false) @map("mentions_self")
+  /// Ce message RÉPOND à un message du dirigeant (M29.7) : l'extrait du message
+  /// qu'il cite — vide quand le message cité n'avait pas de texte. Non nul, il
+  /// vaut mention (`mentionsSelf` est alors vrai). Nul partout ailleurs.
+  quotedSelfText     String?                  @map("quoted_self_text") @db.Text
   status             MessageStatus            @default(received)
   triageHint         TriageHint?              @map("triage_hint")
   /// Vecteur plein texte (français, avec et sans accents) sur l'objet, le nom de

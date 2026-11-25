@@ -105,6 +105,11 @@ d'un message s'affiche — le fil, l'aperçu d'une ligne —, jamais dans ce qui
 message sait dès sa réception s'il mentionne le dirigeant, sans modèle ; la liste des
 conversations marque d'une arobase le fil où il est interpellé tant qu'il ne l'a pas lu.
 
+**Répondre au dirigeant, c'est le mentionner.** Dans un groupe, un message qui cite un message
+du dirigeant pour y répondre s'adresse à lui, même sans « @ » : il vaut mention, et tout ce
+qu'une mention déclenche suit. Le fil le dit en tête de la bulle — « En réponse à @vous », et
+ce qui est cité. Citer quelqu'un d'autre ne déclenche rien.
+
 **Un groupe a trois rythmes de lecture, selon ce qu'il porte.** Sans sujet ouvert, Relvo le lit
 **deux fois par jour**, d'un coup, depuis son repère de lecture — et **aussitôt** quand le
 dirigeant y est mentionné. Dès qu'un sujet l'écoute, il se suit **en direct**, comme un fil :

@@ -14,7 +14,7 @@ import {
 } from "../generated/prisma/enums";
 import type { TenantDb, Tx } from "../tenant";
 import { contactDisplayName } from "./contacts";
-import { mentionsLisibles } from "./annuaire-messagerie";
+import { avecLaCitation, mentionsLisibles } from "./annuaire-messagerie";
 import { DomainError, assertFound } from "./errors";
 import { arbreOrdonne, chaineDe } from "./folders";
 import { EVENT_TYPES, logEvent } from "./events";
@@ -410,6 +410,8 @@ export type SheetMessageRow = {
   createdAt: Date;
   subjectLine: string | null;
   content: string | null;
+  /** L'extrait du message du dirigeant auquel celui-ci répond (M29.7). */
+  quotedSelfText?: string | null;
   attachments: { name: string; aiLabel: string | null }[];
 };
 
@@ -429,7 +431,7 @@ export function projectSheetMessage(
     expediteur,
     recuLe: (m.receivedAt ?? m.sentAt ?? m.createdAt).toISOString(),
     objet: m.subjectLine,
-    contenu: m.content ?? "",
+    contenu: avecLaCitation(m.content, m.quotedSelfText),
     sens: sortant ? ("sortant" as const) : ("entrant" as const),
     piecesJointes: m.attachments.map((a) => ({
       nom: a.name,

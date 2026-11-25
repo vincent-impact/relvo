@@ -15,7 +15,7 @@ import {
 import { Prisma } from "../generated/prisma/client";
 import type { TenantDb, Tx } from "../tenant";
 import { contactDisplayName } from "./contacts";
-import { resoudreMentions } from "./annuaire-messagerie";
+import { avecLaCitation, resoudreMentions } from "./annuaire-messagerie";
 import {
   PIECE_DE_FIL_SELECT,
   type PieceDeFil,
@@ -1345,7 +1345,11 @@ export async function getConversationThread(
     messages: rows.map((m, i) => ({
       id: m.id,
       direction: m.direction,
-      content: mentions.textes[i] ?? m.content,
+      // Une réponse au dirigeant le dit en tête de la bulle (M29.7).
+      content:
+        m.quotedSelfText != null
+          ? avecLaCitation(mentions.textes[i] ?? m.content, m.quotedSelfText)
+          : (mentions.textes[i] ?? m.content),
       contentHtml: m.contentHtml,
       subjectLine: m.subjectLine,
       senderName: m.senderContact

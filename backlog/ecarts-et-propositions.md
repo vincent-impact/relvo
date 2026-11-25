@@ -1969,6 +1969,33 @@ backoffice, décider avant de télécharger, images et expiration). M25 passe à
 page de suivi n'admet qu'une épique en cours — et reprend après M29. Ce que M25 laisse en
 attente du dirigeant ne change pas : lancer la purge du stock ignoré, sortir du palier gratuit.
 
+### Répondre au dirigeant, c'est le mentionner
+
+**`tranché`, à juger à l'usage** · Posé le 2026-11-25 en livrant M29.7, sur le mot du dirigeant
+(« tu peux lancer la fin de M29 ») — l'item attendait « l'usage des premières tranches » ; le
+dirigeant a préféré finir le chantier.
+
+Dans un groupe, un message qui cite un message du dirigeant pour y répondre vaut mention.
+Ce que la mise en œuvre a fixé :
+
+- **Sans modèle, par deux signes** : le message cité est un envoi que Relvo a vu partir, ou
+  son auteur est « c'est moi » dans l'annuaire. Le premier ne dépend d'aucune forme
+  d'identifiant ; le second couvre les messages écrits avant que Relvo ne voie les envois de
+  groupe (entrés depuis le correctif du même jour).
+- **L'extrait cité se garde sur le message qui répond**, pas un lien vers le message cité :
+  le message cité peut ne jamais être entré, ou avoir expiré au nettoyage.
+- **La citation s'écrit à la lecture**, comme une mention : le texte stocké ne change pas, et
+  le fil comme Relvo lisent la même tête, « En réponse à @vous ».
+- **Le modèle est prévenu autrement que pour une mention** : on répond au dirigeant plus
+  souvent qu'on ne lui demande, et une réponse à sa question n'est pas une tâche.
+- **Seuls les groupes, et seulement après la réception** : un groupe ignoré n'est pas relu.
+- **Le webhook d'abord, l'API sinon** : la documentation de l'agrégateur liste le message
+  cité parmi les champs du webhook sans le montrer, et personne ne l'y a vu. Plutôt que de
+  parier, la réception relit le message quand le webhook n'en dit rien. À retirer dès qu'une
+  trace montre que le webhook le porte.
+
+Éprouvé en lecture seule sur 120 messages de groupe du dirigeant : 14 en citent un autre.
+
 ### Le quota et la déduplication : un filet, et un fichier par contenu
 
 **`tranché` par défaut, à régler sur l'usage** · Posé le 2026-11-25 en livrant la tranche 7 de
@@ -2537,6 +2564,40 @@ choix faits en livrant : la personne se résout aussi parmi les **expéditeurs s
 contact ne naît qu'à l'ouverture d'un sujet, et le message cherché était justement hors sujet ;
 et Relvo **désigne** par un outil (`show_messages`), ce qui coûte un aller-retour au modèle par
 message montré — le prix d'un fil qui ne montre que la réponse.
+
+### Un envoi qui ouvre une conversation se trie comme un message reçu
+
+**`tranché`, à construire** · Demandé par le dirigeant le 2026-11-25, noté pour la suite
+(M12.11). Ce qu'il vit : il écrit un e-mail — un nouvel objet, une nouvelle personne — ou un
+message WhatsApp, en comptant que Relvo en fasse un sujet. Le message entre bien, il le
+retrouve dans ses conversations à trier ; mais **il n'est jamais trié** : ni sujet ouvert, ni
+rattachement, ni « rien à faire ». Ses mots : « ça c'est grave ».
+
+Vérifié dans le code le même jour : c'est une règle écrite, pas un accident. Un message envoyé
+d'ailleurs **relit** le sujet qui le capte (`05` §4.1), mais « un envoi sans sujet reste dans
+sa conversation : rien ne se trie sur un envoi seul » (`server/courrier/reception.ts`) ; côté
+messagerie, l'écho d'un envoi du téléphone ne déclenche la relecture que si un sujet le porte
+(`api/webhooks/unipile/route.ts`), et le tri d'un fil direct ne se joue que sur son dernier
+message **entrant** (`pipeline/tri.ts`).
+
+**Décision** : la règle tombe. Un message que le dirigeant envoie dans une conversation
+qu'aucun sujet ne porte se trie comme un message reçu — ouvrir un sujet, rejoindre un sujet
+existant, ou ne rien faire. **À régler en construisant** : ce que le tri lit quand le fil ne
+contient que l'envoi (le correspondant n'a encore rien dit) ; à qui va la tâche née d'un envoi
+(souvent une attente de réponse, pas une tâche de réponse) ; la salve, côté messagerie ; les
+groupes, où l'envoi du dirigeant ne fait aujourd'hui lire que si un sujet écoute ; et le coût
+— chaque envoi hors sujet devient un appel.
+
+### Les filtres des conversations : trois sélecteurs, sur une ligne
+
+**`tranché`, à construire** · Demandé par le dirigeant le 2026-11-25, noté pour la suite
+(M12.12). La page Conversations ne filtre que par canal, avec deux drapeaux (WhatsApp,
+e-mail) : « ce n'est plus suffisant ». **Décision** : trois petits sélecteurs, **sur la même
+ligne** — le **type** (le canal), le **conseil** de Relvo (à traiter, à ignorer, sans avis) et
+la **nature** (professionnel, personnel, publicité, automatique, indésirable). Les valeurs
+sont celles que la liste affiche déjà en badges (`lib/conversation-row.ts`). **À régler en
+construisant** : la place du filtre « Ignorées » existant, et ce que la ligne devient à la
+largeur d'un téléphone.
 
 ### Les documents d'un sujet sont les pièces de ses conversations, par référence
 

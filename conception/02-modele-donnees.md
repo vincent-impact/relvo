@@ -427,6 +427,13 @@ qui porte des données passées ne se récupère pas.
 réception, sans modèle, d'après l'annuaire des identifiants (ci-dessous) ; la liste des
 conversations s'en sert pour marquer un fil où l'on interpelle le dirigeant sans qu'il l'ait lu.
 
+**`quoted_self_text`** dit qu'un message de groupe **répond au dirigeant** : c'est l'extrait du
+message du dirigeant qu'il cite — vide quand ce message n'avait pas de texte —, nul partout
+ailleurs. Répondre au dirigeant vaut mention : le champ ne se pose jamais sans `mentions_self`.
+Il se pose à la réception, sans modèle : le message cité est un envoi que Relvo a vu partir, ou
+son auteur est le dirigeant dans l'annuaire. Le texte du message, lui, ne change pas : la
+citation s'écrit à la lecture.
+
 ## MessagingIdentity
 
 **L'annuaire des identifiants de messagerie.** Dans un groupe, une mention s'écrit « @ » suivi

@@ -2,6 +2,12 @@
 
 ## Démarrage à froid — à lire en premier
 
+> ⏭ **La suite, notée par le dirigeant le 2026-11-25** : M25 et M29 sont construites en entier
+> et attendent son jugement à l'usage. **Le prochain à construire est M12.11** — un envoi qui
+> ouvre une conversation se trie comme un message reçu (« ça c'est grave ») —, puis
+> **M12.12**, les trois sélecteurs de la page Conversations. Les deux décisions sont dans
+> `ecarts`, en fin de « Décisions tranchées ».
+
 > ▶ **Repris le 2026-11-25**, après les quatre tranches de M29 (`ecarts`, « Les mentions
 > d'abord » ; `2026-11-m29-groupes-et-mentions.md`, dont il ne reste que M29.7, après l'usage).
 > **C'est de nouveau le chantier en cours** : la tranche 5, **le nettoyage** (M25.13) et **la

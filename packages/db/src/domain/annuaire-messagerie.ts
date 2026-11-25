@@ -1,3 +1,4 @@
+import { MessageDirection } from "../generated/prisma/enums";
 import type { TenantDb } from "../tenant";
 
 // L'ANNUAIRE DES IDENTIFIANTS DE MESSAGERIE (M29.1) — et les mentions (M29.2).
@@ -207,4 +208,83 @@ export async function mentionsLisibles<T extends { contenu: string }>(
     messages.map((m) => m.contenu),
   );
   return messages.map((m, i) => ({ ...m, contenu: textes[i] ?? m.contenu }));
+}
+
+// ─────────────────────────────────────────────────────────────
+// LA RÉPONSE AU DIRIGEANT (M29.7) — dans un groupe, répondre à un message du
+// dirigeant en le citant, c'est s'adresser à lui : cela VAUT MENTION. Le
+// message garde l'extrait de ce qu'il cite (`quotedSelfText`) et porte
+// `mentionsSelf` — tout ce qu'une mention déclenche suit sans autre règle.
+//
+// Qui est cité se juge sans modèle, de deux façons : le message cité est un
+// envoi que Relvo a vu partir (`estUnEnvoiDuDirigeant`), ou son auteur est
+// « c'est moi » dans l'annuaire du canal (`cleIdentite`, `annuaireDesMentions`).
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Ce qui s'écrit en tête d'un message qui répond au dirigeant. ⚠️ Le contexte
+ * donné au modèle reconnaît cette tête à la lettre (`ia/contexte/couches.ts`,
+ * `REPOND_AU_DIRIGEANT`) — les deux tests la citent en clair.
+ */
+export const REPONSE_A_VOUS = `↪ En réponse à ${MENTION_VOUS}`;
+
+/** Un extrait suffit à dire de quoi l'on parle — pas le message entier. */
+export const EXTRAIT_CITE_MAX = 280;
+
+/** L'extrait d'un message cité : une ligne, bornée. Vide si le message n'avait pas de texte. */
+export function extraitCite(texte: string | null | undefined): string {
+  const ligne = (texte ?? "").replace(/\s+/g, " ").trim();
+  return ligne.length <= EXTRAIT_CITE_MAX
+    ? ligne
+    : `${ligne.slice(0, EXTRAIT_CITE_MAX - 1).trimEnd()}…`;
+}
+
+/**
+ * Le contenu d'un message tel qu'il se LIT, par le dirigeant comme par
+ * Relvo : s'il répond au dirigeant, une première ligne le dit et rappelle ce
+ * qui est cité. Le texte stocké ne change pas.
+ */
+export function avecLaCitation(
+  contenu: string | null | undefined,
+  quotedSelfText: string | null | undefined,
+): string {
+  const texte = contenu ?? "";
+  if (quotedSelfText == null) return texte;
+  const tete = quotedSelfText
+    ? `${REPONSE_A_VOUS} (« ${quotedSelfText} »)`
+    : REPONSE_A_VOUS;
+  return texte ? `${tete}\n${texte}` : tete;
+}
+
+/** Ce message — par son identifiant chez le fournisseur — est-il un envoi du dirigeant ? */
+export async function estUnEnvoiDuDirigeant(
+  db: TenantDb,
+  externalId: string | null | undefined,
+): Promise<boolean> {
+  if (!externalId) return false;
+  const envoi = await db.message.findFirst({
+    where: { externalId, direction: MessageDirection.outgoing },
+    select: { id: true },
+  });
+  return envoi !== null;
+}
+
+/**
+ * Note qu'un message REÇU répond au dirigeant : l'extrait de ce qu'il cite, et
+ * la mention que cela vaut. Sans effet sur un message envoyé, ou déjà noté.
+ */
+export async function noterReponseAuDirigeant(
+  db: TenantDb,
+  messageId: string,
+  texteCite: string | null | undefined,
+): Promise<boolean> {
+  const { count } = await db.message.updateMany({
+    where: {
+      id: messageId,
+      direction: MessageDirection.incoming,
+      quotedSelfText: null,
+    },
+    data: { quotedSelfText: extraitCite(texteCite), mentionsSelf: true },
+  });
+  return count > 0;
 }

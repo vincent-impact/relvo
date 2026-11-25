@@ -79,6 +79,12 @@ export function trierParDate<T extends { recuLe: string }>(
   return [...xs].sort((a, b) => a.recuLe.localeCompare(b.recuLe));
 }
 
+/**
+ * La tête qu'écrit le domaine sur un message qui répond au dirigeant (M29.7,
+ * `domain/annuaire-messagerie`, `REPONSE_A_VOUS`) — reconnue à la lettre.
+ */
+const REPOND_AU_DIRIGEANT = /^↪ En réponse à @vous(?![\p{L}\p{N}_])/u;
+
 /** Un message, nettoyé et délimité comme donnée. Les délimiteurs sont neutralisés dans le contenu. */
 export function blocMessage(
   m: MessageContexte,
@@ -97,9 +103,15 @@ export function blocMessage(
     // « @vous » : le domaine l'écrit à la place de l'identifiant du dirigeant
     // quand on le mentionne dans un groupe (M29.4). Le modèle doit le savoir
     // interpellé — c'est ce qui fait la tâche.
-    m.sens !== "sortant" && /@vous(?![\p{L}\p{N}_])/u.test(m.contenu)
-      ? `Mention : le dirigeant est interpellé nommément (« @vous ») — ce qu'on lui demande ainsi est une tâche pour lui ; un simple remerciement n'en est pas une`
-      : null,
+    // Une RÉPONSE à un message du dirigeant vaut mention (M29.7) — mais on
+    // lui répond plus souvent qu'on ne lui demande : la ligne le dit.
+    m.sens === "sortant"
+      ? null
+      : REPOND_AU_DIRIGEANT.test(m.contenu)
+        ? `Réponse : ce message répond à un message du dirigeant, rappelé en tête (« @vous ») — ce qu'on lui demande ainsi est une tâche pour lui ; une simple réponse à sa question, un accord ou un remerciement n'en est pas une`
+        : /@vous(?![\p{L}\p{N}_])/u.test(m.contenu)
+          ? `Mention : le dirigeant est interpellé nommément (« @vous ») — ce qu'on lui demande ainsi est une tâche pour lui ; un simple remerciement n'en est pas une`
+          : null,
     m.piecesJointes?.length
       ? `Pièces jointes : ${m.piecesJointes.map((p) => (p.etiquette ? `${p.nom} (${p.etiquette})` : p.nom)).join(", ")}`
       : null,

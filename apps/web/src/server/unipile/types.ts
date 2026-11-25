@@ -134,6 +134,26 @@ export type UnipileMessagingWebhook = {
   account_type?: string | null;
   /** Horodatage ISO 8601 (ou epoch selon la source). */
   timestamp?: string | number | null;
+  /**
+   * Le message auquel celui-ci répond (M29.7). ⚠️ Le webhook est déclaré le
+   * porter, mais personne ne l'y a encore vu : ABSENT (`undefined`) veut dire
+   * « le webhook ne le dit pas », et la réception le relit alors par l'API —
+   * `null` voudrait dire « il ne cite rien ».
+   */
+  quoted?: UnipileQuoted | null;
+};
+
+/**
+ * Le message cité par une réponse. `sender_id` est l'identifiant interne de
+ * son auteur (« 2653…@lid ») ; `message_id`, son identifiant chez
+ * l'agrégateur — celui que Relvo garde en `Message.externalId`. Vu sur de
+ * vrais messages relus par l'API.
+ */
+export type UnipileQuoted = {
+  message_id?: string | null;
+  provider_id?: string | null;
+  sender_id?: string | null;
+  text?: string | null;
 };
 
 /**
@@ -268,6 +288,8 @@ export type UnipileMessageApi = {
   id: string;
   attachments?: UnipileMessageAttachmentApi[] | null;
   original?: string | null;
+  /** Le message auquel celui-ci répond, s'il en cite un (M29.7). */
+  quoted?: UnipileQuoted | null;
 };
 
 /** Un participant d'un fil : identifiant interne, numéro, nom, « c'est moi ». */
