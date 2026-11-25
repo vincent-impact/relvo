@@ -5,7 +5,8 @@
 > ⏭ **La suite, notée par le dirigeant le 2026-11-25** : M25 et M29 sont construites en entier
 > et attendent son jugement à l'usage. **Le prochain à construire est M12.11** — un envoi qui
 > ouvre une conversation se trie comme un message reçu (« ça c'est grave ») —, puis
-> **M12.12**, les trois sélecteurs de la page Conversations. Les deux décisions sont dans
+> **M12.12**, les trois sélecteurs de la page Conversations, puis **M8.7**, le message vocal
+> transcrit à la réception pour qu'il participe au tri. Les trois décisions sont dans
 > `ecarts`, en fin de « Décisions tranchées ».
 
 > ▶ **Repris le 2026-11-25**, après les quatre tranches de M29 (`ecarts`, « Les mentions

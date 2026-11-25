@@ -2599,6 +2599,25 @@ sont celles que la liste affiche déjà en badges (`lib/conversation-row.ts`). *
 construisant** : la place du filtre « Ignorées » existant, et ce que la ligne devient à la
 largeur d'un téléphone.
 
+### Un message vocal se lit comme un message écrit
+
+**`tranché`, à construire** · Demandé par le dirigeant le 2026-11-25, noté pour la suite après
+M12.11 et M12.12 : « être capable de lire un vocal dans un message aussi bien qu'un message
+textuel afin de pouvoir participer au mécanisme de tri ». C'est l'item **M8.7**, qui existait
+sans date ; M20.3 (l'écouter et le lire dans le fil) en dépend.
+
+Aujourd'hui un vocal entre sans texte : le tri ne lit de lui que le nom de sa pièce, donc
+rien. **Décision** : le vocal est transcrit à la réception, sa transcription devient le
+contenu du message, et le tri, la relecture et la structuration le lisent comme un message
+écrit. **Ce qui est déjà en place** : un vocal est toujours stocké, sujet ou pas (M25.3 — c'est
+pour cela qu'il l'est) ; le message sait dire que son contenu est transcrit
+(`content_origin`) ; la transcription existe pour la dictée (M22, `server/ia/dictee`). **À
+régler en construisant** : le coût, proportionnel à la durée — à mesurer avant de figer le
+modèle, et à inscrire au compteur et au plafond d'inférence (M8.7, M20.6) ; un plafond de
+durée ; l'ordre avec la salve (le tri doit attendre la transcription) ; les vocaux d'un groupe
+qu'aucun sujet n'écoute (lus deux fois par jour : transcrits à la réception, ou seulement à la
+lecture ?) ; un vocal au quota, qui reste une référence ; et ce que le fil montre.
+
 ### Les documents d'un sujet sont les pièces de ses conversations, par référence
 
 **`tranché`** · Par le dirigeant, le 2026-11-11, après avoir envisagé l'inverse le même jour

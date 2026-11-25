@@ -25,7 +25,7 @@ fin: 2026-12-04
 | M8.4 | Stratégie de cache : l'horodatage **est** le drapeau — jamais deux appels pour un même document au même niveau                                                       |
 | M8.5 | Badge d'étiquette à côté du nom du fichier                                                                                                                           |
 | M8.6 | Étiquette de niveau 1 sur une **image**, par vision — ⚠️ coût à benchmarker avant de figer le tier                                                                   |
-| M8.7 | **Transcription des messages vocaux** à la réception ; l'audio reste une pièce jointe — ⚠️ coût proportionnel à la durée, à benchmarker et à inscrire au disjoncteur |
+| M8.7 | **Transcription des messages vocaux** à la réception ; l'audio reste une pièce jointe — ⚠️ coût proportionnel à la durée, à benchmarker et à inscrire au disjoncteur. **Demandé par le dirigeant le 2026-11-25** : un vocal doit se lire comme un message écrit et **participer au tri** (`ecarts`, « Un message vocal se lit comme un message écrit ») — à construire après M12.11 et M12.12 |
 
 **Pourquoi l'étiquette a de la valeur alors que le résumé peut attendre.** Un nom de fichier est
 souvent illisible — un scan numéroté, un export automatique. L'étiquette rend la pièce jointe

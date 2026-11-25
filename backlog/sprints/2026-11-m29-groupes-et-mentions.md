@@ -6,8 +6,8 @@
 > réponse à un message du dirigeant vaut mention), livrée le même jour sur le mot du dirigeant
 > (« tu peux lancer la fin de M29 »). **L'épique attend son jugement à l'usage** — elle reste
 > `partiel` tant que le dirigeant ne l'a pas vue sur un vrai groupe. **La suite est notée** :
-> M12.11 (un envoi qui ouvre une conversation se trie) puis M12.12 (les filtres des
-> conversations), `ecarts`.
+> M12.11 (un envoi qui ouvre une conversation se trie), M12.12 (les filtres des
+> conversations), puis M8.7 (un vocal se lit comme un message écrit), `ecarts`.
 >
 > **Constaté en production le 2026-11-25 au matin**, lecture seule : la première lecture des
 > groupes a tourné à 6 h UTC (deux groupes lus, tous deux sans suite, leur repère posé) ; 23

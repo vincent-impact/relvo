@@ -50,7 +50,7 @@ frontmatter l'est.
 | **[M26 — Des chiffres vrais](epics/M26-chiffres-vrais.md)**                | ⬜ recette de l'alpha                            | —                               |
 | [M11 — Connaissances](epics/M11-connaissances.md)                          | ⬜                                               | M7, M10                         |
 | **[M10 — Échange avec Relvo](epics/M10-echange-relvo.md)**                 | ✅ — le déclencheur du script à la connexion d'un canal est M7.19 | M13                             |
-| [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md)                    | ⬜                                               | —                               |
+| [M8 — Pièces jointes IA](epics/M8-pieces-jointes-ia.md)                    | ⬜ — **M8.7 (le vocal transcrit, qui participe au tri) demandé par le dirigeant le 2026-11-25**, après M12.11 et M12.12 | —                               |
 | [M17 — Mémoire et apprentissage](epics/M17-memoire-apprentissage.md)       | ⬜                                               | la qualité du tri dans la durée |
 | [M20 — Les usages de la messagerie](epics/M20-usages-messagerie.md)        | ⬜ après M7 et M10                               | —                               |
 | [M12 — Mécanismes transverses](epics/M12-transverses.md)                   | 🟡 partiellement livré au fil de l'eau — **M12.11 puis M12.12 sont les prochains à construire** (demandés par le dirigeant le 2026-11-25) | —                               |
