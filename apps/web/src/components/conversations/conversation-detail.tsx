@@ -573,7 +573,7 @@ export function ConversationDetail({
                 phrase qui dit « rien » prendrait la place d'un message. */}
             {!activeListening && (relvo || ignore) ? (
               <div className="rounded-xl border border-white/15 bg-white/10 px-3 py-2">
-                <AvisDuFil relvo={relvo} ignore={ignore} />
+                <AvisDuFil relvo={relvo} ignore={ignore} canal={channelType} />
               </div>
             ) : null}
 

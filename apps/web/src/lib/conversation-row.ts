@@ -46,9 +46,20 @@ export const NATURE_LABELS: Record<NatureCle, string> = {
   professional: "Professionnel",
   personal: "Personnel",
   advertising: "Publicité",
-  automatic: "Automatique",
+  automatic: "E-mail automatique",
   unwanted: "Indésirable",
 };
+
+/**
+ * La nature, dite pour le canal de la conversation. « Automatique » tout seul
+ * ne disait pas quoi : sur un e-mail c'est un « E-mail automatique » ; sur un
+ * fil de messagerie — une notification de livraison, un code de connexion —
+ * un « Message automatique ». Les autres natures se disent pareil partout.
+ */
+export function libelleDeNature(nature: NatureCle, canal: string): string {
+  if (nature === "automatic" && canal !== "email") return "Message automatique";
+  return NATURE_LABELS[nature];
+}
 
 /** L'avis de Relvo, prêt à afficher — sérialisable (le temps est préformaté). */
 export type RelvoVerdictData = {

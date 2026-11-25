@@ -296,6 +296,7 @@ function ConversationRow({
             <AvisBadges
               relvo={data.relvo}
               ignore={data.ignore}
+              canal={data.channelType}
               className="mt-1.5"
             />
           ) : null}

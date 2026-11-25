@@ -3,6 +3,7 @@ import type { ConversationTriage } from "@relvo/db";
 import {
   CONSEIL_LABELS,
   NATURE_LABELS,
+  libelleDeNature,
   toIgnoreData,
   toRelvoVerdictData,
 } from "@/lib/conversation-row";
@@ -50,10 +51,19 @@ describe("le conseil de Relvo", () => {
       professional: "Professionnel",
       personal: "Personnel",
       advertising: "Publicité",
-      automatic: "Automatique",
+      automatic: "E-mail automatique",
       unwanted: "Indésirable",
     });
     expect(toRelvoVerdictData(avis("noise", null))?.nature).toBeNull();
+  });
+
+  it("« automatique » se dit pour le canal, les autres natures pareil partout", () => {
+    expect(libelleDeNature("automatic", "email")).toBe("E-mail automatique");
+    expect(libelleDeNature("automatic", "whatsapp")).toBe(
+      "Message automatique",
+    );
+    expect(libelleDeNature("advertising", "whatsapp")).toBe("Publicité");
+    expect(libelleDeNature("professional", "email")).toBe("Professionnel");
   });
 });
 

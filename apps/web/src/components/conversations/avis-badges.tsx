@@ -14,7 +14,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   CONSEIL_LABELS,
-  NATURE_LABELS,
+  libelleDeNature,
   SANS_AVIS,
   type Conseil,
   type IgnoreData,
@@ -86,14 +86,17 @@ function Etiquette({
 
 function BadgeNature({
   nature,
+  canal,
   ciel = false,
 }: {
   nature: NatureCle;
+  /** Le canal de la conversation : la nature se dit pour lui (`libelleDeNature`). */
+  canal: string;
   ciel?: boolean;
 }) {
   return (
     <Etiquette icon={NATURE_PICTOS[nature]} ton={ciel ? "ciel" : "relvo"}>
-      {NATURE_LABELS[nature]}
+      {libelleDeNature(nature, canal)}
     </Etiquette>
   );
 }
@@ -113,10 +116,13 @@ function BadgeConseil({ conseil }: { conseil: Conseil }) {
 export function AvisBadges({
   relvo,
   ignore,
+  canal,
   className,
 }: {
   relvo: RelvoVerdictData | null;
   ignore: IgnoreData | null;
+  /** `email` | `whatsapp` — la nature se dit pour le canal. */
+  canal: string;
   className?: string;
 }) {
   const rangee = cn("flex min-w-0 items-center gap-1.5", className);
@@ -130,7 +136,7 @@ export function AvisBadges({
           </Etiquette>
         )}
         {ignore.nature ? (
-          <BadgeNature nature={ignore.nature} />
+          <BadgeNature nature={ignore.nature} canal={canal} />
         ) : ignore.byRelvo ? (
           // Ignorée par Relvo sans nature posée : le badge dit au moins par qui.
           <Etiquette icon={EyeSlash} ton="relvo">
@@ -154,7 +160,9 @@ export function AvisBadges({
   return (
     <div className={rangee}>
       <BadgeConseil conseil={relvo.conseil} />
-      {relvo.nature ? <BadgeNature nature={relvo.nature} /> : null}
+      {relvo.nature ? (
+        <BadgeNature nature={relvo.nature} canal={canal} />
+      ) : null}
     </div>
   );
 }
@@ -168,9 +176,12 @@ export function AvisBadges({
 export function AvisDuFil({
   relvo,
   ignore,
+  canal,
 }: {
   relvo: RelvoVerdictData | null;
   ignore: IgnoreData | null;
+  /** `email` | `whatsapp` — la nature se dit pour le canal. */
+  canal: string;
 }) {
   if (!relvo && !ignore) return null;
   const phrase = ignore
@@ -186,12 +197,16 @@ export function AvisDuFil({
             <Etiquette icon={EyeSlash} ton="ciel">
               {ignore.byRelvo ? "Ignorée par Relvo" : "Ignorée par vous"}
             </Etiquette>
-            {ignore.nature ? <BadgeNature nature={ignore.nature} ciel /> : null}
+            {ignore.nature ? (
+              <BadgeNature nature={ignore.nature} canal={canal} ciel />
+            ) : null}
           </>
         ) : (
           <>
             <BadgeConseil conseil={relvo!.conseil} />
-            {relvo!.nature ? <BadgeNature nature={relvo!.nature} ciel /> : null}
+            {relvo!.nature ? (
+              <BadgeNature nature={relvo!.nature} canal={canal} ciel />
+            ) : null}
           </>
         )}
       </div>
