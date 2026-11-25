@@ -370,6 +370,38 @@ describe("ingestOutboundWhatsApp — la réponse envoyée depuis le téléphone"
     expect(inconnu).toEqual({ message: null, created: false });
   });
 
+  it("dans un groupe qu'un sujet écoute, rejoint le sujet et coche la tâche de réponse", async () => {
+    const { channel, db } = await makeAccountWithChannel(
+      "wa-out-groupe-sujet@test.fr",
+    );
+    const { message: entrant } = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "grp-s-in-1",
+      externalThreadId: "chantier@g.us",
+      senderRaw: "33600000020@s.whatsapp.net",
+      senderName: "Karim Benali",
+      isGroup: true,
+      content: "Tu valides le devis de la dalle ?",
+    });
+    const subject = await createSubjectFromMessage(db, entrant.id);
+    const tache = await createTask(db, {
+      subjectId: subject.id,
+      title: "Répondre sur le devis de la dalle",
+      kind: "reply",
+    });
+
+    const { message } = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "grp-s-out-1",
+      externalThreadId: "chantier@g.us",
+      content: "Validé, vous pouvez commander",
+    });
+    expect(message?.conversationId).toBe(entrant.conversationId);
+    expect(message?.subjectId).toBe(subject.id);
+    const t = await db.task.findFirstOrThrow({ where: { id: tache.id } });
+    expect(t.status).toBe("done");
+  });
+
   it("ne duplique jamais l'écho d'un envoi fait depuis Relvo, ni un rejeu", async () => {
     const { channel, db } = await makeAccountWithChannel("wa-echo@test.fr");
     const { message: entrant } = await ingestInboundWhatsApp(db, {
