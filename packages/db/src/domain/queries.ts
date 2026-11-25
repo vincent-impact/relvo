@@ -10,6 +10,7 @@ import {
 import { Actor, SubjectStatus } from "../generated/prisma/enums";
 import type { TenantDb } from "../tenant";
 import { contactDisplayName } from "./contacts";
+import { PAS_UNE_TRACE, PIECE_DE_FIL_SELECT } from "./attachments";
 import { loadFolderTree, presentationDe } from "./folders";
 import { resolveReplyTargets } from "./brouillon";
 import { countUnsortedConversations } from "./conversations";
@@ -479,7 +480,10 @@ export async function enrichSubjects(
       // référence : on lit le sujet du message, jamais la colonne recopiée
       // sur la pièce, qui peut avoir dérivé.
       db.attachment.findMany({
-        where: { message: { is: { subjectId: { in: ids } } } },
+        where: {
+          message: { is: { subjectId: { in: ids } } },
+          ...PAS_UNE_TRACE,
+        },
         select: { message: { select: { subjectId: true } } },
       }),
       db.message.findMany({
@@ -585,9 +589,7 @@ export async function getSubjectDetail(db: TenantDb, id: string) {
         include: {
           channel: { select: { type: true } },
           senderContact: { select: { firstName: true, lastName: true } },
-          attachments: {
-            select: { id: true, name: true, aiLabel: true, mimeType: true },
-          },
+          attachments: { select: PIECE_DE_FIL_SELECT },
         },
       }),
       db.task
@@ -614,8 +616,9 @@ export async function getSubjectDetail(db: TenantDb, id: string) {
         take: 50,
       }),
       // Par référence au message (cf. `enrichSubjects`).
+      // Sans les traces : un autocollant n'est pas un document du sujet.
       db.attachment.findMany({
-        where: { message: { is: { subjectId: id } } },
+        where: { message: { is: { subjectId: id } }, ...PAS_UNE_TRACE },
         orderBy: { createdAt: "desc" },
       }),
       db.action.findFirst({

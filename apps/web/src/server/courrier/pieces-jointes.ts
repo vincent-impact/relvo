@@ -4,6 +4,7 @@ import {
   MAX_FILE_SIZE_BYTES,
   getStorage,
 } from "@relvo/storage";
+import { estUneImageIncorporee } from "@/lib/medias";
 import type { FournisseurCourrier, PieceJointeRef } from "./types";
 
 // Les PIÈCES JOINTES d'un e-mail (M5.4), stockées à l'ingestion — par le
@@ -11,6 +12,10 @@ import type { FournisseurCourrier, PieceJointeRef } from "./types";
 // quel que soit le fournisseur (M24.6). Le fichier vit dans R2, source de
 // vérité ; le fournisseur n'est qu'un transport. Une pièce jointe ratée ne
 // fait jamais échouer l'ingestion du message.
+//
+// Une pièce d'e-mail est un document : elle se stocke toujours — sauf les
+// images INCORPORÉES au corps et légères (logo de signature, pixel de suivi),
+// qui ne sont pas des pièces et ne sont jamais lues (M25.3).
 
 export async function stockerPiecesJointes(
   db: TenantDb,
@@ -30,6 +35,7 @@ export async function stockerPiecesJointes(
   const storage = getStorage();
   let stored = 0;
   for (const piece of args.pieces) {
+    if (estUneImageIncorporee(piece)) continue;
     try {
       const { bytes, contentType } = await args.fournisseur.lirePieceJointe(
         { externalAccountId: args.externalAccountId },

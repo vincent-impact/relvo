@@ -4,6 +4,10 @@ import { resolveAttachmentFile } from "@/server/storage-access";
 // Les octets d'une pièce jointe, pour « Ouvrir avec… » (recette R18) — plafonnés.
 // Le raisonnement vit dans `server/pieces.ts`.
 
+// Une pièce gardée en référence (M25.3) se complète à cet appel : la route
+// attend le fournisseur du canal avant de répondre.
+export const maxDuration = 120;
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },

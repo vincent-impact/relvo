@@ -265,7 +265,10 @@ export default function ConfidentialitePage() {
                 jointes — il reste dans votre boîte ou sur votre téléphone, que
                 Relvo ne modifie pas. Un sujet que vous fermez sans le valider
                 est effacé trente jours après sa fermeture ; un sujet validé est
-                conservé.
+                conservé. Les photos, vidéos et documents reçus par messagerie
+                ne sont copiés dans Relvo que lorsqu’un sujet les porte ou que
+                vous les ouvrez ; les autres restent chez le fournisseur de
+                votre messagerie.
               </p>
             ) : null}
             <p>

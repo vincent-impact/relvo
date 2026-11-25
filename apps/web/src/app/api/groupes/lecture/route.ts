@@ -4,6 +4,7 @@ import {
   lireLesGroupesDus,
 } from "@/server/ia/pipeline/groupes-du-jour";
 import { passeSuivante } from "@/server/ia/pipeline/messagerie-regles";
+import { completerLesPiecesPortees } from "@/server/medias";
 
 // UNE PASSE de la lecture des groupes (M29.5). Lancée par les deux crons du
 // plan — le matin et la mi-journée —, puis par elle-même tant qu'il reste des
@@ -46,6 +47,15 @@ export async function POST(request: Request) {
     console.info("[ia] lecture des groupes", { passe, ...bilan });
     const suivante = passeSuivante(bilan, passe);
     if (suivante) await lancerLectureDesGroupes(suivante);
+    // Un sujet né d'une lecture porte ses messages : leurs pièces gardées en
+    // référence se complètent (M25.5), dans ce qu'il reste de la fonction.
+    const reste = BUDGET_MS - (Date.now() - debut);
+    if (reste > 20_000) {
+      const pieces = await completerLesPiecesPortees({
+        budgetMs: Math.min(reste - 10_000, 60_000),
+      });
+      console.info("[ia] lecture des groupes — pièces complétées", pieces);
+    }
   });
   return NextResponse.json({ ok: true, passe }, { status: 202 });
 }

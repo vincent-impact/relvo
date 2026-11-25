@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
 import { requireAccountId } from "@/server/auth-context";
 import { revalidateTenantData } from "@/server/cached";
+import { completerApresLeGeste } from "@/server/medias";
 import { type BilanRetour, relireLeTrou } from "@/server/retour-conversation";
 import {
   CONVERSATIONS_PAGE_SIZE,
@@ -82,7 +83,12 @@ export async function createSubjectFromConversationAction(
   );
   // Ouvrir un sujet sur une conversation ignorée la rend au travail : ce
   // qu'elle n'avait pas importé se relit (M25.10).
-  if (result.ok) await relireLeTrou(await requireAccountId(), id);
+  if (result.ok) {
+    const accountId = await requireAccountId();
+    await relireLeTrou(accountId, id);
+    // Ce qu'un sujet porte se garde en plein format (M25.5).
+    completerApresLeGeste(accountId);
+  }
   if (result.ok) {
     revalidateConversations();
     revalidatePath("/sujets/[id]", "page");

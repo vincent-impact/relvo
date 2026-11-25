@@ -14,9 +14,13 @@ export type LigneDePoids = {
   famille: Famille;
   rattachee: boolean;
   ignoree: boolean;
+  /** Pièces STOCKÉES, et leur poids. */
   pieces: number;
   octets: number;
   sansTaille: number;
+  /** Pièces gardées en référence (M25.3) : pas stockées — et le poids annoncé. */
+  references?: number;
+  octetsAnnonces?: number;
 };
 
 export type Poids = { pieces: number; octets: number };
@@ -50,10 +54,16 @@ export type ResumeDesPieces = {
   parFamille: Record<Famille, Poids>;
   /** Ce qu'un sujet porte — ce qui a vocation à rester. */
   tenues: Poids;
-  /** Sans sujet, dans une conversation vivante : ce que la politique des médias vise (M25.3 à M25.6). */
+  /** Sans sujet, dans une conversation vivante : ce que le nettoyage fera expirer à trente jours. */
   libres: Poids;
-  /** Sans sujet, dans une conversation ignorée : ce que la purge retire (M25.12). */
+  /** Sans sujet, dans une conversation ignorée : reçu avant qu'elle le soit, expire de même. */
   ignorees: Poids;
+  /**
+   * Ce que Relvo n'a PAS stocké (M25.3) : les pièces gardées en référence, et
+   * le poids que leur source annonce — ce que « décider avant de télécharger »
+   * a épargné au stockage. Hors de tous les autres totaux.
+   */
+  references: Poids;
   parCompte: Record<string, Poids>;
 };
 
@@ -75,9 +85,12 @@ export function resumerLesPieces(
     tenues: vide(),
     libres: vide(),
     ignorees: vide(),
+    references: vide(),
     parCompte: {},
   };
   for (const l of lignes) {
+    r.references.pieces += l.references ?? 0;
+    r.references.octets += l.octetsAnnonces ?? 0;
     ajouter(r.total, l);
     r.sansTaille += l.sansTaille;
     ajouter(r.parCanal[l.canal], l);

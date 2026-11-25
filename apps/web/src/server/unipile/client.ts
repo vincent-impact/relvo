@@ -6,6 +6,7 @@ import type {
   UnipileChatAttendeeApi,
   UnipileChatMessageApi,
   UnipileMailApi,
+  UnipileMessageApi,
 } from "./types";
 
 /**
@@ -436,6 +437,34 @@ export async function listChatAttendees(
   const res = await ctx.client.messaging.getAllAttendeesFromChat(chatId);
   return ((res as { items?: unknown[] }).items ??
     []) as UnipileChatAttendeeApi[];
+}
+
+/**
+ * Un message relu à l'unité — pour ce qu'il DIT de ses pièces (type, poids,
+ * autocollant, GIF, vocal) et pour la vignette que le réseau y joint, sans en
+ * télécharger aucune (M25.3). `null` quand l'agrégateur n'est pas configuré
+ * ou ne connaît pas le message : l'appelant décide alors sur ce que le
+ * webhook portait.
+ */
+export async function getChatMessage(
+  messageId: string,
+): Promise<UnipileMessageApi | null> {
+  const ctx = getClient();
+  if (!ctx) return null;
+  try {
+    return (await ctx.client.messaging.getMessage(
+      messageId,
+    )) as unknown as UnipileMessageApi;
+  } catch (error) {
+    if (estIntrouvable(error)) return null;
+    throw error;
+  }
+}
+
+/** L'agrégateur répond qu'il n'a pas, ou plus, ce qu'on lui demande. */
+export function estIntrouvable(error: unknown): boolean {
+  const body = (error as { body?: { status?: number; type?: string } })?.body;
+  return body?.status === 404 || body?.type === "errors/resource_not_found";
 }
 
 /**

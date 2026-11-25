@@ -24,10 +24,18 @@ export type PoidsDesPieces = {
   rattachee: boolean;
   /** Sa conversation est ignorée : c'est ce que la purge retire (M25.12). */
   ignoree: boolean;
+  /** Pièces STOCKÉES, et leur poids. */
   pieces: number;
   octets: number;
-  /** Pièces dont la taille n'est pas connue en base : leur poids n'est pas compté. */
+  /** Pièces stockées dont la taille n'est pas connue en base : leur poids n'est pas compté. */
   sansTaille: number;
+  /**
+   * Pièces gardées en RÉFÉRENCE (M25.3) : pas stockées, relisibles chez le
+   * fournisseur — et le poids qu'il annonce, c'est-à-dire ce que le stockage
+   * n'a pas eu à porter.
+   */
+  references: number;
+  octetsAnnonces: number;
 };
 
 /**
@@ -48,6 +56,8 @@ export async function mesurerLesPieces(
       pieces: number;
       octets: bigint;
       sans_taille: number;
+      refs: number;
+      octets_annonces: bigint;
     }>
   >`
     SELECT a.account_id,
@@ -61,9 +71,11 @@ export async function mesurerLesPieces(
            END AS famille,
            (a.subject_id IS NOT NULL OR m.subject_id IS NOT NULL) AS rattachee,
            (c.status = 'ignored') AS ignoree,
-           count(*)::int AS pieces,
-           COALESCE(sum(a.file_size), 0)::bigint AS octets,
-           (count(*) FILTER (WHERE a.file_size IS NULL))::int AS sans_taille
+           (count(*) FILTER (WHERE a.storage_key IS NOT NULL))::int AS pieces,
+           COALESCE(sum(a.file_size) FILTER (WHERE a.storage_key IS NOT NULL), 0)::bigint AS octets,
+           (count(*) FILTER (WHERE a.storage_key IS NOT NULL AND a.file_size IS NULL))::int AS sans_taille,
+           (count(*) FILTER (WHERE a.storage_key IS NULL AND a.external_id IS NOT NULL))::int AS refs,
+           COALESCE(sum(a.file_size) FILTER (WHERE a.storage_key IS NULL AND a.external_id IS NOT NULL), 0)::bigint AS octets_annonces
     FROM attachments a
     JOIN messages m ON m.id = a.message_id
     JOIN conversations c ON c.id = m.conversation_id
@@ -81,6 +93,8 @@ export async function mesurerLesPieces(
     pieces: r.pieces,
     octets: Number(r.octets),
     sansTaille: r.sans_taille,
+    references: r.refs,
+    octetsAnnonces: Number(r.octets_annonces),
   }));
 }
 
@@ -112,7 +126,10 @@ export async function listClesDuStockage(): Promise<{
   enAttente: string[];
 }> {
   const [pieces, connaissances, enAttente] = await Promise.all([
-    prisma.attachment.findMany({ select: { storageKey: true } }),
+    prisma.attachment.findMany({
+      where: { storageKey: { not: null } },
+      select: { storageKey: true },
+    }),
     prisma.knowledgeDocument.findMany({
       where: { storageKey: { not: null } },
       select: { storageKey: true },
@@ -121,7 +138,7 @@ export async function listClesDuStockage(): Promise<{
   ]);
   return {
     connues: [
-      ...pieces.map((p) => p.storageKey),
+      ...pieces.map((p) => p.storageKey!),
       ...connaissances.map((k) => k.storageKey!),
     ],
     enAttente: enAttente.map((e) => e.storageKey),

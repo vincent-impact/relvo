@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { APERCU_MAX_OCTETS, lireClasseur } from "@relvo/storage/classeur";
 import { estUnClasseur } from "@relvo/storage/fichiers";
-import type { ApercuPiece } from "@/lib/pieces";
+import { phraseSansApercu, type ApercuPiece } from "@/lib/pieces";
 import {
   fileSizeInStorage,
   readFile,
   signedRedirectHeaders,
+  statutDuRefus,
+  type Resolution,
   type ResolvedFile,
   type StorageAccessError,
 } from "@/server/storage-access";
@@ -30,16 +32,43 @@ import {
 /** Sous le plafond de 4,5 Mo d'une réponse de fonction, en-têtes compris. */
 export const CONTENU_MAX_OCTETS = 4 * 1024 * 1024;
 
-type Resolution =
-  | { ok: true; file: ResolvedFile }
-  | { ok: false; error: StorageAccessError };
-
 function refus(error: StorageAccessError) {
   return NextResponse.json(
     { error: "Fichier introuvable." },
-    { status: error === "unauthenticated" ? 401 : 404 },
+    { status: statutDuRefus(error) },
   );
 }
+
+/**
+ * Le refus d'une pièce quand c'est le NAVIGATEUR qui la demandait — un PDF
+ * ouvert dans un onglet, un téléchargement : une page qui le dit, pas du JSON
+ * sur fond blanc. Ne sert que pour une référence qu'on n'a pas pu aller
+ * chercher (M25.3) ; tout autre refus garde sa réponse.
+ */
+export function pageDeRefus(resolution: Resolution, request: Request) {
+  if (resolution.ok || !resolution.piece) return null;
+  const echec =
+    ECHEC_DE_SOURCE[resolution.error as keyof typeof ECHEC_DE_SOURCE];
+  if (!echec) return null;
+  if (!(request.headers.get("accept") ?? "").includes("text/html")) return null;
+  const propre = (t: string) =>
+    t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><title>${propre(resolution.piece.name)}</title></head><body style="margin:0;min-height:100vh;display:grid;place-items:center;font-family:-apple-system,system-ui,sans-serif"><main style="max-width:300px;padding:28px;text-align:center"><p style="margin:0 0 12px;font-size:18px;font-weight:500;overflow-wrap:anywhere">${propre(resolution.piece.name)}</p><p style="margin:0;font-size:14px;line-height:20px;opacity:.65">${propre(phraseSansApercu("autre", echec))}</p></main></body></html>`;
+  return new Response(html, {
+    status: statutDuRefus(resolution.error),
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "private, no-store",
+    },
+  });
+}
+
+/** Ce que l'écran dira d'une référence qu'on n'a pas pu aller chercher (M25.3). */
+const ECHEC_DE_SOURCE = {
+  plus_servie: "plus_servie",
+  trop_lourde: "trop_lourde_pour_relvo",
+  source_muette: "source_muette",
+} as const;
 
 /** L'aperçu d'un fichier résolu. Ne lève pas : un échec est une donnée. */
 export async function apercuDePiece(file: ResolvedFile): Promise<ApercuPiece> {
@@ -69,7 +98,24 @@ export async function apercuDePiece(file: ResolvedFile): Promise<ApercuPiece> {
 }
 
 export async function repondreApercu(resolution: Resolution) {
-  if (!resolution.ok) return refus(resolution.error);
+  if (!resolution.ok) {
+    // Une référence qu'on n'a pas pu aller chercher reste une pièce qu'on
+    // connaît : l'écran montre son nom, son poids, et dit pourquoi.
+    const echec =
+      resolution.piece &&
+      ECHEC_DE_SOURCE[resolution.error as keyof typeof ECHEC_DE_SOURCE];
+    if (!echec || !resolution.piece) return refus(resolution.error);
+    const apercu: ApercuPiece = {
+      nom: resolution.piece.name,
+      mimeType: resolution.piece.mimeType,
+      taille: resolution.piece.size,
+      classeur: null,
+      echec,
+    };
+    return NextResponse.json(apercu, {
+      headers: { "Cache-Control": "private, no-store" },
+    });
+  }
   return NextResponse.json(await apercuDePiece(resolution.file), {
     headers: signedRedirectHeaders(),
   });

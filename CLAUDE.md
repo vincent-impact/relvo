@@ -91,6 +91,16 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   (`recevoir…`). ⚠️ **Armé** : `NETTOYAGE_ACTIF` (`lib/nettoyage.ts`) est vrai ; le
   remettre à faux ramène le cron à la simulation et retire ce que l'écran en promet. ⚠️ Un test qui passe par `recevoir…` date ses
   messages **relativement à maintenant** (`PITFALLS.md` #81).
+- **Décider avant de télécharger** (M25.3, `04 §11`) : une pièce de **messagerie** n'est
+  stockée que si un sujet porte son message (un vocal, toujours) ; sinon c'est une
+  **référence** — la ligne existe, le fichier reste chez l'agrégateur — ou une **trace**
+  (autocollant, GIF). La règle est pure (`lib/medias.ts`), l'état d'une pièce se lit du domaine
+  (`etatDePiece`, `domain/attachments.ts`), et `server/medias.ts` fait les trois gestes :
+  recevoir, **compléter à l'ouverture**, compléter ce qu'un sujet prend (après le tri, après
+  un rattachement, et aux deux crons). ⚠️ Toute route de pièce (`/download`, `/apercu`,
+  `/contenu`) **complète** une référence : rien ne les appelle sans que le dirigeant ait
+  touché la pièce — le fil montre la vignette (`PITFALLS.md` #82). ⚠️ `storage_key` est
+  **nullable** : une requête qui compte du poids ou des clés filtre sur ce qui est stocké.
 - **Aucun accès direct au stockage** : tout passe par le paquet dédié, jamais par un client
   instancié à la main — c'est ce qui garde le fournisseur remplaçable et ce qui évite de recréer
   un client sans les deux réglages obligatoires (`PITFALLS.md` #8). **Une pièce s'ouvre dans

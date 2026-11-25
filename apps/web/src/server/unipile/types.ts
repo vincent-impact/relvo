@@ -21,6 +21,8 @@ export type UnipileAttachmentRef = {
   mime?: string | null;
   content_type?: string | null;
   size?: number | null;
+  /** Identifiant de contenu : la pièce est incorporée au corps de l'e-mail. */
+  cid?: string | null;
 };
 
 /**
@@ -235,6 +237,37 @@ export type UnipileChatMessageApi = {
   is_event?: number | boolean | null;
   sender_id?: string | null;
   attachments?: unknown[] | null;
+};
+
+/**
+ * Une pièce d'un message, telle que l'API de messagerie la DÉCRIT sans la
+ * servir (M25.3) — c'est ce qui permet de décider avant de télécharger.
+ * Formes confirmées contre l'API réelle : `type` vaut `img`, `video`, `audio`
+ * ou `file` ; `file_size` est en octets ; un autocollant est un `img` marqué
+ * `sticker`, un GIF un `video` marqué `gif`, un vocal un `audio` marqué
+ * `voice_note`.
+ */
+export type UnipileMessageAttachmentApi = {
+  id: string;
+  type?: string | null;
+  file_size?: number | null;
+  mimetype?: string | null;
+  file_name?: string | null;
+  unavailable?: boolean | null;
+  sticker?: boolean | null;
+  gif?: boolean | null;
+  voice_note?: boolean | null;
+};
+
+/**
+ * Un message relu à l'unité (M25.3). `original` est le message BRUT du réseau,
+ * en JSON dans une chaîne : c'est lui qui porte la vignette (`jpegThumbnail`)
+ * que WhatsApp joint à une image, une vidéo ou un document.
+ */
+export type UnipileMessageApi = {
+  id: string;
+  attachments?: UnipileMessageAttachmentApi[] | null;
+  original?: string | null;
 };
 
 /** Un participant d'un fil : identifiant interne, numéro, nom, « c'est moi ». */

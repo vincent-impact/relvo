@@ -136,13 +136,21 @@ function conversationEmailVide(horizon: Date): Prisma.ConversationWhereInput {
   };
 }
 
+/**
+ * Le bilan ne compte que les pièces STOCKÉES : une référence (M25.3) part avec
+ * son message sans rien rendre au stockage, son poids n'est qu'annoncé.
+ */
+const PIECE_STOCKEE: Prisma.AttachmentWhereInput = {
+  storageKey: { not: null },
+};
+
 /** Ce qu'un passage du nettoyage retire — ou retirerait. */
 export type BilanNettoyage = {
   /** Sujets fermés depuis plus de trente jours, effacés. */
   sujetsFermes: number;
   /** Messages sans sujet de plus de trente jours, effacés. */
   messages: number;
-  /** Leurs pièces jointes, et leur poids connu en octets. */
+  /** Leurs pièces jointes STOCKÉES, et leur poids connu en octets. */
   pieces: number;
   octets: number;
   /** Conversations e-mail qui ne gardaient plus rien, disparues avec leurs messages. */
@@ -192,7 +200,7 @@ export async function simulerLeNettoyage(
       db.subject.count({ where: sujetAEffacer(horizon) }),
       db.message.count({ where: expire }),
       db.attachment.aggregate({
-        where: { message: { is: expire } },
+        where: { message: { is: expire }, ...PIECE_STOCKEE },
         _count: { _all: true },
         _sum: { fileSize: true },
       }),
@@ -237,7 +245,7 @@ export async function nettoyerLeCompte(
 
   const expire = messageExpire(horizon);
   const pieces = await db.attachment.aggregate({
-    where: { message: { is: expire } },
+    where: { message: { is: expire }, ...PIECE_STOCKEE },
     _count: { _all: true },
     _sum: { fileSize: true },
   });

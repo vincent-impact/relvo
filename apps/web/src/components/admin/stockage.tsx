@@ -183,6 +183,13 @@ export function RepartitionDesPieces({ mesure }: { mesure: MesureDuStockage }) {
             {poidsEtPart(pieces.ignorees, total)}
           </Ligne>
         </ListPanel>
+        {/* Ce que « décider avant de télécharger » a épargné (M25.3) : hors
+            des totaux ci-dessus, puisque rien n'en est stocké. */}
+        <p className="mt-3 px-4 text-[12.5px] leading-[17px] font-light text-gris">
+          {pieces.references.pieces
+            ? `${compte(pieces.references.pieces, "pièce gardée", "pièces gardées")} en référence, non stockées : ${octets(pieces.references.octets)} annoncés par leur source.`
+            : "Aucune pièce gardée en référence pour l'instant : tout ce qui est compté ici est stocké."}
+        </p>
       </section>
 
       <section>

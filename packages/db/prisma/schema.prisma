@@ -931,7 +931,20 @@ model Attachment {
   mimeType     String?   @map("mime_type")
   /// Clé de l'objet dans le stockage (R2), pas une URL : le bucket est privé et
   /// les URLs pré-signées expirent. Toujours signer via `@relvo/storage`.
-  storageKey   String    @map("storage_key")
+  /// NULL : la pièce n'est PAS stockée (M25.3) — c'est une RÉFÉRENCE, que
+  /// `externalId` permet de relire chez le fournisseur du canal, ou une simple
+  /// TRACE (un autocollant, un GIF) quand `externalId` manque aussi.
+  storageKey   String?   @map("storage_key")
+  /// L'identifiant de la pièce chez le fournisseur du canal — avec celui du
+  /// message, c'est ce qui la relit à la source quand on l'ouvre.
+  externalId   String?   @map("external_id")
+  /// La vignette que le réseau joint au message (JPEG en base64, quelques
+  /// kilo-octets) : ce que le fil montre d'une image ou d'une vidéo non stockée.
+  thumbnail    String?   @db.Text
+  /// Le fournisseur a répondu qu'il ne sert plus cette pièce : on ne le
+  /// redemande pas, et l'écran le dit.
+  unavailableAt DateTime? @map("unavailable_at")
+  /// En octets. Pour une référence, c'est le poids ANNONCÉ par le fournisseur.
   fileSize     Int?      @map("file_size")
   aiLabel      String?   @map("ai_label")
   aiSummary    String?   @map("ai_summary") @db.Text

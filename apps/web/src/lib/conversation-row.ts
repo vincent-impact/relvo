@@ -6,6 +6,7 @@ import type {
   ConversationTriage,
   UnimportedGap,
 } from "@relvo/db";
+import type { EtatPiece } from "@/lib/pieces";
 import type { TrouData } from "@/lib/trou";
 import { formatRelative } from "@/lib/display";
 
@@ -188,6 +189,10 @@ export type ThreadMessageData = {
     name: string;
     label: string | null;
     mimeType: string | null;
+    /** Où en est la pièce (M25.3) : stockée, gardée en référence, trace… */
+    etat: EtatPiece;
+    vignette: string | null;
+    taille: number | null;
   }[];
 };
 

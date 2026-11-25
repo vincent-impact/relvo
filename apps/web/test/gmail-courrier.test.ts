@@ -130,6 +130,7 @@ describe("courrierDepuisGmail", () => {
         name: "devis.pdf",
         mime: "application/pdf",
         size: 12345,
+        incorporee: false,
       },
     ]);
     expect(c.entetes?.["message-id"]).toBe("<abc@sogood.fr>");

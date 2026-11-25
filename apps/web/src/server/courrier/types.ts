@@ -31,6 +31,12 @@ export type PieceJointeRef = {
   name: string | null;
   mime: string | null;
   size: number | null;
+  /**
+   * La pièce est INCORPORÉE au corps (elle porte un identifiant de contenu, le
+   * HTML la cite) — un logo de signature, un pixel de suivi, une image collée.
+   * Légère, ce n'est pas une pièce jointe (`estUneImageIncorporee`, M25.3).
+   */
+  incorporee?: boolean;
 };
 
 /** Un courrier lu chez le fournisseur, prêt pour le domaine. */

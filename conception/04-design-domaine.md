@@ -598,6 +598,26 @@ dire qu'il compte : c'est ce signal, que personne n'a à donner exprès, qui dé
 reste. Sans lui, un dirigeant qui n'ose rien ignorer de peur de manquer quelque chose ferait de
 Relvo la copie de sa boîte.
 
+**La même règle décide de ce que Relvo télécharge.** À la réception d'un message de
+messagerie, Relvo lit ce que le fournisseur *dit* de ses pièces — leur type, leur poids — avant
+d'en lire un octet, et décide pour chacune :
+
+| Décision | Pour quoi | Ce qui en reste |
+|---|---|---|
+| **Stockée** | ce qu'un sujet porte déjà, sous le plafond de son type ; un message vocal, toujours | le fichier, en plein format |
+| **Référence** | tout le reste — la photo, la vidéo, le document d'un message qu'aucun sujet ne porte ; ce qui dépasse le plafond | son nom, son type, son poids annoncé, la vignette que le réseau y joint ; le fichier reste à la source |
+| **Trace** | un autocollant, un GIF | un mot dans le fil, rien à ouvrir |
+
+Une référence **se complète** — devient un fichier stocké — dans deux cas, et deux seulement :
+le dirigeant **l'ouvre**, ou **un sujet prend le message**. Le tri n'y perd rien : le modèle ne
+lit pas les médias, il lit leur nom. Une pièce que le fournisseur ne sert plus le dit, et
+renvoie au téléphone ; une référence qu'aucun sujet ne prend part avec son message, au
+nettoyage, sans avoir rien pesé. Les plafonds sont une configuration de l'application.
+
+**L'e-mail garde ses pièces** : une pièce d'e-mail est un document, elle se stocke à la
+réception. Seules ses images **incorporées** au corps et légères — un logo de signature, un
+pixel de suivi — ne sont pas des pièces, et ne sont jamais lues.
+
 **Aucun geste courant ne détruit de données sur le coup** — le vocabulaire de l'interface le
 reflète —, et c'est le **nettoyage**, lui, qui efface, selon quatre règles :
 
@@ -648,7 +668,8 @@ que le **bucket** porte réellement, listé chez le fournisseur par le paquet de
 fichier stocké que la base ne connaît plus et que la file n'attend pas est **sans
 propriétaire** : c'est ce qu'un effacement aurait laissé derrière lui, et il ne doit pas y en
 avoir. Une pièce connue de la base et absente du bucket ne s'ouvrira pas : elle se compte
-aussi. Le poids du bucket se lit contre un **repère** de configuration, et alerte à son
+aussi. Les pièces gardées en **référence** se comptent à part, avec le poids que leur source
+annonce : c'est ce que le stockage n'a pas eu à porter. Le poids du bucket se lit contre un **repère** de configuration, et alerte à son
 approche, comme le plafond de l'inférence.
 
 ---

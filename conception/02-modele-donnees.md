@@ -452,11 +452,26 @@ quand une mention désigne quelqu'un d'inconnu. Trois règles :
 ## Attachment
 
 Pièce jointe rattachée à un message, et à le sujet quand il y en a une. Porte un nom, un type MIME,
-une taille, et la **clé d'objet** dans le stockage.
+une taille, et la **clé d'objet** dans le stockage — quand elle est stockée.
 
 ⚠️ **`storage_key` est une clé d'objet, pas une URL.** Le bucket est privé ; l'URL de lecture est
 signée à la demande et expire. Stocker une URL reviendrait à stocker quelque chose qui devient
 faux.
+
+**Une pièce n'est pas toujours stockée** (`04 §11`). Son état se lit de trois colonnes, jamais
+d'un énuméré qui pourrait les contredire :
+
+| État | `storage_key` | `external_id` | Ce que c'est |
+| --- | --- | --- | --- |
+| Stockée | renseignée | indifférent | le fichier est dans le stockage |
+| Référence | nulle | renseigné | le fichier est resté chez le fournisseur du canal ; `external_id` — avec l'identifiant du message — permet d'aller l'y relire |
+| Indisponible | nulle | renseigné, `unavailable_at` posé | une référence que le fournisseur ne sert plus |
+| Trace | nulle | nul | un autocollant, un GIF : rien à aller chercher, la ligne dit seulement qu'il y en avait un |
+
+`thumbnail` porte la **vignette** que le réseau joint au message (un JPEG de quelques
+kilo-octets, en base64) : c'est ce que le fil montre d'une image ou d'une vidéo non stockée.
+Pour une référence, `file_size` est le poids **annoncé** par le fournisseur ; il devient le
+poids réel quand le fichier est stocké.
 
 **Trois niveaux d'analyse, chacun avec son horodatage** — et l'horodatage **est** le drapeau de
 cache : s'il est renseigné, l'analyse a déjà été faite, et le modèle n'est jamais sollicité deux

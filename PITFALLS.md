@@ -894,3 +894,24 @@ passe la garde le jour où il est écrit, et tombe dessous trente jours plus tar
 - Un script qui rejoue du courrier ancien (`pj:rattraper`, une relecture de trou) ne ramène
   que ce qui est déjà en base ou a moins de trente jours : ce n'est pas une panne.
 
+### #82 — Une route de pièce va CHERCHER une référence : un `<img src>` de trop retélécharge tout
+
+**Symptôme** : le stockage se remet à grossir au rythme d'avant, ou l'ouverture d'un fil
+WhatsApp déclenche une rafale d'appels à l'agrégateur — alors que les pièces étaient bien
+entrées en référence (M25.3).
+
+**Cause** : une pièce gardée en référence se **complète à l'ouverture** — et « l'ouverture »,
+c'est tout appel à `/api/attachments/<id>/download`, `/apercu` ou `/contenu`
+(`resolveAttachmentFile`). Un composant qui pose `<img src="…/download?inline=1">` pour
+*afficher* une pièce non stockée, un préchargement, un lien que le navigateur suit de
+lui-même : chacun vaut un tap du dirigeant, et rapatrie le fichier.
+
+**Règle** :
+- Une pièce se montre selon son **état** (`etat` sur la pièce d'un fil) : une image non stockée
+  montre sa **vignette** (`ImageEnReference`), jamais `/download`. Seul un geste du dirigeant
+  appelle une route de pièce.
+- Dans la visionneuse, l'image n'est montée **qu'à l'ouverture** (`AttachmentViewer`).
+- Une requête qui additionne des poids ou liste des clés filtre `storage_key IS NOT NULL` :
+  le `file_size` d'une référence est un poids **annoncé**, pas stocké.
+- Jamais d'essai « pour voir » en local avec de vrais identifiants : le stockage local est le
+  bucket de production, et la complétion y **écrit**.

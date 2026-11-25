@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { Hourglass } from "@/components/shared/picto";
 import {
   RETENTION_SANS_SUJET_JOURS,
+  etatDePiece,
   getSubjectDetail,
   canauxPrioritairesDesContacts,
   listChannels,
@@ -309,6 +310,8 @@ export default async function SujetPage({
                       mimeType={a.mimeType}
                       label={a.aiLabel}
                       time={formatRelative(a.createdAt)}
+                      etat={etatDePiece(a)}
+                      vignette={a.thumbnail}
                     />
                   </div>
                 ))}

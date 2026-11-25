@@ -5,17 +5,12 @@ import {
   requestChannelCatchup,
   resolveMailboxStep,
 } from "@relvo/db";
-import {
-  buildObjectKey,
-  MAX_FILE_SIZE_BYTES,
-  getStorage,
-} from "@relvo/storage";
 import { after, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { tenantDb } from "@/lib/tenant-db";
 import { expireTenantData } from "@/server/cached";
-import { createAttachment } from "@relvo/db";
 import { type Boite, recevoirCourrier } from "@/server/courrier";
+import { completerLesPiecesPortees, recevoirLesPieces } from "@/server/medias";
 import { lancerTranche } from "@/server/ia/pipeline/rattrapage";
 import { fenetreDeRattrapage } from "@/server/ia/pipeline/rattrapage-regles";
 import { relireApresSalve } from "@/server/ia/pipeline/relecture";
@@ -30,7 +25,6 @@ import {
   verifyWebhookAuth,
 } from "@/server/unipile/signature";
 import {
-  fetchMessageAttachment,
   getAccount,
   type UnipileAccountStatusWebhook,
   type UnipileHostedAuthNotify,
@@ -269,23 +263,6 @@ async function handleMail(mail: UnipileMailWebhook) {
   });
 }
 
-// Nom de fichier lisible pour un média WhatsApp (le webhook n'en fournit aucun).
-// Dérivé du `attachment_type` ; l'extension exacte suivra le MIME du Blob.
-function whatsAppMediaName(type: string | null | undefined): string {
-  switch ((type ?? "").toLowerCase()) {
-    case "img":
-    case "image":
-      return "photo";
-    case "video":
-      return "vidéo";
-    case "audio":
-    case "voice":
-      return "message vocal";
-    default:
-      return "piece-jointe";
-  }
-}
-
 /**
  * La relecture d'un fil de messagerie suivi, après la réponse HTTP (M7
  * tranche 11) : un message capté par l'écoute — reçu, ou envoyé depuis le
@@ -392,47 +369,20 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
   if (recu.ecartee) return ok({ ok: true, ignored: IGNORE[recu.motif] });
   const { message, created } = recu;
 
-  // Médias (M6.6) : même chemin que les PJ email — seulement au premier passage.
-  // Le webhook messaging n'expose ni nom ni MIME : l'id de PJ est `attachment_id`
-  // (⚠️ pas `id`), le MIME vient du Blob récupéré, le nom est dérivé du type.
-  let stored = 0;
-  if (created && evt.attachments?.length) {
-    const storage = getStorage();
-    for (const att of evt.attachments) {
-      try {
-        const { bytes, contentType } = await fetchMessageAttachment({
-          messageId: evt.message_id,
-          attachmentId: att.attachment_id,
-        });
-        if (bytes.byteLength > MAX_FILE_SIZE_BYTES.attachments) continue; // garde-fou taille
-        const key = buildObjectKey({
+  // Médias (M25.3) : DÉCIDER AVANT DE TÉLÉCHARGER — seulement au premier
+  // passage. Ce qu'un sujet porte se stocke ; le reste entre comme référence
+  // (relue chez l'agrégateur quand on l'ouvre, ou quand un sujet prend le
+  // message), un autocollant ou un GIF comme simple trace.
+  const pieces =
+    created && evt.attachments?.length
+      ? await recevoirLesPieces(db, {
           accountId: config.accountId,
-          scope: "attachments",
-        });
-        const mime = contentType ?? null;
-        await storage.put({
-          key,
-          body: bytes,
-          contentType: mime ?? "application/octet-stream",
-        });
-        await createAttachment(db, {
           messageId: message.id,
           subjectId: message.subjectId,
-          name: whatsAppMediaName(att.attachment_type),
-          mimeType: mime,
-          storageKey: key,
-          fileSize: bytes.byteLength,
-        });
-        stored += 1;
-      } catch (err) {
-        console.error(
-          "[unipile] média WhatsApp non stocké",
-          att.attachment_id,
-          err,
-        );
-      }
-    }
-  }
+          externalMessageId: evt.message_id,
+          webhook: evt.attachments,
+        })
+      : null;
 
   if (created) expireTenantData();
 
@@ -472,8 +422,21 @@ async function handleMessageReceived(evt: UnipileMessagingWebhook) {
         messageId: message.id,
         ...resultat,
       });
+      // Le tri a pu donner un sujet à des messages gardés en référence : ce
+      // qu'un sujet porte se complète (M25.5). Sans rien à compléter, une
+      // requête et c'est tout.
+      await completerLesPiecesPortees({
+        accountId: config.accountId,
+        budgetMs: 30_000,
+      });
     });
   }
 
-  return ok({ ok: true, messageId: message.id, created, attachments: stored });
+  return ok({
+    ok: true,
+    messageId: message.id,
+    created,
+    attachments: pieces?.stockees ?? 0,
+    references: pieces?.references || undefined,
+  });
 }

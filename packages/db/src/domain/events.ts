@@ -73,6 +73,10 @@ export const EVENT_TYPES = {
   // Attachments
   attachmentCreated: "attachment_created",
   attachmentLabeled: "attachment_labeled",
+  /** Une pièce gardée en référence a été relue chez le fournisseur et stockée (M25.5). */
+  attachmentStored: "attachment_stored",
+  /** Le fournisseur ne sert plus une pièce gardée en référence. */
+  attachmentUnavailable: "attachment_unavailable",
   attachmentSummarized: "attachment_summarized",
   attachmentAnalyzed: "attachment_analyzed",
   // Actions

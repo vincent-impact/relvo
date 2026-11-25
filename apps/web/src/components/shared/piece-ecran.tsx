@@ -27,6 +27,7 @@ import {
   formatPoids,
   lettreDeColonne,
   libelleDeType,
+  estSansFichier,
   phraseSansApercu,
   type ApercuPiece,
   type EchecApercu,
@@ -170,7 +171,7 @@ function Contenu({
   const classeur = donnees?.classeur ?? null;
   const echec: EchecApercu | null =
     apercu.etat === "echec" ? "reseau" : (donnees?.echec ?? null);
-  const absent = echec === "absent";
+  const absent = estSansFichier(echec);
   // Un classeur dont on attend l'aperçu : rien d'autre à montrer que l'attente.
   const enAttente = genre === "classeur" && apercu.etat === "charge";
 

@@ -46,7 +46,7 @@ async function encoreReferencees(storageKeys: string[]): Promise<Set<string>> {
     }),
   ]);
   const prises = new Set<string>();
-  for (const a of attachments) prises.add(a.storageKey);
+  for (const a of attachments) if (a.storageKey) prises.add(a.storageKey);
   for (const d of documents) if (d.storageKey) prises.add(d.storageKey);
   return prises;
 }

@@ -16,6 +16,11 @@ import { Prisma } from "../generated/prisma/client";
 import type { TenantDb, Tx } from "../tenant";
 import { contactDisplayName } from "./contacts";
 import { resoudreMentions } from "./annuaire-messagerie";
+import {
+  PIECE_DE_FIL_SELECT,
+  type PieceDeFil,
+  pieceDeFil,
+} from "./attachments";
 import { assertFound } from "./errors";
 import { EVENT_TYPES, logEvent } from "./events";
 import type { TenantCreate } from "./helpers";
@@ -1022,12 +1027,7 @@ export type ConversationMessageItem = {
     /** Domaine du sujet — source de la couleur du point du cordon. */
     folder: { slug: string; color: string | null; icon: string | null } | null;
   } | null;
-  attachments: {
-    id: string;
-    name: string;
-    label: string | null;
-    mimeType: string | null;
-  }[];
+  attachments: PieceDeFil[];
 };
 
 /**
@@ -1105,9 +1105,7 @@ const CONVERSATION_MESSAGE_INCLUDE = {
       folder: { select: { id: true } },
     },
   },
-  attachments: {
-    select: { id: true, name: true, aiLabel: true, mimeType: true },
-  },
+  attachments: { select: PIECE_DE_FIL_SELECT },
 } as const;
 
 /**
@@ -1363,12 +1361,7 @@ export async function getConversationThread(
             folder: dossierDe(m.subject.folder),
           }
         : null,
-      attachments: m.attachments.map((a) => ({
-        id: a.id,
-        name: a.name,
-        label: a.aiLabel,
-        mimeType: a.mimeType,
-      })),
+      attachments: m.attachments.map(pieceDeFil),
     })),
   };
 }

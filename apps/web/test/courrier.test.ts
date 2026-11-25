@@ -114,7 +114,13 @@ describe("courrierDepuisUnipile", () => {
     expect(c.entrant.channelId).toBe(boite.channelId);
     expect(c.entrant.senderRaw).toBe("karim@sogood.fr");
     expect(c.pieces).toEqual([
-      { id: "pj-1", name: "devis.pdf", mime: "application/pdf", size: null },
+      {
+        id: "pj-1",
+        name: "devis.pdf",
+        mime: "application/pdf",
+        size: null,
+        incorporee: false,
+      },
     ]);
   });
 

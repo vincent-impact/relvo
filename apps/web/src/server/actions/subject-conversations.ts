@@ -13,6 +13,7 @@ import { revalidatePath } from "next/cache";
 import { domainAction } from "@/lib/action-result";
 import { requireAccountId } from "@/server/auth-context";
 import { revalidateTenantData } from "@/server/cached";
+import { completerApresLeGeste } from "@/server/medias";
 import { relireLeTrou } from "@/server/retour-conversation";
 
 // Server Actions SubjectConversation (M6bis.12) — étendre un sujet à une seconde
@@ -38,6 +39,9 @@ export async function extendSubjectToConversationAction(input: {
     extendSubjectToConversation(db, input),
   );
   if (result.ok) {
+    // Ce qu'un sujet porte se garde en plein format (M25.5) : les pièces
+    // gardées en référence des messages qu'il vient de prendre se complètent.
+    completerApresLeGeste(await requireAccountId());
     revalidatePath(`/sujets/${input.subjectId}`);
     revalidatePath("/conversations");
     // Le KPI « Sans sujet » compte les conversations non couvertes : en couvrir
@@ -77,7 +81,9 @@ export async function attachConversationToSubjectAction(input: {
   });
   // Rattacher une conversation ignorée la réactive : son trou se relit (M25.10).
   if (result.ok) {
-    await relireLeTrou(await requireAccountId(), input.conversationId);
+    const accountId = await requireAccountId();
+    await relireLeTrou(accountId, input.conversationId);
+    completerApresLeGeste(accountId);
   }
   if (result.ok) {
     revalidatePath(`/sujets/${input.subjectId}`);
@@ -115,6 +121,7 @@ export async function attachConversationToSubjectFromMessageAction(input: {
   if (result.ok && result.data.conversationId) {
     await relireLeTrou(await requireAccountId(), result.data.conversationId);
   }
+  if (result.ok) completerApresLeGeste(await requireAccountId());
   if (result.ok) {
     revalidatePath(`/sujets/${input.subjectId}`);
     revalidatePath("/conversations");

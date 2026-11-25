@@ -5,6 +5,16 @@ import type { ClasseurApercu } from "@relvo/storage/classeur";
 // d'un dossier — avant et après l'avoir ouverte (recette R18). Logique pure,
 // partagée par le visualiseur (navigateur) et les routes qui le servent.
 
+/**
+ * Où en est une pièce (M25.3) — le miroir de `EtatDePiece` du domaine, redit
+ * ici pour que l'écran n'importe rien de la base :
+ *   stockee      → son fichier est là ;
+ *   reference    → pas gardée, elle se charge à l'ouverture ;
+ *   indisponible → pas gardée, et la source ne la sert plus ;
+ *   trace        → un autocollant, un GIF : rien à ouvrir.
+ */
+export type EtatPiece = "stockee" | "reference" | "indisponible" | "trace";
+
 /** D'où vient la pièce : c'est ce qui choisit la route, jamais une clé de stockage. */
 export type SourcePiece = "attachment" | "document";
 
@@ -174,7 +184,21 @@ export type EchecApercu =
   | "protege"
   | "illisible"
   | "vide"
-  | "reseau";
+  | "reseau"
+  // Une pièce que Relvo n'avait pas gardée (M25.3) et n'a pas pu aller chercher :
+  | "plus_servie"
+  | "trop_lourde_pour_relvo"
+  | "source_muette";
+
+/** Le fichier n'est pas là et ne viendra pas par ce geste : ni partage, ni téléchargement. */
+export function estSansFichier(echec: EchecApercu | null): boolean {
+  return (
+    echec === "absent" ||
+    echec === "plus_servie" ||
+    echec === "trop_lourde_pour_relvo" ||
+    echec === "source_muette"
+  );
+}
 
 /** Ce que `/apercu` répond : l'identité du fichier, et son aperçu s'il en a un. */
 export type ApercuPiece = {
@@ -193,6 +217,15 @@ export function phraseSansApercu(
   echec: EchecApercu | null,
 ): string {
   if (echec === "absent") return "Ce fichier n'est plus disponible.";
+  if (echec === "plus_servie") {
+    return "Relvo n'avait pas gardé ce fichier, et il n'est plus disponible à la source. Il est peut-être encore sur votre téléphone.";
+  }
+  if (echec === "trop_lourde_pour_relvo") {
+    return "Ce fichier est trop lourd pour être ouvert dans Relvo. Il reste sur votre téléphone.";
+  }
+  if (echec === "source_muette") {
+    return "Ce fichier n'a pas pu être récupéré pour l'instant. Réessayez dans un moment.";
+  }
   if (genre !== "classeur") return "Relvo n'affiche pas ce type de fichier.";
   switch (echec) {
     case "trop_lourd":

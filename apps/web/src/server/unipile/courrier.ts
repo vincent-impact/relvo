@@ -22,6 +22,7 @@ export function pieceDepuisUnipile(att: UnipileAttachmentRef): PieceJointeRef {
     name: att.name ?? null,
     mime: att.mime ?? att.content_type ?? null,
     size: att.size ?? null,
+    incorporee: Boolean(att.cid?.trim()),
   };
 }
 

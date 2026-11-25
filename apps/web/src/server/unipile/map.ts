@@ -5,12 +5,20 @@ import type {
   IngestOutboundEmailInput,
   IngestOutboundWhatsAppInput,
 } from "@relvo/db";
+import {
+  VIGNETTE_MAX_CARACTERES,
+  familleDeMedia,
+  type FamilleDeMedia,
+  type PieceDeMessagerie,
+} from "@/lib/medias";
 import { htmlFidele, texteLisible } from "@/server/courrier/corps";
 import type {
   UnipileChatAttendeeApi,
   UnipileChatMessageApi,
   UnipileMailApi,
   UnipileMailWebhook,
+  UnipileMessageApi,
+  UnipileMessagingAttachmentRef,
   UnipileMessagingAttendee,
   UnipileMessagingWebhook,
 } from "./types";
@@ -417,4 +425,150 @@ export function identiteDuParticipant(
     name: p.name,
     isSelf: Boolean(p.is_self),
   };
+}
+
+// ── Les pièces d'un message, décrites avant d'être lues (M25.3) ─────────────
+// Ce que l'agrégateur dit d'une pièce — son type, son poids, si c'est un
+// autocollant, un GIF, un vocal — et la vignette que le réseau joint au
+// message : de quoi décider (`lib/medias.ts`) sans télécharger un octet.
+
+/** Le type que l'agrégateur donne à une pièce → sa famille et son type MIME par défaut. */
+const PAR_TYPE: Record<string, { famille: FamilleDeMedia; mime: string }> = {
+  img: { famille: "image", mime: "image/jpeg" },
+  image: { famille: "image", mime: "image/jpeg" },
+  video: { famille: "video", mime: "video/mp4" },
+  audio: { famille: "audio", mime: "audio/ogg" },
+  voice: { famille: "audio", mime: "audio/ogg" },
+};
+
+function nomDePiece(p: {
+  famille: FamilleDeMedia;
+  autocollant: boolean;
+  gif: boolean;
+  vocal: boolean;
+  fichier?: string | null;
+}): string {
+  if (p.autocollant) return "autocollant";
+  if (p.gif) return "GIF";
+  const fichier = p.fichier?.trim();
+  if (fichier) return fichier.slice(0, 500);
+  switch (p.famille) {
+    case "image":
+      return "photo";
+    case "video":
+      return "vidéo";
+    case "audio":
+      return p.vocal ? "message vocal" : "audio";
+    default:
+      return "piece-jointe";
+  }
+}
+
+/**
+ * La vignette que le réseau joint à un message — un JPEG de quelques
+ * kilo-octets, en base64, sous la clé `jpegThumbnail` du message brut, à une
+ * profondeur qui dépend de ce que le message est (image, vidéo, document,
+ * message éphémère…). On la cherche où qu'elle soit ; rien d'autre du brut
+ * n'est lu. `null` si elle manque, n'est pas un JPEG, ou pèse trop.
+ */
+export function vignetteDepuisOriginal(original: unknown): string | null {
+  let brut: unknown = original;
+  if (typeof original === "string") {
+    try {
+      brut = JSON.parse(original);
+    } catch {
+      return null;
+    }
+  }
+  const chercher = (v: unknown, profondeur: number): string | null => {
+    if (!v || typeof v !== "object" || profondeur > 8) return null;
+    for (const [cle, valeur] of Object.entries(v)) {
+      if (cle === "jpegThumbnail" && typeof valeur === "string") {
+        const propre = valeur.trim();
+        return propre.startsWith("/9j/") &&
+          propre.length <= VIGNETTE_MAX_CARACTERES &&
+          /^[A-Za-z0-9+/]+=*$/.test(propre)
+          ? propre
+          : null;
+      }
+      const trouve = chercher(valeur, profondeur + 1);
+      if (trouve) return trouve;
+    }
+    return null;
+  };
+  return chercher(brut, 0);
+}
+
+/**
+ * Les pièces d'un message, telles que Relvo en décide. `message` est le
+ * message relu à l'unité chez l'agrégateur — la description riche ; s'il
+ * manque (agrégateur muet), on se rabat sur ce que le webhook portait : le
+ * type et le poids, sans autocollant ni vignette.
+ */
+export function piecesDuMessage(
+  message: UnipileMessageApi | null,
+  webhook: readonly UnipileMessagingAttachmentRef[] = [],
+): PieceDeMessagerie[] {
+  const decrites = message?.attachments ?? [];
+  if (decrites.length === 0) {
+    return webhook
+      .filter((a) => a.attachment_id)
+      .map((a) => {
+        const type = PAR_TYPE[(a.attachment_type ?? "").toLowerCase()];
+        const famille = type?.famille ?? "autre";
+        return {
+          id: a.attachment_id,
+          famille,
+          mime: type?.mime ?? null,
+          nom: nomDePiece({
+            famille,
+            autocollant: false,
+            gif: false,
+            vocal: (a.attachment_type ?? "").toLowerCase() === "voice",
+          }),
+          taille: a.attachment_size ?? null,
+          autocollant: false,
+          gif: false,
+          vocal: (a.attachment_type ?? "").toLowerCase() === "voice",
+          vignette: null,
+        };
+      });
+  }
+  // La vignette est celle DU message : elle va à sa première image ou vidéo.
+  let vignette = vignetteDepuisOriginal(message?.original);
+  return decrites
+    .filter((a) => a.id)
+    .map((a) => {
+      const type = PAR_TYPE[(a.type ?? "").toLowerCase()];
+      const mime = a.mimetype?.trim() || type?.mime || null;
+      // Un fichier dont le type dit « vidéo » est une vidéo, quel que soit le
+      // geste qui l'a envoyé.
+      const famille =
+        a.mimetype?.trim() && familleDeMedia(a.mimetype) !== "autre"
+          ? familleDeMedia(a.mimetype)
+          : (type?.famille ?? "autre");
+      const autocollant = Boolean(a.sticker);
+      const gif = Boolean(a.gif);
+      const vocal = Boolean(a.voice_note);
+      const visuelle = famille === "image" || famille === "video";
+      const laSienne = visuelle && !autocollant && !gif ? vignette : null;
+      if (laSienne) vignette = null;
+      return {
+        id: a.id,
+        famille,
+        mime,
+        nom: nomDePiece({
+          famille,
+          autocollant,
+          gif,
+          vocal,
+          fichier: a.file_name,
+        }),
+        taille: a.file_size ?? null,
+        autocollant,
+        gif,
+        vocal,
+        vignette: laSienne,
+      };
+    });
 }

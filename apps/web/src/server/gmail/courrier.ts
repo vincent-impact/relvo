@@ -85,6 +85,11 @@ export function corpsDe(partie: PartieGmail | undefined): Corps {
         name: p.filename,
         mime: p.mimeType ?? null,
         size: p.body.size ?? null,
+        // Une partie qui porte un identifiant de contenu est citée par le
+        // corps : incorporée, pas jointe.
+        incorporee: (p.headers ?? []).some(
+          (h) => h.name?.toLowerCase() === "content-id" && h.value?.trim(),
+        ),
       });
       return;
     }

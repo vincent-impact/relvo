@@ -14,6 +14,7 @@ import {
 import { getStorage } from "@relvo/storage";
 import { renouvelerLesAbonnements } from "@/server/gmail/abonnement";
 import { lancerLectureDesGroupes } from "@/server/ia/pipeline/groupes-du-jour";
+import { completerLesPiecesPortees } from "@/server/medias";
 import { passerLeNettoyage } from "@/server/nettoyage";
 import { notificationDuMatin } from "@/server/push/brief";
 import { envoyerNotification } from "@/server/push/envoyer";
@@ -44,6 +45,10 @@ import { expireTenantData } from "@/server/cached";
 //   5. La lecture des groupes (M29.5) — la première des deux du jour, l'autre
 //      part du cron de la mi-journée : ce cron ne fait que la LANCER, elle
 //      tourne dans sa propre fonction (`/api/groupes/lecture`).
+//   6. Le FILET des pièces qu'un sujet porte (M25.5) : celles qui sont encore
+//      des références se complètent chez l'agrégateur. Le tri et les gestes
+//      de rattachement le font au fil de l'eau ; ce passage rattrape le reste
+//      (un rattachement depuis l'échange, une lecture interrompue).
 //
 // Appelable à la main avec le même secret :
 //   curl -H "Authorization: Bearer $CRON_SECRET" https://<app>/api/cron/matin
@@ -138,6 +143,9 @@ export async function GET(request: Request) {
   const groupes = await lancerLectureDesGroupes();
   console.info("[cron] matin — lecture des groupes lancée", groupes);
 
+  const pieces = await completerLesPiecesPortees({ budgetMs: 45_000 });
+  console.info("[cron] matin — pièces complétées", pieces);
+
   return NextResponse.json({
     nettoyage,
     drainage: { ...drainage, remaining },
@@ -145,5 +153,6 @@ export async function GET(request: Request) {
     abonnements,
     releves,
     groupes,
+    pieces,
   });
 }

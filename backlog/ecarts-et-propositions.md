@@ -1969,6 +1969,51 @@ backoffice, décider avant de télécharger, images et expiration). M25 passe à
 page de suivi n'admet qu'une épique en cours — et reprend après M29. Ce que M25 laisse en
 attente du dirigeant ne change pas : lancer la purge du stock ignoré, sortir du palier gratuit.
 
+### Les médias : une référence, complétée à l'ouverture ou par un sujet
+
+**`tranché` par l'épreuve, à juger à l'usage** · Posé le 2026-11-25 en livrant la tranche 6 de
+M25 (M25.3, M25.5), sur le mot du dirigeant (« Tu peux armer puis lancer la tranche 6 »).
+
+**L'épreuve que S5 attendait est faite**, en lecture seule, sur le compte du dirigeant : 44
+médias WhatsApp déjà stockés, de 1 à 127 jours, redemandés à l'agrégateur. **43 reviennent, à
+l'octet près** — dont des images de 117 et 127 jours et des vidéos de 70 et 83 jours ; un seul
+manque (une image de 34 jours, « introuvable »). La relecture prend de 0,2 à 3,5 secondes.
+L'agrégateur sert donc un média bien au-delà des trente jours que le nettoyage laisse à un
+message sans sujet. **Conséquence : M25.4 est tranchée** — c'est S5 (la vignette à la
+réception, l'original à la demande), pas la recompression (S4), qui n'a plus d'objet.
+
+Ce que la mise en œuvre a fixé, et que l'épique ne disait pas :
+
+- **Une seule règle pour tous les médias de messagerie**, pas une par type : stocké si un sujet
+  porte le message, référence sinon. La vidéo n'a pas de régime à part — hors sujet elle n'est
+  jamais téléchargée, dans un sujet elle se garde.
+- **Ouvrir, c'est garder.** Une fonction ne sert pas un fichier (`PITFALLS` #11) : la pièce
+  qu'on ouvre est stockée, puis servie comme une autre. Elle vit ensuite ce que vit son
+  message — trente jours sans sujet.
+- **La vignette vient du réseau**, pas d'un traitement d'image : WhatsApp joint un JPEG de
+  quelques kilo-octets à chaque photo et vidéo, l'agrégateur le rend avec le message. Aucune
+  bibliothèque d'image n'entre dans le projet.
+- **Un vocal se garde toujours**, sujet ou pas (S13) : petit, et c'est lui que Relvo transcrira.
+- **Un autocollant ou un GIF laisse une trace**, pas rien : un mot dans le fil. Sans elle, un
+  message qui n'était qu'un autocollant devenait une bulle vide.
+- **Les plafonds** — image 10 Mo, audio 5 Mo, autre 20 Mo, vidéo 64 Mo — bornent ce qui se
+  stocke **de lui-même**. Ouvrir une pièce à la main n'a que le plafond du stockage (64 Mo).
+- **Un fichier de messagerie retrouve son nom** : le webhook n'en portait pas (« piece-jointe »),
+  la description de l'agrégateur le donne.
+- **Une pièce qu'on n'a pas su télécharger entre en référence** au lieu d'être perdue, comme
+  elle l'était jusque-là.
+- **Une image incorporée d'e-mail** est laissée sous 150 Ko ; au-dessus, c'est une image que
+  l'auteur a collée dans son message, elle se garde.
+
+**Ce que cela change pour le dirigeant, et qu'il peut vouloir revoir** : dans un fil qu'aucun
+sujet ne porte, une photo arrive floue et se charge au toucher. S6 le prévoyait (« le dirigeant
+qui ouvre un fil non trié voit des vignettes ») ; c'est à l'usage qu'on saura si c'est trop.
+Le réglage tient en une ligne de `deciderDeLaPiece`.
+
+**Le stock n'est pas touché** : ce qui était stocké le reste, jusqu'à ce que le nettoyage
+l'emporte. La messagerie relue à la connexion (S8) n'existe toujours pas ; quand elle se
+construira, elle passera par `recevoirLesPieces` et n'aura rien à décider de plus.
+
 ### Le nettoyage : ce qui n'a pas de sujet ne reste pas
 
 **`tranché`** · Par le dirigeant, le 2026-11-25, en lisant la mesure du stockage (M25.1) : 82 %
