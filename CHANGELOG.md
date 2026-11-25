@@ -6,6 +6,7 @@
 
 ## 2026-11-25
 
+- **Nouveau** — Dans un groupe WhatsApp, quand quelqu'un répond à l'un de vos messages, Relvo le traite comme une mention : il lit l'échange et vous pose la tâche s'il y en a une.
 - **Nouveau** — Un fichier que vous recevez plusieurs fois n'occupe plus qu'une seule place, et la page Usage vous montre la part de votre espace utilisée.
 - **Corrigé** — Le badge « Automatique » devient « E-mail automatique » sur un e-mail, et « Message automatique » sur une conversation WhatsApp.
 - **Corrigé** — Dans un groupe WhatsApp, les messages que vous écrivez depuis votre téléphone apparaissent désormais dans Relvo, comme ceux des autres.

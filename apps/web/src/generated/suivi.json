@@ -229,6 +229,10 @@
       "entrees": [
         {
           "type": "new",
+          "texte": "Dans un groupe WhatsApp, quand quelqu'un répond à l'un de vos messages, Relvo le traite comme une mention : il lit l'échange et vous pose la tâche s'il y en a une."
+        },
+        {
+          "type": "new",
           "texte": "Un fichier que vous recevez plusieurs fois n'occupe plus qu'une seule place, et la page Usage vous montre la part de votre espace utilisée."
         },
         {
