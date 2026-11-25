@@ -228,6 +228,10 @@
       "date": "2026-11-25",
       "entrees": [
         {
+          "type": "new",
+          "texte": "Un fichier que vous recevez plusieurs fois n'occupe plus qu'une seule place, et la page Usage vous montre la part de votre espace utilisée."
+        },
+        {
           "type": "fix",
           "texte": "Le badge « Automatique » devient « E-mail automatique » sur un e-mail, et « Message automatique » sur une conversation WhatsApp."
         },
