@@ -933,8 +933,8 @@ des fichiers de Django en 1.3.
   (`encoreReferencees`, `domain/file-deletions.ts`).
 - Le seul effacement direct permis est celui d'un fichier qu'on vient de poser **soi-même** et
   qu'aucune ligne n'a jamais porté (`completerLaPiece`, quand `Depot.partagee` est faux).
-- Une clé abandonnée **sans** suppression de ligne (la déduplication du stock repointe des
-  pièces) entre en file **à la main, dans la même transaction** : le déclencheur ne la verra
+- Une clé abandonnée **sans** suppression de ligne (le filet de la déduplication repointe des
+  pièces, au cron du matin) entre en file **à la main, dans la même transaction** : le déclencheur ne la verra
   jamais partir.
 - Une requête qui pèse le stockage compte par **clé distincte**, pas par pièce
   (`mesurerLesPieces`, `poidsStockeDuCompte`).

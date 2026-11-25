@@ -8,8 +8,8 @@
 > tranche 6** (« décider avant de télécharger », M25.3 et M25.5 — et M25.4, tranchée par
 > l'épreuve) et **la tranche 7** (le quota par compte, M25.7 ; la déduplication, M25.8) sont
 > livrés : **l'épique n'a plus de tranche à construire**. Il reste au dirigeant à sortir du
-> palier gratuit (M25.2), à **dédoublonner le stock** d'un clic (`/admin/stockage`), et à juger
-> à l'usage. ⚠️ De la tranche 6, la réception est vue en production (trois pièces entrées en
+> palier gratuit (M25.2) et à juger à l'usage — **le stock est dédoublonné** depuis le
+> 2026-11-25 (830 Mo libérés), et le filet passe désormais au cron du matin. ⚠️ De la tranche 6, la réception est vue en production (trois pièces entrées en
 > référence le jour même) ; **l'ouverture réussie d'une référence et la complétion par un sujet
 > ne le sont pas encore** (voir « Ce que la tranche 6 ne fait pas »). ⚠️ **Le nettoyage est ARMÉ depuis le 2026-11-25**, sur le
 > mot du dirigeant (`NETTOYAGE_ACTIF`, `apps/web/src/lib/nettoyage.ts`) : son **premier passage
@@ -223,13 +223,14 @@ sujet ne reste pas » ; `conception/04` §11).
   `20261125180000_m25_empreinte_des_pieces`), le MD5 du contenu — celui que le bucket rend
   dans son listing. Vérifié le 2026-11-25 sur quatre fichiers réels.
 - **Le domaine** : `packages/db/src/domain/deduplication.ts` — `trouverCleDeMemeContenu` (à
-  l'entrée), `planDeDeduplication` (pur) et `dedoublonnerLeCompte` (le stock : empreintes
-  notées, doublons repointés sur le plus ancien, fichiers abandonnés mis en file — une
-  transaction par compte, un événement `deduplication`). Test :
+  l'entrée), `planDeDeduplication` (pur) et `dedoublonnerLeCompte` (le filet : d'après les
+  empreintes en base, doublons repointés sur le plus ancien, fichiers abandonnés mis en file —
+  une transaction par compte, un événement `deduplication`). Test :
   `packages/db/test/deduplication.test.ts`.
-- **Le geste** : `server/deduplication.ts` (`dedoublonnerLeStock`, le bucket relu à neuf, un
-  listing coupé arrête tout), `adminDedoublonnerAction`, et le bouton « Dédoublonner… » de
-  `/admin/stockage` (`components/admin/dedoublonner.tsx`), confirmé. Le drainage part aussitôt.
+- **Le filet** : `server/deduplication.ts` (`passerLaDeduplication`), que le cron du matin
+  passe après le nettoyage et avant le drainage. Il ne lit que la base. **Aucun geste au
+  backoffice** : le bouton « Dédoublonner… » livré d'abord a servi une fois, puis a été retiré
+  (`ecarts`, « Le quota et la déduplication »).
 - **Le quota** : `deciderDeLaPiece` prend `auQuota` ; `recevoirLesPieces` ne le mesure que si
   une pièce allait se stocker ; `completerLesPiecesPortees` laisse les comptes pleins.
   `poidsStockeDuCompte` (`domain/mesure-stockage.ts`) compte par clé distincte, connaissances
@@ -244,14 +245,14 @@ sujet ne reste pas » ; `conception/04` §11).
 
 **Ce que la tranche 7 ne fait pas, et qu'il ne faut pas croire fait.**
 
-- **Le stock n'est pas dédoublonné** : c'est le clic du dirigeant sur « Dédoublonner… ». Tant
-  qu'il n'a pas eu lieu, les pièces d'avant n'ont pas d'empreinte, et un fichier qui arrive ne
-  se rapproche que de ceux entrés depuis la livraison.
-- **Le geste n'a jamais tourné sur le stock réel** : seuls les tests l'exécutent, et le local
-  a le bucket de production — on n'y clique pas. Sa durée n'est pas mesurée (un listing de
-  quinze mille fichiers, puis une transaction par compte, sous cinq minutes de fonction).
+- **Le filet du matin n'a jamais tourné en production** : seuls les tests l'exécutent. Son
+  premier passage est celui du 2026-11-26 ; il ne devrait rien trouver, le stock ayant été
+  dédoublonné la veille.
 - **Deux fichiers identiques qui arrivent au même instant** se stockent deux fois : le
-  second n'a pas encore vu le premier. Le prochain « Dédoublonner… » les rapproche.
+  second n'a pas encore vu le premier. Ils restent en double jusqu'au matin suivant.
+- **Une pièce stockée sans empreinte ne serait jamais rapprochée** : le filet ne lit plus le
+  bucket. Il n'y en a aucune aujourd'hui, et tout dépôt en note une ; la ligne « Doublons dans
+  un même compte » du backoffice, lue du bucket, le dirait.
 - **Le quota ne rationne pas l'e-mail**, ni ce que le dirigeant ouvre : un compte peut le
   dépasser. Il ne protège pas le palier gratuit non plus.
 - **Personne n'est prévenu à l'approche du quota** : ni notification, ni question de Relvo. Il
@@ -377,5 +378,5 @@ Chaque tranche est livrée, testée, documentée et poussée.
 - [x] Tranche 6 — décider avant de télécharger (M25.3, M25.5 ; M25.4 tranchée par l'épreuve)
       — livrée le 2026-11-25 ; le chemin heureux reste à lire en production.
 - [x] Tranche 7 — le quota (M25.7) et la déduplication (M25.8), à l'entrée et sur le stock —
-      livrée le 2026-11-25 ; le stock attend le clic du dirigeant sur « Dédoublonner… ».
+      livrée le 2026-11-25 ; le stock dédoublonné le jour même, le filet passé au cron du matin.
 - [ ] M25.2 — sortir du palier gratuit, par le dirigeant

@@ -1978,6 +1978,10 @@ M25 (M25.7, M25.8), sur le mot du dirigeant (« Tu peux passer à la tranche 7 �
 rapprochant le listing du bucket de ce que la base tient : 4 107 fichiers en double, 830 Mo —
 dont **2 522 fichiers et 270 Mo dans des messages qu'un sujet porte**, que le nettoyage
 n'emportera donc jamais. Le stock se dédoublonne donc aussi, pas seulement ce qui entre.
+Ventilés ensuite : les trois quarts des exemplaires en trop sont des logos de signature
+d'e-mail (peu de poids, et la tranche 6 ne les stocke plus) ; le poids vient de PDF et de
+vidéos renvoyés dans les groupes. La déduplication à l'entrée rendra donc peu à l'avenir —
+c'est sur le stock qu'elle a rendu.
 
 Ce que la mise en œuvre a fixé :
 
@@ -1992,8 +1996,18 @@ Ce que la mise en œuvre a fixé :
   une clé porte son compte.
 - **La ligne reste, le fichier est commun** : chaque message garde sa pièce et son nom. La
   file de suppression épargnait déjà une clé encore tenue ; rien d'autre n'a eu à changer.
-- **Le stock se dédoublonne d'un geste de l'administrateur**, confirmé, depuis la page
-  Stockage — pas par un cron : il efface des fichiers, il se décide en regardant.
+- **Le stock a été dédoublonné une fois, le 2026-11-25**, par un bouton du backoffice que la
+  tranche avait livré : neuf comptes, 4 108 fichiers libérés, 830 Mo, toutes les pièces
+  stockées notées de leur empreinte. **Le bouton a été retiré le jour même, sur le mot du
+  dirigeant** : il n'existait que parce que l'accès à la production est en lecture seule — une
+  contrainte technique, pas un choix métier. La règle qui en sort vaut pour tout le
+  backoffice : **un bouton y est un choix à faire** ; ce qui ne se décide pas est un script
+  s'il passe une fois, un cron s'il revient.
+- **Ce qui se croise à l'entrée est rattrapé par le cron du matin** : deux exemplaires
+  arrivés au même instant se stockent tous les deux, chacun ayant cherché avant que l'autre
+  soit noté. Le filet les rapproche d'après les empreintes en base, sans lire le stockage,
+  avant le drainage qui emporte ce qu'il lâche. La page Stockage garde la ligne « Doublons
+  dans un même compte », qui se lit du bucket : c'est elle qui dirait qu'il en reste.
 - **Le quota par défaut est de 5 Go par compte**, réglable (`STOCKAGE_QUOTA_COMPTE_GO`). Le
   plus gros compte en porte 2,3 ; un quota plus serré aurait coupé un testeur le jour de sa
   livraison. Il ne protège donc **pas** le palier gratuit — dix comptes à 5 Go le dépassent

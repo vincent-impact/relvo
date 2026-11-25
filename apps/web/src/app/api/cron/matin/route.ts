@@ -13,6 +13,7 @@ import {
 } from "@relvo/db";
 import { getStorage } from "@relvo/storage";
 import { renouvelerLesAbonnements } from "@/server/gmail/abonnement";
+import { passerLaDeduplication } from "@/server/deduplication";
 import { lancerLectureDesGroupes } from "@/server/ia/pipeline/groupes-du-jour";
 import { completerLesPiecesPortees } from "@/server/medias";
 import { passerLeNettoyage } from "@/server/nettoyage";
@@ -28,6 +29,10 @@ import { expireTenantData } from "@/server/cached";
 //   0. Le nettoyage (`server/nettoyage`) : les sujets fermés depuis trente
 //      jours s'effacent, ce qu'aucun sujet ne porte depuis trente jours expire.
 //      EN PREMIER : les fichiers qu'il lâche partent au drainage qui suit.
+//      Puis le FILET de la déduplication (M25.8, `server/deduplication`) : un
+//      fichier est dédoublonné à l'entrée, ce passage rapproche ce qui s'est
+//      croisé — deux exemplaires arrivés au même instant. Il ne lit que la
+//      base, et ses fichiers partent au même drainage.
 //   1. Le drainage de l'outbox de suppression de fichiers (M4.6) — la route
 //      `/api/cron/drain-file-deletions` reste appelable à la main.
 //   2. Le brief du matin (M12.7) : pour chaque compte qui a un appareil abonné,
@@ -85,6 +90,13 @@ export async function GET(request: Request) {
     return null;
   });
   console.info("[cron] matin — nettoyage", nettoyage);
+
+  // Le filet de la déduplication, avant le drainage qui emporte ce qu'il lâche.
+  const deduplication = await passerLaDeduplication().catch((e) => {
+    console.error("[cron] matin — déduplication interrompue", e);
+    return null;
+  });
+  console.info("[cron] matin — déduplication", deduplication);
 
   // Une minute de drainage, pas un lot : le nettoyage met des milliers de clés
   // en file d'un coup (PITFALLS #80). Le reste est au brief.
@@ -148,6 +160,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     nettoyage,
+    deduplication,
     drainage: { ...drainage, remaining },
     briefs,
     abonnements,

@@ -106,8 +106,9 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   contenu que le compte a déjà (même empreinte MD5, même poids — `domain/deduplication.ts`)
   n'est pas posé une seconde fois, la pièce **partage** la clé de l'autre. ⚠️ Une clé d'objet
   n'appartient donc plus à une seule pièce : **jamais** de `storage.delete` sur la clé d'une
-  pièce — on supprime la LIGNE, la file épargne ce qui est encore tenu (`PITFALLS.md` #83). Le
-  stock se dédoublonne du backoffice (`/admin/stockage`, « Dédoublonner… »). Le **quota** d'un
+  pièce — on supprime la LIGNE, la file épargne ce qui est encore tenu (`PITFALLS.md` #83). Ce
+  qui s'est croisé à l'entrée est rapproché par le cron du matin (`dedoublonnerLeCompte`,
+  d'après les empreintes en base) — **aucun geste au backoffice**. Le **quota** d'un
   compte (`STOCKAGE_QUOTA_COMPTE_GO`, `espaceDuCompte`) : au quota, rien ne se stocke plus de
   lui-même ; ce qu'on ouvre, oui.
 - **Aucun accès direct au stockage** : tout passe par le paquet dédié, jamais par un client
@@ -128,7 +129,9 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   pas de menu. Gardée **deux fois** — par le proxy (rôle lu dans le jeton ; le callback `session`
   vit donc dans `auth.config.ts`, `PITFALLS.md` #64) et par `requireAdmin()` (rôle relu en base).
   Le rôle se donne **par script** (`admin:role`), jamais par la base. Le backoffice **lit les mêmes
-  fonctions que le produit** et n'a aucun compteur à lui.
+  fonctions que le produit** et n'a aucun compteur à lui. ⚠️ **Un bouton du backoffice est un
+  choix à faire**, jamais une tâche technique : ce qui ne se décide pas est un script s'il
+  passe une fois, un cron s'il revient.
 - **Un test qui touche la base vit dans les tests d'intégration**, jamais ailleurs. Les tests
   unitaires sont colocalisés. La ligne de partage n'est pas la taille du test mais **sa
   dépendance**.
@@ -183,7 +186,7 @@ relvo/
 | `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros — sa carte « Espace » est réelle (la part du quota de stockage, M25.7), celle du plafond mensuel encore de démonstration ; les **Préférences** portent l'assistant et les notifications de cet appareil. Il n'y a **pas** de page Réglages | menu |
 | `/recherche` | Recherche transverse | menu, en dernier |
 | `/sujets/[id]` · `/sujets/nouveau` | Fiche d'un sujet | hors-nav |
-| `/admin` · `/admin/comptes/[id]` · `/admin/stockage` · `/admin/dictee` | **Backoffice** (M21) — rôle `admin` seulement : les comptes, les demandes à ouvrir, les gestes (assistant, test, suppression), le **stockage** (M25.1 : le poids du bucket contre son repère, ce qui tient les pièces, par type, par canal, par compte, et ce qu'un effacement aurait laissé — le bucket se liste par `@relvo/storage`, gardé un quart d'heure ; « Dédoublonner… » ne garde qu'un exemplaire de chaque fichier par compte, M25.8), l'**essai de dictée** (M22.1 : le micro en PWA, la mesure, le partage des enregistrements du benchmark) | entrée du menu pour les administrateurs ; retour à l'app par le pictogramme maison |
+| `/admin` · `/admin/comptes/[id]` · `/admin/stockage` · `/admin/dictee` | **Backoffice** (M21) — rôle `admin` seulement : les comptes, les demandes à ouvrir, les gestes (assistant, test, suppression), le **stockage** (M25.1 : le poids du bucket contre son repère, ce qui tient les pièces, par type, par canal, par compte, et ce qu'un effacement aurait laissé — le bucket se liste par `@relvo/storage`, gardé un quart d'heure ; les doublons qui resteraient s'y comptent, rien ne s'y lance), l'**essai de dictée** (M22.1 : le micro en PWA, la mesure, le partage des enregistrements du benchmark) | entrée du menu pour les administrateurs ; retour à l'app par le pictogramme maison |
 | `/(auth)/*` | Tunnel d'authentification — l'inscription est libre, **l'accès s'ouvre quand un administrateur valide la demande** (`/inscription/attente`) | — |
 | `relvo.net` · `/confidentialite` · `/conditions` | **Le site** (M24.10) — un autre **hôte** du même déployable : la présentation (`(public)/site`, réécrite depuis `/` sur cet hôte), la politique de confidentialité et les conditions, à l'adresse déclarée à Google. Sur `app.relvo.net`, ces chemins renvoient au site ; sur `relvo.net`, tout autre chemin renvoie à l'application (`lib/hotes.ts`, `next.config.ts`) | hors-nav, sans session |
 
@@ -256,7 +259,7 @@ pnpm db:migrate      # nouvelle migration
 pnpm db:generate     # ⚠️ après TOUTE migration (#33)
 pnpm db:seed         # jeu de démonstration
 pnpm --filter web ia:journal   # le compteur de l'inférence relu : coût, cache, silencieux
-curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/matin   # le cron du matin à la main : le nettoyage (réel — `NETTOYAGE_ACTIF`), drainage, brief, abonnements Gmail, le lundi le relevé de ce que Relvo a ignoré (M25.11), et la première lecture des groupes du jour (M29.5) — la seconde part du cron de la mi-journée, `/api/cron/catch-up`
+curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/matin   # le cron du matin à la main : le nettoyage (réel — `NETTOYAGE_ACTIF`), le filet de la déduplication (M25.8), drainage, brief, abonnements Gmail, le lundi le relevé de ce que Relvo a ignoré (M25.11), et la première lecture des groupes du jour (M29.5) — la seconde part du cron de la mi-journée, `/api/cron/catch-up`
 pnpm --filter web push:essai <e-mail>   # pose une question de test et la pousse (M12.9)
 pnpm --filter web admin:role <e-mail> admin|ceo   # donne ou retire le rôle admin, journalisé (M21.1) — effectif à la prochaine connexion
 pnpm --filter web boites:migrer <e-mail> [adresse]   # propose à un compte de passer une boîte de l'agrégateur au relais Gmail (M24.9) — question poussée, rien ne bascule avant son retour de Google

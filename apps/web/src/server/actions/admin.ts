@@ -19,10 +19,6 @@ import { sendAccountActivatedEmail } from "@/lib/email";
 import { requireAdmin } from "@/server/admin";
 import { MESSAGES_REFUS, refusSuppression } from "@/server/admin-regles";
 import { fournisseurDe } from "@/server/courrier";
-import {
-  type DeduplicationDuStock,
-  dedoublonnerLeStock,
-} from "@/server/deduplication";
 import { effacerLesFichiersSupprimes } from "@/server/nettoyage";
 import { TAG_BUCKET } from "@/server/stockage-mesure";
 
@@ -173,30 +169,4 @@ export async function adminRelireBucketAction(): Promise<
   updateTag(TAG_BUCKET);
   revalidatePath("/admin");
   return ok({ relu: true as const });
-}
-
-/**
- * Dédoublonne le stock de tous les comptes (M25.8) : un même fichier n'est
- * gardé qu'une fois par compte, les autres exemplaires partent en file de
- * suppression — et le drainage part aussitôt après la réponse. Irréversible
- * pour les fichiers ; chaque pièce garde le sien. Journalisé par compte.
- */
-export async function adminDedoublonnerAction(): Promise<
-  ActionResult<DeduplicationDuStock>
-> {
-  await requireAdmin();
-  try {
-    const passage = await dedoublonnerLeStock({ simuler: false });
-    console.info("[admin] déduplication du stock", passage);
-    if (passage.bilan.fichiersLiberes > 0) effacerLesFichiersSupprimes();
-    updateTag(TAG_BUCKET);
-    revalidatePath("/admin");
-    return ok(passage);
-  } catch (e) {
-    console.error("[admin] déduplication interrompue", e);
-    return err(
-      "INVALID_STATE",
-      e instanceof Error ? e.message : "La déduplication n'a pas abouti.",
-    );
-  }
 }

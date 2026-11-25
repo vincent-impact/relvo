@@ -618,10 +618,10 @@ nettoyage, sans avoir rien pesé. Les plafonds sont une configuration de l'appli
 fil d'e-mail rejoint la même pièce à chaque réponse. Tout fichier reçu entre par un seul dépôt,
 qui demande d'abord si le compte a déjà ce contenu — même empreinte, même poids : si oui, la
 nouvelle pièce **partage** le fichier de l'ancienne. Chaque message garde sa pièce, avec son
-nom ; seul le fichier est commun, et il part quand sa dernière pièce part. Le stock se
-dédoublonne de la même façon, d'après ce que le bucket porte réellement, par un geste de
-l'administrateur. Jamais d'un compte à l'autre : un fichier commun à deux comptes lierait leur
-sort.
+nom ; seul le fichier est commun, et il part quand sa dernière pièce part. Deux exemplaires
+arrivés au même instant peuvent se croiser à l'entrée : le passage du matin les rapproche,
+d'après les empreintes, sans geste de personne. Jamais d'un compte à l'autre : un fichier commun
+à deux comptes lierait leur sort.
 
 **Chaque compte a un quota**, lu d'une configuration, large comme un filet : il borne le pire
 cas, il ne rationne personne. Au quota, Relvo continue de tout recevoir ; il cesse seulement de

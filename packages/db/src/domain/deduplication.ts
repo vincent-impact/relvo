@@ -17,15 +17,16 @@ import { EVENT_TYPES } from "./events";
 //
 // L'empreinte est le MD5 du contenu, en hexadécimal : celle que le stockage
 // calcule lui-même pour chaque objet et rend dans son listing. C'est ce qui
-// permet de dédoublonner le STOCK sans retélécharger un octet, et de vérifier
-// la base contre le bucket.
+// permet de vérifier la base contre le bucket sans relire un octet — le
+// backoffice compte ainsi les doublons qui resteraient (`/admin/stockage`).
 //
 //   · À L'ENTRÉE : `trouverCleDeMemeContenu` — l'application, avant de poser
-//     un fichier, demande si le compte l'a déjà.
-//   · SUR LE STOCK : `dedoublonnerLeCompte` — d'après le listing du bucket,
-//     note l'empreinte des pièces qui n'en ont pas, puis fait pointer les
-//     doublons sur un seul fichier et met les autres en file de suppression.
-//     Sait d'abord se simuler, par le même calcul (`planDeDeduplication`).
+//     un fichier, demande si le compte l'a déjà. C'est elle qui fait le
+//     travail : toute pièce stockée porte son empreinte.
+//   · LE FILET : `dedoublonnerLeCompte`, que le cron du matin passe sur chaque
+//     compte. Deux exemplaires arrivés au même instant ont pu se croiser à
+//     l'entrée — chacun a cherché avant que l'autre soit noté ; le filet les
+//     rapproche d'après les empreintes en base, sans rien lire au stockage.
 //
 // Jamais d'un compte à l'autre : une clé porte son compte, et un fichier
 // partagé entre deux comptes lierait leur sort.
@@ -59,19 +60,15 @@ export async function trouverCleDeMemeContenu(
   return piece?.storageKey ?? null;
 }
 
-/** Ce que le stockage dit d'un objet : son empreinte et son poids. */
-export type ObjetStocke = { etag: string | null; size: number };
-
 /** Une pièce stockée, telle que le plan la lit. */
 export type PieceStockee = {
   storageKey: string;
   contentHash: string | null;
+  fileSize: number | null;
   createdAt: Date;
 };
 
 export type PlanDeDeduplication = {
-  /** Clés dont les pièces n'ont pas encore leur empreinte en base. */
-  aNoter: { storageKey: string; contentHash: string }[];
   /** Pour chaque contenu en plusieurs exemplaires : la clé gardée, celles qui partent. */
   groupes: { garde: string; abandonnees: string[]; octets: number }[];
   /** Pièces qui changeront de clé, fichiers qui partiront, et leur poids. */
@@ -81,56 +78,52 @@ export type PlanDeDeduplication = {
 };
 
 /**
- * Le PLAN d'un compte — pur : ce que la déduplication noterait et
- * rapprocherait, d'après ses pièces stockées et ce que le bucket porte. Une
- * clé absente du bucket, ou sans empreinte simple, n'entre dans aucun groupe :
- * on ne fait jamais pointer une pièce vers un fichier qu'on n'a pas vu. Pour
- * chaque contenu, la clé gardée est celle de la pièce la plus ancienne.
+ * Le PLAN d'un compte — pur : ce que le filet rapprocherait, d'après ses
+ * pièces stockées. Une clé n'entre dans un groupe que si TOUTES ses pièces
+ * disent la même empreinte et le même poids : dans le doute, un fichier reste
+ * où il est. Pour chaque contenu, la clé gardée est celle de la pièce la plus
+ * ancienne — la même que `trouverCleDeMemeContenu` rend à l'entrée.
  */
 export function planDeDeduplication(
   pieces: readonly PieceStockee[],
-  bucket: ReadonlyMap<string, ObjetStocke>,
 ): PlanDeDeduplication {
   type Cle = {
     key: string;
-    hash: string;
+    contenu: string | null;
     size: number;
     depuis: number;
     n: number;
-    sansEmpreinte: boolean;
   };
   const cles = new Map<string, Cle>();
   for (const p of pieces) {
-    const objet = bucket.get(p.storageKey);
-    if (!objet || !estUneEmpreinte(objet.etag)) continue;
-    const c = cles.get(p.storageKey);
+    const contenu =
+      estUneEmpreinte(p.contentHash) && p.fileSize != null
+        ? `${p.contentHash}|${p.fileSize}`
+        : null;
     const t = p.createdAt.getTime();
+    const c = cles.get(p.storageKey);
     if (c) {
       c.n += 1;
       c.depuis = Math.min(c.depuis, t);
-      c.sansEmpreinte ||= p.contentHash !== objet.etag;
+      if (c.contenu !== contenu) c.contenu = null;
     } else {
       cles.set(p.storageKey, {
         key: p.storageKey,
-        hash: objet.etag,
-        size: objet.size,
+        contenu,
+        size: p.fileSize ?? 0,
         depuis: t,
         n: 1,
-        sansEmpreinte: p.contentHash !== objet.etag,
       });
     }
   }
   const parContenu = new Map<string, Cle[]>();
   for (const c of cles.values()) {
-    const contenu = `${c.hash}|${c.size}`;
-    (parContenu.get(contenu) ?? parContenu.set(contenu, []).get(contenu)!).push(
-      c,
-    );
+    if (!c.contenu) continue;
+    (
+      parContenu.get(c.contenu) ?? parContenu.set(c.contenu, []).get(c.contenu)!
+    ).push(c);
   }
   const plan: PlanDeDeduplication = {
-    aNoter: [...cles.values()]
-      .filter((c) => c.sansEmpreinte)
-      .map((c) => ({ storageKey: c.key, contentHash: c.hash })),
     groupes: [],
     piecesRepointees: 0,
     fichiersLiberes: 0,
@@ -155,8 +148,6 @@ export function planDeDeduplication(
 }
 
 export type BilanDeDeduplication = {
-  /** Pièces dont l'empreinte a été notée. */
-  empreintesNotees: number;
   /** Pièces qui pointent maintenant vers le fichier d'une autre. */
   piecesRepointees: number;
   /** Fichiers mis en file de suppression, et leur poids. */
@@ -165,93 +156,75 @@ export type BilanDeDeduplication = {
 };
 
 /**
- * Dédoublonne le stock d'UN compte, d'après le listing du bucket. Dans une
- * seule transaction : l'empreinte des pièces qui n'en ont pas, les doublons
- * qui pointent sur le fichier gardé, et les fichiers abandonnés en file de
+ * Le filet sur UN compte. Dans une seule transaction : les doublons pointent
+ * sur le fichier gardé, et les fichiers abandonnés entrent en file de
  * suppression — un arrêt en chemin ne laisse ni pièce sans fichier, ni fichier
- * sans propriétaire. `simuler` ne fait que compter, par le même plan.
+ * sans propriétaire. Se rejoue sans effet.
  *
- * Cross-tenant par construction, comme la mesure (`./mesure-stockage`) :
- * appelée seulement derrière `requireAdmin`. Se rejoue sans effet.
+ * Cross-tenant par construction, comme le nettoyage (`./nettoyage`) : appelée
+ * seulement par le cron du matin.
  */
 export async function dedoublonnerLeCompte(
   accountId: string,
-  bucket: ReadonlyMap<string, ObjetStocke>,
-  opts: { simuler?: boolean } = {},
 ): Promise<BilanDeDeduplication> {
   const pieces = await prisma.attachment.findMany({
-    where: { accountId, storageKey: { not: null } },
-    select: { storageKey: true, contentHash: true, createdAt: true },
+    where: {
+      accountId,
+      storageKey: { not: null },
+      contentHash: { not: null },
+    },
+    select: {
+      storageKey: true,
+      contentHash: true,
+      fileSize: true,
+      createdAt: true,
+    },
   });
   const plan = planDeDeduplication(
     pieces.map((p) => ({ ...p, storageKey: p.storageKey! })),
-    bucket,
   );
   const bilan: BilanDeDeduplication = {
-    empreintesNotees: 0,
     piecesRepointees: plan.piecesRepointees,
     fichiersLiberes: plan.fichiersLiberes,
     octetsLiberes: plan.octetsLiberes,
   };
-  if (opts.simuler) {
-    const aNoter = new Set(plan.aNoter.map((n) => n.storageKey));
-    bilan.empreintesNotees = pieces.filter((p) =>
-      aNoter.has(p.storageKey!),
-    ).length;
-    return bilan;
-  }
-  if (plan.aNoter.length === 0 && plan.groupes.length === 0) return bilan;
+  if (plan.groupes.length === 0) return bilan;
 
   const abandonnees = plan.groupes.flatMap((g) => g.abandonnees);
   const gardes = plan.groupes.flatMap((g) => g.abandonnees.map(() => g.garde));
   await prisma.$transaction(
     async (tx) => {
-      if (plan.aNoter.length > 0) {
-        bilan.empreintesNotees = await tx.$executeRaw`
-          UPDATE attachments a
-          SET content_hash = v.hash
-          FROM unnest(
-            ${plan.aNoter.map((n) => n.storageKey)}::text[],
-            ${plan.aNoter.map((n) => n.contentHash)}::text[]
-          ) AS v(cle, hash)
-          WHERE a.account_id = ${accountId}::uuid
-            AND a.storage_key = v.cle
-            AND a.content_hash IS DISTINCT FROM v.hash
-        `;
-      }
-      if (abandonnees.length > 0) {
-        bilan.piecesRepointees = await tx.$executeRaw`
-          UPDATE attachments a
-          SET storage_key = v.garde
-          FROM unnest(${abandonnees}::text[], ${gardes}::text[]) AS v(abandonnee, garde)
-          WHERE a.account_id = ${accountId}::uuid
-            AND a.storage_key = v.abandonnee
-        `;
-        // Aucune ligne ne porte plus ces clés : le déclencheur de suppression
-        // ne les verra jamais partir. C'est ici qu'elles entrent en file — le
-        // drainage vérifie encore, avant d'effacer, que personne ne les tient.
-        await tx.$executeRaw`
-          INSERT INTO pending_file_deletions (storage_key)
-          SELECT unnest(${abandonnees}::text[])
-        `;
-        // Hors client tenant (la mesure et ce geste sont cross-tenant) : le
-        // compte est écrit à la main sur l'entrée de journal.
-        await tx.eventLog.create({
-          data: {
-            accountId,
-            entityType: "system",
-            entityId: accountId,
-            eventType: EVENT_TYPES.deduplication,
-            title: "Déduplication : un même fichier n'est stocké qu'une fois",
-            actor: Actor.system,
-            metadata: {
-              piecesRepointees: bilan.piecesRepointees,
-              fichiersLiberes: bilan.fichiersLiberes,
-              octetsLiberes: bilan.octetsLiberes,
-            },
-          } as Prisma.EventLogUncheckedCreateInput,
-        });
-      }
+      bilan.piecesRepointees = await tx.$executeRaw`
+        UPDATE attachments a
+        SET storage_key = v.garde
+        FROM unnest(${abandonnees}::text[], ${gardes}::text[]) AS v(abandonnee, garde)
+        WHERE a.account_id = ${accountId}::uuid
+          AND a.storage_key = v.abandonnee
+      `;
+      // Aucune ligne ne porte plus ces clés : le déclencheur de suppression ne
+      // les verra jamais partir. C'est ici qu'elles entrent en file — le
+      // drainage vérifie encore, avant d'effacer, que personne ne les tient.
+      await tx.$executeRaw`
+        INSERT INTO pending_file_deletions (storage_key)
+        SELECT unnest(${abandonnees}::text[])
+      `;
+      // Hors client tenant (le filet est cross-tenant) : le compte est écrit
+      // à la main sur l'entrée de journal.
+      await tx.eventLog.create({
+        data: {
+          accountId,
+          entityType: "system",
+          entityId: accountId,
+          eventType: EVENT_TYPES.deduplication,
+          title: "Déduplication : un même fichier n'est stocké qu'une fois",
+          actor: Actor.system,
+          metadata: {
+            piecesRepointees: bilan.piecesRepointees,
+            fichiersLiberes: bilan.fichiersLiberes,
+            octetsLiberes: bilan.octetsLiberes,
+          },
+        } as Prisma.EventLogUncheckedCreateInput,
+      });
     },
     { timeout: 120_000, maxWait: 15_000 },
   );

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { countPendingFileDeletions, listAccountsForAdmin } from "@relvo/db";
 import { depuis } from "@/components/admin/format";
 import { Ligne } from "@/components/admin/ligne";
-import { Dedoublonner } from "@/components/admin/dedoublonner";
 import { RelireBucket } from "@/components/admin/relire-bucket";
 import {
   CarteStockage,
@@ -22,9 +21,6 @@ import { mesureDuStockage } from "@/server/stockage-mesure";
 
 export const metadata: Metadata = { title: "Stockage — Backoffice Relvo" };
 export const dynamic = "force-dynamic";
-// La déduplication du stock (M25.8) part de cette page : elle relit le bucket
-// chez le fournisseur puis passe compte par compte.
-export const maxDuration = 300;
 
 // LE STOCKAGE (M25.1) — où part l'espace, et si ce qui devait partir est
 // parti. En tête, le poids contre le repère ; puis le bucket lu chez le
@@ -139,23 +135,13 @@ export default async function StockagePage() {
               ceux que la base connaît.
             </p>
           )}
-          {/* La note sur toute la largeur, les gestes dessous : à deux boutons,
-              la note se retrouvait serrée dans une colonne étroite. */}
-          <div className="mt-3 flex flex-col gap-2.5 px-4">
+          <div className="mt-3 flex items-center justify-between gap-3 px-4">
             <p className="text-[12.5px] leading-[17px] font-light text-gris">
               {bucket && !bucket.complet
                 ? "Le listing a été coupé à son plafond : ces totaux sont des minorants."
                 : "« Sans propriétaire » : stocké, mais ni en base ni en file — ce qu'un effacement a laissé."}
             </p>
-            <div className="flex items-center justify-end gap-2">
-              {bucket?.complet && bucket.doublons.objets > 0 ? (
-                <Dedoublonner
-                  fichiers={bucket.doublons.objets}
-                  poids={bucket.doublons.octets}
-                />
-              ) : null}
-              <RelireBucket />
-            </div>
+            <RelireBucket />
           </div>
         </section>
 
