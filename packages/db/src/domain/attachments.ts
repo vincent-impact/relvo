@@ -112,6 +112,8 @@ export const createAttachmentSchema = z.object({
   externalId: z.string().trim().min(1).max(1024).optional().nullable(),
   thumbnail: z.string().max(VIGNETTE_MAX_CARACTERES).optional().nullable(),
   fileSize: z.number().int().nonnegative().optional().nullable(),
+  /** L'empreinte du contenu stocké (M25.8, `./deduplication`). */
+  contentHash: z.string().trim().max(128).optional().nullable(),
 });
 
 export type CreateAttachmentInput = z.infer<typeof createAttachmentSchema>;
@@ -156,6 +158,7 @@ export async function createAttachment(
         externalId: data.externalId ?? null,
         thumbnail: data.thumbnail ?? null,
         fileSize: data.fileSize ?? null,
+        contentHash: data.contentHash ?? null,
       } as Prisma.AttachmentUncheckedCreateInput,
     });
     await logEvent(tx as Tx, {
@@ -230,7 +233,13 @@ export async function getPieceARelire(
 export async function noterPieceStockee(
   db: TenantDb,
   id: string,
-  fichier: { storageKey: string; fileSize: number; mimeType: string | null },
+  fichier: {
+    storageKey: string;
+    fileSize: number;
+    mimeType: string | null;
+    /** L'empreinte du contenu (M25.8). */
+    contentHash?: string | null;
+  },
 ): Promise<{ gagne: boolean; storageKey: string }> {
   return db.$transaction(async (tx) => {
     const { count } = await tx.attachment.updateMany({
@@ -238,6 +247,7 @@ export async function noterPieceStockee(
       data: {
         storageKey: fichier.storageKey,
         fileSize: fichier.fileSize,
+        contentHash: fichier.contentHash ?? null,
         unavailableAt: null,
         ...(fichier.mimeType ? { mimeType: fichier.mimeType } : {}),
       },

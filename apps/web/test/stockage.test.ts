@@ -29,6 +29,19 @@ const ligne = (l: Partial<LigneDePoids>): LigneDePoids => ({
   ...l,
 });
 
+describe("ce qui n'est pas stocké, ou l'est une seule fois", () => {
+  it("compte à part les références et ce que la déduplication épargne", () => {
+    const r = resumerLesPieces([
+      ligne({ pieces: 2, octets: 300, references: 3, octetsAnnonces: 9_000 }),
+      ligne({ pieces: 1, octets: 100, partagees: 4, octetsPartages: 400 }),
+      ligne({}),
+    ]);
+    expect(r.total).toEqual({ pieces: 4, octets: 500 });
+    expect(r.references).toEqual({ pieces: 3, octets: 9_000 });
+    expect(r.partagees).toEqual({ pieces: 4, octets: 400 });
+  });
+});
+
 describe("résumer les pièces", () => {
   it("additionne par canal, par famille et par compte", () => {
     const r = resumerLesPieces([

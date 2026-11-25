@@ -473,6 +473,12 @@ kilo-octets, en base64) : c'est ce que le fil montre d'une image ou d'une vidéo
 Pour une référence, `file_size` est le poids **annoncé** par le fournisseur ; il devient le
 poids réel quand le fichier est stocké.
 
+⚠️ **Une clé d'objet n'appartient pas à une seule pièce.** `content_hash` porte l'empreinte du
+contenu stocké — celle que le stockage calcule lui-même pour chaque objet — : deux pièces d'un
+même compte de même empreinte et de même poids **partagent** leur `storage_key`, et le fichier
+n'est stocké qu'une fois (`04 §11`). Jamais d'un compte à l'autre. Le fichier part avec sa
+**dernière** pièce : la file de suppression épargne une clé qu'une autre ligne référence encore.
+
 **Trois niveaux d'analyse, chacun avec son horodatage** — et l'horodatage **est** le drapeau de
 cache : s'il est renseigné, l'analyse a déjà été faite, et le modèle n'est jamais sollicité deux
 fois pour le même document au même niveau.

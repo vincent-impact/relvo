@@ -16,6 +16,7 @@ import {
   mesureDuStockage,
   type MesureDuStockage,
 } from "@/server/stockage-mesure";
+import { partDuQuota, pourcentDuQuota } from "@/lib/medias";
 import { cn } from "@/lib/utils";
 import { depuis } from "./format";
 import { JaugePlafond } from "./jauge-plafond";
@@ -188,7 +189,12 @@ export function RepartitionDesPieces({ mesure }: { mesure: MesureDuStockage }) {
         <p className="mt-3 px-4 text-[12.5px] leading-[17px] font-light text-gris">
           {pieces.references.pieces
             ? `${compte(pieces.references.pieces, "pièce gardée", "pièces gardées")} en référence, non stockées : ${octets(pieces.references.octets)} annoncés par leur source.`
-            : "Aucune pièce gardée en référence pour l'instant : tout ce qui est compté ici est stocké."}
+            : "Aucune pièce gardée en référence pour l'instant : tout ce qui est compté ici est stocké."}{" "}
+          {/* Ce que la déduplication épargne (M25.8) : un fichier partagé
+              n'est compté qu'une fois ci-dessus. */}
+          {pieces.partagees.pieces
+            ? `${compte(pieces.partagees.pieces, "pièce partage", "pièces partagent")} le fichier d'une autre : ${octets(pieces.partagees.octets)} épargnés.`
+            : null}
         </p>
       </section>
 
@@ -235,6 +241,9 @@ export function StockageDuCompte({
   const { pieces, connaissances, bucket } = mesure;
   const total = pieces.total.octets;
   const auBucket = bucket?.parCompte[accountId];
+  // Le quota du compte (M25.7) : ses pièces et ses connaissances, contre la
+  // garde de la configuration. Au quota, plus rien ne se stocke de lui-même.
+  const part = partDuQuota(total + connaissances.octets, mesure.quotaOctets);
   const plusLourdes = FAMILLES.filter((f) => pieces.parFamille[f].pieces > 0)
     .sort((a, b) => pieces.parFamille[b].octets - pieces.parFamille[a].octets)
     .slice(0, 3);
@@ -243,6 +252,17 @@ export function StockageDuCompte({
       <ZoneHeading label="Stockage" hint="pièces et connaissances" />
       <ListPanel>
         <Ligne label="Pièces jointes">{poids(pieces.total)}</Ligne>
+        <Ligne
+          label="Quota du compte"
+          tone={part >= 1 ? "urgent" : part >= 0.8 ? "attente" : undefined}
+        >
+          {pourcentDuQuota(part)} %
+          <span className="font-light text-gris">
+            {" "}
+            de {octets(mesure.quotaOctets)}
+            {part >= 1 ? " · plus rien ne se stocke de lui-même" : ""}
+          </span>
+        </Ligne>
         <Ligne label="Dans le bucket">
           {bucket ? (
             <>

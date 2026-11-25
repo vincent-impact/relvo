@@ -101,6 +101,15 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   `/contenu`) **complète** une référence : rien ne les appelle sans que le dirigeant ait
   touché la pièce — le fil montre la vignette (`PITFALLS.md` #82). ⚠️ `storage_key` est
   **nullable** : une requête qui compte du poids ou des clés filtre sur ce qui est stocké.
+- **Un fichier reçu entre par un seul dépôt** (M25.8, M25.7, `04 §11`) :
+  `deposerUnePiece` (`server/depot.ts`) — e-mail comme messagerie. Il **dédoublonne** : un
+  contenu que le compte a déjà (même empreinte MD5, même poids — `domain/deduplication.ts`)
+  n'est pas posé une seconde fois, la pièce **partage** la clé de l'autre. ⚠️ Une clé d'objet
+  n'appartient donc plus à une seule pièce : **jamais** de `storage.delete` sur la clé d'une
+  pièce — on supprime la LIGNE, la file épargne ce qui est encore tenu (`PITFALLS.md` #83). Le
+  stock se dédoublonne du backoffice (`/admin/stockage`, « Dédoublonner… »). Le **quota** d'un
+  compte (`STOCKAGE_QUOTA_COMPTE_GO`, `espaceDuCompte`) : au quota, rien ne se stocke plus de
+  lui-même ; ce qu'on ouvre, oui.
 - **Aucun accès direct au stockage** : tout passe par le paquet dédié, jamais par un client
   instancié à la main — c'est ce qui garde le fournisseur remplaçable et ce qui évite de recréer
   un client sans les deux réglages obligatoires (`PITFALLS.md` #8). **Une pièce s'ouvre dans
@@ -171,10 +180,10 @@ relvo/
 | `/bilan` | **Bilan** — deux familles de chiffres, séparées | menu |
 | `/memoire/[id]` · `/memoire/nouveau` | **La fiche d'un dossier** (« dossier », « sujet », « connaissance » pour l'utilisateur, `Folder` dans le code) — la vue d'ensemble des dossiers est la vue Dossiers de `/fil` (M28), il n'y a pas de page de liste. Un dossier s'ouvre sur sa **description** (Relvo s'en sert pour ranger ; invite en pointillé si elle manque) puis **quatre onglets à icône** Dossiers (son arbre en une carte : le **triangle à gauche** replie une branche, état retenu sur l'appareil, **la ligne entre** ; créer dedans) · Sujets (les siens et ceux de ses fils, s'ouvre là) · Instructions · Connaissances (déposer un PDF, une image, un texte : il part du navigateur vers le stockage, s'inscrit **à lire** ; la lecture par Relvo est M11), **un ajout en première ligne de chacun** ; le crayon renomme, **range dans** un autre père (la feuille « Ranger dans… », le même arbre) et supprime (le contenu remonte chez le père). **Ranger un sujet** : glisser sa ligne à droite dans un dossier, ou taper son dossier dans le ciel de sa fiche — la même feuille, un toast annule. La couleur d'une ligne, d'une tâche, du Calendrier est celle du **premier niveau** ; Relvo range et parle en **chemins** (« Clients › Franchises ») et l'échange liste, crée, déplace un dossier et range un sujet à la demande | hors-nav |
 | `/contacts` · `/contacts/[id]` · `/contacts/nouveau` | **Contacts** — annuaire et fiche | menu |
-| `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros ; les **Préférences** portent l'assistant et les notifications de cet appareil. Il n'y a **pas** de page Réglages | menu |
+| `/canaux` · `/profil` · `/preferences` · `/usage` | Quatre pages à part entière — l'**Usage** en %, jamais en euros — sa carte « Espace » est réelle (la part du quota de stockage, M25.7), celle du plafond mensuel encore de démonstration ; les **Préférences** portent l'assistant et les notifications de cet appareil. Il n'y a **pas** de page Réglages | menu |
 | `/recherche` | Recherche transverse | menu, en dernier |
 | `/sujets/[id]` · `/sujets/nouveau` | Fiche d'un sujet | hors-nav |
-| `/admin` · `/admin/comptes/[id]` · `/admin/stockage` · `/admin/dictee` | **Backoffice** (M21) — rôle `admin` seulement : les comptes, les demandes à ouvrir, les gestes (assistant, test, suppression), le **stockage** (M25.1 : le poids du bucket contre son repère, ce qui tient les pièces, par type, par canal, par compte, et ce qu'un effacement aurait laissé — le bucket se liste par `@relvo/storage`, gardé un quart d'heure), l'**essai de dictée** (M22.1 : le micro en PWA, la mesure, le partage des enregistrements du benchmark) | entrée du menu pour les administrateurs ; retour à l'app par le pictogramme maison |
+| `/admin` · `/admin/comptes/[id]` · `/admin/stockage` · `/admin/dictee` | **Backoffice** (M21) — rôle `admin` seulement : les comptes, les demandes à ouvrir, les gestes (assistant, test, suppression), le **stockage** (M25.1 : le poids du bucket contre son repère, ce qui tient les pièces, par type, par canal, par compte, et ce qu'un effacement aurait laissé — le bucket se liste par `@relvo/storage`, gardé un quart d'heure ; « Dédoublonner… » ne garde qu'un exemplaire de chaque fichier par compte, M25.8), l'**essai de dictée** (M22.1 : le micro en PWA, la mesure, le partage des enregistrements du benchmark) | entrée du menu pour les administrateurs ; retour à l'app par le pictogramme maison |
 | `/(auth)/*` | Tunnel d'authentification — l'inscription est libre, **l'accès s'ouvre quand un administrateur valide la demande** (`/inscription/attente`) | — |
 | `relvo.net` · `/confidentialite` · `/conditions` | **Le site** (M24.10) — un autre **hôte** du même déployable : la présentation (`(public)/site`, réécrite depuis `/` sur cet hôte), la politique de confidentialité et les conditions, à l'adresse déclarée à Google. Sur `app.relvo.net`, ces chemins renvoient au site ; sur `relvo.net`, tout autre chemin renvoie à l'application (`lib/hotes.ts`, `next.config.ts`) | hors-nav, sans session |
 

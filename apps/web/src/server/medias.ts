@@ -8,15 +8,12 @@ import {
   noterPieceIndisponible,
   noterPieceStockee,
 } from "@relvo/db";
-import {
-  MAX_FILE_SIZE_BYTES,
-  buildObjectKey,
-  getStorage,
-} from "@relvo/storage";
+import { MAX_FILE_SIZE_BYTES, getStorage } from "@relvo/storage";
 import { after } from "next/server";
 import { MEDIAS, deciderDeLaPiece, type PieceDeMessagerie } from "@/lib/medias";
 import { tenantDb } from "@/lib/tenant-db";
 import { expireTenantData } from "@/server/cached";
+import { type Depot, deposerUnePiece, espaceDuCompte } from "@/server/depot";
 import {
   estIntrouvable,
   fetchMessageAttachment,
@@ -51,7 +48,19 @@ export type BilanDesPieces = {
   stockees: number;
   references: number;
   traces: number;
+  /** Le compte est à son quota (M25.7) : ce qui se serait stocké est entré en référence. */
+  auQuota: boolean;
 };
+
+/** Le compte est-il à son quota ? Une erreur de mesure ne bloque pas la réception. */
+async function estAuQuota(accountId: string): Promise<boolean> {
+  try {
+    return (await espaceDuCompte(accountId)).plein;
+  } catch (err) {
+    console.error("[medias] quota illisible, réception sans garde", err);
+    return false;
+  }
+}
 
 /**
  * Les pièces d'un message de messagerie qui vient d'entrer. Ne lève jamais :
@@ -70,7 +79,12 @@ export async function recevoirLesPieces(
     webhook: readonly UnipileMessagingAttachmentRef[];
   },
 ): Promise<BilanDesPieces> {
-  const bilan: BilanDesPieces = { stockees: 0, references: 0, traces: 0 };
+  const bilan: BilanDesPieces = {
+    stockees: 0,
+    references: 0,
+    traces: 0,
+    auQuota: false,
+  };
   let pieces: PieceDeMessagerie[];
   try {
     pieces = piecesDuMessage(
@@ -82,10 +96,25 @@ export async function recevoirLesPieces(
     pieces = piecesDuMessage(null, args.webhook);
   }
 
+  // Le quota ne se mesure que si une pièce allait se stocker : la plupart des
+  // messages n'en ont pas, et une requête de moins compte à chaque webhook.
+  const porteeParUnSujet = args.subjectId != null;
+  if (
+    pieces.some((p) => deciderDeLaPiece(p, { porteeParUnSujet }) === "stocker")
+  ) {
+    bilan.auQuota = await estAuQuota(args.accountId);
+    if (bilan.auQuota) {
+      console.info("[medias] compte au quota : pièces gardées en référence", {
+        accountId: args.accountId,
+      });
+    }
+  }
+
   for (const piece of pieces) {
     try {
       const decision = deciderDeLaPiece(piece, {
-        porteeParUnSujet: args.subjectId != null,
+        porteeParUnSujet,
+        auQuota: bilan.auQuota,
       });
       const commun = {
         messageId: args.messageId,
@@ -99,7 +128,7 @@ export async function recevoirLesPieces(
       }
       const stocke =
         decision === "stocker"
-          ? await telecharger(args.accountId, {
+          ? await telecharger(db, args.accountId, {
               externalMessageId: args.externalMessageId,
               externalId: piece.id,
               plafond: MEDIAS.plafonds[piece.famille],
@@ -114,6 +143,7 @@ export async function recevoirLesPieces(
         mimeType: stocke?.mime ?? piece.mime,
         storageKey: stocke?.key ?? null,
         fileSize: stocke?.octets ?? piece.taille,
+        contentHash: stocke?.empreinte ?? null,
         // Une image stockée se montre elle-même ; la vignette sert à ce qui
         // ne l'est pas, et d'affiche à une vidéo.
         thumbnail: stocke && piece.famille === "image" ? null : piece.vignette,
@@ -133,21 +163,19 @@ export async function recevoirLesPieces(
  * une référence. Lève sur tout autre échec.
  */
 async function telecharger(
+  db: TenantDb,
   accountId: string,
   piece: { externalMessageId: string; externalId: string; plafond: number },
-): Promise<{ key: string; octets: number; mime: string | null } | null> {
+): Promise<(Depot & { mime: string | null }) | null> {
   const { bytes, contentType } = await fetchMessageAttachment({
     messageId: piece.externalMessageId,
     attachmentId: piece.externalId,
   });
   if (bytes.byteLength > Math.min(piece.plafond, POIDS_MAX)) return null;
-  const key = buildObjectKey({ accountId, scope: "attachments" });
-  await getStorage().put({
-    key,
-    body: bytes,
-    contentType: contentType ?? "application/octet-stream",
-  });
-  return { key, octets: bytes.byteLength, mime: contentType };
+  // Le dépôt dédoublonne (M25.8) : un fichier que le compte a déjà n'est pas
+  // posé une seconde fois, la pièce partage sa clé.
+  const depot = await deposerUnePiece(db, accountId, bytes, contentType);
+  return { ...depot, mime: contentType };
 }
 
 /** Pourquoi une référence n'a pas pu devenir un fichier. */
@@ -217,7 +245,7 @@ async function completerLaPiece(
   }
   let fichier: Awaited<ReturnType<typeof telecharger>>;
   try {
-    fichier = await telecharger(piece.accountId, {
+    fichier = await telecharger(db, piece.accountId, {
       externalMessageId: piece.messageExternalId,
       externalId: piece.externalId,
       plafond: POIDS_MAX,
@@ -235,10 +263,12 @@ async function completerLaPiece(
     storageKey: fichier.key,
     fileSize: fichier.octets,
     mimeType: fichier.mime,
+    contentHash: fichier.empreinte,
   });
-  if (!note.gagne) {
-    // Une autre lecture a fini avant celle-ci : son fichier reste, le nôtre
-    // est de trop.
+  // Une autre lecture a fini avant celle-ci : son fichier reste, le nôtre est
+  // de trop. ⚠️ Seulement si c'est NOUS qui l'avons posé : une clé partagée
+  // (M25.8) est le fichier d'une autre pièce, on n'y touche jamais.
+  if (!note.gagne && !fichier.partagee && fichier.key !== note.storageKey) {
     await getStorage()
       .delete(fichier.key)
       .catch((err) => {
@@ -252,6 +282,8 @@ export type BilanDeCompletion = {
   completees: number;
   indisponibles: number;
   echecs: number;
+  /** Références laissées parce que leur compte est à son quota (M25.7). */
+  auQuota: number;
   /** Il en restait quand le budget s'est épuisé : le passage suivant les prendra. */
   restantes: boolean;
 };
@@ -272,8 +304,11 @@ export async function completerLesPiecesPortees(opts: {
     completees: 0,
     indisponibles: 0,
     echecs: 0,
+    auQuota: 0,
     restantes: false,
   };
+  /** Le quota de chaque compte, lu une fois par passage. */
+  const pleins = new Map<string, boolean>();
   const limite = opts.limite ?? 200;
   let pieces: PieceARelire[];
   try {
@@ -290,6 +325,17 @@ export async function completerLesPiecesPortees(opts: {
   for (const piece of pieces) {
     if (Date.now() - debut > opts.budgetMs) break;
     faites += 1;
+    // Au quota, plus rien ne se complète de lui-même : la référence reste, et
+    // s'ouvre à la demande.
+    let plein = pleins.get(piece.accountId);
+    if (plein === undefined) {
+      plein = await estAuQuota(piece.accountId);
+      pleins.set(piece.accountId, plein);
+    }
+    if (plein) {
+      bilan.auQuota += 1;
+      continue;
+    }
     const resultat = await completerPiece(piece.accountId, piece.id).catch(
       (err): Completion => {
         console.error("[medias] complétion interrompue", piece.id, err);

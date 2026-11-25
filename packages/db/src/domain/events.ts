@@ -44,6 +44,8 @@ export const EVENT_TYPES = {
   conversationGapReread: "conversation_gap_reread",
   /** Un passage du nettoyage sur un compte : sujets fermés effacés, messages sans sujet expirés, conversations e-mail vides disparues — les comptes en métadonnée. */
   nettoyage: "nettoyage",
+  /** Le stock d'un compte dédoublonné (M25.8) : pièces repointées, fichiers libérés, octets — en métadonnée. */
+  deduplication: "deduplication",
   conversationAttached: "conversation_attached",
   conversationDetached: "conversation_detached",
   /** Une conversation fantôme (un sortant rangé sous une clé de fil) fondue dans la vraie (PITFALLS #75). */

@@ -614,6 +614,21 @@ lit pas les médias, il lit leur nom. Une pièce que le fournisseur ne sert plus
 renvoie au téléphone ; une référence qu'aucun sujet ne prend part avec son message, au
 nettoyage, sans avoir rien pesé. Les plafonds sont une configuration de l'application.
 
+**Un même fichier n'est stocké qu'une fois par compte.** La messagerie transfère beaucoup, et un
+fil d'e-mail rejoint la même pièce à chaque réponse. Tout fichier reçu entre par un seul dépôt,
+qui demande d'abord si le compte a déjà ce contenu — même empreinte, même poids : si oui, la
+nouvelle pièce **partage** le fichier de l'ancienne. Chaque message garde sa pièce, avec son
+nom ; seul le fichier est commun, et il part quand sa dernière pièce part. Le stock se
+dédoublonne de la même façon, d'après ce que le bucket porte réellement, par un geste de
+l'administrateur. Jamais d'un compte à l'autre : un fichier commun à deux comptes lierait leur
+sort.
+
+**Chaque compte a un quota**, lu d'une configuration, large comme un filet : il borne le pire
+cas, il ne rationne personne. Au quota, Relvo continue de tout recevoir ; il cesse seulement de
+stocker **de lui-même** — les pièces de messagerie entrent en référence, sujet ou pas. Ce que
+le dirigeant ouvre se stocke encore, et l'e-mail garde ses pièces. La part consommée se lit dans
+l'Usage, en pourcentage — jamais en octets ni en euros —, et au backoffice sur chaque compte.
+
 **L'e-mail garde ses pièces** : une pièce d'e-mail est un document, elle se stocke à la
 réception. Seules ses images **incorporées** au corps et légères — un logo de signature, un
 pixel de suivi — ne sont pas des pièces, et ne sont jamais lues.
@@ -669,7 +684,8 @@ fichier stocké que la base ne connaît plus et que la file n'attend pas est **s
 propriétaire** : c'est ce qu'un effacement aurait laissé derrière lui, et il ne doit pas y en
 avoir. Une pièce connue de la base et absente du bucket ne s'ouvrira pas : elle se compte
 aussi. Les pièces gardées en **référence** se comptent à part, avec le poids que leur source
-annonce : c'est ce que le stockage n'a pas eu à porter. Le poids du bucket se lit contre un **repère** de configuration, et alerte à son
+annonce : c'est ce que le stockage n'a pas eu à porter. Un fichier que plusieurs pièces
+partagent ne pèse qu'**une** fois, dans la mesure comme dans le quota. Le poids du bucket se lit contre un **repère** de configuration, et alerte à son
 approche, comme le plafond de l'inférence.
 
 ---

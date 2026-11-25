@@ -21,6 +21,9 @@ export type LigneDePoids = {
   /** Pièces gardées en référence (M25.3) : pas stockées — et le poids annoncé. */
   references?: number;
   octetsAnnonces?: number;
+  /** Pièces qui partagent le fichier d'une autre (M25.8) — et le poids ainsi épargné. */
+  partagees?: number;
+  octetsPartages?: number;
 };
 
 export type Poids = { pieces: number; octets: number };
@@ -64,6 +67,11 @@ export type ResumeDesPieces = {
    * a épargné au stockage. Hors de tous les autres totaux.
    */
   references: Poids;
+  /**
+   * Ce que la déduplication épargne (M25.8) : les pièces qui partagent le
+   * fichier d'une autre, et le poids qu'elles auraient pesé. Hors des totaux.
+   */
+  partagees: Poids;
   parCompte: Record<string, Poids>;
 };
 
@@ -86,11 +94,14 @@ export function resumerLesPieces(
     libres: vide(),
     ignorees: vide(),
     references: vide(),
+    partagees: vide(),
     parCompte: {},
   };
   for (const l of lignes) {
     r.references.pieces += l.references ?? 0;
     r.references.octets += l.octetsAnnonces ?? 0;
+    r.partagees.pieces += l.partagees ?? 0;
+    r.partagees.octets += l.octetsPartages ?? 0;
     ajouter(r.total, l);
     r.sansTaille += l.sansTaille;
     ajouter(r.parCanal[l.canal], l);

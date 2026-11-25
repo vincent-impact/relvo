@@ -24,7 +24,7 @@ export type PoidsDesPieces = {
   rattachee: boolean;
   /** Sa conversation est ignorée : c'est ce que la purge retire (M25.12). */
   ignoree: boolean;
-  /** Pièces STOCKÉES, et leur poids. */
+  /** FICHIERS stockés — un fichier que plusieurs pièces partagent compte une fois — et leur poids. */
   pieces: number;
   octets: number;
   /** Pièces stockées dont la taille n'est pas connue en base : leur poids n'est pas compté. */
@@ -36,6 +36,12 @@ export type PoidsDesPieces = {
    */
   references: number;
   octetsAnnonces: number;
+  /**
+   * Pièces qui PARTAGENT le fichier d'une autre (M25.8) : stockées, mais leur
+   * fichier est déjà compté — et le poids que la déduplication épargne ainsi.
+   */
+  partagees: number;
+  octetsPartages: number;
 };
 
 /**
@@ -58,29 +64,48 @@ export async function mesurerLesPieces(
       sans_taille: number;
       refs: number;
       octets_annonces: bigint;
+      partagees: number;
+      octets_partages: bigint;
     }>
   >`
-    SELECT a.account_id,
-           ch.type::text AS canal,
+    WITH p AS (
+      SELECT a.account_id, a.mime_type, a.file_size, a.storage_key, a.external_id,
+             ch.type::text AS canal,
+             (a.subject_id IS NOT NULL OR m.subject_id IS NOT NULL) AS rattachee,
+             (c.status = 'ignored') AS ignoree,
+             -- Un fichier que plusieurs pièces partagent (M25.8) ne pèse
+             -- qu'UNE fois : il est compté chez celle qu'un sujet porte,
+             -- sinon chez la plus ancienne.
+             row_number() OVER (
+               PARTITION BY a.account_id, COALESCE(a.storage_key, a.id::text)
+               ORDER BY (a.subject_id IS NOT NULL OR m.subject_id IS NOT NULL) DESC,
+                        a.created_at, a.id
+             ) AS rang
+      FROM attachments a
+      JOIN messages m ON m.id = a.message_id
+      JOIN conversations c ON c.id = m.conversation_id
+      JOIN channels ch ON ch.id = m.channel_id
+      ${accountId ? Prisma.sql`WHERE a.account_id = ${accountId}::uuid` : Prisma.empty}
+    )
+    SELECT account_id,
+           canal,
            CASE
-             WHEN a.mime_type LIKE 'video/%' THEN 'video'
-             WHEN a.mime_type LIKE 'image/%' THEN 'image'
-             WHEN a.mime_type LIKE 'audio/%' THEN 'audio'
-             WHEN a.mime_type = 'application/pdf' THEN 'pdf'
+             WHEN mime_type LIKE 'video/%' THEN 'video'
+             WHEN mime_type LIKE 'image/%' THEN 'image'
+             WHEN mime_type LIKE 'audio/%' THEN 'audio'
+             WHEN mime_type = 'application/pdf' THEN 'pdf'
              ELSE 'autre'
            END AS famille,
-           (a.subject_id IS NOT NULL OR m.subject_id IS NOT NULL) AS rattachee,
-           (c.status = 'ignored') AS ignoree,
-           (count(*) FILTER (WHERE a.storage_key IS NOT NULL))::int AS pieces,
-           COALESCE(sum(a.file_size) FILTER (WHERE a.storage_key IS NOT NULL), 0)::bigint AS octets,
-           (count(*) FILTER (WHERE a.storage_key IS NOT NULL AND a.file_size IS NULL))::int AS sans_taille,
-           (count(*) FILTER (WHERE a.storage_key IS NULL AND a.external_id IS NOT NULL))::int AS refs,
-           COALESCE(sum(a.file_size) FILTER (WHERE a.storage_key IS NULL AND a.external_id IS NOT NULL), 0)::bigint AS octets_annonces
-    FROM attachments a
-    JOIN messages m ON m.id = a.message_id
-    JOIN conversations c ON c.id = m.conversation_id
-    JOIN channels ch ON ch.id = m.channel_id
-    ${accountId ? Prisma.sql`WHERE a.account_id = ${accountId}::uuid` : Prisma.empty}
+           rattachee,
+           ignoree,
+           (count(*) FILTER (WHERE storage_key IS NOT NULL AND rang = 1))::int AS pieces,
+           COALESCE(sum(file_size) FILTER (WHERE storage_key IS NOT NULL AND rang = 1), 0)::bigint AS octets,
+           (count(*) FILTER (WHERE storage_key IS NOT NULL AND rang = 1 AND file_size IS NULL))::int AS sans_taille,
+           (count(*) FILTER (WHERE storage_key IS NULL AND external_id IS NOT NULL))::int AS refs,
+           COALESCE(sum(file_size) FILTER (WHERE storage_key IS NULL AND external_id IS NOT NULL), 0)::bigint AS octets_annonces,
+           (count(*) FILTER (WHERE storage_key IS NOT NULL AND rang > 1))::int AS partagees,
+           COALESCE(sum(file_size) FILTER (WHERE storage_key IS NOT NULL AND rang > 1), 0)::bigint AS octets_partages
+    FROM p
     GROUP BY 1, 2, 3, 4, 5
     ORDER BY 1, 2, 3, 4, 5
   `;
@@ -95,6 +120,8 @@ export async function mesurerLesPieces(
     sansTaille: r.sans_taille,
     references: r.refs,
     octetsAnnonces: Number(r.octets_annonces),
+    partagees: r.partagees,
+    octetsPartages: Number(r.octets_partages),
   }));
 }
 
@@ -143,4 +170,27 @@ export async function listClesDuStockage(): Promise<{
     ],
     enAttente: enAttente.map((e) => e.storageKey),
   };
+}
+
+/**
+ * Ce qu'UN compte fait peser sur le stockage, en octets : ses pièces — un
+ * fichier partagé compté une fois — et ses connaissances. C'est la mesure du
+ * QUOTA (M25.7) : une requête, lue à chaque fois qu'une pièce va se stocker
+ * d'elle-même.
+ */
+export async function poidsStockeDuCompte(accountId: string): Promise<number> {
+  const [pieces] = await prisma.$queryRaw<Array<{ octets: bigint }>>`
+    SELECT COALESCE(sum(taille), 0)::bigint AS octets
+    FROM (
+      SELECT max(file_size) AS taille
+      FROM attachments
+      WHERE account_id = ${accountId}::uuid AND storage_key IS NOT NULL
+      GROUP BY storage_key
+    ) f
+  `;
+  const connaissances = await prisma.knowledgeDocument.aggregate({
+    where: { accountId, storageKey: { not: null } },
+    _sum: { fileSize: true },
+  });
+  return Number(pieces?.octets ?? 0) + (connaissances._sum.fileSize ?? 0);
 }

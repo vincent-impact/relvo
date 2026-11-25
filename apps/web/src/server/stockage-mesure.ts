@@ -6,6 +6,7 @@ import {
   mesurerLesPieces,
 } from "@relvo/db";
 import { getStorage, ownerOfObjectKey } from "@relvo/storage";
+import { quotaDuCompte } from "@/server/depot";
 import {
   REPERE_STOCKAGE_GO,
   rapprocherLeBucket,
@@ -71,6 +72,8 @@ export type MesureDuStockage = {
   connaissances: { fichiers: number; octets: number };
   bucket: EtatDuBucket | null;
   repereOctets: number;
+  /** Le quota d'UN compte (M25.7), en octets. */
+  quotaOctets: number;
 };
 
 /** Toute la mesure — de tous les comptes, ou d'un seul. Le bucket, lui, est toujours lu en entier. */
@@ -93,5 +96,6 @@ export async function mesureDuStockage(
     ),
     bucket,
     repereOctets: repereDuStockage(),
+    quotaOctets: quotaDuCompte(),
   };
 }

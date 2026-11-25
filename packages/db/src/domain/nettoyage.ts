@@ -138,7 +138,10 @@ function conversationEmailVide(horizon: Date): Prisma.ConversationWhereInput {
 
 /**
  * Le bilan ne compte que les pièces STOCKÉES : une référence (M25.3) part avec
- * son message sans rien rendre au stockage, son poids n'est qu'annoncé.
+ * son message sans rien rendre au stockage, son poids n'est qu'annoncé. C'est
+ * un MAJORANT depuis la déduplication (M25.8) : une pièce expirée qui partage
+ * son fichier avec une pièce qui reste est comptée, mais son fichier ne part
+ * pas — la file de suppression l'épargne.
  */
 const PIECE_STOCKEE: Prisma.AttachmentWhereInput = {
   storageKey: { not: null },

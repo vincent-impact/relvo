@@ -6,6 +6,8 @@ import {
   deciderDeLaPiece,
   estUneImageIncorporee,
   familleDeMedia,
+  partDuQuota,
+  pourcentDuQuota,
 } from "@/lib/medias";
 import { corpsDe } from "@/server/gmail/courrier";
 import { pieceDepuisUnipile } from "@/server/unipile/courrier";
@@ -93,6 +95,37 @@ describe("décider d'une pièce de messagerie", () => {
     expect(
       deciderDeLaPiece({ ...photo, taille: null }, { porteeParUnSujet: true }),
     ).toBe("stocker");
+  });
+
+  it("au quota du compte, plus rien ne se stocke de lui-même — sauf rien : même un vocal", () => {
+    const auQuota = { porteeParUnSujet: true, auQuota: true };
+    expect(deciderDeLaPiece(photo, auQuota)).toBe("reference");
+    expect(
+      deciderDeLaPiece({ ...photo, famille: "audio", vocal: true }, auQuota),
+    ).toBe("reference");
+    // Une trace reste une trace : elle ne pèse rien.
+    expect(deciderDeLaPiece({ ...photo, autocollant: true }, auQuota)).toBe(
+      "trace",
+    );
+    // Sous le quota, rien ne change.
+    expect(
+      deciderDeLaPiece(photo, { porteeParUnSujet: true, auQuota: false }),
+    ).toBe("stocker");
+  });
+
+  it("dit la part du quota en pourcentage, sans jamais mentir aux extrêmes", () => {
+    const GO = 1024 ** 3;
+    expect(partDuQuota(0, 5 * GO)).toBe(0);
+    expect(partDuQuota(2.5 * GO, 5 * GO)).toBe(0.5);
+    expect(partDuQuota(9 * GO, 5 * GO)).toBe(1);
+    // Un quota nul ou absurde ne déclare personne plein.
+    expect(partDuQuota(GO, 0)).toBe(0);
+    expect(pourcentDuQuota(0)).toBe(0);
+    expect(pourcentDuQuota(0.0004)).toBe(1);
+    expect(pourcentDuQuota(0.5)).toBe(50);
+    expect(pourcentDuQuota(0.998)).toBe(99);
+    expect(pourcentDuQuota(1)).toBe(100);
+    expect(MEDIAS.quotaParCompteGo).toBeGreaterThan(0);
   });
 
   it("range un type MIME dans sa famille", () => {

@@ -25,6 +25,7 @@ export * from "./messages";
 export * from "./reception";
 export * from "./annuaire-messagerie";
 export * from "./lecture-groupes";
+export * from "./deduplication";
 export * from "./mesure-stockage";
 export * from "./nettoyage";
 export * from "./tasks";

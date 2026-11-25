@@ -37,9 +37,30 @@ export const MEDIAS = {
    * collée dans le corps par son auteur — elle se garde.
    */
   incorporeeMaxOctets: 150 * 1024,
+  /**
+   * LE QUOTA d'un compte (M25.7), en gigaoctets — la valeur par défaut d'une
+   * configuration (`STOCKAGE_QUOTA_COMPTE_GO`). Large, comme un filet : il
+   * borne le pire cas, il ne rationne personne.
+   */
+  quotaParCompteGo: 5,
 } as const;
 
 export type FamilleDeMedia = keyof typeof MEDIAS.plafonds;
+
+/** La part du quota consommée, de 0 à 1 — jamais au-delà, jamais un nombre absurde. */
+export function partDuQuota(octets: number, quotaOctets: number): number {
+  if (!(quotaOctets > 0)) return 0;
+  return Math.min(1, Math.max(0, octets / quotaOctets));
+}
+
+/** La part du quota, en pourcentage entier — ce que l'écran montre, jamais des octets. */
+export function pourcentDuQuota(part: number): number {
+  // Un compte qui consomme un peu n'est pas à « 0 % », un compte presque
+  // plein n'est pas à « 100 % » avant de l'être.
+  if (part <= 0) return 0;
+  if (part >= 1) return 100;
+  return Math.min(99, Math.max(1, Math.round(part * 100)));
+}
 
 /** La famille d'une pièce d'après son type MIME — ce que les plafonds distinguent. */
 export function familleDeMedia(
@@ -82,15 +103,19 @@ export type DecisionDePiece = "stocker" | "reference" | "trace";
  *     porte le message, et sous le plafond de sa famille. Sinon référence.
  *
  * Un poids inconnu ne retient pas : la pièce se télécharge et se pèse alors.
+ *
+ * AU QUOTA du compte (M25.7), plus rien ne se stocke de lui-même : tout ce
+ * qui n'est pas une trace entre en référence, vocal compris.
  */
 export function deciderDeLaPiece(
   piece: Pick<
     PieceDeMessagerie,
     "famille" | "taille" | "autocollant" | "gif" | "vocal"
   >,
-  contexte: { porteeParUnSujet: boolean },
+  contexte: { porteeParUnSujet: boolean; auQuota?: boolean },
 ): DecisionDePiece {
   if (piece.autocollant || piece.gif) return "trace";
+  if (contexte.auQuota) return "reference";
   const sousLePlafond =
     piece.taille == null || piece.taille <= MEDIAS.plafonds[piece.famille];
   if (!sousLePlafond) return "reference";

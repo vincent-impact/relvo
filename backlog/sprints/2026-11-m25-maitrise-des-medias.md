@@ -6,10 +6,12 @@
 > d'abord » ; `2026-11-m29-groupes-et-mentions.md`, dont il ne reste que M29.7, après l'usage).
 > **C'est de nouveau le chantier en cours** : la tranche 5, **le nettoyage** (M25.13) et **la
 > tranche 6** (« décider avant de télécharger », M25.3 et M25.5 — et M25.4, tranchée par
-> l'épreuve) sont livrés ; **la suite est la tranche 7** : le quota par compte (M25.7) et la
-> déduplication (M25.8). ⚠️ La tranche 6 n'est prouvée que par ses tests et par le chemin
-> d'échec joué en local : **le chemin heureux se lit en production**, au premier média reçu
-> (voir « Ce que la tranche 6 ne fait pas »). ⚠️ **Le nettoyage est ARMÉ depuis le 2026-11-25**, sur le
+> l'épreuve) et **la tranche 7** (le quota par compte, M25.7 ; la déduplication, M25.8) sont
+> livrés : **l'épique n'a plus de tranche à construire**. Il reste au dirigeant à sortir du
+> palier gratuit (M25.2), à **dédoublonner le stock** d'un clic (`/admin/stockage`), et à juger
+> à l'usage. ⚠️ De la tranche 6, la réception est vue en production (trois pièces entrées en
+> référence le jour même) ; **l'ouverture réussie d'une référence et la complétion par un sujet
+> ne le sont pas encore** (voir « Ce que la tranche 6 ne fait pas »). ⚠️ **Le nettoyage est ARMÉ depuis le 2026-11-25**, sur le
 > mot du dirigeant (`NETTOYAGE_ACTIF`, `apps/web/src/lib/nettoyage.ts`) : son **premier passage
 > réel est celui du cron du matin du 2026-11-26** — à relire ce matin-là (l'événement
 > `nettoyage` de chaque compte, la file de suppression, le poids du bucket). La purge manuelle
@@ -211,14 +213,62 @@ sujet ne reste pas » ; `conception/04` §11).
 - **L'épreuve du 2026-11-25**, lecture seule, compte du dirigeant : 43 médias sur 44 relus chez
   l'agrégateur, de 1 à 127 jours, en 0,2 à 3,5 secondes.
 
+**Ce qui existe après la tranche 7 — le quota et la déduplication** (M25.7, M25.8 ; `ecarts`,
+« Le quota et la déduplication : un filet, et un fichier par contenu » ; `conception/04` §11).
+
+- **Un seul dépôt** : `apps/web/src/server/depot.ts` — `deposerUnePiece` (l'e-mail et la
+  messagerie y passent), `quotaDuCompte` (`STOCKAGE_QUOTA_COMPTE_GO`, cinq par défaut),
+  `espaceDuCompte` (la même lecture pour la garde, l'Usage et le backoffice).
+- **L'empreinte** : `attachments.content_hash` (migration
+  `20261125180000_m25_empreinte_des_pieces`), le MD5 du contenu — celui que le bucket rend
+  dans son listing. Vérifié le 2026-11-25 sur quatre fichiers réels.
+- **Le domaine** : `packages/db/src/domain/deduplication.ts` — `trouverCleDeMemeContenu` (à
+  l'entrée), `planDeDeduplication` (pur) et `dedoublonnerLeCompte` (le stock : empreintes
+  notées, doublons repointés sur le plus ancien, fichiers abandonnés mis en file — une
+  transaction par compte, un événement `deduplication`). Test :
+  `packages/db/test/deduplication.test.ts`.
+- **Le geste** : `server/deduplication.ts` (`dedoublonnerLeStock`, le bucket relu à neuf, un
+  listing coupé arrête tout), `adminDedoublonnerAction`, et le bouton « Dédoublonner… » de
+  `/admin/stockage` (`components/admin/dedoublonner.tsx`), confirmé. Le drainage part aussitôt.
+- **Le quota** : `deciderDeLaPiece` prend `auQuota` ; `recevoirLesPieces` ne le mesure que si
+  une pièce allait se stocker ; `completerLesPiecesPortees` laisse les comptes pleins.
+  `poidsStockeDuCompte` (`domain/mesure-stockage.ts`) compte par clé distincte, connaissances
+  comprises.
+- **La mesure** : un fichier partagé ne pèse qu'une fois (`mesurerLesPieces`, compté chez la
+  pièce qu'un sujet porte) ; `partagees` et `octetsPartages` disent ce que la déduplication
+  épargne.
+- **L'écran** : la carte « Espace » de `/usage`, réelle ; au backoffice, « Quota du compte »
+  sur la fiche et « % du quota » dans la liste par compte.
+- **Mesuré le 2026-11-25**, lecture seule : 4 107 fichiers en double, 830 Mo ; dont 2 522
+  fichiers et 270 Mo dans des messages qu'un sujet porte. Le plus gros compte pèse 2,3 Go.
+
+**Ce que la tranche 7 ne fait pas, et qu'il ne faut pas croire fait.**
+
+- **Le stock n'est pas dédoublonné** : c'est le clic du dirigeant sur « Dédoublonner… ». Tant
+  qu'il n'a pas eu lieu, les pièces d'avant n'ont pas d'empreinte, et un fichier qui arrive ne
+  se rapproche que de ceux entrés depuis la livraison.
+- **Le geste n'a jamais tourné sur le stock réel** : seuls les tests l'exécutent, et le local
+  a le bucket de production — on n'y clique pas. Sa durée n'est pas mesurée (un listing de
+  quinze mille fichiers, puis une transaction par compte, sous cinq minutes de fonction).
+- **Deux fichiers identiques qui arrivent au même instant** se stockent deux fois : le
+  second n'a pas encore vu le premier. Le prochain « Dédoublonner… » les rapproche.
+- **Le quota ne rationne pas l'e-mail**, ni ce que le dirigeant ouvre : un compte peut le
+  dépasser. Il ne protège pas le palier gratuit non plus.
+- **Personne n'est prévenu à l'approche du quota** : ni notification, ni question de Relvo. Il
+  se lit dans l'Usage et au backoffice.
+- **Le bilan du nettoyage est un majorant** depuis que des pièces partagent un fichier.
+- **Les connaissances déposées ne se dédoublonnent pas** : elles partent du navigateur droit
+  au stockage.
+
 **Ce que la tranche 6 ne fait pas, et qu'il ne faut pas croire fait.**
 
 - **Le chemin heureux n'a pas été joué de bout en bout.** Le stockage local est le bucket de
   production : compléter une vraie pièce en local y aurait écrit. Sont prouvés : la règle et
   la traduction (tests), le domaine (tests d'intégration), la relecture chez l'agrégateur
-  (l'épreuve), et le chemin d'échec, joué en local jusqu'à l'écran. **À lire en production**
-  après le premier média reçu : des lignes `attachments` sans clé, avec `external_id` et
-  `thumbnail` ; puis, à la première ouverture, un événement `attachment_stored`.
+  (l'épreuve), le chemin d'échec, joué en local jusqu'à l'écran, et **la réception, vue en
+  production le jour même** (un PDF, une photo avec sa vignette, un classeur : trois pièces
+  sans clé, avec `external_id`). **Reste à lire en production** : à la première ouverture, un
+  événement `attachment_stored` ; et la complétion quand un sujet prend un message.
 - **La forme du webhook n'a pas été relue** : la décision s'appuie sur le message relu à
   l'unité, pas sur lui. Si cette relecture échoue, la pièce est décidée sur le type et le
   poids du webhook, sans vignette ni nom.
@@ -326,6 +376,6 @@ Chaque tranche est livrée, testée, documentée et poussée.
       2026-11-26, à relire.
 - [x] Tranche 6 — décider avant de télécharger (M25.3, M25.5 ; M25.4 tranchée par l'épreuve)
       — livrée le 2026-11-25 ; le chemin heureux reste à lire en production.
-- [ ] Tranche 7 — le quota (M25.7) ; la déduplication (M25.8), dont la mesure a rempli la
-      condition
+- [x] Tranche 7 — le quota (M25.7) et la déduplication (M25.8), à l'entrée et sur le stock —
+      livrée le 2026-11-25 ; le stock attend le clic du dirigeant sur « Dédoublonner… ».
 - [ ] M25.2 — sortir du palier gratuit, par le dirigeant

@@ -915,3 +915,27 @@ lui-même : chacun vaut un tap du dirigeant, et rapatrie le fichier.
   le `file_size` d'une référence est un poids **annoncé**, pas stocké.
 - Jamais d'essai « pour voir » en local avec de vrais identifiants : le stockage local est le
   bucket de production, et la complétion y **écrit**.
+
+### #83 — Une clé d'objet n'appartient plus à une seule pièce : effacer « son » fichier efface celui des autres
+
+**Symptôme** : une pièce ne s'ouvre plus (« Ce fichier n'est plus disponible ») alors que
+personne ne l'a supprimée ; au backoffice, « Absents du bucket » n'est plus à zéro.
+
+**Cause** : depuis la déduplication (M25.8), deux pièces d'un même compte qui ont le même
+contenu **partagent** leur `storage_key`. Du code qui efface l'objet d'une pièce par sa clé —
+un nettoyage après un échec, un « remplacer le fichier », un script — détruit le fichier de
+toutes les autres. C'est exactement le défaut qui a fait retirer la suppression automatique
+des fichiers de Django en 1.3.
+
+**Règle** :
+- **Jamais** de `storage.delete(piece.storageKey)`. On supprime la **ligne** ; le déclencheur
+  met la clé en file, et le drainage n'efface que ce que plus personne ne tient
+  (`encoreReferencees`, `domain/file-deletions.ts`).
+- Le seul effacement direct permis est celui d'un fichier qu'on vient de poser **soi-même** et
+  qu'aucune ligne n'a jamais porté (`completerLaPiece`, quand `Depot.partagee` est faux).
+- Une clé abandonnée **sans** suppression de ligne (la déduplication du stock repointe des
+  pièces) entre en file **à la main, dans la même transaction** : le déclencheur ne la verra
+  jamais partir.
+- Une requête qui pèse le stockage compte par **clé distincte**, pas par pièce
+  (`mesurerLesPieces`, `poidsStockeDuCompte`).
+

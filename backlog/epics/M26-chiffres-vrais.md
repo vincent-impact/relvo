@@ -22,7 +22,7 @@ plafond par compte — l'Usage en lit la valeur, M14.5 pose la coupure).
 | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | M26.1 | **« Ce que Relvo a fait pour vous »** lu du journal : messages lus, affaires ouvertes, tâches créées, brouillons préparés, contacts reconnus, sources en sourdine — depuis le début du mois et depuis toujours ; un tap ouvre la liste derrière (invariant 37) |
 | M26.2 | **« Où en êtes-vous »** : le flux sur sept jours — messages reçus par jour, affaires validées, tâches cochées — par les fonctions du brief (`domain/brief.ts`), jamais mêlé au cumulatif                                                       |
-| M26.3 | **L'Usage** : la part du plafond mensuel consommée par l'inférence, lue du même compteur que le backoffice, sur un plafond lu d'une configuration ; **plus la part du stockage** (M25.6) ; en pourcentage, jamais en euros (invariant 38)        |
+| M26.3 | **L'Usage** : la part du plafond mensuel consommée par l'inférence, lue du même compteur que le backoffice, sur un plafond lu d'une configuration ; **plus la part du stockage** (livrée par M25.7 : la carte « Espace », déjà réelle) ; en pourcentage, jamais en euros (invariant 38)        |
 | M26.4 | **Les fonctions sont partagées** : le backoffice et le produit lisent les mêmes fonctions du domaine, aucun compteur à lui (`CLAUDE.md`, Architecture) ; `DemoNotice` et `demo-bilan.ts` supprimés ; `CLAUDE.md` et la table des routes récrits |
 
 ⚠️ **Un chiffre vrai est un chiffre testé** : chaque compteur a un test d'intégration qui

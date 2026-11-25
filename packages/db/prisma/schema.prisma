@@ -946,6 +946,11 @@ model Attachment {
   unavailableAt DateTime? @map("unavailable_at")
   /// En octets. Pour une référence, c'est le poids ANNONCÉ par le fournisseur.
   fileSize     Int?      @map("file_size")
+  /// L'EMPREINTE du contenu stocké (MD5, en hexadécimal — celle que le
+  /// stockage calcule lui-même pour chaque objet). Deux pièces d'un même
+  /// compte qui portent la même empreinte et le même poids PARTAGENT une clé
+  /// (M25.8) : le fichier n'est stocké qu'une fois.
+  contentHash  String?   @map("content_hash")
   aiLabel      String?   @map("ai_label")
   aiSummary    String?   @map("ai_summary") @db.Text
   aiAnalysis   String?   @map("ai_analysis") @db.Text
@@ -961,6 +966,7 @@ model Attachment {
 
   @@index([accountId])
   @@index([accountId, subjectId])
+  @@index([accountId, contentHash])
   @@index([messageId])
   @@map("attachments")
 }

@@ -1969,6 +1969,42 @@ backoffice, décider avant de télécharger, images et expiration). M25 passe à
 page de suivi n'admet qu'une épique en cours — et reprend après M29. Ce que M25 laisse en
 attente du dirigeant ne change pas : lancer la purge du stock ignoré, sortir du palier gratuit.
 
+### Le quota et la déduplication : un filet, et un fichier par contenu
+
+**`tranché` par défaut, à régler sur l'usage** · Posé le 2026-11-25 en livrant la tranche 7 de
+M25 (M25.7, M25.8), sur le mot du dirigeant (« Tu peux passer à la tranche 7 »).
+
+**La déduplication vaut plus qu'on ne le pensait.** Mesuré le jour même, en lecture seule, en
+rapprochant le listing du bucket de ce que la base tient : 4 107 fichiers en double, 830 Mo —
+dont **2 522 fichiers et 270 Mo dans des messages qu'un sujet porte**, que le nettoyage
+n'emportera donc jamais. Le stock se dédoublonne donc aussi, pas seulement ce qui entre.
+
+Ce que la mise en œuvre a fixé :
+
+- **L'empreinte est le MD5**, parce que c'est celle que le stockage calcule lui-même pour
+  chaque objet et rend dans son listing : le stock se dédoublonne **sans retélécharger un
+  octet**, et la base se vérifie contre le bucket. Vérifié sur quatre fichiers réels :
+  l'empreinte calculée à la main est celle du bucket. Le MD5 n'est pas une preuve contre un
+  adversaire qui fabriquerait deux fichiers de même empreinte — et de même poids, exigé
+  aussi ; le pire qu'il obtiendrait est que Relvo montre le premier à la place du second, dans
+  son propre compte de destinataire. Accepté.
+- **Jamais d'un compte à l'autre** : un fichier commun à deux comptes lierait leur sort, et
+  une clé porte son compte.
+- **La ligne reste, le fichier est commun** : chaque message garde sa pièce et son nom. La
+  file de suppression épargnait déjà une clé encore tenue ; rien d'autre n'a eu à changer.
+- **Le stock se dédoublonne d'un geste de l'administrateur**, confirmé, depuis la page
+  Stockage — pas par un cron : il efface des fichiers, il se décide en regardant.
+- **Le quota par défaut est de 5 Go par compte**, réglable (`STOCKAGE_QUOTA_COMPTE_GO`). Le
+  plus gros compte en porte 2,3 ; un quota plus serré aurait coupé un testeur le jour de sa
+  livraison. Il ne protège donc **pas** le palier gratuit — dix comptes à 5 Go le dépassent
+  cinq fois : c'est le repère global qui alerte, et la sortie du palier qui règle la question.
+- **Au quota, ce qu'on ouvre se stocke encore** : refuser l'ouverture reviendrait à cacher une
+  pièce au dirigeant, puisqu'une fonction ne sert pas un fichier sans le stocker. Le quota
+  borne ce que Relvo stocke de lui-même, pas ce que le dirigeant demande.
+- **L'e-mail n'est pas rationné** : une pièce d'e-mail n'a pas de référence où attendre.
+- **La part se lit dans l'Usage**, carte « Espace », réelle, à côté d'une carte du plafond
+  mensuel encore de démonstration (M26.3 la rendra vraie).
+
 ### Les médias : une référence, complétée à l'ouverture ou par un sujet
 
 **`tranché` par l'épreuve, à juger à l'usage** · Posé le 2026-11-25 en livrant la tranche 6 de

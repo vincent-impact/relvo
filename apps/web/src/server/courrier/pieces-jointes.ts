@@ -1,10 +1,7 @@
 import { createAttachment, type TenantDb } from "@relvo/db";
-import {
-  buildObjectKey,
-  MAX_FILE_SIZE_BYTES,
-  getStorage,
-} from "@relvo/storage";
+import { MAX_FILE_SIZE_BYTES } from "@relvo/storage";
 import { estUneImageIncorporee } from "@/lib/medias";
+import { deposerUnePiece } from "@/server/depot";
 import type { FournisseurCourrier, PieceJointeRef } from "./types";
 
 // Les PIÈCES JOINTES d'un e-mail (M5.4), stockées à l'ingestion — par le
@@ -32,7 +29,6 @@ export async function stockerPiecesJointes(
   },
 ): Promise<number> {
   if (args.pieces.length === 0) return 0;
-  const storage = getStorage();
   let stored = 0;
   for (const piece of args.pieces) {
     if (estUneImageIncorporee(piece)) continue;
@@ -42,23 +38,18 @@ export async function stockerPiecesJointes(
         { emailId: args.emailId, pieceId: piece.id },
       );
       if (bytes.byteLength > MAX_FILE_SIZE_BYTES.attachments) continue; // garde-fou taille
-      const key = buildObjectKey({
-        accountId: args.accountId,
-        scope: "attachments",
-      });
       const mime = contentType ?? piece.mime ?? null;
-      await storage.put({
-        key,
-        body: bytes,
-        contentType: mime ?? "application/octet-stream",
-      });
+      // Le dépôt dédoublonne (M25.8) : le PDF rejoint à chaque réponse d'un
+      // fil n'est stocké qu'une fois, chaque message garde sa pièce.
+      const depot = await deposerUnePiece(db, args.accountId, bytes, mime);
       await createAttachment(db, {
         messageId: args.messageId,
         subjectId: args.subjectId,
         name: piece.name ?? "piece-jointe",
         mimeType: mime,
-        storageKey: key,
-        fileSize: bytes.byteLength,
+        storageKey: depot.key,
+        fileSize: depot.octets,
+        contentHash: depot.empreinte,
       });
       stored += 1;
     } catch (err) {
