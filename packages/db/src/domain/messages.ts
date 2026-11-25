@@ -605,11 +605,13 @@ export type IngestOutboundWhatsAppInput = z.infer<
  * l'agrégateur la rejoue en « message reçu » marqué `is_sender`. Nos propres
  * envois, déjà en base sous le même identifiant, retombent sur l'idempotence
  * — rien n'est dupliqué. Une réponse inconnue entre comme un envoi ordinaire :
- * dans la conversation directe que le fil désigne, rattachée à le sujet qui
- * l'écoute, et `createMessage` coche la tâche de réponse par correspondance et
- * pose « En attente » comme pour un envoi depuis Relvo (05 §4.1). Un fil que
- * Relvo ne connaît pas (le dirigeant écrit le premier à un numéro) n'est pas
- * rangé : `conversation: null`, rien n'est inventé.
+ * dans la conversation que le fil désigne — un fil direct COMME UN GROUPE, où
+ * ce que le dirigeant écrit est la moitié de l'échange —, rattachée au sujet
+ * qui l'écoute, et `createMessage` coche la tâche de réponse par
+ * correspondance et pose « En attente » comme pour un envoi depuis Relvo
+ * (05 §4.1). Un fil que Relvo ne connaît pas (le dirigeant écrit le premier à
+ * un numéro, ou dans un groupe où personne n'a encore écrit) n'est pas rangé :
+ * `message: null`, rien n'est inventé.
  */
 export async function ingestOutboundWhatsApp(
   db: TenantDb,
@@ -625,13 +627,15 @@ export async function ingestOutboundWhatsApp(
   });
   if (existing) return { message: existing, created: false };
 
-  // La conversation du fil — la vraie, jamais un fantôme (PITFALLS #75).
+  // La conversation du fil — la vraie, jamais un fantôme (PITFALLS #75) —,
+  // directe ou de groupe : c'est à elle qu'on demande la nature du fil, comme
+  // pour un envoi depuis Relvo (`sendWhatsAppReply`).
   const conversation = await conversationDuFil(db, {
     channelId: data.channelId,
     externalThreadId: data.externalThreadId,
-    types: [ConversationType.whatsapp_direct],
   });
   if (!conversation) return { message: null, created: false };
+  const groupe = conversation.type === ConversationType.whatsapp_group;
 
   try {
     const message = await createMessage(db, {
@@ -639,7 +643,9 @@ export async function ingestOutboundWhatsApp(
       direction: MessageDirection.outgoing,
       joinListening: true,
       recipientContactId: conversation.contactId,
-      interlocutorRaw: conversation.interlocutorRaw,
+      interlocutorRaw: groupe ? null : conversation.interlocutorRaw,
+      isGroup: groupe,
+      groupTitle: groupe ? conversation.title : null,
       externalId: data.externalId,
       externalThreadId: data.externalThreadId,
       content: data.content ?? null,

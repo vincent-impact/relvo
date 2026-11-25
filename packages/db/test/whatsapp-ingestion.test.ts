@@ -324,6 +324,52 @@ describe("ingestOutboundWhatsApp — la réponse envoyée depuis le téléphone"
     expect(s.waitingForReply).toBe(true);
   });
 
+  it("entre aussi dans un GROUPE : ce que le dirigeant y écrit est la moitié de l'échange", async () => {
+    const { channel, db } = await makeAccountWithChannel(
+      "wa-out-groupe@test.fr",
+    );
+    const { message: entrant } = await ingestInboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "grp-in-1",
+      externalThreadId: "equipe@g.us",
+      senderRaw: "33600000020@s.whatsapp.net",
+      senderName: "Karim Benali",
+      isGroup: true,
+      content: "Qui ouvre demain ?",
+    });
+
+    const { message, created } = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "grp-out-phone-1",
+      externalThreadId: "equipe@g.us",
+      content: "Je m'en occupe, 7 h sur place",
+    });
+    expect(created).toBe(true);
+    expect(message?.direction).toBe(MessageDirection.outgoing);
+    expect(message?.conversationId).toBe(entrant.conversationId);
+    expect(message?.isGroup).toBe(true);
+    expect(message?.subjectId).toBeNull();
+    // Le groupe reste UNE conversation, et aucun contact n'est inventé.
+    expect(await db.conversation.count()).toBe(1);
+    expect(await db.contact.count()).toBe(0);
+    // Le fil montre les deux voix, dans l'ordre.
+    const fil = await db.message.findMany({
+      where: { conversationId: entrant.conversationId },
+      orderBy: { createdAt: "asc" },
+      select: { direction: true },
+    });
+    expect(fil.map((m) => m.direction)).toEqual(["incoming", "outgoing"]);
+
+    // Un groupe que Relvo ne connaît pas encore : rien n'est inventé.
+    const inconnu = await ingestOutboundWhatsApp(db, {
+      channelId: channel.id,
+      externalId: "grp-out-phone-2",
+      externalThreadId: "autre-groupe@g.us",
+      content: "Bonjour à tous",
+    });
+    expect(inconnu).toEqual({ message: null, created: false });
+  });
+
   it("ne duplique jamais l'écho d'un envoi fait depuis Relvo, ni un rejeu", async () => {
     const { channel, db } = await makeAccountWithChannel("wa-echo@test.fr");
     const { message: entrant } = await ingestInboundWhatsApp(db, {
