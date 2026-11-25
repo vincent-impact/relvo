@@ -6,6 +6,8 @@
 
 ## 2026-11-25
 
+- **Corrigé** — Le badge « Automatique » devient « E-mail automatique » sur un e-mail, et « Message automatique » sur une conversation WhatsApp.
+- **Corrigé** — Dans un groupe WhatsApp, les messages que vous écrivez depuis votre téléphone apparaissent désormais dans Relvo, comme ceux des autres.
 - **Nouveau** — Les photos, vidéos et documents reçus par WhatsApp ne sont plus copiés d'office dans Relvo. Hors d'un sujet, une photo s'affiche en aperçu et se charge quand vous la touchez ; dès qu'un sujet prend le message, tout est gardé en entier.
 - **Nouveau** — Relvo fait maintenant le ménage tout seul : un message que vous n'avez rangé dans aucun sujet s'efface de Relvo au bout de trente jours, un sujet fermé trente jours après sa fermeture. Ce qu'un sujet porte reste, et rien ne bouge dans votre boîte ni sur votre téléphone.
 
