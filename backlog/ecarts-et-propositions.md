@@ -2014,6 +2014,10 @@ armé par un interrupteur (`NETTOYAGE_ACTIF`), que l'assistant bascule sur le mo
 d'ici là le cron simule, et ni le fil, ni la fiche d'un sujet fermé, ni la politique de
 confidentialité ne promettent ce qui n'a pas lieu.
 
+**Armé le 2026-11-25**, le jour même, par le dirigeant (« Tu peux armer »), la simulation sous
+les yeux. Le premier passage réel est celui du cron du matin suivant ; la politique de
+confidentialité porte la date de l'armement.
+
 ### La lecture des groupes : prudente par défaut
 
 **`tranché` par défaut, à régler sur l'usage** · Posé le 2026-11-24 en livrant M29.5, sur la

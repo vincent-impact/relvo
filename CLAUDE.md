@@ -88,8 +88,8 @@ serverless ; il n'y a **aucun processus permanent** à héberger.
   disparaît, un fil de messagerie reste. Les règles vivent dans `domain/nettoyage.ts` — le
   passage réel et sa simulation lisent **les mêmes filtres** —, le cron du matin les passe
   (`server/nettoyage.ts`), et **un message de plus de trente jours ne s'importe plus**
-  (`recevoir…`). ⚠️ Armé par `NETTOYAGE_ACTIF` (`lib/nettoyage.ts`) : tant qu'il est faux, le
-  cron simule et l'écran ne promet rien. ⚠️ Un test qui passe par `recevoir…` date ses
+  (`recevoir…`). ⚠️ **Armé** : `NETTOYAGE_ACTIF` (`lib/nettoyage.ts`) est vrai ; le
+  remettre à faux ramène le cron à la simulation et retire ce que l'écran en promet. ⚠️ Un test qui passe par `recevoir…` date ses
   messages **relativement à maintenant** (`PITFALLS.md` #81).
 - **Aucun accès direct au stockage** : tout passe par le paquet dédié, jamais par un client
   instancié à la main — c'est ce qui garde le fournisseur remplaçable et ce qui évite de recréer
@@ -237,7 +237,7 @@ pnpm db:migrate      # nouvelle migration
 pnpm db:generate     # ⚠️ après TOUTE migration (#33)
 pnpm db:seed         # jeu de démonstration
 pnpm --filter web ia:journal   # le compteur de l'inférence relu : coût, cache, silencieux
-curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/matin   # le cron du matin à la main : le nettoyage (simulé tant qu'il n'est pas armé), drainage, brief, abonnements Gmail, le lundi le relevé de ce que Relvo a ignoré (M25.11), et la première lecture des groupes du jour (M29.5) — la seconde part du cron de la mi-journée, `/api/cron/catch-up`
+curl -H "Authorization: Bearer $CRON_SECRET" <app>/api/cron/matin   # le cron du matin à la main : le nettoyage (réel — `NETTOYAGE_ACTIF`), drainage, brief, abonnements Gmail, le lundi le relevé de ce que Relvo a ignoré (M25.11), et la première lecture des groupes du jour (M29.5) — la seconde part du cron de la mi-journée, `/api/cron/catch-up`
 pnpm --filter web push:essai <e-mail>   # pose une question de test et la pousse (M12.9)
 pnpm --filter web admin:role <e-mail> admin|ceo   # donne ou retire le rôle admin, journalisé (M21.1) — effectif à la prochaine connexion
 pnpm --filter web boites:migrer <e-mail> [adresse]   # propose à un compte de passer une boîte de l'agrégateur au relais Gmail (M24.9) — question poussée, rien ne bascule avant son retour de Google

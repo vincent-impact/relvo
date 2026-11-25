@@ -315,7 +315,7 @@ export default function ConfidentialitePage() {
               Si elle change, la date ci-dessous change, et nous vous prévenons
               dans l’application quand le changement vous concerne.
             </p>
-            <p className={s.date}>Dernière mise à jour : 28 octobre 2026.</p>
+            <p className={s.date}>Dernière mise à jour : 25 novembre 2026.</p>
             <p className={s.note}>
               Voir aussi les{" "}
               <Link href={`${SITE_URL}/conditions`}>

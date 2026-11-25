@@ -5,10 +5,11 @@
 > ▶ **Repris le 2026-11-25**, après les quatre tranches de M29 (`ecarts`, « Les mentions
 > d'abord » ; `2026-11-m29-groupes-et-mentions.md`, dont il ne reste que M29.7, après l'usage).
 > **C'est de nouveau le chantier en cours** : la tranche 5 et **le nettoyage** (M25.13) sont
-> livrés, la suite est la tranche 6. ⚠️ **Le nettoyage est livré À L'ARRÊT** : il simule tant
-> que `NETTOYAGE_ACTIF` (`apps/web/src/lib/nettoyage.ts`) est faux ; il se bascule sur le mot du
-> dirigeant, avec la date de la politique de confidentialité. La purge manuelle n'existe plus.
-> Il reste au dirigeant à sortir du palier gratuit.
+> livrés, la suite est la tranche 6. ⚠️ **Le nettoyage est ARMÉ depuis le 2026-11-25**, sur le
+> mot du dirigeant (`NETTOYAGE_ACTIF`, `apps/web/src/lib/nettoyage.ts`) : son **premier passage
+> réel est celui du cron du matin du 2026-11-26** — à relire ce matin-là (l'événement
+> `nettoyage` de chaque compte, la file de suppression, le poids du bucket). La purge manuelle
+> n'existe plus. Il reste au dirigeant à sortir du palier gratuit.
 
 **Où on en est.** La recette de l'alpha est close et M28 terminée. M24 n'attend plus que la
 vérification Google, entre les mains du dirigeant : son épique est passée à `partiel` pour
@@ -156,7 +157,8 @@ sujet ne reste pas » ; `conception/04` §11).
   sous un budget de temps ; le cron du matin le lance EN PREMIER (quatre-vingt-dix secondes),
   puis draine la file (une minute). `effacerLesFichiersSupprimes` lance le drainage aussitôt
   après la suppression d'un canal, d'un compte ou d'une pièce.
-- **L'interrupteur** : `NETTOYAGE_ACTIF` (`lib/nettoyage.ts`), faux. Il commande le passage
+- **L'interrupteur** : `NETTOYAGE_ACTIF` (`lib/nettoyage.ts`), **vrai depuis le 2026-11-25**
+  (livré faux le matin, basculé le jour même sur le mot du dirigeant). Il commande le passage
   réel **et** ce que l'écran en dit : la mention en tête d'un fil, « Fermé · effacé le … » sur
   la fiche, le toast de fermeture, le paragraphe « Combien de temps » de la politique de
   confidentialité.
@@ -168,8 +170,9 @@ sujet ne reste pas » ; `conception/04` §11).
 
 **Ce que le nettoyage ne fait pas, et qu'il ne faut pas croire fait.**
 
-- **Il n'a jamais tourné pour de bon** : ni en production (à l'arrêt), ni sur une base réelle —
-  seuls les tests d'intégration l'exécutent. Le premier passage est le plus gros qu'il fera.
+- **Il n'a pas encore tourné pour de bon** : armé le 2026-11-25, son premier passage est celui
+  du lendemain matin ; jusque-là seuls les tests d'intégration l'ont exécuté. Ce premier
+  passage est le plus gros qu'il fera.
 - **Le temps du premier passage n'est pas mesuré** : plusieurs milliers de lignes effacées par
   compte, dans le budget du cron ; un compte non atteint attend le lendemain.
 - **Les fils affichés auront des trous** : dans une conversation de messagerie, ce qui précède
@@ -179,7 +182,8 @@ sujet ne reste pas » ; `conception/04` §11).
   jours ; d'ici là elles sont hors des listes.
 - **Le journal garde** les coûts d'inférence et les phrases d'avis de Relvo sur des messages
   expirés (`event_logs`, 56 Mo) : rien ne les fait expirer.
-- **Les testeurs ne sont pas prévenus** : c'est au dirigeant de le leur dire avant d'armer.
+- **Prévenir les testeurs** est resté au dirigeant : l'armement n'envoie aucun message, seul
+  l'écran le dit (en tête d'un fil, sur un sujet fermé, dans la politique de confidentialité).
 
 **Ce que la tranche 5 ne fait pas, et qu'il ne faut pas croire fait.**
 
@@ -250,8 +254,9 @@ Chaque tranche est livrée, testée, documentée et poussée.
       drainage de la file par budget de temps.
 - [x] Tranche 5 — mesurer (M25.1) — livrée le 2026-11-25 ; la file de suppression est prouvée
       vide et le bucket sans fichier perdu.
-- [x] Le nettoyage (M25.13, qui remplace M25.6 et M25.12) — livré le 2026-11-25, **à
-      l'arrêt** : à armer sur le mot du dirigeant.
+- [x] Le nettoyage (M25.13, qui remplace M25.6 et M25.12) — livré le 2026-11-25 à l'arrêt,
+      **armé le même jour** sur le mot du dirigeant ; premier passage réel au cron du matin du
+      2026-11-26, à relire.
 - [ ] Tranche 6 — décider avant de télécharger (M25.3, M25.5)
 - [ ] Tranche 7 — les images, le quota (M25.4, M25.7) ; la déduplication (M25.8), dont la
       mesure a rempli la condition

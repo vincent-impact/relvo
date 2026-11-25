@@ -7,8 +7,8 @@
 // Usage : pnpm --filter web nettoyage:simuler [<e-mail>]
 //
 // Tourne sur la base que `DATABASE_URL` désigne ; un accès en lecture suffit.
-// Le passage réel ne se lance pas d'ici : c'est le cron du matin, quand
-// `NETTOYAGE_ACTIF` (`src/server/nettoyage.ts`) est vrai.
+// Le passage réel ne se lance pas d'ici : c'est le cron du matin, tant que
+// `NETTOYAGE_ACTIF` (`src/lib/nettoyage.ts`) est vrai.
 import {
   RETENTION_SANS_SUJET_JOURS,
   additionnerBilans,

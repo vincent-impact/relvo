@@ -26,8 +26,8 @@ import { expireTenantData } from "@/server/cached";
 //     canal, un compte, une pièce) : la base est vidée dans le geste, et le
 //     drainage est lancé aussitôt après la réponse — il n'attend pas le matin.
 //
-// ⚠️ `NETTOYAGE_ACTIF` (`lib/nettoyage.ts`) : tant qu'il est faux, le passage
-// quotidien ne fait que SIMULER et écrit dans les traces ce qu'il retirerait.
+// ⚠️ `NETTOYAGE_ACTIF` (`lib/nettoyage.ts`) arme le passage quotidien : faux,
+// il ne fait que SIMULER et écrit dans les traces ce qu'il retirerait.
 
 export type PassageDuNettoyage = {
   /** Faux : rien n'a été écrit, le bilan est celui d'une simulation. */
