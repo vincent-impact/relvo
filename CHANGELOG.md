@@ -4,6 +4,10 @@
      Ne pas éditer à la main. Depuis la reprise, une entrée s'écrit dans le
      pied « Client: » du commit ; avant elle, dans backlog/journal-client.md. -->
 
+## 2026-11-25
+
+- **Nouveau** — Relvo fait maintenant le ménage tout seul : un message que vous n'avez rangé dans aucun sujet s'efface de Relvo au bout de trente jours, un sujet fermé trente jours après sa fermeture. Ce qu'un sujet porte reste, et rien ne bouge dans votre boîte ni sur votre téléphone.
+
 ## 2026-11-24
 
 - **Nouveau** — Relvo lit maintenant vos groupes WhatsApp deux fois par jour, le matin et à la mi-journée : quand une décision ou une demande vous y attend, il ouvre un sujet et vous prévient.

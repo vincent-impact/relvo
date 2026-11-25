@@ -225,6 +225,15 @@
   "en_cours": "Les photos et vidéos reçues, sans encombrer",
   "journal": [
     {
+      "date": "2026-11-25",
+      "entrees": [
+        {
+          "type": "new",
+          "texte": "Relvo fait maintenant le ménage tout seul : un message que vous n'avez rangé dans aucun sujet s'efface de Relvo au bout de trente jours, un sujet fermé trente jours après sa fermeture. Ce qu'un sujet porte reste, et rien ne bouge dans votre boîte ni sur votre téléphone."
+        }
+      ]
+    },
+    {
       "date": "2026-11-24",
       "entrees": [
         {
