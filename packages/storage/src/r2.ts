@@ -2,16 +2,19 @@ import {
   DeleteObjectCommand,
   HeadObjectCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
   PutObjectCommand,
   S3Client,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { loadStorageConfig, type StorageConfig } from "./config";
 import type {
+  ObjectListing,
   ObjectMetadata,
   ObjectRead,
   PresignedUpload,
   StorageProvider,
+  StoredObject,
 } from "./provider";
 
 // Implémentation Cloudflare R2 (M4.1, décision 2026-07-15).
@@ -30,6 +33,10 @@ import type {
  * partager. R2 plafonne à 7 jours, on n'en approche pas.
  */
 const DEFAULT_EXPIRY_SECONDS = 5 * 60;
+
+/** Parcours d'un listing : mille clés par page (le maximum), et un plafond large par défaut. */
+const LIST_PAGE_SIZE = 1000;
+const DEFAULT_LIST_MAX_OBJECTS = 200_000;
 
 /** Un nom de fichier ne doit pas pouvoir injecter d'en-tête HTTP. */
 function encodeDownloadFilename(filename: string): string {
@@ -175,6 +182,39 @@ export function createR2Storage(
         if (isNotFound(error)) return { status: "absent" };
         throw error;
       }
+    },
+
+    async list({
+      prefix,
+      maxObjects = DEFAULT_LIST_MAX_OBJECTS,
+    } = {}): Promise<ObjectListing> {
+      const objects: StoredObject[] = [];
+      let token: string | undefined;
+      do {
+        const page = await client.send(
+          new ListObjectsV2Command({
+            Bucket: config.bucket,
+            Prefix: prefix,
+            MaxKeys: LIST_PAGE_SIZE,
+            ContinuationToken: token,
+          }),
+        );
+        for (const o of page.Contents ?? []) {
+          if (!o.Key) continue;
+          if (objects.length >= maxObjects) {
+            return { objects, complete: false };
+          }
+          objects.push({
+            key: o.Key,
+            size: o.Size ?? 0,
+            // L'empreinte arrive entre guillemets ; un envoi en une fois (le
+            // seul que nous fassions) y porte le MD5 du contenu.
+            etag: o.ETag?.replaceAll('"', "") || null,
+          });
+        }
+        token = page.IsTruncated ? page.NextContinuationToken : undefined;
+      } while (token);
+      return { objects, complete: true };
     },
 
     async head(key: string): Promise<ObjectMetadata | null> {

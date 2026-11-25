@@ -20,6 +20,19 @@ export type ObjectMetadata = {
   contentType: string | null;
 };
 
+/**
+ * Un objet du bucket tel que le fournisseur le liste : sa clé, son poids, et
+ * l'empreinte de son contenu quand il la donne — deux objets de même empreinte
+ * et de même poids portent le même fichier (M25.8).
+ */
+export type StoredObject = { key: string; size: number; etag: string | null };
+
+/**
+ * Ce que le bucket porte, lu chez le fournisseur. `complete` est faux quand la
+ * liste a été coupée au plafond demandé : les totaux sont alors des minorants.
+ */
+export type ObjectListing = { objects: StoredObject[]; complete: boolean };
+
 /** Le résultat d'une lecture bornée — trois issues, aucune ne lève. */
 export type ObjectRead =
   | { status: "ok"; body: Uint8Array; size: number; contentType: string | null }
@@ -84,4 +97,16 @@ export interface StorageProvider {
 
   /** `null` si l'objet n'existe pas. Sert à vérifier qu'un upload a abouti. */
   head(key: string): Promise<ObjectMetadata | null>;
+
+  /**
+   * LISTE ce que le bucket porte — clés et poids, sans rien télécharger. C'est
+   * la seule lecture qui dise la vérité du fournisseur : ce qu'il facture, et
+   * ce que la base ne connaît plus (M25.1). Sert à MESURER, depuis le
+   * backoffice — jamais à retrouver un fichier : une clé se résout toujours
+   * depuis la base. `maxObjects` borne le parcours ; au-delà, `complete` est faux.
+   */
+  list(input?: {
+    prefix?: string;
+    maxObjects?: number;
+  }): Promise<ObjectListing>;
 }

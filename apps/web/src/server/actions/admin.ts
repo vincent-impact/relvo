@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import {
   Actor,
   DEMO_ACCOUNT_ID,
@@ -19,6 +19,7 @@ import { sendAccountActivatedEmail } from "@/lib/email";
 import { requireAdmin } from "@/server/admin";
 import { MESSAGES_REFUS, refusSuppression } from "@/server/admin-regles";
 import { fournisseurDe } from "@/server/courrier";
+import { TAG_BUCKET } from "@/server/stockage-mesure";
 
 // Les gestes du backoffice (M21.4, M21.6). Chaque action commence par
 // `requireAdmin()` — le proxy ne voit pas une Server Action (PITFALLS #30) — et
@@ -151,4 +152,17 @@ export async function adminDeleteAccountAction(
   if (!result.ok) return result;
   revalidateAdmin();
   return ok({ email: result.data.email, unipile: { echecs } });
+}
+
+/**
+ * Périme la lecture gardée du bucket (M25.1) : le prochain rendu du backoffice
+ * le relit chez le fournisseur. Une lecture, aucun changement d'état.
+ */
+export async function adminRelireBucketAction(): Promise<
+  ActionResult<{ relu: true }>
+> {
+  await requireAdmin();
+  updateTag(TAG_BUCKET);
+  revalidatePath("/admin");
+  return ok({ relu: true as const });
 }

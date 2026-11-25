@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { getAccountForAdmin, getAccountJournal } from "@relvo/db";
 import { AccountGestes } from "@/components/admin/account-gestes";
 import { AccountJournal } from "@/components/admin/account-journal";
+import { Ligne } from "@/components/admin/ligne";
+import {
+  StockageDuCompteEnDirect,
+  StockageEnLecture,
+} from "@/components/admin/stockage";
 import { ActivateButton } from "@/components/admin/activate-button";
 import { DeleteAccount } from "@/components/admin/delete-account";
 import {
@@ -26,34 +32,6 @@ export const dynamic = "force-dynamic";
 // La fiche d'un compte, tranche 1 (M21.2, M21.4) : ce que la liste sait, en
 // entier, et les gestes. Le journal de l'inférence rendu en page viendra en
 // tranche 2 (M21.3).
-
-function Ligne({
-  label,
-  children,
-  tone,
-}: {
-  label: string;
-  children: React.ReactNode;
-  tone?: "urgent" | "attente";
-}) {
-  return (
-    <div
-      data-list-row
-      className="flex items-baseline justify-between gap-3 border-b border-(--filet) px-4 py-2.5 text-[14px]"
-    >
-      <span className="font-light text-gris">{label}</span>
-      <span
-        className={cn(
-          "chiffre text-right font-normal text-noir",
-          tone === "urgent" && "text-urgent",
-          tone === "attente" && "text-(--attente)",
-        )}
-      >
-        {children}
-      </span>
-    </div>
-  );
-}
 
 export default async function CompteAdminPage({
   params,
@@ -198,6 +176,17 @@ export default async function CompteAdminPage({
             </p>
           )}
         </section>
+
+        <Suspense
+          fallback={
+            <section>
+              <ZoneHeading label="Stockage" />
+              <StockageEnLecture />
+            </section>
+          }
+        >
+          <StockageDuCompteEnDirect accountId={compte.id} />
+        </Suspense>
 
         <AccountJournal fiche={fiche} now={now} />
 

@@ -11,12 +11,14 @@
 // jamais relisible. L'affichage utilisateur passe toujours par ici.
 
 export { loadStorageConfig, type StorageConfig } from "./config";
-export { buildObjectKey, type StorageScope } from "./keys";
+export { buildObjectKey, ownerOfObjectKey, type StorageScope } from "./keys";
 export type {
+  ObjectListing,
   ObjectMetadata,
   ObjectRead,
   PresignedUpload,
   StorageProvider,
+  StoredObject,
 } from "./provider";
 export { createR2Storage } from "./r2";
 export {

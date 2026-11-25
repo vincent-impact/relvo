@@ -2,9 +2,10 @@
 
 ## Démarrage à froid — à lire en premier
 
-> ⏸ **En pause depuis le 2026-11-24** : le dirigeant a fait passer M29 devant les tranches 5 à
-> 7 (`ecarts`, « Les mentions d'abord »). Le chantier en cours est
-> `2026-11-m29-groupes-et-mentions.md`. Ici, il reste au dirigeant à lancer la purge.
+> ▶ **Repris le 2026-11-25**, après les quatre tranches de M29 (`ecarts`, « Les mentions
+> d'abord » ; `2026-11-m29-groupes-et-mentions.md`, dont il ne reste que M29.7, après l'usage).
+> **C'est de nouveau le chantier en cours** : la tranche 5 est livrée, la suite est la tranche 6.
+> Il reste au dirigeant à lancer la purge et à sortir du palier gratuit.
 
 **Où on en est.** La recette de l'alpha est close et M28 terminée. M24 n'attend plus que la
 vérification Google, entre les mains du dirigeant : son épique est passée à `partiel` pour
@@ -106,6 +107,50 @@ palier gratuit de son côté** (M25.2) : à vérifier avec lui avant de compter 
   matin, quatre minutes sur `/api/cron/drain-file-deletions`), par lots, huit suppressions de
   front, les entrées déjà échouées en dernier.
 
+**Ce qui existe après la tranche 5 — la mesure.**
+
+- **Le bucket se liste** : `StorageProvider.list()` (`packages/storage`), clés et poids, sans
+  rien télécharger ; `ownerOfObjectKey` lit le compte dans une clé. Aucun autre accès au
+  stockage (`PITFALLS` #8).
+- **La base se mesure** : `domain/mesure-stockage.ts` — `mesurerLesPieces` (par compte, canal,
+  famille de type, et ce qui tient la pièce), `mesurerLesConnaissances`, `listClesDuStockage`
+  (les clés connues, et celles que la file attend). Test : `packages/db/test/mesure-stockage.test.ts`.
+- **Les deux se rapprochent** : `apps/web/src/lib/stockage.ts`, pur — `resumerLesPieces`,
+  `rapprocherLeBucket` (sans propriétaire, en attente, absents, hors comptes),
+  `niveauDuStockage` (alerte à 80 % du repère), `octets`. Test : `apps/web/test/stockage.test.ts`.
+  `server/stockage-mesure.ts` assemble, et garde la lecture du bucket un quart d'heure
+  (`TAG_BUCKET`, « Relire le bucket » la périme).
+- **Au backoffice** : une carte « Stockage » sur la vue d'ensemble (le poids du bucket contre
+  le repère, rouge à 80 %), la page `/admin/stockage` (le bucket rapproché de la base, ce qui
+  tient les pièces, par type, par canal, par compte), et une section sur la fiche de chaque
+  compte. Sur la vue d'ensemble et la fiche, le stockage arrive après le reste de la page
+  (`Suspense`) : lister le bucket prend quelques secondes à froid.
+- **Le repère** est une configuration, `STOCKAGE_REPERE_GO` (dix par défaut, le palier offert).
+- **La preuve de S16, faite le 2026-11-25** en lecture seule, par le même code : le bucket de
+  production porte 15 536 fichiers, 7,59 Go ; la base en connaît 15 536 (15 533 pièces, 3
+  connaissances) ; **aucun fichier sans propriétaire, aucun absent, aucun hors compte**. Le
+  cron du matin a vidé la file (1 124 clés en attente la veille, zéro le matin) et les
+  fichiers ont bien quitté le bucket.
+- **Ce que la mesure dit** (production, même jour) : la vidéo pèse 53 % du stockage (812
+  fichiers), le PDF 22 %, l'image 18 % ; WhatsApp 91 % ; **82 % du poids n'est porté par aucun
+  sujet**, dont 29 % dans des conversations ignorées — ce que la purge retire. Quatre comptes
+  portent 88 % du poids. Aucune pièce sans taille. C'est ce qui ordonne la tranche 6 : la
+  vidéo d'abord.
+
+- **Les doublons se mesurent aussi** : le listing donne l'empreinte de chaque fichier, et le
+  même contenu stocké plusieurs fois dans un compte se compte (`EtatDuBucket.doublons`).
+  Mesuré le 2026-11-25 : 4 099 fichiers en double, 773 Mo, 9,9 % du stockage. **La condition
+  de M25.8 est remplie** — la déduplication a de quoi rendre, à peser contre la vidéo, qui
+  pèse cinq fois plus.
+
+**Ce que la tranche 5 ne fait pas, et qu'il ne faut pas croire fait.**
+
+- **L'alerte ne se voit qu'en ouvrant le backoffice** : rien n'est poussé à l'administrateur.
+- **Le temps de listing en production n'est pas mesuré** : treize secondes depuis un poste,
+  moins attendu depuis la fonction ; il croît avec le nombre de fichiers.
+- Les écrans n'ont été rendus qu'en local, où la base est celle de démonstration et le bucket
+  celui de production : les chiffres vrais se liront au backoffice après le déploiement.
+
 **Ce que les tranches 1 à 3 ne font pas, et qu'il ne faut pas croire fait.**
 
 - **Le relevé n'a jamais tourné en production** : il se pose au prochain lundi où le cron du
@@ -164,7 +209,8 @@ Chaque tranche est livrée, testée, documentée et poussée.
       lundi.
 - [x] Tranche 4 — le stock déjà ignoré (M25.12) — l'outil livré et simulé le 2026-11-24 ;
       **la purge réelle reste à lancer par le dirigeant**, puis la file à drainer.
-- [ ] Tranche 5 — mesurer (M25.1)
+- [x] Tranche 5 — mesurer (M25.1) — livrée le 2026-11-25 ; la file de suppression est prouvée
+      vide et le bucket sans fichier perdu.
 - [ ] Tranche 6 — décider avant de télécharger (M25.3, M25.5)
 - [ ] Tranche 7 — les images, l'expiration, le quota (M25.4, M25.6, M25.7)
 - [ ] M25.2 — sortir du palier gratuit, par le dirigeant

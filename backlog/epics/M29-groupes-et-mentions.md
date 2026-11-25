@@ -8,7 +8,7 @@ resume_client: >
   quand c'est vous qu'on interpelle : il lit ce qui précède, ouvre un sujet s'il le faut et vous
   pose la tâche. Les groupes que vous gardez sont lus deux fois par jour ; ceux qui ne sont pas
   professionnels sont écartés d'eux-mêmes.
-statut: en-cours
+statut: partiel
 debut: 2026-11-24
 ---
 

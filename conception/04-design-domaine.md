@@ -607,6 +607,16 @@ transaction**, un cron la draine **hors transaction**. C'est le seul mécanisme 
 pertes de données. **Toute nouvelle table portant une clé d'objet reçoit son trigger dans la
 même migration.**
 
+**Ce mécanisme se prouve, il ne se suppose pas.** Le backoffice mesure le stockage par deux
+lectures qu'il rapproche : ce que la **base** sait des pièces — leur poids par compte, par
+canal, par type, et selon ce qui les tient (un sujet, rien, une conversation ignorée) — et ce
+que le **bucket** porte réellement, listé chez le fournisseur par le paquet de stockage. Un
+fichier stocké que la base ne connaît plus et que la file n'attend pas est **sans
+propriétaire** : c'est ce qu'un effacement aurait laissé derrière lui, et il ne doit pas y en
+avoir. Une pièce connue de la base et absente du bucket ne s'ouvrira pas : elle se compte
+aussi. Le poids du bucket se lit contre un **repère** de configuration, et alerte à son
+approche, comme le plafond de l'inférence.
+
 ---
 
 ## 12. Le périmètre V1

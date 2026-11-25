@@ -7,7 +7,7 @@ resume_client: >
   Relvo garde ce qui sert à un sujet et va rechercher le reste à la source quand vous le
   demandez. Les conversations en sourdine ne pèsent rien, et l'espace de chaque compte est
   surveillé.
-statut: partiel
+statut: en-cours
 debut: 2026-11-24
 ---
 
@@ -77,7 +77,7 @@ l'agrégateur, qu'on va chercher au tap.
 | M25.5 | **Le plein format pour ce qu'une affaire porte** (S6) : un message hors affaire ne reçoit que vignette ou référence ; quand il rejoint une affaire, le média se complète chez l'agrégateur ; le tri décide, jamais une règle de plus                                                                  |
 | M25.6 | **L'expiration par cycle de vie** (S9) : le paquet de stockage pose les médias de messagerie non rattachés sous un **préfixe** qui expire (trente jours), ce qu'une affaire porte et ce que le dirigeant garde sous un préfixe qui ne meurt pas ; la base reflète l'expiration (la pièce redevient une référence) ; le préfixe **est** la politique, tenu par un test                              |
 | M25.7 | **Le quota par compte** (S15) : une garde en méga-octets lue d'une configuration ; au quota, références seules, et Relvo le dit ; la part consommée se lit dans l'Usage (M26) en pourcentage, jamais en octets ni en euros                                                                                     |
-| M25.8 | **La déduplication** (S11) : seulement si M25.1 montre des transferts en double — empreinte du contenu, un objet par compte                                                                                                                                                                   |
+| M25.8 | **La déduplication** (S11) : seulement si M25.1 montre des transferts en double — **elle en montre** : un fichier sur quatre, un dixième du poids (`sprints/`, tranche 5) — empreinte du contenu, un objet par compte                                                                                                                                                                   |
 
 | M25.9 | **Ignorer, c'est ne plus importer** (`ecarts`, « Ignorer veut dire ne plus importer… ») : le message d'une conversation ignorée — par Relvo ou par le dirigeant, e-mail ou messagerie, reçu ou écrit depuis le téléphone — n'est plus stocké, ni son texte, ni son HTML, ni ses pièces ; la réception s'arrête à la résolution de la conversation. Un fil nouveau d'un expéditeur déjà écarté s'importe une fois, le temps d'être jugé |
 | M25.10 | **Ce qu'on ne lit plus se compte, et se relit au retour** : la conversation ignorée garde un **compteur sans contenu** (combien de messages, depuis quand, le dernier) ; la réactiver ou la rattacher à un sujet relit le trou chez le fournisseur du canal, par la frontière `server/courrier/` pour l'e-mail et par l'agrégateur pour la messagerie — le texte revient, un média ancien peut ne plus être servi, et Relvo le dit |

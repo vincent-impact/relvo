@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Suspense } from "react";
 import { getAdminOverview, listAccountsForAdmin } from "@relvo/db";
 import { AccountRow } from "@/components/admin/account-row";
 import { eur } from "@/components/admin/format";
 import { Overview } from "@/components/admin/overview";
+import {
+  CarteStockageEnDirect,
+  StockageEnLecture,
+} from "@/components/admin/stockage";
 import { RelvoHeader, SKY_BTN } from "@/components/layout/relvo-header";
 import { Screen } from "@/components/layout/screen";
 import { ListPanel } from "@/components/shared/list-panel";
@@ -56,6 +61,13 @@ export default async function AdminPage() {
       />
       <div className="relative z-3 -mt-5 flex flex-col gap-5">
         <Overview vue={vue} />
+        {/* Le stockage (M25.1) : le poids contre le repère, et le détail d'un appui. */}
+        <section>
+          <ZoneHeading label="Stockage" hint="ce que le bucket porte" />
+          <Suspense fallback={<StockageEnLecture />}>
+            <CarteStockageEnDirect now={now} />
+          </Suspense>
+        </section>
         {enAttente.length ? (
           <section>
             <ZoneHeading

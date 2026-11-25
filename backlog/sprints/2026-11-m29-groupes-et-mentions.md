@@ -2,6 +2,16 @@
 
 ## Démarrage à froid — à lire en premier
 
+> ⏸ **En attente de l'usage depuis le 2026-11-25** : les quatre tranches sont livrées, il ne
+> reste que M29.7. **Le chantier en cours est de nouveau M25**
+> (`2026-11-m25-maitrise-des-medias.md`, repris à sa tranche 5).
+>
+> **Constaté en production le 2026-11-25 au matin**, lecture seule : la première lecture des
+> groupes a tourné à 6 h UTC (deux groupes lus, tous deux sans suite, leur repère posé) ; 23
+> groupes se sont jugés d'eux-mêmes depuis la veille, dont 5 ignorés ; « c'est moi » est
+> appris sur quatre identités. Aucune mention du dirigeant n'a encore été reçue, aucun sujet
+> n'est né d'un groupe.
+
 **Où on en est.** Le dirigeant a fait passer M29 devant la fin de M25 le 2026-11-24 (`ecarts`,
 « Les mentions d'abord ») : la mention WhatsApp qui s'affiche en chiffres et ne pèse sur rien
 est ce que les testeurs remontent sans cesse. L'épique est `M29-groupes-et-mentions.md` ; ses

@@ -11,6 +11,19 @@
 
 export type StorageScope = "knowledge" | "attachments";
 
+/**
+ * À qui appartient une clé, lue dans son préfixe — pour MESURER un listing du
+ * bucket (M25.1), jamais pour autoriser. `null` quand la clé n'est pas rangée
+ * sous un compte : un objet posé à la main, ou d'une convention disparue.
+ */
+export function ownerOfObjectKey(
+  key: string,
+): { accountId: string; scope: string } | null {
+  const [racine, accountId, scope, reste] = key.split("/");
+  if (racine !== "accounts" || !accountId || !scope || !reste) return null;
+  return { accountId, scope };
+}
+
 export function buildObjectKey(input: {
   accountId: string;
   scope: StorageScope;

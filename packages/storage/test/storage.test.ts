@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { loadStorageConfig } from "../src/config";
-import { buildObjectKey } from "../src/keys";
+import { buildObjectKey, ownerOfObjectKey } from "../src/keys";
 import { buildUploadRequestSchema } from "../src/validation";
 
 const ENV = {
@@ -45,6 +45,26 @@ describe("buildObjectKey", () => {
     const a = buildObjectKey({ accountId: "a1", scope: "knowledge" });
     const b = buildObjectKey({ accountId: "a1", scope: "knowledge" });
     expect(a).not.toBe(b);
+  });
+});
+
+describe("ownerOfObjectKey", () => {
+  it("lit le compte et l'usage dans le préfixe d'une clé", () => {
+    const key = buildObjectKey({
+      accountId: "a1",
+      scope: "attachments",
+      random: "r1",
+    });
+    expect(ownerOfObjectKey(key)).toEqual({
+      accountId: "a1",
+      scope: "attachments",
+    });
+  });
+
+  it("ne devine rien d'une clé rangée ailleurs", () => {
+    expect(ownerOfObjectKey("fixtures/demo.pdf")).toBeNull();
+    expect(ownerOfObjectKey("accounts/a1/attachments")).toBeNull();
+    expect(ownerOfObjectKey("")).toBeNull();
   });
 });
 

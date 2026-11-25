@@ -13,14 +13,17 @@ import { Progress } from "@/components/ui/progress";
 export function JaugePlafond({
   pct,
   urgent,
+  label = "Part du plafond mensuel consommée",
 }: {
   pct: number;
   urgent: boolean;
+  /** Ce que la jauge mesure, pour un lecteur d'écran. */
+  label?: string;
 }) {
   return (
     <Progress
       value={pct}
-      aria-label="Part du plafond mensuel consommée"
+      aria-label={label}
       getAriaValueText={() => `${pct} %`}
       className="mt-2.5"
       style={

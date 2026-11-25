@@ -1,0 +1,186 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { countPendingFileDeletions, listAccountsForAdmin } from "@relvo/db";
+import { depuis } from "@/components/admin/format";
+import { Ligne } from "@/components/admin/ligne";
+import { RelireBucket } from "@/components/admin/relire-bucket";
+import {
+  CarteStockage,
+  RepartitionDesPieces,
+} from "@/components/admin/stockage";
+import { RelvoHeader } from "@/components/layout/relvo-header";
+import { Screen } from "@/components/layout/screen";
+import { ListPanel } from "@/components/shared/list-panel";
+import { ZoneHeading } from "@/components/shared/zone-heading";
+import { compte, nombre, octets, partDe } from "@/lib/stockage";
+import { requireAdmin } from "@/server/admin";
+import { mesureDuStockage } from "@/server/stockage-mesure";
+
+export const metadata: Metadata = { title: "Stockage — Backoffice Relvo" };
+export const dynamic = "force-dynamic";
+
+// LE STOCKAGE (M25.1) — où part l'espace, et si ce qui devait partir est
+// parti. En tête, le poids contre le repère ; puis le bucket lu chez le
+// fournisseur, rapproché de la base ; puis ce que la base sait des pièces —
+// ce qui les tient, leur type, leur canal — et le poids de chaque compte.
+
+export default async function StockagePage() {
+  await requireAdmin();
+  const now = new Date();
+  const [mesure, comptes, enFile] = await Promise.all([
+    mesureDuStockage(),
+    listAccountsForAdmin({ now }),
+    countPendingFileDeletions(),
+  ]);
+  const { bucket, pieces } = mesure;
+  const total = pieces.total.octets;
+  const parCompte = comptes
+    .map((c) => ({
+      id: c.id,
+      nom: `${c.firstName} ${c.lastName}`.trim() || c.email,
+      email: c.email,
+      poids: pieces.parCompte[c.id] ?? { pieces: 0, octets: 0 },
+    }))
+    .filter((c) => c.poids.pieces > 0)
+    .sort((a, b) => b.poids.octets - a.poids.octets);
+
+  return (
+    <Screen bottomInset={12} entree>
+      <RelvoHeader
+        title="Stockage"
+        subtitle="où part l'espace, et ce qui devait partir"
+        back="/admin"
+        className="pb-9"
+      />
+      <div className="relative z-3 -mt-5 flex flex-col gap-5">
+        <CarteStockage mesure={mesure} now={now} />
+
+        <section>
+          <ZoneHeading
+            label="Le bucket"
+            hint={
+              bucket ? `lu ${depuis(new Date(bucket.luLe), now)}` : "illisible"
+            }
+          />
+          {bucket ? (
+            <ListPanel>
+              <Ligne label="Fichiers stockés">
+                {octets(bucket.total.octets)}
+                <span className="font-light text-gris">
+                  {" "}
+                  · {compte(bucket.total.objets, "fichier", "fichiers")}
+                </span>
+              </Ligne>
+              <Ligne label="Connus de la base">
+                {octets(pieces.total.octets + mesure.connaissances.octets)}
+                <span className="font-light text-gris">
+                  {" "}
+                  ·{" "}
+                  {compte(
+                    pieces.total.pieces + mesure.connaissances.fichiers,
+                    "fichier",
+                    "fichiers",
+                  )}
+                </span>
+              </Ligne>
+              <Ligne
+                label="Sans propriétaire"
+                tone={bucket.sansProprietaire.objets ? "urgent" : undefined}
+              >
+                {bucket.sansProprietaire.objets === 0
+                  ? "aucun"
+                  : `${octets(bucket.sansProprietaire.octets)} · ${compte(bucket.sansProprietaire.objets, "fichier", "fichiers")}`}
+              </Ligne>
+              <Ligne
+                label="En attente d'effacement"
+                tone={enFile ? "attente" : undefined}
+              >
+                {enFile === 0
+                  ? "aucun"
+                  : `${nombre(enFile)} en file · ${octets(bucket.enAttente.octets)} encore stockés`}
+              </Ligne>
+              <Ligne
+                label="Absents du bucket"
+                tone={bucket.manquants ? "urgent" : undefined}
+              >
+                {bucket.manquants === 0
+                  ? "aucun"
+                  : compte(bucket.manquants, "pièce", "pièces")}
+              </Ligne>
+              <Ligne label="Doublons dans un même compte">
+                {bucket.doublons.objets === 0
+                  ? "aucun"
+                  : `${octets(bucket.doublons.octets)} · ${compte(bucket.doublons.objets, "fichier", "fichiers")}`}
+              </Ligne>
+              {bucket.horsComptes.objets ? (
+                <Ligne label="Hors de tout compte" tone="attente">
+                  {octets(bucket.horsComptes.octets)} ·{" "}
+                  {compte(bucket.horsComptes.objets, "fichier", "fichiers")}
+                </Ligne>
+              ) : null}
+              {pieces.sansTaille ? (
+                <Ligne label="Pièces de taille inconnue" tone="attente">
+                  {nombre(pieces.sansTaille)}
+                </Ligne>
+              ) : null}
+            </ListPanel>
+          ) : (
+            <p className="px-4 text-[14px] font-light text-gris">
+              Le fournisseur n&apos;a pas répondu : les poids ci-dessous sont
+              ceux que la base connaît.
+            </p>
+          )}
+          <div className="mt-3 flex items-center justify-between gap-3 px-4">
+            <p className="text-[12.5px] leading-[17px] font-light text-gris">
+              {bucket && !bucket.complet
+                ? "Le listing a été coupé à son plafond : ces totaux sont des minorants."
+                : "« Sans propriétaire » : stocké, mais ni en base ni en file — ce qu'un effacement a laissé."}
+            </p>
+            <RelireBucket />
+          </div>
+        </section>
+
+        <RepartitionDesPieces mesure={mesure} />
+
+        <section>
+          <ZoneHeading label="Par compte" hint="du plus lourd au plus léger" />
+          {parCompte.length ? (
+            <ListPanel>
+              {parCompte.map((c) => (
+                <Link
+                  key={c.id}
+                  href={`/admin/comptes/${c.id}`}
+                  data-list-row
+                  className="flex items-center justify-between gap-3 border-b border-(--filet) px-4 py-2.5 active:bg-(--fond-puce)"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-[14.5px] font-medium text-noir">
+                      {c.nom}
+                    </div>
+                    <div className="truncate text-[12.5px] font-normal text-gris">
+                      {compte(c.poids.pieces, "pièce", "pièces")}
+                      {bucket?.parCompte[c.id]
+                        ? ` · ${octets(bucket.parCompte[c.id]!.octets)} au bucket`
+                        : ""}
+                    </div>
+                  </div>
+                  <span className="chiffre flex-none text-right text-[14px] font-normal text-noir">
+                    {octets(c.poids.octets)}
+                    <span className="font-light text-gris">
+                      {" "}
+                      · {partDe(c.poids.octets, total)}
+                    </span>
+                  </span>
+                </Link>
+              ))}
+            </ListPanel>
+          ) : (
+            <p className="px-4 text-[14px] font-light text-gris">
+              Aucune pièce stockée.
+            </p>
+          )}
+        </section>
+      </div>
+    </Screen>
+  );
+}

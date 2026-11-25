@@ -4,6 +4,7 @@ import { ZoneHeading } from "@/components/shared/zone-heading";
 import { cn } from "@/lib/utils";
 import { eur } from "./format";
 import { JaugePlafond } from "./jauge-plafond";
+import { Ligne } from "./ligne";
 
 // La vue d'ensemble (M21.5) en tête du backoffice : le coût du mois contre le
 // plafond de la clé, les appels et les silencieux, les comptes actifs, les
@@ -16,34 +17,6 @@ const LIBELLE_ECHEC: Record<string, string> = {
   relecture_failed: "relectures",
   ia_echec: "tours de l'échange",
 };
-
-function Ligne({
-  label,
-  children,
-  tone,
-}: {
-  label: string;
-  children: React.ReactNode;
-  tone?: "urgent" | "attente";
-}) {
-  return (
-    <div
-      data-list-row
-      className="flex items-baseline justify-between gap-3 border-b border-(--filet) px-4 py-2.5 text-[14px]"
-    >
-      <span className="font-light text-gris">{label}</span>
-      <span
-        className={cn(
-          "chiffre text-right font-normal text-noir",
-          tone === "urgent" && "text-urgent",
-          tone === "attente" && "text-(--attente)",
-        )}
-      >
-        {children}
-      </span>
-    </div>
-  );
-}
 
 export function Overview({ vue }: { vue: AdminOverview }) {
   const part = vue.plafondEur > 0 ? vue.coutMoisEur / vue.plafondEur : 0;
